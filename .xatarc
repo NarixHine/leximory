@@ -1,0 +1,6 @@
+{
+  "databaseURL": "https://INK-ai3lvl.us-east-1.xata.sh/db/leximory",
+  "codegen": {
+    "output": "lib/xata.ts"
+  }
+}

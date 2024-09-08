@@ -1,0 +1,327 @@
+export const metadata = {
+    title: 'Hello Leximory, Hi PXCI',
+    description: 'The blog post I wrote for the PXCI summer hackathon.'
+}
+
+# Hello Leximory, Hi PXCI
+
+**Leximory** (a blend of **lexicon** & **memory**), is a platform I’ve long longed to build.
+
+Leximory is a language (ESL in particular) learning platform that conforms to the basic principles of language acquisition — rather than works against it — and that taps into the state-of-the-art technologies, LLMs and Web development toolsets, which enable learners to learn more effectively and efficiently.
+
+It all originated from my fellow students’ complaints. “English is so hard … You’d never get to remember such volume of vocabulary,” some growlled. And Learning a secondary language *was* hard – except when you’re in the internet era.
+
+In this blog post, I’ll:
+
+1. First, briefly introduce the roots of the idea underlying Leximory;  
+2. Next, give you a walkthrough of this platform in a YouTube video;
+3. Then, dive into some technical details as to how the combination of Clerk, Xata, Inngest and Prisma streamlines a crucial part of our platform — notifying learners of their daily review based on the forgetting curve;
+4. At Last, express some final thoughts.
+
+## The Inspiration
+
+When I saw [Xata’s hackathon challenge](https://xata.io/blog/summer-launch-pxci-hackathon), I thought, oh, what a proper opportunity, as I had barely laid down the structure of Leximory.
+
+More generally speaking, it has always been good times for language learning in recent years: AI has boomed. Web communities are flourishing. The input material for intensive reading that is absolutely required for the natural process of language acquisition is at hand.
+
+**Just input.** And the human brain will figure out how the language works. It’s not confidence or genius; it’s *science*. It’s also how machine learning works.
+
+Even better is that vocabulary, the biggest barrier to reading “i+1” level input material, can be easily overcome using e-dictionaries.
+
+**But it’s not enough.** I usually need to leaf through different dictionaries and Etymonline.com to get its precise meaning, etymology and cognates. Now, in Leximory, with the integration of AI, I can generate in bulk the contextual meaning of a word, and put together other information that I would otherwise have to collect from different places, meanwhile greatly simplifying review. **One tap, it’s done.** Input has become ever easier. Leximory can make it even easier.
+
+**On the other hand, unfortunately,** our students are inundated with exam papers and overburdened by the rigid cramming of words (aback adv. zhènjīng; abandon v. pāoqì, …). That approach is not unproductive. But it is extremely inefficient, sometimes hardly yielding long-term benefits and in its very essence depriving us of the joy of language learning.
+
+In view of this phenomenon, I decided to develop Leximory, a non-profit platform that isn’t too complex to be built in limited time, but sophisticated enough by using modern Web technologies and artificial intelligence, in accordance with the simple, enjoyable, linguistically proven method of reading and reviewing, to transform the way we learn, not only as a tool to raise students’ marks, but as an eye opener to rediscover a landscape, which is alien, yet as enchanting as that of our own culture.
+
+## A Tour
+
+This YouTube video will walk you through the main features of Leximory, along with some brief accounts of the usage of the PXCI stack — Prisma, Clerk, Xata, and Inngest — and Next.js.
+
+https://youtu.be/5DdAmp2EFeM
+
+Ready? Let’s dive deeper and see some code.
+
+## The Notification System
+
+![](/summer-hackathon/1.png)
+
+This is the Daily Review page in Leximory. It employs *the forgetting curve* theory and shows the user what they saved on certain days, and whether a user revisits and reviews this daily report regularly greatly affects the outcome of their study.
+
+If a user subscribes to the Daily Review, their browser will receive a notification at 10 pm every day.
+
+There’s some data fetching needed on this page:
+
+1. Whether the user has opted to turn on notifications;
+2. The words saved today;
+3. Those saved yesterday;
+4. Those saved 4 days ago;
+5. …
+    
+
+We can display `1` on the initial page load and stream the rest using React `<Suspense />`. Here’s the code.
+
+```ts
+// reduced for clarity
+export default async function Daily() {
+    const prisma = new PrismaClient()
+    const hasSubscribed = Boolean(await prisma.subs.findFirst({
+        where: {
+            uid: auth().userId
+        },
+    })) // check if there is a record
+
+    return (
+        <Main>
+            <H>Daily review</H>
+            <Spacer y={2}></Spacer>
+            <Bell hasSubscribed={hasSubscribed}></Bell>
+            <Suspense fallback={<Loading></Loading>}>
+                <Report day='Today'></Report>
+            </Suspense>
+            <Suspense fallback={<Loading></Loading>}>
+                <Report day='1 day ago'></Report>
+            </Suspense>
+            <Suspense fallback={<Loading></Loading>}>
+                <Report day='4 days ago'></Report>
+            </Suspense>
+        </Main>
+    )
+}
+```
+
+Next, we will get to the component displaying words on a specific day.
+
+```typescript
+// reduced for clarity
+export default async function Report({ day }: {
+    day: '1 day ago' | '4 days ago' | 'Today'
+}) {
+    const range = {
+        'Today': [0, -1],
+        '1 day ago': [1, 0],
+        '4 days ago': [4, 3],
+    }
+    // not very familiar with Prisma when using comparison of dates
+    // to filter records, so I’ll stick the Xata SDK for this
+    const xata = getXataClient()
+    const words = await xata.db.lexicon.select(['id', 'word']).filter({
+        $all: [
+            {
+                'xata.createdAt': { $ge: moment().startOf('day').subtract(range[day][0], 'day').toDate() }
+            },
+            {
+                'xata.createdAt': { $lt: moment().startOf('day').subtract(range[day][1], 'day').toDate() }
+            }
+        ]
+    }).getMany()
+
+    return words.length > 0 ? (
+        <div className='my-8'>
+            <H className='text-xl font-semibold opacity-80 -mb-2'>{day}</H>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+                {words.map((word) => (
+                    <Markdown key={word.id} md={word.word} asCard></Markdown>
+                ))}
+            </div>
+        </div>
+    ) : <></>
+}
+```
+
+Then, we need to implement the notification toggle button 🔔. When clicked, it asks for permission for push notifications (if not already given), and stores the `subscription` in Xata. A user can click it again to delete the subscription.
+
+<details data-node-type="hn-details-summary">
+<summary>Push notifications involve service workers. (MDN)</summary>
+<div data-type="detailsContent">
+Service workers essentially act as proxy servers that sit between web applications, the browser, and the network (when available). They will allow access to push notifications and background sync APIs.
+</div>
+</details>
+
+1. The browser first needs to prepare a `subscription` object with a pre-generated public key, which contains an endpoint to send messages to and functions as an identifier of the user’s browser.
+2. After our server receives the `subscription`, it can start sending messages to the endpoint (which usually belongs to Google or Apple, depending on what browser you’re using).
+3. The endpoint relays it to the language learner, whose browser then decrypts and validates the message. The service worker can then choose to display a notification based on the message.
+    
+
+Leximory uses [Serwist](https://serwist.pages.dev/) to turn the Next.js website into a PWA and to automatically generate `/sw.js` from `sw.ts`. Later we will customise it to adapt it to our needs.
+
+### Step 1: subscribe the user
+
+After the user turns on notifications, the toggle invokes a server action to save the `subscription`.
+
+![](/summer-hackathon/2.png)
+
+```typescript
+// acts as a notification toggle
+export default function Bell({ hasSubscribed }: {
+    hasSubscribed: boolean
+}) {
+    const subscribe = async () => {
+        const register = await navigator.serviceWorker.register('/sw.js')
+
+        const subscription = await register.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        })
+
+        await saveSubs(subscription)
+    }
+    return (
+        <div className='flex flex-col justify-center items-center space-y-1'>
+            <Button variant={hasSubscribed ? 'solid' : 'ghost'} onPress={hasSubscribed ? () => delSubs() : () => subscribe()} startContent={<FcAlarmClock />}>{`${hasSubscribed ? 'Turn off' : 'Turn on'} review notification (22:00)`}</Button>
+            <div className='opacity-50 text-sm text-balance text-center'>
+                iOS users need to add Leximory to the home screen
+            </div>
+        </div>
+    )
+}
+```
+
+```typescript
+// server actions
+export default async function saveSubs(subs: PushSubscription) {
+    const { userId } = auth()
+    if (userId) {
+        await prisma.subs.create({
+            data: {
+                uid: auth().userId,
+                subscription: JSON.stringify(subs)
+            }
+        })
+        revalidatePath(`/daily`)
+    }
+}
+
+export async function delSubs() {
+    const { userId } = auth()
+    if (userId) {
+        const { xata_id } = await prisma.subs.findFirstOrThrow({
+            where: {
+                uid: auth().userId,
+            }
+        })
+        await prisma.subs.delete({
+            where: {
+                xata_id
+            }
+        })
+        revalidatePath(`/daily`)
+    }
+}
+```
+
+### Step 2: `step.sendEvent()`
+
+It is where Inngest steps in. Notifications are scheduled at ten o’clock in the evening, but Next.js has no built-in cron jobs. Furthermore, it would be unsustainable if we were to use a single mammoth request to send notifications to all of our users when we have scaled. Either the execution time or memory will explode.
+
+Inngest, however, provides an event-driven solution.
+
+```typescript
+export const fanNotification = inngest.createFunction(
+    { id: 'load-subscribed-users' },
+    { cron: '0 22 * * *' },
+    async ({ step }) => {
+        const users = await step.run('fetch-users', async () => {
+            return prisma.subs.findMany()
+        })
+
+        const events = users.map(
+            (user) => {
+                return {
+                    name: 'app/notify',
+                    data: {
+                        subscription: user.subscription,
+                    },
+                    user,
+                }
+            }
+        )
+
+        await step.sendEvent('fan-out-notifications', events)
+    }
+)
+```
+
+Basically, what Inngest does in this case is send a scheduled event to `/api/inngest`, and then the handler will know what it triggers.
+
+What’s even more magical is that it retrieves the subscriptions with Prisma, and then *fans them out*. For every user, it sends an event `app/notify` with the subscription as the payload. Then all the steps they trigger will run in parallel, free from the risk of timeout (or the chain failure of `Promise.all()`).
+
+```typescript
+export const notify = inngest.createFunction(
+    { id: 'notify' },
+    { event: 'app/notify' },
+    async ({ event, step }) => {
+        const { subscription } = event.data
+        webpush.sendNotification(JSON.parse(subscription), JSON.stringify({
+            title: 'Daily Review',
+            icon: '/android-chrome-192x192.png',
+            badge: '/android-chrome-192x192.png',
+            data: {
+                url: prefixUrl('/daily')
+            },
+        }))
+    }
+)
+```
+
+`web-push` is used to send messages based on the key pair, the subscription and the payload we provide.
+
+### Step 3: the final presentation, by `sw.js`
+
+```typescript
+// add in sw.ts
+
+self.addEventListener('push', (event) => {
+    const { data } = event
+    if (data) {
+        const json = data.json()
+        const { title, body, icon } = json
+        const { url } = json.data
+
+        const notificationOptions = {
+            body,
+            tag: 'evening-reminder',
+            icon,
+            data: {
+                url,
+            },
+        }
+
+        event.waitUntil(self.registration.showNotification(title, notificationOptions))
+    }
+})
+```
+
+This is fairly easy; it isn’t anything Serwist-specific, just standard Web Service Worker APIs. Simply add the following code to the Serwist configuration, and it shows a notification based on the message we have sent it.
+
+```typescript
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close()
+    const { url } = event.notification.data
+    event.waitUntil(self.clients.openWindow(url))
+})
+```
+
+This listener makes sure that learners (presumably prepared to go to sleep) jump right into the review page in our PWA.
+
+Bingo! (I wonder if anyone may feel it gives a Duolingo touch)
+
+![](/summer-hackathon/3.png)
+
+## Yes, I built Leximory …
+
+With a few eager testers who’d given very positive feedback, and a design lover I could sound out about the palette, I built it.
+
+I built Leximory mainly for students in China. Maybe later will adapt it for students in Japan. South Korea. But I originally built it without plans for i18n, because I didn’t think I could reach very far with few acquaintances outside China. Perhaps I will refactor the code and turn this into a community project, instead of doing this alone. Perhaps I will make it a general language learning platform. For English speakers who would like to learn other languages. For language learners from all over the world. For you. Where does its future head for? Currently still in the dark.
+
+<details data-node-type="hn-details-summary"><summary>On being a general language learning platform</summary><div data-type="detailsContent">In fact, it already is, to some extent. The Japanese learning experience is pretty good. But as for most other languages I don’t speak, I’m really unable to write the prompt or implement the proper support. And there’s the localisation for learners who speak different mother tongues. It takes time and a community. (And, of course, money, for my $20/month Vercel bill, $5/month bill for Elevenlabs, and more.)</div></details>
+
+**But I have hopes.**
+
+I’m someone who buys into the UNESCO view: languages connect the world, thereby *saving* it. Languages and cultures are things that enable people to see differently, to think more wisely, to live inclusively, and to share this world in harmony, which is even more important in today’s world. The rapid advancement of artificial intelligence should not dissuade people from learning languages by eliminating the need (which it very likely can’t), but rather encourage people by assisting them with it.
+
+And (*playfully*) by *language*, I don’t limit my remarks to human language. Even though machine language is not used in everyday speech, it does help connect the world. It connects the world by inventing a thing called *the Web*. It connects people through emails, online forums and instant messages. It connects one mind with another via the sharing of information. It connects us with history by recording and digitalising relics. It connects a community by empowering them to build something helpful upon the Web and to make a difference. It connects a person with a different culture, its intrinsic wisdom and beauty by making Leximory possible.
+
+Anyway, it feels good to build something useful with PXCI. 😃
+
+![](/summer-hackathon/4.jpeg)
