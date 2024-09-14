@@ -1,12 +1,12 @@
 import '@/styles/globals.css'
-import { Metadata, Viewport } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import Navbar from '@/app/navbar'
 import { defaultFontFamily } from '@/lib/fonts'
 import Footer from '@/app/footer'
 import { auth } from '@clerk/nextjs/server'
 import Script from 'next/script'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`

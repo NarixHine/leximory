@@ -56,6 +56,7 @@ export default function Ebook() {
     }, [lang, theme])
 
     const handleFullScreen = useFullScreenHandle()
+    const containerRef = useRef<HTMLDivElement>(null!)
 
     return src && (
         <>
@@ -63,24 +64,26 @@ export default function Ebook() {
                 全屏模式
             </Button>
             <FullScreen handle={handleFullScreen} className='h-[90dvh] relative dark:opacity-80 block'>
-                <Popover placement='right' isDismissable>
-                    <PopoverTrigger>
-                        <Button
-                            data-umami-event='词汇注解'
-                            className='absolute top-1 right-1 bg-background'
-                            color='primary'
-                            variant='light'
-                            size='lg'
-                            isIconOnly
-                            radius='full'
-                            isDisabled={!prompt}
-                            startContent={<PiMagnifyingGlassDuotone />}
-                        />
-                    </PopoverTrigger>
-                    <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                        {prompt && <Comment asCard prompt={prompt} params='["", "加载中……"]'></Comment>}
-                    </PopoverContent>
-                </Popover>
+                <div ref={containerRef}>
+                    <Popover placement='right' isDismissable portalContainer={containerRef.current}>
+                        <PopoverTrigger>
+                            <Button
+                                data-umami-event='词汇注解'
+                                className='absolute top-1 right-1 bg-background'
+                                color='primary'
+                                variant='light'
+                                size='lg'
+                                isIconOnly
+                                radius='full'
+                                isDisabled={!prompt}
+                                startContent={<PiMagnifyingGlassDuotone />}
+                            />
+                        </PopoverTrigger>
+                        <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
+                            {prompt && <Comment asCard prompt={prompt} params='["", "🔄加载中"]'></Comment>}
+                        </PopoverContent>
+                    </Popover>
+                </div>
                 <ReactReader
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
                     location={location}
