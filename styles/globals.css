@@ -51,7 +51,7 @@ blockquote .marginnote,
 .sidenote:before {
     content: counter(sidenote-counter) " ";
     font-size: 0.9rem;
-    left: -0.8rem;
+    left: -1rem;
     top: 1rem;
 }
 

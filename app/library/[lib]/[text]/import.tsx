@@ -22,7 +22,7 @@ import { FileUpload } from '@/components/upload'
 import { saveTitle, saveEbook, generate, saveContentAndTopics } from './actions'
 import { PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom } from './atoms'
+import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom, topicsAtom } from './atoms'
 import { isReadOnlyAtom, langAtom, libAtom } from '../atoms'
 
 export const maxEbookSize = 4 * 1024 * 1024
@@ -38,7 +38,7 @@ export default function ImportModal() {
     const [editing, setEditing] = useAtom(isEditingAtom)
     const setContent = useSetAtom(contentAtom)
     const setCompletion = useSetAtom(completionAtom)
-
+    const setTopics = useSetAtom(topicsAtom)
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
     const [url, setUrl] = useState('')
     const populate = async () => {
@@ -112,6 +112,7 @@ export default function ImportModal() {
                                                     }
                                                 }
                                                 setContent(commentary)
+                                                setTopics(topics)
                                                 await saveContentAndTopics(text, commentary, topics)
                                                 setIsLoading(false)
                                             } catch (e) {

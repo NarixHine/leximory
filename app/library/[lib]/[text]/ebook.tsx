@@ -3,7 +3,7 @@
 import { Button } from '@nextui-org/button'
 import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
 import type { Contents, Rendition } from 'epubjs'
-import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
+import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
 import { getSelectedText } from '@/lib/utils'
@@ -13,6 +13,7 @@ import { useSystemColorMode } from 'react-use-system-color-mode'
 import { ebookAtom, textAtom } from './atoms'
 import { langAtom } from '../atoms'
 import { useAtomValue } from 'jotai'
+import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 
 function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string) {
     const themes = rendition.themes
@@ -54,53 +55,60 @@ export default function Ebook() {
         }
     }, [lang, theme])
 
+    const handleFullScreen = useFullScreenHandle()
+
     return src && (
-        <div className='h-[90dvh] relative dark:opacity-80'>
-            <Popover placement='right' isDismissable>
-                <PopoverTrigger>
-                    <Button
-                        data-umami-event='词汇注解'
-                        className='absolute top-1 right-1 bg-background'
-                        color='primary'
-                        variant='light'
-                        size='lg'
-                        isIconOnly
-                        radius='full'
-                        isDisabled={!prompt}
-                        startContent={<PiMagnifyingGlassDuotone />}
-                    />
-                </PopoverTrigger>
-                <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                    {prompt && <Comment asCard prompt={prompt} params='["", "加载中……"]'></Comment>}
-                </PopoverContent>
-            </Popover>
-            <ReactReader
-                readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
-                location={location}
-                locationChanged={epubcifi => {
-                    setLocation(epubcifi)
-                }}
-                getRendition={rendition => {
-                    updateTheme(rendition, theme, lang)
-                    rendition.themes.default({
-                        'p': {
-                            'margin-top': '0.5em',
-                            'margin-bottom': '0.5em',
-                        }
-                    })
-                    themeRendition.current = rendition
-                    rendition.on('selected', (cfiRange: string, contents: Contents) => {
-                        const selection = contents.window.getSelection()
-                        setPrompt(selection ? getSelectedText(selection) : null)
-                    })
-                }}
-                epubOptions={{
-                    allowPopups: true,
-                    allowScriptedContent: true,
-                }}
-                url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
-            />
-        </div>
+        <>
+            <Button variant='ghost' color='danger' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
+                全屏模式
+            </Button>
+            <FullScreen handle={handleFullScreen} className='h-[90dvh] relative dark:opacity-80 block'>
+                <Popover placement='right' isDismissable>
+                    <PopoverTrigger>
+                        <Button
+                            data-umami-event='词汇注解'
+                            className='absolute top-1 right-1 bg-background'
+                            color='primary'
+                            variant='light'
+                            size='lg'
+                            isIconOnly
+                            radius='full'
+                            isDisabled={!prompt}
+                            startContent={<PiMagnifyingGlassDuotone />}
+                        />
+                    </PopoverTrigger>
+                    <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
+                        {prompt && <Comment asCard prompt={prompt} params='["", "加载中……"]'></Comment>}
+                    </PopoverContent>
+                </Popover>
+                <ReactReader
+                    readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
+                    location={location}
+                    locationChanged={epubcifi => {
+                        setLocation(epubcifi)
+                    }}
+                    getRendition={rendition => {
+                        updateTheme(rendition, theme, lang)
+                        rendition.themes.default({
+                            'p': {
+                                'margin-top': '0.5em',
+                                'margin-bottom': '0.5em',
+                            }
+                        })
+                        themeRendition.current = rendition
+                        rendition.on('selected', (cfiRange: string, contents: Contents) => {
+                            const selection = contents.window.getSelection()
+                            setPrompt(selection ? getSelectedText(selection) : null)
+                        })
+                    }}
+                    epubOptions={{
+                        allowPopups: true,
+                        allowScriptedContent: true,
+                    }}
+                    url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
+                />
+            </FullScreen>
+        </>
     )
 }
 
