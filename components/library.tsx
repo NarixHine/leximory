@@ -7,7 +7,7 @@ import { Divider } from '@nextui-org/divider'
 import { Spacer } from '@nextui-org/spacer'
 import { PiBookBookmarkDuotone } from 'react-icons/pi'
 import Options from './options'
-import { langMap, colorMap, supportedLangs, libAccessStatusMap, accessOptions } from '@/lib/config'
+import { langMap, colorMap, supportedLangs, libAccessStatusMap, accessOptions, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
@@ -39,7 +39,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
                 }}>{name}</a>
                 <Spacer y={5}></Spacer>
                 <div className='flex space-x-2'>
-                    {[langMap[lang]].concat(topics as any).map(tag => <Chip key={tag} variant='flat' color={colorMap[tag]}>{tag}</Chip>)}
+                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color={colorMap[tag]}>{tag}</Chip>)}
                 </div>
             </CardBody>
             <Divider></Divider>

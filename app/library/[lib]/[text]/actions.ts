@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { authReadToLib, authWriteToLib } from '@/lib/auth'
 import incrCommentaryQuota from '@/lib/quota'
 import { maxCommentaryQuota } from '@/lib/quota'
-import { maxArticleLength } from '@/lib/config'
+import { Lang, maxArticleLength } from '@/lib/config'
 import { maxEbookSize } from './import'
 
 async function updateTextAndRevalidate(id: string, updateData: Partial<{ content: string; topics: string[]; title: string }>) {
@@ -50,7 +50,7 @@ export async function generate(prompt: string, lib: string) {
     const stream = createStreamableValue()
     const { lang } = await authWriteToLib(lib)
 
-    if (prompt.length > maxArticleLength(lang)) {
+    if (prompt.length > maxArticleLength(lang as Lang)) {
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota()) {
@@ -90,7 +90,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     const stream = createStreamableValue()
     const { lang } = await authReadToLib(lib)
 
-    if (prompt.length > maxArticleLength(lang)) {
+    if (prompt.length > maxArticleLength(lang as Lang)) {
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(0.25)) {

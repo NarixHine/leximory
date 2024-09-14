@@ -1,15 +1,13 @@
 import { Readable } from 'stream'
-
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 export function stringToColor(input: string): 'primary' | 'warning' | 'danger' {
-    // Simple hash function to convert a string to a number
     let hash = 0
     for (let i = 0; i < input.length; i++) {
         const char = input.charCodeAt(i)
         hash = (hash << 5) - hash + char
-        hash = hash & hash // Convert to 32bit integer
+        hash = hash & hash
     }
     return ['secondary', 'warning', 'danger'][Math.abs(hash % 3)] as any
 }

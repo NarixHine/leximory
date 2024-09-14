@@ -8,7 +8,7 @@ import Nav from '@/components/nav'
 import Options from '@/components/options'
 import H from '@/components/h'
 import { authWriteToLib, isListed } from '@/lib/auth'
-import { supportedLangs, langMap, welcomeMap, libAccessStatusMap, accessOptions } from '@/lib/config'
+import { supportedLangs, langMap, welcomeMap, libAccessStatusMap, accessOptions, Lang } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { auth, clerkClient } from '@clerk/nextjs/server'
@@ -54,7 +54,7 @@ export default async function Page() {
     const save = async (id: string, form: FormData) => {
         'use server'
         const xata = getXataClient()
-        const lang = form.get('lang') as string | undefined
+        const lang = form.get('lang') as Lang | undefined
         const access = form.get('access') as keyof typeof libAccessStatusMap
         if (lang) {
             const lib = await xata.db.libraries.create({
