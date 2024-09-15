@@ -20,7 +20,7 @@ export default function Recollection({ words, cursor, more }: {
     const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
 
-    const [recol, setRecol] = useState<typeof words>([] as unknown as typeof words)
+    const [recol, setRecol] = useState<typeof words>([] satisfies typeof words)
     const [newCursor, setNewCursor] = useState(cursor)
     const [moreWords, setMoreWords] = useState(more)
     const [isPending, startTransition] = useTransition()
@@ -43,7 +43,7 @@ export default function Recollection({ words, cursor, more }: {
             <Button onPress={async () => {
                 startTransition(async () => {
                     const { words, cursor, more } = await load(lib, newCursor)
-                    setRecol((prev) => prev.concat(words as any) as any)
+                    setRecol((prev) => prev.concat(words))
                     setNewCursor(cursor)
                     setMoreWords(more)
                 })

@@ -101,7 +101,7 @@ export default function Ebook() {
                             }
                         })
                         themeRendition.current = rendition
-                        rendition.on('selected', (cfiRange: string, contents: Contents) => {
+                        rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
                             setPrompt(selection ? getSelectedText(selection) : null)
                         })

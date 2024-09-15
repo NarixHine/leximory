@@ -10,9 +10,9 @@ export default async function star(lib: string) {
     const { userId } = auth()
     const { rec } = await authReadToLib(lib)
     const { starredBy } = rec
-    const newStarredBy = starredBy?.includes(userId as string)
-        ? (starredBy ?? []).filter(x => x !== userId)
-        : [...(starredBy ?? []), userId as string]
+    const newStarredBy = starredBy?.includes(userId!)
+        ? (starredBy ?? []).filter(x => x !== userId!)
+        : [...(starredBy ?? []), userId!]
     await xata.db.libraries.update(lib, { starredBy: newStarredBy })
     revalidatePath(`/library/${lib}`)
 }
