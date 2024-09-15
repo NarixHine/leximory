@@ -8,7 +8,7 @@ import Ebook from './ebook'
 import ImportModal from './import'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
+import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone } from 'react-icons/pi'
 import { saveContentAndTopics } from './actions'
 import { Spacer } from '@nextui-org/spacer'
 import { Divider } from '@nextui-org/divider'
@@ -136,6 +136,7 @@ function EditingView() {
         fullWidth
         variant='flat'
         color='secondary'
+        startContent={<PiPencilCircleDuotone />}
         onPress={async () => {
           await saveContentAndTopics(text, modifiedMd, modifiedTopics)
           setIsEditing(false)

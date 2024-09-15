@@ -18,6 +18,7 @@ import { Divider } from '@nextui-org/divider'
 import { Spacer } from '@nextui-org/spacer'
 import { prefixUrl } from '@/lib/config'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 type InputField = {
     name: string,
@@ -121,22 +122,24 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                                         <Spacer y={2} />
                                         <Divider />
                                         <Accordion isCompact fullWidth>
-                                            {advancedInputs.length > 0 || advancedSelects.length > 0 ? <AccordionItem title='进阶设置' key={1}>
-                                                <Fields inputs={advancedInputs} selects={advancedSelects} />
-                                                <div className='flex justify-end'>
-                                                    <Button
-                                                        startContent={<PiFloppyDiskBackDuotone />}
-                                                        color='secondary'
-                                                        variant='flat'
-                                                        type='submit'
-                                                        className='my-2'
-                                                        onPress={onClose}
-                                                    >
-                                                        保存
-                                                    </Button>
-                                                </div>
-                                                <Spacer />
-                                            </AccordionItem> : <></>}
+                                            {advancedInputs.length > 0 && advancedSelects.length > 0 ? (
+                                                <AccordionItem title='进阶设置' key={1}>
+                                                    <Fields inputs={advancedInputs} selects={advancedSelects} />
+                                                    <div className='flex justify-end'>
+                                                        <Button
+                                                            startContent={<PiFloppyDiskBackDuotone />}
+                                                            color='secondary'
+                                                            variant='flat'
+                                                            type='submit'
+                                                            className='my-2'
+                                                            onPress={onClose}
+                                                        >
+                                                            保存
+                                                        </Button>
+                                                    </div>
+                                                    <Spacer />
+                                                </AccordionItem>
+                                            ) : null!}
                                             <AccordionItem title='危险操作' key={2}>
                                                 <Button
                                                     color='danger'
