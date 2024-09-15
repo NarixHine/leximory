@@ -4,9 +4,9 @@ import Center from '@/components/center'
 import H from '@/components/h'
 import { Button } from '@nextui-org/button'
 import { Spacer } from '@nextui-org/spacer'
+import { PiArrowClockwiseDuotone } from 'react-icons/pi'
 
-
-export default function GlobalError({
+export default function Error({
     error,
     reset,
 }: {
@@ -20,7 +20,7 @@ export default function GlobalError({
                 <Spacer></Spacer>
                 {error.digest && <p>ID: {error.digest}</p>}
                 <Spacer></Spacer>
-                <Button fullWidth onPress={reset} variant='flat' color='primary'>
+                <Button fullWidth onPress={reset} variant='flat' startContent={<PiArrowClockwiseDuotone />} color='primary'>
                     Reload
                 </Button>
             </div>

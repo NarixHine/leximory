@@ -29,5 +29,4 @@ export async function saveComment(portions: string[], lib: string) {
         word: `{{${[comment[0]].concat(comment).join('||')}}}`,
         lib
     })
-    revalidatePath(`/library/${lib}/corpus`)
 }
