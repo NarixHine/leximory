@@ -41,7 +41,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setWords([parsedParams])
         setIsLoaded(!isOnDemand)
         setStatus('')
-    }, [params, isOnDemand])
+    }, [])
 
     useEffect(() => {
         const commentWord = async () => {
