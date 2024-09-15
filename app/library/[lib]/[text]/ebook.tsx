@@ -10,7 +10,7 @@ import { getSelectedText } from '@/lib/utils'
 import useLocalStorageState from 'use-local-storage-state'
 import { useEffect, useRef, useState } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
-import { ebookAtom, textAtom } from './atoms'
+import { ebookAtom, textAtom, titleAtom } from './atoms'
 import { langAtom } from '../atoms'
 import { useAtomValue } from 'jotai'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
@@ -41,6 +41,7 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string
 }
 
 export default function Ebook() {
+    const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
@@ -63,7 +64,7 @@ export default function Ebook() {
             <Button variant='ghost' color='danger' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
                 全屏模式
             </Button>
-            <FullScreen handle={handleFullScreen} className='h-[90dvh] relative dark:opacity-80 block'>
+            <FullScreen handle={handleFullScreen} className='h-[80dvh] relative dark:opacity-80 block'>
                 <div ref={containerRef}>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>
                         <PopoverTrigger>
@@ -80,11 +81,12 @@ export default function Ebook() {
                             />
                         </PopoverTrigger>
                         <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                            {prompt && <Comment asCard prompt={prompt} params='["", "🔄加载中"]'></Comment>}
+                            {prompt && <Comment asCard prompt={prompt} params='["", "🔄 加载中"]'></Comment>}
                         </PopoverContent>
                     </Popover>
                 </div>
                 <ReactReader
+                    title={title}
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
                     location={location}
                     locationChanged={epubcifi => {
@@ -138,6 +140,7 @@ const darkReaderTheme: IReactReaderStyle = {
         ...ReactReaderStyle.readerArea,
         backgroundColor: '#15202B',
         transition: undefined,
+        color: '#ccc',
     },
     titleArea: {
         ...ReactReaderStyle.titleArea,
@@ -153,7 +156,6 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     tocButtonBar: {
         ...ReactReaderStyle.tocButtonBar,
-        background: '#15202B',
     },
     tocButton: {
         ...ReactReaderStyle.tocButton,

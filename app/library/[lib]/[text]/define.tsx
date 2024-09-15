@@ -23,29 +23,24 @@ export default function Define() {
             }, 100)
         })
     }, [])
-    if (selection && selection.anchorNode?.textContent && selection.toString()) {
-        return <Popover placement='right'>
-            <PopoverTrigger>
-                <Button
-                    data-umami-event='词汇注解'
-                    className='absolute -translate-x-1/2 bg-background'
-                    style={rect ? {
-                        left: rect.left + rect.width / 2,
-                        top: scrollY + rect.bottom + 10
-                    } : { display: 'none' }}
-                    color='primary'
-                    variant='ghost'
-                    isIconOnly
-                    radius='full'
-                    startContent={<PiMagnifyingGlassDuotone />}
-                />
-            </PopoverTrigger>
-            <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                <Comment asCard prompt={getSelectedText(selection)} params='["", "加载中……"]'></Comment>
-            </PopoverContent>
-        </Popover>
-    }
-    else {
-        return <div />
-    }
+    return selection && selection.anchorNode?.textContent && selection.toString() && <Popover placement='right'>
+        <PopoverTrigger>
+            <Button
+                data-umami-event='词汇注解'
+                className='absolute -translate-x-1/2 bg-background'
+                style={rect ? {
+                    left: rect.left + rect.width / 2,
+                    top: scrollY + rect.bottom + 10
+                } : { display: 'none' }}
+                color='primary'
+                variant='ghost'
+                isIconOnly
+                radius='full'
+                startContent={<PiMagnifyingGlassDuotone />}
+            />
+        </PopoverTrigger>
+        <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
+            <Comment asCard prompt={getSelectedText(selection)} params='["", "🔄 加载中"]'></Comment>
+        </PopoverContent>
+    </Popover>
 }

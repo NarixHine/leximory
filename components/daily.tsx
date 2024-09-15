@@ -7,7 +7,7 @@ import { PiNewspaperDuotone } from 'react-icons/pi'
 export default function DailyCard() {
     const router = useRouter()
     return <div className='w-full py-2 px-4 items-center flex bg-gradient-to-r from-primary-200 to-warning-200 rounded-lg'>
-        <div className='font-bold opacity-50'>每日汇总</div>
+        <div className='font-bold opacity-50'>每日复盘</div>
         <div className='flex-1'></div>
         <div>
             <Button

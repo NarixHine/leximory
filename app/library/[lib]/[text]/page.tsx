@@ -4,11 +4,10 @@ import { getXataClient } from '@/lib/xata'
 import H from '@/components/h'
 import { authReadToText } from '@/lib/auth'
 import sanitizeHtml from 'sanitize-html'
-import { notFound } from 'next/navigation'
 import Nav from '@/components/nav'
 import Topics from '@/components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, ebookAtom, textAtom, topicsAtom } from './atoms'
+import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom } from './atoms'
 
 export const maxDuration = 60
 
@@ -34,7 +33,8 @@ export default async function Page({ params }: LibAndTextParams) {
             [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
             [topicsAtom, topics ?? []],
             [ebookAtom, ebook?.url],
-            [textAtom, id]
+            [textAtom, id],
+            [titleAtom, title]
         ]}>
             <Main className='max-w-screen-xl'>
                 <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>

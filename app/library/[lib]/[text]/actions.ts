@@ -105,7 +105,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
             ${instruction[lang]}
             `,
-            prompt: `由于下文中只有一个加双重中括号的单词或词组，你只需要依次输出它的原文形式、原形、释义${lang === 'en' ? '、语源、同源词' : ''}即可，形如 word||original${lang === 'en' ? '||etymology||cognates' : ''}。具体形式必须保持与示例注解一致。不要附带原文和上下文。\n${lang !== 'en' ? '' : '你必须在注解中附带语源，禁止省略。\n'}\n\n${prompt}`,
+            prompt: `由于下文中只有一个加双重中括号的单词、词组或短语，你只需要依次输出它的原文形式、原形、释义${lang === 'en' ? '、语源、同源词' : ''}即可，形如 word||original${lang === 'en' ? '||etymology||cognates' : ''}。具体形式必须保持与示例注解一致。不要附带原文和上下文。\n${lang === 'en' ? '例如如果双重中括号内是“break it down”，则对短语“break down”进行注解，而不是“break”或“break it down”。你必须在注解中附带语源，禁止省略。\n' : ''}\n\n${prompt}`,
             maxTokens: 2000
         })
 
@@ -149,9 +149,9 @@ const instruction: {
   乃从荀卿学帝王之术。学已成，{{度||度||揣测。}}楚王不足事，而六国皆弱，无可为建功者，欲西入秦。辞于荀卿曰：“斯闻得时无怠，今万乘方争时，游者{{主事||主事||掌事。}}。今秦王欲吞天下，称帝而治，此布衣{{驰骛||驰骛||奔走趋赴。}}之时而游说者之秋也。处卑贱之位而计不为者，此{{禽||禽||同“擒”，捉住。}}鹿视肉，人面而能彊行者耳。故{{诟||诟||耻辱。}}莫大于卑贱，而悲莫甚于穷困。久处卑贱之位，困苦之地，{{非||非||讥刺。}}世而恶利，{{自讬||自讬||自满。讬，同“托”。}}于无为，此非士之情也。故斯将西说秦王矣。
   `,
 
-    en: `你将看到一段英文文本，你必须为一个英文学习者尽可能多地挑选其中的词汇和词组搭配添加以下注解：原文形式（必加），原形（必加，例如名词复数应该改为单数），原形的字典式的简短释义（必加；含英式发音音标，音标用单斜杠包裹，不要在末尾多加一个斜杠；术语标注领域名称，例如 \`Linguistics\`，\`Computing\`，\`Medicine\`），对记忆有助益的语源（选加，同语根词加上时必加），同语根词（选加，不要选取同一词的不同词性变化，选择都含有同源部分的不同词）。尽量详尽地挑选并注解；多多注解外刊中的有价值单词、对英语学习实用的语汇；禁止反复注解同一词汇；禁止注解初级词汇；不要注解如加-less的常见词等词义可轻易推知的词汇。输出格式为 {{原文形式||原形||释义||(语源解释) 各个语素||语根1 (原意) → 同语根词1, 同语根词2; 语根2 (原意) → 同语根词1; …}}。词性、词义和词源注解的对象必须为词的原形，例如如果原文为dazzling，原形为dazzle，则应按照dazzle进行注解，词性为动词。
+    en: `你将看到一段英文文本，你必须为一个英文学习者尽可能多地挑选其中的词汇和词组搭配添加以下注解：原文形式（必加），原形（必加，例如名词复数应该改为单数），原形的字典式的简短释义（必加；含英式发音音标，音标用单斜杠包裹，不要在末尾多加一个斜杠；术语标注领域名称，例如 \`Linguistics\`，\`Computing\`，\`Medicine\`），对记忆有助益的语源（选加，同语根词加上时必加），同语根词（选加，不要选取同一词的不同词性变化，选择都含有同源部分的不同词）。尽量详尽地挑选并注解；多多注解外刊中的有价值单词、对英语学习实用的语汇；禁止反复注解同一词汇；禁止注解初级词汇；不要注解如加-less的常见词等词义可轻易推知的词汇。输出格式为 {{原文形式||原形||释义||(语源解释) 各个语素||语根1 (原意) → 同语根词1, 同语根词2; 语根2 (原意) → 同语根词1; …}}。词性、词义和词源注解的对象必须为词的原形，例如如果原文为dazzling且你标注的原形为dazzle，则应按照dazzle进行注解，词性为v.；如果原文为deserted且你标注的原形为deserted，则应按照deserted进行注解，词性为adj.。
   
-  除此以外，不要修改文本其他部分的Markdown语法。直接输出注解后的文章。不要删除紧跟的标点。注解的同源词板块中，相同的语素才是加粗的部分（如对于ensue中的sue应该加粗pursue中的sue，即“***sue*** (follow) → pur**sue** (追求)”）。注意：对于注解的同源词板块，拼写相同的词素未必同源（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”），只要源于同一印欧语根就是同源词（例如break和fragile）。不要在注解和紧跟的标点之间插入多余空格（例如禁止出现“}} ,”，而应当改为“}},”）。不要把词尾的非词缀音节（如-e，l，a，ire）强行放入语源（例如transpire的语源分解为trans和spire即可）。
+  除此以外，不要修改文本其他部分的Markdown语法。直接输出注解后的文章。不要删除紧跟的标点。注解的同源词板块中，相同的语素才是应当加粗的部分（如对于ensue中的sue应加粗pursue中的sue，即“***sue*** (follow) → pur**sue** (追求)”）。注意：对于注解的同源词板块，拼写相同的词素未必同源（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”），只要源于同一印欧语根就是同源词（例如break和fragile）。不要把词尾的非词缀音节（如e，l，a，ire）强行放入语源。
   
   示例文本一：
   Birds, nowadays, all live in imperilled mansions. I [[studied up]] on birds that are famously difficult to identify so that when I first saw them in the field, I had an inkling of what they were without having to check a field guide. I used the many tools now available to novices: EBird shows where other birders go and reveals how different species navigate space and time; Merlin is best known as an identification app but is secretly an incredible encyclopedia; Birding Quiz lets you practice identifying species based on fleeting glances at bad angles.
@@ -172,7 +172,7 @@ const instruction: {
   Early in his hospitalization, our retired patient mentions a daughter, from whom he’s been {{estranged||estrange||**v. /ɪˈstreɪndʒ/** (使疏远) cause (someone) to be no longer close to someone}} for years. He doesn’t know any contact details, just her name. It’s a {{long shot||long shot||(低胜算之事) an attempt with only slight chance to succeed}}, but we wonder if she can take him in. The med student has one mission: find her. I love reading about medical advances. I’m {{blown away||blow away||(震撼) impress (someone) greatly}} that with a brain implant, a person who’s paralyzed can move a robotic arm and that surgeons recently transplanted a genetically modified pig kidney into a man on {{dialysis||dialysis||**n. /dʌɪˈalᵻsɪs/** \`Medicine\` (透析) the clinical purification of blood by the separation of particles||“分离而释出”意: ***dia-*** (apart) + ***lysis*** (loosen, 松动)||***dia-*** (through, across) → **dia**lect (方言), **dia**gnose (诊断); ***lysis*** (loosen, 松动) →  cata**lysis** (催化), ana**lysis** (分析)}} This is the best of American innovation and {{cause||cause||**n. /kɔːz/** (事业) an aim or movement to which one is committed}} for celebration.
   `,
 
-    ja: `你将看到一段日文，你要为一个日文学习者**尽可能多地**挑选其中对学习日语有价值的和语（不注解格助词）、汉字、词组和专有名词添加以下注解：原文形式，原形（不要调换汉字），字典式释义（含假名注音、词性（名／動／形動／形／副／……）、中文和日文解释）。注意在划分词时划全，例如必须将“儚かった”中的“儚っか”视为一个词，原文形式为“儚っか”，原形为“儚い”；把“気付いて”中的“気付い”视为一个整体，原文形式为“気付い”，原型为“気付く”。注意对日文学习的实用性，不要重复注解同一词语。
+    ja: `你将看到一段日文，你要为一个日文学习者**尽可能多地**挑选其中对学习日语有价值的和语（不注解格助词）、汉字、词组和专有名词添加以下注解：原文形式，原形（不要调换汉字），字典式释义（含假名注音、词性（名／動／形動／形／副／……）、中文和日文解释）。注意在注解词语时完整地划全，例如必须将“儚かった”中的“儚っか”视为一个词，原文形式为“儚っか”，原形为“儚い”；把“気付いて”中的“気付い”视为一个整体，原文形式为“気付い”，原型为“気付く”。注意对日文学习的实用性，不要重复注解同一词语。
   
   输出格式为 {{原文形式||原形||释义}}。直接输出注解后的文章。注意：注解必须遍布全文，你必须多加注解难词、高价值词。
   
