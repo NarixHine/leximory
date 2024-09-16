@@ -17,14 +17,14 @@ import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 
 function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string) {
     const themes = rendition.themes
-    themes.fontSize('1.2em')
-    themes.override('line-height', '1.5em')
+    themes.fontSize('calc(14px + 0.5vw)')
+    themes.override('line-height', '1.6')
     if (lang === 'ja') {
         themes.override('direction', 'ltr')
         themes.fontSize('1.1em')
     }
     if (lang === 'en') {
-        themes.font('Georgia, serif')
+        themes.font('"Georgia", serif')
     }
     switch (theme) {
         case 'dark': {
@@ -81,7 +81,7 @@ export default function Ebook() {
                             />
                         </PopoverTrigger>
                         <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                            {prompt && <Comment asCard prompt={prompt} params='["", "🔄 加载中"]'></Comment>}
+                            {prompt && <Comment asCard prompt={prompt} params='["", "↺加载中"]'></Comment>}
                         </PopoverContent>
                     </Popover>
                 </div>
