@@ -163,7 +163,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     }
                 </PopoverTrigger>
                 <PopoverContent className='max-w-80'>
-                    <div className='p-3 space-y-5'>
+                    <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
                                 ? words.map((portions, index) => <div key={portions[1]}>
