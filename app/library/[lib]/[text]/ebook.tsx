@@ -17,7 +17,7 @@ import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 
 function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string) {
     const themes = rendition.themes
-    themes.fontSize('calc(14px + 0.5vw)')
+    themes.fontSize('18px')
     themes.override('line-height', '1.6')
     if (lang === 'ja') {
         themes.override('direction', 'ltr')
