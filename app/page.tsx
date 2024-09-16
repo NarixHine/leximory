@@ -18,6 +18,7 @@ import External from '@/components/external'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary, RenderingBoundary } from 'jotai-ssr'
 import { libAtom } from './library/[lib]/atoms'
+import { FlipWords } from '@/components/flip'
 
 export default function Home() {
 	const { userId } = auth()
@@ -48,9 +49,9 @@ export default function Home() {
 
 			<Spacer y={10}></Spacer>
 
-			<H className={cn(ma.className, 'text-6xl mb-4')}>
-				功能
-			</H>
+			<div className={cn(ma.className, 'text-5xl sm:text-6xl mb-4 text-center')}>
+				助力<FlipWords words={['外刊', '文摘', '书籍', '古文']} />阅读
+			</div>
 			<div className='flex flex-col space-y-3 w-full'>
 				<div className='flex flex-col sm:flex-row space-x-0 sm:space-x-3 space-y-3 sm:space-y-0'>
 					<div className='basis-2/5'>
@@ -64,7 +65,7 @@ export default function Home() {
 									color='danger'
 								/>
 								<div className='flex flex-col-reverse'>
-									<Button color='primary' radius='full' endContent={<PiLinkSimpleHorizontalDuotone />} variant='flat'>一键读取</Button>
+									<Button color='primary' radius='full' endContent={<PiLinkSimpleHorizontalDuotone />} variant='flat'>读取</Button>
 								</div>
 							</div>
 						</BentoCard>

@@ -69,6 +69,18 @@ module.exports = {
           colors: {
             background: '#15202B',
             content1: '#1B2D48',
+            default: {
+              DEFAULT: '#495463',
+              100: '#272d37',
+              200: '#3a414e',
+              300: '#495463',
+              400: '#5a677a',
+              500: '#67758b',
+              600: '#7e899c',
+              700: '#949eae',
+              800: '#b2bac5',
+              900: '#d0d5dd',
+            },
             primary: {
               DEFAULT: '#7697a6',
               900: '#d6e1e6',
