@@ -1,4 +1,4 @@
-import { zh, lora } from '@/lib/fonts'
+import { chinese, english_serif } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 
 function H({ children, className, disableCenter, useSerif }: {
@@ -9,7 +9,7 @@ function H({ children, className, disableCenter, useSerif }: {
 }) {
     return <h1
         style={{
-            fontFamily: useSerif ? `${lora.style.fontFamily}, ${zh.style.fontFamily}` : undefined
+            fontFamily: useSerif ? `${english_serif.style.fontFamily}, ${chinese.style.fontFamily}` : undefined
         }}
         className={cn('text-balance', !disableCenter && 'text-center', className ?? 'text-5xl')}
     >{children}</h1>

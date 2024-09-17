@@ -1,7 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Input } from '@nextui-org/input'
+import { Button, Input } from '@nextui-org/react'
 import { save } from './actions'
 import { useState, useTransition } from 'react'
 import { PiFloppyDiskBackDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'

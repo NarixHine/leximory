@@ -1,8 +1,7 @@
 'use client'
 
-import { Breadcrumbs, BreadcrumbItem } from '@nextui-org/breadcrumbs'
+import { Breadcrumbs, BreadcrumbItem, Button } from '@nextui-org/react'
 import { NavProps } from '.'
-import { Button } from '@nextui-org/button'
 import { PiBookBookmarkDuotone, PiFileTextDuotone, PiBooksDuotone, PiUserCircleDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'

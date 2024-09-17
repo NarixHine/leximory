@@ -12,13 +12,11 @@ import { supportedLangs, langMap, welcomeMap, libAccessStatusMap, accessOptions,
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { Card, CardBody } from '@nextui-org/card'
-import { Skeleton } from '@nextui-org/skeleton'
+import { Card, CardBody, Skeleton, Spacer } from '@nextui-org/react'
 import { Metadata } from 'next'
 import { revalidatePath } from 'next/cache'
 import { Suspense } from 'react'
 import { PiFolderPlusDuotone } from 'react-icons/pi'
-import { Spacer } from '@nextui-org/spacer'
 
 export const metadata: Metadata = {
     title: '文库'

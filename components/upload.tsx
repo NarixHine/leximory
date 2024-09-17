@@ -3,8 +3,8 @@
 import { cn } from '@/lib/utils'
 import React, { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { IconUpload } from '@tabler/icons-react'
 import { useDropzone } from 'react-dropzone'
+import { PiBoxArrowUpDuotone } from 'react-icons/pi'
 
 const mainVariant = {
     initial: {
@@ -127,10 +127,10 @@ export const FileUpload = ({
                                         className='text-neutral-600 flex flex-col items-center'
                                     >
                                         Drop it
-                                        <IconUpload className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
+                                        <PiBoxArrowUpDuotone className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
                                     </motion.p>
                                 ) : (
-                                    <IconUpload className='h-4 w-4 text-neutral-600 dark:text-neutral-300' />
+                                    <PiBoxArrowUpDuotone className='h-4 w-4 text-neutral-600 dark:text-neutral-300' />
                                 )}
                             </motion.div>
                         )}
@@ -152,7 +152,7 @@ export function GridPattern() {
     const columns = 41
     const rows = 11
     return (
-        <div className='flex bg-gray-100 dark:bg-neutral-900 flex-shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px  scale-105'>
+        <div className='flex bg-gray-100 dark:hidden flex-shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px  scale-105'>
             {Array.from({ length: rows }).map((_, row) =>
                 Array.from({ length: columns }).map((_, col) => {
                     const index = row * columns + col

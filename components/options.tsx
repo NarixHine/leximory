@@ -1,24 +1,10 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Input, Textarea } from '@nextui-org/input'
-import {
-    Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    useDisclosure
-} from '@nextui-org/modal'
-import { Select, SelectItem } from '@nextui-org/select'
 import { ReactElement, cloneElement, useMemo } from 'react'
 import { PiFloppyDiskBackDuotone, PiGearDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
-import { Accordion, AccordionItem } from '@nextui-org/accordion'
-import { Divider } from '@nextui-org/divider'
-import { Spacer } from '@nextui-org/spacer'
+import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Accordion, AccordionItem, Divider, Spacer, Select, SelectItem, Textarea, Input } from '@nextui-org/react'
 import { prefixUrl } from '@/lib/config'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 
 type InputField = {
     name: string,

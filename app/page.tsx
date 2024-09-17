@@ -1,19 +1,15 @@
 import Main from '@/components/main'
 import { auth } from '@clerk/nextjs/server'
 import H from '@/components/h'
-import { ma, playfair, xw } from '@/lib/fonts'
-import { Button } from '@nextui-org/button'
-import { Spacer } from '@nextui-org/spacer'
+import { chinese_calligraphy, english_heading, chinese_kaishu } from '@/lib/fonts'
+import { Button, Spacer, Radio, Input, Card, CardBody, RadioGroup } from '@nextui-org/react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Fade from '@/components/fade'
 import Markdown from '@/components/markdown'
 import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone } from 'react-icons/pi'
-import { Card, CardBody } from '@nextui-org/card'
 import { ReactNode } from 'react'
-import { Input } from '@nextui-org/input'
 import Test from './library/[lib]/corpus/test'
-import { RadioGroup, Radio } from '@nextui-org/radio'
 import External from '@/components/external'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary, RenderingBoundary } from 'jotai-ssr'
@@ -27,7 +23,7 @@ export default function Home() {
 	}
 	return <RenderingBoundary>
 		<Main className={'w-11/12 max-w-screen-lg'}>
-			<H className={cn(playfair.className, 'text-danger text-7xl sm:text-8xl lg:text-9xl')}>
+			<H className={cn(english_heading.className, 'text-danger text-7xl sm:text-8xl lg:text-9xl')}>
 				Leximory
 			</H>
 
@@ -35,10 +31,10 @@ export default function Home() {
 
 			<div className='flex justify-center items-center space-x-2'>
 				<div>
-					<H className={cn(xw.className, 'text-2xl sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
+					<H className={cn(chinese_kaishu.className, 'text-2xl sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
 						语言学地学语言
 					</H>
-					<H className={cn(xw.className, 'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
+					<H className={cn(chinese_kaishu.className, 'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
 						集中输入·轻松复盘·听读结合
 					</H>
 				</div>
@@ -49,7 +45,7 @@ export default function Home() {
 
 			<Spacer y={10}></Spacer>
 
-			<div className={cn(ma.className, 'text-5xl sm:text-6xl mb-4 text-center')}>
+			<div className={cn(chinese_calligraphy.className, 'text-5xl sm:text-6xl mb-4 text-center')}>
 				助力<FlipWords words={['外刊', '文摘', '书籍', '古文']} />阅读
 			</div>
 			<div className='flex flex-col space-y-3 w-full'>
@@ -149,12 +145,12 @@ export default function Home() {
 			<Spacer y={8}></Spacer>
 
 			<Fade>
-				<H className={cn(ma.className, 'whitespace-pre-line text-6xl')}>
+				<H className={cn(chinese_calligraphy.className, 'whitespace-pre-line text-6xl')}>
 					{'从记忆\n到心会'}
 				</H>
 			</Fade>
 			<div className='flex justify-center items-center'>
-				<External className={cn('mt-2 flex flex-wrap w-min sm:w-fit justify-start text-lg', xw.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
+				<External className={cn('mt-2 flex flex-wrap w-min sm:w-fit justify-start text-lg', chinese_kaishu.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
 			</div>
 		</Main>
 	</RenderingBoundary>
@@ -167,7 +163,7 @@ const BentoCard = ({ title, children, description, }: {
 }) => {
 	return <Card shadow='sm' className={'w-full h-full'}>
 		<CardBody className='p-5'>
-			<H className={cn(xw.className, 'text-2xl', !description && 'mb-2')} disableCenter>
+			<H className={cn(chinese_kaishu.className, 'text-2xl', !description && 'mb-2')} disableCenter>
 				{title}
 			</H>
 			{description && <div className='text-sm mb-2'>{description}</div>}

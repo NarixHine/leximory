@@ -3,11 +3,10 @@ import H from '@/components/h'
 import { Suspense } from 'react'
 import Report from './report'
 import Bell from './bell'
-import { Spacer } from '@nextui-org/spacer'
+import { Spacer, Skeleton } from '@nextui-org/react'
 import { auth } from '@clerk/nextjs/server'
 import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
-import { Skeleton } from '@nextui-org/skeleton'
 import Nav from '@/components/nav'
 
 export const metadata: Metadata = {

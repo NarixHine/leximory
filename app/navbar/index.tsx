@@ -5,13 +5,13 @@ import {
 	NavbarBrand,
 	NavbarContent,
 	Navbar as NextUINavbar,
-} from '@nextui-org/navbar'
-import { Button } from '@nextui-org/button'
+	Button
+} from '@nextui-org/react'
 import { PiSignInDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import Image from 'next/image'
 import Logo from './logo.png'
-import { playfair, xw } from '@/lib/fonts'
+import { english_heading, chinese_kaishu } from '@/lib/fonts'
 import { useRouter } from 'next/navigation'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -29,7 +29,7 @@ function Navbar({ userId }: {
 				router.push(userId ? '/library' : '/')
 			}}></Image>
 		</NavbarBrand>
-		{userId && <NavbarBrand className={cn(playfair.className, 'text-3xl text-danger mx-1 justify-center hidden sm:flex')}>
+		{userId && <NavbarBrand className={cn(english_heading.className, 'text-3xl text-danger mx-1 justify-center hidden sm:flex')}>
 			<Link href={'/library'}>Leximory</Link>
 		</NavbarBrand>}
 		<NavbarContent as={'div'} justify='end'>
@@ -39,7 +39,7 @@ function Navbar({ userId }: {
 						<OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} createOrganizationUrl='/create' organizationProfileUrl='/org'></OrganizationSwitcher>
 						<UserButton userProfileUrl='/user'></UserButton>
 					</> :
-					<Button as={Link} variant='flat' color='danger' href='/sign-in' radius='full' className={xw.className} startContent={<PiSignInDuotone />}>开始学习</Button>
+					<Button as={Link} variant='flat' color='danger' href='/sign-in' radius='full' className={chinese_kaishu.className} startContent={<PiSignInDuotone />}>开始学习</Button>
 			}
 		</NavbarContent>
 	</NextUINavbar>

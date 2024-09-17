@@ -3,14 +3,13 @@
 import Markdown from '@/components/markdown'
 import { welcomeMap } from '@/lib/config'
 import { LexiconRecord } from '@/lib/xata'
-import { Button } from '@nextui-org/button'
 import moment from 'moment'
 import { Fragment, useState, useTransition } from 'react'
 import { PiArrowsHorizontalDuotone } from 'react-icons/pi'
 import load from './actions'
 import { useAtomValue } from 'jotai'
 import { libAtom, isReadOnlyAtom } from '../atoms'
-import { Chip } from '@nextui-org/chip'
+import { Button, Chip } from '@nextui-org/react'
 
 export default function Recollection({ words, cursor, more }: {
     words: { word: string, id: string, xata: LexiconRecord['xata'], lib: { id: string, name: string } }[]

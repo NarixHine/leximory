@@ -1,6 +1,6 @@
 import { getAudioQuota, getCommentaryQuota } from '@/lib/quota'
 import GradientCard from './card'
-import { CircularProgress } from '@nextui-org/progress'
+import { CircularProgress } from '@nextui-org/react'
 
 export const CommentaryQuotaCard = async () => {
     const { quota, max, percentage } = await getCommentaryQuota()

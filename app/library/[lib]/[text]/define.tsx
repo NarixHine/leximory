@@ -1,7 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { PopoverContent, Popover, PopoverTrigger } from '@nextui-org/popover'
+import { Button, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react'
 import Comment from '@/components/comment'
 import { useEffect, useState } from 'react'
 import { getSelectedText } from '@/lib/utils'

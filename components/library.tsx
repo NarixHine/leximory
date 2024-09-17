@@ -1,10 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Card, CardBody, CardFooter } from '@nextui-org/card'
-import { Chip } from '@nextui-org/chip'
-import { Divider } from '@nextui-org/divider'
-import { Spacer } from '@nextui-org/spacer'
+import { Button, Card, CardBody, CardFooter, Chip, Divider, Spacer } from '@nextui-org/react'
 import { PiBookBookmarkDuotone } from 'react-icons/pi'
 import Options from './options'
 import { langMap, colorMap, supportedLangs, libAccessStatusMap, accessOptions, Lang } from '@/lib/config'

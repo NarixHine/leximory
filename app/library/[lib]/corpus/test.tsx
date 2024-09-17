@@ -4,9 +4,7 @@ import Markdown from '@/components/markdown'
 import { welcomeMap } from '@/lib/config'
 import { LexiconRecord } from '@/lib/xata'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
-import { Button } from '@nextui-org/button'
-import { DateRangePicker } from '@nextui-org/date-picker'
-import { I18nProvider } from '@react-aria/i18n'
+import { Button, DateRangePicker } from '@nextui-org/react'
 import { SelectedPick, PageRecordArray } from '@xata.io/client'
 import { useState } from 'react'
 import { draw } from './actions'
@@ -14,6 +12,7 @@ import moment from 'moment'
 import { PiShuffleAngularDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '../atoms'
+import { I18nProvider } from '@react-aria/i18n'
 
 export default function Test({ latestTime, compact, disableDel }: {
     latestTime: string
@@ -21,8 +20,8 @@ export default function Test({ latestTime, compact, disableDel }: {
     disableDel?: boolean
 }) {
     const lib = useAtomValue(libAtom)
-    
-    const [words, setWords] = useState<PageRecordArray<SelectedPick<LexiconRecord, 'word'[]>>>([] as any)
+
+    const [words, setWords] = useState<PageRecordArray<SelectedPick<LexiconRecord, 'word'[]>> | []>([])
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
     return <div>

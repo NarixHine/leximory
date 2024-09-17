@@ -1,20 +1,9 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Divider } from '@nextui-org/divider'
-import { readStreamableValue } from 'ai/rsc'
-import { Input, Textarea } from '@nextui-org/input'
-import {
-    Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    useDisclosure
-} from '@nextui-org/modal'
+import { Button, Divider, Input, Textarea, Modal, ModalContent, ModalHeader, ModalBody, useDisclosure, Switch } from '@nextui-org/react'
 import ky from 'ky'
 import { useState } from 'react'
 import isUrl from 'is-url'
-import { Switch } from '@nextui-org/switch'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { useDebouncedCallback } from 'use-debounce'
@@ -24,6 +13,7 @@ import { PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiO
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom, topicsAtom } from './atoms'
 import { isReadOnlyAtom, langAtom, libAtom } from '../atoms'
+import { readStreamableValue } from 'ai/rsc'
 
 export const maxEbookSize = 4 * 1024 * 1024
 

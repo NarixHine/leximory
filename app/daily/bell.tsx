@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
+import { Button } from '@nextui-org/react'
 import { PiClockClockwiseDuotone } from 'react-icons/pi'
 import saveSubs, { delSubs } from './actions'
 

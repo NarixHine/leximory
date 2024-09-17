@@ -2,14 +2,15 @@ import { Readable } from 'stream'
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-export function stringToColor(input: string): 'primary' | 'warning' | 'danger' {
+export function stringToColor(input: string) {
+    const colors = ['secondary', 'warning', 'danger', 'primary'] as const
     let hash = 0
     for (let i = 0; i < input.length; i++) {
         const char = input.charCodeAt(i)
         hash = (hash << 5) - hash + char
         hash = hash & hash
     }
-    return ['secondary', 'warning', 'danger'][Math.abs(hash % 3)] as any
+    return colors[Math.abs(hash % 4)]
 }
 
 export const randomID = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(16)

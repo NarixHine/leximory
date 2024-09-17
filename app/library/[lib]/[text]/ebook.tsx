@@ -1,7 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
+import { Button, Popover, PopoverTrigger, PopoverContent } from '@nextui-org/react'
 import type { Contents, Rendition } from 'epubjs'
 import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
@@ -17,15 +16,6 @@ import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 
 function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string) {
     const themes = rendition.themes
-    themes.fontSize('18px')
-    themes.override('line-height', '1.6')
-    if (lang === 'ja') {
-        themes.override('direction', 'ltr')
-        themes.fontSize('1.1em')
-    }
-    if (lang === 'en') {
-        themes.font('"Georgia", serif')
-    }
     switch (theme) {
         case 'dark': {
             themes.override('color', '#fff')
@@ -64,7 +54,7 @@ export default function Ebook() {
             <Button variant='ghost' color='danger' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
                 全屏模式
             </Button>
-            <FullScreen handle={handleFullScreen} className='h-[80dvh] relative dark:opacity-80 block'>
+            <FullScreen handle={handleFullScreen} className='h-[80vh] relative dark:opacity-80 block'>
                 <div ref={containerRef}>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>
                         <PopoverTrigger>
@@ -96,8 +86,16 @@ export default function Ebook() {
                         updateTheme(rendition, theme, lang)
                         rendition.themes.default({
                             'p': {
-                                'margin-top': '0.5em',
-                                'margin-bottom': '0.5em',
+                                'margin-top': '0.6em',
+                                'margin-bottom': '0.6em',
+                                'font-size': '24px !important',
+                                'font-family': '"Georgia", serif !important',
+                                'line-height': '1.7 !important'
+                            },
+                            'div': {
+                                'font-size': '24px !important',
+                                'font-family': '"Georgia", serif !important',
+                                'line-height': '1.7 !important'
                             }
                         })
                         themeRendition.current = rendition
@@ -123,6 +121,10 @@ const lightReaderTheme: IReactReaderStyle = {
         ...ReactReaderStyle.readerArea,
         backgroundColor: '#FAFDF6',
         transition: undefined,
+    },
+    tocArea: {
+        ...ReactReaderStyle.tocArea,
+        background: '#FAFDF6',
     },
 }
 

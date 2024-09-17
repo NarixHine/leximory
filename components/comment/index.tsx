@@ -1,14 +1,10 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Divider } from '@nextui-org/divider'
-import { Skeleton } from '@nextui-org/skeleton'
-import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
+import { Button, Divider, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone } from 'react-icons/pi'
 import { cn, randomID } from '@/lib/utils'
-import { Card, CardBody } from '@nextui-org/card'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { toast } from 'sonner'
@@ -41,6 +37,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setWords([parsedParams])
         setIsLoaded(!isOnDemand)
         setStatus('')
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -63,6 +60,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
         if (prompt)
             commentWord()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prompt])
 
 

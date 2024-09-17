@@ -2,9 +2,8 @@
 
 import Markdown, { MarkdownProps } from '../markdown'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@nextui-org/button'
+import { Button, Card, CardBody } from '@nextui-org/react'
 import { PiPlayCircleDuotone } from 'react-icons/pi'
-import { Card, CardBody } from '@nextui-org/card'
 import { generateAudio, retrieveAudioUrl } from './actions'
 import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'

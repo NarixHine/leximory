@@ -1,7 +1,7 @@
-import { hFontFamily, playfair } from '@/lib/fonts'
+import { hFontFamily, english_heading } from '@/lib/fonts'
 import H from '@/components/h'
 import Main from '@/components/main'
-import { Spacer } from '@nextui-org/spacer'
+import { Spacer } from '@nextui-org/react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +13,7 @@ export default function BlogHome() {
     ]
     return <Main>
         <div className='border-l-2 border-l-danger/50 px-3 not-prose'>
-            <H disableCenter className={cn('text-danger text-4xl', playfair.className)}>
+            <H disableCenter className={cn('text-danger text-4xl', english_heading.className)}>
                 The Leximory Blog
             </H>
             <H disableCenter useSerif className={'text-danger/80 text-lg'}>
