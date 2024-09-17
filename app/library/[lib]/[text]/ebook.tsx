@@ -51,10 +51,10 @@ export default function Ebook() {
 
     return src && (
         <>
-            <Button variant='ghost' color='danger' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
+            <Button variant='ghost' color='primary' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
                 全屏模式
             </Button>
-            <FullScreen handle={handleFullScreen} className='h-[80vh] relative dark:opacity-80 block'>
+            <FullScreen handle={handleFullScreen} className='h-[80vh] relative dark:opacity-95 block'>
                 <div ref={containerRef}>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>
                         <PopoverTrigger>

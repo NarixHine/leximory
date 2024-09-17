@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import React, { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
-import { PiBoxArrowUpDuotone } from 'react-icons/pi'
+import { PiBoxArrowUp } from 'react-icons/pi'
 
 const mainVariant = {
     initial: {
@@ -127,10 +127,10 @@ export const FileUpload = ({
                                         className='text-neutral-600 flex flex-col items-center'
                                     >
                                         Drop it
-                                        <PiBoxArrowUpDuotone className='text-xl text-neutral-600 dark:text-neutral-400' />
+                                        <PiBoxArrowUp className='text-5xl text-neutral-600 dark:text-neutral-400' />
                                     </motion.p>
                                 ) : (
-                                    <PiBoxArrowUpDuotone className='text-xl text-neutral-600 dark:text-neutral-300' />
+                                    <PiBoxArrowUp className='text-5xl text-neutral-600 dark:text-neutral-300' />
                                 )}
                             </motion.div>
                         )}

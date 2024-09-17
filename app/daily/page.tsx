@@ -40,12 +40,10 @@ export default async function Daily() {
 }
 
 const Loading = () => (<div className='my-8 overflow-hidden'>
-    <Skeleton className='rounded inline max-w-8'>
-        <H disableCenter className='text-xl font-semibold opacity-80 -mb-2'>一天前</H>
-    </Skeleton>
+    <Skeleton className='w-20 rounded-lg h-7'></Skeleton>
     <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 my-5'>
-        <div className='w-full h-32 bg-default-200 rounded-lg animate-pulse'></div>
-        <div className='w-full h-32 bg-default-200 rounded-lg animate-pulse hidden sm:block'></div>
-        <div className='w-full h-32 bg-default-200 rounded-lg animate-pulse hidden md:block'></div>
+        <Skeleton className='w-full h-32 rounded-lg'></Skeleton>
+        <Skeleton className='w-full h-32 rounded-lg hidden sm:block'></Skeleton>
+        <Skeleton className='w-full h-32 rounded-lg hidden md:block'></Skeleton>
     </div>
 </div>)
