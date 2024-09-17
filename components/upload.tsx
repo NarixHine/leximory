@@ -127,10 +127,10 @@ export const FileUpload = ({
                                         className='text-neutral-600 flex flex-col items-center'
                                     >
                                         Drop it
-                                        <PiBoxArrowUpDuotone className='h-4 w-4 text-neutral-600 dark:text-neutral-400' />
+                                        <PiBoxArrowUpDuotone className='text-xl text-neutral-600 dark:text-neutral-400' />
                                     </motion.p>
                                 ) : (
-                                    <PiBoxArrowUpDuotone className='h-4 w-4 text-neutral-600 dark:text-neutral-300' />
+                                    <PiBoxArrowUpDuotone className='text-xl text-neutral-600 dark:text-neutral-300' />
                                 )}
                             </motion.div>
                         )}
