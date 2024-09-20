@@ -38,8 +38,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "components/markdown.tsx"
-, "next.config.mjs"  ],
+    "components/markdown.tsx",
+    "next.config.mjs"
+  ],
   "exclude": [
     "node_modules"
   ]

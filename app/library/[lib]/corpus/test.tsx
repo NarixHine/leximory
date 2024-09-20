@@ -14,18 +14,18 @@ import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom, libAtom } from '../atoms'
 import { I18nProvider } from '@react-aria/i18n'
 
-export default function Test({ latestTime, compact }: {
+export default function Test({ latestTime, mock }: {
     latestTime: string
-    compact?: boolean
+    mock?: boolean
 }) {
     const lib = useAtomValue(libAtom)
-    const disableDel = useAtomValue(isReadOnlyAtom)
+    const isReadOnly = useAtomValue(isReadOnlyAtom)
 
     const [words, setWords] = useState<PageRecordArray<SelectedPick<LexiconRecord, 'word'[]>> | []>([])
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
     return <div>
-        {!compact && <h2 className='text-xl'>自我检测</h2>}
+        {!mock && <h2 className='text-xl'>自我检测</h2>}
         <I18nProvider locale='zh-CN'>
             <DateRangePicker
                 className='my-2'
@@ -38,21 +38,21 @@ export default function Test({ latestTime, compact }: {
                 }}
                 variant='underlined'
                 color='primary'
-                isReadOnly={compact}
+                isReadOnly={mock}
             ></DateRangePicker>
         </I18nProvider>
         <div className='flex space-x-2'>
             <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap space-x-2 min-h-36 px-1'>
                 {
                     words.map(({ word, id }) => (
-                        !Object.values(welcomeMap).includes(word) && <Markdown key={word} md={word} deleteId={disableDel ? undefined : id} disableSave></Markdown>
+                        !Object.values(welcomeMap).includes(word) && <Markdown key={word} md={word} deleteId={mock ?? isReadOnly ? undefined : id} disableSave></Markdown>
                     ))
                 }
             </div>
             <Button data-umami-event='抽取词汇' size='sm' variant='flat' startContent={<PiShuffleAngularDuotone />} color='primary' onPress={async () => {
-                const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
+                const words = await draw(mock ? '3e4f1126' : lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
                 setWords(words)
             }}>{'抽取'}</Button>
         </div>
-    </div>
+    </div >
 }

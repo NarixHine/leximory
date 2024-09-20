@@ -108,7 +108,7 @@ export default function Home() {
 								<HydrationBoundary hydrateAtoms={[
 									[libAtom, 'f023219']
 								]}>
-									<Test compact disableDel latestTime={'2024-07-20'} />
+									<Test mock latestTime={'2024-09-22'} />
 								</HydrationBoundary>
 							</BentoCard>
 						</div>
