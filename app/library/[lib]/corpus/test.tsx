@@ -11,15 +11,15 @@ import { draw } from './actions'
 import moment from 'moment'
 import { PiShuffleAngularDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
-import { libAtom } from '../atoms'
+import { isReadOnlyAtom, libAtom } from '../atoms'
 import { I18nProvider } from '@react-aria/i18n'
 
-export default function Test({ latestTime, compact, disableDel }: {
+export default function Test({ latestTime, compact }: {
     latestTime: string
     compact?: boolean
-    disableDel?: boolean
 }) {
     const lib = useAtomValue(libAtom)
+    const disableDel = useAtomValue(isReadOnlyAtom)
 
     const [words, setWords] = useState<PageRecordArray<SelectedPick<LexiconRecord, 'word'[]>> | []>([])
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))

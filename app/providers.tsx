@@ -24,7 +24,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 	const router = useRouter()
 	const mode = useSystemColorMode()
 	return (
-		<ClerkProvider localization={zhCN} appearance={{ baseTheme: mode === 'dark' ? dark : undefined }}>
+		<ClerkProvider localization={zhCN} afterSignOutUrl={'/'} appearance={{ baseTheme: mode === 'dark' ? dark : undefined }}>
 			<NextUIProvider navigate={router.push}>
 				<ThemeProvider {...themeProps}>
 					<JotaiProvider>

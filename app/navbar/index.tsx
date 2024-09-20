@@ -1,6 +1,6 @@
 'use client'
 
-import { OrganizationSwitcher, UserButton } from '@clerk/nextjs'
+import { OrganizationSwitcher, UserButton, useUser } from '@clerk/nextjs'
 import {
 	NavbarBrand,
 	NavbarContent,
@@ -17,9 +17,11 @@ import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 import { cn } from '@/lib/utils'
 
-function Navbar({ userId }: {
+function Navbar({ userId: defaultUserId }: {
 	userId: string | null | undefined
 }) {
+	const user = useUser()
+	const userId = user.isLoaded ? user.user?.id : defaultUserId
 	const router = useRouter()
 	const isReaderMode = useAtomValue(isReaderModeAtom)
 
