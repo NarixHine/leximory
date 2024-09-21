@@ -108,7 +108,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                                         <Spacer y={2} />
                                         <Divider />
                                         <Accordion isCompact fullWidth>
-                                            {advancedInputs.length > 0 && advancedSelects.length > 0 ? (
+                                            {advancedInputs.length > 0 || advancedSelects.length > 0 ? (
                                                 <AccordionItem title='进阶设置' key={1}>
                                                     <Fields inputs={advancedInputs} selects={advancedSelects} />
                                                     <div className='flex justify-end'>
@@ -128,7 +128,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                                             ) : null!}
                                             <AccordionItem title='危险操作' key={2}>
                                                 <Button
-                                                    color='danger'
+                                                    color='warning'
                                                     startContent={<PiTrashDuotone />}
                                                     fullWidth
                                                     variant='ghost'
