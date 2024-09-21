@@ -14,9 +14,8 @@ import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom, libAtom } from '../atoms'
 import { I18nProvider } from '@react-aria/i18n'
 
-export default function Test({ latestTime, mock }: {
+export default function Test({ latestTime, }: {
     latestTime: string
-    mock?: boolean
 }) {
     const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
@@ -25,7 +24,6 @@ export default function Test({ latestTime, mock }: {
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
     return <div>
-        {!mock && <h2 className='text-xl'>自我检测</h2>}
         <I18nProvider locale='zh-CN'>
             <DateRangePicker
                 className='my-2'
@@ -38,19 +36,18 @@ export default function Test({ latestTime, mock }: {
                 }}
                 variant='underlined'
                 color='primary'
-                isReadOnly={mock}
             ></DateRangePicker>
         </I18nProvider>
         <div className='flex space-x-2'>
-            <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap space-x-2 min-h-36 px-1'>
+            <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2'>
                 {
                     words.map(({ word, id }) => (
-                        !Object.values(welcomeMap).includes(word) && <Markdown key={word} md={word} deleteId={mock ?? isReadOnly ? undefined : id} disableSave></Markdown>
+                        !Object.values(welcomeMap).includes(word) && <Markdown key={word} md={word} deleteId={isReadOnly ? undefined : id} disableSave></Markdown>
                     ))
                 }
             </div>
             <Button data-umami-event='抽取词汇' size='sm' variant='flat' startContent={<PiShuffleAngularDuotone />} color='primary' onPress={async () => {
-                const words = await draw(mock ? '3e4f1126' : lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
+                const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
                 setWords(words)
             }}>{'抽取'}</Button>
         </div>

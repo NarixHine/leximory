@@ -142,7 +142,7 @@ const darkReaderTheme: IReactReaderStyle = {
         ...ReactReaderStyle.readerArea,
         backgroundColor: '#15202B',
         transition: undefined,
-        color: '#ccc',
+        color: '#ccc !important',
     },
     titleArea: {
         ...ReactReaderStyle.titleArea,
@@ -150,6 +150,10 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
+        background: '#15202B',
+    },
+    container: {
+        ...ReactReaderStyle.container,
         background: '#15202B',
     },
     tocButtonExpanded: {

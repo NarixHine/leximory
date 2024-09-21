@@ -13,8 +13,10 @@ import Test from './library/[lib]/corpus/test'
 import External from '@/components/external'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary, RenderingBoundary } from 'jotai-ssr'
-import { libAtom } from './library/[lib]/atoms'
+import { isReadOnlyAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/flip'
+import { lexiconAtom } from './library/[lib]/[text]/atoms'
+import LexiconSelector from '@/components/lexicon'
 
 export default function Home() {
 	const { userId } = auth()
@@ -68,16 +70,11 @@ export default function Home() {
 					</div>
 					<div className='basis-3/5'>
 						<BentoCard title='考纲词汇高亮'>
-							<RadioGroup
-								label='考纲词库'
-								defaultValue={'gaozhong'}
-								orientation='horizontal'
-							>
-								<Radio value='none'>无</Radio>
-								<Radio value='chuzhong'>初中</Radio>
-								<Radio value='gaozhong'>高中</Radio>
-								<Radio value='cet6'>六级</Radio>
-							</RadioGroup>
+							<HydrationBoundary hydrateAtoms={[
+								[lexiconAtom, 'cet6']
+							]}>
+								<LexiconSelector />
+							</HydrationBoundary>
 						</BentoCard>
 					</div>
 				</div>
@@ -86,7 +83,11 @@ export default function Home() {
 					<div className='flex basis-2/3'>
 						<BentoCard title='AI 注解 + AI 朗读'>
 							<div className='px-8 sm:px-16'>
-								<Markdown className={'max-h-64'} disableSave md={':::cad56b4\nYes, the newspapers were right: snow was general all over Ireland. It was falling on every part of the dark central plain, on the {{treeless||treeless||**adj. /ˈtriːlɪs/** (没有树木的) (of a place) having no trees||***tree*** (tree) + ***-less*** (without)}} hills, falling softly upon the Bog of Allen and, farther westward, softly falling into the dark {{mutinous||mutinous||**adj. /ˈmjuːtᵻnəs/** (叛变的) (of a group of people) refusing to obey orders or showing a wish to rebel; rebellious||***mutin*** (rebellion) + ***-ous***||***mutin*** (mutiny) →  **mutin**y (叛乱)}} Shannon waves. It was falling, too, upon every part of the lonely churchyard on the hill where Michael Furey lay buried. It lay thickly drifted on the crooked crosses and {{headstones||headstone||**n. /ˈhɛdstəʊn/** (墓碑) a stone erected at the head of a grave, typically inscribed with the name of the deceased}}, on the spears of the little gate, on the barren thorns. His soul {{swooned||swoon||**v. /swuːn/** (昏厥) faint from extreme emotion}} slowly as he heard the snow falling faintly through the universe and faintly falling, like the {{descent||descent||**n. /dᵻˈsɛnt/** (下降) an act of moving downwards, dropping, or falling||***de-*** (down) + ***scent*** (climb)||***scent*** (climb) →  a**scent** (上升)}} of their last end, upon all the living and the dead. \n:::'} />
+								<HydrationBoundary hydrateAtoms={[
+									[lexiconAtom, 'cet6']
+								]}>
+									<Markdown className={'max-h-64'} disableSave md={':::cad56b4\nYes, the newspapers were right: snow was general all over Ireland. It was falling on every part of the dark central plain, on the {{treeless||treeless||**adj. /ˈtriːlɪs/** (没有树木的) (of a place) having no trees||***tree*** (tree) + ***-less*** (without)}} hills, falling softly upon the Bog of Allen and, farther westward, softly falling into the dark {{mutinous||mutinous||**adj. /ˈmjuːtᵻnəs/** (叛变的) (of a group of people) refusing to obey orders or showing a wish to rebel; rebellious||***mutin*** (rebellion) + ***-ous***||***mutin*** (mutiny) →  **mutin**y (叛乱)}} Shannon waves. It was falling, too, upon every part of the lonely churchyard on the hill where Michael Furey lay buried. It lay thickly drifted on the crooked crosses and {{headstones||headstone||**n. /ˈhɛdstəʊn/** (墓碑) a stone erected at the head of a grave, typically inscribed with the name of the deceased}}, on the spears of the little gate, on the barren thorns. His soul {{swooned||swoon||**v. /swuːn/** (昏厥) faint from extreme emotion}} slowly as he heard the snow falling faintly through the universe and faintly falling, like the {{descent||descent||**n. /dᵻˈsɛnt/** (下降) an act of moving downwards, dropping, or falling||***de-*** (down) + ***scent*** (climb)||***scent*** (climb) →  a**scent** (上升)}} of their last end, upon all the living and the dead. \n:::'} />
+								</HydrationBoundary>
 							</div>
 						</BentoCard>
 					</div>
@@ -106,9 +107,10 @@ export default function Home() {
 						<div className='flex-1'>
 							<BentoCard title='语料本' description='以往生词汇集一处，供君复盘、自测'>
 								<HydrationBoundary hydrateAtoms={[
-									[libAtom, 'f023219']
+									[libAtom, '3e4f1126'],
+									[isReadOnlyAtom, true]
 								]}>
-									<Test mock latestTime={'2024-09-22'} />
+									<Test latestTime={'2024-09-22'} />
 								</HydrationBoundary>
 							</BentoCard>
 						</div>
@@ -153,7 +155,7 @@ export default function Home() {
 				<External className={cn('mt-2 flex flex-wrap w-min sm:w-fit justify-start text-lg', chinese_kaishu.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
 			</div>
 		</Main>
-	</RenderingBoundary>
+	</RenderingBoundary >
 }
 
 const BentoCard = ({ title, children, description, }: {

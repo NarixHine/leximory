@@ -1,11 +1,11 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, lexiconAtom, displayedMdAtom, contentAtom } from './atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom } from './atoms'
 import { langAtom } from '../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
-import { Button, Spacer, Radio, Input, RadioGroup, Tooltip, Snippet, Divider } from '@nextui-org/react'
+import { Button, Spacer, Input, Tooltip, Snippet, Divider } from '@nextui-org/react'
 import ImportModal from './import'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -15,6 +15,7 @@ import MdEditor from '@/components/editor'
 import Topics from '@/components/topics'
 import Markdown from '@/components/markdown'
 import Define from './define'
+import LexiconSelector from '@/components/lexicon'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -40,26 +41,6 @@ function ReaderModeToggle() {
           读者模式／印刷模式
         </Button>
       </Tooltip>
-    </div>
-  )
-}
-
-function LexiconSelector() {
-  const [customLexicon, setCustomLexicon] = useAtom(lexiconAtom)
-
-  return (
-    <div className='flex justify-center items-center mb-1 sm:mb-0'>
-      <RadioGroup
-        value={customLexicon}
-        orientation='horizontal'
-        color='primary'
-        onValueChange={(value) => { setCustomLexicon(value as CustomLexicon) }}
-      >
-        <Radio value='none'>无</Radio>
-        <Radio value='chuzhong'>初中</Radio>
-        <Radio value='gaozhong'>高中</Radio>
-        <Radio value='cet6'>六级</Radio>
-      </RadioGroup>
     </div>
   )
 }
@@ -184,7 +165,7 @@ export default function Digest() {
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
             <ReaderModeToggle />
-            {lang === 'en' && !isReaderMode && <LexiconSelector />}
+            {lang === 'en' && !isReaderMode && <LexiconSelector className='mb-1 sm:mb-0' />}
           </div>
         )}
       </div>

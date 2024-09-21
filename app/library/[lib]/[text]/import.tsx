@@ -6,7 +6,6 @@ import { useState } from 'react'
 import isUrl from 'is-url'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
-import { useDebouncedCallback } from 'use-debounce'
 import { FileUpload } from '@/components/upload'
 import { saveTitle, saveEbook, generate, saveContentAndTopics } from './actions'
 import { PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
@@ -39,9 +38,6 @@ export default function ImportModal() {
         saveTitle(text, title)
     }
     const exceeded = input.length > maxArticleLength(lang)
-    const debouncedSetCompletion = useDebouncedCallback(setCompletion, 500, {
-        maxWait: 500
-    })
 
     return (<>
         <div className='px-3 flex justify-center gap-3'>
@@ -97,7 +93,7 @@ export default function ImportModal() {
                                                 for await (const partialObject of readStreamableValue(object)) {
                                                     if (partialObject) {
                                                         commentary = partialObject.commentary
-                                                        debouncedSetCompletion(partialObject.commentary)
+                                                        setCompletion(partialObject.commentary)
                                                         topics = partialObject.topics
                                                     }
                                                 }

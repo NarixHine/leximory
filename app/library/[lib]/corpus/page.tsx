@@ -24,6 +24,7 @@ export default async function Page({ params }: LibParams) {
             <div className='basis-1/3 sm:border-r-1 sm:pr-2'>
                 <Save></Save>
                 <Divider className='my-4'></Divider>
+                <h2 className='text-xl'>自我检测</h2>
                 <Test latestTime={words[0].xata.createdAt.toISOString().split('T')[0]}></Test>
             </div>
             <div className='basis-3/5'>
