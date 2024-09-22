@@ -14,8 +14,9 @@ import { langAtom } from '../atoms'
 import { useAtomValue } from 'jotai'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 
-function updateTheme(rendition: Rendition, theme: 'light' | 'dark', lang: string) {
+function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     const themes = rendition.themes
+    themes.override('direction', 'ltr')
     switch (theme) {
         case 'dark': {
             themes.override('color', '#fff')
@@ -42,7 +43,7 @@ export default function Ebook() {
     const theme = useSystemColorMode()
     useEffect(() => {
         if (themeRendition.current) {
-            updateTheme(themeRendition.current, theme, lang)
+            updateTheme(themeRendition.current, theme)
         }
     }, [lang, theme])
 
@@ -77,26 +78,27 @@ export default function Ebook() {
                 </div>
                 <ReactReader
                     title={title}
+                    isRTL={lang === 'ja'}
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
                     }}
                     getRendition={rendition => {
-                        updateTheme(rendition, theme, lang)
+                        updateTheme(rendition, theme)
                         rendition.themes.default({
                             'p': {
                                 'margin-top': '0.6em',
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
                                 'font-family': '"Georgia", serif !important',
-                                'line-height': '1.7 !important'
+                                'line-height': '1.7 !important',
                             },
                             'div': {
                                 'font-size': '24px !important',
                                 'font-family': '"Georgia", serif !important',
-                                'line-height': '1.7 !important'
-                            }
+                                'line-height': '1.7 !important',
+                            },
                         })
                         themeRendition.current = rendition
                         rendition.on('selected', (_: string, contents: Contents) => {
