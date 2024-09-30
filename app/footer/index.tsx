@@ -1,12 +1,12 @@
 'use client'
 
-import { Button, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react'
+import { Button, Chip, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import DefineImg from './define.png'
 import { chinese_kaishu } from '@/lib/fonts'
 import { PiMailboxDuotone, PiTelevisionDuotone, PiGithubLogoDuotone } from 'react-icons/pi'
-import { cn } from '@/lib/utils'
+import { cn, stringToColor } from '@/lib/utils'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 
@@ -17,7 +17,14 @@ const Footer = () => {
             {isReaderMode && <p>Generated on <span className='font-mono'>Leximory.com</span></p>}
             {!isReaderMode && <div className={cn('mx-auto w-full max-w-72 space-y-1', chinese_kaishu.className)}>
                 <div className='flex w-full space-x-1'>
-                    <Button size='sm' variant='solid' radius='sm' href='/blog/from-memorisation-to-acquisition' as={Link} className='h-5 bg-danger-200 text-danger-800 basis-3/4'>从记忆到心会</Button>
+                    <Popover>
+                        <PopoverTrigger>
+                            <Button size='sm' variant='solid' radius='sm' className='h-5 bg-danger-200 text-danger-800 basis-3/4'>优质外刊资源</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-96'>
+                            <Newspapers />
+                        </PopoverContent>
+                    </Popover>
                     <Button size='sm' variant='solid' radius='sm' href='/blog' as={Link} className='h-5 bg-warning-200 text-warning-800 basis-1/4'>博客</Button>
                 </div>
                 <div className='flex w-full space-x-1'>
@@ -70,6 +77,42 @@ const Footer = () => {
                 </div>
             </div>}
         </footer>
+    )
+}
+
+function Newspapers() {
+    const newspapers = [
+        { name: 'The New York Times', url: 'https://www.nytimes.com/' },
+        { name: 'The Washington Post', url: 'https://www.washingtonpost.com/' },
+        { name: 'The Wall Street Journal', url: 'https://www.wsj.com/' },
+        { name: 'The Guardian', url: 'https://www.theguardian.com/' },
+        { name: 'The Economist', url: 'https://www.economist.com/' },
+        { name: 'The Financial Times', url: 'https://www.ft.com/' },
+        { name: 'The New Yorker', url: 'https://www.newyorker.com/' },
+        { name: 'The Atlantic', url: 'https://www.theatlantic.com/' },
+        { name: 'The Verge', url: 'https://www.theverge.com/' },
+    ]
+
+    return (
+        <div className='mx-auto py-3'>
+            <div className='flex flex-wrap justify-center gap-2'>
+                {newspapers.map((paper, index) => (
+                    <Chip
+                        key={paper.url}
+                        as={'div'}
+                        size='sm'
+                        color={stringToColor(paper.url)}
+                        className='cursor-pointer'
+                        variant='flat'
+                        onClick={() => {
+                            window.open(paper.url, '_blank')
+                        }}
+                    >
+                        {paper.name}
+                    </Chip>
+                ))}
+            </div>
+        </div>
     )
 }
 

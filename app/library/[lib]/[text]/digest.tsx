@@ -94,7 +94,7 @@ function EditingView() {
           value={modifiedMd}
           className='h-full'
           view={{ menu: true, md: true, html: false }}
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n</article>`} />}
+          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -102,7 +102,7 @@ function EditingView() {
         <MdEditor
           value={modifiedMd}
           className='h-full'
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n</article>`} />}
+          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -146,7 +146,7 @@ function ReadingView() {
     <>
       <Markdown
         className={isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0'}
-        md={`<article>\n${md}\n</article>`}
+        md={`<article>\n${md}\n\n</article>`}
       />
       <Define />
     </>

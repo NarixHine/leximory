@@ -26,17 +26,19 @@ export default function Define() {
         <PopoverTrigger>
             <Button
                 data-umami-event='词汇注解'
-                className='absolute -translate-x-1/2 bg-background'
+                className='absolute -translate-x-1/2'
                 style={rect ? {
                     left: rect.left + rect.width / 2,
                     top: scrollY + rect.bottom + 10
                 } : { display: 'none' }}
-                color='primary'
-                variant='ghost'
-                isIconOnly
-                radius='full'
+                color='secondary'
+                variant='solid'
+                radius='sm'
+                size='sm'
                 startContent={<PiMagnifyingGlassDuotone />}
-            />
+            >
+                注解
+            </Button>
         </PopoverTrigger>
         <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
             <Comment asCard prompt={getSelectedText(selection)} params='["", "🔄 加载中"]'></Comment>

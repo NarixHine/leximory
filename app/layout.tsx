@@ -22,10 +22,10 @@ export const metadata: Metadata = {
 	description: APP_DESCRIPTION,
 	appleWebApp: {
 		capable: true,
-		statusBarStyle: 'default',
-		title: TITLE_DEFAULT
+		statusBarStyle: 'black-translucent',
+		title: TITLE_DEFAULT,
+		startupImage: '/apple-touch-icon.png'
 	},
-	manifest: '/manifest.json',
 	formatDetection: {
 		telephone: false,
 	},
