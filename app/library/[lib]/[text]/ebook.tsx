@@ -1,18 +1,23 @@
 'use client'
 
-import { Button, Popover, PopoverTrigger, PopoverContent } from '@nextui-org/react'
+import { Button, Popover, PopoverTrigger, PopoverContent, Spacer } from '@nextui-org/react'
 import type { Contents, Rendition } from 'epubjs'
 import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
 import { getSelectedText } from '@/lib/utils'
-import useLocalStorageState from 'use-local-storage-state'
 import { useEffect, useRef, useState } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { ebookAtom, textAtom, titleAtom } from './atoms'
 import { langAtom } from '../atoms'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
+import { atomFamily } from 'jotai/utils'
+
+const locationAtomFamily = atomFamily((text: string) => 
+    atomWithStorage<string | number>(`persist-location-${text}`, 0)
+)
 
 function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     const themes = rendition.themes
@@ -36,7 +41,7 @@ export default function Ebook() {
     const text = useAtomValue(textAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
-    const [location, setLocation] = useLocalStorageState<string | number>(`persist-location-${text}`, { defaultValue: 0 })
+    const [location, setLocation] = useAtom(locationAtomFamily(text))
     const [prompt, setPrompt] = useState<string | null>(null)
 
     const themeRendition = useRef<Rendition | null>(null)
@@ -55,6 +60,7 @@ export default function Ebook() {
             <Button variant='ghost' color='primary' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
                 全屏模式
             </Button>
+            <Spacer />
             <FullScreen handle={handleFullScreen} className='h-[80vh] relative dark:opacity-95 block'>
                 <div ref={containerRef}>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>

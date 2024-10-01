@@ -7,6 +7,21 @@ import { langMap, colorMap, supportedLangs, libAccessStatusMap, accessOptions, L
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
+import { atomWithStorage } from 'jotai/utils'
+import { useAtomValue } from 'jotai'
+
+export const recentAccessAtom = atomWithStorage<Record<string, { id: string; title: string }>>('recent-access', {}, {
+    getItem: (key, initialValue) => {
+        const storedValue = localStorage.getItem(key)
+        return storedValue ? JSON.parse(storedValue) : initialValue
+    },
+    setItem: (key, value) => {
+        localStorage.setItem(key, JSON.stringify(value))
+    },
+    removeItem: (key) => {
+        localStorage.removeItem(key)
+    }
+})
 
 function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, orgs }: {
     id: string,
@@ -25,6 +40,10 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
     const router = useRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
+
+    const recentAccess = useAtomValue(recentAccessAtom)
+    const recentAccessItem = recentAccess[id]
+
     return (<div className='w-full relative'>
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
@@ -41,10 +60,14 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
             <Divider></Divider>
             <CardFooter className='p-4 flex gap-4'>
                 <Button onClick={(e) => { e.stopPropagation() }} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
-                <div className='flex flex-col'>
-                    <p className='text-xs opacity-80'>积累的词汇</p>
-                    <p className='text-lg'>{lexicon.count}</p>
+                <div className='flex flex-col items-start'>
+                    <p className='text-xs opacity-80'>积累词汇</p>
+                    <Chip color='warning' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
+                {recentAccessItem && <div className='flex flex-col items-start'>
+                    <p className='text-xs opacity-80'>最近访问</p>
+                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none'>{recentAccessItem.title}</Chip>
+                </div>}
             </CardFooter>
         </Card>
         {isOwner && <Options

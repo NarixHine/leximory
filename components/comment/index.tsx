@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import { Button, Divider, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
-import { ComponentProps, useEffect, useState } from 'react'
+import { ComponentProps, useEffect, useState, useCallback } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone } from 'react-icons/pi'
 import { cn, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
@@ -37,7 +38,6 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setWords([parsedParams])
         setIsLoaded(!isOnDemand)
         setStatus('')
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -60,12 +60,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
         if (prompt)
             commentWord()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [prompt])
 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : false)
-    const init = async () => {
+
+    const init = useCallback(async () => {
         if (isOnDemand && !isLoaded) {
             const defs = await loadMeanings(words[0][0])
             if (defs.length === 0) {
@@ -80,7 +80,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             }
             setIsLoaded(true)
         }
-    }
+    }, [isOnDemand, isLoaded])
 
     const uid = randomID()
     const Save = !disableSave && <>

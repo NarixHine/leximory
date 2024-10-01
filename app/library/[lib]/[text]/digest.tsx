@@ -1,13 +1,13 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom } from './atoms'
-import { langAtom } from '../atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom } from './atoms'
+import { langAtom, libAtom } from '../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
 import { Button, Spacer, Input, Tooltip, Snippet, Divider } from '@nextui-org/react'
 import ImportModal from './import'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone } from 'react-icons/pi'
 import { saveContentAndTopics } from './actions'
@@ -16,6 +16,7 @@ import Topics from '@/components/topics'
 import Markdown from '@/components/markdown'
 import Define from './define'
 import LexiconSelector from '@/components/lexicon'
+import { recentAccessAtom } from '@/components/library'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -61,12 +62,30 @@ function EditingView() {
     setModifiedTopics(topics)
   }, [md, topics])
 
+  const handleTopicRemove = useCallback((topicToRemove: string) => {
+    setModifiedTopics(prevTopics => prevTopics.filter(topic => topic !== topicToRemove))
+  }, [])
+
+  const handleAddTopic = useCallback(() => {
+    setModifiedTopics(prevTopics => [...prevTopics, newTopic])
+    setNewTopic('')
+  }, [newTopic])
+
+  const handleSaveChanges = useCallback(async () => {
+    await saveContentAndTopics(text, modifiedMd, modifiedTopics)
+    setIsEditing(false)
+    setContent(modifiedMd)
+    setTopics(modifiedTopics)
+  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics])
+
+  const memoizedTopics = useMemo(() => (
+    <Topics topics={modifiedTopics} remove={handleTopicRemove} />
+  ), [modifiedTopics, handleTopicRemove])
+
   return (
     <>
       <div className='flex space-x-3'>
-        <Topics topics={modifiedTopics} remove={(topicToRemove) => {
-          setModifiedTopics(modifiedTopics.filter(topic => topic !== topicToRemove))
-        }} />
+        {memoizedTopics}
         <div className='flex-1'>
           <Input
             className='w-full'
@@ -80,10 +99,7 @@ function EditingView() {
           variant='flat'
           color='secondary'
           startContent={<PiPlusCircleDuotone />}
-          onPress={() => {
-            setModifiedTopics([...modifiedTopics, newTopic])
-            setNewTopic('')
-          }}
+          onPress={handleAddTopic}
         >
           添加
         </Button>
@@ -112,12 +128,7 @@ function EditingView() {
         variant='flat'
         color='secondary'
         startContent={<PiPencilCircleDuotone />}
-        onPress={async () => {
-          await saveContentAndTopics(text, modifiedMd, modifiedTopics)
-          setIsEditing(false)
-          setContent(modifiedMd)
-          setTopics(modifiedTopics)
-        }}
+        onPress={handleSaveChanges}
       >
         保存更改
       </Button>
@@ -158,6 +169,17 @@ export default function Digest() {
   const ebook = useAtomValue(ebookAtom)
   const lang = useAtomValue(langAtom)
   const isReaderMode = useAtomValue(isReaderModeAtom)
+
+  const lib = useAtomValue(libAtom)
+  const text = useAtomValue(textAtom)
+  const [recentAccess, setRecentAccess] = useAtom(recentAccessAtom)
+  const title = useAtomValue(titleAtom)
+  useEffect(() => {
+    const newRecentAccess = { ...recentAccess }
+    newRecentAccess[lib] = { id: text, title }
+    setRecentAccess(newRecentAccess)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lib, text, title])
 
   return (
     <>

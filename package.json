@@ -63,7 +63,6 @@
 		"tailwind-merge": "^2.5.2",
 		"tailwind-variants": "^0.1.20",
 		"typescript": "^5.4.5",
-		"use-local-storage-state": "^19.4.0",
 		"web-push": "^3.6.7",
 		"wink-lemmatizer": "^3.0.4",
 		"zod": "^3.23.8"

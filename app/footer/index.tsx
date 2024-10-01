@@ -82,33 +82,32 @@ const Footer = () => {
 
 function Newspapers() {
     const newspapers = [
-        { name: 'The New York Times', url: 'https://www.nytimes.com/' },
-        { name: 'The Washington Post', url: 'https://www.washingtonpost.com/' },
-        { name: 'The Wall Street Journal', url: 'https://www.wsj.com/' },
-        { name: 'The Guardian', url: 'https://www.theguardian.com/' },
+        { name: 'The Atlantic', url: 'https://www.theatlantic.com/' },
         { name: 'The Economist', url: 'https://www.economist.com/' },
         { name: 'The Financial Times', url: 'https://www.ft.com/' },
+        { name: 'The Guardian (free)', url: 'https://www.theguardian.com/' },
+        { name: 'The New York Times', url: 'https://www.nytimes.com/' },
         { name: 'The New Yorker', url: 'https://www.newyorker.com/' },
-        { name: 'The Atlantic', url: 'https://www.theatlantic.com/' },
-        { name: 'The Verge', url: 'https://www.theverge.com/' },
+        { name: 'The Verge (free)', url: 'https://www.theverge.com/' },
+        { name: 'The Wall Street Journal', url: 'https://www.wsj.com/' },
+        { name: 'The Washington Post', url: 'https://www.washingtonpost.com/' },
     ]
 
     return (
         <div className='mx-auto py-3'>
             <div className='flex flex-wrap justify-center gap-2'>
-                {newspapers.map((paper, index) => (
+                {newspapers.map(({ name, url }) => (
                     <Chip
-                        key={paper.url}
-                        as={'div'}
+                        key={name}
+                        as={Link}
+                        href={url}
                         size='sm'
-                        color={stringToColor(paper.url)}
+                        color={stringToColor(name)}
                         className='cursor-pointer'
                         variant='flat'
-                        onClick={() => {
-                            window.open(paper.url, '_blank')
-                        }}
+                        target='_blank'
                     >
-                        {paper.name}
+                        {name}
                     </Chip>
                 ))}
             </div>
