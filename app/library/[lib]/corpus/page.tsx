@@ -4,7 +4,6 @@ import Main from '@/components/main'
 import Recollection from './recollection'
 import load from './actions'
 import Test from './test'
-import Save from './save'
 import Nav from '@/components/nav'
 import { Metadata } from 'next'
 
@@ -22,9 +21,7 @@ export default async function Page({ params }: LibParams) {
         <Spacer y={5}></Spacer>
         <div className='flex flex-col space-y-6 sm:flex-row sm:space-x-5'>
             <div className='basis-1/3 sm:border-r-1 sm:pr-2'>
-                <Save></Save>
-                <Divider className='my-4'></Divider>
-                <h2 className='text-xl'>自我检测</h2>
+                <h2 className='text-xl font-semibold'>自我检测</h2>
                 <Test latestTime={words[0].xata.createdAt.toISOString().split('T')[0]}></Test>
             </div>
             <div className='basis-3/5'>

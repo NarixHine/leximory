@@ -66,7 +66,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
                 </div>
                 {recentAccessItem && <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>最近访问</p>
-                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none'>{recentAccessItem.title}</Chip>
+                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none cursor-pointer' onClick={(e) => { e.stopPropagation() }}>{recentAccessItem.title}</Chip>
                 </div>}
             </CardFooter>
         </Card>
