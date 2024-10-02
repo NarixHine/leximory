@@ -22,6 +22,20 @@ export default function manifest(): MetadataRoute.Manifest {
         display: 'standalone',
         orientation: 'portrait',
         categories: ['utilities', 'education'],
-        description: '从记忆到心会'
+        description: '从记忆到心会',
+        screenshots: [
+            {
+                src: '/screenshots/wide.png',
+                sizes: '2736x1728',
+                type: 'image/png',
+                // @ts-ignore
+                form_factor: 'wide',
+            },
+            {
+                src: '/screenshots/narrow.png',
+                sizes: '1062x1182',
+                type: 'image/png',
+            },
+        ],
     }
 }

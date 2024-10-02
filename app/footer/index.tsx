@@ -4,7 +4,7 @@ import { Button, Chip, Popover, PopoverContent, PopoverTrigger } from '@nextui-o
 import Link from 'next/link'
 import Image from 'next/image'
 import DefineImg from './define.png'
-import { chinese_kaishu } from '@/lib/fonts'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { PiMailboxDuotone, PiTelevisionDuotone, PiGithubLogoDuotone } from 'react-icons/pi'
 import { cn, stringToColor } from '@/lib/utils'
 import { useAtomValue } from 'jotai'
@@ -15,7 +15,7 @@ const Footer = () => {
     return (
         <footer className='text-center opacity-70 mb-3 mt-5'>
             {isReaderMode && <p>Generated on <span className='font-mono'>Leximory.com</span></p>}
-            {!isReaderMode && <div className={cn('mx-auto w-full max-w-72 space-y-1', chinese_kaishu.className)}>
+            {!isReaderMode && <div className={cn('mx-auto w-full max-w-72 space-y-1', CHINESE_ZCOOL.className)}>
                 <div className='flex w-full space-x-1'>
                     <Popover>
                         <PopoverTrigger>
@@ -34,7 +34,7 @@ const Footer = () => {
                             <Button size='sm' variant='solid' radius='sm' className='h-5 bg-secondary-300 text-secondary-900 basis-1/2'>选中查询</Button>
                         </PopoverTrigger>
                         <PopoverContent className='p-3'>
-                            <p className={cn('mb-1.5 text-balance text-center', chinese_kaishu.className)}>
+                            <p className={cn('mb-1.5 text-balance text-center', CHINESE_ZCOOL.className)}>
                                 选中点击即可对任意词汇生成 AI 注解，<br></br>
                                 含语境义、发音、词源（英文文库）。<br></br>
                                 消耗 AI 注解生成次数：0.25 次。

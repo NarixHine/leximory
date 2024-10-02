@@ -11,7 +11,7 @@ import { PiSignInDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import Image from 'next/image'
 import Logo from './logo.png'
-import { english_heading, chinese_kaishu } from '@/lib/fonts'
+import { ENGLISH_PLAYFAIR, CHINESE_ZCOOL } from '@/lib/fonts'
 import { useRouter } from 'next/navigation'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -32,7 +32,7 @@ function Navbar({ userId: defaultUserId }: {
 					router.push(userId ? '/library' : '/')
 				}}></Image>
 			</NavbarBrand>
-			{userId && <NavbarBrand className={cn(english_heading.className, 'text-2xl text-danger mx-1 justify-center hidden sm:flex')}>
+			{userId && <NavbarBrand className={cn(ENGLISH_PLAYFAIR.className, 'text-2xl text-danger mx-1 justify-center hidden sm:flex')}>
 				<Link href={'/library'}>Leximory</Link>
 			</NavbarBrand>}
 			<NavbarContent as={'div'} justify='end'>
@@ -42,7 +42,7 @@ function Navbar({ userId: defaultUserId }: {
 							<OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} createOrganizationUrl='/create' organizationProfileUrl='/org'></OrganizationSwitcher>
 							<UserButton userProfileUrl='/user'></UserButton>
 						</> :
-						<Button as={Link} variant='flat' color='danger' href='/sign-in' radius='full' className={chinese_kaishu.className} startContent={<PiSignInDuotone />}>开始学习</Button>
+						<Button as={Link} variant='flat' color='danger' href='/sign-in' radius='full' className={CHINESE_ZCOOL.className} startContent={<PiSignInDuotone />}>开始学习</Button>
 				}
 			</NavbarContent>
 		</NextUINavbar>

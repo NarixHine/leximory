@@ -10,7 +10,7 @@ export default function Define() {
     const [rect, setRect] = useState<DOMRect>()
     const [selection, setSelection] = useState<Selection | null>()
     useEffect(() => {
-        document.addEventListener('selectionchange', () => {
+        const handleSelectionChange = () => {
             const selection = getSelection()
             if (selection && selection.rangeCount) {
                 const range = selection.getRangeAt(0)
@@ -19,9 +19,14 @@ export default function Define() {
             }
             setTimeout(() => {
                 setSelection(selection)
-            }, 100)
-        })
+            })
+        }
+        document.addEventListener('selectionchange', handleSelectionChange)
+        return () => {
+            document.removeEventListener('selectionchange', handleSelectionChange)
+        }
     }, [])
+
     return selection && selection.anchorNode?.textContent && selection.toString() && <Popover placement='right'>
         <PopoverTrigger>
             <Button

@@ -18,14 +18,26 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             }}>
                 <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone />} onPress={() => {
                     router.push(`/library`)
-                }}>{tenant}</BreadcrumbItem>
+                }}>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle'>
+                        {tenant}
+                    </span>
+                </BreadcrumbItem>
                 {lib && <BreadcrumbItem className='max-w-full' startContent={<PiBooksDuotone />} onPress={() => {
                     router.push(`/library/${lib.id}`)
-                }}>{lib.name}</BreadcrumbItem>}
+                }}>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[30vw] align-middle'>
+                        {lib.name}
+                    </span>
+                </BreadcrumbItem>}
                 {isAtCorpus && <BreadcrumbItem className='max-w-full' startContent={<PiBookBookmarkDuotone />}>语料本</BreadcrumbItem>}
                 {text && lib && <BreadcrumbItem className='max-w-full' startContent={<PiFileTextDuotone />} onPress={() => {
                     router.push(`/library/${lib.id}/${text.id}`)
-                }}>{text.name}</BreadcrumbItem>}
+                }}>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[40vw] align-middle'>
+                        {text.name}
+                    </span>
+                </BreadcrumbItem>}
             </Breadcrumbs>
             {lib && <Button className='bg-primary-200 text-primary-800' size='sm' href={`/library/${lib.id}/corpus`} as={Link} radius='lg' isIconOnly startContent={<PiBookBookmarkDuotone />}></Button>}
         </div>

@@ -11,7 +11,7 @@ import { dark } from '@clerk/themes'
 import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
-import { chinese_kaishu } from '@/lib/fonts'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { RenderingBoundary } from 'jotai-ssr'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 
@@ -31,7 +31,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 						<RenderingBoundary>
 							<Toaster toastOptions={{
 								classNames: {
-									toast: cn('bg-primary-200 text-primary-900 dark:bg-danger-800 dark:border-0 dark:text-primary-100', chinese_kaishu.className),
+									toast: cn('bg-primary-200 text-primary-900 dark:bg-danger-800 dark:border-0 dark:text-primary-100', CHINESE_ZCOOL.className),
 								}
 							}}></Toaster>
 							{children}
