@@ -17,6 +17,7 @@ const Footer = () => {
             {isReaderMode && <p>Generated on <span className='font-mono'>Leximory.com</span></p>}
             {!isReaderMode && <div className={cn('mx-auto w-full max-w-72 space-y-1', CHINESE_ZCOOL.className)}>
                 <div className='flex w-full space-x-1'>
+                    <Button size='sm' variant='solid' radius='sm' href='/blog' as={Link} className='h-5 bg-warning-200 text-warning-800 basis-1/4'>博客</Button>
                     <Popover>
                         <PopoverTrigger>
                             <Button size='sm' variant='solid' radius='sm' className='h-5 bg-danger-200 text-danger-800 basis-3/4'>优质外刊资源</Button>
@@ -25,13 +26,12 @@ const Footer = () => {
                             <Newspapers />
                         </PopoverContent>
                     </Popover>
-                    <Button size='sm' variant='solid' radius='sm' href='/blog' as={Link} className='h-5 bg-warning-200 text-warning-800 basis-1/4'>博客</Button>
                 </div>
                 <div className='flex w-full space-x-1'>
-                    <Button size='sm' variant='solid' radius='sm' href='/blog/reading-while-listening' as={Link} className='h-5 bg-primary-200 text-primary-800 basis-1/2'>边听边读</Button>
+                    <Button size='sm' variant='solid' radius='sm' href='https://www.bilibili.com/video/BV15V4FeEEqt/' target='_blank' as={Link} className='h-5 bg-primary-200 text-primary-800 basis-3/4'>功能演示</Button>
                     <Popover>
                         <PopoverTrigger>
-                            <Button size='sm' variant='solid' radius='sm' className='h-5 bg-secondary-300 text-secondary-900 basis-1/2'>选中查询</Button>
+                            <Button size='sm' variant='solid' radius='sm' className='h-5 bg-secondary-300 text-secondary-900 basis-1/4'>选中查询</Button>
                         </PopoverTrigger>
                         <PopoverContent className='p-3'>
                             <p className={cn('mb-1.5 text-balance text-center', CHINESE_ZCOOL.className)}>
