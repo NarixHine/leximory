@@ -3,7 +3,7 @@ import Nav from '@/components/nav'
 import Options from '@/components/options'
 import Text from '@/components/text'
 import H from '@/components/h'
-import { authReadToLib, authWriteToLib } from '@/lib/auth'
+import { authReadToLib, authWriteToLib, authWriteToText } from '@/lib/auth'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { Card, CardBody } from '@nextui-org/react'
@@ -17,7 +17,7 @@ async function getData(lib: string) {
     const { name } = rec
     const texts = await xata.db.texts.filter({
         $all: [{ lib: { $is: lib } },]
-    }).sort('xata.updatedAt').select(['lib.lang', 'title', 'lib.name', 'topics']).getAll()
+    }).sort('xata.createdAt').select(['lib.lang', 'title', 'lib.name', 'topics']).getAll()
     return { texts, name, isReadOnly }
 }
 
@@ -39,7 +39,7 @@ export default async function Page({ params }: LibParams) {
     const save = async (id: string, form: FormData) => {
         'use server'
         const xata = getXataClient()
-        await authWriteToLib(lib)
+        await authWriteToText(id)
         await xata.db.texts.update(id, {
             title: form.get('title') as string
         })
@@ -48,7 +48,7 @@ export default async function Page({ params }: LibParams) {
     const del = async (id: string) => {
         'use server'
         const xata = getXataClient()
-        await authWriteToLib(lib)
+        await authWriteToText(id)
         await xata.db.texts.delete(id)
         revalidatePath('/library')
     }
@@ -82,7 +82,7 @@ export default async function Page({ params }: LibParams) {
                 inputs={[{
                     name: 'title',
                     label: '标题',
-                    description: '可留空，稍后通过文章链接自动填补'
+                    description: '可留空（通过文章链接自动填补）'
                 }]}></Options>
         </div>
     </Main>
