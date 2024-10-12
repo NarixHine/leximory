@@ -35,14 +35,13 @@ export function getSelectedChunk(selection: Selection) {
     return text
 }
 
-export function getClickedChunk(event: MouseEvent<HTMLButtonElement>): string {
-    const clickedElement = event.target as HTMLElement
-    if (!clickedElement || !clickedElement.textContent) return ''
+export function getClickedChunk(element: HTMLElement): string {
+    if (!element || !element.textContent) return ''
 
-    const parentElement = clickedElement.parentElement
+    const parentElement = element.parentElement
     if (!parentElement || !parentElement.textContent) return ''
 
-    const clickedText = clickedElement.textContent
+    const clickedText = element.textContent
     const parentText = parentElement.textContent
 
     const startIndex = parentText.indexOf(clickedText)

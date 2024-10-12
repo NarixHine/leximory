@@ -3,7 +3,7 @@
 
 import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
-import { ComponentProps, useEffect, useState, useCallback } from 'react'
+import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
@@ -14,7 +14,6 @@ import { useAtomValue } from 'jotai'
 import { delComment, saveComment } from './actions'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
-import { MouseEvent } from 'react'
 import Link from 'next/link'
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt }: {
@@ -72,9 +71,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
     }, [prompt])
 
-    const init = useCallback(async (event: MouseEvent<HTMLButtonElement>) => {
-        if (isOnDemand && !isLoaded) {
-            commentWord(getClickedChunk(event))
+    const wordElement = useRef<HTMLButtonElement>(null)
+
+    const init = useCallback(() => {
+        const element = wordElement.current
+        if (isOnDemand && !isLoaded && element) {
+            commentWord(getClickedChunk(element))
         }
     }, [isOnDemand, isLoaded, prompt])
 
@@ -134,7 +136,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             </CardBody>
         </Card>
         : <>
-            <Popover placement='right'>
+            <Popover placement='right' onOpenChange={init}>
                 <PopoverTrigger>
                     {
                         trigger
@@ -146,7 +148,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     isOnDemand ? 'decoration-primary/60' : 'decoration-danger'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
-                                onClick={(e) => init(e)}
+                                ref={wordElement}
                             >
                                 {words[0][0]}
                                 {isReaderMode && words[0][2] && <>
