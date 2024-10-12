@@ -5,7 +5,7 @@ import type { Contents, Rendition } from 'epubjs'
 import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
-import { getSelectedText } from '@/lib/utils'
+import { getSelectedChunk } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { ebookAtom, textAtom, titleAtom } from './atoms'
@@ -109,7 +109,7 @@ export default function Ebook() {
                         themeRendition.current = rendition
                         rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
-                            setPrompt(selection ? getSelectedText(selection) : null)
+                            setPrompt(selection ? getSelectedChunk(selection) : null)
                         })
                     }}
                     epubOptions={{

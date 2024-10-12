@@ -5,15 +5,16 @@ import { Button, Divider, Skeleton, Popover, PopoverTrigger, PopoverContent, Car
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone } from 'react-icons/pi'
-import { cn, randomID } from '@/lib/utils'
+import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { toast } from 'sonner'
 import { isReadOnlyAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { useAtomValue } from 'jotai'
-import { delComment, loadMeanings, saveComment } from './actions'
+import { delComment, saveComment } from './actions'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
+import { MouseEvent } from 'react'
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt }: {
     params: string,
@@ -40,47 +41,41 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setStatus('')
     }, [])
 
-    useEffect(() => {
-        const commentWord = async () => {
-            const { text, error } = await generateSingleComment(prompt as string, lib)
-            if (error) {
-                toast.error(error)
-            }
-            else if (text) {
-                try {
-                    let commentary = ''
-                    for await (const delta of readStreamableValue(text)) {
-                        commentary += delta
-                        setWords([commentary.replaceAll('{', '').replaceAll('}', '').split('||')])
-                    }
-                } catch (e) {
-                    toast.error('生成中止。')
-                }
-            }
-        }
-        if (prompt)
-            commentWord()
-    }, [prompt])
-
-
     const [isVisible, setIsVisible] = useState(prompt ? true : false)
 
-    const init = useCallback(async () => {
-        if (isOnDemand && !isLoaded) {
-            const defs = await loadMeanings(words[0][0])
-            if (defs.length === 0) {
-                setWords(words => [[words[0][0], words[0][0], '未找到释义。']])
-            }
-            else {
-                setWords(words => defs.map((word) => [
-                    words[0][0],
-                    word.word,
-                    word.translation?.replaceAll('\\n', '\n\n')
-                ]))
-            }
-            setIsLoaded(true)
+
+    const commentWord = async (prompt: string) => {
+        const { text, error } = await generateSingleComment(prompt, lib)
+        if (error) {
+            toast.error(error)
         }
-    }, [isOnDemand, isLoaded])
+        else if (text) {
+            try {
+                let commentary = ''
+                for await (const delta of readStreamableValue(text)) {
+                    commentary += delta
+                    setWords([commentary.replaceAll('{', '').replaceAll('}', '').split('||')])
+                    if (isOnDemand && !isLoaded) {
+                        setIsLoaded(true)
+                    }
+                }
+            } catch (e) {
+                toast.error('生成中止。')
+            }
+        }
+    }
+
+    useEffect(() => {
+        if (prompt) {
+            commentWord(prompt)
+        }
+    }, [prompt])
+
+    const init = useCallback(async (event: MouseEvent<HTMLButtonElement>) => {
+        if (isOnDemand && !isLoaded) {
+            commentWord(getClickedChunk(event))
+        }
+    }, [isOnDemand, isLoaded, prompt])
 
     const uid = randomID()
     const Save = !disableSave && <>
@@ -139,7 +134,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             </CardBody>
         </Card>
         : <>
-            <Popover placement='right' onOpenChange={init}>
+            <Popover placement='right'>
                 <PopoverTrigger>
                     {
                         trigger
@@ -151,6 +146,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     isOnDemand ? 'decoration-primary/60' : 'decoration-danger'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
+                                onClick={(e) => init(e)}
                             >
                                 {words[0][0]}
                                 {isReaderMode && words[0][2] && <>

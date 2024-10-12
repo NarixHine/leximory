@@ -41,14 +41,6 @@ const tables = [
     ],
   },
   {
-    name: "ecdict",
-    columns: [
-      { name: "word", type: "string" },
-      { name: "phonetic", type: "string" },
-      { name: "translation", type: "text" },
-    ],
-  },
-  {
     name: "audio",
     columns: [
       { name: "lib", type: "link", link: { table: "libraries" } },
@@ -76,9 +68,6 @@ export type LexiconRecord = Lexicon & XataRecord;
 export type Texts = InferredTypes["texts"];
 export type TextsRecord = Texts & XataRecord;
 
-export type Ecdict = InferredTypes["ecdict"];
-export type EcdictRecord = Ecdict & XataRecord;
-
 export type Audio = InferredTypes["audio"];
 export type AudioRecord = Audio & XataRecord;
 
@@ -89,7 +78,6 @@ export type DatabaseSchema = {
   libraries: LibrariesRecord;
   lexicon: LexiconRecord;
   texts: TextsRecord;
-  ecdict: EcdictRecord;
   audio: AudioRecord;
   subs: SubsRecord;
 };

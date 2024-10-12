@@ -11,7 +11,7 @@ export default function Topics({ topics, remove }: { topics: string[] | null | u
     {
       topics.map(topic => <Chip key={topic} size='sm' variant={isReaderMode ? 'dot' : 'flat'} className='border-none' onClose={remove && (() => {
         remove(topic)
-      })} color={stringToColor(topic)}>{topic}</Chip>)
+      })} color={isReaderMode ? 'default' : stringToColor(topic)}>{topic}</Chip>)
     }
   </div>
 }
