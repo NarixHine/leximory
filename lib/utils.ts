@@ -46,8 +46,8 @@ export function getClickedChunk(event: MouseEvent<HTMLButtonElement>): string {
     const clickedIndex = range.startOffset
 
     // Get some context before and after the clicked word
-    const contextBefore = clickedText.substring(Math.max(0, clickedIndex - 20), clickedIndex)
-    const contextAfter = clickedText.substring(clickedIndex, clickedIndex + 20)
+    const contextBefore = clickedText.substring(Math.max(0, clickedIndex - 50), clickedIndex)
+    const contextAfter = clickedText.substring(clickedIndex, clickedIndex + 50)
 
     // Find the word boundary
     const wordStart = contextBefore.match(/\S+$/)
