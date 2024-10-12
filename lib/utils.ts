@@ -39,23 +39,18 @@ export function getClickedChunk(event: MouseEvent<HTMLButtonElement>): string {
     const clickedElement = event.target as HTMLElement
     if (!clickedElement || !clickedElement.textContent) return ''
 
-    const range = document.caretRangeFromPoint(event.clientX, event.clientY)
-    if (!range) return ''
+    const parentElement = clickedElement.parentElement
+    if (!parentElement || !parentElement.textContent) return ''
 
-    const clickedText = range.startContainer.textContent || ''
-    const clickedIndex = range.startOffset
+    const clickedText = clickedElement.textContent
+    const parentText = parentElement.textContent
 
-    // Get some context before and after the clicked word
-    const contextBefore = clickedText.substring(Math.max(0, clickedIndex - 50), clickedIndex)
-    const contextAfter = clickedText.substring(clickedIndex, clickedIndex + 50)
+    const startIndex = parentText.indexOf(clickedText)
+    if (startIndex === -1) return ''
 
-    // Find the word boundary
-    const wordStart = contextBefore.match(/\S+$/)
-    const wordEnd = contextAfter.match(/^\S+/)
+    const endIndex = startIndex + clickedText.length
 
-    const clickedWord = (wordStart ? wordStart[0] : '') + (wordEnd ? wordEnd[0] : '')
-
-    return `${contextBefore}[[${clickedWord}]]${contextAfter}`
+    return `${parentText.substring(0, startIndex)}[[${clickedText}]]${parentText.substring(endIndex)}`
 }
 
 export function cn(...inputs: ClassValue[]) {
