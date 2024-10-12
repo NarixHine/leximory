@@ -179,7 +179,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                             }}
                                         >从语料本删除</Button>
                                     </>}
-                                    <Button as={Link} href={`https://www.etymonline.com/cn/word/${words[0][0]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly className='ml-2'></Button>
+                                    <Button as={Link} href={`https://www.etymonline.com/cn/word/${words[0][1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly className='ml-2'></Button>
                                 </div>)
                                 : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
