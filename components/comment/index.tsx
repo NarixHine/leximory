@@ -214,7 +214,7 @@ function Note({ portions, isCompact, omitOriginal }: {
         {
             portions[2] && <div className={margin}>
                 {!isCompact && <div className='font-bold'>释义</div>}
-                <Markdown>{isCompact ? portions[2].replaceAll('\n\n', '; ') : portions[2]}</Markdown>
+                <Markdown className='before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
             </div>
         }
         {

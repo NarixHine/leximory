@@ -8,7 +8,7 @@ export default async function saveSubs(subs: PushSubscription) {
     const xata = getXataClient()
     const { userId } = auth()
     if (userId) {
-        await xata.db.subs.create({
+        await xata.db.subs.createOrReplace({
             uid: auth().userId,
             subscription: subs
         })

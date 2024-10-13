@@ -16,7 +16,6 @@ export async function saveComment(portions: string[], lib: string) {
     const xata = getXataClient()
     const [_, ...comment] = portions
     await authWriteToLib(lib)
-    comment[1] = comment[1].replaceAll('\n', '')
     await xata.db.lexicon.createOrUpdate({
         word: `{{${[comment[0]].concat(comment).join('||')}}}`,
         lib

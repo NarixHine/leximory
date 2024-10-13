@@ -10,13 +10,15 @@ export default function Bell({ hasSubscribed }: {
     hasSubscribed: boolean
 }) {
     const subscribe = async () => {
-        const register = await navigator.serviceWorker.register('/sw.js')
-
-        await register.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        }).then((subscription) => {
-            saveSubs(subscription)
+        navigator.serviceWorker.register('/sw.js').then((register) => {
+            register.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            }).then((subscription) => {
+                saveSubs(subscription)
+            }).catch(() => {
+                toast.error('失败')
+            })
         }).catch(() => {
             toast.error(isIOS() ? 'iOS 用户请将 Leximory 添加至主界面' : '失败')
         })

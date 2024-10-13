@@ -155,7 +155,7 @@ export default function Home() {
 				<External className={cn('mt-2 flex flex-wrap w-fit justify-start text-lg', CHINESE_ZCOOL.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
 			</div>
 		</Main>
-	</RenderingBoundary >
+	</RenderingBoundary>
 }
 
 const BentoCard = ({ title, children, description, }: {
