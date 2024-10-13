@@ -11,17 +11,14 @@ export default function Bell({ hasSubscribed }: {
 }) {
     const subscribe = async () => {
         const register = await navigator.serviceWorker.register('/sw.js')
-        register.pushManager.subscribe({
+
+        await register.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         }).then((subscription) => {
             saveSubs(subscription)
         }).catch(() => {
-            if (isIOS()) {
-                toast.error('iOS 用户请将 Leximory 添加至主界面')
-            } else {
-                toast.error('失败')
-            }
+            toast.error(isIOS() ? 'iOS 用户请将 Leximory 添加至主界面' : '失败')
         })
     }
 
@@ -29,7 +26,7 @@ export default function Bell({ hasSubscribed }: {
         <div className='flex flex-col justify-center items-center space-y-1'>
             <Button variant={hasSubscribed ? 'solid' : 'ghost'} onPress={hasSubscribed ? () => delSubs() : () => subscribe()} size='lg' radius='full' color='primary' startContent={<PiClockClockwiseDuotone />}>{`${hasSubscribed ? '关闭' : '开启'} 22:00 日报提醒`}</Button>
             <div className='opacity-50 text-sm text-balance text-center'>
-                更换设备后需要重新开启消息
+                更换设备后需要重新开启
             </div>
         </div>
     )

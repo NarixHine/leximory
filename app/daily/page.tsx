@@ -21,7 +21,7 @@ export default async function Daily() {
         <Main className='max-w-screen-md'>
             <Nav></Nav>
             <H>每日报告</H>
-            <Spacer y={2}></Spacer>
+            <Spacer y={6}></Spacer>
             <Bell hasSubscribed={hasSubscribed}></Bell>
             <Suspense fallback={<Loading></Loading>}>
                 <Report day='今天'></Report>
