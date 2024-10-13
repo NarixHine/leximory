@@ -165,23 +165,21 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 ? words.map((portions, index) => <div key={portions[1]}>
                                     <Note portions={portions}></Note>
                                     <Spacer y={4}></Spacer>
-                                    <div className='flex gap-2'>
-                                        {index === 0 ? Save : <></>}
-                                        {deleteId && deleteId !== 'undefined' && <>
-                                            <Button
-                                                isDisabled={status === 'deleted'}
-                                                size='sm'
-                                                startContent={<PiTrashDuotone />}
-                                                color='danger'
-                                                variant='flat'
-                                                onClick={async () => {
-                                                    await delComment(deleteId, lib)
-                                                    setStatus('deleted')
-                                                }}
-                                            >从语料本删除</Button>
-                                        </>}
-                                        <Button as={Link} href={`https://www.etymonline.com/cn/word/${words[0][0]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>
-                                    </div>
+                                    {index === 0 ? Save : <></>}
+                                    {deleteId && deleteId !== 'undefined' && <>
+                                        <Button
+                                            isDisabled={status === 'deleted'}
+                                            size='sm'
+                                            startContent={<PiTrashDuotone />}
+                                            color='danger'
+                                            variant='flat'
+                                            onClick={async () => {
+                                                await delComment(deleteId, lib)
+                                                setStatus('deleted')
+                                            }}
+                                        >从语料本删除</Button>
+                                    </>}
+                                    <Button as={Link} href={`https://www.etymonline.com/cn/word/${words[0][0]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly className='ml-2'></Button>
                                 </div>)
                                 : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
