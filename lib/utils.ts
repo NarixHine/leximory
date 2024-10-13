@@ -54,7 +54,3 @@ export function getClickedChunk(element: HTMLElement): string {
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
-
-export function isIOS() {
-    return navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')
-}
