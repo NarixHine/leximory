@@ -20,6 +20,7 @@ import { recentAccessAtom } from '@/components/library'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
+  const setIsEditing = useSetAtom(isEditingAtom)
 
   return (
     <div className={isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center mb-1 mt-2 sm:mt-0 sm:mb-0 sm:w-fit'}>
@@ -31,7 +32,10 @@ function ReaderModeToggle() {
         </div>
       }>
         <Button
-          onPress={() => toggleReaderMode()}
+          onPress={() => {
+            toggleReaderMode()
+            setIsEditing(false)
+          }}
           className='mx-auto'
           variant={'light'}
           color={isReaderMode ? 'default' : 'primary'}

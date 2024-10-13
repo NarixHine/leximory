@@ -1,7 +1,6 @@
 import { Readable } from 'stream'
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { MouseEvent } from 'react'
 
 export function stringToColor(input: string) {
     const colors = ['secondary', 'warning', 'danger', 'primary'] as const
@@ -54,4 +53,8 @@ export function getClickedChunk(element: HTMLElement): string {
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
+}
+
+export function isIOS() {
+    return navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')
 }
