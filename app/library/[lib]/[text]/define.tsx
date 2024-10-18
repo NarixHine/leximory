@@ -9,6 +9,7 @@ import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
 export default function Define() {
     const [rect, setRect] = useState<DOMRect>()
     const [selection, setSelection] = useState<Selection | null>()
+    const [isOpen, setIsOpen] = useState(false)
     useEffect(() => {
         const handleSelectionChange = () => {
             const selection = getSelection()
@@ -19,6 +20,11 @@ export default function Define() {
             }
             setTimeout(() => {
                 setSelection(selection)
+                setTimeout(() => {
+                    if (!isOpen) {
+                        setSelection(null)
+                    }
+                }, 3000)
             })
         }
         document.addEventListener('selectionchange', handleSelectionChange)
@@ -27,7 +33,7 @@ export default function Define() {
         }
     }, [])
 
-    return selection && selection.anchorNode?.textContent && selection.toString() && <Popover placement='right'>
+    return selection && selection.anchorNode?.textContent && selection.toString() && <Popover placement='right' isOpen={isOpen} onOpenChange={(open) => setIsOpen(open)}>
         <PopoverTrigger>
             <Button
                 data-umami-event='词汇注解'
