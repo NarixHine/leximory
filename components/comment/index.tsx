@@ -9,7 +9,7 @@ import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { toast } from 'sonner'
-import { isReadOnlyAtom, libAtom } from '@/app/library/[lib]/atoms'
+import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { useAtomValue } from 'jotai'
 import { delComment, saveComment } from './actions'
 import { motion } from 'framer-motion'
@@ -34,7 +34,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
     const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
-    const [savedComment, setSavedComment] = useState<string[] | null>(null)
+    const [savedId, setSavedId] = useState<string | null>(null)
 
     useEffect(() => {
         setWords([parsedParams])
@@ -81,27 +81,30 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
     }, [isOnDemand, isLoaded, prompt])
 
+    const lang = useAtomValue(langAtom)
     const uid = randomID()
     const Save = !disableSave && <>
         <Button
             size='sm'
-            isDisabled={status === 'saved' && !savedComment}
+            isDisabled={status === 'saved' && !savedId}
             isLoading={status === 'loading'}
             startContent={status === 'saved'
-                ? (savedComment ? <PiArrowCounterClockwiseDuotone /> : <PiCheckCircleDuotone />)
+                ? (savedId ? <PiArrowCounterClockwiseDuotone /> : <PiCheckCircleDuotone />)
                 : (status !== 'loading' && <PiBookBookmarkDuotone />)}
-            color={status === 'saved' && savedComment ? 'secondary' : 'primary'}
+            color={status === 'saved' && savedId ? 'secondary' : 'primary'}
             variant='flat'
             onClick={async () => {
-                if (status === 'saved' && savedComment) {
+                if (status === 'saved' && savedId) {
                     // Undo save
                     setStatus('loading')
                     try {
-                        await delComment(uid)
+                        await delComment(savedId)
                         setStatus('')
-                        setSavedComment(null)
+                        setSavedId(null)
+                        toast.success('已撤销保存')
                     } catch (error) {
                         setStatus('saved')
+                        toast.error('撤销失败')
                     }
                 } else {
                     // Save comment
@@ -109,7 +112,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     try {
                         const savedId = await saveComment(words[0], lib)
                         setStatus('saved')
-                        setSavedComment([savedId, ...words[0]])
+                        setSavedId(savedId)
+                        toast.success('已保存至语料本')
                     } catch (error) {
                         setStatus('')
                         toast.error('保存失败')
@@ -117,13 +121,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 }
             }}
         >
-            {status === 'saved' && savedComment ? '撤销' : '保存至语料本'}
+            {savedId ? '撤销' : '保存至语料本'}
         </Button>
     </>
 
     return asCard
         ? <Card shadow='sm' fullWidth radius='sm'>
-            <CardBody className='p-6 pt-4 pb-3 leading-snug'>
+            <CardBody className='p-6 py-4 leading-snug'>
                 <div className={'font-bold text-lg'}>{words[0][1]}</div>
                 <div className='relative'>
                     {!isVisible && (
@@ -162,7 +166,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             ? <Button {...trigger}></Button>
                             : <button
                                 className={cn(
-                                    status === 'deleted' && 'line-through',
+                                    status === 'deleted' && 'opacity-30',
                                     !isReaderMode && 'underline decoration-wavy underline-offset-[3px]',
                                     isOnDemand ? 'decoration-primary/60' : 'decoration-danger'
                                 )}
@@ -199,7 +203,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                                 }}
                                             >从语料本删除</Button>
                                         </>}
-                                        <Button as={Link} href={`https://www.etymonline.com/cn/word/${words[0][1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>
+                                        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${words[0][1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
                                     </div>
                                 </div>)
                                 : <div className='space-y-3 w-40'>
