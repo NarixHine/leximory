@@ -103,7 +103,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
             ${instruction[lang]}
             `,
-            prompt: `由于下文中只有一个加双重中括号的语块，你只需要依次输出它的原文形式、原形、释义${lang === 'en' ? '、语源、同源词' : ''}即可，形如 word||original${lang === 'en' ? '||etymology||cognates' : ''}。具体形式必须保持与示例注解一致。不要附带原文和上下文。\n${lang === 'en' ? '例如如果双重中括号内是“break it down”，则对短语“break down”进行注解，而不是“break”或“break it down”。你必须在注解中附带语源，禁止省略。\n' : ''}\n\n${prompt}`,
+            prompt: `由于下文中只有一个加双重中括号的语块，你只需要依次输出它的原文形式、原形、释义${lang === 'en' ? '、语源、同源词' : ''}即可，形如 word||original${lang === 'en' ? '||etymology||cognates' : ''}。具体形式必须保持与示例注解一致。必须注解包裹的完整语块，不得截断，也不要附带原文和前后句。\n${lang === 'en' ? '例如如果双重中括号内是“break it down”，则对短语“break down”进行注解，而不是“break”或“break it down”。你必须在注解中附带语源，禁止省略。\n' : ''}\n\n${prompt}`,
             maxTokens: 1000
         })
 
@@ -149,7 +149,7 @@ const instruction: {
 
     en: `你将看到一段英文文本，你必须为一个英文学习者尽可能多地挑选其中的词汇和词组搭配添加以下注解：原文形式（必加），屈折变化的原形（必加），原形的精简语境释义（必加，附带\`\`包裹的音标），对记忆有助益的语源（同语根词加上时必加），同语根词（选加，选取含有同源词素的不同单词）。尽量详尽地挑选并注解；多多注解外刊中的有价值单词、对英语学习实用的语汇和专有名词（如the Revolution）；禁止反复注解同一词汇；禁止注解初级词汇；必加语源。输出格式为 {{原文形式||原形||释义||(语源解释) 各个语素||语根1 (原意) → 同语根词1, 同语根词2; 语根2 (原意) → 同语根词1; …}}。词性、词义和词源注解的对象必须为屈折变化的原形，例如如果原文为implications，原形为implication，则应按照implication而非imply进行注解，词性为名词，语源中不要加入单复数变化词尾-s；例如如果原文为dazzling，原形为dazzling，则应按照dazzling而非dazzle进行注解，词性为形容词；例如如果原文为forgiven，原形为forgive，则应按照forgive而非forgiven进行注解，词性为动词。
   
-  除此以外，不要修改文本其他部分的Markdown语法。直接输出注解后的文章。不要删除紧跟的标点。注解的同源词板块中，相同的语素才是应当加粗的部分（如对于ensue中的sue应加粗pursue中的sue，即“***sue*** (follow) → pur**sue** (追求)”）。注意：同源词素必须来自同一印欧语根。拼写相同的词素未必同源（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”），同源词素也不必拼写相同（例如break和fragile）。不要把词尾的非词缀字母（-ing，-en，-ed等）强行放入语源。
+  除此以外，不要修改文本其他部分的Markdown语法。直接输出注解后的文章。不要删除紧跟的标点。注解的同源词板块中，相同的语素才是应当加粗的部分（如对于ensue中的sue应加粗pursue中的sue，即“***sue*** (follow) → pur**sue** (追求)”）。注意：同源词素必须来自同一印欧语根。拼写相同的词素未必同源（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”），同源词素也不必拼写相同（例如break和fragile）。不要把词尾的非词缀字母（-ing，-en，-ed等）强行放入语源。必须注解词汇在语境中的具体含义，若为比喻义、引申义则须指出。
   
   示例文本一：
   Birds, nowadays, all live in imperilled mansions. I [[studied up]] on birds that are famously difficult to identify so that when I first saw them in the field, I had an inkling of what they were without having to check a field guide. I used the many tools now available to novices: EBird shows where other birders go and reveals how different species navigate space and time; Merlin is best known as an identification app but is secretly an incredible encyclopedia; Birding Quiz lets you practice identifying species based on fleeting glances at bad angles.
