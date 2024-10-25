@@ -4,11 +4,12 @@ import { authWriteToLib } from '@/lib/auth'
 import { getXataClient } from '@/lib/xata'
 import { revalidatePath } from 'next/cache'
 
-export async function delComment(id: string, lib: string) {
+export async function delComment(id: string) {
     const xata = getXataClient()
-    await authWriteToLib(lib)
+    const record = await xata.db.lexicon.filter({ id }).getFirstOrThrow()
+    await authWriteToLib(record.lib!.id)
     await xata.db.lexicon.delete(id)
-    revalidatePath(`/library/${lib}/corpus`)
+    revalidatePath(`/library/${record.lib!.id}/corpus`)
     revalidatePath(`/library/`)
 }
 

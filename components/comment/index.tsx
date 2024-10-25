@@ -4,7 +4,7 @@
 import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiArrowCounterClockwiseDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -33,7 +33,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [words, setWords] = useState([parsedParams])
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
-    const [status, setStatus] = useState('')
+    const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
+    const [savedComment, setSavedComment] = useState<string[] | null>(null)
 
     useEffect(() => {
         setWords([parsedParams])
@@ -84,24 +85,40 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const Save = !disableSave && <>
         <Button
             size='sm'
-            isDisabled={status === 'saved'}
+            isDisabled={status === 'saved' && !savedComment}
             isLoading={status === 'loading'}
             startContent={status === 'saved'
-                ? <PiCheckCircleDuotone />
+                ? (savedComment ? <PiArrowCounterClockwiseDuotone /> : <PiCheckCircleDuotone />)
                 : (status !== 'loading' && <PiBookBookmarkDuotone />)}
-            color='primary'
+            color={status === 'saved' && savedComment ? 'secondary' : 'primary'}
             variant='flat'
             onClick={async () => {
-                setStatus('loading')
-                saveComment(words[0], lib)
-                    .then(() => {
-                        setStatus('saved')
-                    })
-                    .catch(() => {
+                if (status === 'saved' && savedComment) {
+                    // Undo save
+                    setStatus('loading')
+                    try {
+                        await delComment(uid)
                         setStatus('')
-                    })
+                        setSavedComment(null)
+                    } catch (error) {
+                        setStatus('saved')
+                    }
+                } else {
+                    // Save comment
+                    setStatus('loading')
+                    try {
+                        const savedId = await saveComment(words[0], lib)
+                        setStatus('saved')
+                        setSavedComment([savedId, ...words[0]])
+                    } catch (error) {
+                        setStatus('')
+                        toast.error('保存失败')
+                    }
+                }
             }}
-        >保存至语料本</Button>
+        >
+            {status === 'saved' && savedComment ? '撤销' : '保存至语料本'}
+        </Button>
     </>
 
     return asCard
@@ -121,7 +138,9 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     )}
                     <motion.div
                         transition={{ duration: 0.5 }}
-                        className='overflow-hidden'
+                        style={{
+                            overflow: 'hidden'
+                        }}
                     >
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -175,7 +194,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                                 color='danger'
                                                 variant='flat'
                                                 onClick={async () => {
-                                                    await delComment(deleteId, lib)
+                                                    await delComment(deleteId)
                                                     setStatus('deleted')
                                                 }}
                                             >从语料本删除</Button>
