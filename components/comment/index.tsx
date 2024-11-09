@@ -8,13 +8,13 @@ import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSqu
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
-import { toast } from 'sonner'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { useAtomValue } from 'jotai'
 import { delComment, saveComment } from './actions'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt }: {
     params: string,
@@ -101,10 +101,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         await delComment(savedId)
                         setStatus('')
                         setSavedId(null)
-                        toast.success('已撤销保存')
                     } catch (error) {
                         setStatus('saved')
-                        toast.error('撤销失败')
                     }
                 } else {
                     // Save comment
@@ -113,10 +111,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         const savedId = await saveComment(words[0], lib)
                         setStatus('saved')
                         setSavedId(savedId)
-                        toast.success('已保存至语料本')
                     } catch (error) {
                         setStatus('')
-                        toast.error('保存失败')
                     }
                 }
             }}

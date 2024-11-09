@@ -114,6 +114,7 @@ export default function Ebook() {
                     </Popover>
                 </div>
                 <ReactReader
+                    key={isFullViewport ? 'full' : 'normal'}
                     title={title}
                     isRTL={lang === 'ja'}
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
