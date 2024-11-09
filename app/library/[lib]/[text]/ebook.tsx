@@ -81,11 +81,12 @@ export default function Ebook() {
             }}
         >
             <Button variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
-                await handleFullScreen.enter()
-                if (!handleFullScreen.active) {
+                handleFullScreen.enter().catch(() => {
                     setIsFullViewport(!isFullViewport)
-                }
-            }} startContent={<PiFrameCornersDuotone />}>
+                })
+            }}
+                startContent={<PiFrameCornersDuotone />}
+            >
                 全屏模式
             </Button>
             <Spacer />
