@@ -5,7 +5,7 @@ import type { Contents, Rendition } from 'epubjs'
 import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
-import { getSelectedChunk } from '@/lib/utils'
+import { cn, getSelectedChunk } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { ebookAtom, textAtom, titleAtom } from './atoms'
@@ -14,8 +14,9 @@ import { useAtom, useAtomValue } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
+import { motion } from 'framer-motion'
 
-const locationAtomFamily = atomFamily((text: string) => 
+const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
 
@@ -53,15 +54,42 @@ export default function Ebook() {
     }, [lang, theme])
 
     const handleFullScreen = useFullScreenHandle()
+    const [isFullViewport, setIsFullViewport] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null!)
 
     return src && (
-        <>
-            <Button variant='ghost' color='primary' radius='full' fullWidth onPress={handleFullScreen.enter} startContent={<PiFrameCornersDuotone />}>
+        <motion.div
+            className='bg-background z-50'
+            style={{
+                position: isFullViewport ? 'fixed' : 'relative',
+                width: isFullViewport ? '100dvw' : 'auto',
+                height: isFullViewport ? '100dvh' : 'auto'
+            }}
+            transition={{
+                duration: 0.5,
+                ease: 'easeInOut',
+                layout: {
+                    duration: 0.5
+                }
+            }}
+            layout='preserve-aspect'
+            animate={{
+                left: isFullViewport ? 0 : 'auto',
+                top: isFullViewport ? 0 : 'auto',
+                padding: isFullViewport ? 15 : 0,
+                right: isFullViewport ? 0 : 'auto',
+            }}
+        >
+            <Button variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
+                await handleFullScreen.enter()
+                if (!handleFullScreen.active) {
+                    setIsFullViewport(!isFullViewport)
+                }
+            }} startContent={<PiFrameCornersDuotone />}>
                 全屏模式
             </Button>
             <Spacer />
-            <FullScreen handle={handleFullScreen} className='h-[80vh] relative dark:opacity-95 block'>
+            <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
                 <div ref={containerRef}>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>
                         <PopoverTrigger>
@@ -119,7 +147,7 @@ export default function Ebook() {
                     url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
                 />
             </FullScreen>
-        </>
+        </motion.div>
     )
 }
 

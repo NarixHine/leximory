@@ -44,7 +44,7 @@ export const notify = inngest.createFunction(
         const { subscription } = event.data
         webpush.sendNotification(subscription, JSON.stringify({
             title: 'Leximory 日报',
-            body: '回顾昨日、四日前、七日前记忆的语汇。',
+            body: '回顾今日、昨日、四日前、七日前记忆的语汇。',
             icon: '/android-chrome-192x192.png',
             data: {
                 url: prefixUrl('/daily')
