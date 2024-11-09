@@ -81,9 +81,11 @@ export default function Ebook() {
             }}
         >
             <Button variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
-                handleFullScreen.enter().catch(() => {
+                try {
+                    await handleFullScreen.enter()
+                } catch {
                     setIsFullViewport(!isFullViewport)
-                })
+                }
             }}
                 startContent={<PiFrameCornersDuotone />}
             >
