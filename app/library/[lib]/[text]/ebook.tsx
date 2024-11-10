@@ -59,11 +59,12 @@ export default function Ebook() {
 
     return src && (
         <motion.div
-            className='bg-background z-50'
+            className='bg-background'
             style={{
                 position: isFullViewport ? 'fixed' : 'relative',
                 width: isFullViewport ? '100dvw' : 'auto',
-                height: isFullViewport ? '100dvh' : 'auto'
+                height: isFullViewport ? '100dvh' : 'auto',
+                zIndex: isFullViewport ? 999 : 'auto'
             }}
             transition={{
                 duration: 0.5,
