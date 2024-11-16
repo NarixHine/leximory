@@ -1,6 +1,7 @@
 'use server'
 
 import { authWriteToLib } from '@/lib/auth'
+import { extractSaveForm } from '@/lib/lang'
 import { getXataClient } from '@/lib/xata'
 
 export async function delComment(id: string) {
@@ -12,10 +13,9 @@ export async function delComment(id: string) {
 
 export async function saveComment(portions: string[], lib: string) {
     const xata = getXataClient()
-    const [_, ...comment] = portions
     await authWriteToLib(lib)
     const { id } = await xata.db.lexicon.createOrUpdate({
-        word: `{{${[comment[0]].concat(comment).join('||')}}}`,
+        word: `{{${extractSaveForm(portions).join('||')}}}`,
         lib,
     })
     return id

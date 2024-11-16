@@ -7,7 +7,7 @@ import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from '@/components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom } from './atoms'
+import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, recentWordsAtom, inputAtom } from './atoms'
 
 export const maxDuration = 60
 
@@ -28,13 +28,16 @@ const getData = async (text: string) => {
 
 export default async function Page({ params }: LibAndTextParams) {
     const { title, content, lib, id, topics, ebook, } = await getData(params.text)
+
     return (
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
             [topicsAtom, topics ?? []],
             [ebookAtom, ebook?.url],
             [textAtom, id],
-            [titleAtom, title]
+            [titleAtom, title],
+            [recentWordsAtom, []],
+            [inputAtom, '']
         ]}>
             <Main className='max-w-screen-xl'>
                 <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>

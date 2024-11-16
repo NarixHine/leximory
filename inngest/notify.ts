@@ -14,7 +14,7 @@ webpush.setVapidDetails(
 
 export const fanNotification = inngest.createFunction(
     { id: 'load-subscribed-users' },
-    { cron: 'TZ=Asia/Shanghai 0 22 * * *' },
+    { cron: 'TZ=Asia/Shanghai 30 21 * * *' },
     async ({ step }) => {
         const users = await step.run('fetch-users', async () => {
             const xata = getXataClient()

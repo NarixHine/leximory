@@ -1,6 +1,11 @@
 import LEXICON from './lexicon'
 const lemmatize = require('wink-lemmatizer')
 
+export function extractSaveForm(portions: string[]) {
+    const [_, ...comment] = portions
+    return [comment[0]].concat(comment)
+}
+
 export const originals = (word: string): string[] => [...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)])]
 
 export default function wrap(text: string, lexicon?: CustomLexicon): string {

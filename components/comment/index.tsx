@@ -9,8 +9,10 @@ import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
-import { useAtomValue } from 'jotai'
+import { recentWordsAtom } from '@/app/library/[lib]/[text]/atoms'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { delComment, saveComment } from './actions'
+import { extractSaveForm } from '@/lib/lang'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
@@ -44,6 +46,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : false)
 
+    const setRecentWords = useSetAtom(recentWordsAtom)
 
     const commentWord = async (prompt: string) => {
         const { text, error } = await generateSingleComment(prompt, lib)
@@ -111,6 +114,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         const savedId = await saveComment(words[0], lib)
                         setStatus('saved')
                         setSavedId(savedId)
+                        setRecentWords((prev) => [...new Set([...prev, extractSaveForm(words[0])])])
                     } catch (error) {
                         setStatus('')
                     }
