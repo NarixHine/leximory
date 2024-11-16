@@ -31,15 +31,14 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
 
-    const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '').replaceAll('\n', '\\n')).map((param: string) => param.replaceAll('\\n', '\n'))
-    const [words, setWords] = useState([parsedParams])
+    const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '').replaceAll('\n', '\\n')).map((param: string) => param.replaceAll('\\n', '\n')) as string[]
+    const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
     const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
     const [savedId, setSavedId] = useState<string | null>(null)
 
     useEffect(() => {
-        setWords([parsedParams])
         setIsLoaded(!isOnDemand)
         setStatus('')
     }, [])
@@ -58,7 +57,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 let commentary = ''
                 for await (const delta of readStreamableValue(text)) {
                     commentary += delta
-                    setWords([commentary.replaceAll('{', '').replaceAll('}', '').split('||')])
+                    setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
                     if (isOnDemand && !isLoaded) {
                         setIsLoaded(true)
                     }
@@ -86,7 +85,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const lang = useAtomValue(langAtom)
     const uid = randomID()
-    const Save = !disableSave && <>
+    const Save = <>
         <Button
             size='sm'
             isDisabled={status === 'saved' && !savedId}
@@ -111,10 +110,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     // Save comment
                     setStatus('loading')
                     try {
-                        const savedId = await saveComment(words[0], lib)
+                        const savedId = await saveComment(portions, lib)
                         setStatus('saved')
                         setSavedId(savedId)
-                        setRecentWords((prev) => [...new Set([...prev, extractSaveForm(words[0])])])
+                        setRecentWords((prev) => [...new Set([...prev, extractSaveForm(portions)])])
                     } catch (error) {
                         setStatus('')
                     }
@@ -128,7 +127,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     return asCard
         ? <Card shadow='sm' fullWidth radius='sm'>
             <CardBody className='p-6 py-4 leading-snug'>
-                <div className={'font-bold text-lg'}>{words[0][1]}</div>
+                <div className={'font-bold text-lg'}>{portions[1]}</div>
                 <div className='relative'>
                     {!isVisible && (
                         <Button
@@ -151,10 +150,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             animate={{ opacity: isVisible ? 1 : 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Note omitOriginal portions={words[0]}></Note>
+                            <Note omitOriginal portions={portions}></Note>
                         </motion.div>
                     </motion.div>
-                    {words[0][2] && prompt && Save}
+                    {portions[2] && prompt && Save}
                 </div>
             </CardBody>
         </Card>
@@ -173,8 +172,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
                             >
-                                {words[0][0]}
-                                {isReaderMode && words[0][2] && <>
+                                {portions[0]}
+                                {isReaderMode && portions[2] && <>
                                     <label htmlFor={uid} className='margin-toggle sidenote-number'></label>
                                     <input type='checkbox' id={uid} className='margin-toggle' />
                                 </>}
@@ -185,11 +184,11 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
-                                ? words.map((portions, index) => <div key={portions[1]}>
+                                ? <div>
                                     <Note portions={portions}></Note>
-                                    <Spacer y={4}></Spacer>
+                                    {(!disableSave || (deleteId && deleteId !== 'undefined') || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <div className='flex gap-2'>
-                                        {index === 0 ? Save : <></>}
+                                        {!disableSave && Save}
                                         {deleteId && deleteId !== 'undefined' && <>
                                             <Button
                                                 isDisabled={status === 'deleted'}
@@ -203,9 +202,9 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                                 }}
                                             >从语料本删除</Button>
                                         </>}
-                                        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${words[0][1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
+                                        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
                                     </div>
-                                </div>)
+                                </div>
                                 : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-4/5 rounded-lg h-3'></Skeleton>
@@ -217,8 +216,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 </PopoverContent>
             </Popover>
             {
-                isReaderMode && words[0][2] && <span className='sidenote text-sm'>
-                    <Note portions={words[0]} isCompact></Note>
+                isReaderMode && portions[2] && <span className='sidenote text-sm'>
+                    <Note portions={portions} isCompact></Note>
                 </span>
             }
         </>

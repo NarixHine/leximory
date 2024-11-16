@@ -184,6 +184,7 @@ function QuickReview() {
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         placement='top-end'
+        shadow='sm'
       >
         <PopoverTrigger>
           <Badge
