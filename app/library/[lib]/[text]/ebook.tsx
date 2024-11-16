@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Popover, PopoverTrigger, PopoverContent, Spacer } from '@nextui-org/react'
+import { Button, Popover, PopoverTrigger, PopoverContent, Spacer, CircularProgress } from '@nextui-org/react'
 import type { Contents, Rendition } from 'epubjs'
 import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
@@ -43,8 +43,9 @@ export default function Ebook() {
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
-    const [prompt, setPrompt] = useState<string | null>(null)
 
+    const [prompt, setPrompt] = useState<string | null>(null)
+    const [page, setPage] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
     const theme = useSystemColorMode()
     useEffect(() => {
@@ -116,12 +117,20 @@ export default function Ebook() {
                 </div>
                 <ReactReader
                     key={isFullViewport ? 'full' : 'normal'}
-                    title={title}
+                    title={`${title}${page ? ` — ${page}` : ''}`}
+                    loadingView={
+                        <CircularProgress color='primary' size='lg' className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' />
+                    }
                     isRTL={lang === 'ja'}
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
+
+                        if (themeRendition.current) {
+                            const { displayed } = themeRendition.current.location.start
+                            setPage(lang === 'ja' ? `${displayed.page}/${displayed.total} ページ目` : `At ${displayed.page}/${displayed.total} in Chapter`)
+                        }
                     }}
                     getRendition={rendition => {
                         updateTheme(rendition, theme)
