@@ -9,7 +9,7 @@ import { Button, Spacer, Input, Tooltip, Snippet, Divider, Badge, Popover, Popov
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone } from 'react-icons/pi'
+import { PiBookOpenDuotone, PiKanbanDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone } from 'react-icons/pi'
 import { saveContentAndTopics } from './actions'
 import MdEditor from '@/components/editor'
 import Topics from '@/components/topics'
@@ -197,7 +197,7 @@ function QuickReview() {
               onPress={() => setIsOpen(true)}
               variant='flat'
               color='secondary'
-              startContent={<PiBookBookmarkDuotone />}
+              startContent={<PiKanbanDuotone />}
             >
             </Button>
           </Badge>
