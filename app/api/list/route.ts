@@ -14,5 +14,5 @@ export async function POST(request: Request) {
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
     const libs = await xata.db.libraries.filter({ owner: sub }).getMany()
 
-    return NextResponse.json(libs.map(lib => ({ id: lib.id, name: lib.name })))
+    return NextResponse.json(Object.fromEntries(libs.map(lib => [lib.name, lib.id])))
 }
