@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import DefineImg from './define.png'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
-import { PiMailboxDuotone, PiTelevisionDuotone, PiGithubLogoDuotone } from 'react-icons/pi'
+import { PiMailboxDuotone, PiTelevisionDuotone, PiGithubLogoDuotone, PiAppleLogoDuotone } from 'react-icons/pi'
 import { cn, stringToColor } from '@/lib/utils'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -71,6 +71,16 @@ const Footer = () => {
                         href='mailto:hi@leximory.com'
                         isIconOnly
                         startContent={<PiMailboxDuotone />}
+                        as={Link}
+                        className='text-lg text-danger-700'
+                    ></Button>
+                     <Button
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='https://www.icloud.com/shortcuts/b90409348c9e4a63b3eb1bae601a45a7'
+                        isIconOnly
+                        startContent={<PiAppleLogoDuotone />}
                         as={Link}
                         className='text-lg text-danger-700'
                     ></Button>
