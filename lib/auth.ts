@@ -13,8 +13,8 @@ const getAuthOrThrow = () => {
 
 // auth access to libs
 
-export const authWriteToLib = async (lib: string) => {
-    const { xata, userId, orgId, orgRole } = getAuthOrThrow()
+export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
+    const { xata, userId, orgId, orgRole } = explicitUserId ? { userId: explicitUserId, orgId: undefined, orgRole: undefined, xata: getXataClient() } : getAuthOrThrow()
     const rec = await xata.db.libraries.select(['lang']).filter({
         $all: [
             { id: lib },
