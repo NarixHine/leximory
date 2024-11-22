@@ -1,6 +1,7 @@
 import { Readable } from 'stream'
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { z } from 'zod'
 
 export function stringToColor(input: string) {
     const colors = ['secondary', 'warning', 'danger', 'primary'] as const
@@ -53,4 +54,11 @@ export function getClickedChunk(element: HTMLElement): string {
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
+}
+
+export async function parseBody<T>(request: Request, schema: z.ZodSchema<T>) {
+    const body = await request.json()
+    const { success, data } = schema.safeParse(body)
+    if (!success) { throw new Error('Invalid request body') }
+    return data
 }
