@@ -9,7 +9,8 @@ Leximory integrates features like:
 - One-click **foreign publication importing**,
 - AI-driven targeted **annotations with etymologies**, 
 - **Combination of listening** with reading, 
-- **Easy reviewing** of saved words. 
+- **Easy reviewing** of saved words,
+- Save a word through our **iOS Shortcuts Integration**.
 
 The platform supports collaborative learning with **shared libraries and study groups**, making it ideal for both individual learners and academic settings.
 

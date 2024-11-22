@@ -49,14 +49,16 @@ function Navbar({ userId: defaultUserId }: {
 										labelIcon={<PiKeyBold size={16} />}
 										onClick={async () => {
 											const toastId = toast.loading('获取密钥中...')
-											const token = await getToken({ template: 'shortcut' })
-											try {
-												await navigator.clipboard.writeText(token!)
-											} catch (e) {
-												alert(token)
-											}
-											toast.dismiss(toastId)
-											toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
+											getToken({ template: 'shortcut' }).then(token => {
+												if (navigator.clipboard && token) {
+													navigator.clipboard.writeText(token)
+												} else {
+													toast.error('复制失败')
+												}
+											}).finally(() => {
+												toast.dismiss(toastId)
+												toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
+											})
 										}}
 									/>
 								</UserButton.MenuItems>
