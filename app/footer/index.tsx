@@ -78,7 +78,7 @@ const Footer = () => {
                         size='sm'
                         variant='light'
                         radius='full'
-                        href='https://www.icloud.com/shortcuts/b90409348c9e4a63b3eb1bae601a45a7'
+                        href='/blog/ios-shortcuts'
                         isIconOnly
                         startContent={<PiAppleLogoDuotone />}
                         as={Link}

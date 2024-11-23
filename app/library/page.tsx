@@ -74,6 +74,7 @@ export default async function Page() {
             await xata.db.libraries.update(id, typeof org === 'string'
                 ? {
                     org: org === 'none' ? null : org,
+                    shortcut: form.get('shortcut') === 'true',
                     name: form.get('name') as string,
                     access: libAccessStatusMap[access],
                 } : {
@@ -145,6 +146,7 @@ export default async function Page() {
 
             {summaries.map(({ lib, count }) => lib && (
                 <Library
+                    shortcut={lib.shortcut}
                     del={del.bind(null, lib.id)}
                     save={save.bind(null, lib.id)}
                     access={lib.access}

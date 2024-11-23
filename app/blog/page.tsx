@@ -9,10 +9,11 @@ export default function BlogHome() {
     const posts = [
         { title: 'The Inspiration, Creation and Mission of Leximory', date: '2024-07-20', slug: 'summer-hackathon' },
         { title: '“边听边阅览”功能导引', date: '2024-07-18', slug: 'reading-while-listening' },
-        { title: '从记忆到心会', date: '2024-07-15', slug: 'from-memorisation-to-acquisition' }
-    ]
+        { title: '从记忆到心会', date: '2024-07-15', slug: 'from-memorisation-to-acquisition' },
+        { title: '利用 iOS Shortcuts 快捷保存词汇', date: '2024-11-23', slug: 'ios-shortcuts' },
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return <Main>
-        <div className='border-l-2 border-l-danger/50 px-3 not-prose'>
+        <div className='border-l-2 border-l-danger/50 px-3 not-prose -mt-10'>
             <H disableCenter className={cn('text-danger text-4xl', ENGLISH_PLAYFAIR.className)}>
                 The Leximory Blog
             </H>
