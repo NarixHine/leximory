@@ -41,6 +41,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
     const router = useRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
+        .concat(shortcut ? ['快捷保存'] : [])
 
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
