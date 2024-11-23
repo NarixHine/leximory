@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody } from '@nextui-org/react'
+import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody, Textarea } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiArrowCounterClockwiseDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiArrowCounterClockwiseDuotone, PiPencilDuotone, PiXCircleDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -29,6 +29,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const isReaderMode = useAtomValue(isReaderModeAtom)
+    const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
 
     const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '').replaceAll('\n', '\\n')).map((param: string) => param.replaceAll('\\n', '\n')) as string[]
@@ -37,6 +38,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
     const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
     const [savedId, setSavedId] = useState<string | null>(null)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editedPortions, setEditedPortions] = useState<string[]>([])
 
     useEffect(() => {
         setIsLoaded(!isOnDemand)
@@ -83,10 +86,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
     }, [isOnDemand, isLoaded, prompt])
 
-    const lang = useAtomValue(langAtom)
     const uid = randomID()
-    const Save = <>
-        <Button
+    const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
+    const Save = () => <div className='flex gap-2'>
+        {!disableSave && !isEditing && !isReadOnly && <Button
             size='sm'
             isDisabled={status === 'saved' && !savedId}
             isLoading={status === 'loading'}
@@ -121,8 +124,55 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             }}
         >
             {savedId ? '撤销' : '保存至语料本'}
-        </Button>
-    </>
+        </Button>}
+        {editId && !isReadOnly && <>
+            <Button
+                isDisabled={status === 'deleted'}
+                size='sm'
+                startContent={isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />}
+                color='primary'
+                variant='flat'
+                onClick={() => {
+                    if (isEditing) {
+                        saveComment(editedPortions, lib, editId).then(() => {
+                            setPortions(editedPortions)
+                            setIsEditing(false)
+                            toast.success('更新成功')
+                        }).catch(() => {
+                            toast.error('保存失败')
+                        })
+                    } else {
+                        setEditedPortions([...portions])
+                        setIsEditing(true)
+                    }
+                }}
+            >{isEditing ? '保存' : '编辑'}</Button>
+            {isEditing && (
+                <Button
+                    size='sm'
+                    color='warning'
+                    variant='flat'
+                    startContent={<PiXCircleDuotone />}
+                    onClick={() => {
+                        setIsEditing(false)
+                        setEditedPortions([])
+                    }}
+                >取消</Button>
+            )}
+            {editId && !isEditing && <Button
+                isDisabled={status === 'deleted'}
+                size='sm'
+                startContent={<PiTrashDuotone />}
+                color='danger'
+                variant='flat'
+                onClick={async () => {
+                    await delComment(editId)
+                    setStatus('deleted')
+                }}
+            >从语料本删除</Button>}
+        </>}
+        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
+    </div>
 
     return asCard
         ? <Card shadow='sm' fullWidth radius='sm'>
@@ -150,10 +200,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             animate={{ opacity: isVisible ? 1 : 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Note omitOriginal portions={portions}></Note>
+                            <Note omitOriginal portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                         </motion.div>
                     </motion.div>
-                    {portions[2] && prompt && Save}
+                    {portions[2] && prompt && <Save />}
                 </div>
             </CardBody>
         </Card>
@@ -185,25 +235,9 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         {
                             isLoaded
                                 ? <div>
-                                    <Note portions={portions}></Note>
+                                    <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                                     {(!disableSave || (deleteId && deleteId !== 'undefined') || lang === 'en') && <Spacer y={4}></Spacer>}
-                                    <div className='flex gap-2'>
-                                        {!disableSave && Save}
-                                        {deleteId && deleteId !== 'undefined' && <>
-                                            <Button
-                                                isDisabled={status === 'deleted'}
-                                                size='sm'
-                                                startContent={<PiTrashDuotone />}
-                                                color='danger'
-                                                variant='flat'
-                                                onClick={async () => {
-                                                    await delComment(deleteId)
-                                                    setStatus('deleted')
-                                                }}
-                                            >从语料本删除</Button>
-                                        </>}
-                                        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
-                                    </div>
+                                    <Save />
                                 </div>
                                 : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
@@ -217,40 +251,78 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             </Popover>
             {
                 isReaderMode && portions[2] && <span className='sidenote text-sm'>
-                    <Note portions={portions} isCompact></Note>
+                    <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                 </span>
             }
         </>
 }
 
-function Note({ portions, isCompact, omitOriginal }: {
+function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, onEdit }: {
     portions: string[]
     isCompact?: boolean
     omitOriginal?: boolean
+    isEditing?: boolean
+    editedPortions?: string[]
+    onEdit?: (portions: string[]) => void
 }) {
     const margin = isCompact ? 'mt-1' : 'my-2'
+
+    const handleEdit = (index: number, value: string) => {
+        if (onEdit && editedPortions) {
+            const newPortions = [...editedPortions]
+            newPortions[index] = value
+            onEdit(newPortions)
+        }
+    }
+
     return (<div className={isCompact ? 'leading-tight' : ''}>
-        {
-            !omitOriginal && <div className={isCompact ? 'font-bold text-[0.8rem]' : 'font-extrabold text-large'}>{portions[1]}</div>
-        }
-        {
-            portions[2] && <div className={margin}>
-                {!isCompact && <div className='font-bold'>释义</div>}
-                <Markdown className='before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
-            </div>
-        }
-        {
-            portions[3] && <div className={margin}>
-                {!isCompact && <div className='font-bold'>语源</div>}
-                <Markdown>{portions[3]}</Markdown>
-            </div>
-        }
-        {
-            portions[4] && <div className={margin}>
-                {!isCompact && <div className='font-bold'>同源词</div>}
-                <Markdown>{portions[4]}</Markdown>
-            </div>
-        }
+        {!omitOriginal && (
+            isEditing
+                ? <Textarea
+                    size='sm'
+                    value={editedPortions?.[1] || ''}
+                    onChange={(e) => handleEdit(1, e.target.value)}
+                    className='mb-2'
+                    placeholder='词条'
+                />
+                : <div className={isCompact ? 'font-bold text-[0.8rem]' : 'font-extrabold text-large'}>{portions[1]}</div>
+        )}
+        {portions[2] && <div className={margin}>
+            {!isCompact && <div className='font-bold'>释义</div>}
+            {isEditing
+                ? <Textarea
+                    size='sm'
+                    value={editedPortions?.[2] || ''}
+                    onChange={(e) => handleEdit(2, e.target.value)}
+                    placeholder='释义'
+                />
+                : <Markdown className='before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
+            }
+        </div>}
+        {portions[3] && <div className={margin}>
+            {!isCompact && <div className='font-bold'>语源</div>}
+            {isEditing
+                ? <Textarea
+                    size='sm'
+                    value={editedPortions?.[3] || ''}
+                    onChange={(e) => handleEdit(3, e.target.value)}
+                    placeholder='语源'
+                />
+                : <Markdown>{portions[3]}</Markdown>
+            }
+        </div>}
+        {portions[4] && <div className={margin}>
+            {!isCompact && <div className='font-bold'>同源词</div>}
+            {isEditing
+                ? <Textarea
+                    size='sm'
+                    value={editedPortions?.[4] || ''}
+                    onChange={(e) => handleEdit(4, e.target.value)}
+                    placeholder='同源词'
+                />
+                : <Markdown>{portions[4]}</Markdown>
+            }
+        </div>}
     </div>)
 }
 
