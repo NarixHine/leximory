@@ -19,8 +19,7 @@ export async function POST(request: Request) {
 
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
     const { lang } = await authWriteToLib(lib, sub)
-    const firstWord = word.split(/\s+/)[0].replace(/[^\p{L}\p{N}]/gu, '')
-    await xata.db.lexicon.create({ lib, word: `{{${lang === 'en' ? originals(firstWord)[0] : firstWord}}}` })
+    await xata.db.lexicon.create({ lib, word: `{{${lang === 'en' ? originals(word)[0] : word}}}` })
     revalidatePath(`/library/${lib}/corpus`)
 
     return NextResponse.json({ success: true })

@@ -28,7 +28,7 @@ function Navbar({ userId: defaultUserId }: {
 	const { getToken } = useAuth()
 
 	return !isReaderMode && <div className='px-10 pt-3 pb-1 sticky top-0 z-20'>
-		<NextUINavbar className='rounded-full border-1.5 border-primary-300/50 dark:border-danger-100/50 h-14'>
+		<NextUINavbar className='rounded-full border-1 border-primary-300/50 dark:border-danger-100/50 h-14'>
 			<NavbarBrand className='space-x-2'>
 				<Image src={Logo} alt='Leximory' width={24} height={24} quality={100} onClick={() => {
 					router.push(userId ? '/library' : '/')
