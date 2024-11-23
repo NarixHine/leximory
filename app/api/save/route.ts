@@ -1,4 +1,5 @@
 import { authWriteToLib } from '@/lib/auth'
+import { originals } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { XataClient } from '@/lib/xata'
 import { verifyToken } from '@clerk/nextjs/server'
@@ -17,8 +18,9 @@ export async function POST(request: Request) {
     const { lib, token, word } = await parseBody(request, schema)
 
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
-    await authWriteToLib(lib, sub)
-    await xata.db.lexicon.create({ lib, word: `{{${word}}}` })
+    const { lang } = await authWriteToLib(lib, sub)
+    const firstWord = word.split(/\s+/)[0].replace(/[^\p{L}\p{N}]/gu, '')
+    await xata.db.lexicon.create({ lib, word: `{{${lang === 'en' ? originals(firstWord)[0] : firstWord}}}` })
     revalidatePath(`/library/${lib}/corpus`)
 
     return NextResponse.json({ success: true })

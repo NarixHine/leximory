@@ -23,7 +23,7 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, orgs }: {
+function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, orgs, shortcut }: {
     id: string,
     name: string,
     access: number,
@@ -35,6 +35,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
     del?: () => Promise<void>,
     isOwner: boolean,
     orgId: string | null | undefined,
+    shortcut: boolean,
     orgs: { label: string, name: string }[]
 }) {
     const router = useRouter()
@@ -101,6 +102,18 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
                     label: '无',
                     name: 'none'
                 }),
+                isAdvanced: true
+            }, {
+                name: 'shortcut',
+                label: 'iOS Shortcuts',
+                value: shortcut ? 'true' : 'false',
+                options: [{
+                    name: 'true',
+                    label: '显示于快捷保存选项'
+                }, {
+                    name: 'false',
+                    label: '不显示'
+                }],
                 isAdvanced: true
             }]}></Options>}
     </div>)

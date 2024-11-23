@@ -12,7 +12,7 @@ const schema = z.object({
 export async function POST(request: Request) {
     const { token } = await parseBody(request, schema)
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
-    const libs = await xata.db.libraries.filter({ owner: sub }).getMany()
+    const libs = await xata.db.libraries.filter({ owner: sub, shortcut: true }).getMany()
 
     return NextResponse.json(Object.fromEntries(libs.map(lib => [lib.name, lib.id])))
 }

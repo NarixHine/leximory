@@ -34,6 +34,12 @@
         {
           "name": "org",
           "type": "string"
+        },
+        {
+          "name": "shortcut",
+          "type": "bool",
+          "notNull": true,
+          "defaultValue": "false"
         }
       ],
       "revLinks": [
@@ -101,23 +107,6 @@
           "file": {
             "defaultPublicAccess": true
           }
-        }
-      ]
-    },
-    {
-      "name": "ecdict",
-      "columns": [
-        {
-          "name": "word",
-          "type": "string"
-        },
-        {
-          "name": "phonetic",
-          "type": "string"
-        },
-        {
-          "name": "translation",
-          "type": "text"
         }
       ]
     },

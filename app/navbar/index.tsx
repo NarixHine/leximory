@@ -47,17 +47,23 @@ function Navbar({ userId: defaultUserId }: {
 									<UserButton.Action
 										label='拷贝通行密钥'
 										labelIcon={<PiKeyBold size={16} />}
-										onClick={async () => {
+										onClick={() => {
 											const toastId = toast.loading('获取密钥中...')
-											getToken({ template: 'shortcut' }).then(token => {
+											getToken({ template: 'shortcut' }).then(async token => {
 												if (navigator.clipboard && token) {
 													navigator.clipboard.writeText(token)
+														.then(() => {
+															toast.dismiss(toastId)
+															toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
+														})
+														.catch(() => {
+															toast.dismiss(toastId)
+															toast.error('复制失败')
+														})
 												} else {
+													toast.dismiss(toastId)
 													toast.error('复制失败')
 												}
-											}).finally(() => {
-												toast.dismiss(toastId)
-												toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
 											})
 										}}
 									/>
