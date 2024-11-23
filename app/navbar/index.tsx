@@ -48,7 +48,7 @@ function Navbar({ userId: defaultUserId }: {
 										label='拷贝通行密钥'
 										labelIcon={<PiKeyBold size={16} />}
 										onClick={() => {
-											const toastId = toast.loading('获取密钥中...')
+											const toastId = toast.loading('获取密钥中...', { duration: 1000 })
 											getToken({ template: 'shortcut' }).then(async token => {
 												if (navigator.clipboard && token) {
 													navigator.clipboard.writeText(token)
