@@ -283,7 +283,7 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
                     onChange={(e) => handleEdit(2, e.target.value)}
                     placeholder='释义'
                 />
-                : <Markdown className='before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
+                : <Markdown className='prose-em:font-light before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
             }
         </div>}
         {portions[3] && <div className={margin}>
