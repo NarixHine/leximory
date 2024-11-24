@@ -1,5 +1,5 @@
 import { authWriteToLib } from '@/lib/auth'
-import { originals } from '@/lib/lang'
+import { originals, validateOrThrow } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { XataClient } from '@/lib/xata'
 import { verifyToken } from '@clerk/nextjs/server'
@@ -16,6 +16,7 @@ const schema = z.object({
 
 export async function POST(request: Request) {
     const { lib, token, word } = await parseBody(request, schema)
+    validateOrThrow(word)
 
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
     const { lang } = await authWriteToLib(lib, sub)

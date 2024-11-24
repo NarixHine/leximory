@@ -4,7 +4,7 @@
 import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody, Textarea } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiArrowCounterClockwiseDuotone, PiPencilDuotone, PiXCircleDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -31,7 +31,6 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
-
     const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '').replaceAll('\n', '\\n')).map((param: string) => param.replaceAll('\\n', '\n')) as string[]
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
@@ -89,38 +88,24 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const uid = randomID()
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
     const Save = () => <div className='flex gap-2'>
-        {!disableSave && !isEditing && !isReadOnly && <Button
+        {!disableSave && !isEditing && !isReadOnly && status !== 'saved' && <Button
             size='sm'
-            isDisabled={status === 'saved' && !savedId}
             isIconOnly
             isLoading={status === 'loading'}
-            startContent={status === 'saved'
-                ? (savedId ? <PiArrowCounterClockwiseDuotone /> : <PiCheckCircleDuotone />)
-                : (status !== 'loading' && <PiBookBookmarkDuotone />)}
-            color={status === 'saved' && savedId ? 'secondary' : 'primary'}
+            startContent={status !== 'loading' && <PiBookBookmarkDuotone />}
+            color={'primary'}
             variant='flat'
             onClick={async () => {
-                if (status === 'saved' && savedId) {
-                    // Undo save
-                    setStatus('loading')
-                    try {
-                        await delComment(savedId)
-                        setStatus('')
-                        setSavedId(null)
-                    } catch (error) {
-                        setStatus('saved')
-                    }
-                } else {
-                    // Save comment
-                    setStatus('loading')
-                    try {
-                        const savedId = await saveComment(portions, lib)
-                        setStatus('saved')
-                        setSavedId(savedId)
-                        setRecentWords((prev) => [...new Set([...prev, extractSaveForm(portions)])])
-                    } catch (error) {
-                        setStatus('')
-                    }
+                // Save comment
+                setStatus('loading')
+                try {
+                    const savedId = await saveComment(portions, lib)
+                    setStatus('saved')
+                    setSavedId(savedId)
+                    setRecentWords((prev) => [...new Set([...prev, extractSaveForm(portions)])])
+                } catch (error) {
+                    setStatus('')
+                    toast.error('保存失败')
                 }
             }}
         ></Button>}

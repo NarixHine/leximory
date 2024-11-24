@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib } from '@/lib/auth'
-import { extractSaveForm } from '@/lib/lang'
+import { extractSaveForm, validateOrThrow } from '@/lib/lang'
 import { getXataClient } from '@/lib/xata'
 import { revalidatePath } from 'next/cache'
 
@@ -15,10 +15,7 @@ export async function delComment(id: string) {
 export async function saveComment(portions: string[], lib: string, editId?: string) {
     const xata = getXataClient()
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
-    const wordIsValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
-    if (!wordIsValid) {
-        throw new Error('Invalid word')
-    }
+    validateOrThrow(word)
 
     await authWriteToLib(lib)
     const { id } = await xata.db.lexicon.createOrUpdate({

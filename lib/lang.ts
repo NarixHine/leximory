@@ -6,6 +6,14 @@ export function extractSaveForm(portions: string[]) {
     return [comment[0]].concat(comment)
 }
 
+export function validateOrThrow(word: string) {
+    const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
+    if (!isValid) {
+        throw new Error('Invalid word')
+    }
+    return word
+}
+
 export const originals = (word: string): string[] => [...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)])]
 
 export default function wrap(text: string, lexicon?: CustomLexicon): string {
