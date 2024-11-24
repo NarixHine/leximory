@@ -92,6 +92,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         {!disableSave && !isEditing && !isReadOnly && <Button
             size='sm'
             isDisabled={status === 'saved' && !savedId}
+            isIconOnly
             isLoading={status === 'loading'}
             startContent={status === 'saved'
                 ? (savedId ? <PiArrowCounterClockwiseDuotone /> : <PiCheckCircleDuotone />)
@@ -122,13 +123,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     }
                 }
             }}
-        >
-            {savedId ? '撤销' : '保存至语料本'}
-        </Button>}
+        ></Button>}
         {editId && !isReadOnly && <>
             <Button
                 isDisabled={status === 'deleted'}
                 size='sm'
+                isIconOnly
                 startContent={isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />}
                 color='primary'
                 variant='flat'
@@ -146,22 +146,24 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         setIsEditing(true)
                     }
                 }}
-            >{isEditing ? '保存' : '编辑'}</Button>
+            ></Button>
             {isEditing && (
                 <Button
                     size='sm'
                     color='warning'
                     variant='flat'
                     startContent={<PiXCircleDuotone />}
+                    isIconOnly
                     onClick={() => {
                         setIsEditing(false)
                         setEditedPortions([])
                     }}
-                >取消</Button>
+                ></Button>
             )}
             {editId && !isEditing && <Button
                 isDisabled={status === 'deleted'}
                 size='sm'
+                isIconOnly
                 startContent={<PiTrashDuotone />}
                 color='danger'
                 variant='flat'
@@ -169,7 +171,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     await delComment(editId)
                     setStatus('deleted')
                 }}
-            >从语料本删除</Button>}
+            ></Button>}
         </>}
         {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
     </div>
