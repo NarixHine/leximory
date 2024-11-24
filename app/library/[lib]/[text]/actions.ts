@@ -103,7 +103,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
             ${instruction[lang]}
             `,
-            prompt: `下文中只有一个加双重中括号的语块，你仅需要依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但***必须在语境义部分附上该词的例句（不要加双竖线）***。形如 word||original||meaning here: *an example sentence*${lang === 'en' ? '||etymology||cognates' : ''}${lang === 'ja' ? '||etymology' : ''}$，参考范例。必须注解包裹的完整语块，不得截断，也不要附带原文和前后句。\n${lang === 'en' ? '例如如果双重中括号内是“break it down”，则对短语“break down”进行注解，而不是“break”或“break it down”。你必须在注解中附带语源，禁止省略。\n' : ''}\n\n${prompt}`,
+            prompt: `下文中只有一个加双重中括号的语块，你仅需要依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但***必须在语境义部分附上该词的例句（不要在释义和例句间加双竖线）***。形式如 word||original||meaning here: *an example sentence*${lang === 'en' ? '||etymology||cognates' : ''}${lang === 'ja' ? '||etymology' : ''}$。必须注解包裹的完整语块，不得截断，也不要附带原文和前后句。\n${lang === 'en' ? '例如如果双重中括号内是“break it down”，则对短语“break down”进行注解，而不是“break”或“break it down”。你必须在注解中附带语源，禁止省略。\n' : ''}\n\n${prompt}`,
             maxTokens: 1000
         })
 
