@@ -15,12 +15,13 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-    const { lib, token, word } = await parseBody(request, schema)
-    validateOrThrow(word)
+    const { lib, token, word: original } = await parseBody(request, schema)
 
+    const word = `{{${lang === 'en' ? originals(word)[0] : word}}}`
+    validateOrThrow(word)
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
     const { lang } = await authWriteToLib(lib, sub)
-    await xata.db.lexicon.create({ lib, word: `{{${lang === 'en' ? originals(word)[0] : word}}}` })
+    await xata.db.lexicon.create({ lib, word })
     revalidatePath(`/library/${lib}/corpus`)
 
     return NextResponse.json({ success: true })
