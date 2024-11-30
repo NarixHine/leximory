@@ -34,7 +34,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 						<RenderingBoundary>
 							<Toaster toastOptions={{
 								classNames: {
-									toast: cn('bg-primary-200 text-primary-900 dark:bg-danger-800 dark:border-0 dark:text-primary-100', CHINESE_ZCOOL.className),
+									toast: cn('bg-primary-200 text-primary-900 dark:border-0 dark:text-primary-100', CHINESE_ZCOOL.className),
 								}
 							}}></Toaster>
 							<PWAPrompt copyTitle='将 Leximory 添加到主屏幕' copyDescription='在主屏幕上快速访问 Leximory PWA' copySubtitle='https://leximory.com/' copyShareStep='点击右上角分享按钮' copyAddToHomeScreenStep='点击“添加到主屏幕”' appIconPath='/apple-touch-icon.png' />
