@@ -9,9 +9,9 @@ import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
-import { recentWordsAtom } from '@/app/library/[lib]/[text]/atoms'
+import { contentAtom, recentWordsAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { delComment, saveComment } from './actions'
+import { delComment, modifyText, saveComment } from './actions'
 import { extractSaveForm } from '@/lib/lang'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -27,6 +27,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     prompt?: string
 }) {
     const lib = useAtomValue(libAtom)
+    const content = useAtomValue(contentAtom)
+    const text = useAtomValue(textAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const lang = useAtomValue(langAtom)
@@ -120,6 +122,9 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 onClick={() => {
                     if (isEditing) {
                         saveComment(editedPortions, lib, editId).then(() => {
+                            if (content && text) {
+                                modifyText(text, content.replaceAll(`{{${portions.join('||')}}}`, `{{${editedPortions.join('||')}}}`))
+                            }
                             setPortions(editedPortions)
                             setIsEditing(false)
                             toast.success('更新成功')
@@ -288,14 +293,15 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
         </div>}
         {portions[3] && <div className={margin}>
             {!isCompact && <div className='font-bold'>语源</div>}
-            {isEditing
-                ? <Textarea
-                    size='sm'
-                    value={editedPortions?.[3] || ''}
-                    onChange={(e) => handleEdit(3, e.target.value)}
-                    placeholder='语源'
-                />
-                : <Markdown>{portions[3]}</Markdown>
+            {
+                isEditing
+                    ? <Textarea
+                        size='sm'
+                        value={editedPortions?.[3] || ''}
+                        onChange={(e) => handleEdit(3, e.target.value)}
+                        placeholder='语源'
+                    />
+                    : <Markdown>{portions[3]}</Markdown>
             }
         </div>}
         {portions[4] && <div className={margin}>
