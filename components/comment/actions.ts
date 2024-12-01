@@ -3,7 +3,6 @@
 import { authWriteToLib } from '@/lib/auth'
 import { extractSaveForm, validateOrThrow } from '@/lib/lang'
 import { getXataClient } from '@/lib/xata'
-import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -32,5 +31,4 @@ export async function modifyText(id: string, modifiedText: string) {
     await xata.db.texts.update(id, {
         content: modifiedText,
     })
-    revalidatePath(`/library/${text.lib!.id}/${id}`)
 }

@@ -33,7 +33,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
-    const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '').replaceAll('\n', '\\n')).map((param: string) => param.replaceAll('\\n', '\n')) as string[]
+    const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '')) as string[]
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
@@ -116,19 +116,23 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isDisabled={status === 'deleted'}
                 size='sm'
                 isIconOnly
-                startContent={isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />}
+                isLoading={status === 'loading' && isEditing}
+                startContent={status !== 'loading' && (isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />)}
                 color='primary'
                 variant='flat'
                 onClick={() => {
                     if (isEditing) {
-                        saveComment(editedPortions, lib, editId).then(() => {
+                        setStatus('loading')
+                        saveComment(editedPortions, lib, editId).then(async () => {
                             if (content && text) {
-                                modifyText(text, content.replaceAll(`{{${portions.join('||')}}}`, `{{${editedPortions.join('||')}}}`))
+                                await modifyText(text, content.replaceAll(`{{${portions.filter(Boolean).join('||')}}}`, `{{${editedPortions.filter(Boolean).join('||')}}}`))
                             }
                             setPortions(editedPortions)
                             setIsEditing(false)
+                            setStatus('saved')
                             toast.success('更新成功')
                         }).catch(() => {
+                            setStatus('saved')
                             toast.error('保存失败')
                         })
                     } else {
