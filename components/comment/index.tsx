@@ -4,7 +4,7 @@
 import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody, Textarea } from '@nextui-org/react'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -177,13 +177,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 <div className='relative'>
                     {!isVisible && (
                         <Button
-                            variant='flat'
+                            variant='ghost'
+                            isIconOnly
+                            startContent={<PiEyesDuotone />}
                             color='secondary'
-                            className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10'
+                            className='absolute rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10'
                             onClick={() => setIsVisible(!isVisible)}
-                        >
-                            显示词义
-                        </Button>
+                        ></Button>
                     )}
                     <motion.div
                         transition={{ duration: 0.5 }}

@@ -3,10 +3,10 @@ import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import Navbar from '@/app/navbar'
 import { defaultFontFamily } from '@/lib/fonts'
-import Footer from '@/app/footer'
 import { auth } from '@clerk/nextjs/server'
 import Script from 'next/script'
 import type { ReactNode } from 'react'
+import Dock from './dock'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -59,7 +59,7 @@ export default function RootLayout({
 					<div className='relative flex flex-col'>
 						<Navbar userId={userId} />
 						{children}
-						<Footer />
+						<Dock />
 					</div>
 				</Providers>
 			</body>

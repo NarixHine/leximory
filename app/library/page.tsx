@@ -123,10 +123,6 @@ export default async function Page() {
         <H className='text-5xl'>文库</H>
         <Spacer y={8}></Spacer>
         <div className='flex flex-col gap-4'>
-            <div className='w-full'>
-                <DailyCard></DailyCard>
-            </div>
-
             <div className='grid grid-cols-2 justify-center gap-4'>
                 <Suspense fallback={<GradientCard title={'本月 AI 注解额度'}></GradientCard>}>
                     <CommentaryQuotaCard />
