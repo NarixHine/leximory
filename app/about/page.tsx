@@ -12,10 +12,12 @@ import { TypeAnimation } from 'react-type-animation'
 export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
-            <h1 className={cn('text-danger mt-12 text-5xl font-mono')}>
+            <h1 className={cn('text-danger dark:text-danger-800 mt-12 text-5xl font-mono')}>
                 <TypeAnimation
                     sequence={[
-                        'About Leximory',
+                        'About Us',
+                        500,
+                        'How to Use Leximory',
                         1000,
                     ]}
                     speed={50}
@@ -129,7 +131,7 @@ export default function About() {
                             <GradientCard
                                 title='iOS Shortcut'
                                 text='在苹果设备上快速保存单词'
-                                gradient='bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-700 dark:to-primary-800'
+                                gradient='bg-gradient-to-br from-primary-200 to-primary-300'
                             >
                                 <PiAppleLogoDuotone className='text-2xl opacity-60' />
                             </GradientCard>
@@ -143,8 +145,8 @@ export default function About() {
                     >
                         <GradientCard
                             title='导入电子书'
-                            text='能注解文章，还还能边读边注解电子书'
-                            gradient='bg-gradient-to-br from-secondary-200 to-secondary-300 dark:from-secondary-700 dark:to-secondary-800'
+                            text='能注解文章，还能边读书边注解'
+                            gradient='bg-gradient-to-br from-secondary-200 to-secondary-300'
                         >
                             <PiBookOpenDuotone className='text-2xl opacity-60' />
                         </GradientCard>
@@ -159,7 +161,7 @@ export default function About() {
                             <GradientCard
                                 title='边听边读'
                                 text='听觉是语言认知的另一个维度，与视觉相辅相成'
-                                gradient='bg-gradient-to-br from-warning-200 to-warning-300 dark:from-warning-700 dark:to-warning-800'
+                                gradient='bg-gradient-to-br from-warning-200 to-warning-300'
                             >
                                 <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                             </GradientCard>
@@ -175,7 +177,7 @@ export default function About() {
                             <GradientCard
                                 title='PWA 支持'
                                 text='下载到主屏幕后离线访问与阅读'
-                                gradient='bg-gradient-to-br from-danger-200 to-danger-300 dark:from-danger-700 dark:to-danger-800'
+                                gradient='bg-gradient-to-br from-danger-200 to-danger-300'
                             >
                                 <PiDeviceMobileDuotone className='text-2xl opacity-60' />
                             </GradientCard>
@@ -188,7 +190,7 @@ export default function About() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.6 }}
                 >
-                    一个演示视频：
+                    核心功能的演示视频：
                 </motion.p>
                 <iframe className='rounded my-4' height={400} src='//player.bilibili.com/player.html?isOutside=true&aid=113248456147712&bvid=BV15V4FeEEqt&cid=26137266223&p=1' width={'100%'}></iframe>
             </article>

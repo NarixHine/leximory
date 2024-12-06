@@ -19,7 +19,7 @@ const GradientCard = ({ text, gradient, title, children }: {
                     ? <p className='opacity-50'>{text}</p>
                     : <Skeleton className='h-2 w-2/3 max-w-30 my-3 rounded-lg opacity-50' />
             }
-            <div className='absolute bottom-0 right-0 p-4'>
+            <div className='absolute bottom-0 right-0 p-3'>
                 {children}
             </div>
         </div>
