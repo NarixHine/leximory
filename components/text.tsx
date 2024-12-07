@@ -1,6 +1,7 @@
 'use client'
 
-import { Card, CardBody, CardFooter, Chip } from '@nextui-org/react'
+import { Card, CardBody, CardFooter } from '@nextui-org/card'
+import { Chip } from '@nextui-org/chip'
 import Options from './options'
 import { useRouter } from 'next/navigation'
 import { stringToColor } from '@/lib/utils'

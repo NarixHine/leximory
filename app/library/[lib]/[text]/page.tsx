@@ -11,7 +11,8 @@ import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, recentWordsAto
 
 export const maxDuration = 60
 
-export async function generateMetadata({ params }: LibAndTextParams) {
+export async function generateMetadata(props: LibAndTextParams) {
+    const params = await props.params
     const xata = getXataClient()
     const rec = await xata.db.texts.select(['title']).filter({ id: params.text }).getFirstOrThrow()
     return {
@@ -26,7 +27,8 @@ const getData = async (text: string) => {
     return rec
 }
 
-export default async function Page({ params }: LibAndTextParams) {
+export default async function Page(props: LibAndTextParams) {
+    const params = await props.params
     const { title, content, lib, id, topics, ebook, } = await getData(params.text)
 
     return (

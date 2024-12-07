@@ -6,7 +6,7 @@ import H from '@/components/h'
 import { authReadToLib, authWriteToLib, authWriteToText } from '@/lib/auth'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
-import { Card, CardBody } from '@nextui-org/react'
+import { Card, CardBody } from '@nextui-org/card'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { PiFilePlusDuotone } from 'react-icons/pi'
@@ -21,7 +21,8 @@ async function getData(lib: string) {
     return { texts, name, isReadOnly }
 }
 
-export default async function Page({ params }: LibParams) {
+export default async function Page(props: LibParams) {
+    const params = await props.params
     const { lib } = params
     const { texts, name, isReadOnly } = await getData(lib)
     const create = async (form: FormData) => {

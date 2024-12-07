@@ -1,7 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { Button, Spacer, Skeleton, Popover, PopoverTrigger, PopoverContent, Card, CardBody, Textarea } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Spacer } from '@nextui-org/spacer'
+import { Skeleton } from '@nextui-org/skeleton'
+import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
+import { Card, CardBody } from '@nextui-org/card'
+import { Textarea } from '@nextui-org/input'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone } from 'react-icons/pi'

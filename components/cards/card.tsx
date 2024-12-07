@@ -1,5 +1,7 @@
-import { Skeleton } from '@nextui-org/react'
+import { Skeleton } from '@nextui-org/skeleton'
 import { cn } from '@/lib/utils'
+
+import type { JSX } from "react";
 
 const GradientCard = ({ text, gradient, title, children }: {
     title?: string,

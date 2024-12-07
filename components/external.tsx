@@ -1,5 +1,5 @@
 import { ComponentPropsWithoutRef, ReactNode } from 'react'
-import { Button } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
 import { PiArrowSquareOutDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 

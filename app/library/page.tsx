@@ -1,6 +1,5 @@
 import { CommentaryQuotaCard, AudioQuotaCard } from '@/components/cards'
 import GradientCard from '@/components/cards/card'
-import DailyCard from '@/components/daily'
 import Library from '@/components/library'
 import Lookback, { LookbackWrapper } from '@/components/lookback'
 import Main from '@/components/main'
@@ -12,11 +11,15 @@ import { supportedLangs, langMap, welcomeMap, libAccessStatusMap, accessOptions,
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { Card, CardBody, Skeleton, Spacer } from '@nextui-org/react'
+import { Card, CardBody, CardFooter } from '@nextui-org/card'
+import { Divider } from '@nextui-org/divider'
+import { Skeleton } from '@nextui-org/skeleton'
+import { Spacer } from '@nextui-org/spacer'
 import { Metadata } from 'next'
 import { revalidatePath } from 'next/cache'
 import { Suspense } from 'react'
 import { PiFolderPlusDuotone } from 'react-icons/pi'
+import { RedirectToSignIn } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -24,7 +27,8 @@ export const metadata: Metadata = {
 
 async function getData() {
     const xata = getXataClient()
-    const data = await xata.db.lexicon.filter(isListed()).summarize({
+    const listed = await isListed()
+    const data = await xata.db.lexicon.filter(listed).summarize({
         columns: ['lib'],
         summaries: {
             count: { count: '*' },
@@ -42,13 +46,71 @@ async function getData() {
 }
 
 async function getOrgs() {
-    const { data } = await clerkClient.users.getOrganizationMembershipList({ userId: auth().userId! })
+    const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId: (await auth()).userId! })
     return data
 }
 
+function LibrarySkeleton() {
+    return (
+        <Card className='w-full opacity-50' shadow='sm'>
+            <CardBody className='p-6'>
+                <Skeleton className='w-48 h-10 rounded-lg' />
+                <Spacer y={8} />
+                <div className='flex space-x-2'>
+                    <Skeleton className='w-16 h-6 rounded-lg' />
+                    <Skeleton className='w-16 h-6 rounded-lg' />
+                </div>
+            </CardBody>
+            <Divider />
+            <CardFooter className='p-4 flex gap-4'>
+                <Skeleton className='w-24 h-9 rounded-lg' />
+                <div className='flex flex-col gap-1'>
+                    <Skeleton className='w-16 h-3 rounded-lg' />
+                    <Skeleton className='w-12 h-5 rounded-lg' />
+                </div>
+            </CardFooter>
+        </Card>
+    )
+}
+
+async function LibraryList({ userId, save, del, mems }: {
+    userId: string
+    save: (id: string, form: FormData) => Promise<void>
+    del: (id: string) => Promise<void>
+    mems: Awaited<ReturnType<typeof getOrgs>>
+}) {
+    const { summaries } = await getData()
+    return (
+        <>
+            {summaries.map(({ lib, count }) => lib && (
+                <Library
+                    shortcut={lib.shortcut}
+                    del={del.bind(null, lib.id)}
+                    save={save.bind(null, lib.id)}
+                    access={lib.access}
+                    id={lib.id}
+                    key={lib.name}
+                    name={lib.name}
+                    lang={lib.lang}
+                    lexicon={{ count }}
+                    isOwner={lib.owner === userId}
+                    orgs={mems.map((mem) => ({
+                        name: mem.organization.id,
+                        label: mem.organization.name
+                    }))}
+                    orgId={lib.org}
+                />
+            ))}
+        </>
+    )
+}
+
 export default async function Page() {
-    const [{ summaries }, mems] = await Promise.all([getData(), getOrgs()])
-    const { userId, orgId } = auth()
+    const { userId, orgId } = await auth()
+    if (!userId) {
+        return <RedirectToSignIn />
+    }
+    const mems = await getOrgs()
     const save = async (id: string, form: FormData) => {
         'use server'
         const xata = getXataClient()
@@ -118,47 +180,52 @@ export default async function Page() {
     }
 
     return <Main className='flex flex-col max-w-screen-sm'>
-        <Nav></Nav>
+        <Nav />
 
         <H className='text-5xl'>文库</H>
-        <Spacer y={8}></Spacer>
+        <Spacer y={8} />
         <div className='flex flex-col gap-4'>
             <div className='grid grid-cols-2 justify-center gap-4'>
-                <Suspense fallback={<GradientCard title={'本月 AI 注解额度'}></GradientCard>}>
+                <Suspense fallback={
+                    <GradientCard title='本月 AI 注解额度'>
+                        <Skeleton className='w-full h-8' />
+                    </GradientCard>
+                }>
                     <CommentaryQuotaCard />
                 </Suspense>
-                <Suspense fallback={<GradientCard title={'本月 AI 音频额度'}></GradientCard>}>
+                <Suspense fallback={
+                    <GradientCard title='本月 AI 音频额度'>
+                        <Skeleton className='w-full h-8' />
+                    </GradientCard>
+                }>
                     <AudioQuotaCard />
                 </Suspense>
             </div>
 
             <div className='w-full my-6'>
-                <Suspense fallback={<LookbackWrapper>
-                    <Skeleton className='rounded w-full my-3 h-3'></Skeleton>
-                </LookbackWrapper>}>
-                    <Lookback></Lookback>
+                <Suspense fallback={
+                    <LookbackWrapper>
+                        <Skeleton className='w-full h-4' />
+                    </LookbackWrapper>
+                }>
+                    <Lookback />
                 </Suspense>
             </div>
 
-            {summaries.map(({ lib, count }) => lib && (
-                <Library
-                    shortcut={lib.shortcut}
-                    del={del.bind(null, lib.id)}
-                    save={save.bind(null, lib.id)}
-                    access={lib.access}
-                    id={lib.id}
-                    key={lib.name}
-                    name={lib.name}
-                    lang={lib.lang}
-                    lexicon={{ count }}
-                    isOwner={lib.owner === userId}
-                    orgs={mems.map((mem) => ({
-                        name: mem.organization.id,
-                        label: mem.organization.name
-                    }))}
-                    orgId={lib.org}
-                ></Library>
-            ))}
+            <Suspense fallback={
+                <div className='flex flex-col gap-4'>
+                    <LibrarySkeleton />
+                    <LibrarySkeleton />
+                    <LibrarySkeleton />
+                </div>
+            }>
+                <LibraryList
+                    userId={userId}
+                    save={save}
+                    del={del}
+                    mems={mems}
+                />
+            </Suspense>
 
             <Options
                 trigger={<Card className='h-full w-full opacity-70 bg-transparent' shadow='none' isPressable>
@@ -184,7 +251,8 @@ export default async function Page() {
                         name: lang,
                         label: langMap[lang]
                     })),
-                }]}></Options>
+                }]}
+            />
         </div>
     </Main>
 }

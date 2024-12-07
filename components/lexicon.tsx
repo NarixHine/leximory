@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { Radio, RadioGroup } from '@nextui-org/react'
+import { Radio, RadioGroup } from '@nextui-org/radio'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { cn } from '@/lib/utils'
 

@@ -12,6 +12,8 @@ const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
 const APP_DESCRIPTION = '从记忆到心会'
 
+export const experimental_ppr = true
+
 export const metadata: Metadata = {
 	applicationName: TITLE_DEFAULT,
 	metadataBase: new URL(process.env.NEXT_PUBLIC_URL!),
@@ -43,19 +45,22 @@ export const viewport: Viewport = {
 	themeColor: '#FAFDF6',
 }
 
-export default function RootLayout({
-	children,
-}: {
-	children: ReactNode
-}) {
-	const { userId } = auth()
+export default async function RootLayout(
+	{
+		children,
+	}: {
+		children: ReactNode
+	}
+) {
+	const { userId } = await auth()
 	return (
+
 		<html lang='zh-CN'>
 			{process.env.NODE_ENV === 'production' && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 			<body style={{
 				fontFamily: defaultFontFamily,
 			}}>
-				<Providers themeProps={{ attribute: 'class', enableSystem: true }}>
+				<Providers themeProps={{ enableSystem: true }}>
 					<div className='relative flex flex-col'>
 						<Navbar userId={userId} />
 						{children}
@@ -63,6 +68,7 @@ export default function RootLayout({
 					</div>
 				</Providers>
 			</body>
+
 		</html>
 	)
 }

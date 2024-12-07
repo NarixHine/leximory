@@ -1,9 +1,12 @@
 import createMDX from '@next/mdx'
 import withSerwistInit from '@serwist/next'
-import remarkYoutube from 'remark-youtube'
+import { NextConfig } from 'next'
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
+    experimental: {
+        mdxRs: true,
+        ppr: 'incremental',
+    },
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
         return [
@@ -43,10 +46,6 @@ const withSerwist = withSerwistInit({
     swDest: 'public/sw.js',
 })
 
-const withMDX = createMDX({
-    options: {
-        remarkPlugins: [remarkYoutube],
-    },
-})
+const withMDX = createMDX({})
 
 export default withSerwist(withMDX(nextConfig))

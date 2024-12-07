@@ -9,7 +9,8 @@ import { PiArrowsHorizontalDuotone } from 'react-icons/pi'
 import load from './actions'
 import { useAtomValue } from 'jotai'
 import { libAtom, isReadOnlyAtom } from '../atoms'
-import { Button, Chip } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Chip } from '@nextui-org/chip'
 
 export default function Recollection({ words, cursor, more }: {
     words: { word: string, id: string, xata: LexiconRecord['xata'], lib: { id: string, name: string } }[]

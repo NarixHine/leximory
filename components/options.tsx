@@ -1,8 +1,14 @@
 'use client'
 
-import { ReactElement, cloneElement, useMemo } from 'react'
+import { ReactElement, cloneElement, useMemo, type JSX } from 'react';
 import { PiFloppyDiskBackDuotone, PiGearDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
-import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Accordion, AccordionItem, Divider, Spacer, Select, SelectItem, Textarea, Input } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@nextui-org/modal'
+import { Accordion, AccordionItem } from '@nextui-org/accordion'
+import { Divider } from '@nextui-org/divider'
+import { Spacer } from '@nextui-org/spacer'
+import { Select, SelectItem } from '@nextui-org/select'
+import { Textarea, Input } from '@nextui-org/input'
 import { prefixUrl } from '@/lib/config'
 import { toast } from 'sonner'
 
@@ -55,7 +61,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
     }
 
     return (
-        <div className={trigger ? undefined : 'absolute right-0.5 top-0.5 flex space-x-0.5'}>
+        (<div className={trigger ? undefined : 'absolute right-0.5 top-0.5 flex space-x-0.5'}>
             {shareUrl && (
                 <Button
                     onPress={handleShare}
@@ -68,7 +74,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                 />
             )}
             {trigger
-                ? cloneElement(trigger as ReactElement, { onPress: onOpen })
+                ? cloneElement(trigger as ReactElement<any>, { onPress: onOpen })
                 : (
                     <Button
                         onPress={onOpen}
@@ -151,8 +157,8 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                     )}
                 </ModalContent>
             </Modal>
-        </div>
-    )
+        </div>)
+    );
 }
 
 function Fields({ inputs, selects }: FieldsType) {

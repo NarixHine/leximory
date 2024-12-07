@@ -1,12 +1,13 @@
 'use client'
 
-import { Breadcrumbs, BreadcrumbItem, Button } from '@nextui-org/react'
-import { NavProps } from '.'
+import { Breadcrumbs, BreadcrumbItem } from '@nextui-org/breadcrumbs'
+import { Button } from '@nextui-org/button'
 import { PiBookBookmarkDuotone, PiFileTextDuotone, PiBooksDuotone, PiUserCircleDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
+import { NavProps } from '.'
 
 export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavProps & { tenant: string }) {
     const isReaderMode = useAtomValue(isReaderModeAtom)

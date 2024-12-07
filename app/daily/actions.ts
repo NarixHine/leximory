@@ -6,10 +6,10 @@ import { revalidatePath } from 'next/cache'
 
 export default async function saveSubs(subs: PushSubscription) {
     const xata = getXataClient()
-    const { userId } = auth()
+    const { userId } = await auth()
     if (userId) {
         await xata.db.subs.create({
-            uid: auth().userId,
+            uid: (await auth()).userId,
             subscription: subs
         })
         revalidatePath(`/daily`)
@@ -18,10 +18,10 @@ export default async function saveSubs(subs: PushSubscription) {
 
 export async function delSubs() {
     const xata = getXataClient()
-    const { userId } = auth()
+    const { userId } = await auth()
     if (userId) {
         const rec = await xata.db.subs.filter({
-            uid: auth().userId,
+            uid: (await auth()).userId,
         }).getFirstOrThrow()
         await rec.delete()
         revalidatePath(`/daily`)

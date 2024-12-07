@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 
 export default async function star(lib: string) {
     const xata = getXataClient()
-    const { userId } = auth()
+    const { userId } = await auth()
     const { rec } = await authReadToLib(lib)
     const { starredBy } = rec
     const newStarredBy = starredBy?.includes(userId!)

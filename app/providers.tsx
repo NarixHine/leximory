@@ -1,6 +1,6 @@
 'use client'
 
-import { NextUIProvider } from '@nextui-org/react'
+import { NextUIProvider } from '@nextui-org/system'
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
 import { ReactNode } from 'react'

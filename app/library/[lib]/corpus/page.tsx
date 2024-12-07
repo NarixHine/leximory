@@ -1,5 +1,5 @@
 import H from '@/components/h'
-import { Spacer, Divider } from '@nextui-org/react'
+import { Spacer } from '@nextui-org/spacer'
 import Main from '@/components/main'
 import Recollection from './recollection'
 import load from './actions'
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     title: '语料库'
 }
 
-export default async function Page({ params }: LibParams) {
+export default async function Page(props: LibParams) {
+    const params = await props.params
     const { lib } = params
     const { words, cursor, more } = await load(lib)
 

@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { redis } from './redis'
 
-const getPlan = () => auth().sessionClaims?.plan
+const getPlan = async () => (await auth()).sessionClaims?.plan
 
 export const maxCommentaryQuota = () => {
     const plan = getPlan()
@@ -26,7 +26,7 @@ export const maxAudioQuota = () => {
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1) {
-    const { userId } = auth()
+    const { userId } = await auth()
     const quotaKey = `user:${userId}:commentary_quota`
 
     const quota = await redis.incrbyfloat(quotaKey, incrBy)
@@ -39,16 +39,16 @@ export default async function incrCommentaryQuota(incrBy: number = 1) {
 }
 
 export async function getCommentaryQuota() {
-    const { userId } = auth()
+    const { userId } = await auth()
     const quotaKey = `user:${userId}:commentary_quota`
 
-    const quota: number = await redis.get(quotaKey) ?? 0
+    const quota: number = (await redis.get(quotaKey)) ?? 0
 
     return { quota, max: maxCommentaryQuota(), percentage: Math.floor(100 * quota / maxCommentaryQuota()) }
 }
 
 export async function incrAudioQuota() {
-    const { userId } = auth()
+    const { userId } = await auth()
     const quotaKey = `user:${userId}:audio_quota`
 
     const quota = await redis.incr(quotaKey)
@@ -61,10 +61,10 @@ export async function incrAudioQuota() {
 }
 
 export async function getAudioQuota() {
-    const { userId } = auth()
+    const { userId } = await auth()
     const quotaKey = `user:${userId}:audio_quota`
 
-    const quota: number = await redis.get(quotaKey) ?? 0
+    const quota: number = (await redis.get(quotaKey)) ?? 0
 
     return { quota, max: maxAudioQuota(), percentage: Math.floor(100 * quota / maxAudioQuota()) }
 }

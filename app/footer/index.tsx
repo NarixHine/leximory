@@ -1,6 +1,8 @@
 'use client'
 
-import { Button, Chip, Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Chip } from '@nextui-org/chip'
+import { Popover, PopoverContent, PopoverTrigger } from '@nextui-org/popover'
 import Link from 'next/link'
 import Image from 'next/image'
 import DefineImg from './define.png'

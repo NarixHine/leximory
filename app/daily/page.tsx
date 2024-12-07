@@ -3,11 +3,11 @@ import H from '@/components/h'
 import { Suspense } from 'react'
 import Report from './report'
 import Bell from './bell'
-import { Spacer, Skeleton } from '@nextui-org/react'
+import { Spacer } from '@nextui-org/spacer'
+import { Skeleton } from '@nextui-org/skeleton'
 import { auth } from '@clerk/nextjs/server'
 import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
-import Nav from '@/components/nav'
 
 export const metadata: Metadata = {
     title: '日报',
@@ -15,11 +15,10 @@ export const metadata: Metadata = {
 
 export default async function Daily() {
     const xata = getXataClient()
-    const hasSubscribed = !!(await xata.db.subs.filter({ uid: auth().userId }).getFirst())
+    const hasSubscribed = !!(await xata.db.subs.filter({ uid: (await auth()).userId }).getFirst())
 
     return (
-        <Main className='max-w-screen-md'>
-            <Nav></Nav>
+        <Main className='max-w-screen-lg pt-16'>
             <H>每日报告</H>
             <Spacer y={6}></Spacer>
             <Bell hasSubscribed={hasSubscribed}></Bell>

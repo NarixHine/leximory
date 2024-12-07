@@ -1,7 +1,7 @@
 import { nextui } from '@nextui-org/react'
+import type { Config } from 'tailwindcss'
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+const config: Config = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -137,3 +137,6 @@ module.exports = {
     require('@tailwindcss/typography'),
   ],
 }
+
+export default config
+  

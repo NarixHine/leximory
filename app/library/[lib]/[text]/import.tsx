@@ -1,6 +1,11 @@
 'use client'
 
-import { Button, Divider, Input, Textarea, Modal, ModalContent, ModalHeader, ModalBody, useDisclosure, Switch } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Divider } from '@nextui-org/divider'
+import { Input } from '@nextui-org/input'
+import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure } from '@nextui-org/modal'
+import { Switch } from '@nextui-org/switch'
+import { Textarea } from '@nextui-org/input'
 import ky from 'ky'
 import { useState } from 'react'
 import isUrl from 'is-url'

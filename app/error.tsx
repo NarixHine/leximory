@@ -2,7 +2,8 @@
 
 import Center from '@/components/center'
 import H from '@/components/h'
-import { Button, Spacer } from '@nextui-org/react'
+import { Spacer } from '@nextui-org/spacer'
+import { Button } from '@nextui-org/button'
 import { PiArrowClockwiseDuotone } from 'react-icons/pi'
 
 export default function Error({

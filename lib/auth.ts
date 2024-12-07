@@ -2,9 +2,9 @@ import { getXataClient } from '@/lib/xata'
 import { auth } from '@clerk/nextjs/server'
 import { libAccessStatusMap } from './config'
 
-const getAuthOrThrow = () => {
+const getAuthOrThrow = async () => {
     const xata = getXataClient()
-    const { userId, orgId, orgRole } = auth()
+    const { userId, orgId, orgRole } = await auth()
     if (!userId) {
         throw new Error('Unauthorized')
     }
@@ -14,7 +14,7 @@ const getAuthOrThrow = () => {
 // auth access to libs
 
 export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
-    const { xata, userId, orgId, orgRole } = explicitUserId ? { userId: explicitUserId, orgId: undefined, orgRole: undefined, xata: getXataClient() } : getAuthOrThrow()
+    const { xata, userId, orgId, orgRole } = explicitUserId ? { userId: explicitUserId, orgId: undefined, orgRole: undefined, xata: getXataClient() } : await getAuthOrThrow()
     const rec = await xata.db.libraries.select(['lang']).filter({
         $all: [
             { id: lib },
@@ -25,7 +25,7 @@ export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
 }
 
 export const authReadToLib = async (lib: string) => {
-    const { xata, userId, orgId, orgRole } = getAuthOrThrow()
+    const { xata, userId, orgId, orgRole } = await getAuthOrThrow()
     const rec = await xata.db.libraries.select(['owner', 'lang', 'name', 'starredBy', 'org']).filter({
         $all: [
             { id: lib },
@@ -39,8 +39,8 @@ export const authReadToLib = async (lib: string) => {
         ]
     }).getFirstOrThrow()
 
-    const isReadOnly = rec.owner !== auth().userId && (!orgId || orgRole !== 'org:admin')
-    const isOwner = rec.owner === auth().userId
+    const isReadOnly = rec.owner !== (await auth()).userId && (!orgId || orgRole !== 'org:admin')
+    const isOwner = rec.owner === (await auth()).userId
     const { lang } = rec
     const isOrganizational = !!orgId && rec.org === orgId
     return { rec, isReadOnly, isOwner, lang, isOrganizational }
@@ -49,7 +49,7 @@ export const authReadToLib = async (lib: string) => {
 // auth access to items related to libs
 
 export const authWriteToText = async (text: string) => {
-    const { xata, userId, orgId, orgRole } = getAuthOrThrow()
+    const { xata, userId, orgId, orgRole } = await getAuthOrThrow()
     const rec = await xata.db.texts.filter({
         $all: [
             { id: text },
@@ -60,7 +60,7 @@ export const authWriteToText = async (text: string) => {
 }
 
 export const authReadToText = async (text: string) => {
-    const { xata, userId, orgId } = getAuthOrThrow()
+    const { xata, userId, orgId } = await getAuthOrThrow()
     const rec = await xata.db.texts.select([]).filter({
         $all: [
             { id: text },
@@ -77,26 +77,26 @@ export const authReadToText = async (text: string) => {
 }
 
 const isPublic = { 'lib.access': libAccessStatusMap.public }
-const isStarredByUser = () => {
-    const { userId } = getAuthOrThrow()
+const isStarredByUser = async () => {
+    const { userId } = await getAuthOrThrow()
     return { 'lib.starredBy': { $includes: userId } }
 }
 
-const isOwnedByUser = () => {
-    const { userId } = getAuthOrThrow()
+const isOwnedByUser = async () => {
+    const { userId } = await getAuthOrThrow()
     return { 'lib.owner': userId }
 }
 
-const isAccessibleToUserOnly = () => {
+const isAccessibleToUserOnly = async () => {
     return {
         $any: [
             {
-                ...isOwnedByUser(),
+                ...(await isOwnedByUser()),
                 $notExists: 'lib.org'
             },
             {
                 $all: [
-                    isStarredByUser(),
+                    await isStarredByUser(),
                     isPublic
                 ]
             }
@@ -104,24 +104,24 @@ const isAccessibleToUserOnly = () => {
     }
 }
 
-export const isAccessibleToUserOrg = () => {
-    const { orgId } = getAuthOrThrow()
+export const isAccessibleToUserOrg = async () => {
+    const { orgId } = await getAuthOrThrow()
     return orgId ? {
         'lib.org': orgId,
     } : {}
 }
 
-export const isListed = () => {
-    const { orgId } = getAuthOrThrow()
+export const isListed = async () => {
+    const { orgId } = await getAuthOrThrow()
     return orgId ? isAccessibleToUserOrg() : isAccessibleToUserOnly()
 }
 
-export const isAccessibleAndRelevantToUser = () => {
+export const isAccessibleAndRelevantToUser = async () => {
     return {
         $any: [
-            isOwnedByUser(),
-            isAccessibleToUserOnly(),
-            isAccessibleToUserOrg(),
+            await isOwnedByUser(),
+            await isAccessibleToUserOnly(),
+            await isAccessibleToUserOrg(),
         ]
     }
 }

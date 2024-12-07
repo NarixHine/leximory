@@ -1,7 +1,7 @@
 'use client'
 
 import { cn, stringToColor } from '@/lib/utils'
-import { Chip } from '@nextui-org/react'
+import { Chip } from '@nextui-org/chip'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 

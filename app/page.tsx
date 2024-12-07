@@ -2,7 +2,6 @@ import Main from '@/components/main'
 import { auth } from '@clerk/nextjs/server'
 import H from '@/components/h'
 import { CHINESE_CALLIGRAPHY, ENGLISH_PLAYFAIR, CHINESE_ZCOOL } from '@/lib/fonts'
-import { Button, Spacer, Input, Card, CardBody } from '@nextui-org/react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Fade from '@/components/fade'
@@ -17,9 +16,13 @@ import { isReadOnlyAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/flip'
 import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
+import { Spacer } from '@nextui-org/spacer'
+import { Button } from '@nextui-org/button'
+import { Input } from '@nextui-org/input'
+import { Card, CardBody } from '@nextui-org/card'
 
-export default function Home() {
-	const { userId } = auth()
+export default async function Home() {
+	const { userId } = await auth()
 	if (userId) {
 		redirect('/library')
 	}

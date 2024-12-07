@@ -1,12 +1,11 @@
 import { hFontFamily, ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import H from '@/components/h'
-import { Spacer } from '@nextui-org/react'
+import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export default function BlogHome() {
     const posts = [
-        { title: 'The Inspiration, Creation and Mission of Leximory', date: '2024-07-20', slug: 'summer-hackathon' },
         { title: '“边听边阅览”功能导引', date: '2024-07-18', slug: 'reading-while-listening' },
         { title: '从记忆到心会', date: '2024-07-15', slug: 'from-memorisation-to-acquisition' },
         { title: '利用 iOS Shortcuts 快捷保存词汇', date: '2024-11-23', slug: 'ios-shortcuts' },

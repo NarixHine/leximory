@@ -9,8 +9,10 @@ import {
     useSpring,
     useTransform,
 } from "framer-motion"
+import { useAtomValue } from 'jotai'
 import Link from "next/link"
 import { useRef, useState } from "react"
+import { isReaderModeAtom } from '../atoms'
 
 export const FloatingDock = ({
     items,
@@ -20,7 +22,8 @@ export const FloatingDock = ({
     className?: string
 }) => {
     let mouseX = useMotionValue(Infinity)
-    return (
+    const isReaderMode = useAtomValue(isReaderModeAtom)
+    return !isReaderMode && (
         <motion.div
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}

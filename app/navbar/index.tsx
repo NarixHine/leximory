@@ -1,12 +1,10 @@
 'use client'
 
-import { OrganizationSwitcher, useAuth, UserButton, useUser } from '@clerk/nextjs'
-import {
-	NavbarBrand,
-	NavbarContent,
-	Navbar as NextUINavbar,
-	Button
-} from '@nextui-org/react'
+import { OrganizationSwitcher, UserButton } from '@clerk/nextjs'
+import { Navbar as NextUINavbar } from '@nextui-org/navbar'
+import { NavbarBrand } from '@nextui-org/navbar'
+import { NavbarContent } from '@nextui-org/navbar'
+import { Button } from '@nextui-org/button'
 import { PiKeyBold, PiSignInDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,15 +15,13 @@ import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import getToken from './actions'
 
-function Navbar({ userId: defaultUserId }: {
+function Navbar({ userId }: {
 	userId: string | null | undefined
 }) {
-	const user = useUser()
-	const userId = user.isLoaded ? user.user?.id : defaultUserId
 	const router = useRouter()
 	const isReaderMode = useAtomValue(isReaderModeAtom)
-	const { getToken } = useAuth()
 
 	return !isReaderMode && <div className='px-10 pt-3 pb-1 sticky top-0 z-20'>
 		<NextUINavbar className='rounded-full border-1 border-primary-300/50 dark:border-danger-100/50 h-14'>
@@ -49,7 +45,7 @@ function Navbar({ userId: defaultUserId }: {
 										labelIcon={<PiKeyBold size={16} />}
 										onClick={() => {
 											const toastId = toast.loading('获取密钥中...', { duration: 1000 })
-											getToken({ template: 'shortcut' }).then(async token => {
+											getToken().then(async token => {
 												if (navigator.clipboard && token) {
 													navigator.clipboard.writeText(token)
 														.then(() => {

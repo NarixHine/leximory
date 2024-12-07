@@ -14,7 +14,7 @@ export type NavProps = {
 }
 
 export default async function Nav(props: NavProps) {
-    const { orgSlug } = auth()
+    const { orgSlug } = await auth()
     const tenant = orgSlug ?? (await currentUser())!.username ?? 'You'
     return <NavBreadcrumbs {...props} tenant={tenant}></NavBreadcrumbs>
 }

@@ -1,6 +1,7 @@
 import Main from '@/components/main'
 import H from '@/components/h'
-import { Button, Spacer } from '@nextui-org/react'
+import { Button } from '@nextui-org/button'
+import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
 import { PiArrowUDownLeftDuotone } from 'react-icons/pi'
 
