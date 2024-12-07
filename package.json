@@ -1,12 +1,13 @@
 {
   "name": "leximory",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npm i next@canary --force"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.40",
