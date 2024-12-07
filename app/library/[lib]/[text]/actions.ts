@@ -54,7 +54,7 @@ export async function generate(prompt: string, lib: string) {
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota()) {
-        return { error: `你已用完本月的 ${maxCommentaryQuota()} 次 AI 注释生成额度。` }
+        return { error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` }
     }
 
     (async () => {
@@ -92,7 +92,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(0.25)) {
-        return { error: `你已用完本月的 ${maxCommentaryQuota()} 次 AI 注释生成额度。` }
+        return { error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` }
     }
 
     (async () => {

@@ -11,8 +11,7 @@ export default function Dock() {
             title: 'Review',
             icon: <PiRewindDuotone />,
             href: '/daily'
-        },
-        {
+        }, {
             title: 'Reference',
             icon: <PiInfoDuotone />,
             href: '/about',

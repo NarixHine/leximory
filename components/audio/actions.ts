@@ -20,7 +20,7 @@ export async function generateAudio(id: string, lib: string, text: string) {
         return { error: '文本长度超过 5000 字符。' }
     }
     if (await incrAudioQuota()) {
-        return { error: `你已用完本月的 ${maxAudioQuota()} 次 AI 音频生成额度。` }
+        return { error: `你已用完本月的 ${await maxAudioQuota()} 次 AI 音频生成额度。` }
     }
 
     const lab = new ElevenLabsClient()

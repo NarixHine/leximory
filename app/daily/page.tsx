@@ -10,7 +10,7 @@ import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: '日报',
+    title: '每日汇总',
 }
 
 export default async function Daily() {
@@ -19,7 +19,7 @@ export default async function Daily() {
 
     return (
         <Main className='max-w-screen-lg pt-16'>
-            <H>每日报告</H>
+            <H>每日汇总</H>
             <Spacer y={6}></Spacer>
             <Bell hasSubscribed={hasSubscribed}></Bell>
             <Suspense fallback={<Loading></Loading>}>

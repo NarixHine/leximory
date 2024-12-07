@@ -3,8 +3,8 @@ import { redis } from './redis'
 
 const getPlan = async () => (await auth()).sessionClaims?.plan
 
-export const maxCommentaryQuota = () => {
-    const plan = getPlan()
+export const maxCommentaryQuota = async () => {
+    const plan = await getPlan()
     if (plan === 'communicator') {
         return 999
     }
@@ -14,8 +14,8 @@ export const maxCommentaryQuota = () => {
     return 50
 }
 
-export const maxAudioQuota = () => {
-    const plan = getPlan()
+export const maxAudioQuota = async () => {
+    const plan = await getPlan()
     if (plan === 'communicator') {
         return 99
     }
@@ -35,7 +35,7 @@ export default async function incrCommentaryQuota(incrBy: number = 1) {
         await redis.expire(quotaKey, 60 * 60 * 24 * 30)
     }
 
-    return quota > maxCommentaryQuota()
+    return quota > await maxCommentaryQuota()
 }
 
 export async function getCommentaryQuota() {
@@ -44,7 +44,7 @@ export async function getCommentaryQuota() {
 
     const quota: number = (await redis.get(quotaKey)) ?? 0
 
-    return { quota, max: maxCommentaryQuota(), percentage: Math.floor(100 * quota / maxCommentaryQuota()) }
+    return { quota, max: await maxCommentaryQuota(), percentage: Math.floor(100 * quota / await maxCommentaryQuota()) }
 }
 
 export async function incrAudioQuota() {
@@ -57,7 +57,7 @@ export async function incrAudioQuota() {
         await redis.expire(quotaKey, 60 * 60 * 24 * 30)
     }
 
-    return quota > maxAudioQuota()
+    return quota > await maxAudioQuota()
 }
 
 export async function getAudioQuota() {
@@ -66,5 +66,5 @@ export async function getAudioQuota() {
 
     const quota: number = (await redis.get(quotaKey)) ?? 0
 
-    return { quota, max: maxAudioQuota(), percentage: Math.floor(100 * quota / maxAudioQuota()) }
+    return { quota, max: await maxAudioQuota(), percentage: Math.floor(100 * quota / await maxAudioQuota()) }
 }
