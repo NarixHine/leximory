@@ -23,13 +23,14 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt }: {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments }: {
     params: string,
     disableSave?: boolean
     deleteId?: string
     trigger?: ComponentProps<typeof Button>
     asCard?: boolean
     prompt?: string
+    onlyComments?: boolean
 }) {
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
@@ -52,7 +53,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setStatus('')
     }, [])
 
-    const [isVisible, setIsVisible] = useState(prompt ? true : false)
+    const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
     const setRecentWords = useSetAtom(recentWordsAtom)
 

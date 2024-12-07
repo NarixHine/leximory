@@ -13,9 +13,9 @@ import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/upload'
 import { saveTitle, saveEbook, generate, saveContentAndTopics } from './actions'
-import { PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
+import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom, topicsAtom } from './atoms'
+import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom, topicsAtom, hideTextAtom } from './atoms'
 import { isReadOnlyAtom, langAtom, libAtom } from '../atoms'
 import { readStreamableValue } from 'ai/rsc'
 
@@ -35,6 +35,7 @@ export default function ImportModal() {
     const setTopics = useSetAtom(topicsAtom)
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
     const [url, setUrl] = useState('')
+    const [hideText, setHideText] = useAtom(hideTextAtom)
     const populate = async () => {
         const res = await ky.get(url, { prefixUrl: 'https://r.jina.ai' }).text()
         const markdown = (/Markdown Content:\n([\s\S]*)/.exec(res) as string[])[1]
@@ -42,10 +43,13 @@ export default function ImportModal() {
         setInput(markdown.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1') /* remove links */)
         saveTitle(text, title)
     }
-    const exceeded = input.length > maxArticleLength(lang)
+    const exceeded = hideText ? false : input.length > maxArticleLength(lang)
 
     return (<>
         <div className='px-3 flex justify-center gap-3'>
+            {!ebook && <Switch isDisabled={isReadOnly || isLoading} startContent={<PiKanbanFill />} endContent={<PiKanbanDuotone />} isSelected={hideText} onValueChange={setHideText} color='secondary'>
+                词汇展板
+            </Switch>}
             <Button isDisabled={isReadOnly} onPress={onOpen} className='flex-1' variant='flat' color='primary' startContent={<PiMagicWandDuotone />} isLoading={isLoading}>导入{!ebook ? '文本／' : ''}电子书</Button>
             {!ebook && <Switch startContent={<PiOptionFill />} endContent={<PiOptionDuotone />} isDisabled={isReadOnly || isLoading} isSelected={editing} onValueChange={setEditing} color='secondary'>
                 修正模式
@@ -78,14 +82,18 @@ export default function ImportModal() {
                                     rows={5}
                                     onValueChange={setInput}
                                     disableAutosize />
+                                <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='warning'>
+                                    仅生成词摘
+                                </Switch>
                                 <Button
+                                    className='mt-2'
                                     data-umami-event='文章注解'
                                     color='primary'
                                     fullWidth
                                     isDisabled={isLoading || exceeded}
                                     onPress={async () => {
                                         setIsLoading(true)
-                                        const { object, error } = await generate(input, lib)
+                                        const { object, error } = await generate(input, lib, hideText)
                                         onClose()
 
                                         if (error) {

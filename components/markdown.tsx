@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
 import { defaultFontFamily } from '@/lib/fonts'
+import { hideTextAtom } from '@/app/library/[lib]/[text]/atoms'
 
 export type MarkdownProps = {
     md: string,
@@ -19,16 +20,21 @@ export type MarkdownProps = {
     className?: string
     asCard?: boolean
     hasWrapped?: boolean
+    onlyComments?: boolean
 }
 
-export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave }: MarkdownProps) {
+export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
-    const result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
+    const hideText = useAtomValue(hideTextAtom)
+
+    let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
         .replaceAll('}} ,', '}},')
         .replaceAll('}} .', '}}.')
+
+    result = result
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => portion.replaceAll('"', '\\"'))
-            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + (asCard ?? 'false') + '}></Comment>'
+            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((hideText && !asCard) ?? asCard ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '}></Comment>'
         })
         .replaceAll(/:::([a-f0-9-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`

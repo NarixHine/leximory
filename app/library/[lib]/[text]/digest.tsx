@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom, recentWordsAtom } from './atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom, recentWordsAtom, hideTextAtom } from './atoms'
 import { langAtom, libAtom } from '../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -24,10 +24,6 @@ import Markdown from '@/components/markdown'
 import Define from './define'
 import LexiconSelector from '@/components/lexicon'
 import { recentAccessAtom } from '@/components/library'
-import { AnimatePresence, motion } from 'framer-motion'
-import Comment from '@/components/comment'
-import { generateSingleComment } from './actions'
-import { readStreamableValue } from 'ai/rsc'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -154,6 +150,20 @@ function EditingView() {
 function ReadingView() {
   const md = useAtomValue(displayedMdAtom)
   const isReaderMode = useAtomValue(isReaderModeAtom)
+  const hideText = useAtomValue(hideTextAtom)
+
+  if (hideText) {
+    const matches = md?.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
+    return (
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4'>
+        {matches.map((match, index) => (
+          <div key={index} className='flex justify-center'>
+            <Markdown md={match} onlyComments />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   if (!md) {
     return (
