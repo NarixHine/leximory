@@ -137,7 +137,7 @@ export function Article() {
         >
             核心功能的演示视频：
         </motion.p>
-        <iframe className='rounded my-4' height={400} src='//player.bilibili.com/player.html?isOutside=true&aid=113248456147712&bvid=BV15V4FeEEqt&cid=26137266223&p=1' width={'100%'}></iframe>
+        <iframe className='rounded-xl my-4' height={400} src='//player.bilibili.com/player.html?isOutside=true&aid=113248456147712&bvid=BV15V4FeEEqt&cid=26137266223&p=1' width={'100%'}></iframe>
     </article>
 }
 
