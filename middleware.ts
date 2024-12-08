@@ -4,14 +4,8 @@ const isProtectedRoute = createRouteMatcher([
     '/library(.*)',
     '/library/(.*)',
 
-    '/org(.*)',
-    '/org/(.*)',
-
-    '/create(.*)',
-    '/create/(.*)',
-
-    '/user(.*)',
-    '/user/(.*)',
+    '/settings(.*)',
+    '/settings/(.*)',
 
     '/daily(.*)',
 ])

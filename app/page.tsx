@@ -1,7 +1,7 @@
 import Main from '@/components/main'
 import { auth } from '@clerk/nextjs/server'
 import H from '@/components/h'
-import { CHINESE_CALLIGRAPHY, ENGLISH_PLAYFAIR, CHINESE_ZCOOL } from '@/lib/fonts'
+import { CHINESE_CALLIGRAPHY, CHINESE_ZCOOL } from '@/lib/fonts'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Fade from '@/components/fade'
@@ -28,7 +28,7 @@ export default async function Home() {
 	}
 	return <RenderingBoundary>
 		<Main className={'w-11/12 max-w-screen-lg'}>
-			<H className={cn(ENGLISH_PLAYFAIR.className, 'text-danger text-7xl sm:text-8xl lg:text-9xl')}>
+			<H className={'text-danger text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
 				Leximory
 			</H>
 
@@ -36,10 +36,10 @@ export default async function Home() {
 
 			<div className='flex justify-center items-center space-x-2'>
 				<div>
-					<H className={cn(CHINESE_ZCOOL.className, 'text-2xl sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
+					<H className={'text-2xl sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
 						语言学地学语言
 					</H>
-					<H className={cn(CHINESE_ZCOOL.className, 'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000')}>
+					<H className={'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
 						集中输入·轻松复盘·听读结合
 					</H>
 				</div>
@@ -150,12 +150,12 @@ export default async function Home() {
 			<Spacer y={8}></Spacer>
 
 			<Fade>
-				<H className={cn(CHINESE_CALLIGRAPHY.className, 'whitespace-pre-line text-6xl')}>
+				<H className={'whitespace-pre-line text-6xl'}>
 					{'从记忆\n到心会'}
 				</H>
 			</Fade>
 			<div className='flex justify-center items-center'>
-				<External className={cn('mt-2 flex flex-wrap w-fit justify-start text-lg', CHINESE_ZCOOL.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
+				<External className={'mt-2 flex flex-wrap w-fit justify-start text-lg'} link='/library/3e4f1126'>体验我们的精编示例文库</External>
 			</div>
 		</Main>
 	</RenderingBoundary>

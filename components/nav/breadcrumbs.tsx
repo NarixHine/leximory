@@ -13,7 +13,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const router = useRouter()
     return !isReaderMode && (
-        <div className='sticky flex justify-center mb-8 -mt-2 top-[74px] z-20 left-0 w-full space-x-1'>
+        <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-1'>
             <Breadcrumbs variant='solid' radius='lg' color='primary' className='overflow-x-hidden max-w-[90%]' classNames={{
                 list: 'bg-secondary-200 dark:bg-danger-200 flex-nowrap',
             }}>

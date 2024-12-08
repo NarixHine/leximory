@@ -18,7 +18,7 @@ export default async function Page(props: LibParams) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name: words[0].lib.name }}></Nav>
-        <H useSerif>{words[0].lib.name}</H>
+        <H>{words[0].lib.name}</H>
         <Spacer y={5}></Spacer>
         <div className='flex flex-col space-y-6 sm:flex-row sm:space-x-5'>
             <div className='basis-1/3 sm:border-r-1 sm:pr-2'>

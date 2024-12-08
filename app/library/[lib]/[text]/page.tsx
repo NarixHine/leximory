@@ -43,7 +43,7 @@ export default async function Page(props: LibAndTextParams) {
         ]}>
             <Main className='max-w-screen-xl'>
                 <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>
-                <H className={'sm:text-4xl mb-2 text-3xl'} useSerif>{title}</H>
+                <H useNoto className={'sm:text-4xl mb-2 text-3xl'}>{title}</H>
                 <Topics topics={topics}></Topics>
                 <Digest></Digest>
             </Main>

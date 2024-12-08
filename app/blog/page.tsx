@@ -1,4 +1,4 @@
-import { hFontFamily, ENGLISH_PLAYFAIR } from '@/lib/fonts'
+import { hFontFamily } from '@/lib/fonts'
 import H from '@/components/h'
 import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
@@ -12,10 +12,10 @@ export default function BlogHome() {
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return <div className='max-w-sm mx-auto'>
         <div className='border-l-2 border-l-danger/50 px-3 not-prose -mt-10'>
-            <H disableCenter className={cn('text-danger text-4xl', ENGLISH_PLAYFAIR.className)}>
+            <H disableCenter className={'text-danger text-4xl'} usePlayfair>
                 The Leximory Blog
             </H>
-            <H disableCenter useSerif className={'text-danger/80 text-lg'}>
+            <H disableCenter className={'text-danger/80 text-lg'}>
                 The tech and mind behind Leximory.
             </H>
         </div>

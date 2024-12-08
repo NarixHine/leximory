@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
-import Navbar from '@/app/navbar'
 import { defaultFontFamily } from '@/lib/fonts'
 import { auth } from '@clerk/nextjs/server'
 import Script from 'next/script'
@@ -62,7 +61,6 @@ export default async function RootLayout(
 			}}>
 				<Providers themeProps={{ enableSystem: true }}>
 					<div className='relative flex flex-col'>
-						<Navbar userId={userId} />
 						{children}
 						<Dock />
 					</div>

@@ -18,7 +18,7 @@ export default async function Daily() {
     const hasSubscribed = !!(await xata.db.subs.filter({ uid: (await auth()).userId }).getFirst())
 
     return (
-        <Main className='max-w-screen-lg pt-16'>
+        <Main className='max-w-screen-lg pt-12'>
             <H>每日汇总</H>
             <Spacer y={6}></Spacer>
             <Bell hasSubscribed={hasSubscribed}></Bell>

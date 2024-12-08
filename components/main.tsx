@@ -5,7 +5,7 @@ export default function Main({ children, className, ...props }: HTMLAttributes<H
     return (
         <main
             {...props}
-            className={cn('w-full px-5 pt-2 mb-20 sm:w-10/12 mx-auto max-w-screen-md min-h-[calc(100dvh-200px)]', className)}
+            className={cn('w-full px-5 pt-10 pb-20 sm:w-10/12 mx-auto max-w-screen-md min-h-[100dvh]', className)}
         >
             {children}
         </main>
