@@ -1,11 +1,15 @@
 import { Metadata } from 'next'
 import Center from '@/components/center'
-import { SignUp } from '@clerk/nextjs'
+import { ClerkLoading, SignUp } from '@clerk/nextjs'
+import { CircularProgress } from '@nextui-org/progress'
 
 export const metadata: Metadata = { title: '注册' }
 
 export default function Page() {
     return <Center>
-    <SignUp path='/sign-up' />
+        <ClerkLoading>
+            <CircularProgress color='primary' />
+        </ClerkLoading>
+        <SignUp path='/sign-up' />
     </Center>
 }

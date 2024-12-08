@@ -23,7 +23,7 @@ export function TypedTitle() {
 }
 
 export function Article() {
-    return <article className={cn('text-xl text-danger dark:text-danger-800')}>
+    return <article className='text-xl text-danger dark:text-danger-800'>
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

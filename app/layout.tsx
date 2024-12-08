@@ -2,7 +2,6 @@ import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import { defaultFontFamily } from '@/lib/fonts'
-import { auth } from '@clerk/nextjs/server'
 import Script from 'next/script'
 import type { ReactNode } from 'react'
 import Dock from './dock'
@@ -51,22 +50,19 @@ export default async function RootLayout(
 		children: ReactNode
 	}
 ) {
-	const { userId } = await auth()
 	return (
-
 		<html lang='zh-CN'>
 			{process.env.NODE_ENV === 'production' && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 			<body style={{
 				fontFamily: defaultFontFamily,
 			}}>
-				<Providers themeProps={{ enableSystem: true }}>
+				<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 					<div className='relative flex flex-col'>
 						{children}
 						<Dock />
 					</div>
 				</Providers>
 			</body>
-
 		</html>
 	)
 }

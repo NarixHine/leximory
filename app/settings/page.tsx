@@ -1,5 +1,5 @@
 import Main from '@/components/main'
-import { OrganizationList, OrganizationSwitcher, UserButton } from '@clerk/nextjs'
+import { ClerkLoaded, OrganizationList, OrganizationSwitcher, UserButton } from '@clerk/nextjs'
 import { Metadata } from 'next'
 import { PiKeyDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
@@ -14,7 +14,9 @@ export default function Settings() {
         <div className='flex justify-center gap-5'>
             <UserButton userProfileUrl='/settings/user' />
             <OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} createOrganizationUrl='/create' organizationProfileUrl='/settings/org' />
-            <CopyToken />
+            <ClerkLoaded>
+                <CopyToken />
+            </ClerkLoaded>
         </div>
         <OrganizationList afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} />
     </div>
