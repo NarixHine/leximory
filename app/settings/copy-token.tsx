@@ -4,13 +4,15 @@ import getToken from './actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone } from 'react-icons/pi'
 import { Button } from '@nextui-org/button'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
 
 export default function CopyToken() {
     return <Button
         variant='ghost'
         color='warning'
+        className={CHINESE_ZCOOL.className}
         startContent={<PiKeyDuotone />}
-        onClick={() => {
+        onPress={() => {
             const toastId = toast.loading('获取密钥中...', { duration: 1000 })
             getToken().then(async token => {
                 if (navigator.clipboard && token) {

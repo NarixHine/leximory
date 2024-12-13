@@ -103,7 +103,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             startContent={status !== 'loading' && <PiBookBookmarkDuotone />}
             color={'primary'}
             variant='flat'
-            onClick={async () => {
+            onPress={async () => {
                 // Save comment
                 setStatus('loading')
                 try {
@@ -126,7 +126,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 startContent={status !== 'loading' && (isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />)}
                 color='primary'
                 variant='flat'
-                onClick={() => {
+                onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
                         saveComment(editedPortions, lib, editId).then(async () => {
@@ -154,7 +154,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     variant='flat'
                     startContent={<PiXCircleDuotone />}
                     isIconOnly
-                    onClick={() => {
+                    onPress={() => {
                         setIsEditing(false)
                         setEditedPortions([])
                     }}
@@ -167,7 +167,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 startContent={<PiTrashDuotone />}
                 color='danger'
                 variant='flat'
-                onClick={async () => {
+                onPress={async () => {
                     await delComment(editId)
                     setStatus('deleted')
                 }}
@@ -188,7 +188,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             startContent={<PiEyesDuotone />}
                             color='secondary'
                             className='absolute rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10'
-                            onClick={() => setIsVisible(!isVisible)}
+                            onPress={() => setIsVisible(!isVisible)}
                         ></Button>
                     )}
                     <motion.div
@@ -283,7 +283,7 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
                 ? <Textarea
                     size='sm'
                     value={editedPortions?.[1] || ''}
-                    onChange={(e) => handleEdit(1, e.target.value)}
+                    onValueChange={(value) => handleEdit(1, value)}
                     className='mb-2'
                     placeholder='词条'
                 />
@@ -295,7 +295,7 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
                 ? <Textarea
                     size='sm'
                     value={editedPortions?.[2] || ''}
-                    onChange={(e) => handleEdit(2, e.target.value)}
+                    onValueChange={(value) => handleEdit(2, value)}
                     placeholder='释义'
                 />
                 : <Markdown className='prose-em:font-light before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
@@ -308,7 +308,7 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
                     ? <Textarea
                         size='sm'
                         value={editedPortions?.[3] || ''}
-                        onChange={(e) => handleEdit(3, e.target.value)}
+                        onValueChange={(value) => handleEdit(3, value)}
                         placeholder='语源'
                     />
                     : <Markdown>{portions[3]}</Markdown>
@@ -320,7 +320,7 @@ function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, on
                 ? <Textarea
                     size='sm'
                     value={editedPortions?.[4] || ''}
-                    onChange={(e) => handleEdit(4, e.target.value)}
+                    onValueChange={(value) => handleEdit(4, value)}
                     placeholder='同源词'
                 />
                 : <Markdown>{portions[4]}</Markdown>

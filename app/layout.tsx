@@ -51,7 +51,7 @@ export default async function RootLayout(
 	}
 ) {
 	return (
-		<html lang='zh-CN'>
+		<html lang='zh-CN' className='antialiased'>
 			{process.env.NODE_ENV === 'production' && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 			<body style={{
 				fontFamily: defaultFontFamily,

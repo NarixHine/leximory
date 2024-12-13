@@ -72,6 +72,12 @@
           "type": "string",
           "notNull": true,
           "defaultValue": ""
+        },
+        {
+          "name": "day",
+          "type": "datetime",
+          "notNull": true,
+          "defaultValue": "now"
         }
       ]
     },

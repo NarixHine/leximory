@@ -69,22 +69,6 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className='col-span-2'
-            >
-                <Link href='/blog/ios-shortcuts'>
-                    <GradientCard
-                        title='iOS Shortcut'
-                        text='在苹果设备上快速保存单词'
-                        gradient='bg-gradient-to-br from-primary-200 to-primary-300'
-                    >
-                        <PiAppleLogoDuotone className='text-2xl opacity-60' />
-                    </GradientCard>
-                </Link>
-            </motion.div>
-            <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className='col-span-3'
             >
@@ -99,19 +83,20 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className='col-span-3'
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className='col-span-2'
             >
-                <Link href='/blog/reading-while-listening'>
+                <Link href='/blog/ios-shortcuts'>
                     <GradientCard
-                        title='边听边读'
-                        text='听觉是语言认知的另一个维度，与视觉相辅相成'
-                        gradient='bg-gradient-to-br from-warning-200 to-warning-300'
+                        title='iOS Shortcut'
+                        text='在苹果设备上快速保存单词'
+                        gradient='bg-gradient-to-br from-primary-200 to-primary-300'
                     >
-                        <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
+                        <PiAppleLogoDuotone className='text-2xl opacity-60' />
                     </GradientCard>
                 </Link>
             </motion.div>
+
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -120,11 +105,27 @@ export function Article() {
             >
                 <Link href='https://www.cdc.gov/niosh/mining/tools/installpwa.html'>
                     <GradientCard
-                        title='PWA 支持'
-                        text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
+                        title='边听边读'
+                        text='语言认知的另一个维度'
                         gradient='bg-gradient-to-br from-danger-200 to-danger-300'
                     >
                         <PiDeviceMobileDuotone className='text-2xl opacity-60' />
+                    </GradientCard>
+                </Link>
+            </motion.div>
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className='col-span-3'
+            >
+                <Link href='/blog/reading-while-listening'>
+                    <GradientCard
+                        title='PWA 支持'
+                        text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
+                        gradient='bg-gradient-to-br from-warning-200 to-warning-300'
+                    >
+                        <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                     </GradientCard>
                 </Link>
             </motion.div>

@@ -6,26 +6,23 @@ import H from '@/components/h'
 import { welcomeMap } from '@/lib/config'
 
 export default async function Report({ day }: {
-    day: '今天' | '一天前' | '四天前' | '七天前'
+    day: '今天记忆' | '一天前记忆' | '四天前记忆' | '七天前记忆'
 }) {
     const range = {
-        '今天': [0, -1],
-        '一天前': [1, 0],
-        '四天前': [4, 3],
-        '七天前': [7, 6],
+        '今天记忆': [0, -1],
+        '一天前记忆': [1, 0],
+        '四天前记忆': [4, 3],
+        '七天前记忆': [7, 6],
     }
     const xata = getXataClient()
     const words = await xata.db.lexicon.select(['id', 'word']).filter({
         $all: [
-            isAccessibleAndRelevantToUser(),
+            await isAccessibleAndRelevantToUser(),
             {
                 'xata.createdAt': { $ge: moment().tz('Asia/Shanghai').startOf('day').subtract(range[day][0], 'day').utc().toDate() }
             },
             {
                 'xata.createdAt': { $lt: moment().tz('Asia/Shanghai').startOf('day').subtract(range[day][1], 'day').utc().toDate() }
-            },
-            {
-                'word': { $contains: '||' }
             },
             {
                 $not: {

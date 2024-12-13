@@ -29,6 +29,7 @@ const tables = [
     columns: [
       { name: "lib", type: "link", link: { table: "libraries" } },
       { name: "word", type: "string", notNull: true, defaultValue: "" },
+      { name: "day", type: "datetime", notNull: true, defaultValue: "now" },
     ],
   },
   {

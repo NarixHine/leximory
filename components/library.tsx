@@ -65,14 +65,14 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
             </CardBody>
             <Divider></Divider>
             <CardFooter className='p-4 flex gap-4'>
-                <Button onClick={(e) => { e.stopPropagation() }} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
+                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>积累词汇</p>
                     <Chip color='warning' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 {recentAccessItem && <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>最近访问</p>
-                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none cursor-pointer' onClick={(e) => { e.stopPropagation() }}><span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle'>{recentAccessItem.title}</span></Chip>
+                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none cursor-pointer'><span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle'>{recentAccessItem.title}</span></Chip>
                 </div>}
             </CardFooter>
         </Card>

@@ -8,6 +8,8 @@ import { Skeleton } from '@nextui-org/skeleton'
 import { auth } from '@clerk/nextjs/server'
 import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
+import WordStats from './word-stats'
+import { WordChartSkeleton } from './word-chart'
 
 export const metadata: Metadata = {
     title: '每日汇总',
@@ -20,19 +22,24 @@ export default async function Daily() {
     return (
         <Main className='max-w-screen-lg pt-12'>
             <H>每日汇总</H>
+            <div className='my-12 h-80'>
+                <Suspense fallback={<WordChartSkeleton />}>
+                    <WordStats />
+                </Suspense>
+            </div>
             <Spacer y={6}></Spacer>
             <Bell hasSubscribed={hasSubscribed}></Bell>
             <Suspense fallback={<Loading></Loading>}>
-                <Report day='今天'></Report>
+                <Report day='今天记忆'></Report>
             </Suspense>
             <Suspense fallback={<Loading></Loading>}>
-                <Report day='一天前'></Report>
+                <Report day='一天前记忆'></Report>
             </Suspense>
             <Suspense fallback={<Loading></Loading>}>
-                <Report day='四天前'></Report>
+                <Report day='四天前记忆'></Report>
             </Suspense>
             <Suspense fallback={<Loading></Loading>}>
-                <Report day='七天前'></Report>
+                <Report day='七天前记忆'></Report>
             </Suspense>
         </Main>
     )
