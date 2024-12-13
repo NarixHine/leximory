@@ -32,7 +32,7 @@ export const FloatingDock = ({
             )}
         >
             {items.map((item, i) => (
-                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={i === 0 ? 'bg-warning-300' : i === 1 ? 'bg-primary-300' : i === 2 ? 'bg-secondary-400' : 'bg-danger-200'} />
+                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={i === 0 ? 'bg-primary-400' : i === 1 ? 'bg-primary-300' : i === 2 ? 'bg-secondary-400' : 'bg-danger-200'} />
             ))}
         </motion.div>
     )
