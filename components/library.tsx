@@ -5,7 +5,7 @@ import { Card, CardBody, CardFooter } from '@nextui-org/card'
 import { Chip } from '@nextui-org/chip'
 import { Divider } from '@nextui-org/divider'
 import { Spacer } from '@nextui-org/spacer'
-import { PiBookBookmarkDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone } from 'react-icons/pi'
 import Options from './options'
 import { langMap, colorMap, supportedLangs, libAccessStatusMap, accessOptions, Lang } from '@/lib/config'
 import Link from 'next/link'
@@ -51,10 +51,10 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
     const recentAccessItem = recentAccess[id]
 
     return (<div className='w-full relative'>
-        <Card fullWidth shadow='sm' isPressable>
-            <CardBody className='p-6' onClick={() => {
-                router.push(`/library/${id}`)
-            }}>
+        <Card fullWidth shadow='sm' isPressable onPress={() => {
+            router.push(`/library/${id}`)
+        }}>
+            <CardBody className='p-6'>
                 <a className='text-4xl' style={{
                     fontFamily: postFontFamily
                 }}>{name}</a>
@@ -65,15 +65,15 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
             </CardBody>
             <Divider></Divider>
             <CardFooter className='p-4 flex gap-4'>
-                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
+                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='secondary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>积累词汇</p>
                     <Chip color='warning' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
-                {recentAccessItem && <div className='flex flex-col items-start'>
-                    <p className='text-xs opacity-80'>最近访问</p>
-                    <Chip color='secondary' variant='dot' as={Link} href={`/library/${id}/${recentAccessItem.id}`} className='border-none cursor-pointer'><span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle'>{recentAccessItem.title}</span></Chip>
-                </div>}
+                <div className='flex-1'></div>
+                {recentAccessItem && <Button color={'primary'} radius='full' startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
+                </Button>}
             </CardFooter>
         </Card>
         {isOwner && <Options

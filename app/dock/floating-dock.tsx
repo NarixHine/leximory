@@ -1,24 +1,23 @@
 'use client'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 import {
-    AnimatePresence,
     MotionValue,
     motion,
     useMotionValue,
     useSpring,
     useTransform,
-} from "framer-motion"
+} from 'framer-motion'
 import { useAtomValue } from 'jotai'
-import Link from "next/link"
-import { useRef, useState } from "react"
+import Link from 'next/link'
+import { useRef, useState } from 'react'
 import { isReaderModeAtom } from '../atoms'
 
 export const FloatingDock = ({
     items,
     className,
 }: {
-    items: { title: string; icon: React.ReactNode; href: string }[]
+    items: { icon: React.ReactNode; href: string }[]
     className?: string
 }) => {
     let mouseX = useMotionValue(Infinity)
@@ -33,7 +32,7 @@ export const FloatingDock = ({
             )}
         >
             {items.map((item, i) => (
-                <IconContainer mouseX={mouseX} key={item.title} {...item} styles={i === 0 ? 'bg-primary-300' : i === items.length - 1 ? 'bg-secondary-400' : 'bg-danger-200'} />
+                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={i === 0 ? 'bg-warning-300' : i === 1 ? 'bg-primary-300' : i === 2 ? 'bg-secondary-400' : 'bg-danger-200'} />
             ))}
         </motion.div>
     )
@@ -41,13 +40,11 @@ export const FloatingDock = ({
 
 function IconContainer({
     mouseX,
-    title,
     icon,
     href,
     styles,
 }: {
     mouseX: MotionValue
-    title: string
     icon: React.ReactNode
     href: string
     styles?: string
@@ -92,32 +89,22 @@ function IconContainer({
         damping: 12,
     })
 
+    let opacity = useTransform(distance, [-100, 0, 100], [0.9, 1, 0.9])
+
     const [hovered, setHovered] = useState(false)
 
     return (
         <Link href={href}>
             <motion.div
                 ref={ref}
-                style={{ width, height }}
+                style={{ width, height, opacity }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
-                className={cn("aspect-square rounded-full flex items-center justify-center relative", styles)}
+                className={cn('aspect-square rounded-full flex items-center justify-center relative', styles)}
             >
-                <AnimatePresence>
-                    {hovered && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10, x: '-50%' }}
-                            animate={{ opacity: 1, y: 0, x: '-50%' }}
-                            exit={{ opacity: 0, y: 2, x: '-50%' }}
-                            className={"px-2 py-0.5 whitespace-pre rounded-md bg-primary-200 text-primary-800 absolute left-1/2 -translate-x-1/2 -top-8 w-fit text-xs"}
-                        >
-                            {title}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
                 <motion.div
                     style={{ width: widthIcon, height: heightIcon }}
-                    className="flex items-center justify-center text-primary-800"
+                    className='flex items-center justify-center text-primary-800'
                 >
                     {icon}
                 </motion.div>

@@ -86,7 +86,6 @@ const config: Config = {
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),
     nextui({
       themes: {
         light: {
@@ -212,6 +211,9 @@ const config: Config = {
     }),
     require('tailwindcss-animate'),
     require('@tailwindcss/typography'),
+    require('@tailwindcss/forms')({
+      strategy: 'class',
+    }),
   ],
 }
 

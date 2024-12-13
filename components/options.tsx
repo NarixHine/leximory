@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactElement, cloneElement, useMemo, type JSX } from 'react';
+import { ReactElement, cloneElement, useMemo, type JSX } from 'react'
 import { PiFloppyDiskBackDuotone, PiGearDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
 import { Button } from '@nextui-org/button'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@nextui-org/modal'
@@ -158,7 +158,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                 </ModalContent>
             </Modal>
         </div>)
-    );
+    )
 }
 
 function Fields({ inputs, selects }: FieldsType) {
