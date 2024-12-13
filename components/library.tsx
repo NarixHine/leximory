@@ -51,10 +51,10 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
     const recentAccessItem = recentAccess[id]
 
     return (<div className='w-full relative'>
-        <Card fullWidth shadow='sm' isPressable onPress={() => {
-            router.push(`/library/${id}`)
-        }}>
-            <CardBody className='p-6'>
+        <Card fullWidth shadow='sm' isPressable>
+            <CardBody className='p-6' onClick={() => {
+                router.push(`/library/${id}`)
+            }}>
                 <a className='text-4xl' style={{
                     fontFamily: postFontFamily
                 }}>{name}</a>

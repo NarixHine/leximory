@@ -179,8 +179,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     return asCard
         ? <Card shadow='sm' fullWidth radius='sm'>
             <CardBody className='p-6 py-4 leading-snug'>
-                <div className={'font-bold text-lg'}>{portions[1]}</div>
-                <div className='relative'>
+                <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
+                {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
                         <Button
                             variant='ghost'
@@ -206,7 +206,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         </motion.div>
                     </motion.div>
                     {portions[2] && prompt && <Save />}
-                </div>
+                </div>}
             </CardBody>
         </Card>
         : <>

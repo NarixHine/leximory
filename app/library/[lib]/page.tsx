@@ -56,7 +56,7 @@ export default async function Page(props: LibParams) {
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
-        <H className='mb-10 text-5xl'>{name}</H>
+        <H useNoto className='mb-10 text-5xl'>{name}</H>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
             {texts.map(({ lib, title, id, topics }) => (
                 <Text
