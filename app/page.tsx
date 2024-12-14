@@ -39,7 +39,7 @@ export default async function Home() {
 					<H className={'text-2xl sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
 						语言学地学语言
 					</H>
-					<H className={'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
+					<H className={'text-lg sm:text-xl animate-in fade-in slide-in-from-bottom-10 duration-1000 hidden sm:block'}>
 						集中输入·轻松复盘·听读结合
 					</H>
 				</div>
@@ -155,7 +155,7 @@ export default async function Home() {
 				</H>
 			</Fade>
 			<div className='flex justify-center items-center'>
-				<External className={'mt-2 flex flex-wrap w-fit justify-start text-lg'} link='/library/3e4f1126'>体验我们的精编示例文库</External>
+				<External className={cn('mt-2 flex flex-wrap w-fit justify-start text-lg', CHINESE_ZCOOL.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
 			</div>
 		</Main>
 	</RenderingBoundary>

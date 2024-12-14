@@ -7,7 +7,7 @@ import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import { Button } from '@nextui-org/button'
 import { DateRangePicker } from '@nextui-org/date-picker'
 import { SelectedPick, PageRecordArray } from '@xata.io/client'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { draw } from './actions'
 import moment from 'moment'
 import { PiShuffleAngularDuotone } from 'react-icons/pi'
@@ -25,6 +25,7 @@ export default function Test({ latestTime }: {
     const [words, setWords] = useState<{ word: string, id: string }[]>([])
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
+    const [isLoading, startTransition] = useTransition()
 
     return <div>
         <I18nProvider locale='zh-CN'>
@@ -51,9 +52,9 @@ export default function Test({ latestTime }: {
                         !Object.values(welcomeMap).includes(word) &&
                         <motion.div
                             key={word}
-                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, x: -20 }}
                             transition={{ duration: 0.5 }}
                         >
                             <Markdown md={word} deleteId={isReadOnly ? undefined : id} disableSave></Markdown>
@@ -65,12 +66,15 @@ export default function Test({ latestTime }: {
                 data-umami-event='抽取词汇'
                 size='sm'
                 variant='flat'
-                startContent={<PiShuffleAngularDuotone />}
+                isLoading={isLoading}
+                startContent={!isLoading && <PiShuffleAngularDuotone />}
                 color='primary'
-                onPress={async () => {
+                onPress={() => { 
                     setWords([])
-                    const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
-                    setWords(words)
+                    startTransition(async () => {
+                        const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
+                        setWords(words)
+                    })
                 }}
             >
                 {'抽取'}
