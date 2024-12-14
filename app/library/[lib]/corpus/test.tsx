@@ -46,7 +46,7 @@ export default function Test({ latestTime }: {
             ></DateRangePicker>
         </I18nProvider>
         <div className='flex space-x-2'>
-            <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2'>
+            <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
                 <AnimatePresence mode='sync'>
                     {words.map(({ word, id }) => (
                         !Object.values(welcomeMap).includes(word) &&
@@ -66,8 +66,8 @@ export default function Test({ latestTime }: {
                 data-umami-event='抽取词汇'
                 size='sm'
                 variant='flat'
-                isLoading={isLoading}
-                startContent={!isLoading && <PiShuffleAngularDuotone />}
+                isDisabled={isLoading}
+                startContent={<PiShuffleAngularDuotone />}
                 color='primary'
                 onPress={() => { 
                     setWords([])
