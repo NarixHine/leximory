@@ -2,7 +2,6 @@ import { hFontFamily } from '@/lib/fonts'
 import H from '@/components/h'
 import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 export default function BlogHome() {
     const posts = [
@@ -11,7 +10,7 @@ export default function BlogHome() {
         { title: '利用 iOS Shortcuts 快捷保存词汇', date: '2024-11-23', slug: 'ios-shortcuts' },
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return <div className='max-w-sm mx-auto'>
-        <div className='border-l-2 border-l-danger/50 px-3 not-prose -mt-10'>
+        <div className='border-l-2 border-l-danger/50 px-3 not-prose'>
             <H disableCenter className={'text-danger text-4xl'} usePlayfair>
                 The Leximory Blog
             </H>

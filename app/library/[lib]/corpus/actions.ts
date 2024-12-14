@@ -39,5 +39,5 @@ export async function draw(lib: string, start: Date, end: Date) {
             }
         ]
     }).getMany({ pagination: { size: 5 } })
-    return records
+    return records.map(({ word, id }) => ({ word, id }))
 }

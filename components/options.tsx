@@ -67,7 +67,6 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                     onPress={handleShare}
                     isIconOnly
                     variant='light'
-                    radius='full'
                     size='lg'
                     color='warning'
                     startContent={<PiShareDuotone />}
@@ -80,7 +79,6 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
                         onPress={onOpen}
                         isIconOnly
                         variant='light'
-                        radius='full'
                         size='lg'
                         color='warning'
                         startContent={<PiGearDuotone />}

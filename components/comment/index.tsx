@@ -9,7 +9,7 @@ import { Card, CardBody } from '@nextui-org/card'
 import { Textarea } from '@nextui-org/input'
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone, PiSignInDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -22,6 +22,7 @@ import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { useAuth } from '@clerk/nextjs'
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments }: {
     params: string,
@@ -86,9 +87,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const wordElement = useRef<HTMLButtonElement>(null)
 
+    const { userId } = useAuth()
     const init = useCallback(() => {
         const element = wordElement.current
-        if (isOnDemand && !isLoaded && element) {
+        if (isOnDemand && !isLoaded && element && userId) {
             commentWord(getClickedChunk(element))
         }
     }, [isOnDemand, isLoaded, prompt])
@@ -122,7 +124,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isDisabled={status === 'deleted'}
                 size='sm'
                 isIconOnly
-                isLoading={status === 'loading' && isEditing}
+                isLoading={status === 'loading'}
                 startContent={status !== 'loading' && (isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />)}
                 color='primary'
                 variant='flat'
@@ -164,12 +166,19 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isDisabled={status === 'deleted'}
                 size='sm'
                 isIconOnly
-                startContent={<PiTrashDuotone />}
+                isLoading={status === 'loading' && !isEditing}
+                startContent={status !== 'loading' && <PiTrashDuotone />}
                 color='danger'
                 variant='flat'
                 onPress={async () => {
-                    await delComment(editId)
-                    setStatus('deleted')
+                    setStatus('loading')
+                    try {
+                        await delComment(editId)
+                        setStatus('deleted')
+                    } catch (error) {
+                        setStatus('')
+                        toast.error('删除失败')
+                    }
                 }}
             ></Button>}
         </>}
@@ -232,7 +241,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             </button>
                     }
                 </PopoverTrigger>
-                <PopoverContent className='max-w-80'>
+                <PopoverContent className={cn('max-w-80', !userId && !isLoaded && 'bg-background/50')}>
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
@@ -241,12 +250,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     {(!disableSave || (deleteId && deleteId !== 'undefined') || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <Save />
                                 </div>
-                                : <div className='space-y-3 w-40'>
+                                : userId ? <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-4/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-2/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-full rounded-lg h-3'></Skeleton>
                                 </div>
+                                : <Button startContent={<PiSignInDuotone />} as={Link} href='/sign-in' color='secondary' variant='shadow'>登录</Button>
                         }
                     </div>
                 </PopoverContent>

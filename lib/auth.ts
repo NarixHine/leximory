@@ -77,6 +77,7 @@ export const authReadToText = async (text: string) => {
 }
 
 const isPublic = { 'lib.access': libAccessStatusMap.public }
+
 const isStarredByUser = async () => {
     const { userId } = await getAuthOrThrow()
     return { 'lib.starredBy': { $includes: userId } }

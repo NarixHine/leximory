@@ -13,7 +13,7 @@ export default async function Lookback() {
         .lexicon
         .filter({
             $all: [
-                isListed(),
+                await isListed(),
                 {
                     $not: {
                         'word': { $any: Object.values(welcomeMap) }

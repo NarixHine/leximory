@@ -14,16 +14,18 @@ import { PiShuffleAngularDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom, libAtom } from '../atoms'
 import { I18nProvider } from '@react-aria/i18n'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Test({ latestTime, }: {
+export default function Test({ latestTime }: {
     latestTime: string
 }) {
     const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
 
-    const [words, setWords] = useState<PageRecordArray<SelectedPick<LexiconRecord, 'word'[]>> | []>([])
+    const [words, setWords] = useState<{ word: string, id: string }[]>([])
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
+
     return <div>
         <I18nProvider locale='zh-CN'>
             <DateRangePicker
@@ -31,9 +33,12 @@ export default function Test({ latestTime, }: {
                 label='词汇选取范围'
                 granularity='day'
                 value={{ start, end }}
-                onChange={({ start, end }) => {
-                    setStart(start)
-                    setEnd(end)
+                onChange={(range) => {
+                    if (range) {
+                        const { start, end } = range
+                        setStart(start)
+                        setEnd(end)
+                    }
                 }}
                 variant='underlined'
                 color='primary'
@@ -41,16 +46,35 @@ export default function Test({ latestTime, }: {
         </I18nProvider>
         <div className='flex space-x-2'>
             <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2'>
-                {
-                    words.map(({ word, id }) => (
-                        !Object.values(welcomeMap).includes(word) && <Markdown key={word} md={word} deleteId={isReadOnly ? undefined : id} disableSave></Markdown>
-                    ))
-                }
+                <AnimatePresence mode='sync'>
+                    {words.map(({ word, id }) => (
+                        !Object.values(welcomeMap).includes(word) &&
+                        <motion.div
+                            key={word}
+                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <Markdown md={word} deleteId={isReadOnly ? undefined : id} disableSave></Markdown>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
-            <Button data-umami-event='抽取词汇' size='sm' variant='flat' startContent={<PiShuffleAngularDuotone />} color='primary' onPress={async () => {
-                const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
-                setWords(words)
-            }}>{'抽取'}</Button>
+            <Button
+                data-umami-event='抽取词汇'
+                size='sm'
+                variant='flat'
+                startContent={<PiShuffleAngularDuotone />}
+                color='primary'
+                onPress={async () => {
+                    setWords([])
+                    const words = await draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
+                    setWords(words)
+                }}
+            >
+                {'抽取'}
+            </Button>
         </div>
-    </div >
+    </div>
 }
