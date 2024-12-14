@@ -155,7 +155,7 @@ function ReadingView() {
   if (hideText && md) {
     const matches = md?.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
     return (
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
         {matches.map((match, index) => (
           <div key={index} className='flex justify-center'>
             <Markdown md={match} onlyComments />
