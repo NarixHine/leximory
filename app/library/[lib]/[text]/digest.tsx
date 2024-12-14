@@ -152,7 +152,7 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const hideText = useAtomValue(hideTextAtom)
 
-  if (hideText) {
+  if (hideText && md) {
     const matches = md?.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4'>

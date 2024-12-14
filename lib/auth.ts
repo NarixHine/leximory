@@ -1,6 +1,6 @@
 import { getXataClient } from '@/lib/xata'
 import { auth } from '@clerk/nextjs/server'
-import { libAccessStatusMap } from './config'
+import { Lang, libAccessStatusMap } from './config'
 
 const getAuthOrThrow = async () => {
     const xata = getXataClient()
@@ -21,7 +21,7 @@ export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
             { $any: [{ owner: userId }, ...(orgId && orgRole === 'org:admin' ? [{ org: orgId }] : [])] },
         ]
     }).getFirstOrThrow()
-    return rec
+    return { rec, lang: rec.lang as Lang }
 }
 
 export const authReadToLib = async (lib: string) => {
@@ -43,7 +43,7 @@ export const authReadToLib = async (lib: string) => {
     const isOwner = rec.owner === (await auth()).userId
     const { lang } = rec
     const isOrganizational = !!orgId && rec.org === orgId
-    return { rec, isReadOnly, isOwner, lang, isOrganizational }
+    return { rec, isReadOnly, isOwner, lang: lang as Lang, isOrganizational }
 }
 
 // auth access to items related to libs
