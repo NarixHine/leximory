@@ -51,9 +51,9 @@ export default function ImportModal() {
                 词汇展板
             </Switch>}
             <Button isDisabled={isReadOnly} onPress={onOpen} className='flex-1' variant='flat' color='primary' startContent={<PiMagicWandDuotone />} isLoading={isLoading}>导入{!ebook ? '文本／' : ''}电子书</Button>
-            {!ebook && <Switch startContent={<PiOptionFill />} endContent={<PiOptionDuotone />} isDisabled={isReadOnly || isLoading} isSelected={editing} onValueChange={setEditing} color='secondary'>
-                修正模式
-            </Switch>}
+            <Switch startContent={<PiOptionFill />} endContent={<PiOptionDuotone />} isDisabled={isReadOnly || isLoading} isSelected={editing} onValueChange={setEditing} color='secondary'>
+                手动编辑
+            </Switch>
         </div>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
             <ModalContent>

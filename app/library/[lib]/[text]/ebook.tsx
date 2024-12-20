@@ -5,19 +5,21 @@ import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
 import { Spacer } from '@nextui-org/spacer'
 import { CircularProgress } from '@nextui-org/progress'
 import type { Contents, Rendition } from 'epubjs'
-import { PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
+import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
-import { cn, getSelectedChunk } from '@/lib/utils'
-import { useEffect, useRef, useState } from 'react'
+import { cn, getBracketedSelection, getSelectedChunk } from '@/lib/utils'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
-import { ebookAtom, textAtom, titleAtom } from './atoms'
+import { contentAtom, ebookAtom, textAtom, titleAtom } from './atoms'
 import { langAtom } from '../atoms'
 import { useAtom, useAtomValue } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
+import { updateTextAndRevalidate } from './actions'
+import { toast } from 'sonner'
 
 const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
@@ -43,11 +45,14 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
 export default function Ebook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
+    const content = useAtomValue(contentAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
 
     const [prompt, setPrompt] = useState<string | null>(null)
+    const [bookmark, setBookmark] = useState<string | null>(null)
+    const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
     const theme = useSystemColorMode()
@@ -98,12 +103,30 @@ export default function Ebook() {
             </Button>
             <Spacer />
             <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                <div ref={containerRef}>
+                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1'>
+                    <Button
+                        startContent={!savingBookmark && <PiBookmarkDuotone />}
+                        isLoading={savingBookmark}
+                        className='bg-background z-10'
+                        color='primary'
+                        variant='light'
+                        size='lg'
+                        radius='full'
+                        isIconOnly
+                        onPress={() => {
+                            if (bookmark) {
+                                startSavingBookmark(async () => {
+                                    await updateTextAndRevalidate(text, { content: content.concat(bookmark) })
+                                    toast.success('文摘已保存')
+                                })
+                            }
+                        }}>
+                    </Button>
                     <Popover placement='right' isDismissable portalContainer={containerRef.current}>
                         <PopoverTrigger>
                             <Button
                                 data-umami-event='词汇注解'
-                                className='absolute top-1 right-1 bg-background'
+                                className='bg-background'
                                 color='primary'
                                 variant='light'
                                 size='lg'
@@ -129,7 +152,6 @@ export default function Ebook() {
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
-
                         if (themeRendition.current) {
                             const { displayed } = themeRendition.current.location.start
                             setPage(lang === 'ja' ? `${displayed.page}/${displayed.total} ページ目` : `At ${displayed.page}/${displayed.total} in Chapter`)
@@ -154,7 +176,8 @@ export default function Ebook() {
                         themeRendition.current = rendition
                         rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
-                            setPrompt(selection ? getSelectedChunk(selection) : null)
+                            setPrompt(selection ? getBracketedSelection(selection) : null)
+                            setBookmark(selection ? `\n\n> ${getSelectedChunk(selection).replaceAll('\n', '\n> ')}` : null)
                         })
                     }}
                     epubOptions={{

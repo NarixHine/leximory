@@ -4,7 +4,7 @@ import { Button } from '@nextui-org/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@nextui-org/popover'
 import Comment from '@/components/comment'
 import { useEffect, useState } from 'react'
-import { getSelectedChunk } from '@/lib/utils'
+import { getBracketedSelection } from '@/lib/utils'
 import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
 
 export default function Define() {
@@ -47,7 +47,7 @@ export default function Define() {
             </Button>
         </PopoverTrigger>
         <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-            <Comment asCard prompt={getSelectedChunk(selection)} params='["", "🔄 加载中"]'></Comment>
+            <Comment asCard prompt={getBracketedSelection(selection)} params='["", "🔄 加载中"]'></Comment>
         </PopoverContent>
     </Popover>
 }

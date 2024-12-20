@@ -205,7 +205,7 @@ export default async function Page() {
             <div className='w-full my-6'>
                 <Suspense fallback={
                     <LookbackWrapper>
-                        <Skeleton className='w-full h-4 rounded-lg' />
+                        <Skeleton className='w-full h-4 rounded-lg my-2' />
                     </LookbackWrapper>
                 }>
                     <Lookback />

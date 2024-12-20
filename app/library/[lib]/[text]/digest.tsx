@@ -6,6 +6,7 @@ import { langAtom, libAtom } from '../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
 import { Button } from '@nextui-org/button'
+import { Alert } from '@nextui-org/alert'
 import { Spacer } from '@nextui-org/spacer'
 import { Input } from '@nextui-org/input'
 import { Tooltip } from '@nextui-org/tooltip'
@@ -150,6 +151,7 @@ function EditingView() {
 function ReadingView() {
   const md = useAtomValue(displayedMdAtom)
   const isReaderMode = useAtomValue(isReaderModeAtom)
+  const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
 
   if (hideText && md) {
@@ -167,13 +169,15 @@ function ReadingView() {
 
   if (!md) {
     return (
-      <ul className='flex flex-col gap-1 align-middle justify-center items-center h-[calc(100dvh-500px)]'>
-        <div>
-          <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
-          <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
-          <li className='flex items-center gap-2'><PiHeadphonesDuotone /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
-          <li className='flex items-center gap-2'><PiMagnifyingGlassDuotone /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
-        </div>
+      <ul className='flex flex-col gap-1 align-middle justify-center items-center'>
+        {ebook
+          ? <Alert icon={<PiBookBookmarkDuotone />} color='secondary' title='保存的文摘会显示于此'></Alert>
+          : <div className='h-[calc(100dvh-500px)]'>
+            <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
+            <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
+            <li className='flex items-center gap-2'><PiHeadphonesDuotone /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
+            <li className='flex items-center gap-2'><PiMagnifyingGlassDuotone /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
+          </div>}
       </ul>
     )
   }
@@ -268,18 +272,19 @@ export default function Digest() {
         )}
       </div>
 
-      {ebook ? (
-        <Ebook />
-      ) : isEditing ? (
+      {isEditing ? (
         <EditingView />
       ) : (
-        <ReadingView />
+        <>
+          {ebook && <Ebook />}
+          <ReadingView />
+        </>
       )}
 
       <div className={isReaderMode ? '' : 'max-w-[650px] mx-auto'}>
         {!isReaderMode && (
           <>
-            {!ebook && <Spacer y={3} />}
+            <Spacer y={3} />
             <Divider />
             <Spacer y={3} />
             <ImportModal />

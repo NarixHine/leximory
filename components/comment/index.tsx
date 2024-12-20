@@ -46,6 +46,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
     const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
     const [savedId, setSavedId] = useState<string | null>(null)
+    const [uid, setUid] = useState<string>(randomID())
     const [isEditing, setIsEditing] = useState(false)
     const [editedPortions, setEditedPortions] = useState<string[]>([])
 
@@ -82,6 +83,9 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     useEffect(() => {
         if (prompt) {
             commentWord(prompt)
+            setStatus('')
+            setUid(randomID())
+            setSavedId(null)
         }
     }, [prompt])
 
@@ -95,7 +99,6 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
     }, [isOnDemand, isLoaded, prompt])
 
-    const uid = randomID()
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
     const Save = () => <div className='flex gap-2'>
         {!disableSave && !isEditing && !isReadOnly && status !== 'saved' && <Button

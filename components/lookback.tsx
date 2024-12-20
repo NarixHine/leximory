@@ -25,7 +25,7 @@ export default async function Lookback() {
         .select(['lib.id', 'word'])
         .getMany({ pagination: { size: 10 } })
     return <LookbackWrapper>
-        {words.length > 0 ? words.map(({ word, id, lib }) =>
+        {words.length > 0 ? words.map(({ word, id }) =>
             <span key={id} className='inline-block px-2 py-1'>
                 <Markdown key={word} md={word} disableSave></Markdown>
             </span>

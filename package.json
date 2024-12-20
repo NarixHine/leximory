@@ -1,6 +1,6 @@
 {
   "name": "leximory",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -21,6 +21,7 @@
     "@mdx-js/react": "^3.0.1",
     "@next/mdx": "15.0.4",
     "@nextui-org/accordion": "^2.2.5",
+    "@nextui-org/alert": "^2.2.7",
     "@nextui-org/badge": "^2.2.3",
     "@nextui-org/breadcrumbs": "^2.2.4",
     "@nextui-org/button": "^2.2.7",
@@ -75,7 +76,7 @@
     "markdown-to-jsx": "^7.4.7",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.45",
-    "next": "^15.1.1-canary.2",
+    "next": "^15.1.1-canary.14",
     "next-themes": "^0.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
