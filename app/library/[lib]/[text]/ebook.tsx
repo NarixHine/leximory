@@ -107,6 +107,7 @@ export default function Ebook() {
                     <Button
                         startContent={!savingBookmark && <PiBookmarkDuotone />}
                         isLoading={savingBookmark}
+                        isDisabled={!bookmark}
                         className='bg-background z-10'
                         color='primary'
                         variant='light'
