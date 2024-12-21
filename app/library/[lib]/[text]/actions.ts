@@ -117,7 +117,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 }
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
-    if (await incrCommentaryQuota(0.2, userId)) {
+    if (await incrCommentaryQuota(0.25, userId)) {
         return { error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` }
     }
 

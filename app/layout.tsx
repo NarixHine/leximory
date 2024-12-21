@@ -5,6 +5,7 @@ import { defaultFontFamily } from '@/lib/fonts'
 import Script from 'next/script'
 import type { ReactNode } from 'react'
 import Dock from './dock'
+import { RenderingBoundary } from 'jotai-ssr'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -57,10 +58,12 @@ export default async function RootLayout(
 				fontFamily: defaultFontFamily,
 			}}>
 				<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-					<div className='relative flex flex-col'>
-						{children}
-						<Dock />
-					</div>
+					<RenderingBoundary>
+						<div className='relative flex flex-col'>
+							{children}
+							<Dock />
+						</div>
+					</RenderingBoundary>
 				</Providers>
 			</body>
 		</html>

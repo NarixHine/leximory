@@ -12,7 +12,6 @@ import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
-import { RenderingBoundary } from 'jotai-ssr'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import dynamic from 'next/dynamic'
 
@@ -46,7 +45,6 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 			<NextUIProvider navigate={router.push}>
 				<ThemeProvider {...themeProps}>
 					<JotaiProvider>
-						<RenderingBoundary>
 							<Toaster toastOptions={{
 								classNames: {
 									toast: cn('bg-primary-200 text-primary-900 dark:bg-sky-700 dark:text-sky-100 dark:border-0', CHINESE_ZCOOL.className),
@@ -54,7 +52,6 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 							}}></Toaster>
 							<PWAPrompt copyTitle='将 Leximory 添加到主屏幕' copyDescription='在主屏幕上快速访问 Leximory PWA' copySubtitle='https://leximory.com/' copyShareStep='点击右上角分享按钮' copyAddToHomeScreenStep='点击"添加到主屏幕"' appIconPath='/apple-touch-icon.png' />
 							{children}
-						</RenderingBoundary>
 					</JotaiProvider>
 				</ThemeProvider>
 			</NextUIProvider>

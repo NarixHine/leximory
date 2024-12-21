@@ -31,22 +31,20 @@ export default async function Page(props: LibAndTextParams) {
     const params = await props.params
     const { title, content, lib, id, topics, ebook, } = await getData(params.text)
 
-    return (
-        <HydrationBoundary hydrateAtoms={[
-            [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
-            [topicsAtom, topics ?? []],
-            [ebookAtom, ebook?.url],
-            [textAtom, id],
-            [titleAtom, title],
-            [recentWordsAtom, []],
-            [inputAtom, '']
-        ]}>
-            <Main className='max-w-screen-xl'>
-                <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>
-                <H useNoto className={'sm:text-4xl mb-2 text-3xl'}>{title}</H>
-                <Topics topics={topics}></Topics>
-                <Digest></Digest>
-            </Main>
-        </HydrationBoundary>
-    )
+    return (<HydrationBoundary hydrateAtoms={[
+        [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
+        [topicsAtom, topics ?? []],
+        [ebookAtom, ebook?.url],
+        [textAtom, id],
+        [titleAtom, title],
+        [recentWordsAtom, []],
+        [inputAtom, '']
+    ]}>
+        <Main className='max-w-screen-xl'>
+            <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>
+            <H useNoto className={'sm:text-4xl mb-2 text-3xl'}>{title}</H>
+            <Topics topics={topics}></Topics>
+            <Digest></Digest>
+        </Main>
+    </HydrationBoundary>)
 }

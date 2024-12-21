@@ -3,7 +3,6 @@
 import { Button } from '@nextui-org/button'
 import { Card, CardBody, CardFooter } from '@nextui-org/card'
 import { Chip } from '@nextui-org/chip'
-import { Divider } from '@nextui-org/divider'
 import { Spacer } from '@nextui-org/spacer'
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone } from 'react-icons/pi'
 import Options from './options'
@@ -54,7 +53,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
-            <CardBody className='p-6'>
+            <CardBody className='px-6 pt-5'>
                 <a className='text-4xl' style={{
                     fontFamily: postFontFamily
                 }}>{name}</a>
@@ -63,8 +62,7 @@ function Library({ id, name, lexicon, lang, save, del, isOwner, access, orgId, o
                     {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color={colorMap[tag]}>{tag}</Chip>)}
                 </div>
             </CardBody>
-            <Divider></Divider>
-            <CardFooter className='p-4 flex gap-4'>
+            <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='secondary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>积累词汇</p>

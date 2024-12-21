@@ -1,10 +1,12 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redis } from './redis'
 
-const getPlan = async () => (await auth()).sessionClaims?.plan
+const getPlan = async (userId?: string) => {
+    return userId ? (await (await clerkClient()).users.getUser(userId)).publicMetadata.plan : (await auth()).sessionClaims?.plan
+}
 
-export const maxCommentaryQuota = async () => {
-    const plan = await getPlan()
+export const maxCommentaryQuota = async (userId?: string) => {
+    const plan = userId ? await getPlan(userId) : await getPlan()
     if (plan === 'communicator') {
         return 999
     }
@@ -35,7 +37,7 @@ export default async function incrCommentaryQuota(incrBy: number = 1, givenUserI
         await redis.expire(quotaKey, 60 * 60 * 24 * 30)
     }
 
-    return quota > await maxCommentaryQuota()
+    return quota > await maxCommentaryQuota(givenUserId)
 }
 
 export async function getCommentaryQuota() {

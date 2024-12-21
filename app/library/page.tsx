@@ -12,7 +12,6 @@ import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { Card, CardBody, CardFooter } from '@nextui-org/card'
-import { Divider } from '@nextui-org/divider'
 import { Skeleton } from '@nextui-org/skeleton'
 import { Spacer } from '@nextui-org/spacer'
 import { Metadata } from 'next'
@@ -20,6 +19,7 @@ import { revalidatePath } from 'next/cache'
 import { Suspense } from 'react'
 import { PiFolderPlusDuotone } from 'react-icons/pi'
 import { RedirectToSignIn } from '@clerk/nextjs'
+import { RenderingBoundary } from 'jotai-ssr'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -53,7 +53,7 @@ async function getOrgs() {
 function LibrarySkeleton() {
     return (
         <Card className='w-full opacity-50' shadow='sm'>
-            <CardBody className='p-6'>
+            <CardBody className='px-6 pt-5'>
                 <Skeleton className='w-48 h-10 rounded-lg' />
                 <Spacer y={8} />
                 <div className='flex space-x-2'>
@@ -61,8 +61,7 @@ function LibrarySkeleton() {
                     <Skeleton className='w-16 h-6 rounded-lg' />
                 </div>
             </CardBody>
-            <Divider />
-            <CardFooter className='p-4 flex gap-4'>
+            <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Skeleton className='w-24 h-9 rounded-lg' />
                 <div className='flex flex-col gap-1'>
                     <Skeleton className='w-16 h-3 rounded-lg' />
@@ -179,80 +178,81 @@ export default async function Page() {
         revalidatePath('/library')
     }
 
-    return <Main className='flex flex-col max-w-screen-sm'>
-        <Nav />
+    return <RenderingBoundary>
+        <Main className='flex flex-col max-w-screen-sm'>
+            <Nav />
 
-        <H className='text-5xl'>文库</H>
-        <Spacer y={8} />
-        <div className='flex flex-col gap-4'>
-            <div className='grid grid-cols-2 justify-center gap-4'>
-                <Suspense fallback={
-                    <GradientCard title='本月 AI 注解额度'>
-                        <Skeleton className='w-full h-8' />
-                    </GradientCard>
-                }>
-                    <CommentaryQuotaCard />
-                </Suspense>
-                <Suspense fallback={
-                    <GradientCard title='本月 AI 音频额度'>
-                        <Skeleton className='w-full h-8' />
-                    </GradientCard>
-                }>
-                    <AudioQuotaCard />
-                </Suspense>
-            </div>
-
-            <div className='w-full my-6'>
-                <Suspense fallback={
-                    <LookbackWrapper>
-                        <Skeleton className='w-full h-4 rounded-lg my-2' />
-                    </LookbackWrapper>
-                }>
-                    <Lookback />
-                </Suspense>
-            </div>
-
-            <Suspense fallback={
-                <div className='flex flex-col gap-4'>
-                    <LibrarySkeleton />
-                    <LibrarySkeleton />
-                    <LibrarySkeleton />
+            <H className='text-5xl'>文库</H>
+            <Spacer y={8} />
+            <div className='flex flex-col gap-4'>
+                <div className='grid grid-cols-2 justify-center gap-4'>
+                    <Suspense fallback={
+                        <GradientCard title='本月 AI 注解额度'>
+                            <Skeleton className='w-full h-8' />
+                        </GradientCard>
+                    }>
+                        <CommentaryQuotaCard />
+                    </Suspense>
+                    <Suspense fallback={
+                        <GradientCard title='本月 AI 音频额度'>
+                            <Skeleton className='w-full h-8' />
+                        </GradientCard>
+                    }>
+                        <AudioQuotaCard />
+                    </Suspense>
                 </div>
-            }>
-                <LibraryList
-                    userId={userId}
-                    save={save}
-                    del={del}
-                    mems={mems}
-                />
-            </Suspense>
 
-            <Options
-                trigger={<Card className='h-full w-full opacity-70 bg-transparent' shadow='none' isPressable>
-                    <CardBody className='justify-center items-center flex'>
-                        <span className='text-7xl text-slate-700 dark:text-slate-200'><PiFolderPlusDuotone /></span>
-                    </CardBody>
-                </Card>}
-                action={save.bind(null, randomID())}
-                inputs={[{
-                    name: 'name',
-                    label: '文库名',
-                }]}
-                selects={[{
-                    name: 'access',
-                    label: '权限',
-                    value: 'private',
-                    options: accessOptions
-                }, {
-                    name: 'lang',
-                    label: '语言',
-                    value: 'en',
-                    options: supportedLangs.map(lang => ({
-                        name: lang,
-                        label: langMap[lang]
-                    })),
-                }]}
-            />
-        </div>
-    </Main>
+                <div className='w-full my-6'>
+                    <Suspense fallback={
+                        <LookbackWrapper>
+                            <Skeleton className='w-full h-4 rounded-lg mb-3 mt-2' />
+                        </LookbackWrapper>
+                    }>
+                        <Lookback />
+                    </Suspense>
+                </div>
+
+                <Suspense fallback={
+                    <div className='flex flex-col gap-4'>
+                        <LibrarySkeleton />
+                        <LibrarySkeleton />
+                    </div>
+                }>
+                    <LibraryList
+                        userId={userId}
+                        save={save}
+                        del={del}
+                        mems={mems}
+                    />
+                </Suspense>
+
+                <Options
+                    trigger={<Card className='h-full w-full opacity-70 bg-transparent' shadow='none' isPressable>
+                        <CardBody className='justify-center items-center flex'>
+                            <span className='text-7xl text-slate-700 dark:text-slate-200'><PiFolderPlusDuotone /></span>
+                        </CardBody>
+                    </Card>}
+                    action={save.bind(null, randomID())}
+                    inputs={[{
+                        name: 'name',
+                        label: '文库名',
+                    }]}
+                    selects={[{
+                        name: 'access',
+                        label: '权限',
+                        value: 'private',
+                        options: accessOptions
+                    }, {
+                        name: 'lang',
+                        label: '语言',
+                        value: 'en',
+                        options: supportedLangs.map(lang => ({
+                            name: lang,
+                            label: langMap[lang]
+                        })),
+                    }]}
+                />
+            </div>
+        </Main>
+    </RenderingBoundary>
 }
