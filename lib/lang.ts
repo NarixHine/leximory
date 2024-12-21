@@ -9,7 +9,7 @@ export function extractSaveForm(portions: string[]) {
 export function validateOrThrow(word: string) {
     const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
     if (!isValid) {
-        throw new Error('Invalid word')
+        throw new Error('Invalid word', { cause: word })
     }
     return word
 }

@@ -105,6 +105,7 @@ export default function Ebook() {
             <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='flex absolute top-2 right-2 gap-1'>
                     <Button
+                        data-umami-event='摘录好句'
                         startContent={!savingBookmark && <PiBookmarkDuotone />}
                         isLoading={savingBookmark}
                         isDisabled={!bookmark}

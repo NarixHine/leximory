@@ -1,7 +1,7 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import { authWriteToLib } from '@/lib/auth'
 import { originals, validateOrThrow } from '@/lib/lang'
-import { parseBody } from '@/lib/utils'
+import { parseBody, wrapInDoubleBracketsIfNot } from '@/lib/utils'
 import { XataClient } from '@/lib/xata'
 import { verifyToken } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
@@ -26,12 +26,14 @@ export async function POST(request: Request) {
     if (typeof comment === 'object' && 'error' in comment) {
         throw new Error(comment.error)
     }
-    validateOrThrow(comment)
+
+    const wrappedComment = wrapInDoubleBracketsIfNot(comment)
+    validateOrThrow(wrappedComment)
     after(async () => {
-        await xata.db.lexicon.create({ lib, word: comment })
+        await xata.db.lexicon.create({ lib, word: wrappedComment })
         revalidatePath(`/library/${lib}/corpus`)
     })
-
-    const portions = comment.replaceAll('{{', '').replaceAll('}}', '').split('||').map((md) => removeMd(md))
+    
+    const portions = wrappedComment.replaceAll('{{', '').replaceAll('}}', '').split('||').map((md) => removeMd(md))
     return NextResponse.json({ word: portions[0], def: portions[2], etym: portions[3] ?? '无', cognates: portions[4] ?? '无' })
 }
