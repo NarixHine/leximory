@@ -1,10 +1,12 @@
+import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import { authWriteToLib } from '@/lib/auth'
 import { originals, validateOrThrow } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { XataClient } from '@/lib/xata'
 import { verifyToken } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
+import removeMd from 'remove-markdown'
 import { z } from 'zod'
 
 const xata = new XataClient()
@@ -16,13 +18,20 @@ const schema = z.object({
 
 export async function POST(request: Request) {
     const { lib, token, word: rawWord } = await parseBody(request, schema)
-    
+
     const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
     const { lang } = await authWriteToLib(lib, sub)
     const word = `{{${lang === 'en' ? originals(rawWord)[0] : rawWord}}}`
-    validateOrThrow(word)
-    await xata.db.lexicon.create({ lib, word })
-    revalidatePath(`/library/${lib}/corpus`)
+    const comment = await generateSingleCommentFromShortcut(word, lang, sub)
+    if (typeof comment === 'object' && 'error' in comment) {
+        throw new Error(comment.error)
+    }
+    validateOrThrow(comment)
+    after(async () => {
+        await xata.db.lexicon.create({ lib, word: comment })
+        revalidatePath(`/library/${lib}/corpus`)
+    })
 
-    return NextResponse.json({ success: true })
+    const portions = comment.replaceAll('{{', '').replaceAll('}}', '').split('||').map((md) => removeMd(md))
+    return NextResponse.json({ word: portions[0], def: portions[2], etym: portions[3] ?? '无', cognates: portions[4] ?? '无' })
 }

@@ -3,7 +3,7 @@
 import { authWriteToText } from '@/lib/auth'
 import { getXataClient } from '@/lib/xata'
 import { revalidatePath } from 'next/cache'
-import { streamObject, streamText } from 'ai'
+import { generateText, streamObject, streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { createStreamableValue } from 'ai/rsc'
 import { z } from 'zod'
@@ -114,6 +114,25 @@ export async function generateSingleComment(prompt: string, lib: string) {
     })()
 
     return { text: stream.value }
+}
+
+export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
+    if (await incrCommentaryQuota(0.2, userId)) {
+        return { error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` }
+    }
+
+    const { text } = await generateText({
+        model: openai('gpt-4o-mini'),
+        system: `
+        生成词汇注解（形如 [[vocabulary]]，双重中括号内的部分必须注解）。
+
+        ${instruction[lang]}
+        `,
+        prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}\n\n${prompt}`,
+        maxTokens: 200
+    })
+
+    return text
 }
 
 const exampleSentencePrompt = (lang: Lang) => `必须在语境义部分以斜体附上该词的例句。形如${lang === 'en' ? 'word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known: *It later transpired that he was a spy.*||原形容水汽“升腾”: ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。' : ''}${lang === 'ja' ? '単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である：*彼女は可哀想に見えた。*||**かわい**（可悲）＋**そう**（……的样子）' : ''}${lang === 'zh' ? '词语||词语||释义：*例文*' : ''}`

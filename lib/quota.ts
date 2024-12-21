@@ -25,8 +25,8 @@ export const maxAudioQuota = async () => {
     return 5
 }
 
-export default async function incrCommentaryQuota(incrBy: number = 1) {
-    const { userId } = await auth()
+export default async function incrCommentaryQuota(incrBy: number = 1, givenUserId?: string) {
+    const userId = givenUserId ?? (await auth()).userId
     const quotaKey = `user:${userId}:commentary_quota`
 
     const quota = await redis.incrbyfloat(quotaKey, incrBy)
