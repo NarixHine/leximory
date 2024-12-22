@@ -2,16 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-    color: #FAFDF6;
-}
-
-@media(prefers-color-scheme: dark) {
-    html {
-        color: #383E38;
-    }
-}
-
 body {
     counter-reset: sidenote-counter;
 }

@@ -6,6 +6,7 @@ import Script from 'next/script'
 import type { ReactNode } from 'react'
 import Dock from './dock'
 import { RenderingBoundary } from 'jotai-ssr'
+import env, { isProd } from '@/lib/env'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -15,7 +16,7 @@ export const experimental_ppr = true
 
 export const metadata: Metadata = {
 	applicationName: TITLE_DEFAULT,
-	metadataBase: new URL(process.env.NEXT_PUBLIC_URL!),
+	metadataBase: new URL(env.NEXT_PUBLIC_URL),
 	title: {
 		default: TITLE_DEFAULT,
 		template: TITLE_TEMPLATE,
@@ -53,7 +54,7 @@ export default async function RootLayout(
 ) {
 	return (
 		<html lang='zh-CN' className='antialiased'>
-			{process.env.NODE_ENV === 'production' && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
+			{isProd && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 			<body style={{
 				fontFamily: defaultFontFamily,
 			}}>

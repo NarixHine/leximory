@@ -15,7 +15,7 @@ import { maxEbookSize } from './import'
 
 export async function updateTextAndRevalidate(id: string, updateData: Partial<{ content: string; topics: string[]; title: string }>) {
     const { lib } = (await (await authWriteToText(id)).update(updateData))!
-    revalidatePath(`/library/${lib!.id}/${id}/`)
+    revalidatePath(`/library/${lib!.id}/${id}`)
 }
 
 export async function saveContentAndTopics(id: string, content: string, topics: string[]) {

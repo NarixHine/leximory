@@ -4,6 +4,7 @@ import { Button } from '@nextui-org/button'
 import { PiClockClockwiseDuotone } from 'react-icons/pi'
 import saveSubs, { delSubs } from './actions'
 import { toast } from 'sonner'
+import env from '@/lib/env'
 
 export default function Bell({ hasSubscribed }: {
     hasSubscribed: boolean
@@ -13,7 +14,7 @@ export default function Bell({ hasSubscribed }: {
 
         const subscription = await register.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         })
 
         await saveSubs(subscription)

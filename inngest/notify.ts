@@ -3,13 +3,14 @@ import { inngest } from './client'
 import { getXataClient } from '@/lib/xata'
 import webpush, { PushSubscription } from 'web-push'
 import { prefixUrl } from '@/lib/config'
+import env from '@/lib/env'
 
 type Events = GetEvents<typeof inngest>
 
 webpush.setVapidDetails(
-    process.env.NEXT_PUBLIC_URL!,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
+    env.NEXT_PUBLIC_URL!,
+    env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    env.VAPID_PRIVATE_KEY!
 )
 
 export const fanNotification = inngest.createFunction(

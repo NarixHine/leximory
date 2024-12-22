@@ -10,7 +10,7 @@ export default async function load(lib: string, cursor?: string) {
     const res = await xata.db.lexicon.filter({ lib }).sort('xata.createdAt', 'desc').select(['lib.name', 'word', 'lib.lang']).getPaginated({
         pagination: { size: 16, after: cursor },
     })
-    return { words: res.records.map(({ word, id, xata, lib }) => ({ word, id, xata, lib: { id: lib!.id, name: lib!.name } })), cursor: res.meta.page.cursor, more: res.meta.page.more, isReadOnly }
+    return { words: res.records.map(({ word, id, lib, xata }) => ({ word, id, date: xata.createdAt.toISOString().split('T')[0], lib: { id: lib!.id, name: lib!.name } })), cursor: res.meta.page.cursor, more: res.meta.page.more, isReadOnly }
 }
 
 export const save = async (lib: string, word: string) => {

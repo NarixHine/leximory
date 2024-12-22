@@ -20,11 +20,6 @@ const nextConfig: NextConfig = {
                 destination: '/blog/from-memorisation-to-acquisition',
                 permanent: true,
             },
-            {
-                source: '/hello-leximory-hi-pxci',
-                destination: '/blog/summer-hackathon',
-                permanent: true,
-            },
         ]
     },
     async rewrites() {

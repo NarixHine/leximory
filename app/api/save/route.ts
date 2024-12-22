@@ -1,5 +1,6 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import { authWriteToLib } from '@/lib/auth'
+import env from '@/lib/env'
 import { originals, validateOrThrow } from '@/lib/lang'
 import { parseBody, wrapInDoubleBracketsIfNot } from '@/lib/utils'
 import { XataClient } from '@/lib/xata'
@@ -19,7 +20,7 @@ const schema = z.object({
 export async function POST(request: Request) {
     const { lib, token, word: rawWord } = await parseBody(request, schema)
 
-    const { sub } = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! })
+    const { sub } = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY })
     const { lang } = await authWriteToLib(lib, sub)
     const word = `{{${lang === 'en' ? originals(rawWord)[0] : rawWord}}}`
     const comment = await generateSingleCommentFromShortcut(word, lang, sub)

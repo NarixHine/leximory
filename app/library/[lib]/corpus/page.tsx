@@ -20,12 +20,12 @@ export default async function Page(props: LibParams) {
         <Nav isAtCorpus lib={{ id: lib, name: words[0].lib.name }}></Nav>
         <H>{words[0].lib.name}</H>
         <Spacer y={5}></Spacer>
-        <div className='flex flex-col space-y-6 sm:flex-row sm:space-x-5'>
-            <div className='basis-1/3 sm:border-r-1 sm:pr-2'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='sm:col-span-1 sm:border-r-1 sm:pr-2'>
                 <h2 className='text-xl font-semibold'>自我检测</h2>
-                <Test latestTime={words[0].xata.createdAt.toISOString().split('T')[0]}></Test>
+                <Test latestTime={words[0].date}></Test>
             </div>
-            <div className='basis-3/5'>
+            <div className='sm:col-span-2'>
                 <Recollection words={words} cursor={cursor} more={more}></Recollection>
             </div>
         </div>

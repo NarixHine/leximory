@@ -45,7 +45,7 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
 export default function Ebook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
-    const content = useAtomValue(contentAtom)
+    const [content, setContent] = useAtom(contentAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
@@ -118,7 +118,9 @@ export default function Ebook() {
                         onPress={() => {
                             if (bookmark) {
                                 startSavingBookmark(async () => {
-                                    await updateTextAndRevalidate(text, { content: content.concat(bookmark) })
+                                    const newContent = content.concat(bookmark)
+                                    await updateTextAndRevalidate(text, { content: newContent })
+                                    setContent(newContent)
                                     toast.success('文摘已保存')
                                 })
                             }

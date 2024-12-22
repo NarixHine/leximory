@@ -1,3 +1,5 @@
+import env from './env'
+
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
@@ -30,7 +32,7 @@ export const libAccessStatusMap: Record<'private' | 'public', number> = {
     public: 1,
 }
 
-export const prefixUrl = (url: string) => `${process.env.NEXT_PUBLIC_URL}${url}`
+export const prefixUrl = (url: string) => `${env.NEXT_PUBLIC_URL}${url}`
 
 export const accessOptions = [
     { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },
