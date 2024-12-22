@@ -18,5 +18,4 @@ export const displayedMdAtom = atom((get) => {
     const isLoading = get(isLoadingAtom)
     return isLoading ? completion : content
 })
-export const recentWordsAtom = atom<string[][]>([])
 export const hideTextAtom = atom(false)

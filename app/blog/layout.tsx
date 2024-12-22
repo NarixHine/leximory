@@ -1,6 +1,14 @@
 import Main from '@/components/main'
 import { postFontFamily } from '@/lib/fonts'
+import { Metadata } from 'next'
 import { ReactNode } from 'react'
+
+export const metadata: Metadata = {
+    title: {
+        default: 'The Leximory Blog',
+        template: '%s | The Leximory Blog',
+    },
+}
 
 export default function PostLayout({ children }: { children: ReactNode }) {
     return (

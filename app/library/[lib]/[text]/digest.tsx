@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom, recentWordsAtom, hideTextAtom } from './atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom, hideTextAtom } from './atoms'
 import { langAtom, libAtom } from '../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -11,12 +11,10 @@ import { Spacer } from '@nextui-org/spacer'
 import { Input } from '@nextui-org/input'
 import { Tooltip } from '@nextui-org/tooltip'
 import { Snippet } from '@nextui-org/snippet'
-import { Badge } from '@nextui-org/badge'
-import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { PiBookOpenDuotone, PiKanbanDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone } from 'react-icons/pi'
+import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone } from 'react-icons/pi'
 import { saveContentAndTopics } from './actions'
 import MdEditor from '@/components/editor'
 import Topics from '@/components/topics'
@@ -194,57 +192,6 @@ function ReadingView() {
   )
 }
 
-function QuickReview() {
-  const [recentWords] = useAtom(recentWordsAtom)
-  const [isOpen, setIsOpen] = useState(false)
-
-  if (recentWords.length === 0) return null
-
-  return (
-    <div className='fixed bottom-4 right-4 z-50'>
-      <Popover
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
-        placement='top-end'
-        shadow='sm'
-      >
-        <PopoverTrigger>
-          <Badge
-            content={recentWords.length}
-            color='secondary'
-            variant='flat'
-          >
-            <Button
-              isIconOnly
-              onPress={() => setIsOpen(true)}
-              variant='flat'
-              color='secondary'
-              startContent={<PiKanbanDuotone />}
-            >
-            </Button>
-          </Badge>
-        </PopoverTrigger>
-        <PopoverContent className='p-5 max-w-80'>
-          <div className='flex justify-between items-center mb-2'>
-            <span className='text-sm text-gray-500'>
-              本次阅读保存词汇
-            </span>
-          </div>
-          <div className='flex flex-wrap gap-3 w-full justify-center'>
-            {recentWords.map((word) => (
-              <Markdown
-                key={word[0]}
-                disableSave
-                md={`{{${word.join('||')}}}`}
-              />
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  )
-}
-
 export default function Digest() {
   const isEditing = useAtomValue(isEditingAtom)
   const ebook = useAtomValue(ebookAtom)
@@ -287,7 +234,6 @@ export default function Digest() {
           <>
             <Spacer y={4} />
             <ImportModal />
-            <QuickReview />
           </>
         )}
       </div>

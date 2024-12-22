@@ -14,7 +14,7 @@ import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
-import { contentAtom, recentWordsAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
+import { contentAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { delComment, modifyText, saveComment } from './actions'
 import { extractSaveForm } from '@/lib/lang'
@@ -24,15 +24,23 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments }: {
-    params: string,
+interface CommentProps {
+    params: string
     disableSave?: boolean
     deleteId?: string
     trigger?: ComponentProps<typeof Button>
     asCard?: boolean
     prompt?: string
     onlyComments?: boolean
-}) {
+}
+
+interface CommentState {
+    status: 'idle' | 'loading' | 'saved' | 'deleted'
+    error?: string
+    savedId: string | null
+}
+
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments }: CommentProps) {
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
     const text = useAtomValue(textAtom)
@@ -44,20 +52,18 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
-    const [status, setStatus] = useState<'' | 'saved' | 'deleted' | 'loading'>('')
-    const [savedId, setSavedId] = useState<string | null>(null)
+    const [status, setStatus] = useState<CommentState['status']>('idle')
+    const [savedId, setSavedId] = useState<CommentState['savedId']>(null)
     const [uid, setUid] = useState<string>(randomID())
     const [isEditing, setIsEditing] = useState(false)
     const [editedPortions, setEditedPortions] = useState<string[]>([])
 
     useEffect(() => {
         setIsLoaded(!isOnDemand)
-        setStatus('')
+        setStatus('idle')
     }, [])
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
-
-    const setRecentWords = useSetAtom(recentWordsAtom)
 
     const commentWord = async (prompt: string) => {
         const { text, error } = await generateSingleComment(prompt, lib)
@@ -83,7 +89,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     useEffect(() => {
         if (prompt) {
             commentWord(prompt)
-            setStatus('')
+            setStatus('idle')
             setUid(randomID())
             setSavedId(null)
         }
@@ -115,9 +121,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     const savedId = await saveComment(portions, lib)
                     setStatus('saved')
                     setSavedId(savedId)
-                    setRecentWords((prev) => [...new Set([...prev, extractSaveForm(portions)])])
                 } catch (error) {
-                    setStatus('')
+                    setStatus('idle')
                     toast.error('保存失败')
                 }
             }}
@@ -179,7 +184,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         await delComment(editId)
                         setStatus('deleted')
                     } catch (error) {
-                        setStatus('')
+                        setStatus('idle')
                         toast.error('删除失败')
                     }
                 }}
