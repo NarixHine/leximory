@@ -18,11 +18,11 @@ export default async function Page(props: LibParams) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name: words[0].lib.name }}></Nav>
-        <H>{words[0].lib.name}</H>
+        <H useNoto>{words[0].lib.name}</H>
         <Spacer y={5}></Spacer>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            <div className='sm:col-span-1 sm:border-r-1 sm:pr-2'>
-                <h2 className='text-xl font-semibold'>自我检测</h2>
+            <div className='sm:col-span-1'>
+                <h2 className='text-xl font-semibold opacity-80'>自我检测</h2>
                 <Test latestTime={words[0].date}></Test>
             </div>
             <div className='sm:col-span-2'>
