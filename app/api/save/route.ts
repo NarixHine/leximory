@@ -36,5 +36,5 @@ export async function POST(request: Request) {
     })
     
     const portions = wrappedComment.replaceAll('{{', '').replaceAll('}}', '').split('||').map((md) => removeMd(md))
-    return NextResponse.json({ word: portions[0], def: portions[2], etym: portions[3] ?? '无', cognates: portions[4] ?? '无' })
+    return NextResponse.json({ word: portions[1], def: portions[2], etym: portions[3] ?? '无', cognates: portions[4] ?? '无' })
 }
