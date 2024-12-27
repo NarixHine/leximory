@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
+import { useRouter } from 'next/navigation'
 
 export function TypedTitle() {
     return <TypeAnimation
@@ -76,6 +77,7 @@ export function Article() {
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
                     gradient='bg-gradient-to-br from-secondary-200 to-secondary-300'
+                    to='/library/3e4f1126/5c4e8e4e'
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -86,15 +88,14 @@ export function Article() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className='col-span-2'
             >
-                <Link href='/blog/ios-shortcuts'>
-                    <GradientCard
-                        title='iOS Shortcut'
-                        text='在苹果设备上快速保存单词'
-                        gradient='bg-gradient-to-br from-primary-200 to-primary-300'
-                    >
-                        <PiAppleLogoDuotone className='text-2xl opacity-60' />
-                    </GradientCard>
-                </Link>
+                <GradientCard
+                    title='iOS Shortcut'
+                    text='在苹果设备上快速保存单词'
+                    to='/blog/ios-shortcuts'
+                    gradient='bg-gradient-to-br from-primary-200 to-primary-300'
+                >
+                    <PiAppleLogoDuotone className='text-2xl opacity-60' />
+                </GradientCard>
             </motion.div>
 
             <motion.div
@@ -103,15 +104,14 @@ export function Article() {
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className='col-span-2'
             >
-                <Link href='https://www.cdc.gov/niosh/mining/tools/installpwa.html'>
-                    <GradientCard
-                        title='边听边读'
-                        text='语言认知的另一个维度'
-                        gradient='bg-gradient-to-br from-danger-200 to-danger-300'
-                    >
-                        <PiDeviceMobileDuotone className='text-2xl opacity-60' />
-                    </GradientCard>
-                </Link>
+                <GradientCard
+                    to='/blog/reading-while-listening'
+                    title='边听边读'
+                    text='语言认知的另一个维度'
+                    gradient='bg-gradient-to-br from-danger-200 to-danger-300'
+                >
+                    <PiDeviceMobileDuotone className='text-2xl opacity-60' />
+                </GradientCard>
             </motion.div>
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -119,15 +119,14 @@ export function Article() {
                 transition={{ duration: 0.5, delay: 0.4 }}
                 className='col-span-3'
             >
-                <Link href='/blog/reading-while-listening'>
-                    <GradientCard
-                        title='PWA 支持'
-                        text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
-                        gradient='bg-gradient-to-br from-warning-200 to-warning-300'
-                    >
-                        <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
-                    </GradientCard>
-                </Link>
+                <GradientCard
+                    title='PWA 支持'
+                    text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
+                    to='https://www.cdc.gov/niosh/mining/tools/installpwa.html'
+                    gradient='bg-gradient-to-br from-warning-200 to-warning-300'
+                >
+                    <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
+                </GradientCard>
             </motion.div>
         </div>
 
@@ -143,15 +142,17 @@ export function Article() {
 }
 
 
-const GradientCard = ({ text, gradient, title, children }: {
+const GradientCard = ({ text, gradient, title, children, to }: {
     title: string,
     text: string,
     gradient: string,
     children?: React.ReactNode
+    to: string
 }) => {
+    const router = useRouter()
     return (
-        <Card isPressable onPress={(e) => {
-            e.continuePropagation()
+        <Card isPressable onPress={() => {
+            router.push(to)
         }} shadow='none' className={cn(gradient, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
             <CardBody className='overflow-hidden'>
                 <h2 className='text-xl'>{title}</h2>
