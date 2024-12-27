@@ -9,6 +9,7 @@ import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } fr
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
 import { cn, getBracketedSelection } from '@/lib/utils'
+import { useDebounce } from '@uidotdev/usehooks'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from './atoms'
@@ -20,6 +21,7 @@ import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { updateTextAndRevalidate } from './actions'
 import { toast } from 'sonner'
+import { memo } from 'react'
 
 const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
@@ -42,6 +44,35 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     }
 }
 
+const MemoizedPopover = memo(function MemoizedPopover({
+    prompt,
+    containerRef
+}: {
+    prompt: string | null
+    containerRef: React.RefObject<HTMLDivElement>
+}) {
+    return (
+        <Popover placement='right' isDismissable portalContainer={containerRef.current}>
+            <PopoverTrigger>
+                <Button
+                    data-umami-event='词汇注解'
+                    className='bg-background'
+                    color='primary'
+                    variant='light'
+                    size='lg'
+                    isIconOnly
+                    radius='full'
+                    isDisabled={!prompt}
+                    startContent={<PiMagnifyingGlassDuotone />}
+                />
+            </PopoverTrigger>
+            <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
+                {prompt && <Comment asCard prompt={prompt} params='["", "↺加载中"]'></Comment>}
+            </PopoverContent>
+        </Popover>
+    )
+})
+
 export default function Ebook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
@@ -51,6 +82,7 @@ export default function Ebook() {
     const [location, setLocation] = useAtom(locationAtomFamily(text))
 
     const [prompt, setPrompt] = useState<string | null>(null)
+    const debouncedPrompt = useDebounce(prompt, 512)
     const [bookmark, setBookmark] = useState<string | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
@@ -126,24 +158,10 @@ export default function Ebook() {
                             }
                         }}>
                     </Button>
-                    <Popover placement='right' isDismissable portalContainer={containerRef.current}>
-                        <PopoverTrigger>
-                            <Button
-                                data-umami-event='词汇注解'
-                                className='bg-background'
-                                color='primary'
-                                variant='light'
-                                size='lg'
-                                isIconOnly
-                                radius='full'
-                                isDisabled={!prompt}
-                                startContent={<PiMagnifyingGlassDuotone />}
-                            />
-                        </PopoverTrigger>
-                        <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                            {prompt && <Comment asCard prompt={prompt} params='["", "↺加载中"]'></Comment>}
-                        </PopoverContent>
-                    </Popover>
+                    <MemoizedPopover
+                        prompt={debouncedPrompt}
+                        containerRef={containerRef}
+                    />
                 </div>
                 <ReactReader
                     key={isFullViewport ? 'full' : 'normal'}
@@ -182,7 +200,6 @@ export default function Ebook() {
                             const selection = contents.window.getSelection()
                             setPrompt(selection ? getBracketedSelection(selection) : null)
                             setBookmark(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n> ')}` : null)
-                            console.log(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n> ')}` : null)
                         })
                     }}
                     epubOptions={{

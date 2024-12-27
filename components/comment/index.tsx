@@ -15,15 +15,13 @@ import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { contentAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { delComment, modifyText, saveComment } from './actions'
-import { extractSaveForm } from '@/lib/lang'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
-import { useDebounce } from '@uidotdev/usehooks'
 
 interface CommentProps {
     params: string
@@ -66,7 +64,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
-    const commentWord = useDebounce(async (prompt: string) => {
+    const commentWord = async (prompt: string) => {
         const { text, error } = await generateSingleComment(prompt, lib)
         if (error) {
             toast.error(error)
@@ -85,7 +83,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 toast.error('生成中止。')
             }
         }
-    }, 512)
+    }
 
     useEffect(() => {
         if (prompt) {
