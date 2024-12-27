@@ -201,8 +201,6 @@ export default function Ebook() {
                     epubOptions={{
                         allowPopups: true,
                         allowScriptedContent: true,
-                        flow: 'scrolled',
-                        manager: 'continuous',
                     }}
                     url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
                 />
