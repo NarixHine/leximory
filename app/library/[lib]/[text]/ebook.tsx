@@ -9,7 +9,6 @@ import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } fr
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
 import { cn, getBracketedSelection } from '@/lib/utils'
-import { useDebounce } from '@uidotdev/usehooks'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from './atoms'
@@ -82,7 +81,6 @@ export default function Ebook() {
     const [location, setLocation] = useAtom(locationAtomFamily(text))
 
     const [prompt, setPrompt] = useState<string | null>(null)
-    const debouncedPrompt = useDebounce(prompt, 512)
     const [bookmark, setBookmark] = useState<string | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
@@ -122,15 +120,13 @@ export default function Ebook() {
                 right: isFullViewport ? 0 : 'auto',
             }}
         >
-            <Button variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
+            <Button startContent={<PiFrameCornersDuotone />} variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
                 try {
                     await handleFullScreen.enter()
                 } catch {
                     setIsFullViewport(!isFullViewport)
                 }
-            }}
-                startContent={<PiFrameCornersDuotone />}
-            >
+            }}>
                 全屏模式
             </Button>
             <Spacer />
@@ -159,7 +155,7 @@ export default function Ebook() {
                         }}>
                     </Button>
                     <MemoizedPopover
-                        prompt={debouncedPrompt}
+                        prompt={prompt}
                         containerRef={containerRef}
                     />
                 </div>
@@ -205,6 +201,8 @@ export default function Ebook() {
                     epubOptions={{
                         allowPopups: true,
                         allowScriptedContent: true,
+                        flow: 'scrolled',
+                        manager: 'continuous',
                     }}
                     url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
                 />
