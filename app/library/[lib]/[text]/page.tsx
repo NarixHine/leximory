@@ -7,7 +7,7 @@ import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from '@/components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, recentWordsAtom, inputAtom } from './atoms'
+import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } from './atoms'
 
 export const maxDuration = 60
 
@@ -37,7 +37,6 @@ export default async function Page(props: LibAndTextParams) {
         [ebookAtom, ebook?.url],
         [textAtom, id],
         [titleAtom, title],
-        [recentWordsAtom, []],
         [inputAtom, '']
     ]}>
         <Main className='max-w-screen-xl'>
