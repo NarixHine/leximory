@@ -23,6 +23,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
+import { useDebounce } from '@uidotdev/usehooks'
 
 interface CommentProps {
     params: string
@@ -65,7 +66,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
-    const commentWord = async (prompt: string) => {
+    const commentWord = useDebounce(async (prompt: string) => {
         const { text, error } = await generateSingleComment(prompt, lib)
         if (error) {
             toast.error(error)
@@ -84,7 +85,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 toast.error('生成中止。')
             }
         }
-    }
+    }, 512)
 
     useEffect(() => {
         if (prompt) {

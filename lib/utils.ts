@@ -28,7 +28,7 @@ export async function convertReadableToBinaryFile(readable: Readable) {
     return dataBuffer
 }
 
-export function getSelectedChunk(selection: Selection) {
+function getSelectedChunk(selection: Selection) {
     const start = Math.min(selection.anchorOffset, selection.focusOffset)
     const end = Math.max(selection.anchorOffset, selection.focusOffset)
     return selection.anchorNode!.textContent!.substring(start, end)

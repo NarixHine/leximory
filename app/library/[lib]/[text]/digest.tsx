@@ -170,7 +170,7 @@ function ReadingView() {
     return (
       <ul className='flex flex-col gap-1 align-middle justify-center items-center'>
         {ebook
-          ? <Alert icon={<PiBookBookmarkDuotone />} variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto' }} title='保存的文摘会显示于此'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto' }} title='文摘'></Alert>
           : <div className='h-[calc(100dvh-500px)]'>
             <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
             <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>

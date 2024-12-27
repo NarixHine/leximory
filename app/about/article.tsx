@@ -150,7 +150,9 @@ const GradientCard = ({ text, gradient, title, children }: {
     children?: React.ReactNode
 }) => {
     return (
-        <Card isPressable shadow='none' className={cn(gradient, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
+        <Card isPressable onPress={(e) => {
+            e.continuePropagation()
+        }} shadow='none' className={cn(gradient, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
             <CardBody className='overflow-hidden'>
                 <h2 className='text-xl'>{title}</h2>
                 <p className='opacity-60 text-lg'>{text}</p>

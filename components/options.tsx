@@ -9,8 +9,8 @@ import { Divider } from '@nextui-org/divider'
 import { Spacer } from '@nextui-org/spacer'
 import { Select, SelectItem } from '@nextui-org/select'
 import { Textarea, Input } from '@nextui-org/input'
-import { prefixUrl } from '@/lib/config'
 import { toast } from 'sonner'
+import { useCopyToClipboard } from '@uidotdev/usehooks'
 
 type InputField = {
     name: string,
@@ -44,6 +44,7 @@ type OptionsProps = FieldsType & {
 }
 
 export default function Options({ inputs, selects, action, del, trigger, shareUrl }: OptionsProps) {
+    const [, copyToClipboard] = useCopyToClipboard()
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
 
     const { advancedInputs, advancedSelects, regularInputs, regularSelects } = useMemo(() => ({
@@ -55,7 +56,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
 
     const handleShare = () => {
         if (shareUrl) {
-            navigator.clipboard.writeText(prefixUrl(shareUrl))
+            copyToClipboard(shareUrl)
             toast.success('链接已复制到剪贴板')
         }
     }

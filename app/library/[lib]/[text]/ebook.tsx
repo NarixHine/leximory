@@ -8,7 +8,7 @@ import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
-import { cn, getBracketedSelection, getSelectedChunk } from '@/lib/utils'
+import { cn, getBracketedSelection } from '@/lib/utils'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from './atoms'
@@ -181,7 +181,8 @@ export default function Ebook() {
                         rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
                             setPrompt(selection ? getBracketedSelection(selection) : null)
-                            setBookmark(selection ? `\n\n> ${getSelectedChunk(selection).replaceAll('\n', '\n> ')}` : null)
+                            setBookmark(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n> ')}` : null)
+                            console.log(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n> ')}` : null)
                         })
                     }}
                     epubOptions={{

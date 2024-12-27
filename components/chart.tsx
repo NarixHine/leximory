@@ -22,7 +22,7 @@ import {
   getColorClassName,
   getYAxisDomain,
   hasOnlyOneValueForKey,
-} from "@/lib/chartUtils"
+} from "@/lib/chart-utils"
 import { useOnWindowResize } from "@/lib/hooks"
 import { cn as cx } from "@/lib/utils"
 import { PiArrowLeftDuotone } from 'react-icons/pi'

@@ -5,7 +5,7 @@ import { Button } from '@nextui-org/button'
 import Link from 'next/link'
 import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone } from 'react-icons/pi'
 import { Metadata } from 'next'
-import { TypedTitle, Article } from './client'
+import { TypedTitle, Article } from './article'
 
 export const metadata: Metadata = {
     title: 'How to Use Leximory'
