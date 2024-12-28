@@ -20,6 +20,7 @@ import { Spacer } from '@nextui-org/spacer'
 import { Button } from '@nextui-org/button'
 import { Input } from '@nextui-org/input'
 import { Card, CardBody } from '@nextui-org/card'
+import ShowcaseAnnotation from '@/components/showcase-annotation'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -89,7 +90,7 @@ export default async function Home() {
 								<HydrationBoundary hydrateAtoms={[
 									[lexiconAtom, 'cet6']
 								]}>
-									<Markdown className={'max-h-64'} disableSave md={':::cad56b4\nYes, the newspapers were right: snow was general all over Ireland. It was falling on every part of the dark central plain, on the {{treeless||treeless||**adj. /ˈtriːlɪs/** (没有树木的) (of a place) having no trees||***tree*** (tree) + ***-less*** (without)}} hills, falling softly upon the Bog of Allen and, farther westward, softly falling into the dark {{mutinous||mutinous||**adj. /ˈmjuːtᵻnəs/** (叛变的) (of a group of people) refusing to obey orders or showing a wish to rebel; rebellious||***mutin*** (rebellion) + ***-ous***||***mutin*** (mutiny) →  **mutin**y (叛乱)}} Shannon waves. It was falling, too, upon every part of the lonely churchyard on the hill where Michael Furey lay buried. It lay thickly drifted on the crooked crosses and {{headstones||headstone||**n. /ˈhɛdstəʊn/** (墓碑) a stone erected at the head of a grave, typically inscribed with the name of the deceased}}, on the spears of the little gate, on the barren thorns. His soul {{swooned||swoon||**v. /swuːn/** (昏厥) faint from extreme emotion}} slowly as he heard the snow falling faintly through the universe and faintly falling, like the {{descent||descent||**n. /dᵻˈsɛnt/** (下降) an act of moving downwards, dropping, or falling||***de-*** (down) + ***scent*** (climb)||***scent*** (climb) →  a**scent** (上升)}} of their last end, upon all the living and the dead. \n:::'} />
+									<ShowcaseAnnotation />
 								</HydrationBoundary>
 							</div>
 						</BentoCard>
