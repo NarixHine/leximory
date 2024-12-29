@@ -12,7 +12,7 @@ import { cn, getBracketedSelection } from '@/lib/utils'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from './atoms'
-import { langAtom } from '../atoms'
+import { isReadOnlyAtom, langAtom } from '../atoms'
 import { useAtom, useAtomValue } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
@@ -78,6 +78,7 @@ export default function Ebook() {
     const [content, setContent] = useAtom(contentAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
+    const isReadOnly = useAtomValue(isReadOnlyAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
 
     const [prompt, setPrompt] = useState<string | null>(null)
@@ -136,7 +137,7 @@ export default function Ebook() {
                         data-umami-event='摘录好句'
                         startContent={!savingBookmark && <PiBookmarkDuotone />}
                         isLoading={savingBookmark}
-                        isDisabled={!bookmark}
+                        isDisabled={!bookmark || isReadOnly}
                         className='bg-background z-10'
                         color='primary'
                         variant='light'
@@ -195,7 +196,7 @@ export default function Ebook() {
                         rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
                             setPrompt(selection ? getBracketedSelection(selection) : null)
-                            setBookmark(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n> ')}` : null)
+                            setBookmark(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n>\n> ')}` : null)
                         })
                     }}
                     epubOptions={{

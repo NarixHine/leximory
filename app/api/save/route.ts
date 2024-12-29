@@ -30,11 +30,12 @@ export async function POST(request: Request) {
 
     const wrappedComment = wrapInDoubleBracketsIfNot(comment)
     validateOrThrow(wrappedComment)
+    const portions = wrappedComment.replaceAll('{{', '').split('}}')[0].split('||')
     after(async () => {
-        await xata.db.lexicon.create({ lib, word: wrappedComment })
+        await xata.db.lexicon.create({ lib, word: `{{${portions[1]}||${portions.slice(1).join('||')}}}` })
         revalidatePath(`/library/${lib}/corpus`)
     })
-    
-    const portions = wrappedComment.replaceAll('{{', '').replaceAll('}}', '').split('||').map((md) => removeMd(md))
-    return NextResponse.json({ word: portions[1], def: portions[2], etym: portions[3] ?? '无', cognates: portions[4] ?? '无' })
+
+    const plainPortions = portions.map((md) => removeMd(md))
+    return NextResponse.json({ word: plainPortions[1], def: plainPortions[2], etym: plainPortions[3] ?? '无', cognates: plainPortions[4] ?? '无' })
 }

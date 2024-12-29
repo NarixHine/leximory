@@ -47,7 +47,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
-    const parsedParams = JSON.parse(params.replaceAll('{', '').replaceAll('}', '')) as string[]
+    const parsedParams = JSON.parse(params.split('}}')[0].replaceAll('{', '')) as string[]
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
@@ -263,7 +263,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     <Skeleton className='w-2/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-full rounded-lg h-3'></Skeleton>
                                 </div>
-                                : <Button startContent={<PiSignInDuotone />} as={Link} href='/sign-in' color='secondary' variant='shadow'>登录</Button>
+                                    : <Button startContent={<PiSignInDuotone />} as={Link} href='/sign-in' color='secondary' variant='shadow'>登录</Button>
                         }
                     </div>
                 </PopoverContent>
