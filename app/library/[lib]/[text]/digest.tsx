@@ -168,10 +168,10 @@ function ReadingView() {
 
   if (!md) {
     return (
-      <ul className='flex flex-col gap-1 align-middle justify-center items-center'>
+      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-500px)]')}>
         {ebook
           ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='warning' variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto', description: cn(CHINESE_ZCOOL.className, 'text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
-          : <div className='h-[calc(100dvh-500px)]'>
+          : <div>
             <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
             <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
             <li className='flex items-center gap-2'><PiHeadphonesDuotone /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
