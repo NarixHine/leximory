@@ -10,6 +10,7 @@ import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
 import WordStats from './word-stats'
 import { WordChartSkeleton } from './word-chart'
+import { PiRewindDuotone } from 'react-icons/pi'
 
 export const metadata: Metadata = {
     title: '每日汇总',
@@ -21,7 +22,7 @@ export default async function Daily() {
 
     return (
         <Main className='max-w-screen-lg pt-12'>
-            <H>每日汇总</H>
+            <H><PiRewindDuotone />每日汇总</H>
             <div className='my-12 h-80'>
                 <Suspense fallback={<WordChartSkeleton />}>
                     <WordStats />

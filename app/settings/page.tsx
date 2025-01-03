@@ -1,10 +1,5 @@
-import Main from '@/components/main'
 import { ClerkLoaded, OrganizationList, OrganizationSwitcher, UserButton } from '@clerk/nextjs'
 import { Metadata } from 'next'
-import { PiKeyDuotone } from 'react-icons/pi'
-import { toast } from 'sonner'
-import getToken from './actions'
-import { Button } from '@nextui-org/button'
 import CopyToken from './copy-token'
 
 export const metadata: Metadata = { title: '设置' }

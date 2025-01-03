@@ -7,6 +7,7 @@ import { auth } from '@clerk/nextjs/server'
 import { Spacer } from '@nextui-org/spacer'
 import { Suspense } from 'react'
 import H from '@/components/h'
+import { PiStorefrontDuotone } from 'react-icons/pi'
 
 const PAGE_SIZE = 12
 
@@ -48,8 +49,8 @@ export default async function MarketplacePage({ params }: {
     const page = parseInt((await params).page)
     return (
         <Main className='max-w-screen-lg'>
-            <H className='text-5xl'>文库集市</H>
-            <Spacer y={8} />
+            <H className='text-5xl'><PiStorefrontDuotone />文库集市</H>
+            <Spacer y={7} />
             <Pagination page={page} />
             <Spacer y={5} />
             <Suspense fallback={<SuspenseLibraryList />}>

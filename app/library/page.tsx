@@ -18,7 +18,7 @@ import { Spacer } from '@nextui-org/spacer'
 import { Metadata } from 'next'
 import { revalidatePath } from 'next/cache'
 import { Suspense } from 'react'
-import { PiFolderPlusDuotone } from 'react-icons/pi'
+import { PiBooksDuotone, PiFolderPlusDuotone } from 'react-icons/pi'
 import { RedirectToSignIn } from '@clerk/nextjs'
 import { RenderingBoundary } from 'jotai-ssr'
 
@@ -161,7 +161,7 @@ export default async function Page() {
         <Main className='flex flex-col max-w-screen-sm'>
             <Nav />
 
-            <H className='text-5xl'>文库</H>
+            <H className='text-5xl'><PiBooksDuotone />文库</H>
             <Spacer y={8} />
             <div className='flex flex-col gap-4'>
                 <div className='grid grid-cols-2 justify-center gap-4'>
