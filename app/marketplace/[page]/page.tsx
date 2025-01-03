@@ -6,6 +6,7 @@ import LibraryCard, { LibraryCardSkeleton } from './card'
 import { auth } from '@clerk/nextjs/server'
 import { Spacer } from '@nextui-org/spacer'
 import { Suspense } from 'react'
+import H from '@/components/h'
 
 const PAGE_SIZE = 12
 
@@ -47,8 +48,10 @@ export default async function MarketplacePage({ params }: {
     const page = parseInt((await params).page)
     return (
         <Main className='max-w-screen-lg'>
+            <H className='text-5xl'>文库集市</H>
+            <Spacer y={8} />
             <Pagination page={page} />
-            <Spacer y={10} />
+            <Spacer y={5} />
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />
             </Suspense>

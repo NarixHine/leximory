@@ -1,7 +1,6 @@
 import { getXataClient } from '@/lib/xata'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
-import H from '@/components/h'
 import { totalPagesAtom } from './atoms'
 import { libAccessStatusMap } from '@/lib/config'
 
@@ -27,13 +26,10 @@ export default async function MarketplaceLayout({
     const totalPages = await getTotalPages()
 
     return (
-        <div className='pt-12'>
-            <H className='text-5xl'>文库集市</H>
-            <HydrationBoundary hydrateAtoms={[
-                [totalPagesAtom, totalPages]
-            ]}>
-                {children}
-            </HydrationBoundary>
-        </div>
+        <HydrationBoundary hydrateAtoms={[
+            [totalPagesAtom, totalPages]
+        ]}>
+            {children}
+        </HydrationBoundary>
     )
 }

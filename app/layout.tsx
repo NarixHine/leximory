@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import { defaultFontFamily } from '@/lib/fonts'
 import Script from 'next/script'
+import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './dock'
 import { RenderingBoundary } from 'jotai-ssr'
@@ -53,20 +54,22 @@ export default async function RootLayout(
 	}
 ) {
 	return (
-		<html lang='zh-CN' className='antialiased'>
-			{isProd && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
-			<body style={{
-				fontFamily: defaultFontFamily,
-			}}>
-				<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-					<RenderingBoundary>
-						<div className='relative flex flex-col'>
-							{children}
-							<Dock />
-						</div>
-					</RenderingBoundary>
-				</Providers>
-			</body>
-		</html>
+		<ViewTransitions>
+			<html lang='zh-CN' className='antialiased'>
+				{isProd && <Script defer src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
+				<body style={{
+					fontFamily: defaultFontFamily,
+				}}>
+					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
+						<RenderingBoundary>
+							<div className='relative flex flex-col'>
+								{children}
+								<Dock />
+							</div>
+						</RenderingBoundary>
+					</Providers>
+				</body>
+			</html>
+		</ViewTransitions>
 	)
 }

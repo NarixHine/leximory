@@ -168,7 +168,7 @@ function ReadingView() {
 
   if (!md) {
     return (
-      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-500px)]')}>
+      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-300px)]')}>
         {ebook
           ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='warning' variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto', description: cn(CHINESE_ZCOOL.className, 'text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>

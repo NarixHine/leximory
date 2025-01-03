@@ -9,7 +9,7 @@ import {
     useTransform,
 } from 'framer-motion'
 import { useAtomValue } from 'jotai'
-import Link from 'next/link'
+import { Link } from 'next-view-transitions'
 import { useRef, useState } from 'react'
 import { isReaderModeAtom } from '../atoms'
 

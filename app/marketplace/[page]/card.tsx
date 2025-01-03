@@ -34,8 +34,8 @@ export default function LibraryCard({ library, isStarred }: LibraryCardProps) {
         >
             <CardBody className='p-5'>
                 <div className='space-y-1'>
-                    <H useNoto disableCenter className='text-2xl text-gray-800'>{library.name}</H>
-                    <p className='text-sm text-gray-500'>{langMap[library.lang]}</p>
+                    <H useNoto disableCenter className='text-2xl '>{library.name}</H>
+                    <p className='text-sm opacity-70'>{langMap[library.lang]}</p>
                 </div>
             </CardBody>
 
