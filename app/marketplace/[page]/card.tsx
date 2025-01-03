@@ -8,6 +8,7 @@ import H from '@/components/h'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import star from '@/app/library/[lib]/actions'
+import { Skeleton } from '@nextui-org/skeleton'
 
 interface LibraryCardProps {
     library: {
@@ -53,6 +54,32 @@ export default function LibraryCard({ library, isStarred }: LibraryCardProps) {
                     }}
                 >
                 </Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
+export function LibraryCardSkeleton() {
+    return (
+        <Card
+            shadow='sm'
+            radius='sm'
+        >
+            <CardBody className='p-5'>
+                <div className='space-y-1'>
+                    <Skeleton className='rounded-lg'>
+                        <div className='h-8 w-3/4'></div>
+                    </Skeleton>
+                    <Skeleton className='rounded-lg'>
+                        <div className='h-4 w-1/3'></div>
+                    </Skeleton>
+                </div>
+            </CardBody>
+
+            <CardFooter className='flex justify-end pb-4 pr-4'>
+                <Skeleton className='rounded-full'>
+                    <div className='h-8 w-8'></div>
+                </Skeleton>
             </CardFooter>
         </Card>
     )

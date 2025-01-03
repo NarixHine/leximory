@@ -2,11 +2,12 @@ import { getXataClient } from '@/lib/xata'
 import Main from '@/components/main'
 import { libAccessStatusMap, Lang } from '@/lib/config'
 import Pagination from './pagination'
-import LibraryCard from './card'
+import LibraryCard, { LibraryCardSkeleton } from './card'
 import { auth } from '@clerk/nextjs/server'
 import { Spacer } from '@nextui-org/spacer'
+import { Suspense } from 'react'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 12
 
 async function LibraryList({ page }: {
     page: number
@@ -38,17 +39,27 @@ async function LibraryList({ page }: {
 }
 
 
-export default function MarketplacePage({ params }: {
-    params: {
+export default async function MarketplacePage({ params }: {
+    params: Promise<{
         page: string
-    }
+    }>
 }) {
-    const page = parseInt(params.page)
+    const page = parseInt((await params).page)
     return (
         <Main className='max-w-screen-lg'>
             <Pagination page={page} />
             <Spacer y={10} />
-            <LibraryList page={page} />
+            <Suspense fallback={<SuspenseLibraryList />}>
+                <LibraryList page={page} />
+            </Suspense>
         </Main>
     )
 }
+
+const SuspenseLibraryList = () => (
+    <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
+        {Array.from({ length: 6 }).map((_, i) => (
+            <LibraryCardSkeleton key={i} />
+        ))}
+    </div>
+)
