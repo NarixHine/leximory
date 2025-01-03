@@ -1,5 +1,5 @@
 import Main from '@/components/main'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { CHINESE_ZCOOL, ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Button } from '@nextui-org/button'
 import Link from 'next/link'
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
-            <h1 className={cn('text-danger dark:text-danger-800 text-4xl font-serif')}>
+            <h1 className={cn('text-danger dark:text-danger-800 text-4xl', ENGLISH_PLAYFAIR.className)}>
                 <TypedTitle />
             </h1>
             <div className='flex w-fit mt-1 mb-6'>
