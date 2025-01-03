@@ -1,8 +1,7 @@
 'use client'
 
-import { Card, CardBody } from '@nextui-org/react'
+import { Card, CardBody } from '@nextui-org/card'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
 import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'

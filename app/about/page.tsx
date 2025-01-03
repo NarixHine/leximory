@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
-            <h1 className={cn('text-danger dark:text-danger-800 text-4xl font-mono')}>
+            <h1 className={cn('text-danger dark:text-danger-800 text-4xl font-serif')}>
                 <TypedTitle />
             </h1>
             <div className='flex w-fit mt-1 mb-6'>

@@ -36,7 +36,7 @@ export const prefixUrl = (url: string) => `${env.NEXT_PUBLIC_URL}${url}`
 
 export const accessOptions = [
     { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },
-    { name: 'public' as const, label: '公开（所有用户都可见且显示于文库集市中）' }
+    { name: 'public' as const, label: '公开（所有用户都可见，且显示于文库集市中）' }
 ]
 
 export const maxArticleLength = (lang: Lang): number => {
