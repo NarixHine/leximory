@@ -27,16 +27,16 @@ export const colorMap: Record<string, ColorOption> = {
     '只读': 'danger'
 }
 
-export const libAccessStatusMap: Record<'private' | 'public', number> = {
+export const libAccessStatusMap = {
     private: 0,
     public: 1,
-}
+} as const
 
 export const prefixUrl = (url: string) => `${env.NEXT_PUBLIC_URL}${url}`
 
 export const accessOptions = [
     { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },
-    { name: 'public' as const, label: '公开（所有用户都可见）' }
+    { name: 'public' as const, label: '公开（所有用户都可见且显示于文库集市中）' }
 ]
 
 export const maxArticleLength = (lang: Lang): number => {

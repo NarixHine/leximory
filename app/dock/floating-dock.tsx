@@ -104,6 +104,13 @@ function IconContainer({
             >
                 <motion.div
                     style={{ width: widthIcon, height: heightIcon }}
+                    animate={{
+                        scale: hovered ? 2 : 1
+                    }}
+                    transition={{
+                        duration: 0.2,
+                        ease: 'easeInOut'
+                    }}
                     className='flex items-center justify-center text-primary-800'
                 >
                     {icon}

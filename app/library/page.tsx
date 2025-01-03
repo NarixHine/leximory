@@ -9,9 +9,10 @@ import H from '@/components/h'
 import { authWriteToLib, isListed } from '@/lib/auth'
 import { supportedLangs, langMap, welcomeMap, libAccessStatusMap, accessOptions, Lang } from '@/lib/config'
 import { randomID } from '@/lib/utils'
+import { LibrarySkeleton } from '@/components/library'
 import { getXataClient } from '@/lib/xata'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { Card, CardBody, CardFooter } from '@nextui-org/card'
+import { Card, CardBody } from '@nextui-org/card'
 import { Skeleton } from '@nextui-org/skeleton'
 import { Spacer } from '@nextui-org/spacer'
 import { Metadata } from 'next'
@@ -48,28 +49,6 @@ async function getData() {
 async function getOrgs() {
     const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId: (await auth()).userId! })
     return data
-}
-
-function LibrarySkeleton() {
-    return (
-        <Card className='w-full opacity-50' shadow='sm'>
-            <CardBody className='px-6 pt-5'>
-                <Skeleton className='w-48 h-10 rounded-lg' />
-                <Spacer y={8} />
-                <div className='flex space-x-2'>
-                    <Skeleton className='w-16 h-6 rounded-lg' />
-                    <Skeleton className='w-16 h-6 rounded-lg' />
-                </div>
-            </CardBody>
-            <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Skeleton className='w-24 h-9 rounded-lg' />
-                <div className='flex flex-col gap-1'>
-                    <Skeleton className='w-16 h-3 rounded-lg' />
-                    <Skeleton className='w-12 h-5 rounded-lg' />
-                </div>
-            </CardFooter>
-        </Card>
-    )
 }
 
 async function LibraryList({ userId, save, del, mems }: {
