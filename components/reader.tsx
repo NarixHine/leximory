@@ -17,7 +17,5 @@ export default function Reader({ children }: {
             : ''
     }, [isReaderMode, colorMode])
 
-    return (<>
-        {children}
-    </>)
+    return children
 }

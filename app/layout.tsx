@@ -6,7 +6,6 @@ import Script from 'next/script'
 import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './dock'
-import { RenderingBoundary } from 'jotai-ssr'
 import env, { isProd } from '@/lib/env'
 
 const TITLE_DEFAULT = 'Leximory'
@@ -61,12 +60,10 @@ export default async function RootLayout(
 					fontFamily: defaultFontFamily,
 				}}>
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-						<RenderingBoundary>
 							<div className='relative flex flex-col'>
 								{children}
 								<Dock />
 							</div>
-						</RenderingBoundary>
 					</Providers>
 				</body>
 			</html>

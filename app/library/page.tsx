@@ -20,7 +20,6 @@ import { revalidatePath } from 'next/cache'
 import { Suspense } from 'react'
 import { PiBooksDuotone, PiFolderPlusDuotone } from 'react-icons/pi'
 import { RedirectToSignIn } from '@clerk/nextjs'
-import { RenderingBoundary } from 'jotai-ssr'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -157,81 +156,79 @@ export default async function Page() {
         revalidatePath('/library')
     }
 
-    return <RenderingBoundary>
-        <Main className='flex flex-col max-w-screen-sm'>
-            <Nav />
+    return <Main className='flex flex-col max-w-screen-sm'>
+        <Nav />
 
-            <H className='text-5xl'><PiBooksDuotone />文库</H>
-            <Spacer y={8} />
-            <div className='flex flex-col gap-4'>
-                <div className='grid grid-cols-2 justify-center gap-4'>
-                    <Suspense fallback={
-                        <GradientCard title='本月 AI 注解额度'>
-                            <Skeleton className='w-full h-8' />
-                        </GradientCard>
-                    }>
-                        <CommentaryQuotaCard />
-                    </Suspense>
-                    <Suspense fallback={
-                        <GradientCard title='本月 AI 音频额度'>
-                            <Skeleton className='w-full h-8' />
-                        </GradientCard>
-                    }>
-                        <AudioQuotaCard />
-                    </Suspense>
-                </div>
-
-                <div className='w-full my-6'>
-                    <Suspense fallback={
-                        <LookbackWrapper>
-                            <Skeleton className='w-full h-4 rounded-lg mb-3 mt-2' />
-                        </LookbackWrapper>
-                    }>
-                        <Lookback />
-                    </Suspense>
-                </div>
-
+        <H className='text-5xl'><PiBooksDuotone />文库</H>
+        <Spacer y={8} />
+        <div className='flex flex-col gap-4'>
+            <div className='grid grid-cols-2 justify-center gap-4'>
                 <Suspense fallback={
-                    <div className='flex flex-col gap-4'>
-                        <LibrarySkeleton />
-                        <LibrarySkeleton />
-                    </div>
+                    <GradientCard title='本月 AI 注解额度'>
+                        <Skeleton className='w-full h-8' />
+                    </GradientCard>
                 }>
-                    <LibraryList
-                        userId={userId}
-                        save={save}
-                        del={del}
-                        mems={mems}
-                    />
+                    <CommentaryQuotaCard />
                 </Suspense>
-
-                <Options
-                    trigger={<Card className='h-full w-full opacity-70 bg-transparent' shadow='none' isPressable>
-                        <CardBody className='justify-center items-center flex'>
-                            <span className='text-7xl text-slate-700 dark:text-slate-200'><PiFolderPlusDuotone /></span>
-                        </CardBody>
-                    </Card>}
-                    action={save.bind(null, randomID())}
-                    inputs={[{
-                        name: 'name',
-                        label: '文库名',
-                    }]}
-                    selects={[{
-                        name: 'access',
-                        label: '权限',
-                        value: 'private',
-                        options: accessOptions
-                    }, {
-                        name: 'lang',
-                        label: '语言',
-                        value: 'en',
-                        options: supportedLangs.map(lang => ({
-                            name: lang,
-                            label: langMap[lang]
-                        })),
-                    }]}
-                />
+                <Suspense fallback={
+                    <GradientCard title='本月 AI 音频额度'>
+                        <Skeleton className='w-full h-8' />
+                    </GradientCard>
+                }>
+                    <AudioQuotaCard />
+                </Suspense>
             </div>
-        </Main>
-    </RenderingBoundary>
+
+            <div className='w-full my-6'>
+                <Suspense fallback={
+                    <LookbackWrapper>
+                        <Skeleton className='w-full h-4 rounded-lg mb-3 mt-2' />
+                    </LookbackWrapper>
+                }>
+                    <Lookback />
+                </Suspense>
+            </div>
+
+            <Suspense fallback={
+                <div className='flex flex-col gap-4'>
+                    <LibrarySkeleton />
+                    <LibrarySkeleton />
+                </div>
+            }>
+                <LibraryList
+                    userId={userId}
+                    save={save}
+                    del={del}
+                    mems={mems}
+                />
+            </Suspense>
+
+            <Options
+                trigger={<Card className='h-full w-full opacity-70 bg-transparent' shadow='none' isPressable>
+                    <CardBody className='justify-center items-center flex'>
+                        <span className='text-7xl text-slate-700 dark:text-slate-200'><PiFolderPlusDuotone /></span>
+                    </CardBody>
+                </Card>}
+                action={save.bind(null, randomID())}
+                inputs={[{
+                    name: 'name',
+                    label: '文库名',
+                }]}
+                selects={[{
+                    name: 'access',
+                    label: '权限',
+                    value: 'private',
+                    options: accessOptions
+                }, {
+                    name: 'lang',
+                    label: '语言',
+                    value: 'en',
+                    options: supportedLangs.map(lang => ({
+                        name: lang,
+                        label: langMap[lang]
+                    })),
+                }]}
+            />
+        </div>
+    </Main>
 }

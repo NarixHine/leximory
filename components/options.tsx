@@ -11,6 +11,7 @@ import { Select, SelectItem } from '@nextui-org/select'
 import { Textarea, Input } from '@nextui-org/input'
 import { toast } from 'sonner'
 import { useCopyToClipboard } from '@uidotdev/usehooks'
+import { prefixUrl } from '@/lib/config'
 
 type InputField = {
     name: string,
@@ -56,7 +57,7 @@ export default function Options({ inputs, selects, action, del, trigger, shareUr
 
     const handleShare = () => {
         if (shareUrl) {
-            copyToClipboard(shareUrl)
+            copyToClipboard(prefixUrl(shareUrl))
             toast.success('链接已复制到剪贴板')
         }
     }

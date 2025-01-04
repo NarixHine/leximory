@@ -25,11 +25,9 @@ export default async function MarketplaceLayout({
 }) {
     const totalPages = await getTotalPages()
 
-    return (
-        <HydrationBoundary hydrateAtoms={[
-            [totalPagesAtom, totalPages]
-        ]}>
-            {children}
-        </HydrationBoundary>
-    )
+    return (<HydrationBoundary hydrateAtoms={[
+        [totalPagesAtom, totalPages]
+    ]}>
+        {children}
+    </HydrationBoundary>)
 }

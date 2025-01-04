@@ -8,6 +8,7 @@ import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import UserAvatar from '@/components/avatar'
+import Reader from '@/components/reader'
 
 export async function generateMetadata(props: LibParams) {
     const params = await props.params
@@ -36,18 +37,27 @@ export default async function LibLayout(
     const { rec, isReadOnly, isOrganizational, isOwner } = await authReadToLib(params.lib)
     const { starredBy } = rec
     const { userId } = await auth()
-    const isStarred = Boolean(starredBy?.includes(userId as string))
-    return (<HydrationBoundary hydrateAtoms={[
+    const isStarred = Boolean(starredBy?.includes(userId!))
+    return (<HydrationBoundary options={{
+        enableReHydrate: true
+    }} hydrateAtoms={[
         [libAtom, rec.id],
         [isReadOnlyAtom, isReadOnly],
         [langAtom, rec.lang as Lang],
         [isStarredAtom, isStarred]
     ]}>
-        {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
-        <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>
-            {!isOrganizational && <UserAvatar uid={rec.owner}></UserAvatar>}
-            {!isOrganizational && <Star></Star>}
-        </div>
-        {children}
+        <Reader>
+            {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
+            <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>
+                {
+                    !isOwner && !isOrganizational &&
+                    <>
+                        <UserAvatar uid={rec.owner}></UserAvatar>
+                        <Star></Star>
+                    </>
+                }
+            </div>
+            {children}
+        </Reader>
     </HydrationBoundary>)
 }
