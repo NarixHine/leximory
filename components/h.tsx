@@ -13,8 +13,8 @@ function H({ children, className, disableCenter, useNoto, usePlayfair }: {
         style={{
             fontFamily: `${usePlayfair ? ENGLISH_PLAYFAIR.style.fontFamily : ENGLISH_SERIF.style.fontFamily}, ${useNoto ? CHINESE.style.fontFamily : CHINESE_ZCOOL.style.fontFamily}`
         }}
-        className={cn('text-balance flex', !disableCenter && 'justify-center', className ?? 'text-5xl')}
-    ><span className={cn('flex', !disableCenter && 'justify-center')}>{children}</span></h1>
+        className={cn('text-balance flex', !disableCenter && 'justify-center text-center', className ?? 'text-5xl')}
+    ><span className={cn('flex', !disableCenter && 'justify-center text-center')}>{children}</span></h1>
 }
 
 export default H
