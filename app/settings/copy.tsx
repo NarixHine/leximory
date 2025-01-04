@@ -19,15 +19,9 @@ export default function CopyToken() {
         onPress={() => {
             const toastId = toast.loading('获取密钥中...', { duration: 1000 })
             getToken().then(async token => {
-                copyToClipboard(token!)
-                    .then(() => {
-                        toast.dismiss(toastId)
-                        toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
-                    })
-                    .catch(() => {
-                        toast.dismiss(toastId)
-                        toast.error('复制失败')
-                    })
+                await copyToClipboard(token!)
+                toast.dismiss(toastId)
+                toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
             })
         }}
     >
@@ -41,14 +35,11 @@ export function CopyProfileLink() {
     return <Button
         variant='flat'
         color='secondary'
-        onPress={() => {
-            user && copyToClipboard(prefixUrl(`/profile/${user.id}`))
-                .then(() => {
-                    toast.success('复制成功')
-                })
-                .catch(() => {
-                    toast.error('复制失败')
-                })
+        onPress={async () => {
+            if (user) {
+                await copyToClipboard(prefixUrl(`/profile/${user.id}`))
+                toast.success('复制成功')
+            }
         }}
         isIconOnly
     >
