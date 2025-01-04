@@ -6,7 +6,7 @@ import { Link } from 'next-view-transitions'
 export default function NotFound() {
     return (
         <Center>
-            <div className={cn('relative w-full max-w-4xl aspect-video bg-white rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
+            <div className={cn('relative w-full max-w-4xl aspect-video bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
                 {/* Left side: 404 */}
                 <div className='absolute left-0 top-0 bottom-0 w-1/3 bg-[#B8C5B6] flex items-center justify-center'>
                     <div className='text-center'>
@@ -21,7 +21,7 @@ export default function NotFound() {
 
                 {/* Right side: Content */}
                 <div className='absolute right-0 top-0 bottom-0 w-2/3 flex flex-col items-center justify-center p-8 z-10'>
-                    <p className='text-3xl text-gray-700 mb-8 font-medium text-center'>
+                    <p className='text-3xl text-gray-700 dark:text-white mb-8 font-medium text-center'>
                         您访问的页面不存在
                     </p>
                     <Link

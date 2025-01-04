@@ -16,7 +16,7 @@ export default function Error({
 }) {
     return (
         <Center>
-            <div className={cn('relative w-full max-w-4xl aspect-video bg-white rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
+            <div className={cn('relative w-full max-w-4xl aspect-video bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
                 {/* Left side: Error icon and minigame */}
                 <div className='absolute left-0 top-0 bottom-0 w-1/3 bg-[#B8C5B6] flex flex-col items-center justify-end'>
                     <div className='mb-4 flex flex-col items-center justify-center'>
@@ -30,10 +30,10 @@ export default function Error({
 
                 {/* Right side: Content */}
                 <div className='absolute right-0 top-0 bottom-0 w-2/3 flex flex-col items-center justify-center p-8'>
-                    <p className='text-3xl text-gray-700 mb-8 font-medium text-center'>
+                    <p className='text-3xl text-gray-700 dark:text-white mb-8 font-medium text-center'>
                         出现了一些问题
                     </p>
-                    <p className='text-lg text-gray-600 mb-8 text-center'>
+                    <p className='text-lg text-gray-600 dark:text-white/80 mb-8 text-center'>
                         在此期间，不如尝试捕捉左侧的bug来消磨时间！
                     </p>
                     <div className='flex space-x-4 relative z-10'>
