@@ -70,13 +70,14 @@ export function LibraryCardSkeleton() {
         >
             <CardBody className='p-5'>
                 <div className='space-y-2'>
-                    <Skeleton className='rounded h-8 w-3/4' />
-                    <Skeleton className='rounded h-2 w-1/3' />
+                    <Skeleton className='rounded-lg h-8 w-3/4' />
+                    <Skeleton className='rounded-lg h-2 w-1/3' />
                 </div>
             </CardBody>
 
-            <CardFooter className='flex justify-end pb-4 pr-4'>
-                <Skeleton className='rounded h-6 w-16' />
+            <CardFooter className='flex justify-end gap-2 pb-4 pr-4'>
+                <Skeleton className='rounded-full size-7' />
+                <Skeleton className='rounded-lg h-6 w-16' />
             </CardFooter>
         </Card>
     )

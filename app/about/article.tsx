@@ -2,18 +2,18 @@
 
 import { Card, CardBody } from '@nextui-org/card'
 import { motion } from 'framer-motion'
-import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone } from 'react-icons/pi'
+import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone, PiHeartDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
+import { Spacer } from '@nextui-org/spacer'
 
 export function TypedTitle() {
     return <TypeAnimation
         sequence={[
             'About Us',
-            500,
+            2000,
             'How to Use Leximory',
-            1000,
         ]}
         speed={50}
         cursor={true}
@@ -136,7 +136,17 @@ export function Article() {
         >
             核心功能的演示视频：
         </motion.p>
-        <iframe className='rounded-xl my-4' height={400} src='//player.bilibili.com/player.html?isOutside=true&aid=113248456147712&bvid=BV15V4FeEEqt&cid=26137266223&p=1' width={'100%'}></iframe>
+        <iframe className='rounded-xl my-4' height={400} src='//player.bilibili.com/player.html?isOutside=true&aid=113248456147712&bvid=BV15V4FeEEqt&cid=26137266223&p=1' width={'100%'} allowFullScreen></iframe>
+
+        <Spacer y={10}></Spacer>
+        <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+        >
+            Leximory <PiHeartDuotone className='inline-block' /> iOS！
+        </motion.p>
+        <iframe className='rounded-xl my-4' height={450} src='//player.bilibili.com/player.html?isOutside=true&aid=113730700447501&bvid=BV1XFChYxEbC&cid=27579122683&p=1' width={'100%'} allowFullScreen></iframe>
     </article>
 }
 

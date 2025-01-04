@@ -2,11 +2,12 @@ import Main from '@/components/main'
 import { auth } from '@clerk/nextjs/server'
 import H from '@/components/h'
 import { CHINESE_CALLIGRAPHY, CHINESE_ZCOOL } from '@/lib/fonts'
+import { Link as ViewTransitionLink } from 'next-view-transitions'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Fade from '@/components/fade'
 import Markdown from '@/components/markdown'
-import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone } from 'react-icons/pi'
+import { PiFastForward, PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import Test from './library/[lib]/corpus/test'
 import External from '@/components/external'
@@ -145,15 +146,15 @@ export default async function Home() {
 					<li>利用 AI 音频生成边听边读，充分激活大脑不同语言认知模块。</li>
 				</ul>
 				<p>语言不仅是交流的工具，更是思想的媒介、文化的载体、心灵间的信使。学习语言是一场对于异域的陌生的接触，本是陶冶性情、快意宜人的。</p>
-				<p>我们想要打造的不仅仅是一个高效的工具，更希望 Leximory 上的学习过程能够发现语言学习本来的面目。</p>
+				<p>我们想要打造的不仅仅是一个高效的工具，更希望 Leximory 上的学习过程能够发现语言学习本来的面目。<ViewTransitionLink href='/about' className='items-center gap-1 font-semibold underline-offset-4 inline-flex'>了解更多<PiFastForward /></ViewTransitionLink></p>
 			</div>
 
 			<Spacer y={8}></Spacer>
 
 			<Fade>
-				<H className={'whitespace-pre-line text-6xl'}>
+				<div className={cn(CHINESE_CALLIGRAPHY.className, 'whitespace-pre-line text-6xl text-center')}>
 					{'从记忆\n到心会'}
-				</H>
+				</div>
 			</Fade>
 			<div className='flex justify-center items-center'>
 				<External className={cn('mt-2 flex flex-wrap w-fit justify-start text-lg', CHINESE_ZCOOL.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>

@@ -25,11 +25,12 @@ export default function WordChart({ data }: { data: WordData[] }) {
 }
 
 export function WordChartSkeleton() {
-    return <LineChart 
+    return <LineChart
+        className='opacity-30 animate-pulse'
         data={formarChartData(new Map())}
         index='date'
         categories={['Count']}
-        colors={['emerald']}
+        colors={['gray']}
         valueFormatter={(value: number) => `${value} 词`}
         showLegend
         showGridLines
