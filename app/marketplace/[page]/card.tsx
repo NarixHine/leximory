@@ -6,20 +6,22 @@ import { Card, CardBody, CardFooter } from '@nextui-org/card'
 import { Button } from '@nextui-org/button'
 import H from '@/components/h'
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { ReactNode, useTransition } from 'react'
 import star from '@/app/library/[lib]/actions'
 import { Skeleton } from '@nextui-org/skeleton'
 
 interface LibraryCardProps {
     library: {
         id: string
+        owner: string
         name: string
         lang: Lang
     }
     isStarred: boolean
+    avatar: ReactNode
 }
 
-export default function LibraryCard({ library, isStarred }: LibraryCardProps) {
+export default function LibraryCard({ library, isStarred, avatar }: LibraryCardProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
 
@@ -39,7 +41,8 @@ export default function LibraryCard({ library, isStarred }: LibraryCardProps) {
                 </div>
             </CardBody>
 
-            <CardFooter className='flex justify-end pb-4 pr-4'>
+            <CardFooter className='flex justify-end gap-3 pb-4 pr-4'>
+                {avatar}
                 <Button
                     as={'div'}
                     size='sm'

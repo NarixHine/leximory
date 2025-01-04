@@ -15,4 +15,5 @@ export default async function star(lib: string) {
         : [...(starredBy ?? []), userId!]
     await xata.db.libraries.update(lib, { starredBy: newStarredBy })
     revalidatePath(`/library/${lib}`)
+    return newStarredBy.includes(userId!)
 }

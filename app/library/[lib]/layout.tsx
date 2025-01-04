@@ -7,6 +7,7 @@ import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom } from './atoms'
 import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
+import UserAvatar from '@/components/avatar'
 
 export async function generateMetadata(props: LibParams) {
     const params = await props.params
@@ -43,7 +44,10 @@ export default async function LibLayout(
         [isStarredAtom, isStarred]
     ]}>
         {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
-        {!isOwner && !isOrganizational && <Star></Star>}
+        <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>
+            {!isOrganizational && <UserAvatar uid={rec.owner}></UserAvatar>}
+            {!isOrganizational && <Star></Star>}
+        </div>
         {children}
     </HydrationBoundary>)
 }

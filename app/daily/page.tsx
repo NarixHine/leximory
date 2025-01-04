@@ -8,8 +8,8 @@ import { Skeleton } from '@nextui-org/skeleton'
 import { auth } from '@clerk/nextjs/server'
 import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
-import WordStats from './word-stats'
-import { WordChartSkeleton } from './word-chart'
+import { WordChartSkeleton } from '@/components/stats/word-chart'
+import WordStats from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
 
 export const metadata: Metadata = {
@@ -17,15 +17,16 @@ export const metadata: Metadata = {
 }
 
 export default async function Daily() {
+    const { userId } = await auth()
     const xata = getXataClient()
-    const hasSubscribed = !!(await xata.db.subs.filter({ uid: (await auth()).userId }).getFirst())
+    const hasSubscribed = !!(await xata.db.subs.filter({ uid: userId! }).getFirst())
 
     return (
         <Main className='max-w-screen-lg pt-12'>
             <H><PiRewindDuotone />每日汇总</H>
             <div className='my-12 h-80'>
                 <Suspense fallback={<WordChartSkeleton />}>
-                    <WordStats />
+                    <WordStats uid={userId!} />
                 </Suspense>
             </div>
             <Spacer y={6}></Spacer>

@@ -1,7 +1,7 @@
 'use client'
 
 import { LineChart } from '@/components/chart'
-import { Skeleton } from '@nextui-org/skeleton'
+import { formarChartData } from '.'
 
 type WordData = {
     date: string
@@ -25,5 +25,16 @@ export default function WordChart({ data }: { data: WordData[] }) {
 }
 
 export function WordChartSkeleton() {
-    return <Skeleton className='w-full h-80 rounded-lg mt-4' />
+    return <LineChart 
+        data={formarChartData(new Map())}
+        index='date'
+        categories={['Count']}
+        colors={['emerald']}
+        valueFormatter={(value: number) => `${value} 词`}
+        showLegend
+        showGridLines
+        showYAxis
+        showXAxis
+        startEndOnly
+    />
 } 

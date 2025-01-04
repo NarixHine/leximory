@@ -11,6 +11,7 @@ import { PiStorefrontDuotone } from 'react-icons/pi'
 import { Alert } from '@nextui-org/alert'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
+import UserAvatar from '@/components/avatar'
 
 const PAGE_SIZE = 12
 
@@ -30,10 +31,12 @@ async function LibraryList({ page }: {
         <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
             {records.map((lib) => (
                 <LibraryCard
+                    avatar={<UserAvatar uid={lib.owner} />}
                     library={{
                         id: lib.id,
                         name: lib.name,
                         lang: lib.lang as Lang,
+                        owner: lib.owner
                     }}
                     isStarred={lib.starredBy?.includes(userId!) ?? false}
                     key={lib.id}
