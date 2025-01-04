@@ -11,7 +11,6 @@ import { useUser } from '@clerk/nextjs'
 import { useTransition } from 'react'
 
 export default function CopyToken() {
-    const [, copyToClipboard] = useCopyToClipboard()
     const [isLoading, startTransition] = useTransition()
     return <Button
         variant='ghost'
@@ -23,7 +22,15 @@ export default function CopyToken() {
             startTransition(async () => {
                 const token = await getToken()
                 if (token) {
-                    await copyToClipboard(token)
+                    const isIOS = navigator.userAgent.match(/iPhone|iPad|iPod/i)
+                    if (isIOS) {
+                        // iOS seems to limit the text length of clipboard.writeText
+                        navigator.share({
+                            text: token
+                        })
+                    } else {
+                        navigator.clipboard.writeText(token)
+                    }
                     toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
                 } else {
                     toast.error('获取密钥失败')
