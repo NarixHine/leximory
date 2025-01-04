@@ -8,20 +8,26 @@ import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useCopyToClipboard } from '@uidotdev/usehooks'
 import { prefixUrl } from '@/lib/config'
 import { useUser } from '@clerk/nextjs'
+import { useTransition } from 'react'
 
 export default function CopyToken() {
     const [, copyToClipboard] = useCopyToClipboard()
+    const [isLoading, startTransition] = useTransition()
     return <Button
         variant='ghost'
         color='warning'
         className={CHINESE_ZCOOL.className}
-        startContent={<PiKeyDuotone />}
+        startContent={isLoading ? null : <PiKeyDuotone />}
+        isLoading={isLoading}
         onPress={() => {
-            const toastId = toast.loading('获取密钥中...', { duration: 1000 })
-            getToken().then(async token => {
-                await copyToClipboard(token!)
-                toast.dismiss(toastId)
-                toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
+            startTransition(async () => {
+                const token = await getToken()
+                if (token) {
+                    await copyToClipboard(token)
+                    toast.success('可以将密钥粘贴到 iOS Shortcuts 中了！')
+                } else {
+                    toast.error('获取密钥失败')
+                }
             })
         }}
     >

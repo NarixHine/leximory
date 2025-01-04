@@ -1,8 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from 'next-view-transitions'
 import { CatchTheBug } from '@/components/catch-the-bug'
 import { CHINESE_ZCOOL, ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import Center from '@/components/center'
