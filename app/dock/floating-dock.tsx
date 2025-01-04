@@ -10,7 +10,7 @@ import {
 } from 'framer-motion'
 import { useAtomValue } from 'jotai'
 import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { isReaderModeAtom } from '../atoms'
 
 export const FloatingDock = ({
@@ -60,13 +60,6 @@ function IconContainer({
     let widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40])
     let heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40])
 
-    let widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20])
-    let heightTransformIcon = useTransform(
-        distance,
-        [-150, 0, 150],
-        [20, 40, 20]
-    )
-
     let width = useSpring(widthTransform, {
         mass: 0.1,
         stiffness: 150,
@@ -78,40 +71,28 @@ function IconContainer({
         damping: 12,
     })
 
-    let widthIcon = useSpring(widthTransformIcon, {
-        mass: 0.1,
-        stiffness: 150,
-        damping: 12,
-    })
-    let heightIcon = useSpring(heightTransformIcon, {
-        mass: 0.1,
-        stiffness: 150,
-        damping: 12,
-    })
-
     let opacity = useTransform(distance, [-100, 0, 100], [0.9, 1, 0.9])
 
-    const [hovered, setHovered] = useState(false)
+    let iconScale = useTransform(distance, [-150, 0, 150], [1.3, 2.3, 1.3])
+    let iconSpring = useSpring(iconScale, {
+        mass: 0.1,
+        stiffness: 150,
+        damping: 12,
+    })
 
     return (
         <Link href={href}>
             <motion.div
                 ref={ref}
                 style={{ width, height, opacity }}
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                className={cn('aspect-square rounded-full flex items-center justify-center relative', styles)}
+                className={cn(
+                    'aspect-square rounded-full flex items-center justify-center relative',
+                    styles
+                )}
             >
                 <motion.div
-                    style={{ width: widthIcon, height: heightIcon }}
-                    animate={{
-                        scale: hovered ? 2 : 1
-                    }}
-                    transition={{
-                        duration: 0.2,
-                        ease: 'easeInOut'
-                    }}
-                    className='flex items-center justify-center text-primary-800'
+                    style={{ scale: iconSpring }}
+                    className="flex items-center justify-center text-primary-800"
                 >
                     {icon}
                 </motion.div>
