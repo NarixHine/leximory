@@ -3,6 +3,12 @@ import H from '@/components/ui/h'
 import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
 import Center from '@/components/ui/center'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'The Leximory Blog',
+    description: 'The tech and mind behind Leximory.',
+}
 
 export default function BlogHome() {
     const posts = [

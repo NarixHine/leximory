@@ -38,6 +38,7 @@
     "@nextui-org/input": "^2.4.7",
     "@nextui-org/modal": "^2.2.6",
     "@nextui-org/navbar": "^2.2.7",
+    "@nextui-org/pagination": "^2.2.8",
     "@nextui-org/popover": "^2.3.8",
     "@nextui-org/progress": "^2.2.5",
     "@nextui-org/radio": "^2.3.7",
