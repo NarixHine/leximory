@@ -1,4 +1,4 @@
-import Center from '@/components/center'
+import Center from '@/components/ui/center'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Link } from 'next-view-transitions'

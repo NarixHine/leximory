@@ -1,47 +1,45 @@
-import Main from '@/components/main'
-import Digest from './digest'
-import { getXataClient } from '@/lib/xata'
-import H from '@/components/h'
+import Main from '@/components/ui/main'
+import Digest from './components/digest'
+import EditableH from './components/editable-h'
 import { authReadToText } from '@/lib/auth'
 import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from '@/components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } from './atoms'
+import { getTextContent } from '@/server/text'
 
 export const maxDuration = 60
 
 export async function generateMetadata(props: LibAndTextParams) {
     const params = await props.params
-    const xata = getXataClient()
-    const rec = await xata.db.texts.select(['title']).filter({ id: params.text }).getFirstOrThrow()
+    const { title } = await getTextContent({ id: params.text })
     return {
-        title: rec.title ?? '文本'
+        title: title ?? '文本'
     }
 }
 
 const getData = async (text: string) => {
-    const xata = getXataClient()
     await authReadToText(text)
-    const rec = await xata.db.texts.filter({ id: text }).select(['title', 'content', 'lib', 'ebook', 'lib.lang', 'topics']).getFirstOrThrow()
-    return rec
+    const { title, content, topics, ebook, lib } = await getTextContent({ id: text })
+    return { title, content, topics, ebook, lib }
 }
 
 export default async function Page(props: LibAndTextParams) {
-    const params = await props.params
-    const { title, content, lib, id, topics, ebook, } = await getData(params.text)
+    const { text } = await props.params
+    const { title, content, topics, ebook, lib } = await getData(text)
 
     return (<HydrationBoundary hydrateAtoms={[
         [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
         [topicsAtom, topics ?? []],
         [ebookAtom, ebook?.url],
-        [textAtom, id],
+        [textAtom, text],
         [titleAtom, title],
         [inputAtom, '']
     ]}>
         <Main className='max-w-screen-xl'>
-            <Nav lib={{ id: lib!.id, name: lib!.name }} text={{ id: params.text, name: title }}></Nav>
-            <H useNoto className={'sm:text-4xl mb-2 text-3xl'}>{title}</H>
+            <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
+            <EditableH></EditableH>
             <Topics topics={topics}></Topics>
             <Digest></Digest>
         </Main>

@@ -1,6 +1,6 @@
 'use client'
 
-import { LineChart } from '@/components/chart'
+import { LineChart } from '@/components/ui/chart'
 import { formarChartData } from '.'
 
 type WordData = {

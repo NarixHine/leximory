@@ -1,10 +1,10 @@
 import { ClerkLoaded, OrganizationList, OrganizationSwitcher, UserButton } from '@clerk/nextjs'
 import { Metadata } from 'next'
-import CopyToken, { CopyProfileLink } from './copy'
+import CopyToken, { CopyProfileLink } from './components/copy'
 import { Button } from '@nextui-org/button'
 import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
-import { PiFastForwardDuotone, PiShareDuotone } from 'react-icons/pi'
+import { PiFastForwardDuotone } from 'react-icons/pi'
 
 export const metadata: Metadata = { title: '设置' }
 

@@ -1,7 +1,6 @@
-import Center from '@/components/center'
-import H from '@/components/h'
+import Center from '@/components/ui/center'
+import H from '@/components/ui/h'
 import { stringToColor } from '@/lib/utils'
-import { getXataClient } from '@/lib/xata'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Avatar } from '@nextui-org/avatar'
 import moment from 'moment'
@@ -11,20 +10,14 @@ import WordStats from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Chip } from '@nextui-org/chip'
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
+import { summarizeLibsWithWords } from '@/server/lib'
 
 export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
     moment.locale('zh-CN')
     const uid = (await params).uid
     const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(uid)
-    const xata = getXataClient()
-    const { summaries } = await xata.db.lexicon.filter({
-        'lib.owner': uid
-    }).summarize({
-        summaries: {
-            count: { count: '*' },
-        },
-    })
-    const totalWordsLearned = summaries[0].count
+    const data = await summarizeLibsWithWords({ filter: { 'lib.owner': uid } })
+    const totalWordsLearned = data[0].count
     return <Center>
         <div className='flex flex-col items-center gap-4 max-w-md'>
             <Avatar src={imageUrl} isBordered color={stringToColor(uid)} className='!size-16' />

@@ -1,25 +1,24 @@
-import Main from '@/components/main'
-import H from '@/components/h'
+import Main from '@/components/ui/main'
+import H from '@/components/ui/h'
 import { Suspense } from 'react'
-import Report from './report'
-import Bell from './bell'
+import Report from './components/report'
+import Bell from './components/bell'
 import { Spacer } from '@nextui-org/spacer'
 import { Skeleton } from '@nextui-org/skeleton'
-import { auth } from '@clerk/nextjs/server'
-import { getXataClient } from '@/lib/xata'
 import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import WordStats from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
+import { getSubsStatus } from '@/server/subs'
+import { getAuthOrThrow } from '@/lib/auth'
 
 export const metadata: Metadata = {
     title: '每日汇总',
 }
 
 export default async function Daily() {
-    const { userId } = await auth()
-    const xata = getXataClient()
-    const hasSubscribed = !!(await xata.db.subs.filter({ uid: userId! }).getFirst())
+    const { userId } = await getAuthOrThrow()
+    const hasSubscribed = await getSubsStatus({ userId })
 
     return (
         <Main className='max-w-screen-lg pt-12'>

@@ -1,5 +1,5 @@
 import type { MDXComponents } from 'mdx/types'
-import MdImg from './components/mdimg'
+import MdImg from './components/ui/mdimg'
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
     return {

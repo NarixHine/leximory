@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { ClerkLoading } from '@clerk/nextjs'
 import { CircularProgress } from '@nextui-org/progress'
-import Center from '@/components/center'
+import Center from '@/components/ui/center'
 
 export const metadata: Metadata = { title: '设置' }
 

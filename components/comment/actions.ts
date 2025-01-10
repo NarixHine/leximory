@@ -1,34 +1,33 @@
 'use server'
 
-import { authWriteToLib } from '@/lib/auth'
+import { authWriteToLib, authWriteToText } from '@/lib/auth'
 import { extractSaveForm, validateOrThrow } from '@/lib/lang'
-import { getXataClient } from '@/lib/xata'
-
-const xata = getXataClient()
+import { updateText } from '@/server/text'
+import { deleteWord, getWord, saveWord, updateWord } from '@/server/word'
 
 export async function delComment(id: string) {
-    const record = await xata.db.lexicon.filter({ id }).getFirstOrThrow()
-    await authWriteToLib(record.lib!.id)
-    await xata.db.lexicon.delete(id)
+    const { lib } = await getWord({ id })
+    await authWriteToLib(lib!.id)
+    await deleteWord(id)
 }
 
 export async function saveComment(portions: string[], lib: string, editId?: string) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
     validateOrThrow(word)
 
-    await authWriteToLib(lib)
-    const { id } = await xata.db.lexicon.createOrUpdate({
-        word,
-        lib,
-        id: editId,
-    })
-    return id
+    if (editId) {
+        const { lib } = await getWord({ id: editId })
+        await authWriteToLib(lib!.id)
+        await updateWord({ id: editId, word })
+        return editId
+    } else {
+        await authWriteToLib(lib)
+        const { id } = await saveWord({ lib, word })
+        return id
+    }
 }
 
 export async function modifyText(id: string, modifiedText: string) {
-    const text = await xata.db.texts.filter({ id }).getFirstOrThrow()
-    await authWriteToLib(text.lib!.id)
-    await xata.db.texts.update(id, {
-        content: modifiedText,
-    })
+    await authWriteToText(id)
+    await updateText({ id, content: modifiedText })
 }

@@ -2,9 +2,9 @@
 
 import { cn } from '@/lib/utils'
 import { Link } from 'next-view-transitions'
-import { CatchTheBug } from '@/components/catch-the-bug'
+import { CatchTheBug } from '@/components/ui/catch-the-bug'
 import { CHINESE_ZCOOL, ENGLISH_PLAYFAIR } from '@/lib/fonts'
-import Center from '@/components/center'
+import Center from '@/components/ui/center'
 import { PiWarningDiamondDuotone } from 'react-icons/pi'
 
 export default function Error({

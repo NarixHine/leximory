@@ -28,7 +28,6 @@ export default function manifest(): MetadataRoute.Manifest {
                 src: '/screenshots/wide.png',
                 sizes: '2736x1728',
                 type: 'image/png',
-                // @ts-ignore
                 form_factor: 'wide',
             },
             {

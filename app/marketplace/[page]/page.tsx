@@ -1,41 +1,31 @@
-import { getXataClient } from '@/lib/xata'
-import Main from '@/components/main'
-import { libAccessStatusMap, Lang } from '@/lib/config'
+import Main from '@/components/ui/main'
 import Pagination from './pagination'
-import LibraryCard, { LibraryCardSkeleton } from './card'
+import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { auth } from '@clerk/nextjs/server'
 import { Spacer } from '@nextui-org/spacer'
 import { Suspense } from 'react'
-import H from '@/components/h'
+import H from '@/components/ui/h'
 import { PiStorefrontDuotone } from 'react-icons/pi'
 import { Alert } from '@nextui-org/alert'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
-
-const PAGE_SIZE = 12
+import { getPaginatedPublicLibs } from '@/server/lib'
 
 async function LibraryList({ page }: {
     page: number
 }) {
-    const xata = getXataClient()
     const { userId } = await auth()
-    const { records } = await xata.db.libraries
-        .filter({ access: libAccessStatusMap.public })
-        .sort('xata.createdAt', 'desc')
-        .select(['id', 'name', 'lang', 'owner', 'starredBy'])
-        .getPaginated({
-            pagination: { size: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }
-        })
+    const libs = await getPaginatedPublicLibs({ page, size: 12 })
     return (
         <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
-            {records.map((lib) => (
+            {libs.map((lib) => (
                 <LibraryCard
                     avatar={<UserAvatar uid={lib.owner} />}
                     library={{
                         id: lib.id,
                         name: lib.name,
-                        lang: lib.lang as Lang,
+                        lang: lib.lang,
                         owner: lib.owner
                     }}
                     isStarred={lib.starredBy?.includes(userId!) ?? false}

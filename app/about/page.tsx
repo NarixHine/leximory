@@ -1,4 +1,4 @@
-import Main from '@/components/main'
+import Main from '@/components/ui/main'
 import { CHINESE_ZCOOL, ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Button } from '@nextui-org/button'

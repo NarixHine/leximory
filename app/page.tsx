@@ -1,27 +1,26 @@
-import Main from '@/components/main'
+import Main from '@/components/ui/main'
 import { auth } from '@clerk/nextjs/server'
-import H from '@/components/h'
+import H from '@/components/ui/h'
 import { CHINESE_CALLIGRAPHY, CHINESE_ZCOOL } from '@/lib/fonts'
 import { Link as ViewTransitionLink } from 'next-view-transitions'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import Fade from '@/components/fade'
 import Markdown from '@/components/markdown'
 import { PiFastForward, PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
-import Test from './library/[lib]/corpus/test'
-import External from '@/components/external'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
 import { isReadOnlyAtom, libAtom } from './library/[lib]/atoms'
-import { FlipWords } from '@/components/flip'
+import { FlipWords } from '@/components/ui/flip'
 import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
 import { Spacer } from '@nextui-org/spacer'
 import { Button } from '@nextui-org/button'
 import { Input } from '@nextui-org/input'
 import { Card, CardBody } from '@nextui-org/card'
-import ShowcaseAnnotation from '@/components/showcase-annotation'
+import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
+import { motion } from 'framer-motion'
+import Test from './library/[lib]/corpus/components/test'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -150,14 +149,15 @@ export default async function Home() {
 
 		<Spacer y={8}></Spacer>
 
-		<Fade>
+		<motion.div
+			initial={{ opacity: 0, y: 20 }}
+			whileInView={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.8 }}
+		>
 			<div className={cn(CHINESE_CALLIGRAPHY.className, 'whitespace-pre-line text-6xl text-center')}>
 				{'从记忆\n到心会'}
 			</div>
-		</Fade>
-		<div className='flex justify-center items-center'>
-			<External className={cn('mt-2 flex flex-wrap w-fit justify-start text-lg', CHINESE_ZCOOL.className)} link='/library/3e4f1126'>体验我们的精编示例文库</External>
-		</div>
+		</motion.div>
 	</Main>
 }
 

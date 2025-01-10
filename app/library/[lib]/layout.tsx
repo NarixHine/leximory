@@ -1,23 +1,22 @@
 import { authReadToLib } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
-import Prompt from './prompt'
-import { getXataClient } from '@/lib/xata'
-import Star from './star'
+import Prompt from './components/prompt'
+import Star from './components/star'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom } from './atoms'
 import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import UserAvatar from '@/components/avatar'
 import Reader from '@/components/reader'
+import { getLib } from '@/server/lib'
 
 export async function generateMetadata(props: LibParams) {
     const params = await props.params
-    const xata = getXataClient()
-    const rec = await xata.db.libraries.select(['name']).filter({ id: params.lib }).getFirstOrThrow()
+    const { name } = await getLib({ id: params.lib })
     return {
         title: {
-            default: rec.name,
-            template: `%s | ${rec.name} | Leximory`
+            default: name,
+            template: `%s | ${name} | Leximory`
         }
     }
 }
@@ -34,16 +33,15 @@ export default async function LibLayout(
         children
     } = props
 
-    const { rec, isReadOnly, isOrganizational, isOwner } = await authReadToLib(params.lib)
-    const { starredBy } = rec
+    const { starredBy, isReadOnly, isOrganizational, isOwner, lang, owner } = await authReadToLib(params.lib)
     const { userId } = await auth()
     const isStarred = Boolean(starredBy?.includes(userId!))
     return (<HydrationBoundary options={{
         enableReHydrate: true
     }} hydrateAtoms={[
-        [libAtom, rec.id],
+        [libAtom, params.lib],
         [isReadOnlyAtom, isReadOnly],
-        [langAtom, rec.lang as Lang],
+        [langAtom, lang as Lang],
         [isStarredAtom, isStarred]
     ]}>
         <Reader>
@@ -52,7 +50,7 @@ export default async function LibLayout(
                 {
                     !isOwner && !isOrganizational &&
                     <>
-                        <UserAvatar uid={rec.owner}></UserAvatar>
+                        <UserAvatar uid={owner}></UserAvatar>
                         <Star></Star>
                     </>
                 }

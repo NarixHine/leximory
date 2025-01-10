@@ -5,7 +5,7 @@ import { defaultFontFamily } from '@/lib/fonts'
 import Script from 'next/script'
 import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
-import Dock from './dock'
+import Dock from './components/dock'
 import env, { isProd } from '@/lib/env'
 
 const TITLE_DEFAULT = 'Leximory'

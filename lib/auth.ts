@@ -2,30 +2,31 @@ import { getXataClient } from '@/lib/xata'
 import { auth } from '@clerk/nextjs/server'
 import { Lang, libAccessStatusMap } from './config'
 
-const getAuthOrThrow = async () => {
-    const xata = getXataClient()
+const xata = getXataClient()
+
+export const getAuthOrThrow = async () => {
     const { userId, orgId, orgRole } = await auth()
     if (!userId) {
         throw new Error('Unauthorized')
     }
-    return { xata, userId, orgId, orgRole }
+    return { userId, orgId, orgRole }
 }
 
 // auth access to libs
 
 export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
-    const { xata, userId, orgId, orgRole } = explicitUserId ? { userId: explicitUserId, orgId: undefined, orgRole: undefined, xata: getXataClient() } : await getAuthOrThrow()
+    const { userId, orgId, orgRole } = explicitUserId ? { userId: explicitUserId, orgId: undefined, orgRole: undefined } : await getAuthOrThrow()
     const rec = await xata.db.libraries.select(['lang']).filter({
         $all: [
             { id: lib },
             { $any: [{ owner: userId }, ...(orgId && orgRole === 'org:admin' ? [{ org: orgId }] : [])] },
         ]
     }).getFirstOrThrow()
-    return { rec, lang: rec.lang as Lang }
+    return { lang: rec.lang as Lang }
 }
 
 export const authReadToLib = async (lib: string) => {
-    const { xata, userId, orgId, orgRole } = await getAuthOrThrow()
+    const { userId, orgId, orgRole } = await getAuthOrThrow()
     const rec = await xata.db.libraries.select(['owner', 'lang', 'name', 'starredBy', 'org']).filter({
         $all: [
             { id: lib },
@@ -43,13 +44,13 @@ export const authReadToLib = async (lib: string) => {
     const isOwner = rec.owner === (await auth()).userId
     const { lang } = rec
     const isOrganizational = !!orgId && rec.org === orgId
-    return { rec, isReadOnly, isOwner, lang: lang as Lang, isOrganizational }
+    return { isReadOnly, isOwner, owner: rec.owner, lang: lang as Lang, isOrganizational, name: rec.name, starredBy: rec.starredBy }
 }
 
 // auth access to items related to libs
 
 export const authWriteToText = async (text: string) => {
-    const { xata, userId, orgId, orgRole } = await getAuthOrThrow()
+    const { userId, orgId, orgRole } = await getAuthOrThrow()
     const rec = await xata.db.texts.filter({
         $all: [
             { id: text },
@@ -60,8 +61,8 @@ export const authWriteToText = async (text: string) => {
 }
 
 export const authReadToText = async (text: string) => {
-    const { xata, userId, orgId } = await getAuthOrThrow()
-    const rec = await xata.db.texts.select([]).filter({
+    const { userId, orgId } = await getAuthOrThrow()
+    await xata.db.texts.select([]).filter({
         $all: [
             { id: text },
             {
@@ -73,7 +74,6 @@ export const authReadToText = async (text: string) => {
             },
         ]
     }).getFirstOrThrow()
-    return rec
 }
 
 const isPublic = { 'lib.access': libAccessStatusMap.public }

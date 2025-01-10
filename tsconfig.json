@@ -38,7 +38,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "components/markdown.tsx",
+    "components/markdown/index.tsx",
     "next.config.ts"
   ],
   "exclude": [

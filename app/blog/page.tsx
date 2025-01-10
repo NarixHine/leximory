@@ -1,7 +1,8 @@
 import { hFontFamily } from '@/lib/fonts'
-import H from '@/components/h'
+import H from '@/components/ui/h'
 import { Spacer } from '@nextui-org/spacer'
 import Link from 'next/link'
+import Center from '@/components/ui/center'
 
 export default function BlogHome() {
     const posts = [
@@ -9,8 +10,8 @@ export default function BlogHome() {
         { title: '从记忆到心会', date: '2024-07-15', slug: 'from-memorisation-to-acquisition' },
         { title: '利用 iOS Shortcuts 快捷保存词汇', date: '2024-11-23', slug: 'ios-shortcuts' },
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    return <div className='max-w-sm mx-auto'>
-        <div className='border-l-2 border-l-danger/50 px-3 not-prose'>
+    return <Center>
+        <div className='border-l-2 border-l-danger/50 px-3 pt-6 not-prose'>
             <H disableCenter className={'text-danger text-4xl'} usePlayfair>
                 The Leximory Blog
             </H>
@@ -33,5 +34,5 @@ export default function BlogHome() {
                 </H>
             </div>)}
         </div>
-    </div>
+    </Center>
 }

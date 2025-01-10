@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import { Button } from '@nextui-org/button'
@@ -11,7 +10,7 @@ import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone, PiSignInDuotone } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
-import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
+import { generateSingleComment } from '@/app/library/[lib]/[text]/components/digest/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { contentAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
