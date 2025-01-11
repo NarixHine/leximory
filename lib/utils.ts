@@ -69,10 +69,6 @@ export async function parseBody<T>(request: Request, schema: z.ZodSchema<T>) {
     return data
 }
 
-export function wrapInDoubleBracketsIfNot(text: string) {
-    return `${!text.includes('{{') ? '{{' : ''}${text}${!text.includes('}}') ? '}}' : ''}`
-}
-
 // Tremor Raw focusInput [v0.0.1]
 export const focusInput = [
     // base

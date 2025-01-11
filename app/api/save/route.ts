@@ -2,7 +2,7 @@ import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/co
 import { authWriteToLib } from '@/lib/auth'
 import env from '@/lib/env'
 import { originals, validateOrThrow } from '@/lib/lang'
-import { parseBody, wrapInDoubleBracketsIfNot } from '@/lib/utils'
+import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { verifyToken } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
