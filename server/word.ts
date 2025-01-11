@@ -11,6 +11,26 @@ export async function getWord({ id }: { id: string }) {
     return await xata.db.lexicon.filter({ id }).getFirstOrThrow()
 }
 
+export async function getRecentWords({ filter }: { filter: Record<string, any> }) {
+    const words = await xata
+        .db
+        .lexicon
+        .filter({
+            $all: [
+                filter,
+                {
+                    $not: {
+                        'word': { $any: Object.values(welcomeMap) }
+                    }
+                }
+            ]
+        })
+        .sort('xata.createdAt', 'desc')
+        .select(['lib.id', 'word'])
+        .getMany({ pagination: { size: 10 } })
+    return words.map(({ word, id }) => ({ word, id }))
+}
+
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
     return await xata.db.lexicon.create({
         lib,
@@ -60,4 +80,29 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
         }
     })
     return words.map(({ word, id }) => ({ word, id }))
+}
+
+export async function aggrMonthlyWordHistogram({ libs }: { libs: string[] }) {
+    const results = await xata.db.lexicon.aggregate({
+        wordsByDate: {
+            dateHistogram: {
+                column: 'day',
+                calendarInterval: 'day',
+            }
+        }
+    }, {
+        $all: [
+            {
+                day: {
+                    $ge: moment().subtract(30, 'days').toDate()
+                }
+            },
+            {
+                lib: {
+                    $any: libs
+                }
+            }
+        ]
+    })
+    return results.aggs.wordsByDate.values
 }

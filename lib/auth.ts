@@ -1,13 +1,14 @@
 import { getXataClient } from '@/lib/xata'
 import { auth } from '@clerk/nextjs/server'
 import { Lang, libAccessStatusMap } from './config'
+import { redirect } from 'next/navigation'
 
 const xata = getXataClient()
 
 export const getAuthOrThrow = async () => {
     const { userId, orgId, orgRole } = await auth()
     if (!userId) {
-        throw new Error('Unauthorized')
+        redirect('/sign-in')
     }
     return { userId, orgId, orgRole }
 }

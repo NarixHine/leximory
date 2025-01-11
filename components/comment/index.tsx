@@ -78,7 +78,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         setIsLoaded(true)
                     }
                 }
-            } catch (e) {
+            } catch {
                 toast.error('生成中止。')
             }
         }
@@ -119,7 +119,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     const savedId = await saveComment(portions, lib)
                     setStatus('saved')
                     setSavedId(savedId)
-                } catch (error) {
+                } catch {
                     setStatus('idle')
                     toast.error('保存失败')
                 }
@@ -181,7 +181,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     try {
                         await delComment(editId)
                         setStatus('deleted')
-                    } catch (error) {
+                    } catch {
                         setStatus('idle')
                         toast.error('删除失败')
                     }

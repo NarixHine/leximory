@@ -1,8 +1,9 @@
 import LEXICON from './lexicon'
+import { CustomLexicon } from './types'
 const lemmatize = require('wink-lemmatizer')
 
 export function extractSaveForm(portions: string[]) {
-    const [_, ...comment] = portions
+    const [, ...comment] = portions
     return [comment[0]].concat(comment)
 }
 

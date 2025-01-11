@@ -1,29 +1,10 @@
-import { getXataClient } from '@/lib/xata'
 import { isListed } from '@/lib/auth'
 import Markdown from '../../../components/markdown'
-import moment from 'moment'
 import { ReactNode } from 'react'
-import { welcomeMap } from '@/lib/config'
+import { getRecentWords } from '@/server/word'
 
 export default async function Lookback() {
-    const xata = getXataClient()
-    moment().utcOffset('+08:00')
-    const words = await xata
-        .db
-        .lexicon
-        .filter({
-            $all: [
-                await isListed(),
-                {
-                    $not: {
-                        'word': { $any: Object.values(welcomeMap) }
-                    }
-                }
-            ]
-        })
-        .sort('xata.createdAt', 'desc')
-        .select(['lib.id', 'word'])
-        .getMany({ pagination: { size: 10 } })
+    const words = await getRecentWords({ filter: await isListed() })
     return <LookbackWrapper>
         {words.length > 0 ? words.map(({ word, id }) =>
             <span key={id} className='inline-block px-2 py-1'>

@@ -20,7 +20,7 @@ export const FloatingDock = ({
     items: { icon: React.ReactNode; href: string }[]
     className?: string
 }) => {
-    let mouseX = useMotionValue(Infinity)
+    const mouseX = useMotionValue(Infinity)
     const isReaderMode = useAtomValue(isReaderModeAtom)
     return !isReaderMode && (
         <motion.div

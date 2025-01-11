@@ -1,7 +1,7 @@
 'use client'
 
 import { LineChart } from '@/components/ui/chart'
-import { formarChartData } from '.'
+import { formatChartData } from '.'
 
 type WordData = {
     date: string
@@ -27,7 +27,7 @@ export default function WordChart({ data }: { data: WordData[] }) {
 export function WordChartSkeleton() {
     return <LineChart
         className='opacity-30 animate-pulse'
-        data={formarChartData(new Map())}
+        data={formatChartData(new Map())}
         index='date'
         categories={['Count']}
         colors={['gray']}

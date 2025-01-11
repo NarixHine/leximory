@@ -1,14 +1,14 @@
-type LibParams = {
+export type LibParams = {
     params: Promise<{
         lib: string
     }>
 }
 
-type LibAndTextParams = {
+export type LibAndTextParams = {
     params: Promise<{
         lib: string
         text: string
     }>
 }
 
-type CustomLexicon = 'chuzhong' | 'gaozhong' | 'cet6' | 'none'
+export type CustomLexicon = 'chuzhong' | 'gaozhong' | 'cet6' | 'none'

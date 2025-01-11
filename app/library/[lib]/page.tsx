@@ -4,6 +4,7 @@ import H from '@/components/ui/h'
 import Text, { AddTextButton } from './components/text'
 import { authReadToLib } from '@/lib/auth'
 import { getTexts } from '@/server/text'
+import { LibParams } from '@/lib/types'
 
 async function getData(lib: string) {
     const { name, isReadOnly } = await authReadToLib(lib)

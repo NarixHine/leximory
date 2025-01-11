@@ -32,7 +32,7 @@ export default function Bell({ hasSubscribed }: {
                         try {
                             await subscribe()
                             toast.success('开启成功')
-                        } catch (e) {
+                        } catch {
                             toast.error(`开启失败，iOS 用户请将 Leximory 添加至主界面`)
                         }
                     }

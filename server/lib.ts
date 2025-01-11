@@ -1,5 +1,4 @@
 import 'server-only'
-
 import { Lang, libAccessStatusMap, welcomeMap } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
@@ -124,4 +123,9 @@ export async function getLib({ id }: { id: string }) {
 export async function listShortcutLibs({ owner }: { owner: string }) {
     const libs = await xata.db.libraries.filter({ owner, shortcut: true }).getMany()
     return libs.map(({ id, name }) => ({ id, name }))
+}
+
+export async function listLibs({ owner }: { owner: string }) {
+    const libs = await xata.db.libraries.select([]).filter({ owner }).getMany()
+    return libs.map(({ id }) => id)
 }

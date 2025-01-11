@@ -1,13 +1,18 @@
 import 'server-only'
 
 import { getXataClient } from '@/lib/xata'
-import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
+import { PushSubscription } from 'web-push'
 
 const xata = getXataClient()
 
 export async function getSubsStatus({ userId }: { userId: string }) {
     return !!(await xata.db.subs.filter({ uid: userId }).getFirst())
+}
+
+export async function getAllSubs() {
+    const subs = await xata.db.subs.select(['uid', 'subscription']).getAll()
+    return subs.map(({ uid, subscription }) => ({ uid, subscription: subscription as PushSubscription }))
 }
 
 export default async function saveSubs({ userId, subs }: { userId: string, subs: PushSubscription }) {

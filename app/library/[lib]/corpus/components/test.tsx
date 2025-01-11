@@ -20,7 +20,7 @@ export default function Test({ latestTime }: {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const [start, setStart] = useState(parseDate(latestTime).subtract({ days: 6 }))
     const [end, setEnd] = useState(parseDate(latestTime))
-    const [words, drawWords, isDrawing] = useActionState((words: { word: string, id: string }[]) => {
+    const [words, drawWords, isDrawing] = useActionState(() => {
         return draw(lib, moment(start.toDate(getLocalTimeZone())).startOf('day').toDate(), moment(end.toDate(getLocalTimeZone())).add(1, 'day').startOf('day').toDate())
     }, [])
 

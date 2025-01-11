@@ -4,6 +4,7 @@ import { useAtom } from 'jotai'
 import { Radio, RadioGroup } from '@nextui-org/radio'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { cn } from '@/lib/utils'
+import { CustomLexicon } from '@/lib/types'
 
 export default function LexiconSelector({ className }: { className?: string }) {
   const [customLexicon, setCustomLexicon] = useAtom(lexiconAtom)

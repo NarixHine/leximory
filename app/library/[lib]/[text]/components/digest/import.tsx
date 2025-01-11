@@ -115,7 +115,7 @@ export default function ImportModal() {
                                                 setTopics(topics)
                                                 await save({ id: text, content: commentary, topics })
                                                 setIsLoading(false)
-                                            } catch (e) {
+                                            } catch {
                                                 await save({ id: text, content: commentary, topics })
                                                 toast.error('生成中止。')
                                                 setIsLoading(false)

@@ -95,7 +95,7 @@ function EditingView() {
       setContent(modifiedMd)
       setTopics(modifiedTopics)
     })
-  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics])
+  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title])
 
   const memoizedTopics = useMemo(() => (
     <Topics topics={modifiedTopics} remove={handleTopicRemove} />

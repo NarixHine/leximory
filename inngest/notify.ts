@@ -1,9 +1,9 @@
 import { GetEvents } from 'inngest'
 import { inngest } from './client'
-import { getXataClient } from '@/lib/xata'
-import webpush, { PushSubscription } from 'web-push'
+import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
 import env from '@/lib/env'
+import { getAllSubs } from '@/server/subs'
 
 type Events = GetEvents<typeof inngest>
 
@@ -18,20 +18,17 @@ export const fanNotification = inngest.createFunction(
     { cron: 'TZ=Asia/Shanghai 30 21 * * *' },
     async ({ step }) => {
         const users = await step.run('fetch-users', async () => {
-            const xata = getXataClient()
-            return xata.db.subs.select(['uid', 'subscription']).getAll()
+            return await getAllSubs()
         })
 
         const events = users.map<Events['app/notify']>(
-            (user) => {
-                return {
-                    name: 'app/notify',
-                    data: {
-                        subscription: user.subscription as PushSubscription,
-                    },
-                    user,
-                }
-            }
+            (user) => ({
+                name: 'app/notify',
+                data: {
+                    subscription: user.subscription,
+                },
+                user: user.uid,
+            })
         )
 
         await step.sendEvent('fan-out-notifications', events)

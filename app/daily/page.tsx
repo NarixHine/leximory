@@ -25,7 +25,7 @@ export default async function Daily() {
             <H><PiRewindDuotone />每日汇总</H>
             <div className='my-12 h-80'>
                 <Suspense fallback={<WordChartSkeleton />}>
-                    <WordStats uid={userId!} />
+                    <WordStats uid={userId} />
                 </Suspense>
             </div>
             <Spacer y={6}></Spacer>
