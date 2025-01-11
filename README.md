@@ -10,9 +10,8 @@ Leximory integrates features like:
 - AI-driven targeted **annotations with etymologies**, 
 - **Combination of listening** with reading, 
 - **Easy reviewing** of saved words,
-- Save a word through our **iOS Shortcuts Integration**.
-
-The platform supports collaborative learning with **shared libraries and study groups**, making it ideal for both individual learners and academic settings.
+- Saving through our **iOS Shortcuts Integration**,
+- Sharing study resources using **Study Groups** or in the **Library Market**.
 
 The platform is built with Next.js, Xata, Clerk, Upstash, Vercel AI SDK and Inngest.
 
