@@ -34,7 +34,7 @@ export async function getRecentWords({ filter }: { filter: Record<string, any> }
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
     return await xata.db.lexicon.create({
         lib,
-        word: `{{${word}}}`
+        word
     })
 }
 
