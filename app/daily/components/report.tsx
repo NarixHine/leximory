@@ -1,7 +1,7 @@
 import { isAccessibleAndRelevantToUser } from '@/lib/auth'
 import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
-import { getForgetCurve } from '@/server/word'
+import { getForgetCurve } from '@/server/db/word'
 
 export const forgetCurve = {
     '今天记忆': [0, -1],

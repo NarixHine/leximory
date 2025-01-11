@@ -1,6 +1,6 @@
 'use server'
 
-import { authWriteToText } from '@/lib/auth'
+import { authWriteToText, getAuthOrThrow } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { generateText, streamObject, streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
@@ -11,7 +11,8 @@ import incrCommentaryQuota from '@/lib/quota'
 import { maxCommentaryQuota } from '@/lib/quota'
 import { Lang, maxArticleLength } from '@/lib/config'
 import { maxEbookSize } from './import'
-import { deleteText, updateText, uploadEbook } from '@/server/text'
+import { deleteText, updateText, uploadEbook } from '@/server/db/text'
+import { getAccentPreference } from '@/server/db/preference'
 
 export async function save({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const { lib } = await authWriteToText(id)
@@ -59,7 +60,7 @@ export async function generate(input: string, lib: string, onlyComments: boolean
             
             你将会看到一段网页文本，你${onlyComments ? '可以无视示例格式。禁止输出文本，直接制作词摘。你必须直接给出以{{}}包裹的注释部分，不加上下文。只输出{{}}内的内容（含{{}}，禁止省略双重大括号），输出形如“{{一个词汇的原形||原形||注解||……}} {{另一个词汇的原形||原形||注解||……}} ……”。不要注解术语，多多注解实用、通用语块，俗语、短语和动词搭配' : '首先要删去首尾的标题、作者、日期、导航和插入正文的广告等无关部分以及图片的来源和说明，段与段间空两行，并提取出其中的正文（含图片）'}。然后，你要生成一个object，在commentary中生成文本注解，然后在topics中用1~3个中文标签表示下文的话题或关键词。
             `,
-            prompt: `${lang !== 'en' ? '' : '你要为英语学习者注解一切高阶或罕见词汇，必须添加语源。'}${onlyComments ? `\n注意：禁止输出原文。请多注解有益于语言学习的语块而非术语，尽可能详尽丰富，不得少于二十个。多注解成块词组、短语（例如on the horns of a dilemma）、俗语（catch off guard），尤其是动词短语，越多越好。${exampleSentencePrompt(lang)}` : ''}注解必须均匀地遍布下文。\n\n${input}`,
+            prompt: `${lang !== 'en' ? '' : '你要为英语学习者注解一切高阶或罕见词汇，必须添加语源。'}${onlyComments ? `\n注意：禁止输出原文。请多注解有益于语言学习的语块而非术语，尽可能详尽丰富，不得少于二十个。多注解成块词组、短语（例如on the horns of a dilemma）、俗语（catch off guard），尤其是动词短语，越多越好。${exampleSentencePrompt(lang)}` : ''}注解必须均匀地遍布下文。${await accentPreferencePrompt(lang)}\n\n${input}`,
             schema: z.object({
                 commentary: z.string(),
                 topics: z.array(z.string()).optional()
@@ -95,7 +96,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
             ${instruction[lang]}
             `,
-            prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}\n\n${prompt}`,
+            prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt(lang)}\n\n${prompt}`,
             maxTokens: 1000
         })
 
@@ -120,11 +121,20 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
 
         ${instruction[lang]}
         `,
-        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}\n你要注解的是：\n${prompt}`,
+        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt(lang)}\n你要注解的是：\n${prompt}`,
         maxTokens: 200
     })
 
     return text
+}
+
+const accentPreferencePrompt = async (lang: Lang) => {
+    if (lang !== 'en') {
+        return ''
+    }
+    const { userId } = await getAuthOrThrow()
+    const accent = await getAccentPreference({ userId })
+    return `用户偏好：${accent}。请使用${accent}拼写、发音和语汇。`
 }
 
 const exampleSentencePrompt = (lang: Lang) => `必须在语境义部分以斜体附上该词的例句。形如${lang === 'en' ? 'word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known: *It later transpired that he was a spy.*||原形容水汽“升腾”: ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。' : ''}${lang === 'ja' ? '単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である：*彼女は可哀想に見えた。*||**かわい**（可悲）＋**そう**（……的样子）' : ''}${lang === 'zh' ? '词语||词语||释义：*例文*' : ''}`

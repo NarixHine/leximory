@@ -1,7 +1,7 @@
 'use server'
 
 import { getAuthOrThrow } from '@/lib/auth'
-import saveSubs, { delSubs } from '@/server/subs'
+import saveSubs, { delSubs } from '@/server/db/subs'
 import { PushSubscription } from 'web-push'
 
 export async function save(subs: PushSubscription) {

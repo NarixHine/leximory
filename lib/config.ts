@@ -1,5 +1,12 @@
 import env from './env'
 
+export const exampleSharedLib = {
+    id: '210fdc4d',
+    name: '📚 100-Day Intensive Input',
+    lang: 'en',
+    owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt'
+} as const
+
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 

@@ -1,7 +1,7 @@
 import { isListed } from '@/lib/auth'
 import Markdown from '../../../components/markdown'
 import { ReactNode } from 'react'
-import { getRecentWords } from '@/server/word'
+import { getRecentWords } from '@/server/db/word'
 
 export default async function Lookback() {
     const words = await getRecentWords({ filter: await isListed() })

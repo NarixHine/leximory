@@ -4,8 +4,8 @@ import getToken from '../actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
 import { Button } from '@nextui-org/button'
+import { useCopyToClipboard } from 'usehooks-ts'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
-import { useCopyToClipboard } from '@uidotdev/usehooks'
 import { prefixUrl } from '@/lib/config'
 import { useUser } from '@clerk/nextjs'
 import { useState, useTransition } from 'react'
@@ -52,14 +52,15 @@ export default function CopyToken() {
 }
 
 export function CopyProfileLink() {
-    const [, copyToClipboard] = useCopyToClipboard()
+    const [, copy] = useCopyToClipboard()
     const { user } = useUser()
     return <Button
+        size='sm'
         variant='flat'
         color='secondary'
         onPress={async () => {
             if (user) {
-                await copyToClipboard(prefixUrl(`/profile/${user.id}`))
+                copy(prefixUrl(`/profile/${user.id}`))
                 toast.success('复制成功')
             }
         }}

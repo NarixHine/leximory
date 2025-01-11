@@ -3,7 +3,7 @@ import { inngest } from './client'
 import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
 import env from '@/lib/env'
-import { getAllSubs } from '@/server/subs'
+import { getAllSubs } from '@/server/db/subs'
 import { PushSubscription } from 'web-push'
 
 type Events = GetEvents<typeof inngest>

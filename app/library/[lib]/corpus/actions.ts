@@ -1,7 +1,7 @@
 'use server'
 
 import { authReadToLib, authWriteToLib } from '@/lib/auth'
-import { loadWords, drawWords, saveWord } from '@/server/word'
+import { loadWords, drawWords, saveWord } from '@/server/db/word'
 import { revalidatePath } from 'next/cache'
 
 export default async function load(lib: string, cursor?: string) {

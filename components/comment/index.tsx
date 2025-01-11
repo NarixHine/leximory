@@ -47,12 +47,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
     const purifiedParams = params.replaceAll('{{', '').replaceAll('}}', '')
-    try {
-        JSON.parse(purifiedParams)
-    } catch {
-        console.error(purifiedParams)
-    }
-    const parsedParams = JSON.parse(purifiedParams) as string[]
+    const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)

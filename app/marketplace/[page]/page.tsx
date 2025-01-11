@@ -10,7 +10,7 @@ import { Alert } from '@nextui-org/alert'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
-import { getPaginatedPublicLibs } from '@/server/lib'
+import { getPaginatedPublicLibs } from '@/server/db/lib'
 
 async function LibraryList({ page }: {
     page: number

@@ -1,6 +1,6 @@
 import env from '@/lib/env'
 import { parseBody } from '@/lib/utils'
-import { listShortcutLibs } from '@/server/lib'
+import { listShortcutLibs } from '@/server/db/lib'
 import { verifyToken } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'

@@ -7,7 +7,7 @@ import Nav from '@/components/nav'
 import Topics from '@/components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } from './atoms'
-import { getTextContent } from '@/server/text'
+import { getTextContent } from '@/server/db/text'
 import { LibAndTextParams } from '@/lib/types'
 
 export const maxDuration = 60

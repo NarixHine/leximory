@@ -8,7 +8,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import UserAvatar from '@/components/avatar'
 import Reader from '@/components/reader'
-import { getLib } from '@/server/lib'
+import { getLib } from '@/server/db/lib'
 import { LibParams } from '@/lib/types'
 
 export async function generateMetadata(props: LibParams) {

@@ -1,7 +1,7 @@
 'use server'
 
-import { listLibs } from '@/server/lib'
-import { aggrMonthlyWordHistogram } from '@/server/word'
+import { listLibs } from '@/server/db/lib'
+import { aggrMonthlyWordHistogram } from '@/server/db/word'
 
 export async function getData(uid: string) {
     const libs = await listLibs({ owner: uid })

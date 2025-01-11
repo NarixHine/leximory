@@ -12,7 +12,7 @@ import { Spacer } from '@nextui-org/spacer'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PiBooksDuotone } from 'react-icons/pi'
-import { summarizeLibsWithWords } from '@/server/lib'
+import { summarizeLibsWithWords } from '@/server/db/lib'
 
 export const metadata: Metadata = {
     title: '文库'

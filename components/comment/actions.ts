@@ -2,8 +2,8 @@
 
 import { authWriteToLib, authWriteToText } from '@/lib/auth'
 import { extractSaveForm, validateOrThrow } from '@/lib/lang'
-import { updateText } from '@/server/text'
-import { deleteWord, getWord, saveWord, updateWord } from '@/server/word'
+import { updateText } from '@/server/db/text'
+import { deleteWord, getWord, saveWord, updateWord } from '@/server/db/word'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })

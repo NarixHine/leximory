@@ -9,7 +9,7 @@ import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import WordStats from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
-import { getSubsStatus } from '@/server/subs'
+import { getSubsStatus } from '@/server/db/subs'
 import { getAuthOrThrow } from '@/lib/auth'
 
 export const metadata: Metadata = {

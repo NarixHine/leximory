@@ -10,7 +10,7 @@ import WordStats from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Chip } from '@nextui-org/chip'
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
-import { summarizeLibsWithWords } from '@/server/lib'
+import { summarizeLibsWithWords } from '@/server/db/lib'
 
 export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
     moment.locale('zh-CN')

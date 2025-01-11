@@ -126,9 +126,9 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
                 const timer = setTimeout(() => {
                     remove({ id })
                     toast.success('删除成功')
-                }, 3000)
-                toast('三秒后删除……', {
-                    duration: 3000,
+                }, 5000)
+                toast('五秒后删除……', {
+                    duration: 5000,
                     icon: <PiHourglassMediumDuotone />,
                     cancel: {
                         label: '撤销',

@@ -6,7 +6,7 @@ import load from './actions'
 import Test from './components/test'
 import Nav from '@/components/nav'
 import { Metadata } from 'next'
-import { getLib } from '@/server/lib'
+import { getLib } from '@/server/db/lib'
 import { LibParams } from '@/lib/types'
 
 export const metadata: Metadata = {

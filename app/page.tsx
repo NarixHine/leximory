@@ -22,6 +22,7 @@ import Test from './library/[lib]/corpus/components/test'
 import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
+import { exampleSharedLib } from '@/lib/config'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -120,7 +121,7 @@ export default async function Home() {
 						>
 							<HydrationBoundary
 								hydrateAtoms={[
-									[libAtom, '210fdc4d'],
+									[libAtom, exampleSharedLib.id],
 									[isReadOnlyAtom, true]
 								]}
 							>
@@ -146,13 +147,8 @@ export default async function Home() {
 				<div className='col-span-1'>
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
-							avatar={<UserAvatar uid={'user_2foyJGoo6tI1iHeOszUoXu3x2cw'} />}
-							library={{
-								id: '210fdc4d',
-								name: '📚 100-Day Intensive Input',
-								lang: 'en',
-								owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt'
-							}}
+							avatar={<UserAvatar uid={exampleSharedLib.owner} />}
+							library={exampleSharedLib}
 							isStarred={false}
 						/>
 					</BentoCard>
