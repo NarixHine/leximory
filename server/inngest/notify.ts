@@ -4,6 +4,7 @@ import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
 import env from '@/lib/env'
 import { getAllSubs } from '@/server/subs'
+import { PushSubscription } from 'web-push'
 
 type Events = GetEvents<typeof inngest>
 
@@ -25,9 +26,9 @@ export const fanNotification = inngest.createFunction(
             (user) => ({
                 name: 'app/notify',
                 data: {
-                    subscription: user.subscription,
+                    subscription: JSON.stringify(user.subscription),
                 },
-                user: user.uid,
+                user
             })
         )
 
@@ -39,11 +40,11 @@ export const notify = inngest.createFunction(
     { id: 'notify' },
     { event: 'app/notify' },
     async ({ event }) => {
-        const { subscription } = event.data
-        webpush.sendNotification(subscription, JSON.stringify({
+        const subscription = JSON.parse(event.data.subscription) as PushSubscription
+        await webpush.sendNotification(subscription, JSON.stringify({
             title: 'Leximory 日报',
             body: '回顾今日、昨日、四日前、七日前记忆的语汇。',
-            icon: '/android-chrome-192x192.png',
+            icon: prefixUrl('/android-chrome-192x192.png'),
             data: {
                 url: prefixUrl('/daily')
             },

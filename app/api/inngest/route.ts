@@ -1,5 +1,5 @@
-import { inngest } from '@/inngest/client'
-import { fanNotification, notify } from '@/inngest/notify'
+import { inngest } from '@/server/inngest/client'
+import { fanNotification, notify } from '@/server/inngest/notify'
 import { serve } from 'inngest/next'
 
 export const { GET, POST, PUT } = serve({

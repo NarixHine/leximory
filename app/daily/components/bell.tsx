@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import env from '@/lib/env'
 import { save, remove } from '../actions'
 import { useTransition } from 'react'
+import { PushSubscription } from 'web-push'
 
 export default function Bell({ hasSubscribed }: {
     hasSubscribed: boolean
@@ -19,7 +20,7 @@ export default function Bell({ hasSubscribed }: {
             applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         })
 
-        await save(subscription)
+        await save(subscription as unknown as PushSubscription)
     }
 
     return (
@@ -37,7 +38,7 @@ export default function Bell({ hasSubscribed }: {
                         }
                     }
                 })
-            }} size='lg' radius='full' color='primary' startContent={<PiClockClockwiseDuotone />}>{`${hasSubscribed ? '关闭' : '开启'} 21:30 日报提醒`}</Button>
+            }} size='lg' radius='full' color='primary' startContent={isUpdating ? null : <PiClockClockwiseDuotone />}>{`${hasSubscribed ? '关闭' : '开启'} 21:30 日报提醒`}</Button>
             <div className='opacity-50 text-sm text-balance text-center'>
                 更换设备后需要重新开启
             </div>

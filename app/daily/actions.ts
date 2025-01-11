@@ -4,9 +4,9 @@ import { getAuthOrThrow } from '@/lib/auth'
 import saveSubs, { delSubs } from '@/server/subs'
 import { PushSubscription } from 'web-push'
 
-export async function save(subscription: PushSubscription) {
+export async function save(subs: PushSubscription) {
     const { userId } = await getAuthOrThrow()
-    await saveSubs({ userId, subs: subscription })
+    await saveSubs({ userId, subs })
 }
 
 export async function remove() {

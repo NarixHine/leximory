@@ -18,16 +18,16 @@ const serwist = new Serwist({
     runtimeCaching: defaultCache,
 })
 
-self.addEventListener('push', (event) => {
+self.addEventListener('push', async (event) => {
     const { data } = event
     if (data) {
-        const json = data.json()
+        const json = await data.json()
+        console.log(json)
         const { title, body, icon } = json
         const { url } = json.data
 
         const notificationOptions = {
             body,
-            tag: 'evening-reminder',
             icon,
             data: {
                 url,
