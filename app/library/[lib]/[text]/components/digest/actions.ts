@@ -41,6 +41,7 @@ export async function saveEbook(id: string, form: FormData) {
 
 export async function generate(input: string, lib: string, onlyComments: boolean) {
     const stream = createStreamableValue()
+    const { userId } = await getAuthOrThrow()
     const { lang } = await authWriteToLib(lib)
 
     if (!onlyComments && input.length > maxArticleLength(lang)) {
@@ -60,7 +61,7 @@ export async function generate(input: string, lib: string, onlyComments: boolean
             
             你将会看到一段网页文本，你${onlyComments ? '可以无视示例格式。禁止输出文本，直接制作词摘。你必须直接给出以{{}}包裹的注释部分，不加上下文。只输出{{}}内的内容（含{{}}，禁止省略双重大括号），输出形如“{{一个词汇的原形||原形||注解||……}} {{另一个词汇的原形||原形||注解||……}} ……”。不要注解术语，多多注解实用、通用语块，俗语、短语和动词搭配' : '首先要删去首尾的标题、作者、日期、导航和插入正文的广告等无关部分以及图片的来源和说明，段与段间空两行，并提取出其中的正文（含图片）'}。然后，你要生成一个object，在commentary中生成文本注解，然后在topics中用1~3个中文标签表示下文的话题或关键词。
             `,
-            prompt: `${lang !== 'en' ? '' : '你要为英语学习者注解一切高阶或罕见词汇，必须添加语源。'}${onlyComments ? `\n注意：禁止输出原文。请多注解有益于语言学习的语块而非术语，尽可能详尽丰富，不得少于二十个。多注解成块词组、短语（例如on the horns of a dilemma）、俗语（catch off guard），尤其是动词短语，越多越好。${exampleSentencePrompt(lang)}` : ''}注解必须均匀地遍布下文。${await accentPreferencePrompt(lang)}\n\n${input}`,
+            prompt: `${lang !== 'en' ? '' : '你要为英语学习者注解一切高阶或罕见词汇，必须添加语源。'}${onlyComments ? `\n注意：禁止输出原文。请多注解有益于语言学习的语块而非术语，尽可能详尽丰富，不得少于二十个。多注解成块词组、短语（例如on the horns of a dilemma）、俗语（catch off guard），尤其是动词短语，越多越好。${exampleSentencePrompt(lang)}` : ''}注解必须均匀地遍布下文。${await accentPreferencePrompt({ lang, userId })}\n\n${input}`,
             schema: z.object({
                 commentary: z.string(),
                 topics: z.array(z.string()).optional()
@@ -79,6 +80,7 @@ export async function generate(input: string, lib: string, onlyComments: boolean
 
 export async function generateSingleComment(prompt: string, lib: string) {
     const stream = createStreamableValue()
+    const { userId } = await getAuthOrThrow()
     const { lang } = await authReadToLib(lib)
 
     if (prompt.length > maxArticleLength(lang)) {
@@ -96,7 +98,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
             ${instruction[lang]}
             `,
-            prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt(lang)}\n\n${prompt}`,
+            prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n\n${prompt}`,
             maxTokens: 1000
         })
 
@@ -121,18 +123,17 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
 
         ${instruction[lang]}
         `,
-        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt(lang)}\n你要注解的是：\n${prompt}`,
+        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({lang, userId})}\n你要注解的是：\n${prompt}`,
         maxTokens: 200
     })
 
     return text
 }
 
-const accentPreferencePrompt = async (lang: Lang) => {
+const accentPreferencePrompt = async ({ lang, userId }: { lang: Lang, userId: string }) => {
     if (lang !== 'en') {
         return ''
     }
-    const { userId } = await getAuthOrThrow()
     const accent = await getAccentPreference({ userId })
     return `用户偏好：${accent}。请使用${accent}拼写、发音和语汇。`
 }
