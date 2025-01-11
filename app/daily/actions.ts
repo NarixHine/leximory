@@ -2,6 +2,7 @@
 
 import { getAuthOrThrow } from '@/lib/auth'
 import saveSubs, { delSubs } from '@/server/subs'
+import { PushSubscription } from 'web-push'
 
 export async function save(subscription: PushSubscription) {
     const { userId } = await getAuthOrThrow()
