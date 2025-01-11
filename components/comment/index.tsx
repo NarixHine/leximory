@@ -21,7 +21,6 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
-import { Chip } from '@nextui-org/chip'
 
 interface CommentProps {
     params: string
