@@ -21,6 +21,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
+import { Chip } from '@nextui-org/chip'
 
 interface CommentProps {
     params: string
@@ -46,7 +47,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const lang = useAtomValue(langAtom)
     const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
-    const parsedParams = JSON.parse(params.split('}}')[0].replaceAll('{', '')) as string[]
+    const purifiedParams = params.replaceAll('{{', '').replaceAll('}}', '')
+    try {
+        JSON.parse(purifiedParams)
+    } catch {
+        return <Chip color='danger' variant='flat'>ERROR</Chip>
+    }
+    const parsedParams = JSON.parse(purifiedParams) as string[]
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)

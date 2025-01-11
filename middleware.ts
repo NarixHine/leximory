@@ -7,7 +7,6 @@ const isProtectedRoute = createRouteMatcher([
     '/settings(.*)',
     '/settings/(.*)',
 
-    '/marketplace(.*)',
     '/marketplace/(.*)',
 
     '/daily(.*)',
