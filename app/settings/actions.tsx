@@ -2,7 +2,7 @@
 
 import { getAuthOrThrow } from '@/lib/auth'
 import { auth } from '@clerk/nextjs/server'
-import { setAccentPreference } from '@/server/db/preference'
+import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 
 export default async function getToken() {
 	const { getToken } = await auth()
@@ -13,4 +13,10 @@ export default async function getToken() {
 export async function setPreference(isBrE: boolean) {
 	const { userId } = await getAuthOrThrow()
 	await setAccentPreference({ accent: isBrE ? 'BrE' : 'AmE', userId })
+}
+
+export async function getPreference() {
+	const { userId } = await getAuthOrThrow()
+	const accent = await getAccentPreference({ userId })
+	return accent
 }

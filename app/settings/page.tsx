@@ -8,15 +8,9 @@ import Preference from './components/preference'
 import { getAuthOrThrow } from '@/lib/auth'
 import { HydrationBoundary } from 'jotai-ssr'
 import { accentAtom } from './atoms'
-import { getAccentPreference } from '@/server/db/preference'
+import { getPreference } from './actions'
 
 export const metadata: Metadata = { title: '设置' }
-
-export async function getPreference() {
-    const { userId } = await getAuthOrThrow()
-    const accent = await getAccentPreference({ userId })
-    return accent
-}
 
 export default async function Settings() {
     const { userId } = await getAuthOrThrow()
