@@ -51,7 +51,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     try {
         JSON.parse(purifiedParams)
     } catch {
-        return <Chip color='danger' variant='flat'>ERROR</Chip>
+        console.error(purifiedParams)
     }
     const parsedParams = JSON.parse(purifiedParams) as string[]
     const [portions, setPortions] = useState(parsedParams)
