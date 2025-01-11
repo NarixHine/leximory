@@ -21,17 +21,16 @@ export async function POST(request: Request) {
 
     const { sub } = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY })
     const { lang } = await authWriteToLib(lib, sub)
-    const word = `{{${lang === 'en' ? originals(rawWord)[0] : rawWord}}}`
+    const word = `[[${lang === 'en' ? originals(rawWord)[0] : rawWord}]]`
     const comment = await generateSingleCommentFromShortcut(word, lang, sub)
     if (typeof comment === 'object' && 'error' in comment) {
         throw new Error(comment.error)
     }
 
-    const wrappedComment = wrapInDoubleBracketsIfNot(comment)
-    validateOrThrow(wrappedComment)
-    const portions = wrappedComment.replaceAll('{{', '').split('}}')[0].split('||')
+    const portions = comment.replaceAll('{', '').replaceAll('}', '').split('||')
     after(async () => {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
+        validateOrThrow(word)
         await saveWord({ lib, word })
         revalidatePath(`/library/${lib}/corpus`)
     })
