@@ -8,8 +8,9 @@ import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { getAccentPreference } from '@/server/db/preference'
 import { ElevenLabsClient } from 'elevenlabs'
 
-export function retrieve(id: string) {
-    return retrieveAudioUrl({ id })
+export async function retrieve(id: string) {
+    const url = await retrieveAudioUrl({ id })
+    return url
 }
 
 export async function generate(id: string, lib: string, text: string) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { isReaderModeAtom } from '@/app/atoms'
+import { Image } from '@nextui-org/image'
 import { useAtomValue } from 'jotai'
 
 export default function MdImg({ src, alt = 'Image', title }: {
@@ -10,11 +11,12 @@ export default function MdImg({ src, alt = 'Image', title }: {
 }) {
     const isReaderMode = useAtomValue(isReaderModeAtom)
     return isReaderMode ? <></> : (
-        <img
+        <Image
+            isZoomed
             title={title}
             alt={alt}
             src={src}
-            className='shadow rounded-lg block mx-auto'
+            className='mx-auto'
         />
     )
 }
