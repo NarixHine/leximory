@@ -5,7 +5,7 @@ import { Card, CardBody, CardFooter } from '@nextui-org/card'
 import { Chip } from '@nextui-org/chip'
 import { Spacer } from '@nextui-org/spacer'
 import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiBinocularsDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
-import { langMap, colorMap, libAccessStatusMap, Lang } from '@/lib/config'
+import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
@@ -95,7 +95,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
 
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     return (<div className='w-full relative'>
-        {isOwner && <Button isIconOnly color='secondary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
+        {isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
@@ -103,19 +103,19 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
                 <a className='text-4xl' style={{
                     fontFamily: postFontFamily
                 }}>{name}</a>
-                <Spacer y={5}></Spacer>
+                <Spacer y={2}></Spacer>
                 <div className='flex space-x-2'>
-                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color={colorMap[tag]}>{tag}</Chip>)}
+                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='bordered' color='primary' classNames={{ base: 'border-1' }}>{tag}</Chip>)}
                 </div>
             </CardBody>
             <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='secondary' variant='flat'>语料本</Button>
+                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-start'>
                     <p className='text-xs opacity-80'>积累词汇</p>
-                    <Chip color='warning' variant='dot' className='border-none'>{lexicon.count}</Chip>
+                    <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button color={'primary'} radius='full' startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <Button color={'secondary'} radius='full' startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
                 </Button>}
             </CardFooter>

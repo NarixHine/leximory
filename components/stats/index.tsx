@@ -23,7 +23,7 @@ export function formatChartData(countMap: Map<string, number>) {
 
     const data = dates.map(date => ({
         date: new Date(date).toLocaleDateString('zh-CN'),
-        Count: countMap.get(date) || 0
+        '记忆单词数': countMap.get(date) || 0
     }))
 
     return data

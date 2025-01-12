@@ -23,7 +23,7 @@ export function TypedTitle() {
 }
 
 export function Article() {
-    return <article className='text-xl text-danger dark:text-danger-800'>
+    return <article className='text-xl'>
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,7 +75,7 @@ export function Article() {
                 <GradientCard
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
-                    gradient='bg-gradient-to-br from-secondary-200 to-secondary-300'
+                    gradient='bg-gradient-to-br from-secondary-50 to-secondary-100'
                     to='/library/3e4f1126/5c4e8e4e'
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
@@ -91,7 +91,7 @@ export function Article() {
                     title='iOS Shortcut'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
-                    gradient='bg-gradient-to-br from-primary-200 to-primary-300'
+                    gradient='bg-gradient-to-br from-primary-50 to-primary-100'
                 >
                     <PiAppleLogoDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -107,7 +107,7 @@ export function Article() {
                     to='/blog/reading-while-listening'
                     title='边听边读'
                     text='语言认知的另一个维度'
-                    gradient='bg-gradient-to-br from-danger-200 to-danger-300'
+                    gradient='bg-gradient-to-br from-danger-50 to-danger-100'
                 >
                     <PiDeviceMobileDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -122,7 +122,7 @@ export function Article() {
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
                     to='https://www.cdc.gov/niosh/mining/tools/installpwa.html'
-                    gradient='bg-gradient-to-br from-warning-200 to-warning-300'
+                    gradient='bg-gradient-to-br from-warning-50 to-warning-100'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>

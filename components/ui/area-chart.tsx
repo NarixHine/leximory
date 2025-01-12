@@ -1,31 +1,23 @@
 "use client"
 
-import React from "react"
+import { PiArrowLeftDuotone, PiArrowRightDuotone } from "react-icons/pi"
 import {
+  Area,
   CartesianGrid,
   Dot,
   Label,
   Line,
+  AreaChart as RechartsAreaChart,
   Legend as RechartsLegend,
-  LineChart as RechartsLineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts"
 import { AxisDomain } from "recharts/types/util/types"
-
-import {
-  AvailableChartColors,
-  AvailableChartColorsKeys,
-  constructCategoryColors,
-  getColorClassName,
-  getYAxisDomain,
-  hasOnlyOneValueForKey,
-} from "@/lib/chart-utils"
 import { cn as cx } from "@/lib/utils"
-import { PiArrowLeftDuotone } from 'react-icons/pi'
-import { PiArrowRightDuotone } from 'react-icons/pi'
+import { AvailableChartColorsKeys, getColorClassName, AvailableChartColors, constructCategoryColors, getYAxisDomain, hasOnlyOneValueForKey } from '@/lib/chart-utils'
+import React from 'react'
 
 //#region Legend
 
@@ -385,7 +377,6 @@ const ChartTooltip = ({
   valueFormatter,
 }: ChartTooltipProps) => {
   if (active && payload && payload.length) {
-    const legendPayload = payload.filter((item: any) => item.type !== "none")
     return (
       <div
         className={cx(
@@ -410,7 +401,7 @@ const ChartTooltip = ({
           </p>
         </div>
         <div className={cx("space-y-1 px-4 py-2")}>
-          {legendPayload.map(({ value, category, color }, index) => (
+          {payload.map(({ value, category, color }, index) => (
             <div
               key={`id-${index}`}
               className="flex items-center justify-between space-x-8"
@@ -453,7 +444,7 @@ const ChartTooltip = ({
   return null
 }
 
-//#region LineChart
+//#region AreaChart
 
 interface ActiveDot {
   index?: number
@@ -466,9 +457,9 @@ type BaseEventProps = {
   [key: string]: number | string
 }
 
-type LineChartEventProps = BaseEventProps | null | undefined
+type AreaChartEventProps = BaseEventProps | null | undefined
 
-interface LineChartProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AreaChartProps extends React.HTMLAttributes<HTMLDivElement> {
   data: Record<string, any>[]
   index: string
   categories: string[]
@@ -486,18 +477,20 @@ interface LineChartProps extends React.HTMLAttributes<HTMLDivElement> {
   minValue?: number
   maxValue?: number
   allowDecimals?: boolean
-  onValueChange?: (value: LineChartEventProps) => void
+  onValueChange?: (value: AreaChartEventProps) => void
   enableLegendSlider?: boolean
   tickGap?: number
   connectNulls?: boolean
   xAxisLabel?: string
   yAxisLabel?: string
+  type?: "default" | "stacked" | "percent"
   legendPosition?: "left" | "center" | "right"
+  fill?: "gradient" | "solid" | "none"
   tooltipCallback?: (tooltipCallbackContent: TooltipProps) => void
   customTooltip?: React.ComponentType<TooltipProps>
 }
 
-const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
+const AreaChart = React.forwardRef<HTMLDivElement, AreaChartProps>(
   (props, ref) => {
     const {
       data = [],
@@ -524,7 +517,9 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
       tickGap = 5,
       xAxisLabel,
       yAxisLabel,
+      type = "default",
       legendPosition = "right",
+      fill = "gradient",
       tooltipCallback,
       customTooltip,
       ...other
@@ -543,8 +538,49 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
 
     const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue)
     const hasOnValueChange = !!onValueChange
+    const stacked = type === "stacked" || type === "percent"
+    const areaId = React.useId()
+
     const prevActiveRef = React.useRef<boolean | undefined>(undefined)
     const prevLabelRef = React.useRef<string | undefined>(undefined)
+
+    const getFillContent = ({
+      fillType,
+      activeDot,
+      activeLegend,
+      category,
+    }: {
+      fillType: AreaChartProps["fill"]
+      activeDot: ActiveDot | undefined
+      activeLegend: string | undefined
+      category: string
+    }) => {
+      const stopOpacity =
+        activeDot || (activeLegend && activeLegend !== category) ? 0.1 : 0.3
+
+      switch (fillType) {
+        case "none":
+          return <stop stopColor="currentColor" stopOpacity={0} />
+        case "gradient":
+          return (
+            <>
+              <stop
+                offset="5%"
+                stopColor="currentColor"
+                stopOpacity={stopOpacity}
+              />
+              <stop offset="95%" stopColor="currentColor" stopOpacity={0} />
+            </>
+          )
+        case "solid":
+        default:
+          return <stop stopColor="currentColor" stopOpacity={stopOpacity} />
+      }
+    }
+
+    function valueToPercent(value: number) {
+      return `${(value * 100).toFixed(0)}%`
+    }
 
     function onDotClick(itemData: any, event: React.MouseEvent) {
       event.stopPropagation()
@@ -602,7 +638,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
         {...other}
       >
         <ResponsiveContainer>
-          <RechartsLineChart
+          <RechartsAreaChart
             data={data}
             onClick={
               hasOnValueChange && (activeLegend || activeDot)
@@ -619,6 +655,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               right: yAxisLabel ? 5 : undefined,
               top: 5,
             }}
+            stackOffset={type === "percent" ? "expand" : undefined}
           >
             {showGridLines ? (
               <CartesianGrid
@@ -676,7 +713,9 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                 // text fill
                 "fill-gray-500 dark:fill-gray-500",
               )}
-              tickFormatter={valueFormatter}
+              tickFormatter={
+                type === "percent" ? valueToPercent : valueFormatter
+              }
               allowDecimals={allowDecimals}
             >
               {yAxisLabel && (
@@ -762,112 +801,146 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                 }
               />
             ) : null}
-            {categories.map((category) => (
-              <Line
-                className={cx(
-                  getColorClassName(
-                    categoryColors.get(category) as AvailableChartColorsKeys,
-                    "stroke",
-                  ),
-                )}
-                strokeOpacity={
-                  activeDot || (activeLegend && activeLegend !== category)
-                    ? 0.3
-                    : 1
-                }
-                activeDot={(props: any) => {
-                  const {
-                    cx: cxCoord,
-                    cy: cyCoord,
-                    stroke,
-                    strokeLinecap,
-                    strokeLinejoin,
-                    strokeWidth,
-                    dataKey,
-                  } = props
-                  return (
-                    <Dot
+            {categories.map((category) => {
+              const categoryId = `${areaId}-${category.replace(/[^a-zA-Z0-9]/g, "")}`
+              return (
+                <React.Fragment key={category}>
+                  <defs key={category}>
+                    <linearGradient
+                      key={category}
                       className={cx(
-                        "stroke-white dark:stroke-gray-950",
-                        onValueChange ? "cursor-pointer" : "",
                         getColorClassName(
                           categoryColors.get(
-                            dataKey,
+                            category,
                           ) as AvailableChartColorsKeys,
-                          "fill",
+                          "text",
                         ),
                       )}
-                      cx={cxCoord}
-                      cy={cyCoord}
-                      r={5}
-                      fill=""
-                      stroke={stroke}
-                      strokeLinecap={strokeLinecap}
-                      strokeLinejoin={strokeLinejoin}
-                      strokeWidth={strokeWidth}
-                      onClick={(_, event) => onDotClick(props, event)}
-                    />
-                  )
-                }}
-                dot={(props: any) => {
-                  const {
-                    stroke,
-                    strokeLinecap,
-                    strokeLinejoin,
-                    strokeWidth,
-                    cx: cxCoord,
-                    cy: cyCoord,
-                    dataKey,
-                    index,
-                  } = props
+                      id={categoryId}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      {getFillContent({
+                        fillType: fill,
+                        activeDot: activeDot,
+                        activeLegend: activeLegend,
+                        category: category,
+                      })}
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    className={cx(
+                      getColorClassName(
+                        categoryColors.get(
+                          category,
+                        ) as AvailableChartColorsKeys,
+                        "stroke",
+                      ),
+                    )}
+                    strokeOpacity={
+                      activeDot || (activeLegend && activeLegend !== category)
+                        ? 0.3
+                        : 1
+                    }
+                    activeDot={(props: any) => {
+                      const {
+                        cx: cxCoord,
+                        cy: cyCoord,
+                        stroke,
+                        strokeLinecap,
+                        strokeLinejoin,
+                        strokeWidth,
+                        dataKey,
+                      } = props
+                      return (
+                        <Dot
+                          className={cx(
+                            "stroke-white dark:stroke-gray-950",
+                            onValueChange ? "cursor-pointer" : "",
+                            getColorClassName(
+                              categoryColors.get(
+                                dataKey,
+                              ) as AvailableChartColorsKeys,
+                              "fill",
+                            ),
+                          )}
+                          cx={cxCoord}
+                          cy={cyCoord}
+                          r={5}
+                          fill=""
+                          stroke={stroke}
+                          strokeLinecap={strokeLinecap}
+                          strokeLinejoin={strokeLinejoin}
+                          strokeWidth={strokeWidth}
+                          onClick={(_, event) => onDotClick(props, event)}
+                        />
+                      )
+                    }}
+                    dot={(props: any) => {
+                      const {
+                        stroke,
+                        strokeLinecap,
+                        strokeLinejoin,
+                        strokeWidth,
+                        cx: cxCoord,
+                        cy: cyCoord,
+                        dataKey,
+                        index,
+                      } = props
 
-                  if (
-                    (hasOnlyOneValueForKey(data, category) &&
-                      !(
-                        activeDot ||
-                        (activeLegend && activeLegend !== category)
-                      )) ||
-                    (activeDot?.index === index &&
-                      activeDot?.dataKey === category)
-                  ) {
-                    return (
-                      <Dot
-                        key={index}
-                        cx={cxCoord}
-                        cy={cyCoord}
-                        r={5}
-                        stroke={stroke}
-                        fill=""
-                        strokeLinecap={strokeLinecap}
-                        strokeLinejoin={strokeLinejoin}
-                        strokeWidth={strokeWidth}
-                        className={cx(
-                          "stroke-white dark:stroke-gray-950",
-                          onValueChange ? "cursor-pointer" : "",
-                          getColorClassName(
-                            categoryColors.get(
-                              dataKey,
-                            ) as AvailableChartColorsKeys,
-                            "fill",
-                          ),
-                        )}
-                      />
-                    )
-                  }
-                  return <React.Fragment key={index}></React.Fragment>
-                }}
-                key={category}
-                name={category}
-                type="linear"
-                dataKey={category}
-                stroke=""
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                isAnimationActive={false}
-                connectNulls={connectNulls}
-              />
-            ))}
+                      if (
+                        (hasOnlyOneValueForKey(data, category) &&
+                          !(
+                            activeDot ||
+                            (activeLegend && activeLegend !== category)
+                          )) ||
+                        (activeDot?.index === index &&
+                          activeDot?.dataKey === category)
+                      ) {
+                        return (
+                          <Dot
+                            key={index}
+                            cx={cxCoord}
+                            cy={cyCoord}
+                            r={5}
+                            stroke={stroke}
+                            fill=""
+                            strokeLinecap={strokeLinecap}
+                            strokeLinejoin={strokeLinejoin}
+                            strokeWidth={strokeWidth}
+                            className={cx(
+                              "stroke-white dark:stroke-gray-950",
+                              onValueChange ? "cursor-pointer" : "",
+                              getColorClassName(
+                                categoryColors.get(
+                                  dataKey,
+                                ) as AvailableChartColorsKeys,
+                                "fill",
+                              ),
+                            )}
+                          />
+                        )
+                      }
+                      return <React.Fragment key={index}></React.Fragment>
+                    }}
+                    key={category}
+                    name={category}
+                    type="linear"
+                    dataKey={category}
+                    stroke=""
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    isAnimationActive={false}
+                    connectNulls={connectNulls}
+                    stackId={stacked ? "stack" : undefined}
+                    fill={`url(#${categoryId})`}
+                  />
+                </React.Fragment>
+              )
+            })}
             {/* hidden lines to increase clickable target area */}
             {onValueChange
               ? categories.map((category) => (
@@ -892,14 +965,16 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                 />
               ))
               : null}
-          </RechartsLineChart>
+          </RechartsAreaChart>
         </ResponsiveContainer>
       </div>
     )
   },
 )
 
-LineChart.displayName = "LineChart"
+AreaChart.displayName = "AreaChart"
+
+export { AreaChart, type AreaChartEventProps, type TooltipProps }
 
 const useOnWindowResize = (handler: { (): void }) => {
   React.useEffect(() => {
@@ -912,5 +987,3 @@ const useOnWindowResize = (handler: { (): void }) => {
     return () => window.removeEventListener("resize", handleResize)
   }, [handler])
 }
-
-export { LineChart, type LineChartEventProps, type TooltipProps }

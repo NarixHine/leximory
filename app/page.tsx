@@ -30,7 +30,7 @@ export default async function Home() {
 		redirect('/library')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
-		<H className={'text-danger-400 dark:text-danger-600 text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
+		<H className={'text-primary text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
 			<span className='[text-shadow:_5px_5px_5px_rgb(175_225_175_/_50%)] dark:[text-shadow:none]'>Leximory</span>
 		</H>
 
@@ -46,7 +46,7 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<Button data-umami-event='开始学习' startContent={<PiShootingStarDuotone />} color='danger' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
+				<Button data-umami-event='开始学习' startContent={<PiShootingStarDuotone />} color='primary' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
 			</div>
 		</div>
 
@@ -65,7 +65,7 @@ export default async function Home() {
 								label='网址'
 								placeholder='https://example.com/'
 								variant='underlined'
-								color='danger'
+								color='secondary'
 							/>
 							<div className='flex flex-col-reverse'>
 								<Button
@@ -105,7 +105,7 @@ export default async function Home() {
 							title='共享文库'
 							description='创建学习小组，分发精读资料'
 						>
-							<div className='h-28 w-full bg-gradient-to-br from-secondary-400 dark:from-secondary-300 dark:to-warning-400 to-warning-300 p-3 relative rounded-lg'>
+							<div className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
 								<h2 className='font-bold opacity-50'>学习小组：</h2>
 								<p className='opacity-60 font-bold'>新知</p>
 								<div className='absolute bottom-0 right-0 p-4'>

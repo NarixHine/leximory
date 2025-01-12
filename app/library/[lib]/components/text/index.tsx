@@ -3,7 +3,6 @@
 import { Card, CardBody, CardFooter } from '@nextui-org/card'
 import { Chip } from '@nextui-org/chip'
 import { useRouter } from 'next/navigation'
-import { stringToColor } from '@/lib/utils'
 import { postFontFamily } from '@/lib/fonts'
 import { add } from './actions'
 import { motion } from 'framer-motion'
@@ -32,7 +31,7 @@ function Text({ id, title, topics }: {
             </CardBody>
             <CardFooter className='p-7'>
                 <div className='gap-2 flex flex-wrap align-middle items-center'>
-                    {topics.map(topic => <Chip key={topic} variant='flat' color={stringToColor(topic)}>{topic}</Chip>)}
+                    {topics.map(topic => <Chip key={topic} variant='flat' color={'primary'}>{topic}</Chip>)}
                 </div>
             </CardFooter>
         </Card>

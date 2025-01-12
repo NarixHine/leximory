@@ -1,24 +1,17 @@
-'use client'
-
-import { LineChart } from '@/components/ui/chart'
 import { formatChartData } from '.'
+import { LineChart } from '../ui/line-chart'
 
 type WordData = {
     date: string
-    Count: number
+    '记忆单词数': number
 }
 
 export default function WordChart({ data }: { data: WordData[] }) {
     return <LineChart
         data={data}
         index='date'
-        categories={['Count']}
-        colors={['emerald']}
-        valueFormatter={(value: number) => `${value} 词`}
+        categories={['记忆单词数']}
         showLegend
-        showGridLines
-        showYAxis
-        showXAxis
         startEndOnly
         allowDecimals={false}
     />
@@ -29,13 +22,9 @@ export function WordChartSkeleton() {
         className='opacity-30 animate-pulse'
         data={formatChartData(new Map())}
         index='date'
-        categories={['Count']}
-        colors={['gray']}
-        valueFormatter={(value: number) => `${value} 词`}
+        categories={['记忆单词数']}
         showLegend
-        showGridLines
-        showYAxis
-        showXAxis
+        colors={['default']}
         startEndOnly
     />
 } 

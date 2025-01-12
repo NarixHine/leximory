@@ -24,16 +24,6 @@ export const welcomeMap: Record<Lang, string> = {
     'nl': '{{Welcome||welcome||Welcome to your new library!}}'
 }
 
-type ColorOption = 'primary' | 'warning' | 'danger'
-export const colorMap: Record<string, ColorOption> = {
-    '文言文': 'primary',
-    '英文': 'primary',
-    '日文': 'primary',
-    '其他': 'primary',
-    '共享': 'warning',
-    '只读': 'danger'
-}
-
 export const libAccessStatusMap = {
     private: 0,
     public: 1,

@@ -48,7 +48,7 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
                     size='sm'
                     isLoading={isTransitioning}
                     startContent={isStarred ? <PiPushPinFill className='text-lg' /> : <PiPushPinDuotone className='text-lg' />}
-                    color='secondary'
+                    color='primary'
                     variant={'ghost'}
                     onPress={() => {
                         startTransition(() => {

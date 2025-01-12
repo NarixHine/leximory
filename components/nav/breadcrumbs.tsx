@@ -14,8 +14,8 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     const router = useRouter()
     return !isReaderMode && (
         <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-1'>
-            <Breadcrumbs variant='solid' radius='lg' color='primary' className='overflow-x-hidden max-w-[90%]' classNames={{
-                list: 'bg-secondary-200 dark:bg-danger-200 flex-nowrap',
+            <Breadcrumbs variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%]' classNames={{
+                list: 'flex-nowrap',
             }}>
                 <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone />} onPress={() => {
                     router.push(`/library`)
@@ -40,7 +40,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     </span>
                 </BreadcrumbItem>}
             </Breadcrumbs>
-            {lib && <Button className='bg-primary-200 text-primary-800' size='sm' href={`/library/${lib.id}/corpus`} as={Link} radius='lg' isIconOnly startContent={<PiBookBookmarkDuotone />}></Button>}
+            {lib && <Button size='sm' variant='flat' href={`/library/${lib.id}/corpus`} as={Link} radius='lg' isIconOnly startContent={<PiBookBookmarkDuotone />}></Button>}
         </div>
     )
 }

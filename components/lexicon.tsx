@@ -14,7 +14,6 @@ export default function LexiconSelector({ className }: { className?: string }) {
       <RadioGroup
         value={customLexicon}
         orientation='horizontal'
-        color='primary'
         onValueChange={(value) => { setCustomLexicon(value as CustomLexicon) }}
       >
         <Radio value='none'>无</Radio>

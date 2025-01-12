@@ -16,7 +16,7 @@ import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
 import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
 import Editor from '../editor'
-import Topics from '@/components/topics'
+import Topics from '../topics'
 import Markdown from '@/components/markdown'
 import Define from './define'
 import LexiconSelector from '@/components/lexicon'
@@ -47,7 +47,7 @@ function ReaderModeToggle() {
           }}
           className='mx-auto'
           variant={'light'}
-          color={isReaderMode ? 'default' : 'primary'}
+          color={'default'}
           radius='sm'
           endContent={<PiPrinterDuotone />}
           startContent={<PiBookOpenDuotone />}
@@ -172,7 +172,7 @@ function EditingView() {
           isLoading={isUpdating}
           isDisabled={isDeleting}
           variant='flat'
-          color='secondary'
+          color='primary'
           startContent={<PiPencilCircleDuotone />}
           onPress={handleSaveChanges}
         >
@@ -215,7 +215,7 @@ function ReadingView() {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='warning' variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto', description: cn(CHINESE_ZCOOL.className, 'text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto', description: cn(CHINESE_ZCOOL.className, 'text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>
             <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
             <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>

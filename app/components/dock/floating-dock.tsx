@@ -27,12 +27,12 @@ export const FloatingDock = ({
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'fixed bottom-0 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-tl-2xl rounded-tr-2xl backdrop:blur-sm bg-danger-100/70 dark:bg-primary-100/50 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
+                'fixed bottom-0 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-tl-2xl rounded-tr-2xl backdrop:blur-sm border border-default-100/80 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
                 className
             )}
         >
             {items.map((item, i) => (
-                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={i === 0 ? 'bg-primary-400' : i === 1 ? 'bg-primary-300' : i === 2 ? 'bg-secondary-400' : 'bg-danger-200'} />
+                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/50 text-primary-800', 'bg-secondary-100/50 text-secondary-800', 'bg-warning-100/50 text-warning-800', 'bg-danger-100/50 text-danger-800', 'bg-default-100/50 text-default-800'][i]} />
             ))}
         </motion.div>
     )
@@ -92,7 +92,7 @@ function IconContainer({
             >
                 <motion.div
                     style={{ scale: iconSpring }}
-                    className="flex items-center justify-center text-primary-800"
+                    className="flex items-center justify-center"
                 >
                     {icon}
                 </motion.div>

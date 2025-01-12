@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
-            <h1 className={cn('text-danger dark:text-danger-800 text-4xl', ENGLISH_PLAYFAIR.className)}>
+            <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
                 <TypedTitle />
             </h1>
             <div className='flex w-fit mt-1 mb-6'>
@@ -26,7 +26,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiTelevisionDuotone />}
                     as={Link}
-                    className='text-xl text-danger-700'
+                    className='text-xl'
                 ></Button>
                 <Button
                     size='sm'
@@ -36,7 +36,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiGithubLogoDuotone />}
                     as={Link}
-                    className='text-xl text-danger-700'
+                    className='text-xl'
                 ></Button>
                 <Button
                     size='sm'
@@ -46,7 +46,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiMailboxDuotone />}
                     as={Link}
-                    className='text-xl text-danger-700'
+                    className='text-xl'
                 ></Button>
                 <Button
                     size='sm'
@@ -56,7 +56,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiPenNibDuotone />}
                     as={Link}
-                    className='text-xl text-danger-700'
+                    className='text-xl'
                 ></Button>
             </div>
             <Article />

@@ -1,4 +1,3 @@
-import { stringToColor } from '@/lib/utils'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Avatar } from '@nextui-org/avatar'
 import { Button } from '@nextui-org/button'
@@ -7,11 +6,11 @@ import { Suspense } from 'react'
 
 async function UserAvatarServer({ uid }: { uid: string }) {
     const { imageUrl } = await (await clerkClient()).users.getUser(uid)
-    return <Avatar isBordered color={stringToColor(uid)} src={imageUrl} size='sm' />
+    return <Avatar isBordered color={'secondary'} src={imageUrl} size='sm' />
 }
 
-function UserAvatarFallback({ uid }: { uid: string }) {
-    return <Avatar isBordered color={stringToColor(uid)} size='sm' />
+function UserAvatarFallback() {
+    return <Avatar isBordered color={'secondary'} size='sm' />
 }
 
 export default function UserAvatar({ uid }: { uid: string }) {
@@ -19,7 +18,7 @@ export default function UserAvatar({ uid }: { uid: string }) {
         as={Link}
         href={`/profile/${uid}`}
         variant='light'
-        startContent={<Suspense fallback={<UserAvatarFallback uid={uid} />}>
+        startContent={<Suspense fallback={<UserAvatarFallback />}>
             <UserAvatarServer uid={uid} />
         </Suspense>}
         className='p-0 rounded-full'

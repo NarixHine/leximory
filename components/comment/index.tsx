@@ -175,7 +175,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isIconOnly
                 isLoading={status === 'loading' && !isEditing}
                 startContent={status !== 'loading' && <PiTrashDuotone />}
-                color='danger'
+                color='secondary'
                 variant='flat'
                 onPress={async () => {
                     setStatus('loading')
@@ -235,7 +235,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
                                     !isReaderMode && 'underline decoration-wavy underline-offset-[3px]',
-                                    isOnDemand ? 'decoration-primary/60' : 'decoration-danger'
+                                    isOnDemand ? 'decoration-default-400' : 'decoration-default-600'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}

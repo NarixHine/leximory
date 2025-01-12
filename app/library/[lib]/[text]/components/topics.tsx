@@ -1,6 +1,6 @@
 'use client'
 
-import { cn, stringToColor } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Chip } from '@nextui-org/chip'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -11,7 +11,7 @@ export default function Topics({ topics, remove }: { topics: string[] | null | u
     {
       topics.map(topic => <Chip key={topic} size='sm' variant={isReaderMode ? 'dot' : 'flat'} className='border-none' onClose={remove && (() => {
         remove(topic)
-      })} color={isReaderMode ? 'default' : stringToColor(topic)}>{topic}</Chip>)
+      })} color={'default'}>{topic}</Chip>)
     }
   </div>
 }
