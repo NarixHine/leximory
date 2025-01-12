@@ -12,7 +12,7 @@ export async function delComment(id: string) {
 }
 
 export async function saveComment(portions: string[], lib: string, editId?: string) {
-    const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
+    const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`.replaceAll('\n', '')
     validateOrThrow(word)
 
     if (editId) {
