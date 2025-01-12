@@ -13,34 +13,34 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const router = useRouter()
     return !isReaderMode && (
-        <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-1'>
-            <Breadcrumbs variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%]' classNames={{
-                list: 'flex-nowrap',
+        <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-2'>
+            <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%] backdrop-blur-sm' classNames={{
+                list: 'flex-nowrap bg-[#e4d4c8]/50',
             }}>
-                <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone />} onPress={() => {
+                <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone className='text-[#67595e]' />} onPress={() => {
                     router.push(`/library`)
                 }}>
-                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle'>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle text-[#67595e]'>
                         {tenant}
                     </span>
                 </BreadcrumbItem>
-                {lib && <BreadcrumbItem className='max-w-full' startContent={<PiBooksDuotone />} onPress={() => {
+                {lib && <BreadcrumbItem className='max-w-full' startContent={<PiBooksDuotone className='text-[#67595e]' />} onPress={() => {
                     router.push(`/library/${lib.id}`)
                 }}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[30vw] align-middle'>
                         {lib.name}
                     </span>
                 </BreadcrumbItem>}
-                {isAtCorpus && <BreadcrumbItem className='max-w-full' startContent={<PiBookBookmarkDuotone />}>语料本</BreadcrumbItem>}
-                {text && lib && <BreadcrumbItem className='max-w-full' startContent={<PiFileTextDuotone />} onPress={() => {
+                {isAtCorpus && <BreadcrumbItem className='max-w-full text-[#67595e]' startContent={<PiBookBookmarkDuotone className='text-[#67595e]' />}>语料本</BreadcrumbItem>}
+                {text && lib && <BreadcrumbItem className='max-w-full' startContent={<PiFileTextDuotone className='text-[#67595e]' />} onPress={() => {
                     router.push(`/library/${lib.id}/${text.id}`)
                 }}>
-                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[40vw] align-middle'>
+                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[40vw] align-middle text-[#67595e]'>
                         {text.name}
                     </span>
                 </BreadcrumbItem>}
             </Breadcrumbs>
-            {lib && <Button size='sm' variant='flat' href={`/library/${lib.id}/corpus`} as={Link} radius='lg' isIconOnly startContent={<PiBookBookmarkDuotone />}></Button>}
+            {lib && !isAtCorpus && <Button size='sm' variant='flat' href={`/library/${lib.id}/corpus`} as={Link} radius='lg' isIconOnly className='bg-[#e4d4c8]/50' startContent={<PiBookBookmarkDuotone className='text-[#67595e]' />}></Button>}
         </div>
     )
 }

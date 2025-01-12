@@ -11,6 +11,7 @@ export default function Preference() {
     const [accent, setAccent] = useAtom(accentAtom)
     const [isUpdating, startUpdating] = useTransition()
     return <Switch
+        className='z-0'
         isDisabled={isUpdating}
         color='secondary'
         isSelected={accent === 'BrE'}

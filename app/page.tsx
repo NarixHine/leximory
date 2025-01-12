@@ -31,8 +31,8 @@ export default async function Home() {
 		redirect('/library')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
-		<H className={'text-primary-700 dark:text-default text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
-			<span className='[text-shadow:_5px_5px_5px_rgb(205_213_157_/_50%)] dark:[text-shadow:none]'>Leximory</span>
+		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
+			<span className='[text-shadow:_5px_5px_5px_rgb(238_214_211_/_80%)] dark:[text-shadow:none]'>Leximory</span>
 		</H>
 
 		<Spacer y={5}></Spacer>
