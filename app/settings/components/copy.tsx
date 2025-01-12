@@ -4,7 +4,6 @@ import getToken from '../actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
 import { Button } from '@nextui-org/button'
-import { useCopyToClipboard } from 'usehooks-ts'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { prefixUrl } from '@/lib/config'
 import { useUser } from '@clerk/nextjs'
@@ -52,16 +51,22 @@ export default function CopyToken() {
 }
 
 export function CopyProfileLink() {
-    const [, copy] = useCopyToClipboard()
     const { user } = useUser()
     return <Button
         size='sm'
         variant='flat'
         color='secondary'
         onPress={async () => {
-            if (user) {
-                copy(prefixUrl(`/profile/${user.id}`))
-                toast.success('复制成功')
+            if (!user) return
+            const data: ShareData = {
+                title: 'Leximory',
+                text: '我在 Leximory 上学语言',
+                url: prefixUrl(`/profile/${user.id}`),
+            }
+            if (navigator.canShare(data)) {
+                navigator.share(data)
+            } else {
+                toast.error('浏览器不支持分享功能')
             }
         }}
         isIconOnly

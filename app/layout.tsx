@@ -7,6 +7,7 @@ import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
 import env, { isProd } from '@/lib/env'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -59,11 +60,12 @@ export default async function RootLayout(
 				<body style={{
 					fontFamily: defaultFontFamily,
 				}}>
+					<SpeedInsights />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-							<div className='relative flex flex-col'>
-								{children}
-								<Dock />
-							</div>
+						<div className='relative flex flex-col'>
+							{children}
+							<Dock />
+						</div>
 					</Providers>
 				</body>
 			</html>

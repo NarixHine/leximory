@@ -1,20 +1,21 @@
 'use server'
 
-import { authWriteToLib } from '@/lib/auth'
+import { authWriteToLib, getAuthOrThrow } from '@/lib/auth'
+import { elevenLabsVoice } from '@/lib/config'
 import { incrAudioQuota } from '@/lib/quota'
 import { maxAudioQuota } from '@/lib/quota'
-import { convertReadableToBinaryFile } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
+import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
+import { getAccentPreference } from '@/server/db/preference'
 import { ElevenLabsClient } from 'elevenlabs'
 
 const xata = getXataClient()
 
-export async function retrieveAudioUrl(id: string) {
-    const audio = await xata.db.audio.select(['gen']).filter({ id }).getFirst()
-    return audio?.gen?.url
+export function retrieve(id: string) {
+    return retrieveAudioUrl({ id })
 }
 
-export async function generateAudio(id: string, lib: string, text: string) {
+export async function generate(id: string, lib: string, text: string) {
     await authWriteToLib(lib)
     if (text.length > 5000) {
         return { error: '文本长度超过 5000 字符。' }
@@ -23,24 +24,14 @@ export async function generateAudio(id: string, lib: string, text: string) {
         return { error: `你已用完本月的 ${await maxAudioQuota()} 次 AI 音频生成额度。` }
     }
 
+    const { userId } = await getAuthOrThrow()
     const lab = new ElevenLabsClient()
+    const accent = await getAccentPreference({ userId })
     const audio = await lab.generate({
-        voice: 'npp2mvZp4jbUrUkhYg8e',
+        voice: elevenLabsVoice[accent],
         text,
         model_id: 'eleven_multilingual_v2'
     })
 
-    await xata.db.audio.create({
-        id,
-        lib,
-        gen: {
-            enablePublicUrl: true,
-        }
-    })
-    await xata.files.upload({ table: 'audio', column: 'gen', record: id }, await convertReadableToBinaryFile(audio), {
-        mediaType: 'audio/mpeg',
-    })
-
-    const url = await retrieveAudioUrl(id) as string
-    return { url }
+    return uploadAudio({ id, lib, audio })
 }

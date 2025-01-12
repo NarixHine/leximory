@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@nextui-org/button'
 import { Card, CardBody } from '@nextui-org/card'
 import { PiPlayCircleDuotone } from 'react-icons/pi'
-import { generateAudio, retrieveAudioUrl } from './actions'
+import { generate, retrieve } from './actions'
 import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
@@ -32,14 +32,14 @@ export default function AudioPlayer({ id, md, ...props }: {
                     return
                 }
                 setStatus('generating')
-                generateAudio(id, lib, innerText).then(({ url, error }) => {
-                    if (url) {
-                        setUrl(url)
+                generate(id, lib, innerText).then((res) => {
+                    if (typeof res === 'string') {
+                        setUrl(res)
                         setStatus('ready')
                     }
-                    else if (error) {
+                    else if (res.error) {
                         setStatus('ungenerated')
-                        toast.error(error)
+                        toast.error(res.error)
                     }
                 })
             }
@@ -47,7 +47,7 @@ export default function AudioPlayer({ id, md, ...props }: {
     }
 
     useEffect(() => {
-        retrieveAudioUrl(id).then((url) => {
+        retrieve(id).then((url) => {
             if (url) {
                 setUrl(url)
                 setStatus('ready')
