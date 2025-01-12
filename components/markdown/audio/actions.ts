@@ -4,12 +4,9 @@ import { authWriteToLib, getAuthOrThrow } from '@/lib/auth'
 import { elevenLabsVoice } from '@/lib/config'
 import { incrAudioQuota } from '@/lib/quota'
 import { maxAudioQuota } from '@/lib/quota'
-import { getXataClient } from '@/lib/xata'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { getAccentPreference } from '@/server/db/preference'
 import { ElevenLabsClient } from 'elevenlabs'
-
-const xata = getXataClient()
 
 export function retrieve(id: string) {
     return retrieveAudioUrl({ id })
