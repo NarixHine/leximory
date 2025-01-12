@@ -9,7 +9,7 @@ import { PiFastForward, PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, Pi
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
-import { isReadOnlyAtom, libAtom } from './library/[lib]/atoms'
+import { isReadOnlyAtom, langAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/ui/flip'
 import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
@@ -23,6 +23,7 @@ import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
+import { isProd } from '@/lib/env'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -30,8 +31,8 @@ export default async function Home() {
 		redirect('/library')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
-		<H className={'text-primary text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
-			<span className='[text-shadow:_5px_5px_5px_rgb(175_225_175_/_50%)] dark:[text-shadow:none]'>Leximory</span>
+		<H className={'text-primary-700 dark:text-default text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
+			<span className='[text-shadow:_5px_5px_5px_rgb(205_213_157_/_50%)] dark:[text-shadow:none]'>Leximory</span>
 		</H>
 
 		<Spacer y={5}></Spacer>
@@ -135,19 +136,21 @@ export default async function Home() {
 			<div className='grid grid-cols-1 gap-3 md:grid-cols-3 w-full'>
 				<div className='col-span-1 sm:col-span-2'>
 					<BentoCard title='多语言' description='日语、文言文……'>
-						<Markdown
-							disableSave
-							md={
-								'<div/>\n' +
-								'> 自分は{{透き徹る||透き徹る||**［動］（すきとおる／透彻）**光が完全に通る。}}ほど深く見えるこの黒眼の色沢を眺めて、これでも死ぬのかと思った。それで、{{ねんごろ||ねんごろ||**［形動］（懇ろ／亲切）**心がこもっているさま。親切であるさま。}}に枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうね、とまた聞き返した。すると女は黒い眼を眠そうに{{睁た||睁る||**［動］（みはる／睁眼）**目を見開く。}}まま、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。\n\n'
-							}
-						/>
+						<HydrationBoundary hydrateAtoms={[[langAtom, 'ja']]}>
+							<Markdown
+								disableSave
+								md={
+									'<div/>\n' +
+									'> 自分は{{透き徹る||透き徹る||**［動］（すきとおる／透彻）**光が完全に通る。}}ほど深く見えるこの黒眼の色沢を眺めて、これでも死ぬのかと思った。それで、{{ねんごろ||ねんごろ||**［形動］（懇ろ／亲切）**心がこもっているさま。親切であるさま。}}に枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうね、とまた聞き返した。すると女は黒い眼を眠そうに{{睁た||睁る||**［動］（みはる／睁眼）**目を見開く。}}まま、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。\n\n'
+								}
+							/>
+						</HydrationBoundary>
 					</BentoCard>
 				</div>
 				<div className='col-span-1'>
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
-							avatar={<UserAvatar uid={exampleSharedLib.owner} />}
+							avatar={isProd ? <UserAvatar uid={exampleSharedLib.owner} /> : <></>}
 							library={exampleSharedLib}
 							isStarred={false}
 						/>
@@ -179,7 +182,7 @@ export default async function Home() {
 		<Spacer y={8}></Spacer>
 
 		<ToXinhui />
-	</Main>
+	</Main >
 }
 
 const BentoCard = ({ title, children, description, }: {

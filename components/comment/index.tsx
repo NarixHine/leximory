@@ -175,7 +175,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isIconOnly
                 isLoading={status === 'loading' && !isEditing}
                 startContent={status !== 'loading' && <PiTrashDuotone />}
-                color='secondary'
+                color='danger'
                 variant='flat'
                 onPress={async () => {
                     setStatus('loading')

@@ -28,18 +28,8 @@ import {
     hasOnlyOneValueForKey,
 } from "@/lib/chart-utils"
 import { cn as cx } from "@/lib/utils"
+import { useOnWindowResize } from '@/lib/use-on-window-resize'
 
-const useOnWindowResize = (handler: { (): void }) => {
-    React.useEffect(() => {
-        const handleResize = () => {
-            handler()
-        }
-        handleResize()
-        window.addEventListener("resize", handleResize)
-
-        return () => window.removeEventListener("resize", handleResize)
-    }, [handler])
-}
 //#region Legend
 
 interface LegendItemProps {
