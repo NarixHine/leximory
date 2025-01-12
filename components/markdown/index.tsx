@@ -58,6 +58,6 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
         style={{
             fontFamily: defaultFontFamily,
         }}
-        className={cn('dark:prose-invert prose prose-blockquote:not-italic prose-blockquote:border-secondary prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]', className)}
+        className={cn('dark:prose-invert prose prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]', className)}
     >{result}</MarkdownToJSX>)
 }

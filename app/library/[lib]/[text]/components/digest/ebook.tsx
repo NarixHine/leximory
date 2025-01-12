@@ -32,12 +32,12 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     switch (theme) {
         case 'dark': {
             themes.override('color', '#fff')
-            themes.override('background', '#15202B')
+            themes.override('background', '#100F0F')
             break
         }
         case 'light': {
             themes.override('color', '#000')
-            themes.override('background', '#FAFDF6')
+            themes.override('background', '#FFFCF0')
             break
         }
     }
@@ -121,7 +121,7 @@ export default function Ebook() {
                 right: isFullViewport ? 0 : 'auto',
             }}
         >
-            <Button startContent={<PiFrameCornersDuotone />} variant={isFullViewport ? 'flat' : 'ghost'} size={isFullViewport ? 'sm' : 'md'} color='primary' radius='full' fullWidth onPress={async () => {
+            <Button startContent={<PiFrameCornersDuotone />} color='primary' variant={isFullViewport ? 'flat' : 'ghost'} radius='full' fullWidth onPress={async () => {
                 try {
                     await handleFullScreen.enter()
                 } catch {
@@ -214,12 +214,12 @@ const lightReaderTheme: IReactReaderStyle = {
     ...ReactReaderStyle,
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#FAFDF6',
+        backgroundColor: '#FFFCF0',
         transition: undefined,
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#FAFDF6',
+        background: '#FFFCF0',
     },
 }
 
@@ -235,7 +235,7 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#15202B',
+        backgroundColor: '#100F0F',
         transition: undefined,
         color: '#ccc !important',
     },
@@ -245,11 +245,11 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#15202B',
+        background: '#100F0F',
     },
     container: {
         ...ReactReaderStyle.container,
-        background: '#15202B',
+        background: '#100F0F',
     },
     tocButtonExpanded: {
         ...ReactReaderStyle.tocButtonExpanded,

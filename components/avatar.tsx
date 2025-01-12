@@ -6,11 +6,11 @@ import { Suspense } from 'react'
 
 async function UserAvatarServer({ uid }: { uid: string }) {
     const { imageUrl } = await (await clerkClient()).users.getUser(uid)
-    return <Avatar isBordered color={'secondary'} src={imageUrl} size='sm' />
+    return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
 }
 
 function UserAvatarFallback() {
-    return <Avatar isBordered color={'secondary'} size='sm' />
+    return <Avatar isBordered color={'primary'} size='sm' />
 }
 
 export default function UserAvatar({ uid }: { uid: string }) {
