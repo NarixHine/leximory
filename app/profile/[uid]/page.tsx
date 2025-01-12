@@ -16,7 +16,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
     const uid = (await params).uid
     const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(uid)
     const data = await summarizeLibsWithWords({ filter: { 'lib.owner': uid } })
-    const totalWordsLearned = data[0].count
+    const totalWordsLearned = data.reduce((acc, curr) => acc + curr.count, 0)
     return <Center>
         <div className='flex flex-col items-center gap-4 max-w-md'>
             <Avatar src={imageUrl} isBordered color={'primary'} className='!size-16' />
