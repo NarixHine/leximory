@@ -50,8 +50,8 @@ export default async function MarketplacePage({ params }: {
             <Spacer y={10} />
             {
                 orgId ?
-                    <Alert description='收藏文库在个人工作区中才会显示' color='warning' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: cn('text-xs', CHINESE_ZCOOL.className), base: 'mb-5' }} title='你正在小组工作区中'></Alert> :
-                    <Alert description={`Moderator's E-mail: report@leximory.com`} color='warning' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: 'text-xs', base: 'mb-5' }} title='共享文库由用户发布'></Alert>
+                    <Alert description='收藏文库在个人工作区中才会显示' color='primary' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: cn('text-xs', CHINESE_ZCOOL.className), base: 'mb-5' }} title='你正在小组工作区中'></Alert> :
+                    <Alert description={`Moderator's E-mail: report@leximory.com`} color='primary' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: 'text-xs', base: 'mb-5' }} title='共享文库由用户发布'></Alert>
             }
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />
