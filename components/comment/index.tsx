@@ -276,14 +276,14 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         </>
 }
 
-function Note({ portions, isCompact, omitOriginal, isEditing, editedPortions, onEdit }: {
+function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
     portions: string[]
-    isCompact?: boolean
     omitOriginal?: boolean
     isEditing?: boolean
     editedPortions?: string[]
     onEdit?: (portions: string[]) => void
 }) {
+    const isCompact = useAtomValue(isReaderModeAtom)
     const margin = isCompact ? 'mt-1' : 'my-2'
 
     const handleEdit = (index: number, value: string) => {

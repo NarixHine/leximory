@@ -3,8 +3,8 @@ import { inngest } from './client'
 import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
 import env from '@/lib/env'
-import { getAllSubs } from '@/server/db/subs'
-import { PushSubscription } from 'web-push'
+import { getHourlySubs } from '@/server/db/subs'
+import moment from 'moment-timezone'
 
 type Events = GetEvents<typeof inngest>
 
@@ -16,19 +16,21 @@ webpush.setVapidDetails(
 
 export const fanNotification = inngest.createFunction(
     { id: 'load-subscribed-users' },
-    { cron: 'TZ=Asia/Shanghai 30 21 * * *' },
+    { cron: 'TZ=Asia/Shanghai 0 * * * *' },
     async ({ step }) => {
         const users = await step.run('fetch-users', async () => {
-            return await getAllSubs()
+            const hour = moment().tz('Asia/Shanghai').hour()
+            const subs = await getHourlySubs(hour)
+            return subs.map(({ uid, subscription }) => ({ uid, subscription }))
         })
 
         const events = users.map<Events['app/notify']>(
-            (user) => ({
+            ({ subscription, uid }) => ({
                 name: 'app/notify',
                 data: {
-                    subscription: JSON.stringify(user.subscription),
+                    subscription,
                 },
-                user
+                user: uid,
             })
         )
 
@@ -40,7 +42,7 @@ export const notify = inngest.createFunction(
     { id: 'notify' },
     { event: 'app/notify' },
     async ({ event }) => {
-        const subscription = JSON.parse(event.data.subscription) as PushSubscription
+        const subscription = event.data.subscription
         await webpush.sendNotification(subscription, JSON.stringify({
             title: 'Leximory 日报',
             body: '回顾今日、昨日、四日前、七日前记忆的语汇。',

@@ -54,6 +54,7 @@ const tables = [
     columns: [
       { name: "uid", type: "string", unique: true },
       { name: "subscription", type: "json", notNull: true, defaultValue: "{}" },
+      { name: "hour", type: "int", notNull: true, defaultValue: "22" },
     ],
   },
 ] as const;

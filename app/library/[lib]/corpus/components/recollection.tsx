@@ -20,9 +20,8 @@ export default function Recollection({ words, cursor, more }: {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
 
     const [recol, loadRecol, isLoading] = useActionState(async (recol: { words: typeof words, cursor: string, more: boolean }) => {
-
-        const { words, cursor: newCursor, more } = await load(lib, cursor)
-        return { words: recol.words.concat(words), cursor: newCursor, more }
+        const { words, cursor, more } = await load(lib, recol.cursor)
+        return { words: recol.words.concat(words), cursor, more }
     }, { words, cursor, more })
 
     return (<div className='grid lg:grid-cols-4 md:grid-cols-3 grid-cols-2 gap-3 w-full'>

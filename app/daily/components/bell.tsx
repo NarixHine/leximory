@@ -7,11 +7,17 @@ import env from '@/lib/env'
 import { save, remove } from '../actions'
 import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
+import { useState } from 'react'
+import { Select, SelectItem } from '@nextui-org/select'
 
-export default function Bell({ hasSubscribed }: {
-    hasSubscribed: boolean
+export default function Bell({ hasSubs, hour = 22 }: {
+    hasSubs: boolean
+    hour?: number
 }) {
     const [isUpdating, startUpdating] = useTransition()
+    const [isSubscribed, setIsSubscribed] = useState(hasSubs)
+    const [selectedHour, setSelectedHour] = useState(hour)
+
     const subscribe = async () => {
         const register = await navigator.serviceWorker.register('/sw.js')
 
@@ -20,25 +26,51 @@ export default function Bell({ hasSubscribed }: {
             applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         })
 
-        await save(subscription as unknown as PushSubscription)
+        await save({ subs: subscription as unknown as PushSubscription, hour: selectedHour })
     }
 
     return (
-        <div className='flex flex-col justify-center items-center space-y-1'>
-            <Button variant={hasSubscribed ? 'flat' : 'ghost'} isLoading={isUpdating} onPress={() => {
-                startUpdating(async () => {
-                    if (hasSubscribed) {
-                        await remove()
-                    } else {
-                        try {
-                            await subscribe()
-                            toast.success('开启成功')
-                        } catch {
-                            toast.error(`开启失败，iOS 用户请将 Leximory 添加至主界面`)
-                        }
-                    }
-                })
-            }} size='lg' radius='full' color='primary' startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}>{`${hasSubscribed ? '关闭' : '开启'} 21:30 日报提醒`}</Button>
+        <div className='flex flex-col justify-center items-center space-y-3'>
+            <div className='flex gap-2 items-center'>
+                <Button
+                    variant={isSubscribed ? 'flat' : 'ghost'}
+                    isLoading={isUpdating}
+                    onPress={() => {
+                        startUpdating(async () => {
+                            if (isSubscribed) {
+                                await remove()
+                                setIsSubscribed(false)
+                            } else {
+                                try {
+                                    await subscribe()
+                                    setIsSubscribed(true)
+                                } catch {
+                                    toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
+                                }
+                            }
+                        })
+                    }}
+                    size='lg'
+                    radius='full'
+                    color='primary'
+                    startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
+                >
+                    {`${isSubscribed ? '关闭' : '开启'}每日复习提醒`}
+                </Button>
+                <Select
+                    size='sm'
+                    selectedKeys={[selectedHour.toString()]}
+                    onSelectionChange={(e) => setSelectedHour(parseInt(e.currentKey ?? '22'))}
+                    className='w-28'
+                    startContent='于'
+                    endContent={<span className='text-sm'>时</span>}
+                    isDisabled={isSubscribed}
+                >
+                    {new Array(24).fill(0).map((_, i) => (
+                        <SelectItem key={i} value={i.toString()}>{i.toString()}</SelectItem>
+                    ))}
+                </Select>
+            </div>
             <div className='opacity-50 text-sm text-balance text-center'>
                 更换设备后需要重新开启
             </div>

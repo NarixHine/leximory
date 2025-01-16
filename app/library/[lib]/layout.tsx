@@ -7,7 +7,6 @@ import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import UserAvatar from '@/components/avatar'
-import Reader from '@/components/reader'
 import { getLib } from '@/server/db/lib'
 import { LibParams } from '@/lib/types'
 
@@ -45,18 +44,16 @@ export default async function LibLayout(
         [langAtom, lang as Lang],
         [isStarredAtom, isStarred]
     ]}>
-        <Reader>
-            {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
-            <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>
-                {
-                    !isOwner && !isOrganizational &&
-                    <>
-                        <UserAvatar uid={owner}></UserAvatar>
-                        <Star></Star>
-                    </>
-                }
-            </div>
-            {children}
-        </Reader>
+        {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
+        <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>
+            {
+                !isOwner && !isOrganizational &&
+                <>
+                    <UserAvatar uid={owner}></UserAvatar>
+                    <Star></Star>
+                </>
+            }
+        </div>
+        {children}
     </HydrationBoundary>)
 }

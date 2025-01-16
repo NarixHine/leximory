@@ -23,7 +23,6 @@ import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
-import { isProd } from '@/lib/env'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -126,7 +125,7 @@ export default async function Home() {
 									[isReadOnlyAtom, true]
 								]}
 							>
-								<Test latestTime={'2025-01-12'} />
+								<Test latestTime={'2025-01-16'} />
 							</HydrationBoundary>
 						</BentoCard>
 					</div>
@@ -150,7 +149,7 @@ export default async function Home() {
 				<div className='col-span-1'>
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
-							avatar={isProd ? <UserAvatar uid={exampleSharedLib.owner} /> : <></>}
+							avatar={<UserAvatar uid={exampleSharedLib.owner} />}
 							library={exampleSharedLib}
 							isStarred={false}
 						/>

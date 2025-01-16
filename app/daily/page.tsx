@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default async function Daily() {
     const { userId } = await getAuthOrThrow()
-    const hasSubscribed = await getSubsStatus({ userId })
+    const { hasSubs, hour } = await getSubsStatus({ userId })
 
     return (
         <Main className='max-w-screen-lg pt-12'>
@@ -29,7 +29,7 @@ export default async function Daily() {
                 </Suspense>
             </div>
             <Spacer y={6}></Spacer>
-            <Bell hasSubscribed={hasSubscribed}></Bell>
+            <Bell hasSubs={hasSubs} hour={hour}></Bell>
             <Suspense fallback={<Loading></Loading>}>
                 <Report day='今天记忆'></Report>
             </Suspense>

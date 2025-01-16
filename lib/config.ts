@@ -6,8 +6,8 @@ export const elevenLabsVoice = {
 } as const
 
 export const exampleSharedLib = {
-    id: '210fdc4d',
-    name: '📚 100-Day Intensive Input',
+    id: '4c33b971',
+    name: '📚 外刊泛读入门－Best of The Times',
     lang: 'en',
     owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt'
 } as const

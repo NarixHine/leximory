@@ -5,8 +5,12 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 
 async function UserAvatarServer({ uid }: { uid: string }) {
-    const { imageUrl } = await (await clerkClient()).users.getUser(uid)
-    return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
+    try {
+        const { imageUrl } = await (await clerkClient()).users.getUser(uid)
+        return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
+    } catch (e) {
+        return <Avatar isBordered color={'primary'} size='sm' />
+    }
 }
 
 function UserAvatarFallback() {

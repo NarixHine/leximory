@@ -22,7 +22,6 @@ self.addEventListener('push', async (event) => {
     const { data } = event
     if (data) {
         const json = await data.json()
-        console.log(json)
         const { title, body, icon } = json
         const { url } = json.data
 

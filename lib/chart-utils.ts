@@ -9,6 +9,12 @@ export const chartColors = {
         fill: 'fill-primary',
         text: 'text-primary',
     },
+    secondary: {
+        bg: 'bg-secondary',
+        stroke: 'stroke-secondary',
+        fill: 'fill-secondary',
+        text: 'text-secondary',
+    },
     default: {
         bg: 'bg-default',
         stroke: 'stroke-default',
