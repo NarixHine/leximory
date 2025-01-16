@@ -23,7 +23,7 @@ import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { remove, save } from './actions'
+import { remove, save } from '../../actions'
 import { toast } from 'sonner'
 import { useTransitionRouter } from 'next-view-transitions'
 

@@ -1,4 +1,4 @@
-import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/components/digest/actions'
+import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import { authWriteToLib } from '@/lib/auth'
 import env from '@/lib/env'
 import { originals, validateOrThrow } from '@/lib/lang'

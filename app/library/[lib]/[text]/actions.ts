@@ -3,6 +3,7 @@
 import { authWriteToText, getAuthOrThrow } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { generateText, streamObject, streamText } from 'ai'
+import { maxEbookSize } from './components/digest/import'
 import { openai } from '@ai-sdk/openai'
 import { createStreamableValue } from 'ai/rsc'
 import { z } from 'zod'
@@ -10,7 +11,6 @@ import { authReadToLib, authWriteToLib } from '@/lib/auth'
 import incrCommentaryQuota from '@/lib/quota'
 import { maxCommentaryQuota } from '@/lib/quota'
 import { Lang, maxArticleLength } from '@/lib/config'
-import { maxEbookSize } from './import'
 import { deleteText, updateText, uploadEbook } from '@/server/db/text'
 import { getAccentPreference } from '@/server/db/preference'
 
@@ -123,7 +123,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
 
         ${instruction[lang]}
         `,
-        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({lang, userId})}\n你要注解的是：\n${prompt}`,
+        prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n你要注解的是：\n${prompt}`,
         maxTokens: 200
     })
 

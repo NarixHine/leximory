@@ -7,7 +7,6 @@ import { Spacer } from '@nextui-org/spacer'
 import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiBinocularsDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
@@ -21,6 +20,8 @@ import { useForm } from 'react-hook-form'
 import { useDisclosure } from '@nextui-org/react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { useState } from 'react'
+import { useTransitionRouter } from 'next-view-transitions'
 
 export function LibrarySkeleton() {
     return (
@@ -70,12 +71,13 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
     shortcut: boolean,
     orgs: { label: string, name: string }[]
 }) {
-    const router = useRouter()
+    const router = useTransitionRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
         .concat(shortcut ? ['快捷保存'] : [])
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
+    const [isDeleted, setIsDeleted] = useState(false)
 
     const { register, handleSubmit, formState } = useForm<{
         id: string,
@@ -94,7 +96,11 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
     })
 
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
-    return (<div className='w-full relative'>
+    return (<motion.div
+        className='w-full relative'
+        animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
+        transition={{ duration: 1 }}
+    >
         {isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
@@ -125,6 +131,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
             actionButton={<Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} onPress={() => {
                 const timer = setTimeout(() => {
                     remove({ id })
+                    setIsDeleted(true)
                     toast.success('删除成功')
                 }, 5000)
                 toast('五秒后删除……', {
@@ -160,7 +167,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
                 </Checkbox>
             </div>
         </Form>
-    </div>)
+    </motion.div>)
 }
 
 export function LibraryAddButton() {

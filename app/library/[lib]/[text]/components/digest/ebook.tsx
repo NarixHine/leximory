@@ -18,7 +18,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
-import { save } from './actions'
+import { save } from '../../actions'
 import { toast } from 'sonner'
 import { memo } from 'react'
 

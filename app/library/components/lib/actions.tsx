@@ -3,7 +3,6 @@
 import { authWriteToLib, getAuthOrThrow } from '@/lib/auth'
 import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
 import { createLib, deleteLib, updateLib } from '@/server/db/lib'
-import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 

@@ -8,7 +8,7 @@ async function UserAvatarServer({ uid }: { uid: string }) {
     try {
         const { imageUrl } = await (await clerkClient()).users.getUser(uid)
         return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
-    } catch (e) {
+    } catch {
         return <Avatar isBordered color={'primary'} size='sm' />
     }
 }

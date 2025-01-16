@@ -4,10 +4,10 @@ import { Breadcrumbs, BreadcrumbItem } from '@nextui-org/breadcrumbs'
 import { Button } from '@nextui-org/button'
 import { PiBookBookmarkDuotone, PiFileTextDuotone, PiBooksDuotone, PiUserCircleDuotone, PiSkipBackCircleDuotone } from 'react-icons/pi'
 import Link from 'next/link'
-import { useTransitionRouter as useRouter } from 'next-view-transitions'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 import { NavProps } from '.'
+import { useRouter } from 'next/navigation'
 
 export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavProps & { tenant: string }) {
     const isReaderMode = useAtomValue(isReaderModeAtom)
