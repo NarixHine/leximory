@@ -7,7 +7,7 @@ export const elevenLabsVoice = {
 
 export const exampleSharedLib = {
     id: '4c33b971',
-    name: '📚 外刊泛读入门－Best of The Times',
+    name: '📚 外刊泛读入门',
     lang: 'en',
     owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt'
 } as const

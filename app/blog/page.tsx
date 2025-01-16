@@ -36,7 +36,7 @@ export default function BlogHome() {
                             {post.title}
                         </H>
                     </Link>
-                    <H disableCenter className={'text-primary/80 text-sm -my-0.5'}>
+                    <H disableCenter className={'text-sm -my-0.5'}>
                         {new Date(post.date).toDateString()}
                     </H>
                 </span>)}

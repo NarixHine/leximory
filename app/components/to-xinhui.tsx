@@ -4,10 +4,10 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
 import { Card, CardBody } from '@nextui-org/card'
-import { useTransitionRouter } from 'next-view-transitions'
+import { useRouter } from 'next/navigation'
 
 export function ToXinhui() {
-    const router = useTransitionRouter()
+    const router = useRouter()
     return <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

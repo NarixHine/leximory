@@ -13,6 +13,7 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PiBooksDuotone } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
+import { exampleSharedLib } from '@/lib/config'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 async function getData() {
     const listed = await isListed()
     const data = await summarizeLibsWithWords({ filter: listed })
-    return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': '3e4f1126' } })
+    return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': exampleSharedLib.id } })
 }
 
 async function getOrgs() {

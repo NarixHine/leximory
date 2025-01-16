@@ -21,7 +21,7 @@ import { useDisclosure } from '@nextui-org/react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { useTransitionRouter } from 'next-view-transitions'
+import { useRouter } from 'next/navigation'
 
 export function LibrarySkeleton() {
     return (
@@ -71,7 +71,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
     shortcut: boolean,
     orgs: { label: string, name: string }[]
 }) {
-    const router = useTransitionRouter()
+    const router = useRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
         .concat(shortcut ? ['快捷保存'] : [])
