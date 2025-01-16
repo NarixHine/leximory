@@ -28,7 +28,7 @@ export const fanNotification = inngest.createFunction(
             ({ subscription, uid }) => ({
                 name: 'app/notify',
                 data: {
-                    subscription,
+                    subscription: JSON.stringify(subscription),
                 },
                 user: uid,
             })
@@ -42,7 +42,7 @@ export const notify = inngest.createFunction(
     { id: 'notify' },
     { event: 'app/notify' },
     async ({ event }) => {
-        const subscription = event.data.subscription
+        const subscription = JSON.parse(event.data.subscription)
         await webpush.sendNotification(subscription, JSON.stringify({
             title: 'Leximory 日报',
             body: '回顾今日、昨日、四日前、七日前记忆的语汇。',

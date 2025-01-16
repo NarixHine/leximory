@@ -1,9 +1,8 @@
 import { EventSchemas, Inngest } from 'inngest'
-import { PushSubscription } from 'web-push'
 
 type UserSignup = {
     data: {
-        subscription: PushSubscription
+        subscription: string
     }
 }
 type Events = {
