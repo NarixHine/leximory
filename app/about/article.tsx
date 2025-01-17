@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
+import { exampleEbookLink } from '@/lib/config'
 
 export function TypedTitle() {
     return <TypeAnimation
@@ -76,7 +77,7 @@ export function Article() {
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
                     gradient='bg-gradient-to-br from-primary-50/50 to-secondary-100/50'
-                    to='/library/3e4f1126/5c4e8e4e'
+                    to={exampleEbookLink}
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
                 </GradientCard>

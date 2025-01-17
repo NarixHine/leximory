@@ -12,6 +12,8 @@ export const exampleSharedLib = {
     owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt'
 } as const
 
+export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
+
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
@@ -45,7 +47,7 @@ export const maxArticleLength = (lang: Lang): number => {
     switch (lang) {
         case 'en': return 20000
         case 'ja':
-        case 'zh': return 5000
+        case 'zh': return 3000
         default: return 5000
     }
 }

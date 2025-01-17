@@ -41,6 +41,8 @@ export default function ImportModal() {
     }
     const exceeded = hideText ? false : input.length > maxArticleLength(lang)
 
+    const [isGenerating, startGenerating] = useTransition()
+
     return (<>
         <div className='px-3 flex justify-center gap-3'>
             {!ebook && <Switch isDisabled={isReadOnly || isLoading} startContent={<PiKanbanFill />} endContent={<PiKanbanDuotone />} isSelected={hideText} onValueChange={setHideText} color='secondary'>
@@ -86,12 +88,14 @@ export default function ImportModal() {
                                     data-umami-event='文章注解'
                                     color='primary'
                                     fullWidth
-                                    isDisabled={isLoading || exceeded}
+                                    isDisabled={isLoading || exceeded || isGenerating}
                                     onPress={async () => {
-                                        await setAnnotationProgress({ id: text, progress: 'annotating' })
-                                        setIsLoading(true)
-                                        onClose()
-                                        generate({ article: input, textId: text, onlyComments: hideText })
+                                        startGenerating(async () => {
+                                            await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                            setIsLoading(true)
+                                            onClose()
+                                            await generate({ article: input, textId: text, onlyComments: hideText })
+                                        })
                                     }}>
                                     生成
                                 </Button>
