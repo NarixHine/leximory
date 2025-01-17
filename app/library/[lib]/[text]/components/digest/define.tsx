@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@heroui/popover"
 import Comment from '@/components/comment'
-import { useEffect, useState, useRef, RefObject } from 'react'
+import { useState, useRef, RefObject } from 'react'
 import { cn, getBracketedSelection } from '@/lib/utils'
 import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { motion } from 'framer-motion'
