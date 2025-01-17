@@ -68,20 +68,20 @@ export const annotateFullArticle = inngest.createFunction(
         })
 
         const chunks = chunkText(article)
-        const annotatedChunks = await Promise.all(
-            chunks.map(async (chunk) => {
+        const [topics, ...annotatedChunks] = await Promise.all([
+            (async () => {
+                const topicsConfig = await topicsPrompt(article)
+                const { text: topics } = await step.ai.wrap('annotate-topics', generateText, topicsConfig)
+                return topics
+            })(),
+            ...chunks.map(async (chunk) => {
                 const annotationConfig = await articleAnnotationPrompt(lang, chunk, onlyComments, userId)
                 const { text } = await step.ai.wrap('annotate-article', generateText, annotationConfig)
                 return text
             })
-        )
-        const content = annotatedChunks.join('\n\n')
+        ])
 
-        await step.run('set-annotation-progress-annotating-topics', async () => {
-            await setTextAnnotationProgress({ id: textId, progress: 'annotating-topics' })
-        })
-        const topicsConfig = await topicsPrompt(article)
-        const { text: topics } = await step.ai.wrap('annotate-topics', generateText, topicsConfig)
+        const content = annotatedChunks.join('\n\n')
 
         const textUrl = `/library/${libId}/${textId}`
 

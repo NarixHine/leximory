@@ -249,14 +249,12 @@ function GeneratingView() {
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
     'annotating': 60,
-    'annotating-topics': 80,
     'saving': 95,
     'completed': 100
   }
 
   const startProgressRecord: Record<AnnotationProgress, number> = {
     'annotating': 0,
-    'annotating-topics': 60,
     'saving': 80,
     'completed': 95
   }
@@ -291,8 +289,7 @@ function GeneratingView() {
   }, isLoading ? 1000 : null)
 
   const progressLabel: Record<AnnotationProgress, string> = {
-    annotating: '注解中……',
-    'annotating-topics': '生成话题……',
+    annotating: '生成注解中……',
     saving: '保存中……',
     completed: '完成'
   }

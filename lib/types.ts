@@ -13,4 +13,4 @@ export type LibAndTextParams = {
 
 export type CustomLexicon = 'chuzhong' | 'gaozhong' | 'cet6' | 'none'
 
-export type AnnotationProgress = 'annotating' | 'annotating-topics' | 'saving' | 'completed'
+export type AnnotationProgress = 'annotating' | 'saving' | 'completed'

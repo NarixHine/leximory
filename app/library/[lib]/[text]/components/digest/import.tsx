@@ -89,7 +89,7 @@ export default function ImportModal() {
                                     color='primary'
                                     fullWidth
                                     isDisabled={isLoading || exceeded || isGenerating}
-                                    onPress={async () => {
+                                    onPress={() => {
                                         startGenerating(async () => {
                                             await setAnnotationProgress({ id: text, progress: 'annotating' })
                                             setIsLoading(true)
