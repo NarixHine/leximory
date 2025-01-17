@@ -108,7 +108,7 @@ export const annotateFullArticle = inngest.createFunction(
                     url: prefixUrl(textUrl),
                     subscription
                 },
-                user: userId
+                user: { uid: userId }
             })
         }
 

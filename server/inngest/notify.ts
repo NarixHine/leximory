@@ -33,7 +33,7 @@ export const fanNotification = inngest.createFunction(
                     url: prefixUrl('/daily'),
                     subscription: JSON.stringify(subscription),
                 },
-                user: uid,
+                user: { uid },
             })
         )
 

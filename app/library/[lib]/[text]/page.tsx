@@ -9,6 +9,8 @@ import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } fr
 import { getTextContent } from '@/server/db/text'
 import { LibAndTextParams } from '@/lib/types'
 
+export const maxDuration = 60
+
 export async function generateMetadata(props: LibAndTextParams) {
     const params = await props.params
     const { title } = await getTextContent({ id: params.text })
