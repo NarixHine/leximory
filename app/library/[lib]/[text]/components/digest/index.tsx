@@ -257,8 +257,8 @@ function GeneratingView() {
   useInterval(() => {
     if (currentProgress < targetProgressRecord[annotationProgress]) {
       const remaining = targetProgressRecord[annotationProgress] - currentProgress
-      const baseIncrement = 2
-      const increment = Math.max(0.2, (baseIncrement * remaining) / targetProgressRecord[annotationProgress])
+      const baseIncrement = 3
+      const increment = Math.max(0.4, (baseIncrement * remaining) / targetProgressRecord[annotationProgress])
       setCurrentProgress(prev => Math.min(prev + increment, targetProgressRecord[annotationProgress]))
     }
   }, 1000)
