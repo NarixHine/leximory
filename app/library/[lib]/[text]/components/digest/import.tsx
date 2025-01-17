@@ -12,7 +12,7 @@ import isUrl from 'is-url'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, save } from '../../actions'
+import { saveEbook, generate, save, setAnnotationProgress } from '../../actions'
 import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
 import { useAtom, useAtomValue } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
@@ -87,7 +87,8 @@ export default function ImportModal() {
                                     color='primary'
                                     fullWidth
                                     isDisabled={isLoading || exceeded}
-                                    onPress={() => {
+                                    onPress={async () => {
+                                        await setAnnotationProgress({ id: text, progress: 'annotating' })
                                         setIsLoading(true)
                                         onClose()
                                         generate({ article: input, textId: text, onlyComments: hideText })

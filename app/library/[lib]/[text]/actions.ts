@@ -1,6 +1,6 @@
 'use server'
 
-import { authWriteToText, getAuthOrThrow } from '@/lib/auth'
+import { authReadToText, authWriteToText, getAuthOrThrow } from '@/lib/auth'
 import { generateText, streamText } from 'ai'
 import { maxEbookSize } from './components/digest/import'
 import { openai } from '@ai-sdk/openai'
@@ -9,9 +9,10 @@ import { authReadToLib, authWriteToLib } from '@/lib/auth'
 import incrCommentaryQuota from '@/lib/quota'
 import { maxCommentaryQuota } from '@/lib/quota'
 import { Lang, maxArticleLength } from '@/lib/config'
-import { deleteText, getTextAnnotationProgress, getTextContent, updateText, uploadEbook } from '@/server/db/text'
+import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
+import { AnnotationProgress } from '@/lib/types'
 
 export async function getNewText(id: string) {
     const { content, topics } = await getTextContent({ id })
@@ -121,7 +122,12 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
 }
 
 export async function getAnnotationProgress(id: string) {
-    await authWriteToText(id)
+    await authReadToText(id)
     const annotationProgress = await getTextAnnotationProgress({ id })
     return annotationProgress
+}
+
+export async function setAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
+    await authWriteToText(id)
+    await setTextAnnotationProgress({ id, progress })
 }
