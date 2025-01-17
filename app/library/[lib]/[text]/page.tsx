@@ -1,7 +1,6 @@
 import Main from '@/components/ui/main'
 import Digest from './components/digest'
 import EditableH from './components/editable-h'
-import { authReadToText } from '@/lib/auth'
 import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from './components/topics'
@@ -9,8 +8,6 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } from './atoms'
 import { getTextContent } from '@/server/db/text'
 import { LibAndTextParams } from '@/lib/types'
-
-export const maxDuration = 60
 
 export async function generateMetadata(props: LibAndTextParams) {
     const params = await props.params
@@ -21,7 +18,6 @@ export async function generateMetadata(props: LibAndTextParams) {
 }
 
 const getData = async (text: string) => {
-    await authReadToText(text)
     const { title, content, topics, ebook, lib } = await getTextContent({ id: text })
     return { title, content, topics, ebook, lib }
 }

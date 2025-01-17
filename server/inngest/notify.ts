@@ -28,6 +28,9 @@ export const fanNotification = inngest.createFunction(
             ({ subscription, uid }) => ({
                 name: 'app/notify',
                 data: {
+                    title: 'Leximory 日报',
+                    body: '回顾今日、昨日、四日前、七日前记忆的语汇。',
+                    url: prefixUrl('/daily'),
                     subscription: JSON.stringify(subscription),
                 },
                 user: uid,
@@ -42,13 +45,14 @@ export const notify = inngest.createFunction(
     { id: 'notify' },
     { event: 'app/notify' },
     async ({ event }) => {
-        const subscription = JSON.parse(event.data.subscription)
-        await webpush.sendNotification(subscription, JSON.stringify({
-            title: 'Leximory 日报',
-            body: '回顾今日、昨日、四日前、七日前记忆的语汇。',
+        const { title, body, url, subscription } = event.data
+        const subs = JSON.parse(subscription)
+        await webpush.sendNotification(subs, JSON.stringify({
+            title,
+            body,
             icon: prefixUrl('/android-chrome-192x192.png'),
             data: {
-                url: prefixUrl('/daily')
+                url
             },
         }))
     }

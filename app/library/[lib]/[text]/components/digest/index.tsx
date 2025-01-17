@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, contentAtom, titleAtom, hideTextAtom } from '../../atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom } from '../../atoms'
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -14,7 +14,7 @@ import { Snippet } from "@heroui/snippet"
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
+import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -23,9 +23,12 @@ import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { remove, save } from '../../actions'
+import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
 import { toast } from 'sonner'
 import { useTransitionRouter } from 'next-view-transitions'
+import { AnnotationProgress } from '@/lib/types'
+import { useInterval } from 'usehooks-ts'
+import { Progress } from '@heroui/progress'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -63,21 +66,20 @@ function EditingView() {
   const text = useAtomValue(textAtom)
   const lib = useAtomValue(libAtom)
   const [topics, setTopics] = useAtom(topicsAtom)
-  const md = useAtomValue(displayedMdAtom)
-  const setContent = useSetAtom(contentAtom)
+  const [content, setContent] = useAtom(contentAtom)
   const setIsEditing = useSetAtom(isEditingAtom)
   const title = useAtomValue(titleAtom)
 
-  const [modifiedMd, setModifiedMd] = useState(md)
+  const [modifiedMd, setModifiedMd] = useState(content)
   const [modifiedTopics, setModifiedTopics] = useState(topics)
   const [newTopic, setNewTopic] = useState('')
 
   const [isUpdating, startUpdating] = useTransition()
 
   useEffect(() => {
-    setModifiedMd(md)
+    setModifiedMd(content)
     setModifiedTopics(topics)
-  }, [md, topics])
+  }, [content, topics])
 
   const handleTopicRemove = useCallback((topicToRemove: string) => {
     setModifiedTopics(prevTopics => prevTopics.filter(topic => topic !== topicToRemove))
@@ -193,13 +195,13 @@ function EditingView() {
 }
 
 function ReadingView() {
-  const md = useAtomValue(displayedMdAtom)
+  const content = useAtomValue(contentAtom)
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
 
-  if (hideText && md) {
-    const matches = md?.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
+  if (hideText && content) {
+    const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
         {matches.map((match, index) => (
@@ -211,7 +213,7 @@ function ReadingView() {
     )
   }
 
-  if (!md) {
+  if (!content) {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
@@ -230,10 +232,78 @@ function ReadingView() {
     <>
       <Markdown
         className={isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0'}
-        md={`<article>\n${md}\n\n</article>`}
+        md={`<article>\n${content}\n\n</article>`}
       />
       <Define />
     </>
+  )
+}
+
+function GeneratingView() {
+  const [annotationProgress, setAnnotationProgress] = useState<AnnotationProgress>('annotating')
+  const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
+  const setContent = useSetAtom(contentAtom)
+  const setTopics = useSetAtom(topicsAtom)
+  const text = useAtomValue(textAtom)
+  const [currentProgress, setCurrentProgress] = useState(0)
+
+  const targetProgressRecord: Record<AnnotationProgress, number> = {
+    'annotating': 60,
+    'annotating-topics': 80,
+    'saving': 95,
+    'completed': 100
+  }
+
+  useInterval(() => {
+    if (currentProgress < targetProgressRecord[annotationProgress]) {
+      const remaining = targetProgressRecord[annotationProgress] - currentProgress
+      const baseIncrement = 2
+      const increment = Math.max(0.2, (baseIncrement * remaining) / targetProgressRecord[annotationProgress])
+      setCurrentProgress(prev => Math.min(prev + increment, targetProgressRecord[annotationProgress]))
+    }
+  }, 1000)
+
+  useInterval(() => {
+    getAnnotationProgress(text).then(newProgress => {
+      if (!newProgress) {
+        setAnnotationProgress('annotating')
+        return
+      }
+      if (annotationProgress !== newProgress) {
+        setCurrentProgress(targetProgressRecord[annotationProgress])
+        if (newProgress === 'completed') {
+          getNewText(text).then(({ content, topics }) => {
+            setContent(content)
+            setTopics(topics ?? [])
+            setIsLoading(false)
+          })
+        }
+        setAnnotationProgress(newProgress)
+      }
+    })
+  }, isLoading ? 3000 : null)
+
+  const progressLabel: Record<AnnotationProgress, string> = {
+    annotating: '注解中……',
+    'annotating-topics': '生成话题……',
+    saving: '保存中……',
+    completed: '完成'
+  }
+
+  return (
+    <div className='flex flex-col justify-center items-center h-[500px] gap-4'>
+      <Progress
+        classNames={{ label: cn(CHINESE_ZCOOL.className) }}
+        color='primary'
+        size='lg'
+        value={currentProgress}
+        label={progressLabel[annotationProgress]}
+      />
+      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', CHINESE_ZCOOL.className)}>
+        <li className='flex items-center gap-2'><PiChatDotsDuotone /><span>生成完成后注解版会自动出现</span></li>
+        <li className='flex items-center gap-2'><PiBellDuotone /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
+      </ul>
+    </div>
   )
 }
 
@@ -242,7 +312,7 @@ export default function Digest() {
   const ebook = useAtomValue(ebookAtom)
   const lang = useAtomValue(langAtom)
   const isReaderMode = useAtomValue(isReaderModeAtom)
-
+  const isLoading = useAtomValue(isLoadingAtom)
   const lib = useAtomValue(libAtom)
   const text = useAtomValue(textAtom)
   const [recentAccess, setRecentAccess] = useAtom(recentAccessAtom)
@@ -264,7 +334,9 @@ export default function Digest() {
         )}
       </div>
 
-      {isEditing ? (
+      {isLoading ? (
+        <GeneratingView />
+      ) : isEditing ? (
         <EditingView />
       ) : (
         <>

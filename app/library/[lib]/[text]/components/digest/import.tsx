@@ -14,25 +14,20 @@ import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, save } from '../../actions'
 import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { inputAtom, isLoadingAtom, isEditingAtom, contentAtom, completionAtom, ebookAtom, textAtom, topicsAtom, hideTextAtom } from '../../atoms'
-import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
-import { readStreamableValue } from 'ai/rsc'
+import { useAtom, useAtomValue } from 'jotai'
+import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
+import { isReadOnlyAtom, langAtom } from '../../../atoms'
 
 export const maxEbookSize = 4 * 1024 * 1024
 
 export default function ImportModal() {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const lang = useAtomValue(langAtom)
-    const lib = useAtomValue(libAtom)
     const text = useAtomValue(textAtom)
     const [ebook, setEbook] = useAtom(ebookAtom)
     const [input, setInput] = useAtom(inputAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [editing, setEditing] = useAtom(isEditingAtom)
-    const setContent = useSetAtom(contentAtom)
-    const setCompletion = useSetAtom(completionAtom)
-    const setTopics = useSetAtom(topicsAtom)
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
     const [url, setUrl] = useState('')
     const [hideText, setHideText] = useAtom(hideTextAtom)
@@ -92,35 +87,10 @@ export default function ImportModal() {
                                     color='primary'
                                     fullWidth
                                     isDisabled={isLoading || exceeded}
-                                    onPress={async () => {
+                                    onPress={() => {
                                         setIsLoading(true)
-                                        const { object, error } = await generate(input, lib, hideText)
                                         onClose()
-
-                                        if (error) {
-                                            toast.error(error)
-                                            setIsLoading(false)
-                                        }
-                                        else if (object) {
-                                            let commentary = '', topics = []
-                                            try {
-                                                for await (const partialObject of readStreamableValue(object)) {
-                                                    if (partialObject) {
-                                                        commentary = partialObject.commentary
-                                                        setCompletion(partialObject.commentary)
-                                                        topics = partialObject.topics
-                                                    }
-                                                }
-                                                setContent(commentary)
-                                                setTopics(topics)
-                                                await save({ id: text, content: commentary, topics })
-                                                setIsLoading(false)
-                                            } catch {
-                                                await save({ id: text, content: commentary, topics })
-                                                toast.error('生成中止。')
-                                                setIsLoading(false)
-                                            }
-                                        }
+                                        generate({ article: input, textId: text, onlyComments: hideText })
                                     }}>
                                     生成
                                 </Button>

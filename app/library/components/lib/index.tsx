@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
-import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiBinocularsDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
+import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { postFontFamily } from '@/lib/fonts'
@@ -200,7 +200,7 @@ export function LibraryAddButton() {
             title='创建文库'
         >
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto'>
-                <Input isRequired startContent={<PiBinocularsDuotone />} label='文库名' {...register('name')} />
+                <Input isRequired startContent={<PiPackageDuotone />} label='文库名' {...register('name')} />
                 <Select isRequired startContent={<PiTranslateDuotone />} label='语言' {...register('lang')} validate={value => {
                     if (!value) return '请选择语言'
                     return true

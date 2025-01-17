@@ -2,6 +2,8 @@ import 'server-only'
 
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
+import { redis } from '@/lib/redis'
+import { AnnotationProgress } from '@/lib/types'
 
 const xata = getXataClient()
 
@@ -46,4 +48,13 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
         { mediaType: ebook.type }
     )
     return url
+}
+
+export async function getTextAnnotationProgress({ id }: { id: string }) {
+    const annotationProgress = await redis.get(`text:${id}:annotation`)
+    return annotationProgress ? (annotationProgress as AnnotationProgress) : null
+}
+
+export async function setTextAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
+    await redis.set(`text:${id}:annotation`, progress)
 }

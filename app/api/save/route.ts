@@ -5,7 +5,6 @@ import { originals, validateOrThrow } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { verifyToken } from '@clerk/nextjs/server'
-import { revalidatePath } from 'next/cache'
 import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
@@ -32,7 +31,6 @@ export async function POST(request: Request) {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
         validateOrThrow(word)
         await saveWord({ lib, word })
-        revalidatePath(`/library/${lib}/corpus`)
     })
 
     const plainPortions = portions.map((md) => removeMd(md))

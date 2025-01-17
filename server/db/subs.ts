@@ -7,7 +7,7 @@ const xata = getXataClient()
 
 export async function getSubsStatus({ userId }: { userId: string }) {
     const subs = await xata.db.subs.filter({ uid: userId }).getFirst()
-    return { hasSubs: !!subs, hour: subs?.hour }
+    return { hasSubs: !!subs, hour: subs?.hour, subscription: JSON.stringify(subs?.subscription) }
 }
 
 export async function getHourlySubs(hour: number) {
