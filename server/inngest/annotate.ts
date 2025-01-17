@@ -21,7 +21,7 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     ${await accentPreferencePrompt({ lang, userId })}
     
     ${input}`,
-    maxTokens: 5000
+    maxTokens: 3000
 })
 
 const topicsPrompt = async (input: string) => ({
@@ -35,6 +35,28 @@ const topicsPrompt = async (input: string) => ({
     maxTokens: 100
 })
 
+const chunkText = (text: string, maxLength: number = 5000): string[] => {
+    const chunks: string[] = []
+    let currentChunk = ''
+
+    // Split by paragraphs (double newline)
+    const paragraphs = text.split(/\n\s*\n/)
+
+    for (const paragraph of paragraphs) {
+        if ((currentChunk + paragraph).length > maxLength && currentChunk) {
+            chunks.push(currentChunk.trim())
+            currentChunk = ''
+        }
+        currentChunk += paragraph + '\n\n'
+    }
+
+    if (currentChunk) {
+        chunks.push(currentChunk.trim())
+    }
+
+    return chunks
+}
+
 export const annotateFullArticle = inngest.createFunction(
     { id: 'annotate-article' },
     { event: 'app/article.imported' },
@@ -44,8 +66,16 @@ export const annotateFullArticle = inngest.createFunction(
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
         })
-        const annotationConfig = await articleAnnotationPrompt(lang, article, onlyComments, userId)
-        const { text: content } = await step.ai.wrap('annowate-article', generateText, annotationConfig)
+
+        const chunks = chunkText(article)
+        const annotatedChunks = await Promise.all(
+            chunks.map(async (chunk) => {
+                const annotationConfig = await articleAnnotationPrompt(lang, chunk, onlyComments, userId)
+                const { text } = await step.ai.wrap('annotate-article', generateText, annotationConfig)
+                return text
+            })
+        )
+        const content = annotatedChunks.join('\n\n')
 
         await step.run('set-annotation-progress-annotating-topics', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating-topics' })
