@@ -40,7 +40,22 @@ self.addEventListener('push', async (event) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close()
     const { url } = event.notification.data
-    event.waitUntil(self.clients.openWindow(url))
+
+    event.waitUntil(
+        self.clients.matchAll({ type: "window" }).then((clientsArr) => {
+            // If a Window tab matching the targeted URL already exists, focus that;
+            const hadWindowToFocus = clientsArr.some((windowClient) =>
+                windowClient.url === url
+                    ? (windowClient.focus(), true)
+                    : false,
+            )
+
+            // Otherwise, open a new tab to the applicable URL and focus it.
+            if (!hadWindowToFocus)
+                self.clients
+                    .openWindow(url)
+        }),
+    )
 })
 
 serwist.addEventListeners()
