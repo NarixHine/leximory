@@ -12,6 +12,7 @@ import { useEventListener, useOnClickOutside } from 'usehooks-ts'
 
 export default function Define() {
     const ref = useRef<HTMLDivElement>(null)
+    const documentRef = useRef<Document>(globalThis.document)
     const [rect, setRect] = useState<DOMRect>()
     const [selection, setSelection] = useState<Selection | null>()
 
@@ -23,7 +24,7 @@ export default function Define() {
             setRect(rect)
         }
         setSelection(selection)
-    })
+    }, documentRef)
 
     useOnClickOutside(ref as RefObject<HTMLElement>, () => {
         setSelection(null)

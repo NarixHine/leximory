@@ -254,6 +254,13 @@ function GeneratingView() {
     'completed': 100
   }
 
+  const startProgressRecord: Record<AnnotationProgress, number> = {
+    'annotating': 0,
+    'annotating-topics': 60,
+    'saving': 80,
+    'completed': 95
+  }
+
   useInterval(() => {
     if (currentProgress < targetProgressRecord[annotationProgress]) {
       const remaining = targetProgressRecord[annotationProgress] - currentProgress
@@ -270,7 +277,7 @@ function GeneratingView() {
         return
       }
       if (annotationProgress !== newProgress) {
-        setCurrentProgress(targetProgressRecord[annotationProgress])
+        setCurrentProgress(startProgressRecord[newProgress])
         if (newProgress === 'completed') {
           getNewText(text).then(({ content, topics }) => {
             setContent(content)
@@ -281,7 +288,7 @@ function GeneratingView() {
         setAnnotationProgress(newProgress)
       }
     })
-  }, isLoading ? 3000 : null)
+  }, isLoading ? 1000 : null)
 
   const progressLabel: Record<AnnotationProgress, string> = {
     annotating: '注解中……',
