@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
+import { Button } from "@heroui/button"
 import { PiPushPinDuotone, PiPushPinFill, } from 'react-icons/pi'
 import { isReaderModeAtom } from '@/app/atoms'
 import { useAtomValue } from 'jotai'

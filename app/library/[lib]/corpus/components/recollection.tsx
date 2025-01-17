@@ -7,8 +7,8 @@ import { Fragment, useActionState } from 'react'
 import { PiArrowsHorizontalDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { libAtom, isReadOnlyAtom } from '../../atoms'
-import { Button } from '@nextui-org/button'
-import { Chip } from '@nextui-org/chip'
+import { Button } from "@heroui/button"
+import { Chip } from "@heroui/chip"
 import load from '../actions'
 
 export default function Recollection({ words, cursor, more }: {

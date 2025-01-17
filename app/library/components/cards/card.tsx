@@ -1,4 +1,4 @@
-import { Skeleton } from '@nextui-org/skeleton'
+import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
 
 import type { JSX } from "react";

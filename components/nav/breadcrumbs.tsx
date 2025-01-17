@@ -1,7 +1,7 @@
 'use client'
 
-import { Breadcrumbs, BreadcrumbItem } from '@nextui-org/breadcrumbs'
-import { Button } from '@nextui-org/button'
+import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs"
+import { Button } from "@heroui/button"
 import { PiBookBookmarkDuotone, PiFileTextDuotone, PiBooksDuotone, PiUserCircleDuotone, PiSkipBackCircleDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import { useAtomValue } from 'jotai'

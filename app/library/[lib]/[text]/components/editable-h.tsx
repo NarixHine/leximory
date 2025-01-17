@@ -3,7 +3,7 @@
 import H from '@/components/ui/h'
 import { useAtom, useAtomValue } from 'jotai'
 import { isEditingAtom, titleAtom } from '../atoms'
-import { Input } from '@nextui-org/input'
+import { Input } from "@heroui/input"
 import { CHINESE } from '@/lib/fonts'
 import { ENGLISH_SERIF } from '@/lib/fonts'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { NextUIProvider } from '@nextui-org/system'
+import { HeroUIProvider } from "@heroui/system"
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
 import { ReactNode } from 'react'
@@ -42,7 +42,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 				fontFamily: CHINESE_ZCOOL.style.fontFamily,
 			}
 		}}>
-			<NextUIProvider navigate={router.push}>
+			<HeroUIProvider navigate={router.push}>
 				<ThemeProvider {...themeProps}>
 					<JotaiProvider>
 						<Toaster toastOptions={{
@@ -54,7 +54,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 						{children}
 					</JotaiProvider>
 				</ThemeProvider>
-			</NextUIProvider>
+			</HeroUIProvider>
 		</ClerkProvider>
 	)
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react'
 import { motion } from 'framer-motion'
 import { PiBugDroidDuotone } from 'react-icons/pi'
-import { Button } from '@nextui-org/button'
+import { Button } from "@heroui/button"
 
 export const CatchTheBug: React.FC = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 })

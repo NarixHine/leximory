@@ -1,11 +1,11 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Divider } from '@nextui-org/divider'
-import { Input } from '@nextui-org/input'
-import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure } from '@nextui-org/modal'
-import { Switch } from '@nextui-org/switch'
-import { Textarea } from '@nextui-org/input'
+import { Button } from "@heroui/button"
+import { Divider } from "@heroui/divider"
+import { Input } from "@heroui/input"
+import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure } from "@heroui/modal"
+import { Switch } from "@heroui/switch"
+import { Textarea } from "@heroui/input"
 import ky from 'ky'
 import { useState, useTransition } from 'react'
 import isUrl from 'is-url'

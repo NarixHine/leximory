@@ -1,6 +1,6 @@
 'use client'
 
-import { CircularProgress, Switch } from '@nextui-org/react'
+import { CircularProgress, Switch } from "@heroui/react"
 import { useAtom } from 'jotai'
 import { accentAtom } from '../atoms'
 import { PiCoffeeDuotone, PiHamburgerDuotone } from 'react-icons/pi'

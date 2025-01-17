@@ -2,8 +2,8 @@
 
 import Markdown, { MarkdownProps } from '@/components/markdown'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@nextui-org/button'
-import { Card, CardBody } from '@nextui-org/card'
+import { Button } from "@heroui/button"
+import { Card, CardBody } from "@heroui/card"
 import { PiPlayCircleDuotone } from 'react-icons/pi'
 import { generate, retrieve } from './actions'
 import { toast } from 'sonner'

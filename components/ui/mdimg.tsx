@@ -1,7 +1,7 @@
 'use client'
 
 import { isReaderModeAtom } from '@/app/atoms'
-import { Image } from '@nextui-org/image'
+import { Image } from "@heroui/image"
 import { useAtomValue } from 'jotai'
 
 export default function MdImg({ src, alt = 'Image', title }: {

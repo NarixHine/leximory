@@ -3,14 +3,14 @@
 import getToken from '../actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
-import { Button } from '@nextui-org/button'
+import { Button } from "@heroui/button"
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { prefixUrl } from '@/lib/config'
 import { useUser } from '@clerk/nextjs'
 import { useState, useTransition } from 'react'
 import { Drawer } from 'vaul'
-import { Snippet } from '@nextui-org/snippet'
-import { Progress } from '@nextui-org/progress'
+import { Snippet } from "@heroui/snippet"
+import { Progress } from "@heroui/progress"
 import { cn } from '@/lib/utils'
 
 export default function CopyToken() {

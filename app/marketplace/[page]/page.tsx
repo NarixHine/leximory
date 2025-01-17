@@ -2,11 +2,11 @@ import Main from '@/components/ui/main'
 import Pagination from './pagination'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { auth } from '@clerk/nextjs/server'
-import { Spacer } from '@nextui-org/spacer'
+import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
 import H from '@/components/ui/h'
 import { PiStorefrontDuotone } from 'react-icons/pi'
-import { Alert } from '@nextui-org/alert'
+import { Alert } from "@heroui/alert"
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'

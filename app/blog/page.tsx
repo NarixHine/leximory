@@ -1,6 +1,6 @@
 import { hFontFamily } from '@/lib/fonts'
 import H from '@/components/ui/h'
-import { Spacer } from '@nextui-org/spacer'
+import { Spacer } from "@heroui/spacer"
 import { Link } from 'next-view-transitions'
 import Center from '@/components/ui/center'
 import type { Metadata } from 'next'

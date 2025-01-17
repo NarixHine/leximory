@@ -5,12 +5,12 @@ import { isEditingAtom, textAtom, ebookAtom, topicsAtom, displayedMdAtom, conten
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
-import { Button } from '@nextui-org/button'
-import { Alert } from '@nextui-org/alert'
-import { Spacer } from '@nextui-org/spacer'
-import { Input } from '@nextui-org/input'
-import { Tooltip } from '@nextui-org/tooltip'
-import { Snippet } from '@nextui-org/snippet'
+import { Button } from "@heroui/button"
+import { Alert } from "@heroui/alert"
+import { Spacer } from "@heroui/spacer"
+import { Input } from "@heroui/input"
+import { Tooltip } from "@heroui/tooltip"
+import { Snippet } from "@heroui/snippet"
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'

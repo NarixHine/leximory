@@ -2,12 +2,12 @@
 
 import { Lang, langMap } from '@/lib/config'
 import { PiPushPinDuotone, PiPushPinFill } from 'react-icons/pi'
-import { Card, CardBody, CardFooter } from '@nextui-org/card'
-import { Button } from '@nextui-org/button'
+import { Card, CardBody, CardFooter } from "@heroui/card"
+import { Button } from "@heroui/button"
 import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
 import { ReactNode, useTransition } from 'react'
-import { Skeleton } from '@nextui-org/skeleton'
+import { Skeleton } from "@heroui/skeleton"
 import { star } from '@/app/library/[lib]/components/actions'
 
 interface LibraryCardProps {

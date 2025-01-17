@@ -3,8 +3,8 @@ import H from '@/components/ui/h'
 import { Suspense } from 'react'
 import Report from './components/report'
 import Bell from './components/bell'
-import { Spacer } from '@nextui-org/spacer'
-import { Skeleton } from '@nextui-org/skeleton'
+import { Spacer } from "@heroui/spacer"
+import { Skeleton } from "@heroui/skeleton"
 import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import WordStats from '@/components/stats'

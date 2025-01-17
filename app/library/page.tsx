@@ -7,8 +7,8 @@ import Nav from '@/components/nav'
 import H from '@/components/ui/h'
 import { getAuthOrThrow, isListed } from '@/lib/auth'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { Skeleton } from '@nextui-org/skeleton'
-import { Spacer } from '@nextui-org/spacer'
+import { Skeleton } from "@heroui/skeleton"
+import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PiBooksDuotone } from 'react-icons/pi'

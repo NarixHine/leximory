@@ -1,7 +1,7 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@nextui-org/modal'
+import { Button } from "@heroui/button"
+import { useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal"
 import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom } from '../atoms'
 
@@ -22,7 +22,7 @@ export default function Prompt() {
                             你的权限是：<span className='font-bold'>{isReadOnly ? '只读' : '读写'}</span>。
                         </p>
                         <p>
-                            它默认不会出现在你的主页，但你可以点击右下角的按钮将其钉选。
+                            你可以点击右下角的按钮将其钉选至主页。
                         </p>
                     </ModalBody>
                     <ModalFooter>

@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Chip } from '@nextui-org/chip'
+import { Chip } from "@heroui/chip"
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 

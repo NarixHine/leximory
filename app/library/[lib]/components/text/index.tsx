@@ -1,7 +1,7 @@
 'use client'
 
-import { Card, CardBody, CardFooter } from '@nextui-org/card'
-import { Chip } from '@nextui-org/chip'
+import { Card, CardBody, CardFooter } from "@heroui/card"
+import { Chip } from "@heroui/chip"
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
 import { add } from './actions'
@@ -9,7 +9,7 @@ import { motion } from 'framer-motion'
 import { PiFilePlusDuotone } from 'react-icons/pi'
 import { useTransitionRouter } from 'next-view-transitions'
 import { useTransition } from 'react'
-import { CircularProgress } from '@nextui-org/progress'
+import { CircularProgress } from "@heroui/progress"
 import { useAtomValue } from 'jotai'
 import { libAtom } from '../../atoms'
 

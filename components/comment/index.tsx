@@ -1,11 +1,11 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Spacer } from '@nextui-org/spacer'
-import { Skeleton } from '@nextui-org/skeleton'
-import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
-import { Card, CardBody } from '@nextui-org/card'
-import { Textarea } from '@nextui-org/input'
+import { Button } from "@heroui/button"
+import { Spacer } from "@heroui/spacer"
+import { Skeleton } from "@heroui/skeleton"
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
+import { Card, CardBody } from "@heroui/card"
+import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone, PiSignInDuotone } from 'react-icons/pi'

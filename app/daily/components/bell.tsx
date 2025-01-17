@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
+import { Button } from "@heroui/button"
 import { PiClockClockwiseDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import env from '@/lib/env'
@@ -8,7 +8,7 @@ import { save, remove } from '../actions'
 import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
-import { Select, SelectItem } from '@nextui-org/select'
+import { Select, SelectItem } from "@heroui/select"
 
 export default function Bell({ hasSubs, hour = 22 }: {
     hasSubs: boolean

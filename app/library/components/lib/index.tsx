@@ -1,23 +1,23 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Card, CardBody, CardFooter } from '@nextui-org/card'
-import { Chip } from '@nextui-org/chip'
-import { Spacer } from '@nextui-org/spacer'
+import { Button } from "@heroui/button"
+import { Card, CardBody, CardFooter } from "@heroui/card"
+import { Chip } from "@heroui/chip"
+import { Spacer } from "@heroui/spacer"
 import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiBinocularsDuotone, PiTrashDuotone, PiHourglassMediumDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { postFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
-import { Skeleton } from '@nextui-org/skeleton'
+import { Skeleton } from "@heroui/skeleton"
 import Form from '../../../../components/form'
-import { Input } from '@nextui-org/input'
-import { Checkbox } from '@nextui-org/checkbox'
-import { Select, SelectItem } from '@nextui-org/select'
+import { Input } from "@heroui/input"
+import { Checkbox } from "@heroui/checkbox"
+import { Select, SelectItem } from "@heroui/select"
 import { create, remove, save } from './actions'
 import { useForm } from 'react-hook-form'
-import { useDisclosure } from '@nextui-org/react'
+import { useDisclosure } from "@heroui/react"
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useState } from 'react'

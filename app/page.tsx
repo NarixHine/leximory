@@ -14,10 +14,10 @@ import { isReadOnlyAtom, langAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/ui/flip'
 import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
-import { Spacer } from '@nextui-org/spacer'
-import { Button } from '@nextui-org/button'
-import { Input } from '@nextui-org/input'
-import { Card, CardBody } from '@nextui-org/card'
+import { Spacer } from "@heroui/spacer"
+import { Button } from "@heroui/button"
+import { Input } from "@heroui/input"
+import { Card, CardBody } from "@heroui/card"
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import { ToXinhui } from './components/to-xinhui'

@@ -1,9 +1,9 @@
 'use client'
 
-import { Button } from '@nextui-org/button'
-import { Popover, PopoverTrigger, PopoverContent } from '@nextui-org/popover'
-import { Spacer } from '@nextui-org/spacer'
-import { CircularProgress } from '@nextui-org/progress'
+import { Button } from "@heroui/button"
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
+import { Spacer } from "@heroui/spacer"
+import { CircularProgress } from "@heroui/progress"
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'

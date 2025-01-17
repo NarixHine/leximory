@@ -12,4 +12,4 @@ type Events = {
 export const inngest = new Inngest({
     id: 'leximory',
     schemas: new EventSchemas().fromRecord<Events>(),
-},)
+})

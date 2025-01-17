@@ -2,11 +2,11 @@
 
 import { useAtomValue } from 'jotai'
 import { totalPagesAtom } from '../atoms'
-import { Pagination as NextUIPagination } from '@nextui-org/pagination'
+import { Pagination as HeroUIPagination } from "@heroui/pagination"
 
 export default function Pagination({page }: { page: number }) {
     const totalPages = useAtomValue(totalPagesAtom)
     return <div className='flex justify-center'>
-        <NextUIPagination variant='bordered' color='primary' total={totalPages} page={page} />
+        <HeroUIPagination variant='bordered' color='primary' total={totalPages} page={page} />
     </div>
 }

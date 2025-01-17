@@ -1,6 +1,6 @@
 import Center from '@/components/ui/center'
 import { ClerkLoading } from '@clerk/nextjs'
-import { CircularProgress } from '@nextui-org/progress'
+import { CircularProgress } from "@heroui/progress"
 import { ReactNode } from 'react'
 
 export default function Layout({ children }: { children: ReactNode }) {

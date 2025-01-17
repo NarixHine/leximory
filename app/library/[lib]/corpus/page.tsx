@@ -1,5 +1,5 @@
 import H from '@/components/ui/h'
-import { Spacer } from '@nextui-org/spacer'
+import { Spacer } from "@heroui/spacer"
 import Main from '@/components/ui/main'
 import Recollection from './components/recollection'
 import load from './actions'

@@ -3,8 +3,8 @@
 import Markdown from '@/components/markdown'
 import { welcomeMap } from '@/lib/config'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
-import { Button } from '@nextui-org/button'
-import { DateRangePicker } from '@nextui-org/date-picker'
+import { Button } from "@heroui/button"
+import { DateRangePicker } from "@heroui/date-picker"
 import { useActionState, useState } from 'react'
 import { draw } from '../actions'
 import moment from 'moment'

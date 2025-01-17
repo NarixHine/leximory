@@ -1,13 +1,13 @@
 import Center from '@/components/ui/center'
 import H from '@/components/ui/h'
 import { clerkClient } from '@clerk/nextjs/server'
-import { Avatar } from '@nextui-org/avatar'
+import { Avatar } from "@heroui/avatar"
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { Suspense } from 'react'
 import WordStats from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
-import { Chip } from '@nextui-org/chip'
+import { Chip } from "@heroui/chip"
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 

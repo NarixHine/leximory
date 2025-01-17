@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
-import { Card, CardBody } from '@nextui-org/card'
+import { Card, CardBody } from "@heroui/card"
 import { useRouter } from 'next/navigation'
 
 export function ToXinhui() {
