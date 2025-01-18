@@ -21,7 +21,7 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     ${await accentPreferencePrompt({ lang, userId })}
     
     ${input}`,
-    maxTokens: 3000
+    maxTokens: 1000
 })
 
 const topicsPrompt = async (input: string) => ({
@@ -35,7 +35,7 @@ const topicsPrompt = async (input: string) => ({
     maxTokens: 100
 })
 
-const chunkText = (text: string, maxLength: number = 5000): string[] => {
+const chunkText = (text: string, maxLength: number = 3000): string[] => {
     const chunks: string[] = []
     let currentChunk = ''
 
