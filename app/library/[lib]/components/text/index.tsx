@@ -13,10 +13,11 @@ import { CircularProgress } from "@heroui/progress"
 import { useAtomValue } from 'jotai'
 import { libAtom } from '../../atoms'
 
-function Text({ id, title, topics }: {
+function Text({ id, title, topics, hasEbook }: {
     id: string,
     title: string,
-    topics: string[]
+    topics: string[],
+    hasEbook: boolean
 }) {
     const lib = useAtomValue(libAtom)
     const router = useRouter()
@@ -32,6 +33,7 @@ function Text({ id, title, topics }: {
             <CardFooter className='p-7'>
                 <div className='gap-2 flex flex-wrap align-middle items-center'>
                     {topics.map(topic => <Chip key={topic} variant='flat' color={'primary'}>{topic}</Chip>)}
+                    {hasEbook && <Chip variant='flat' color={'secondary'}>电子书</Chip>}
                 </div>
             </CardFooter>
         </Card>

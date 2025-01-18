@@ -2,6 +2,7 @@ import 'server-only'
 
 import { getXataClient } from '@/lib/xata'
 import { PushSubscription } from 'web-push'
+import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -21,6 +22,7 @@ export default async function saveSubs({ userId, subs, hour }: { userId: string,
         subscription: subs,
         hour
     })
+    revalidatePath(`/daily`)
 }
 
 export async function delSubs({ userId }: { userId: string }) {
@@ -28,4 +30,5 @@ export async function delSubs({ userId }: { userId: string }) {
         uid: userId,
     }).getFirstOrThrow()
     await rec.delete()
+    revalidatePath(`/daily`)
 }

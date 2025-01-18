@@ -4,6 +4,7 @@ import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { welcomeMap } from '@/lib/config'
 import { getXataClient } from '@/lib/xata'
 import moment from 'moment-timezone'
+import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -32,18 +33,24 @@ export async function getRecentWords({ filter }: { filter: Record<string, any> }
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
-    return await xata.db.lexicon.create({
+    const rec = await xata.db.lexicon.create({
         lib,
         word
     })
+    revalidatePath(`/library/${lib}/corpus`)
+    return rec
 }
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
-    return await xata.db.lexicon.update(id, { word })
+    const rec = await xata.db.lexicon.update(id, { word })
+    revalidatePath(`/library/${rec!.lib!.id}/corpus`)
+    return rec
 }
 
 export async function deleteWord(id: string) {
-    return await xata.db.lexicon.delete(id)
+    const rec = await xata.db.lexicon.delete(id)
+    revalidatePath(`/library/${rec!.lib!.id}/corpus`)
+    return rec
 }
 
 export async function loadWords({ lib, cursor }: { lib: string, cursor?: string }) {

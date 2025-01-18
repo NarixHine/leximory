@@ -15,7 +15,6 @@ export default function Bell({ hasSubs, hour = 22 }: {
     hour?: number
 }) {
     const [isUpdating, startUpdating] = useTransition()
-    const [isSubscribed, setIsSubscribed] = useState(hasSubs)
     const [selectedHour, setSelectedHour] = useState(hour)
 
     const subscribe = async () => {
@@ -33,17 +32,15 @@ export default function Bell({ hasSubs, hour = 22 }: {
         <div className='flex flex-col justify-center items-center space-y-3'>
             <div className='flex gap-2 items-center'>
                 <Button
-                    variant={isSubscribed ? 'flat' : 'ghost'}
+                    variant={hasSubs ? 'flat' : 'ghost'}
                     isLoading={isUpdating}
                     onPress={() => {
                         startUpdating(async () => {
-                            if (isSubscribed) {
+                            if (hasSubs) {
                                 await remove()
-                                setIsSubscribed(false)
                             } else {
                                 try {
                                     await subscribe()
-                                    setIsSubscribed(true)
                                 } catch {
                                     toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
                                 }
@@ -55,7 +52,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                     color='primary'
                     startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
                 >
-                    {`${isSubscribed ? '关闭' : '开启'}每日复习提醒`}
+                    {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
                 </Button>
                 <Select
                     size='sm'
@@ -64,7 +61,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                     className='w-28'
                     startContent='于'
                     endContent={<span className='text-sm'>时</span>}
-                    isDisabled={isSubscribed}
+                    isDisabled={!hasSubs}
                 >
                     {new Array(24).fill(0).map((_, i) => (
                         <SelectItem key={i} value={i.toString()}>{i.toString()}</SelectItem>

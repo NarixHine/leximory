@@ -4,6 +4,7 @@ import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
 import { redis } from '@/lib/redis'
 import { AnnotationProgress } from '@/lib/types'
+import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -13,24 +14,23 @@ export async function createText({ lib }: { lib: string }) {
         lib,
         title: '',
     })
+    revalidatePath(`/library/${lib}`)
     return id
 }
 
 export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    await xata.db.texts.update(id, { title, content, topics })
+    const rec = await xata.db.texts.update(id, { title, content, topics })
+    revalidatePath(`/library/${rec!.lib!.id}`)
 }
 
 export async function deleteText({ id }: { id: string }) {
-    await xata.db.texts.delete(id)
+    const rec = await xata.db.texts.delete(id)
+    revalidatePath(`/library/${rec!.lib!.id}`)
 }
 
 export async function getTexts({ lib }: { lib: string }) {
-    const texts = await xata.db.texts.select(['title', 'topics']).filter({ lib }).getAll()
-    return texts.map(text => ({
-        id: text.id,
-        title: text.title,
-        topics: text.topics,
-    }))
+    const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url']).filter({ lib }).getAll()
+    return texts
 }
 
 export async function getTextContent({ id }: { id: string }) {
@@ -47,6 +47,8 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
         await ebook.arrayBuffer(),
         { mediaType: ebook.type }
     )
+    const { lib } = await xata.db.texts.select(['lib.id']).filter({ id }).getFirstOrThrow()
+    revalidatePath(`/library/${lib!.id}/${id}`)
     return url
 }
 

@@ -2,6 +2,7 @@ import 'server-only'
 import { Lang, libAccessStatusMap, welcomeMap } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/lib/xata'
+import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -11,6 +12,8 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
         ? (starredBy ?? []).filter(x => x !== userId!)
         : [...(starredBy ?? []), userId!]
     await xata.db.libraries.update(lib, { starredBy: newStarredBy })
+    revalidatePath(`/library/${lib}`)
+    revalidatePath(`/marketplace/[page]`)
     return newStarredBy.includes(userId!)
 }
 
@@ -25,6 +28,8 @@ export async function updateLib({ id, access, name, org, shortcut }: { id: strin
             name,
             access,
         })
+    revalidatePath(`/library/${id}`)
+    revalidatePath(`/library`)
 }
 
 export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
@@ -53,6 +58,7 @@ export async function createLib({ name, lang, org, owner }: { name: string, lang
             }
         }
     ])
+    revalidatePath(`/library`)
     return id
 }
 
@@ -83,6 +89,7 @@ export async function deleteLib({ id }: { id: string }) {
             }
         })),
     ])
+    revalidatePath(`/library`)
 }
 
 export async function summarizeLibsWithWords({ filter }: { filter: Record<string, string | undefined | object> }) {

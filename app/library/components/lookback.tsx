@@ -2,6 +2,7 @@ import { isListed } from '@/lib/auth'
 import Markdown from '../../../components/markdown'
 import { ReactNode } from 'react'
 import { getRecentWords } from '@/server/db/word'
+import { PiEmpty } from 'react-icons/pi'
 
 export default async function Lookback() {
     const words = await getRecentWords({ filter: await isListed() })
@@ -10,8 +11,11 @@ export default async function Lookback() {
             <span key={id} className='inline-block px-2 py-1'>
                 <Markdown key={word} md={word} disableSave></Markdown>
             </span>
-        ) : <span className='inline-block px-2 py-1'>
-            <Markdown md={'无新增语汇。'}></Markdown>
+        ) : <span className={'inline-block px-2 py-1'}>
+            <span className='flex items-center gap-1'>
+                <PiEmpty />
+                <Markdown md={'暂无新增语汇'}></Markdown>
+            </span>
         </span>}
     </LookbackWrapper>
 }
