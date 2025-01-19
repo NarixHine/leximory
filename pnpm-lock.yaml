@@ -201,8 +201,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(jotai@2.11.0(@types/react@19.0.1)(react@19.0.0))(react@19.0.0)
       ky:
-        specifier: ^1.2.4
-        version: 1.2.4
+        specifier: ^1.7.4
+        version: 1.7.4
       markdown-to-jsx:
         specifier: ^7.7.2
         version: 7.7.2(react@19.0.0)
@@ -2438,6 +2438,9 @@ packages:
   caniuse-lite@1.0.30001692:
     resolution: {integrity: sha512-A95VKan0kdtrsnMubMKxEKUKImOPSuCpYgxSQBo036P5YYgVIcOYJEgt/txJWqObiRQeISNCfef9nvlQ0vbV7A==}
 
+  caniuse-lite@1.0.30001695:
+    resolution: {integrity: sha512-vHyLade6wTgI2u1ec3WQBxv+2BrTERV28UXQu9LO6lZ9pYeMk34vjXFLOxo1A4UBA8XTL4njRQZdno/yYaSmWw==}
+
   canonicalize@1.0.8:
     resolution: {integrity: sha512-0CNTVCLZggSh7bc5VkX5WWPWO+cyZbNd07IHIsSXLia/eAq+r836hgk+8BKoEh7949Mda87VUOitx5OddVj64A==}
 
@@ -3572,8 +3575,8 @@ packages:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
 
-  ky@1.2.4:
-    resolution: {integrity: sha512-CfSrf4a0yj1n6WgPT6kQNQOopIGLkQzqSAXo05oKByaH7G3SiqW4a8jGox0p9whMXqO49H7ljgigivrMyycAVA==}
+  ky@1.7.4:
+    resolution: {integrity: sha512-zYEr/gh7uLW2l4su11bmQ2M9xLgQLjyvx58UyNM/6nuqyWFHPX5ktMjvpev3F8QWdjSsHUpnWew4PBCswBNuMQ==}
     engines: {node: '>=18'}
 
   language-subtag-registry@0.3.23:
@@ -7833,7 +7836,7 @@ snapshots:
 
   browserslist@4.24.4:
     dependencies:
-      caniuse-lite: 1.0.30001692
+      caniuse-lite: 1.0.30001695
       electron-to-chromium: 1.5.83
       node-releases: 2.0.19
       update-browserslist-db: 1.1.2(browserslist@4.24.4)
@@ -7875,6 +7878,8 @@ snapshots:
   caniuse-lite@1.0.30001653: {}
 
   caniuse-lite@1.0.30001692: {}
+
+  caniuse-lite@1.0.30001695: {}
 
   canonicalize@1.0.8: {}
 
@@ -9182,7 +9187,7 @@ snapshots:
 
   kind-of@6.0.3: {}
 
-  ky@1.2.4: {}
+  ky@1.7.4: {}
 
   language-subtag-registry@0.3.23: {}
 

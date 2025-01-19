@@ -1,8 +1,0 @@
-model Subscription {
-    endpoint         String   @id
-    p256dh          String
-    auth            String
-    notificationTime String   @default("21:30")
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
-} 
