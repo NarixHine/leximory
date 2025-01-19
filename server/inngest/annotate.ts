@@ -20,7 +20,7 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     ${await accentPreferencePrompt({ lang, userId })}
     
     ${input}`,
-    maxTokens: 2000
+    maxTokens: 3000
 })
 
 const topicsPrompt = async (input: string) => ({

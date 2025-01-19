@@ -15,7 +15,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     return !isReaderMode && (
         <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-2'>
             <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%] backdrop-blur-sm' classNames={{
-                list: 'flex-nowrap bg-[#ece1d9]/80 dark:bg-default-200/80',
+                list: 'flex-nowrap bg-[#ece1d9]/75 dark:bg-default-200/75',
             }}>
                 <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone className='text-[#67595e] dark:text-default-500' />} onPress={() => {
                     router.push(`/library`)
