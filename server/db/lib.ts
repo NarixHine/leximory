@@ -140,7 +140,7 @@ export async function getLib({ id }: { id: string }) {
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {
-    const libs = await xata.db.libraries.filter({ owner, shortcut: true }).getMany()
+    const libs = await xata.db.libraries.filter({ owner }).getMany()
     return libs.map(({ id, name }) => ({ id, name }))
 }
 
