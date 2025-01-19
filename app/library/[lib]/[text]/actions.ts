@@ -90,7 +90,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
             ${instruction[lang]}
             `,
             prompt: `下文中仅一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n\n${prompt}`,
-            maxTokens: 300
+            maxTokens: 500
         })
 
         for await (const delta of textStream) {
@@ -115,7 +115,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
         ${instruction[lang]}
         `,
         prompt: `下面是一个加双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n你要注解的是：\n${prompt}`,
-        maxTokens: 300
+        maxTokens: 500
     })
 
     return text
