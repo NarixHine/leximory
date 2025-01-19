@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
-import { PiAppleLogoDuotone, PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiShareDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { postFontFamily } from '@/lib/fonts'
@@ -58,7 +58,7 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortcut, shadow }: {
+function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow }: {
     id: string,
     name: string,
     access: number,
@@ -68,14 +68,12 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
     lang: string,
     isOwner: boolean,
     orgId: string | null | undefined,
-    shortcut: boolean,
     shadow: boolean,
     orgs: { label: string, name: string }[]
 }) {
     const router = useRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
-        .concat(shortcut ? ['快捷保存'] : [])
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
     const [isDeleted, setIsDeleted] = useState(false)
@@ -84,14 +82,12 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
         id: string,
         name: string,
         access: boolean,
-        shortcut: boolean,
         org: string,
     }>({
         defaultValues: {
             id,
             name,
             access: access === libAccessStatusMap.public,
-            shortcut,
             org: orgId ?? 'none',
         }
     })
@@ -161,11 +157,8 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
                     <SelectItem startContent={<PiUserDuotone />} key='none' value='none'>无</SelectItem>
                     {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name} value={org.name}>{org.label}</SelectItem>) as any}
                 </Select>
-                <Checkbox color='secondary' {...register('access')} icon={<PiShareDuotone />}>
-                    公开并上架集市
-                </Checkbox>
-                <Checkbox color='secondary' {...register('shortcut')} icon={<PiAppleLogoDuotone />}>
-                    显示于 iOS 快捷保存选项
+                <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
+                    设为公开并上架集市
                 </Checkbox>
             </div>
         </Form>

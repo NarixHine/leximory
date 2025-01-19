@@ -40,7 +40,6 @@ async function LibraryList({ mems }: {
             {data.map(({ lib, count }) => lib && (
                 <Library
                     shadow={lib.shadow}
-                    shortcut={lib.shortcut}
                     access={lib.access}
                     id={lib.id}
                     key={lib.name}

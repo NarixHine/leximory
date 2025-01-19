@@ -89,7 +89,7 @@ export function Article() {
                 className='col-span-2'
             >
                 <GradientCard
-                    title='iOS Shortcut'
+                    title='iOS Shortcuts'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
                     gradient='bg-gradient-to-bl from-warning-50/50 to-secondary-100/50'

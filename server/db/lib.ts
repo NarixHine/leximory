@@ -30,11 +30,10 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
     return newStarredBy.includes(userId!)
 }
 
-export async function updateLib({ id, access, name, org, shortcut }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, shortcut: boolean }) {
+export async function updateLib({ id, access, name, org }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null }) {
     await xata.db.libraries.update(id, typeof org === 'string'
         ? {
             org: org === 'none' ? null : org,
-            shortcut,
             name,
             access,
         } : {

@@ -10,18 +10,16 @@ const saveValidator = z.object({
     id: z.string(),
     name: z.string(),
     access: z.boolean(),
-    shortcut: z.boolean(),
     org: z.string().optional(),
 })
 
 export async function save(data: z.infer<typeof saveValidator>) {
-    const { id, name, access, shortcut, org } = saveValidator.parse(data)
+    const { id, name, access, org } = saveValidator.parse(data)
     await authWriteToLib(id)
-    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null, shortcut })
+    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null })
     return {
         name,
         access,
-        shortcut,
         org,
     }
 }
