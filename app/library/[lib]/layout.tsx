@@ -1,5 +1,4 @@
-import { authReadToLib } from '@/server/auth/role'
-import { auth } from '@clerk/nextjs/server'
+import { authReadToLib, getAuthOrThrow } from '@/server/auth/role'
 import Prompt from './components/prompt'
 import Star from './components/star'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom } from './atoms'
@@ -34,8 +33,8 @@ export default async function LibLayout(
     } = props
 
     const { starredBy, isReadOnly, isOrganizational, isOwner, lang, owner } = await authReadToLib(params.lib)
-    const { userId } = await auth()
-    const isStarred = Boolean(starredBy?.includes(userId!))
+    const { userId } = await getAuthOrThrow()
+    const isStarred = Boolean(starredBy?.includes(userId))
     return (<HydrationBoundary options={{
         enableReHydrate: true
     }} hydrateAtoms={[

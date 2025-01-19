@@ -61,7 +61,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                     className='w-28'
                     startContent='于'
                     endContent={<span className='text-sm'>时</span>}
-                    isDisabled={!hasSubs}
+                    isDisabled={hasSubs}
                 >
                     {new Array(24).fill(0).map((_, i) => (
                         <SelectItem key={i} value={i.toString()}>{i.toString()}</SelectItem>
