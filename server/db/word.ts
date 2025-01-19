@@ -2,9 +2,10 @@ import 'server-only'
 
 import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { welcomeMap } from '@/lib/config'
-import { getXataClient } from '@/lib/xata'
+import { getXataClient } from '@/server/client/xata'
 import moment from 'moment-timezone'
 import { revalidatePath } from 'next/cache'
+import { getShadowLib } from './lib'
 
 const xata = getXataClient()
 
@@ -37,13 +38,16 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
         lib,
         word
     })
-    revalidatePath(`/library/${lib}/corpus`)
     return rec
+}
+
+export async function shadowSaveWord({ word, uid }: { word: string, uid: string }) {
+    const shadowSaveLib = await getShadowLib({ owner: uid })
+    return await saveWord({ lib: shadowSaveLib.id, word })
 }
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
     const rec = await xata.db.lexicon.update(id, { word })
-    revalidatePath(`/library/${rec!.lib!.id}/corpus`)
     return rec
 }
 

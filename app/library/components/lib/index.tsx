@@ -58,7 +58,7 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortcut }: {
+function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortcut, shadow }: {
     id: string,
     name: string,
     access: number,
@@ -69,6 +69,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
     isOwner: boolean,
     orgId: string | null | undefined,
     shortcut: boolean,
+    shadow: boolean,
     orgs: { label: string, name: string }[]
 }) {
     const router = useRouter()
@@ -111,7 +112,8 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shortc
                 }}>{name}</a>
                 <Spacer y={2}></Spacer>
                 <div className='flex space-x-2'>
-                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='bordered' color='primary' classNames={{ base: 'border-1' }}>{tag}</Chip>)}
+                    {shadow && <Chip key='shadow' variant='flat' color='secondary' classNames={{ base: 'border-1' }}>默认</Chip>}
+                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary' classNames={{ base: 'border-1' }}>{tag}</Chip>)}
                 </div>
             </CardBody>
             <CardFooter className='px-4 pb-4 flex gap-4'>

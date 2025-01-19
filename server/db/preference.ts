@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { redis } from '@/lib/redis'
+import { redis } from '../client/redis'
 
 export type Accent = 'BrE' | 'AmE'
 

@@ -1,6 +1,6 @@
 'use server'
 
-import { getAuthOrThrow } from '@/lib/auth'
+import { getAuthOrThrow } from '@/server/auth/role'
 import { starLib } from '@/server/db/lib'
 
 export const star = async (lib: string) => {

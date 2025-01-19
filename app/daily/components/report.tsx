@@ -1,4 +1,4 @@
-import { isAccessibleAndRelevantToUser } from '@/lib/auth'
+import { isAccessibleAndRelevantToUser } from '@/server/auth/role'
 import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'

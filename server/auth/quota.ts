@@ -1,5 +1,5 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { redis } from './redis'
+import { redis } from '../client/redis'
 
 const getPlan = async (userId?: string) => {
     return userId ? (await (await clerkClient()).users.getUser(userId)).publicMetadata.plan : (await auth()).sessionClaims?.plan

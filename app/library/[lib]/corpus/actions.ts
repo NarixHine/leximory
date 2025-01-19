@@ -1,6 +1,6 @@
 'use server'
 
-import { authReadToLib } from '@/lib/auth'
+import { authReadToLib } from '@/server/auth/role'
 import { loadWords, drawWords } from '@/server/db/word'
 
 export default async function load(lib: string, cursor?: string) {

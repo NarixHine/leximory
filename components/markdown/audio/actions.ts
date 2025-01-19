@@ -1,9 +1,9 @@
 'use server'
 
-import { authWriteToLib, getAuthOrThrow } from '@/lib/auth'
+import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
 import { elevenLabsVoice } from '@/lib/config'
-import { incrAudioQuota } from '@/lib/quota'
-import { maxAudioQuota } from '@/lib/quota'
+import { incrAudioQuota } from '@/server/auth/quota'
+import { maxAudioQuota } from '@/server/auth/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { getAccentPreference } from '@/server/db/preference'
 import { ElevenLabsClient } from 'elevenlabs'

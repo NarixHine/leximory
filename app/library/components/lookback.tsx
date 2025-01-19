@@ -1,4 +1,4 @@
-import { isListed } from '@/lib/auth'
+import { isListed } from '@/server/auth/role'
 import Markdown from '../../../components/markdown'
 import { ReactNode } from 'react'
 import { getRecentWords } from '@/server/db/word'

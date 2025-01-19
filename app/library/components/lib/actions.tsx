@@ -1,6 +1,6 @@
 'use server'
 
-import { authWriteToLib, getAuthOrThrow } from '@/lib/auth'
+import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
 import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
 import { createLib, deleteLib, updateLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'

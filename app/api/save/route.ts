@@ -1,5 +1,5 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
-import { authWriteToLib } from '@/lib/auth'
+import { authWriteToLib } from '@/server/auth/role'
 import env from '@/lib/env'
 import { originals, validateOrThrow } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'

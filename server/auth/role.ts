@@ -1,6 +1,6 @@
-import { getXataClient } from '@/lib/xata'
+import { getXataClient } from '@/server/client/xata'
 import { auth } from '@clerk/nextjs/server'
-import { Lang, libAccessStatusMap } from './config'
+import { Lang, libAccessStatusMap } from '../../lib/config'
 import { redirect } from 'next/navigation'
 
 const xata = getXataClient()
@@ -94,7 +94,7 @@ const isAccessibleToUserOnly = async () => {
         $any: [
             {
                 ...(await isOwnedByUser()),
-                $notExists: 'lib.org'
+                $notExists: 'lib.org',
             },
             {
                 $all: [

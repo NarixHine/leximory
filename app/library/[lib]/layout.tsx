@@ -1,4 +1,4 @@
-import { authReadToLib } from '@/lib/auth'
+import { authReadToLib } from '@/server/auth/role'
 import { auth } from '@clerk/nextjs/server'
 import Prompt from './components/prompt'
 import Star from './components/star'
@@ -42,7 +42,7 @@ export default async function LibLayout(
         [libAtom, params.lib],
         [isReadOnlyAtom, isReadOnly],
         [langAtom, lang as Lang],
-        [isStarredAtom, isStarred]
+        [isStarredAtom, isStarred],
     ]}>
         {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
         <div className='flex flex-col items-center gap-2 fixed bottom-3 right-3'>

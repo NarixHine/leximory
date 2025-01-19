@@ -1,6 +1,6 @@
 'use server'
 
-import { authWriteToLib } from '@/lib/auth'
+import { authWriteToLib } from '@/server/auth/role'
 import { createText } from '@/server/db/text'
 
 export async function add(lib: string) {

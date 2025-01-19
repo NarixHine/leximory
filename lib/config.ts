@@ -25,10 +25,10 @@ export const langMap: Record<Lang, string> = {
 } as const
 
 export const welcomeMap: Record<Lang, string> = {
-    'zh': '{{欢迎||欢迎||欢迎来到你的新文言文文库！}}',
-    'en': '{{Welcome||welcome||Welcome to your new English library!}}',
-    'ja': '{{ようこそ||ようこそ||新しい日本語ライブラリへようこそ！}}',
-    'nl': '{{Welcome||welcome||Welcome to your new library!}}'
+    'zh': '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
+    'en': '{{Welcome!||welcome||Welcome to your new English library!}}',
+    'ja': '{{ようこそ！||ようこそ||新しい日本語ライブラリへようこそ！}}',
+    'nl': '{{Welcome!||welcome||Welcome to your new library!}}'
 } as const
 
 export const libAccessStatusMap = {

@@ -1,6 +1,6 @@
 'use server'
 
-import { getAuthOrThrow } from '@/lib/auth'
+import { getAuthOrThrow } from '@/server/auth/role'
 import { auth } from '@clerk/nextjs/server'
 import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 

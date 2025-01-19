@@ -5,7 +5,7 @@ import Lookback, { LookbackWrapper } from './components/lookback'
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import { getAuthOrThrow, isListed } from '@/lib/auth'
+import { getAuthOrThrow, isListed } from '@/server/auth/role'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
@@ -39,6 +39,7 @@ async function LibraryList({ mems }: {
         <>
             {data.map(({ lib, count }) => lib && (
                 <Library
+                    shadow={lib.shadow}
                     shortcut={lib.shortcut}
                     access={lib.access}
                     id={lib.id}

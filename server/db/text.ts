@@ -1,10 +1,11 @@
 import 'server-only'
 
 import { randomID } from '@/lib/utils'
-import { getXataClient } from '@/lib/xata'
-import { redis } from '@/lib/redis'
+import { getXataClient } from '@/server/client/xata'
+import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
+import { notFound } from 'next/navigation'
 
 const xata = getXataClient()
 
@@ -34,7 +35,11 @@ export async function getTexts({ lib }: { lib: string }) {
 }
 
 export async function getTextContent({ id }: { id: string }) {
-    const { content, ebook, title, topics, lib } = await xata.db.texts.select(['content', 'ebook', 'title', 'topics', 'lib.name']).filter({ id }).getFirstOrThrow()
+    const text = await xata.db.texts.select(['content', 'ebook', 'title', 'topics', 'lib.name']).filter({ id }).getFirst()
+    if (!text) {
+        notFound()
+    }
+    const { content, ebook, title, topics, lib } = text
     if (!lib) {
         throw new Error('lib not found')
     }

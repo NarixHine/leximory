@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getXataClient } from '@/lib/xata'
+import { getXataClient } from '@/server/client/xata'
 import { PushSubscription } from 'web-push'
 import { revalidatePath } from 'next/cache'
 

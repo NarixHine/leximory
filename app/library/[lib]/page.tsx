@@ -2,7 +2,7 @@ import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
 import Text, { AddTextButton } from './components/text'
-import { authReadToLib } from '@/lib/auth'
+import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibParams } from '@/lib/types'
 

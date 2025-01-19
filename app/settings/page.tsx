@@ -5,7 +5,7 @@ import { Button } from "@heroui/button"
 import Link from 'next/link'
 import { PiFastForwardDuotone } from 'react-icons/pi'
 import Preference from './components/preference'
-import { getAuthOrThrow } from '@/lib/auth'
+import { getAuthOrThrow } from '@/server/auth/role'
 import { HydrationBoundary } from 'jotai-ssr'
 import { accentAtom } from './atoms'
 import { getPreference } from './actions'

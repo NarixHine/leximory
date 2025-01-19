@@ -10,7 +10,7 @@ import { WordChartSkeleton } from '@/components/stats/word-chart'
 import WordStats from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
 import { getSubsStatus } from '@/server/db/subs'
-import { getAuthOrThrow } from '@/lib/auth'
+import { getAuthOrThrow } from '@/server/auth/role'
 
 export const metadata: Metadata = {
     title: '每日汇总',

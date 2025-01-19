@@ -17,6 +17,7 @@ const tables = [
       { name: "access", type: "int", notNull: true, defaultValue: "0" },
       { name: "org", type: "string" },
       { name: "shortcut", type: "bool", notNull: true, defaultValue: "false" },
+      { name: "shadow", type: "bool", notNull: true, defaultValue: "false" },
     ],
     revLinks: [
       { column: "lib", table: "lexicon" },

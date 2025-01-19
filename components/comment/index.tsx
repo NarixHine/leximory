@@ -44,8 +44,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const text = useAtomValue(textAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const isReaderMode = useAtomValue(isReaderModeAtom)
+    const isDeleteable = deleteId && deleteId !== 'undefined'
     const lang = useAtomValue(langAtom)
-    const disableSave = explicitDisableSave || (deleteId && deleteId !== 'undefined') ? true : isReadOnly
     const purifiedParams = params.replaceAll('{{', '').replaceAll('}}', '')
     const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
     const [portions, setPortions] = useState(parsedParams)
@@ -106,18 +106,18 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
     const Save = () => <div className='flex gap-2'>
-        {!disableSave && !isEditing && !isReadOnly && status !== 'saved' && <Button
+        {/* save button: show when user is on the library page / corpus page */}
+        {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
             size='sm'
-            isIconOnly
+            isIconOnly={!isReadOnly}
             isLoading={status === 'loading'}
             startContent={status !== 'loading' && <PiBookBookmarkDuotone />}
             color={'primary'}
             variant='flat'
             onPress={async () => {
-                // Save comment
                 setStatus('loading')
                 try {
-                    const savedId = await saveComment(portions, lib)
+                    const savedId = await saveComment({ portions, lib, shadow: isReadOnly })
                     setStatus('saved')
                     setSavedId(savedId)
                 } catch {
@@ -125,8 +125,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     toast.error('保存失败')
                 }
             }}
-        ></Button>}
-        {editId && !isReadOnly && <>
+        >{isReadOnly ? '存入个人文库' : null}</Button>}
+        {editId && !explicitDisableSave && <>
             <Button
                 isDisabled={status === 'deleted'}
                 size='sm'
@@ -138,8 +138,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
-                        saveComment(editedPortions, lib, editId).then(async () => {
-                            if (content && text) {
+                        saveComment({ portions: editedPortions, lib, editId, shadow: isReadOnly }).then(async () => {
+                            if (content && text && !isReadOnly) {
                                 await modifyText(text, content.replaceAll(`{{${portions.filter(Boolean).join('||')}}}`, `{{${editedPortions.filter(Boolean).join('||')}}}`))
                             }
                             setPortions(editedPortions)
@@ -254,7 +254,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             isLoaded
                                 ? <div>
                                     <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
-                                    {(!disableSave || (deleteId && deleteId !== 'undefined') || lang === 'en') && <Spacer y={4}></Spacer>}
+                                    {(!explicitDisableSave || !isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <Save />
                                 </div>
                                 : userId ? <div className='space-y-3 w-40'>
