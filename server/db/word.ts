@@ -9,6 +9,10 @@ import { getShadowLib } from './lib'
 
 const xata = getXataClient()
 
+export async function getAllWordsInLib({ lib }: { lib: string }) {
+    return await xata.db.lexicon.filter({ lib }).select(['word', 'id']).getAll()
+}
+
 export async function getWord({ id }: { id: string }) {
     return await xata.db.lexicon.filter({ id }).getFirstOrThrow()
 }

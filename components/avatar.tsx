@@ -25,7 +25,8 @@ export default function UserAvatar({ uid }: { uid: string }) {
         startContent={<Suspense fallback={<UserAvatarFallback />}>
             <UserAvatarServer uid={uid} />
         </Suspense>}
-        className='p-0 rounded-full'
+        className='p-0 rounded-full print:hidden'
         isIconOnly
     />
 }
+

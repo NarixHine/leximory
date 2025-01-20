@@ -8,6 +8,9 @@ import Nav from '@/components/nav'
 import { Metadata } from 'next'
 import { getLib } from '@/server/db/lib'
 import { LibParams } from '@/lib/types'
+import Link from 'next/link'
+import { Button } from '@heroui/button'
+import { PiPrinterDuotone } from 'react-icons/pi'
 
 export const metadata: Metadata = {
     title: '语料库'
@@ -26,11 +29,26 @@ export default async function Page(props: LibParams) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
-        <H useNoto>{name}</H>
+        <H useNoto>
+            {name}
+        </H>
         <Spacer y={5}></Spacer>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <div className='sm:col-span-1'>
-                <h2 className='text-xl font-semibold opacity-80'>自我检测</h2>
+                <h2 className='text-xl font-semibold opacity-70'>自我检测</h2>
+                <Button
+                    as={Link}
+                    variant='flat'
+                    fullWidth
+                    color='primary'
+                    radius='lg'
+                    size='sm'
+                    className='mt-2'
+                    href={`/library/${lib}/corpus/print`}
+                    startContent={<PiPrinterDuotone />}
+                >
+                    打印词卡
+                </Button>
                 <Test latestTime={words[0].date}></Test>
             </div>
             <div className='sm:col-span-2'>
