@@ -3,12 +3,13 @@
   "version": "3.8.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "concurrently \"next dev --turbopack\" \"npx inngest-cli@latest dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^0.1.0",
     "@ai-sdk/openai": "^1.0.18",
     "@clerk/localizations": "^3.9.7",
     "@clerk/nextjs": "^6.9.9",
@@ -113,6 +114,7 @@
     "@types/sanitize-html": "^2.11.0",
     "@types/web-push": "^3.6.3",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.1.4",
     "postcss": "^8.4.41",

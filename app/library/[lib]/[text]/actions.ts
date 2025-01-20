@@ -3,12 +3,11 @@
 import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
 import { generateText, streamText } from 'ai'
 import { maxEbookSize } from './components/digest/import'
-import { openai } from '@ai-sdk/openai'
 import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { Lang, maxArticleLength } from '@/lib/config'
+import { Lang, maxArticleLength, DeepseekModel, OpenAIModel } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -84,7 +83,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
     (async () => {
         const { textStream } = await streamText({
-            model: openai('gpt-4o-mini'),
+            model: lang === 'en' ? DeepseekModel : OpenAIModel,
             system: `
             生成词汇注解（形如 [[vocabulary]]，双重中括号内的部分必须注解）。
 
@@ -109,7 +108,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
     }
 
     const { text } = await generateText({
-        model: openai('gpt-4o-mini'),
+        model: lang === 'en' ? DeepseekModel : OpenAIModel,
         system: `
         生成词汇注解（形如 [[vocabulary]]，双重中括号内的部分必须注解）。
 

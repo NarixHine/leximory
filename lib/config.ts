@@ -1,4 +1,6 @@
+import { deepseek } from '@ai-sdk/deepseek'
 import env from './env'
+import { openai } from '@ai-sdk/openai'
 
 export const elevenLabsVoice = {
     'BrE': 'npp2mvZp4jbUrUkhYg8e',
@@ -16,6 +18,9 @@ export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
 
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
+
+export const DeepseekModel = deepseek('deepseek-chat')
+export const OpenAIModel = openai('gpt-4o-mini')
 
 export const langMap: Record<Lang, string> = {
     'zh': '文言文',

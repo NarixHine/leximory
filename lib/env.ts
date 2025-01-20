@@ -12,6 +12,7 @@ const env = createEnv({
         UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
         VAPID_PRIVATE_KEY: z.string().min(1),
         OPENAI_API_KEY: z.string().min(1),
+        DEEPSEEK_API_KEY: z.string().min(1),
     },
 
     client: {
@@ -30,6 +31,7 @@ const env = createEnv({
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
         NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     },

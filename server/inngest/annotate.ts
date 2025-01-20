@@ -1,10 +1,10 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { openai } from '@ai-sdk/openai'
-import { Lang, prefixUrl } from '@/lib/config'
+import { Lang, DeepseekModel, prefixUrl } from '@/lib/config'
 import { setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
+import env from '@/lib/env'
 
 const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string) => ({
     system: `
@@ -114,8 +114,8 @@ export const annotateFullArticle = inngest.createFunction(
         })
 
         const [topics, ...annotatedChunks] = await Promise.all([
-            step.ai.wrap('annotate-topics', generateText, { model: openai('gpt-4o-mini'), ...topicsConfig }),
-            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, { model: openai('gpt-4o-mini'), ...config }))
+            step.ai.wrap('annotate-topics', generateText, { model: DeepseekModel, ...topicsConfig }),
+            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, { model: DeepseekModel, ...config }))
         ])
 
         const content = annotatedChunks.map(chunk => chunk.text).join('\n\n')
