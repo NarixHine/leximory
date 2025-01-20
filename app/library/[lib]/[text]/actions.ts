@@ -49,10 +49,11 @@ export async function generate({ article, textId, onlyComments }: { article: str
     const libId = lib!.id
     const { lang } = await authWriteToLib(libId)
 
-    if (!onlyComments && article.length > maxArticleLength(lang)) {
+    const length = article.length
+    if (length > maxArticleLength(lang)) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota()) {
+    if (await incrCommentaryQuota(Math.ceil(length / 8000))) {
         return { error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` }
     }
 

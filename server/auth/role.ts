@@ -117,13 +117,3 @@ export const isListed = async () => {
     const { orgId } = await getAuthOrThrow()
     return orgId ? isAccessibleToUserOrg() : isAccessibleToUserOnly()
 }
-
-export const isAccessibleAndRelevantToUser = async () => {
-    return {
-        $any: [
-            await isOwnedByUser(),
-            await isAccessibleToUserOnly(),
-            await isAccessibleToUserOrg(),
-        ]
-    }
-}

@@ -29,7 +29,7 @@ export const fanNotification = inngest.createFunction(
                 name: 'app/notify',
                 data: {
                     title: 'Leximory 日报',
-                    body: '回顾今日、昨日、四日前、七日前记忆的语汇。',
+                    body: '回顾你在今日、昨日、四日前、七日前、十四日前记忆的语汇。',
                     url: prefixUrl('/daily'),
                     subscription: JSON.stringify(subscription),
                 },
