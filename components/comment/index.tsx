@@ -30,6 +30,7 @@ interface CommentProps {
     asCard?: boolean
     prompt?: string
     onlyComments?: boolean
+    print?: boolean
 }
 
 interface CommentState {
@@ -38,7 +39,7 @@ interface CommentState {
     savedId: string | null
 }
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print }: CommentProps) {
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
     const text = useAtomValue(textAtom)
@@ -192,6 +193,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
     </div>
 
+    if (print) {
+        return <Note portions={portions}></Note>
+    }
+
     return asCard
         ? <Card shadow='sm' fullWidth radius='sm'>
             <CardBody className='p-6 py-4 leading-snug'>
@@ -304,7 +309,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                     className='mb-2'
                     placeholder='词条'
                 />
-                : <div className={isCompact ? 'font-bold text-[0.8rem]' : 'font-extrabold text-large'}>{portions[1]}</div>
+                : <div className={isCompact ? 'font-bold text-medium' : 'font-extrabold text-large'}>{portions[1]}</div>
         )}
         {portions[2] && <div className={margin}>
             {!isCompact && <div className='font-bold'>释义</div>}

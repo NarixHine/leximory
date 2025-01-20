@@ -22,16 +22,23 @@ export default async function PrintPage({ params }: LibParams) {
         <div className='p-8 print:p-0'>
             <div>
                 <H usePlayfair>语料汇总</H>
-                <div className='flex items-center gap-2 print:hidden'>
+                <div className='flex items-center gap-2 print:hidden pt-1'>
                     <ReaderToggle />
                     <p className='opacity-60'>按 Ctrl + P 打印词卡</p>
                 </div>
             </div>
 
-            <div className='grid grid-cols-2 md:grid-cols-3 gap-4 print:grid-cols-3 p-1'>
-                {words.map(({ word, id }) => (
-                    <Markdown key={id} md={word} onlyComments />
-                ))}
+            <div className='grid grid-cols-2 gap-4'>
+                <div className='col-span-1'>
+                    {words.filter((_, index) => index % 2 === 0).map(({ word, id }) => (
+                        <Markdown key={id} md={word} print />
+                    ))}
+                </div>
+                <div className='col-span-1'>
+                    {words.filter((_, index) => index % 2 === 1).map(({ word, id }) => (
+                        <Markdown key={id} md={word} print />
+                    ))}
+                </div>
             </div>
         </div>
     )
