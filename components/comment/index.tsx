@@ -8,7 +8,7 @@ import { Card, CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesDuotone, PiSignInDuotone } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiSignInDuotone, PiEyesFill } from 'react-icons/pi'
 import { cn, getClickedChunk, randomID } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -31,6 +31,7 @@ interface CommentProps {
     prompt?: string
     onlyComments?: boolean
     print?: boolean
+    shadow?: boolean
 }
 
 interface CommentState {
@@ -39,7 +40,7 @@ interface CommentState {
     savedId: string | null
 }
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, shadow }: CommentProps) {
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
     const text = useAtomValue(textAtom)
@@ -198,7 +199,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <Card shadow='sm' fullWidth radius='sm'>
+        ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
             <CardBody className='p-6 py-4 leading-snug'>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
@@ -206,7 +207,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         <Button
                             variant='ghost'
                             isIconOnly
-                            startContent={<PiEyesDuotone />}
+                            startContent={<PiEyesFill />}
                             color='secondary'
                             className='absolute rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10'
                             onPress={() => setIsVisible(!isVisible)}

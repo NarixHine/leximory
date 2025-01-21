@@ -21,9 +21,9 @@ export default async function Report({ day }: {
     return words.length > 0 ? (
         <div className='my-8'>
             <H disableCenter className='text-xl font-semibold opacity-80 -mb-2'>{day}</H>
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
                 {words.map((word) => (
-                    <Markdown key={word.id} md={word.word} asCard></Markdown>
+                    <Markdown key={word.id} md={word.word} asCard shadow></Markdown>
                 ))}
             </div>
         </div>

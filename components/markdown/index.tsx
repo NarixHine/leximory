@@ -22,9 +22,10 @@ export type MarkdownProps = {
     hasWrapped?: boolean
     onlyComments?: boolean
     print?: boolean
+    shadow?: boolean
 }
 
-export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print }: MarkdownProps) {
+export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
 
     let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
@@ -34,7 +35,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
     result = result
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => portion.replaceAll('"', '\\"'))
-            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '}></Comment>'
+            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
         .replaceAll(/:::([a-f0-9-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
