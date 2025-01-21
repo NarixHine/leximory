@@ -98,6 +98,9 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
 }
 
 export async function aggrMonthlyWordHistogram({ libs }: { libs: string[] }) {
+    if (libs.length === 0) {
+        return []
+    }
     const results = await xata.db.lexicon.aggregate({
         wordsByDate: {
             dateHistogram: {
