@@ -48,7 +48,7 @@ export default function Define() {
         <Drawer.Portal>
             <Drawer.Overlay className='fixed inset-0 bg-black/40 z-40' />
             <Drawer.Content className='h-fit fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-white dark:bg-slate-900 flex flex-col justify-center items-center mx-auto max-w-md z-50'>
-                {selection && selection.anchorNode?.textContent && selection.toString() &&  && <Comment asCard prompt={getBracketedSelection(selection)} params='["", "🔄 加载中"]'></Comment>}
+                {selection && selection.anchorNode?.textContent && selection.toString() && <Comment asCard prompt={getBracketedSelection(selection)} params='["", "🔄 加载中"]'></Comment>}
                 <Logo />
             </Drawer.Content>
         </Drawer.Portal>
