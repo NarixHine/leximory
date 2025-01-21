@@ -206,7 +206,7 @@ function ReadingView() {
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
         {matches.map((match, index) => (
           <div key={index} className='flex justify-center'>
-            <Markdown md={match} onlyComments />
+            <Markdown md={match} onlyComments shadow />
           </div>
         ))}
       </div>
