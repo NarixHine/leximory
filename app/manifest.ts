@@ -4,6 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: 'Leximory',
         short_name: 'Leximory',
+        display_override: ['standalone', 'minimal-ui'],
         icons: [
             {
                 src: '/android-chrome-192x192.png',

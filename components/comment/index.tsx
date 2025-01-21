@@ -128,7 +128,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 }
             }}
         >{isReadOnly ? '存入个人文库' : null}</Button>}
-        {editId && !explicitDisableSave && <>
+        {editId && !explicitDisableSave && !prompt && <>
             <Button
                 isDisabled={status === 'deleted'}
                 size='sm'
