@@ -112,7 +112,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             size='sm'
             isIconOnly={!isReadOnly}
             isLoading={status === 'loading'}
-            startContent={status !== 'loading' && <PiBookBookmarkDuotone />}
+            startContent={status !== 'loading' && <PiBookBookmarkDuotone size={isReadOnly ? 20 : undefined} />}
             color={'primary'}
             variant='flat'
             onPress={async () => {
