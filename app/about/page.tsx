@@ -15,8 +15,8 @@ export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
             <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
-                <TypedTitle />
-            </h1>
+            <TypedTitle />
+            </h1 >
             <div className='flex w-fit mt-1 mb-6'>
                 <Button
                     size='sm'
@@ -60,6 +60,6 @@ export default function About() {
                 ></Button>
             </div>
             <Article />
-        </Main>
+        </Main >
     )
 }

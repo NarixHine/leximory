@@ -21,6 +21,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
+import { useLogSnag } from '@logsnag/next'
 
 interface CommentProps {
     params: string
@@ -69,7 +70,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const commentWord = async (prompt: string) => {
         const { text, error } = await generateSingleComment(prompt, lib)
         if (error) {
-            toast.error(error)
+            toast.error(error, {
+                duration: 10000,
+                action: {
+                    label: '联系我们',
+                    onClick: () => window.open('https://space.bilibili.com/3494376432994441', '_blank')
+                }
+            })
         }
         else if (text) {
             try {
@@ -107,6 +114,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }, [isOnDemand, isLoaded, prompt])
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
+    const { track } = useLogSnag()
     const Save = () => <div className='flex gap-2'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
@@ -118,6 +126,13 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             variant='flat'
             onPress={async () => {
                 setStatus('loading')
+                track({
+                    event: '词汇保存',
+                    channel: 'corpus',
+                    description: `保存了 ${portions[1]}`,
+                    icon: '💾',
+                    tags: { lib }
+                })
                 try {
                     const savedId = await saveComment({ portions, lib, shadow: isReadOnly })
                     setStatus('saved')

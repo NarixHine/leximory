@@ -16,11 +16,13 @@ import { saveEbook, generate, save, setAnnotationProgress } from '../../actions'
 import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
 import { useAtom, useAtomValue } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
-import { isReadOnlyAtom, langAtom } from '../../../atoms'
+import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
+import { useLogSnag } from '@logsnag/next'
 
 export const maxEbookSize = 4 * 1024 * 1024
 
 export default function ImportModal() {
+    const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const lang = useAtomValue(langAtom)
     const text = useAtomValue(textAtom)
@@ -42,6 +44,8 @@ export default function ImportModal() {
     const exceeded = hideText ? false : input.length > maxArticleLength(lang)
 
     const [isGenerating, startGenerating] = useTransition()
+
+    const { track } = useLogSnag()
 
     return (<>
         <div className='px-3 flex justify-center gap-3'>
@@ -84,12 +88,23 @@ export default function ImportModal() {
                                     仅生成词摘
                                 </Switch>
                                 <Button
+                                    data-tag-library={lib}
                                     className='mt-2'
-                                    data-umami-event='文章注解'
                                     color='primary'
                                     fullWidth
                                     isDisabled={isLoading || exceeded || isGenerating}
                                     onPress={() => {
+                                        track({
+                                            event: '文章注解',
+                                            channel: 'annotation',
+                                            description: '生成注解',
+                                            icon: '📝',
+                                            tags: {
+                                                lib,
+                                                text,
+                                                lang
+                                            }
+                                        })
                                         startGenerating(async () => {
                                             await setAnnotationProgress({ id: text, progress: 'annotating' })
                                             setIsLoading(true)

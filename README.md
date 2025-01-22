@@ -38,6 +38,7 @@ UPSTASH_REDIS_REST_TOKEN=<your_upstash_redis_token>
 
 # API keys for AI services
 OPENAI_API_KEY=<your_openai_api_key>
+DEEPSEEK_API_KEY=<your_deepseek_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
 
 # VAPID keys for web push notifications

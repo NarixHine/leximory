@@ -28,10 +28,6 @@ const nextConfig: NextConfig = {
                 source: '/ebooks/:id\\.epub',
                 destination: 'https://us-east-1.storage.xata.sh/:id'
             },
-            {
-                source: '/stats/:match*',
-                destination: 'https://cloud.umami.is/:match*',
-            },
         ]
     },
 }

@@ -8,12 +8,14 @@ import { save, remove } from '../actions'
 import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
-import { Select, SelectItem } from "@heroui/select"
+import { Select, SelectItem } from '@heroui/select'
+import { useLogSnag } from '@logsnag/next'
 
 export default function Bell({ hasSubs, hour = 22 }: {
     hasSubs: boolean
     hour?: number
 }) {
+    const { track } = useLogSnag()
     const [isUpdating, startUpdating] = useTransition()
     const [selectedHour, setSelectedHour] = useState(hour)
 
@@ -32,14 +34,27 @@ export default function Bell({ hasSubs, hour = 22 }: {
         <div className='flex flex-col justify-center items-center space-y-3'>
             <div className='flex gap-2 items-center'>
                 <Button
+                    data-tag-hour={selectedHour}
                     variant={hasSubs ? 'flat' : 'ghost'}
                     isLoading={isUpdating}
                     onPress={() => {
                         startUpdating(async () => {
                             if (hasSubs) {
+                                track({
+                                    event: '关闭每日复习提醒',
+                                    channel: 'notification',
+                                })
                                 await remove()
                             } else {
                                 try {
+                                    track({
+                                        event: '开启每日复习提醒',
+                                        channel: 'notification',
+                                        description: `开启每日于 ${selectedHour} 时提醒`,
+                                        tags: {
+                                            hour: selectedHour
+                                        }
+                                    })
                                     await subscribe()
                                 } catch {
                                     toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')

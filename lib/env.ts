@@ -19,6 +19,8 @@ const env = createEnv({
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
         NEXT_PUBLIC_URL: z.string().min(1),
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
+        NEXT_PUBLIC_LOGSNAG_API_KEY: z.string().min(1),
+        NEXT_PUBLIC_LOGSNAG_PROJECT: z.string().min(1),
     },
 
     runtimeEnv: {
@@ -34,6 +36,8 @@ const env = createEnv({
         DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
         NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        NEXT_PUBLIC_LOGSNAG_API_KEY: process.env.NEXT_PUBLIC_LOGSNAG_API_KEY,
+        NEXT_PUBLIC_LOGSNAG_PROJECT: process.env.NEXT_PUBLIC_LOGSNAG_PROJECT,
     },
 })
 

@@ -3,8 +3,8 @@
 import { HeroUIProvider } from "@heroui/system"
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
-import { ReactNode } from 'react'
-import { ClerkProvider } from '@clerk/nextjs'
+import { ReactNode, useEffect } from 'react'
+import { ClerkProvider, useUser } from '@clerk/nextjs'
 import { zhCN } from '@clerk/localizations'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { dark } from '@clerk/themes'
@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import dynamic from 'next/dynamic'
+import { useLogSnag } from '@logsnag/next'
+import { isProd } from '@/lib/env'
 
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false })
 
@@ -25,6 +27,7 @@ export interface ProvidersProps {
 export function Providers({ children, themeProps }: ProvidersProps) {
 	const router = useRouter()
 	const mode = useSystemColorMode()
+
 	return (
 		<ClerkProvider localization={zhCN} afterSignOutUrl={'/'} appearance={{
 			baseTheme: mode === 'dark' ? dark : undefined,
@@ -50,6 +53,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 								toast: cn('bg-primary-50 text-primary-900 dark:bg-sky-800 dark:text-sky-100 dark:border-0', CHINESE_ZCOOL.className),
 							}
 						}}></Toaster>
+						<LogSnagInit />
 						<PWAPrompt copyTitle='将 Leximory 添加到主屏幕' copyDescription='在主屏幕上快速访问 Leximory PWA' copySubtitle='https://leximory.com/' copyShareStep='点击右上角分享按钮' copyAddToHomeScreenStep='点击"添加到主屏幕"' appIconPath='/apple-touch-icon.png' />
 						{children}
 					</JotaiProvider>
@@ -57,4 +61,26 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 			</HeroUIProvider>
 		</ClerkProvider>
 	)
+}
+
+function LogSnagInit() {
+	const { setUserId, identify, setDebug } = useLogSnag()
+	const { user, isLoaded } = useUser()
+
+	useEffect(() => {
+		setDebug(!isProd)
+		if (isLoaded && user) {
+			const { id, emailAddresses, username } = user
+			const email = emailAddresses[0].emailAddress
+			setUserId(id)
+			identify({
+				user_id: id,
+				properties: {
+					email,
+					name: username ?? email,
+				}
+			})
+		}
+	}, [isLoaded, user])
+	return <></>
 }

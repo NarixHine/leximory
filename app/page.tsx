@@ -47,7 +47,7 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<Button data-umami-event='开始学习' startContent={<PiShootingStarDuotone />} color='primary' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
+				<Button startContent={<PiShootingStarDuotone />} color='primary' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
 			</div>
 		</div>
 

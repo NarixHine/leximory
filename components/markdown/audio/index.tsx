@@ -67,7 +67,7 @@ export default function AudioPlayer({ id, md, ...props }: {
                     controls
                     className='w-full'
                     src={url}
-                /> : <Button data-umami-event={status === 'ungenerated' ? '音频生成' : '音频播放'} isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={() => action()}>
+                /> : <Button isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={() => action()}>
                     {
                         status === 'lengthy' ? '录音文本不多于 5000 字' :
                             status === 'loading' ? '加载中' :

@@ -51,7 +51,6 @@ export default function Test({ latestTime }: {
             </div>
             <form action={drawWords}>
                 <Button
-                    data-umami-event='抽取词汇'
                     size='sm'
                     variant='flat'
                     isLoading={isDrawing}
