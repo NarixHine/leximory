@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, DeepseekModel, prefixUrl } from '@/lib/config'
+import { Lang, DeepseekModel, prefixUrl, langMaxChunkSizeMap } from '@/lib/config'
 import { setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
@@ -33,7 +33,7 @@ const topicsPrompt = async (input: string) => ({
     maxTokens: 100
 })
 
-const chunkText = (text: string, maxLength: number = 3000): string[] => {
+const chunkText = (text: string, maxLength: number): string[] => {
     // Handle edge cases
     if (!text) return []
     if (text.length <= maxLength) return [text]
@@ -105,7 +105,7 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
         })
 
-        const chunks = chunkText(article)
+        const chunks = chunkText(article, langMaxChunkSizeMap[lang])
 
         const { topicsConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
             const topicsConfig = await topicsPrompt(article)

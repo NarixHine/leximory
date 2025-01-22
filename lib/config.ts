@@ -29,6 +29,13 @@ export const langMap: Record<Lang, string> = {
     'nl': '其他'
 } as const
 
+export const langMaxChunkSizeMap: Record<Lang, number> = {
+    'zh': 300,
+    'en': 3000,
+    'ja': 500,
+    'nl': 2000
+} as const
+
 export const welcomeMap: Record<Lang, string> = {
     'zh': '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
     'en': '{{Welcome!||welcome||Welcome to your new English library!}}',
