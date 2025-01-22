@@ -11,6 +11,7 @@ import { generateText } from 'ai'
 import { Lang, supportedLangs, OpenAIModel } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
+import { logsnagServer } from '@/lib/logsnag'
 
 export const maxDuration = 30
 
@@ -39,6 +40,20 @@ export async function POST(request: Request) {
         validateOrThrow(word)
         const { id: lib } = await getShadowLib({ owner: sub })
         await saveWord({ lib, word })
+        const logsnag = logsnagServer()
+        await logsnag.track({
+            event: '快捷注解',
+            channel: 'annotation',
+            icon: '🍎',
+            description: `利用 iOS Shortcuts 注解并保存了 ${portions[1]}`,
+            tags: { lib, lang },
+            user_id: sub,
+        })
+        await logsnag.insight.increment({
+            title: '用户保存的词汇',
+            value: 1,
+            icon: '💾',
+        })
     })
 
     const plainPortions = portions.map((md) => removeMd(md))

@@ -13,6 +13,7 @@ const env = createEnv({
         VAPID_PRIVATE_KEY: z.string().min(1),
         OPENAI_API_KEY: z.string().min(1),
         DEEPSEEK_API_KEY: z.string().min(1),
+        LOGSNAG_SECRET_KEY: z.string().min(1),
     },
 
     client: {
@@ -24,6 +25,7 @@ const env = createEnv({
     },
 
     runtimeEnv: {
+        LOGSNAG_SECRET_KEY: process.env.LOGSNAG_SECRET_KEY,
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
         XATA_API_KEY: process.env.XATA_API_KEY,

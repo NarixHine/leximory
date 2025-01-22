@@ -4,6 +4,8 @@ import { authWriteToLib, authWriteToText, getAuthOrThrow } from '@/server/auth/r
 import { extractSaveForm, validateOrThrow } from '@/lib/lang'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
+import { after } from 'next/server'
+import { logsnagServer } from '@/lib/logsnag'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })
@@ -14,6 +16,14 @@ export async function delComment(id: string) {
 export async function saveComment({ portions, lib, editId, shadow }: { portions: string[], lib: string, editId?: string, shadow?: boolean }) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`.replaceAll('\n', '')
     validateOrThrow(word)
+
+    after(async () => {
+        await logsnagServer().insight.increment({
+            title: '用户保存的词汇',
+            value: 1,
+            icon: '💾',
+        })
+    })
 
     const { userId } = await getAuthOrThrow()
     if (editId) {

@@ -206,7 +206,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 }}
             ></Button>}
         </>}
-        {lang === 'en' && <Button as={Link} href={`https://www.etymonline.com/word/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
+        {(lang === 'en' || lang === 'zh') && <Button as={Link} href={lang === 'en' ? `https://www.etymonline.com/word/${portions[1]}` : `https://www.zdic.net/hans/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
     </div>
 
     if (print) {
