@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { ReactNode, useTransition } from 'react'
 import { Skeleton } from "@heroui/skeleton"
 import { star } from '@/app/library/[lib]/components/actions'
+import { useLogSnag } from '@logsnag/next'
 
 interface LibraryCardProps {
     library: {
@@ -24,6 +25,7 @@ interface LibraryCardProps {
 export default function LibraryCard({ library, isStarred, avatar }: LibraryCardProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
+    const { track } = useLogSnag()
 
     return (
         <Card
@@ -51,6 +53,13 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
                     color='primary'
                     variant={'ghost'}
                     onPress={() => {
+                        track({
+                            event: isStarred ? '取消钉选文库' : '钉选文库',
+                            channel: 'resource-sharing',
+                            icon: '📍',
+                            description: `钉选了 ${library.name}`,
+                            tags: { lib: library.id, lang: library.lang }
+                        })
                         startTransition(() => {
                             star(library.id)
                         })
