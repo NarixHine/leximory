@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     experimental: {
         mdxRs: true,
         ppr: 'incremental',
+        serverActions: {
+            bodySizeLimit: '4mb',
+        },
     },
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {

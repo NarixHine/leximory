@@ -28,7 +28,7 @@ export default function Star() {
                 event: isStarred ? '取消钉选文库' : '钉选文库',
                 channel: 'resource-sharing',
                 icon: '📍',
-                description: `钉选了 ${lib}`,
+                description: `${isStarred ? '取消' : ''}钉选了 ${lib}`,
                 tags: { lib, lang }
             })
             startTransition(() => star(lib))

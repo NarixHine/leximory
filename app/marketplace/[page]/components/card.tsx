@@ -57,7 +57,7 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
                             event: isStarred ? '取消钉选文库' : '钉选文库',
                             channel: 'resource-sharing',
                             icon: '📍',
-                            description: `钉选了 ${library.name}`,
+                            description: `${isStarred ? '取消' : ''}钉选了 ${library.name}`,
                             tags: { lib: library.id, lang: library.lang }
                         })
                         startTransition(() => {
