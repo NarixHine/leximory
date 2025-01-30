@@ -41,7 +41,7 @@ export const authReadToLib = async (lib: string) => {
         ]
     }).getFirstOrThrow()
 
-    const isReadOnly = rec.owner !== (await auth()).userId && (!orgId || orgRole !== 'org:admin')
+    const isReadOnly = rec.owner !== (await auth()).userId && (!orgId || orgId !== rec.org || orgRole !== 'org:admin')
     const isOwner = rec.owner === (await auth()).userId
     const { lang } = rec
     const isOrganizational = !!orgId && rec.org === orgId
