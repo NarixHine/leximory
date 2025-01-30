@@ -15,7 +15,7 @@ async function getData(lib: string) {
 export default async function Page(props: LibParams) {
     const params = await props.params
     const { lib } = params
-    const { texts, name } = await getData(lib)
+    const { texts, name, isReadOnly } = await getData(lib)
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
@@ -30,7 +30,7 @@ export default async function Page(props: LibParams) {
                     hasEbook={hasEbook}
                 ></Text>
             ))}
-            <AddTextButton />
+            {!isReadOnly && <AddTextButton />}
         </div>
     </Main>
 }
