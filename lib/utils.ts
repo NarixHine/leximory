@@ -14,7 +14,7 @@ export async function convertReadableToBinaryFile(readable: Readable) {
         readable.on('end', resolve)
         readable.on('error', reject)
     })
-    return dataBuffer
+    return new File([dataBuffer], 'file', { type: 'audio/mpeg' })
 }
 
 export function getSelectedChunk(selection: Selection) {
