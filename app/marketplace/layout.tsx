@@ -2,7 +2,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { totalPagesAtom } from './atoms'
 import { countPublicLibs } from '@/server/db/lib'
-import { PAGE_SIZE } from './[page]/page'
+import { PAGE_SIZE } from './[page]/pagination'
 
 export const metadata = {
     title: '文库集市'

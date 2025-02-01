@@ -1,5 +1,5 @@
 import Main from '@/components/ui/main'
-import Pagination from './pagination'
+import Pagination, { PAGE_SIZE } from './pagination'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { auth } from '@clerk/nextjs/server'
 import { Spacer } from "@heroui/spacer"
@@ -11,8 +11,6 @@ import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
-
-export const PAGE_SIZE = 6
 
 async function LibraryList({ page }: {
     page: number
