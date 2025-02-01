@@ -30,9 +30,9 @@ export const langMap: Record<Lang, string> = {
 } as const
 
 export const langMaxChunkSizeMap: Record<Lang, number> = {
-    'zh': 300,
+    'zh': 250,
     'en': 3000,
-    'ja': 300,
+    'ja': 200,
     'nl': 1000
 } as const
 
