@@ -2,7 +2,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { totalPagesAtom } from './atoms'
 import { countPublicLibs } from '@/server/db/lib'
-import { PAGE_SIZE } from './[page]/pagination'
+import { MARKETPLACE_PAGE_SIZE } from '@/lib/config'
 
 export const metadata = {
     title: '文库集市'
@@ -10,7 +10,7 @@ export const metadata = {
 
 async function getTotalPages() {
     const total = await countPublicLibs()
-    return Math.ceil(total / PAGE_SIZE)
+    return Math.ceil(total / MARKETPLACE_PAGE_SIZE)
 }
 
 export default async function MarketplaceLayout({

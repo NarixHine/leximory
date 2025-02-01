@@ -63,3 +63,5 @@ export const maxArticleLength = (lang: Lang): number => {
         default: return 5000
     }
 }
+
+export const MARKETPLACE_PAGE_SIZE = 6

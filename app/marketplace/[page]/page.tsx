@@ -1,5 +1,6 @@
 import Main from '@/components/ui/main'
-import Pagination, { PAGE_SIZE } from './pagination'
+import Pagination from './pagination'
+import { MARKETPLACE_PAGE_SIZE } from '@/lib/config'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { auth } from '@clerk/nextjs/server'
 import { Spacer } from "@heroui/spacer"
@@ -16,7 +17,7 @@ async function LibraryList({ page }: {
     page: number
 }) {
     const { userId } = await auth()
-    const libs = await getPaginatedPublicLibs({ page, size: PAGE_SIZE })
+    const libs = await getPaginatedPublicLibs({ page, size: MARKETPLACE_PAGE_SIZE })
     return (
         <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
             {libs.map((lib) => (
