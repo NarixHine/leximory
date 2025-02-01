@@ -15,7 +15,7 @@ export default function About() {
     return (
         <Main className={cn('max-w-screen-sm', CHINESE_ZCOOL.className)}>
             <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
-            <TypedTitle />
+                <TypedTitle />
             </h1 >
             <div className='flex w-fit mt-1 mb-6'>
                 <Button
@@ -26,7 +26,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiTelevisionDuotone />}
                     as={Link}
-                    className='text-xl'
+                    className='text-xl text-pink-400'
                 ></Button>
                 <Button
                     size='sm'

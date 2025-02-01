@@ -122,7 +122,7 @@ export function Article() {
                 <GradientCard
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
-                    to='https://www.cdc.gov/niosh/mining/tools/installpwa.html'
+                    to='/blog/install-pwa'
                     gradient='bg-gradient-to-tl from-primary-50/50 to-warning-100/50'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
