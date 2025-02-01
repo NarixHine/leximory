@@ -36,7 +36,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiGithubLogoDuotone />}
                     as={Link}
-                    className='text-xl'
+                    className='text-xl opacity-50'
                 ></Button>
                 <Button
                     size='sm'
@@ -46,7 +46,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiMailboxDuotone />}
                     as={Link}
-                    className='text-xl'
+                    className='text-xl opacity-50'
                 ></Button>
                 <Button
                     size='sm'
@@ -56,7 +56,7 @@ export default function About() {
                     isIconOnly
                     startContent={<PiPenNibDuotone />}
                     as={Link}
-                    className='text-xl'
+                    className='text-xl opacity-50'
                 ></Button>
             </div>
             <Article />

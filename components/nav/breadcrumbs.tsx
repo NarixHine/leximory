@@ -14,8 +14,8 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     const router = useRouter()
     return !isReaderMode && (
         <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-2'>
-            <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%] backdrop-blur-sm' classNames={{
-                list: 'flex-nowrap bg-[#ece1d9]/70 dark:bg-default-200/70',
+            <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%]' classNames={{
+                list: 'flex-nowrap bg-[#ece1d9]/70 dark:bg-default-200/70 backdrop-blur-sm',
             }}>
                 <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone className='text-[#67595e] dark:text-default-500' />} onPress={() => {
                     router.push(`/library`)
@@ -52,7 +52,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                             }}
                             radius='lg'
                             isIconOnly
-                            className='bg-[#e4d4c8]/50 dark:bg-default-200/50'
+                            className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm'
                             startContent={<PiSkipBackCircleDuotone className='text-[#67595e] dark:text-default-500 text-lg' />}
                         />
                         : <Button
@@ -62,7 +62,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                             as={Link}
                             radius='lg'
                             isIconOnly
-                            className='bg-[#e4d4c8]/50 dark:bg-default-200/50'
+                            className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm'
                             startContent={<PiBookBookmarkDuotone className='text-[#67595e] dark:text-default-500 text-medium' />}
                         />
                 )

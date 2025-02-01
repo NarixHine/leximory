@@ -92,6 +92,7 @@ const config: Config = {
           colors: {
             // Light theme background set to "paper"
             background: '#FFFCF0',
+            foreground: '#100F0F',
 
             // Use "base" scale for default (in normal order)
             default: {
@@ -174,6 +175,7 @@ const config: Config = {
           colors: {
             // Dark theme background set to "black"
             background: '#100F0F',
+            foreground: '#CECDC3',
 
             // Use "base" scale for default (reversed order)
             default: {

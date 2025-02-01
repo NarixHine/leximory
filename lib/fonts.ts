@@ -1,6 +1,6 @@
 import { Noto_Serif_SC, Lora, Ma_Shan_Zheng, ZCOOL_XiaoWei, Playfair_Display, Montserrat } from 'next/font/google'
 
-export const CHINESE = Noto_Serif_SC({ subsets: ['latin'], weight: ['300', '400', '700'] })
+export const CHINESE = Noto_Serif_SC({ subsets: ['latin'], weight: 'variable' })
 export const ENGLISH = Montserrat({ subsets: ['latin', 'latin-ext'], weight: 'variable' })
 export const ENGLISH_SERIF = Lora({ subsets: ['latin'], weight: 'variable' })
 export const CHINESE_CALLIGRAPHY = Ma_Shan_Zheng({ subsets: ['latin'], weight: ['400'] })

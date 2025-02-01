@@ -32,12 +32,12 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     themes.override('direction', 'ltr')
     switch (theme) {
         case 'dark': {
-            themes.override('color', '#fff')
+            themes.override('color', '#CECDC3')
             themes.override('background', '#100F0F')
             break
         }
         case 'light': {
-            themes.override('color', '#000')
+            themes.override('color', '#100F0F')
             themes.override('background', '#FFFCF0')
             break
         }
@@ -96,6 +96,7 @@ export default function Ebook() {
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
+    
     const theme = useSystemColorMode()
     useEffect(() => {
         if (themeRendition.current) {
@@ -116,7 +117,11 @@ export default function Ebook() {
                 position: isFullViewport ? 'fixed' : 'relative',
                 width: isFullViewport ? '100dvw' : 'auto',
                 height: isFullViewport ? '100dvh' : 'auto',
-                zIndex: isFullViewport ? 999 : 0
+                zIndex: isFullViewport ? 999 : 0,
+                left: isFullViewport ? 0 : 'auto',
+                top: isFullViewport ? 0 : 'auto',
+                padding: isFullViewport ? 15 : 0,
+                right: isFullViewport ? 0 : 'auto',
             }}
             transition={{
                 duration: 0.5,
@@ -126,12 +131,6 @@ export default function Ebook() {
                 }
             }}
             layout='preserve-aspect'
-            animate={{
-                left: isFullViewport ? 0 : 'auto',
-                top: isFullViewport ? 0 : 'auto',
-                padding: isFullViewport ? 15 : 0,
-                right: isFullViewport ? 0 : 'auto',
-            }}
         >
             <Button startContent={<PiFrameCornersDuotone />} color='primary' variant={isFullViewport ? 'flat' : 'ghost'} radius='full' fullWidth onPress={async () => {
                 try {
