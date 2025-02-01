@@ -8,10 +8,11 @@ import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
 import { generateText } from 'ai'
-import { Lang, supportedLangs, OpenAIModel } from '@/lib/config'
+import { Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { logsnagServer } from '@/lib/logsnag'
+import { openai } from '@ai-sdk/openai'
 
 export const maxDuration = 30
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
 
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
-        model: OpenAIModel,
+        model: openai('gpt-4o-mini'),
         prompt: `请判断双重方括号中的单词最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
     })

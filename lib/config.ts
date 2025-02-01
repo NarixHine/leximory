@@ -19,8 +19,12 @@ export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
-export const DeepseekModel = deepseek('deepseek-chat')
-export const OpenAIModel = openai('gpt-4o-mini')
+export const bestModel = {
+    'zh': deepseek('deepseek-chat'),
+    'en': deepseek('deepseek-chat'),
+    'ja': openai('gpt-4o-mini'),
+    'nl': deepseek('deepseek-chat')
+}
 
 export const langMap: Record<Lang, string> = {
     'zh': '文言文',
@@ -30,9 +34,9 @@ export const langMap: Record<Lang, string> = {
 } as const
 
 export const langMaxChunkSizeMap: Record<Lang, number> = {
-    'zh': 250,
+    'zh': 300,
     'en': 3000,
-    'ja': 200,
+    'ja': 1000,
     'nl': 1000
 } as const
 

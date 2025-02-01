@@ -7,7 +7,7 @@ import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { Lang, maxArticleLength, DeepseekModel, OpenAIModel } from '@/lib/config'
+import { bestModel, Lang, maxArticleLength } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -83,7 +83,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
     (async () => {
         const { textStream } = await streamText({
-            model: lang === 'en' ? DeepseekModel : OpenAIModel,
+            model: bestModel[lang],
             system: `
             生成词汇注解（形如 [[vocabulary]]，双重中括号内的部分必须注解）。
 
@@ -108,7 +108,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
     }
 
     const { text } = await generateText({
-        model: lang === 'en' ? DeepseekModel : OpenAIModel,
+        model: bestModel[lang],
         system: `
         生成词汇注解（形如 [[vocabulary]]，双重中括号内的部分必须注解）。
 

@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, DeepseekModel, prefixUrl, langMaxChunkSizeMap } from '@/lib/config'
+import { Lang, prefixUrl, langMaxChunkSizeMap, bestModel } from '@/lib/config'
 import { setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
@@ -114,8 +114,8 @@ export const annotateFullArticle = inngest.createFunction(
         })
 
         const [topics, ...annotatedChunks] = await Promise.all([
-            step.ai.wrap('annotate-topics', generateText, { model: DeepseekModel, ...topicsConfig }),
-            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, { model: DeepseekModel, ...config }))
+            step.ai.wrap('annotate-topics', generateText, { model: bestModel[lang], ...topicsConfig }),
+            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, { model: bestModel[lang], ...config }))
         ])
 
         const content = annotatedChunks.map(chunk => chunk.text).join('\n\n')
