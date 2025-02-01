@@ -108,8 +108,8 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 }}>{name}</a>
                 <Spacer y={2}></Spacer>
                 <div className='flex space-x-2'>
-                    {shadow && <Chip key='shadow' variant='flat' color='secondary' classNames={{ base: 'border-1' }}>默认</Chip>}
-                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary' classNames={{ base: 'border-1' }}>{tag}</Chip>)}
+                    {shadow && <Chip key='shadow' variant='flat' color='secondary'>默认</Chip>}
+                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary'>{tag}</Chip>)}
                 </div>
             </CardBody>
             <CardFooter className='px-4 pb-4 flex gap-4'>

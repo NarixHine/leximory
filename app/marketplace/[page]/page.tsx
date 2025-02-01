@@ -12,11 +12,13 @@ import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 
+export const PAGE_SIZE = 6
+
 async function LibraryList({ page }: {
     page: number
 }) {
     const { userId } = await auth()
-    const libs = await getPaginatedPublicLibs({ page, size: 12 })
+    const libs = await getPaginatedPublicLibs({ page, size: PAGE_SIZE })
     return (
         <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
             {libs.map((lib) => (

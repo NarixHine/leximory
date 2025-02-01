@@ -63,7 +63,7 @@ export async function deleteWord(id: string) {
 
 export async function loadWords({ lib, cursor }: { lib: string, cursor?: string }) {
     const res = await xata.db.lexicon.filter({ lib }).sort('xata.createdAt', 'desc').select(['word']).getPaginated({
-        pagination: { size: 16, after: cursor },
+        pagination: { size: 20, after: cursor },
     })
     return { words: res.records.map(({ word, id, xata }) => ({ word, id, date: xata.createdAt.toISOString().split('T')[0] })), cursor: res.meta.page.cursor, more: res.meta.page.more }
 }

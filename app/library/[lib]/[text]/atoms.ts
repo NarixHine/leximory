@@ -12,16 +12,5 @@ export const inputAtom = atom('')
 export const isLoadingAtom = atom(false)
 export const isEditingAtom = atom(false)
 export const topicsAtom = atom<string[]>([])
-export const lexiconAtom = atomWithStorage<CustomLexicon>('persist-lexicon', 'gaozhong', {
-    getItem: (key, initialValue) => {
-        const storedValue = document.cookie.split('; ').find(row => row.startsWith(`${key}=`))
-        return storedValue ? JSON.parse(decodeURIComponent(storedValue.split('=')[1])) : initialValue
-    },
-    setItem: (key, value) => {
-        document.cookie = `${key}=${encodeURIComponent(JSON.stringify(value))}; path=/`
-    },
-    removeItem: (key) => {
-        document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
-    }
-})
+export const lexiconAtom = atomWithStorage<CustomLexicon>('persist-lexicon', 'gaozhong')
 export const hideTextAtom = atom(false)
