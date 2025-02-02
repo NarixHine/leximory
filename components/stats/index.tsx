@@ -22,7 +22,7 @@ export function formatChartData(countMap: Map<string, number>, size: number) {
     }).reverse()
 
     const data = dates.map(date => ({
-        date: new Date(date).toLocaleDateString('zh-CN'),
+        date: moment(date).format('MMM Do'),
         '记忆单词数': countMap.get(date) || 0
     }))
 
