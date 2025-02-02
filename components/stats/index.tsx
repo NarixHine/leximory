@@ -12,11 +12,11 @@ export default async function WordStats({ uid }: { uid: string }) {
         ])
     )
 
-    return <WordChart data={formatChartData(countMap)} />
+    return <WordChart data={formatChartData(countMap, 30)} />
 }
 
-export function formatChartData(countMap: Map<string, number>) {
-    const dates = Array.from({ length: 30 }, (_, i) => {
+export function formatChartData(countMap: Map<string, number>, size: number) {
+    const dates = Array.from({ length: size }, (_, i) => {
         const d = moment().subtract(i, 'days').toDate()
         return d.toISOString().split('T')[0]
     }).reverse()

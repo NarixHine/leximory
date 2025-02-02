@@ -97,7 +97,7 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
     return words.map(({ word, id }) => ({ word, id }))
 }
 
-export async function aggrMonthlyWordHistogram({ libs }: { libs: string[] }) {
+export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {
     if (libs.length === 0) {
         return []
     }
@@ -112,7 +112,7 @@ export async function aggrMonthlyWordHistogram({ libs }: { libs: string[] }) {
         $all: [
             {
                 day: {
-                    $ge: moment().subtract(30, 'days').toDate()
+                    $ge: moment().subtract(size, 'days').toDate()
                 }
             },
             {
