@@ -20,7 +20,7 @@ export default function WordChart({ data }: { data: WordData[] }) {
 export function WordChartSkeleton() {
     return <LineChart
         className='opacity-30 animate-pulse'
-        data={formatChartData(new Map())}
+        data={formatChartData(new Map(), 30)}
         index='date'
         categories={['记忆单词数']}
         showLegend
