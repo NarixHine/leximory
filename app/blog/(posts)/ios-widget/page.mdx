@@ -1,0 +1,50 @@
+import UID from './uid'
+
+export const metadata = {
+    title: 'iOS 词汇统计小组件',
+    description: 'Leximory 支持通过 iOS Widgy 在主屏幕上展示词汇学习统计。',
+}
+
+# iOS 词汇统计小组件
+
+![Widgy 组件](/ios-widget/screenshot.webp)
+
+> Widgy 是一款强大的 iOS 小组件制作工具，可以自定义各种精美的小组件展示在主屏幕上。
+
+
+在 iOS 设备上可以**通过 [Widgy](https://apps.apple.com/app/widgy/id1524540481) 在主屏幕上展示 Leximory 的词汇学习统计**，实时掌握学习进度。
+
+本文将介绍如何设置和使用这个功能。
+
+## 第一步：获取组件
+
+1. 安装 [Widgy](https://apps.apple.com/app/widgy/id1524540481)
+2. 打开 [Widgy 链接](widgyURL://widgy.icu/api/v1/widgy/9e1ee8d8-815d-4adf-83c9-11aa8a672650) 获取 Leximory 统计组件
+3. 按提示导入组件到 Widgy
+
+## 第二步：修改数据来源
+
+1. 在 Widgy 中编辑组件
+2. 找到折线图数据源 URL
+3. 将 URL 中的用户 ID 参数替换为你的用户 ID
+
+你的用户 ID 是：
+
+<UID />
+
+## 第三步：添加到主屏幕
+
+
+1. 长按主屏幕空白处进入编辑模式
+2. 点击左上角 `+` 号
+3. 找到并选择 Widgy
+4. 选择导入的 Leximory 统计组件
+
+## 额外功能：点击打开 Leximory
+
+如果想要点击小组件直接打开 Leximory：
+
+1. 确保[已安装 PWA 版本](/blog/install-pwa) Leximory
+1. 打开 [iCloud 链接](https://www.icloud.com/shortcuts/98690fe010f14931a8982f7f8d7a02ee) 获取配套 Shortcut
+
+现在你的 iOS 设备主屏幕上就有了 Leximory 的词汇学习统计小组件！它会实时显示你的学习进度，帮助你保持学习动力。点击小组件还可以直接打开 Leximory，开启新一轮的词汇学习。
