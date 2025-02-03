@@ -1,6 +1,7 @@
 import { deepseek } from '@ai-sdk/deepseek'
 import env from './env'
 import { openai } from '@ai-sdk/openai'
+import { get } from '@vercel/edge-config'
 
 export const elevenLabsVoice = {
     'BrE': 'npp2mvZp4jbUrUkhYg8e',
@@ -19,11 +20,14 @@ export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
-export const bestModel = {
-    'zh': deepseek('deepseek-chat'),
-    'en': deepseek('deepseek-chat'),
-    'ja': openai('gpt-4o-mini'),
-    'nl': deepseek('deepseek-chat')
+export const getBestModel = async (lang: Lang) => {
+    const deepseekDown = await get('deepseek-is-down')
+    switch (lang) {
+        case 'zh': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
+        case 'en': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
+        case 'ja': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
+        case 'nl': return openai('gpt-4o-mini')
+    }
 }
 
 export const langMap: Record<Lang, string> = {

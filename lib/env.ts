@@ -14,6 +14,7 @@ const env = createEnv({
         OPENAI_API_KEY: z.string().min(1),
         DEEPSEEK_API_KEY: z.string().min(1),
         LOGSNAG_SECRET_KEY: z.string().min(1),
+        EDGE_CONFIG: z.string().min(1),
     },
 
     client: {
@@ -40,6 +41,7 @@ const env = createEnv({
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
         NEXT_PUBLIC_LOGSNAG_API_KEY: process.env.NEXT_PUBLIC_LOGSNAG_API_KEY,
         NEXT_PUBLIC_LOGSNAG_PROJECT: process.env.NEXT_PUBLIC_LOGSNAG_PROJECT,
+        EDGE_CONFIG: process.env.EDGE_CONFIG,
     },
 })
 

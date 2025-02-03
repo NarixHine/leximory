@@ -49,6 +49,9 @@ VAPID_PRIVATE_KEY=<your_vapid_private_key>
 INNGEST_SIGNING_KEY=<your_inggest_signing_key>
 INNGEST_EVENT_KEY=<your_inggest_event_key>
 
+# Vercel Edge Config for AI provider status
+EDGE_CONFIG=your_vercel_edge_config_url
+
 NEXT_PUBLIC_URL=https://leximory.com
 ```
 
@@ -61,15 +64,7 @@ NEXT_PUBLIC_URL=https://leximory.com
 
 ### Initialise Database
 
-You need to initialise the Xata database first. 
-
-Generate the schema for Leximory by running the following command:
-
-```bash
-xata schema upload schema.json
-```
-
-You can find more specific documentation [on their website](https://xata.io/docs/getting-started/cli#schema).
+You need to initialise the Xata database first according to [the schema](./server/client/xata.ts).
 
 ### Starting Development Server
 

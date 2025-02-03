@@ -42,7 +42,7 @@ async function LibraryList({ mems }: {
                     shadow={lib.shadow}
                     access={lib.access}
                     id={lib.id}
-                    key={lib.name}
+                    key={lib.id}
                     name={lib.name}
                     lang={lib.lang}
                     lexicon={{ count }}
