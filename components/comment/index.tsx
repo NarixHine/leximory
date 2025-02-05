@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
+import { bilibiliLink } from '@/lib/config'
 
 interface CommentProps {
     params: string
@@ -74,7 +75,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 duration: 10000,
                 action: {
                     label: '联系我们',
-                    onClick: () => window.open('https://space.bilibili.com/3494376432994441', '_blank')
+                    onClick: () => window.open(bilibiliLink, '_blank')
                 }
             })
         }

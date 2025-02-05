@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone } from 'react-icons/pi'
 import { Metadata } from 'next'
 import { TypedTitle, Article } from './article'
+import { bilibiliLink } from '@/lib/config'
 
 export const metadata: Metadata = {
     title: 'How to Use Leximory'
@@ -22,7 +23,7 @@ export default function About() {
                     size='sm'
                     variant='light'
                     radius='full'
-                    href='https://space.bilibili.com/3494376432994441/'
+                    href={bilibiliLink}
                     isIconOnly
                     startContent={<PiTelevisionDuotone />}
                     as={Link}

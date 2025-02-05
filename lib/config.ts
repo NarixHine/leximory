@@ -16,6 +16,7 @@ export const exampleSharedLib = {
 } as const
 
 export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
+export const bilibiliLink = 'https://space.bilibili.com/3494376432994441/' as const
 
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]

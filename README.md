@@ -71,7 +71,7 @@ You need to initialise the Xata database first according to [the schema](./serve
 After installing dependencies, run:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Access the application at `http://localhost:3000`.
