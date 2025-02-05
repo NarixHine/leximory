@@ -14,8 +14,6 @@ import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { logsnagServer } from '@/lib/logsnag'
 import { openai } from '@ai-sdk/openai'
 
-export const maxDuration = 30
-
 const schema = z.object({
     word: z.string(),
     token: z.string()
