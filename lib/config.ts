@@ -26,7 +26,7 @@ export const getBestModel = async (lang: Lang) => {
     switch (lang) {
         case 'zh': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
         case 'en': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
-        case 'ja': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
+        case 'ja': return openai('gpt-4o-mini')
         case 'nl': return openai('gpt-4o-mini')
     }
 }
