@@ -30,7 +30,7 @@ export default function FollowUs() {
                             <FaBilibili />在 B 站上关注 Leximory
                         </ModalHeader>
 
-                        <ModalBody className={'prose prose-invert prose-p:my-1'}>
+                        <ModalBody className={'prose dark:prose-invert prose-p:my-1'}>
                             <p>
                                 嗨，我们会在 B 站上不定期发布一些<span className='font-semibold'>学习资料</span>和<span className='font-semibold'>使用教程</span>。如欲了解最新开发进度，也请关注<Link href={bilibiliLink} className='text-primary underline underline-offset-4'>我们的频道</Link>。
                             </p>
