@@ -73,18 +73,19 @@ export default function Test({ latestTime }: {
                 >
                     抽取
                 </Button>
-                <Button
+                {!isReadOnly && <Button
                     size='sm'
                     variant='flat'
                     isLoading={isGettingWithin}
                     startContent={!isGettingWithin && <PiMagicWandDuotone className='text-xl' />}
                     color='secondary'
                     onPress={() => {
+
                         startGettingWithin(async () => {
                             const comments = await getWithin(retrieveConfig)
                             if (await ConfirmStory.call({ comments })) {
                                 generateStory({ comments, lib })
-                                    .then(async ({ success, error }) => {
+                                    .then(async ({ success, message }) => {
                                         if (success) {
                                             track({
                                                 channel: 'annotation',
@@ -94,7 +95,7 @@ export default function Test({ latestTime }: {
                                                     lib,
                                                 }
                                             })
-                                            toast.success('生成后故事会出现在本文库文本内', {
+                                            toast.success(message, {
                                                 action: {
                                                     label: '设置提醒',
                                                     onClick: () => {
@@ -103,7 +104,7 @@ export default function Test({ latestTime }: {
                                                 }
                                             })
                                         } else {
-                                            toast.error(error)
+                                            toast.error(message)
                                         }
                                     })
                             }
@@ -111,7 +112,7 @@ export default function Test({ latestTime }: {
                     }}
                 >
                     故事
-                </Button>
+                </Button>}
             </form>
         </div>
     </div>
