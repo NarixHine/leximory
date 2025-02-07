@@ -18,12 +18,11 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string) => ({
         5. 确保故事内容无任何不当内容
     `,
     prompt: `
-        ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : `
-            语言：${lang}。
-            请使用以下词汇创作一个短篇故事，以下关键词用双重大括号（{{ }}）包裹：
-            ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
-        `}
+        ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : `语言：${lang}。`}
+        请使用以下词汇创作一个短篇故事，以下关键词用双重大括号（{{ }}）包裹：
+        ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
+
     maxTokens: 2000
 
 })
