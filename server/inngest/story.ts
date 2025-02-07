@@ -27,7 +27,7 @@ const storyPrompt = async (words: { word: string, meaning: string }[], lang: Lan
     maxTokens: 2000
 })
 
-export const generateDailyStory = inngest.createFunction(
+export const generateStory = inngest.createFunction(
     { id: 'generate-daily-story' },
     { event: 'app/story.requested' },
     async ({ step, event }) => {
