@@ -92,7 +92,7 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
         ]
     }).getMany({
         pagination: {
-            size: 50,
+            size: 100,
         }
     })
     return words.map(({ word, id }) => ({ word, id }))
