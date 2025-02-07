@@ -15,6 +15,7 @@ import { I18nProvider } from '@react-aria/i18n'
 import { ConfirmStory } from './confirm-story'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useLogSnag } from '@logsnag/next'
 
 export default function Test({ latestTime }: {
     latestTime: string
@@ -33,6 +34,7 @@ export default function Test({ latestTime }: {
     }, [])
     const [isGettingWithin, startGettingWithin] = useTransition()
     const router = useRouter()
+    const { track } = useLogSnag()
 
     return <div>
         <ConfirmStory.Root></ConfirmStory.Root>
@@ -82,21 +84,28 @@ export default function Test({ latestTime }: {
                             const comments = await getWithin(retrieveConfig)
                             if (await ConfirmStory.call({ comments })) {
                                 generateStory({ comments, lib })
-                                    .then(async (res) => {
-                                        if (res.success) {
+                                    .then(async ({ success, error }) => {
+                                        if (success) {
+                                            track({
+                                                channel: 'annotation',
+                                                event: '生成小故事',
+                                                icon: '👀',
+                                                tags: {
+                                                    lib,
+                                                }
+                                            })
                                             toast.success('生成后故事会出现在本文库文本内', {
                                                 action: {
                                                     label: '设置提醒',
-
-                                                onClick: () => {
-                                                    router.push(`/daily`)
+                                                    onClick: () => {
+                                                        router.push(`/daily`)
+                                                    }
                                                 }
-                                            }
-                                        })
-                                    } else {
-                                        toast.error(res.error)
-                                    }
-                                })
+                                            })
+                                        } else {
+                                            toast.error(error)
+                                        }
+                                    })
                             }
                         })
                     }}

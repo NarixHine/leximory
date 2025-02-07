@@ -25,7 +25,7 @@ export async function generateStory({ comments, lib }: { comments: string[], lib
     const { userId } = await getAuthOrThrow()
     await authWriteToLib(lib)
 
-    if (await incrCommentaryQuota(1)) {
+    if (await incrCommentaryQuota(2)) {
         return {
             success: false,
             error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。`
