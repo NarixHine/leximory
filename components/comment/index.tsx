@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
 import { bilibiliLink } from '@/lib/config'
+import { parseCommentParams } from '@/lib/lang'
 
 interface CommentProps {
     params: string
@@ -50,8 +51,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const isDeleteable = deleteId && deleteId !== 'undefined'
     const lang = useAtomValue(langAtom)
-    const purifiedParams = params.replaceAll('{{', '').replaceAll('}}', '')
-    const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
+    const parsedParams = parseCommentParams(params)
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)

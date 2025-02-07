@@ -70,11 +70,12 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
 
 export async function drawWords({ lib, start, end, size }: { lib: string, start: Date, end: Date, size: number }) {
     const words = await xata.db.lexicon.sort('*', 'random').select(['word']).filter({ 'lib.id': lib, 'xata.createdAt': { $gt: start, $lt: end } }).getMany({ pagination: { size } })
-    return words.map(({ word, id }) => ({ word, id }))
+    return words
 }
 
 export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, filter: Record<string, any> }) {
     const words = await xata.db.lexicon.select(['id', 'word']).filter({
+
         $all: [
             filter,
             {

@@ -1,6 +1,6 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import env from '@/lib/env'
-import { originals, validateOrThrow } from '@/lib/lang'
+import { originals, parseComment, validateOrThrow } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { verifyToken } from '@clerk/nextjs/server'
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
         throw new Error(comment.error)
     }
 
-    const portions = comment.replaceAll('{', '').replaceAll('}', '').split('||')
+    const portions = parseComment(comment)
     after(async () => {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
         validateOrThrow(word)

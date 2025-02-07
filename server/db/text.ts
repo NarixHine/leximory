@@ -6,6 +6,7 @@ import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
 import { revalidatePath } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { Lang } from '@/lib/config'
 
 const xata = getXataClient()
 
@@ -17,6 +18,16 @@ export async function createText({ lib }: { lib: string }) {
     })
     revalidatePath(`/library/${lib}`)
     return id
+}
+
+export async function createTextWithData({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
+    const text = await xata.db.texts.create({
+        lib,
+        title,
+        content,
+        topics
+    })
+    return text
 }
 
 export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
@@ -64,4 +75,9 @@ export async function getTextAnnotationProgress({ id }: { id: string }) {
 
 export async function setTextAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
     await redis.set(`text:${id}:annotation`, progress)
+}
+
+export async function getLibIdAndLangOfText({ id }: { id: string }) {
+    const text = await xata.db.texts.select(['lib.id', 'lib.lang']).filter({ id }).getFirstOrThrow()
+    return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
 }

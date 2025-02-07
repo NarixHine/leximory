@@ -13,17 +13,24 @@ type NotifyUser = {
 type ArticleImported = {
     data: {
         article: string
-        lang: Lang
         textId: string
-        libId: string
         onlyComments: boolean
         userId: string
+    }
+}
+
+interface StoryRequested {
+    data: {
+        comments: string[]
+        userId: string
+        libId: string
     }
 }
 
 type Events = {
     'app/notify': NotifyUser
     'app/article.imported': ArticleImported
+    'app/story.requested': StoryRequested
 }
 
 export const inngest = new Inngest({

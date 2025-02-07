@@ -25,6 +25,8 @@ export function WordChartSkeleton() {
         categories={['记忆单词数']}
         showLegend
         colors={['default']}
+
+
         startEndOnly
     />
 } 

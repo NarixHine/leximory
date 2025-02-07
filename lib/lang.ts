@@ -15,6 +15,17 @@ export function validateOrThrow(word: string) {
     return word
 }
 
+export function parseCommentParams(word: string) {
+    const purifiedParams = word.replaceAll('{{', '').replaceAll('}}', '')
+    const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
+    return parsedParams
+}
+
+export function parseComment(comment: string) {
+    const portions = comment.replaceAll('{', '').replaceAll('}', '').split('||')
+    return portions
+}
+
 export const originals = (word: string): string[] => [...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)])]
 
 export default function wrap(text: string, lexicon?: CustomLexicon): string {

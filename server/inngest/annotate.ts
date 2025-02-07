@@ -1,10 +1,9 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
 import { Lang, prefixUrl, langMaxChunkSizeMap, getBestModel } from '@/lib/config'
-import { setTextAnnotationProgress, updateText } from '../db/text'
+import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
-import env from '@/lib/env'
 
 const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string) => ({
     system: `
@@ -99,7 +98,11 @@ export const annotateFullArticle = inngest.createFunction(
     { id: 'annotate-article' },
     { event: 'app/article.imported' },
     async ({ step, event }) => {
-        const { article, lang, textId, libId, onlyComments, userId } = event.data
+        const { article, textId, onlyComments, userId } = event.data
+
+        const { libId, lang } = await step.run('get-lib-id', async () => {
+            return await getLibIdAndLangOfText({ id: textId })
+        })
 
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
