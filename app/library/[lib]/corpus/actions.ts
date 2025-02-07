@@ -5,7 +5,6 @@ import { loadWords, drawWords } from '@/server/db/word'
 import { getAuthOrThrow } from '@/server/auth/role'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { inngest } from '@/server/inngest/client'
-import { parseComment } from '@/lib/lang'
 
 export default async function load(lib: string, cursor?: string) {
     await authReadToLib(lib)
