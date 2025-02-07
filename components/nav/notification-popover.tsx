@@ -17,9 +17,6 @@ export default function NotificationPopover({ notices }: { notices: z.infer<type
     const [lastOpenDate, setLastOpenDate] = useAtom(lastOpenDateAtom)
     const [isOpen, setIsOpen] = useState(false)
     const handleOpen = () => {
-
-
-        console.log(isNew)
         setLastOpenDate(new Date().toISOString())
         setIsOpen(!isOpen)
     }
