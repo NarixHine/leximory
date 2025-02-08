@@ -1,5 +1,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redis } from '../client/redis'
+import { incrementQuota, getQuota } from '../db/quota'
+import { getAuthOrThrow } from './role'
 
 const getPlan = async (userId?: string) => {
     return userId ? (await (await clerkClient()).users.getUser(userId)).publicMetadata.plan : (await auth()).sessionClaims?.plan
@@ -28,45 +30,28 @@ export const maxAudioQuota = async () => {
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {
-    const userId = explicitUserId ?? (await auth()).userId
-    const quotaKey = `user:${userId}:commentary_quota`
-
-    const quota = await redis.incrbyfloat(quotaKey, incrBy)
-
-    if (quota === 1) {
-        await redis.expire(quotaKey, 60 * 60 * 24 * 30)
-    }
-
+    const userId = explicitUserId ?? (await getAuthOrThrow()).userId
+    const quota = await incrementQuota(userId, 'commentary', incrBy)
     return quota > await maxCommentaryQuota(explicitUserId)
 }
 
 export async function getCommentaryQuota() {
-    const { userId } = await auth()
-    const quotaKey = `user:${userId}:commentary_quota`
-
-    const quota: number = (await redis.get(quotaKey)) ?? 0
-
-    return { quota, max: await maxCommentaryQuota(), percentage: Math.floor(100 * quota / await maxCommentaryQuota()) }
+    const { userId } = await getAuthOrThrow()
+    const quota = await getQuota(userId, 'commentary')
+    const max = await maxCommentaryQuota()
+    return { quota, max, percentage: Math.floor(100 * quota / max) }
 }
 
 export async function incrAudioQuota() {
-    const { userId } = await auth()
-    const quotaKey = `user:${userId}:audio_quota`
-
-    const quota = await redis.incr(quotaKey)
-
-    if (quota === 1) {
-        await redis.expire(quotaKey, 60 * 60 * 24 * 30)
-    }
-
+    const { userId } = await getAuthOrThrow()
+    const quota = await incrementQuota(userId, 'audio')
     return quota > await maxAudioQuota()
 }
 
+
 export async function getAudioQuota() {
-    const { userId } = await auth()
-    const quotaKey = `user:${userId}:audio_quota`
-
-    const quota: number = (await redis.get(quotaKey)) ?? 0
-
-    return { quota, max: await maxAudioQuota(), percentage: Math.floor(100 * quota / await maxAudioQuota()) }
+    const { userId } = await getAuthOrThrow()
+    const quota = await getQuota(userId, 'audio')
+    const max = await maxAudioQuota()
+    return { quota, max, percentage: Math.floor(100 * quota / max) }
 }

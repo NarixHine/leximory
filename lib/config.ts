@@ -25,7 +25,7 @@ export const getBestModel = async (lang: Lang) => {
     const deepseekDown = await getDeepSeekStatus()
     const googleModel = google('gemini-2.0-flash-002', {
         safetySettings: [{
-            category: 'HARM_CATEGORY_UNSPECIFIED',
+            category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
         }, {
             category: 'HARM_CATEGORY_HARASSMENT',
