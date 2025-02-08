@@ -11,7 +11,6 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^0.1.0",
     "@ai-sdk/google": "^1.1.10",
-    "@ai-sdk/openai": "^1.0.18",
     "@clerk/localizations": "^3.9.7",
     "@clerk/nextjs": "^6.10.6",
     "@clerk/themes": "^2.1.53",

@@ -37,8 +37,8 @@ UPSTASH_REDIS_REST_URL=<your_upstash_redis_url>
 UPSTASH_REDIS_REST_TOKEN=<your_upstash_redis_token>
 
 # API keys for AI services
-OPENAI_API_KEY=<your_openai_api_key>
 DEEPSEEK_API_KEY=<your_deepseek_api_key>
+GOOGLE_GENERATIVE_AI_API_KEY=<your_google_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
 
 # VAPID keys for web push notifications
@@ -54,13 +54,6 @@ EDGE_CONFIG=your_vercel_edge_config_url
 
 NEXT_PUBLIC_URL=https://leximory.com
 ```
-
-- **Clerk**: Provides authentication services. Obtain keys from [Clerk](https://clerk.dev/).
-- **Xata**: Hosts the project database. Create a project at [Xata](https://xata.io/) to get an API key.
-- **Upstash**: Offers Redis services for rate limiting. Set up at [Upstash](https://upstash.com/) to receive REST URL and token.
-- **OpenAI**: Provides AI annotation. Register at [OpenAI](https://openai.com/) for API access.
-- **ElevenLabs**: Enables AI-powered voice synthesis. Get your API key from [ElevenLabs](https://elevenlabs.io/).
-- **VAPID**: Used for sending web push notifications. Generate VAPID keys using web-push libraries or online tools.
 
 ### Initialise Database
 

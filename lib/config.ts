@@ -21,23 +21,24 @@ export const bilibiliLink = 'https://space.bilibili.com/3494376432994441/' as co
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
+export const googleModel = google('gemini-2.0-flash-001', {
+    safetySettings: [{
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_NONE',
+    }, {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_NONE',
+    }, {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_NONE',
+    }, {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+    }]
+})
+
 export const getBestModel = async (lang: Lang) => {
     const deepseekDown = await getDeepSeekStatus()
-    const googleModel = google('gemini-2.0-flash-001', {
-        safetySettings: [{
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-        }]
-    })
     const deepseekModel = deepseek('deepseek-chat')
     switch (lang) {
         case 'zh': return deepseekDown ? googleModel : deepseekModel
