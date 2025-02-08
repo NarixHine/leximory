@@ -23,7 +23,7 @@ export type Lang = typeof supportedLangs[number]
 
 export const getBestModel = async (lang: Lang) => {
     const deepseekDown = await getDeepSeekStatus()
-    const googleModel = google('gemini-2.0-flash-002', {
+    const googleModel = google('gemini-2.0-flash-001', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
