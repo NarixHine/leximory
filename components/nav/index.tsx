@@ -1,11 +1,10 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import NavBreadcrumbs from './breadcrumbs'
 import { Suspense } from 'react'
-import { get } from '@vercel/edge-config'
 import { PiBellDuotone } from 'react-icons/pi'
 import NotificationPopover from './notification-popover'
 import { Button } from '@heroui/button'
-import { z } from 'zod'
+import { getNotices } from '@/server/db/config'
 
 export type NavProps = {
     lib?: {
@@ -42,16 +41,9 @@ export default async function Nav(props: NavProps) {
     )
 }
 
-const zNotice = z.object({
-    message: z.string(),
-    date: z.string(),
-})
-
-export const zNotices = z.array(zNotice)
-
 async function Notices() {
     try {
-        const notices = zNotices.parse(JSON.parse(await get('notices') ?? '[]'))
+        const notices = await getNotices()
         return (
             <NotificationPopover notices={notices} />
         )

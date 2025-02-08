@@ -47,13 +47,7 @@ export const viewport: Viewport = {
 	themeColor: '#FFFCF0',
 }
 
-export default async function RootLayout(
-	{
-		children,
-	}: {
-		children: ReactNode
-	}
-) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<ViewTransitions>
 			<html lang='zh-CN' className='antialiased'>

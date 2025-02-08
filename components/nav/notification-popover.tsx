@@ -10,7 +10,7 @@ import moment from 'moment'
 import { useState } from 'react'
 import Markdown from '../markdown'
 import { useIsClient } from 'usehooks-ts'
-import { zNotices } from './index'
+import { zNotices } from '@/server/db/config'
 import { z } from 'zod'
 
 export default function NotificationPopover({ notices }: { notices: z.infer<typeof zNotices> }) {

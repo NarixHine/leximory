@@ -14,6 +14,8 @@ import { Suspense } from 'react'
 import { PiBooksDuotone } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
+import { redirect } from 'next/navigation'
+import { getMaintenanceStatus } from '@/server/db/config'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -59,9 +61,14 @@ async function LibraryList({ mems }: {
 }
 
 export default async function Page() {
+    const isMaintenance = await getMaintenanceStatus()
+    if (isMaintenance) {
+        redirect('/maintenance')
+    }
     const mems = await getOrgs()
     return <Main className='flex flex-col max-w-screen-sm'>
         <Nav />
+
 
         <H className='text-5xl'><PiBooksDuotone />文库</H>
         <Spacer y={8} />
