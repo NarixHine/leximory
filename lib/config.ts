@@ -1,7 +1,7 @@
 import { deepseek } from '@ai-sdk/deepseek'
 import env from './env'
-import { openai } from '@ai-sdk/openai'
 import { getDeepSeekStatus } from '@/server/db/config'
+import { google } from '@ai-sdk/google'
 
 export const elevenLabsVoice = {
     'BrE': 'npp2mvZp4jbUrUkhYg8e',
@@ -23,11 +23,27 @@ export type Lang = typeof supportedLangs[number]
 
 export const getBestModel = async (lang: Lang) => {
     const deepseekDown = await getDeepSeekStatus()
+    const googleModel = google('gemini-2.0-flash-002', {
+        safetySettings: [{
+            category: 'HARM_CATEGORY_UNSPECIFIED',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }]
+    })
+    const deepseekModel = deepseek('deepseek-chat')
     switch (lang) {
-        case 'zh': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
-        case 'en': return deepseekDown ? openai('gpt-4o-mini') : deepseek('deepseek-chat')
-        case 'ja': return openai('gpt-4o-mini')
-        case 'nl': return openai('gpt-4o-mini')
+        case 'zh': return deepseekDown ? googleModel : deepseekModel
+        case 'en': return deepseekDown ? googleModel : deepseekModel
+        case 'nl': return googleModel
+        case 'ja': return googleModel
     }
 }
 
