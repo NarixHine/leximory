@@ -1,5 +1,4 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { redis } from '../client/redis'
 import { incrementQuota, getQuota } from '../db/quota'
 import { getAuthOrThrow } from './role'
 
