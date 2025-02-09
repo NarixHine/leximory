@@ -27,7 +27,7 @@ export function getBracketedSelection(selection: Selection) {
     const text = getSelectedChunk(selection)!
     const start = Math.min(selection.anchorOffset, selection.focusOffset)
     const end = Math.max(selection.anchorOffset, selection.focusOffset)
-    return `${selection.anchorNode?.textContent?.substring(0, start)}[[${text}]]${selection.anchorNode?.textContent?.substring(end)}`
+    return `${selection.anchorNode?.textContent?.substring(0, start)}<must>${text}</must>${selection.anchorNode?.textContent?.substring(end)}`
 }
 
 export function getClickedChunk(element: HTMLElement): string {

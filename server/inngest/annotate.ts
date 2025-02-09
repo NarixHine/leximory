@@ -7,7 +7,7 @@ import { instruction, accentPreferencePrompt } from '@/lib/prompt'
 
 const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string) => ({
     system: `
-        生成文本注解（形如 [[vocabulary]] 双重中括号内的词必须注解，除此以外***尽可能多***地挑选。
+        生成文本注解（形如 [[vocabulary]] 双重中括号内的词以及形如<must>vocabulary</must>的词必须注解，除此以外***尽可能多***地挑选。
 
         ${instruction[lang]}
             

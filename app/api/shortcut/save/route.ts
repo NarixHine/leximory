@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     const lang = await getWordLang(rawWord)
-    const word = `[[${lang === 'en' ? originals(rawWord)[0] : rawWord}]]`
+    const word = `<must>${lang === 'en' ? originals(rawWord)[0] : rawWord}</must>`
     const comment = await generateSingleCommentFromShortcut(word, lang, sub)
     if (typeof comment === 'object' && 'error' in comment) {
         throw new Error(comment.error)
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
         model: googleModel,
-        prompt: `请判断双重方括号中的单词最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
+        prompt: `请判断下述词汇最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
     })
     const lang = z.enum(supportedLangs).parse(text)
