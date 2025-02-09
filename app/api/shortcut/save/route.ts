@@ -21,7 +21,7 @@ const schema = z.object({
 export async function POST(request: Request) {
     const { token, word: rawWord } = await parseBody(request, schema)
     const { sub } = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY })
-    if (await incrCommentaryQuota(0.25)) {
+    if (await incrCommentaryQuota(0.25, sub)) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
     }
 
