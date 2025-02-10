@@ -5,7 +5,7 @@ import H from '@/components/ui/h'
 import { Button } from '@heroui/button'
 import { Card, CardBody, CardFooter, CardHeader } from '@heroui/card'
 import { createCallable } from 'react-call'
-import { PiMagicWandDuotone } from 'react-icons/pi'
+import { PiTornadoDuotone } from 'react-icons/pi'
 
 type Response = boolean
 
@@ -42,7 +42,7 @@ export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ c
             </Button>
             <Button
                 variant='solid'
-                startContent={<PiMagicWandDuotone className='text-xl' />}
+                startContent={<PiTornadoDuotone className='text-xl' />}
                 color='secondary'
                 onPress={() => call.end(true)}
             >

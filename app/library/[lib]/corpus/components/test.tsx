@@ -89,7 +89,7 @@ export default function Test({ latestTime }: {
                                             track({
                                                 channel: 'annotation',
                                                 event: '生成小故事',
-                                                icon: '👀',
+                                                icon: '🌪️',
                                                 tags: {
                                                     lib,
                                                 }

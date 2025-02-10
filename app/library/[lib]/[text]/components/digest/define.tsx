@@ -42,7 +42,7 @@ export default function Define() {
         <Drawer.Root>
             {selection && selection.anchorNode?.textContent && selection.toString() && <Drawer.Trigger
                 data-event='词汇注解'
-                data-description={`动态注解了 ${selection.toString()}`}
+                data-description={`进行了动态注解`}
                 data-channel='annotation'
                 data-tag-library={lib}
                 data-tag-lang={lang}
