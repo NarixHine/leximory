@@ -6,6 +6,7 @@ import { getXataClient } from '@/server/client/xata'
 import moment from 'moment-timezone'
 import { revalidatePath } from 'next/cache'
 import { getShadowLib } from './lib'
+import { validateOrThrow } from '@/lib/lang'
 
 const xata = getXataClient()
 
@@ -38,17 +39,22 @@ export async function getRecentWords({ filter }: { filter: Record<string, any> }
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
+    const sanitizedWord = word.replaceAll('\n', '')
+    validateOrThrow(sanitizedWord)
     const rec = await xata.db.lexicon.create({
         lib,
-        word
+        word: sanitizedWord
     })
     return rec
 }
 
 export async function shadowSaveWord({ word, uid }: { word: string, uid: string }) {
+    const sanitizedWord = word.replaceAll('\n', '')
+    validateOrThrow(sanitizedWord)
     const shadowSaveLib = await getShadowLib({ owner: uid })
-    return await saveWord({ lib: shadowSaveLib.id, word })
+    return await saveWord({ lib: shadowSaveLib.id, word: sanitizedWord })
 }
+
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
     const rec = await xata.db.lexicon.update(id, { word })

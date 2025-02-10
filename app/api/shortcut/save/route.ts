@@ -1,6 +1,6 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import env from '@/lib/env'
-import { originals, parseComment, validateOrThrow } from '@/lib/lang'
+import { originals, parseComment } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { verifyToken } from '@clerk/nextjs/server'
@@ -35,7 +35,6 @@ export async function POST(request: Request) {
     const portions = parseComment(comment)
     after(async () => {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
-        validateOrThrow(word)
         const { id: lib } = await getShadowLib({ owner: sub })
         await saveWord({ lib, word })
         const logsnag = logsnagServer()

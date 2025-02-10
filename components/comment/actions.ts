@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
-import { extractSaveForm, validateOrThrow } from '@/lib/lang'
+import { extractSaveForm } from '@/lib/lang'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
@@ -14,8 +14,7 @@ export async function delComment(id: string) {
 }
 
 export async function saveComment({ portions, lib, editId, shadow }: { portions: string[], lib: string, editId?: string, shadow?: boolean }) {
-    const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`.replaceAll('\n', '')
-    validateOrThrow(word)
+    const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
 
     after(async () => {
         await logsnagServer().insight.increment({
