@@ -18,6 +18,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string) => ({
         5. 确保故事内容无任何不当内容
         6. 故事全文使用关键词所属语言
         7. 所有给定词汇必须在文中以<must></must>包裹（如<must>word</must>）
+        8. 直接输出故事文本，前后不要附带其他内容
     `,
     prompt: `
         ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : ''}

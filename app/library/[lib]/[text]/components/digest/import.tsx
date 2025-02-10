@@ -50,12 +50,12 @@ export default function ImportModal() {
     return (<>
         <div className='px-3 flex justify-center gap-3'>
             {!ebook && <Switch isDisabled={isReadOnly || isLoading} startContent={<PiKanbanFill />} endContent={<PiKanbanDuotone />} isSelected={hideText} onValueChange={setHideText} color='secondary'>
-                词汇展板
+                展板
             </Switch>}
             <Button isDisabled={isReadOnly} onPress={onOpen} className='flex-1' variant='flat' color='primary' startContent={<PiMagicWandDuotone />} isLoading={isLoading}>导入{!ebook ? '文本／' : ''}电子书</Button>
             <StoryModal />
             <Switch startContent={<PiOptionFill />} endContent={<PiOptionDuotone />} isDisabled={isReadOnly || isLoading} isSelected={editing} onValueChange={setEditing} color='secondary'>
-                手动编辑
+                编辑
             </Switch>
         </div>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
@@ -158,14 +158,14 @@ function StoryModal() {
     const { track } = useLogSnag()
     return <>
         <Button className='flex-1' isDisabled={isReadOnly} isLoading={isLoading} variant='flat' color='secondary' startContent={<PiTornadoDuotone />} onPress={onOpen}>连词成文</Button>
-        <Modal hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
             <ModalContent>
                 {(onClose) => (
                     <>
                         <ModalHeader className='flex flex-col gap-1'>连词成文</ModalHeader>
                         <ModalBody className='flex flex-col gap-2'>
                             <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
-                            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 items-center my-2'>
+                            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 items-center my-2'>
                                 {
                                     words.map((word, index) => (
                                         <Input
