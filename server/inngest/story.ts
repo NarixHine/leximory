@@ -32,11 +32,17 @@ export const generateStory = inngest.createFunction(
     { id: 'generate-daily-story' },
     { event: 'app/story.requested' },
     async ({ step, event }) => {
-        const { comments, userId, libId } = event.data
-
-        const { id: textId } = await step.run('create-text', async () => {
-            return await createTextWithData({ lib: libId, title: `${moment().format('MM/DD')} 小故事`, content: '> 生成中……' })
-        })
+        const { comments, userId } = event.data
+        let textId: string
+        if ('libId' in event.data) {
+            const { libId } = event.data
+            textId = await step.run('create-text', async () => {
+                const { id } = await createTextWithData({ lib: libId, title: `${moment().format('MM/DD')} 小故事`, content: '> 生成中……' })
+                return id
+            })
+        } else {
+            textId = event.data.textId
+        }
 
         const { lang } = await step.run('get-lang', async () => {
             return await getLibIdAndLangOfText({ id: textId })

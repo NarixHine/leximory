@@ -13,6 +13,33 @@ import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
 
+
+export async function generateStory({ comments, textId }: { comments: string[], textId: string }) {
+    const { userId } = await getAuthOrThrow()
+    await authWriteToText(textId)
+
+    if (await incrCommentaryQuota(2)) {
+        return {
+            success: false,
+            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。`
+        }
+    }
+
+    await inngest.send({
+        name: 'app/story.requested',
+        data: {
+            comments,
+            userId,
+            textId
+        }
+    })
+
+    return {
+        success: true,
+        message: '生成中……'
+    }
+}
+
 export async function getNewText(id: string) {
     const { content, topics } = await getTextContent({ id })
     return { content, topics }

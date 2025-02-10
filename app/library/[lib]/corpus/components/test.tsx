@@ -80,7 +80,6 @@ export default function Test({ latestTime }: {
                     startContent={!isGettingWithin && <PiMagicWandDuotone className='text-xl' />}
                     color='secondary'
                     onPress={() => {
-
                         startGettingWithin(async () => {
                             const comments = await getWithin(retrieveConfig)
                             if (await ConfirmStory.call({ comments })) {

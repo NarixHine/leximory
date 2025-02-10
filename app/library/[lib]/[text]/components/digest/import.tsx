@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { Divider } from "@heroui/divider"
 import { Input } from "@heroui/input"
-import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure } from "@heroui/modal"
+import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure, ModalFooter } from "@heroui/modal"
 import { Switch } from "@heroui/switch"
 import { Textarea } from "@heroui/input"
 import ky from 'ky'
@@ -12,8 +12,8 @@ import isUrl from 'is-url'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, save, setAnnotationProgress } from '../../actions'
-import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill } from 'react-icons/pi'
+import { saveEbook, generate, save, setAnnotationProgress, generateStory } from '../../actions'
+import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
 import { useAtom, useAtomValue } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
@@ -53,6 +53,7 @@ export default function ImportModal() {
                 词汇展板
             </Switch>}
             <Button isDisabled={isReadOnly} onPress={onOpen} className='flex-1' variant='flat' color='primary' startContent={<PiMagicWandDuotone />} isLoading={isLoading}>导入{!ebook ? '文本／' : ''}电子书</Button>
+            <StoryModal />
             <Switch startContent={<PiOptionFill />} endContent={<PiOptionDuotone />} isDisabled={isReadOnly || isLoading} isSelected={editing} onValueChange={setEditing} color='secondary'>
                 手动编辑
             </Switch>
@@ -145,4 +146,73 @@ export default function ImportModal() {
             </ModalContent>
         </Modal>
     </>)
+}
+
+function StoryModal() {
+    const { isOpen, onOpenChange, onOpen } = useDisclosure()
+    const [words, setWords] = useState<string[]>([])
+    const isReadOnly = useAtomValue(isReadOnlyAtom)
+    const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
+    const [isGenerating, startGenerating] = useTransition()
+    const text = useAtomValue(textAtom)
+    const { track } = useLogSnag()
+    return <>
+        <Button className='flex-1' isDisabled={isReadOnly} isLoading={isLoading} variant='flat' color='secondary' startContent={<PiTornadoDuotone />} onPress={onOpen}>连词成文</Button>
+        <Modal hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
+            <ModalContent>
+                {(onClose) => (
+                    <>
+                        <ModalHeader className='flex flex-col gap-1'>连词成文</ModalHeader>
+                        <ModalBody className='flex flex-col gap-2'>
+                            <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 items-center my-2'>
+                                {
+                                    words.map((word, index) => (
+                                        <Input
+                                            key={index}
+                                            value={word}
+                                            className='col-span-1'
+                                            onValueChange={(value) => setWords(words.map((w, i) => i === index ? value : w))}
+                                        />
+                                    ))
+                                }
+                                <Button variant='flat' startContent={<PiPlusCircleDuotone />} onPress={() => {
+                                    setWords([...words, ''])
+                                }}>
+                                    添加单词
+                                </Button>
+                            </div>
+                        </ModalBody>
+                        <ModalFooter className='flex'>
+                            <Button className='justify-end' isLoading={isGenerating} color='secondary' startContent={<PiTornadoDuotone />} onPress={() => {
+                                track({
+                                    channel: 'annotation',
+                                    event: '生成小故事',
+                                    icon: '👀',
+                                    tags: {
+                                        text,
+                                    }
+                                })
+                                startGenerating(async () => {
+                                    setIsLoading(true)
+                                    const { success, message } = await generateStory({ comments: words.map(word => `{{${word}||${word}||略}}`), textId: text })
+                                    if (success) {
+                                        await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                        toast.success(message)
+                                        onClose()
+                                    } else {
+                                        toast.error(message)
+                                        setIsLoading(false)
+                                    }
+                                    onClose()
+                                })
+                            }}>
+                                生成
+                            </Button>
+                        </ModalFooter>
+                    </>
+                )}
+            </ModalContent>
+        </Modal>
+    </>
 }

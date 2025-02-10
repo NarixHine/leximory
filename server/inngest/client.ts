@@ -23,6 +23,10 @@ interface StoryRequested {
     data: {
         comments: string[]
         userId: string
+        textId: string
+    } | {
+        comments: string[]
+        userId: string
         libId: string
     }
 }
