@@ -42,7 +42,7 @@ export async function extractWords(form: FormData) {
             },
         ],
         schema: z.array(z.string()).describe('提取出的字符串数组形式的词汇。'),
-        maxTokens: 3000
+        maxTokens: 8000
     })
 
     return object
