@@ -12,7 +12,7 @@ import isUrl from 'is-url'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, save, setAnnotationProgress, generateStory } from '../../actions'
+import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
 import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
 import { useAtom, useAtomValue } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
@@ -162,7 +162,7 @@ export default function ImportModal() {
 
 function StoryModal() {
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
-    const [words, setWords] = useState<string[]>([])
+    const [words, setWords] = useState<string[]>([''])
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [isGenerating, startGenerating] = useTransition()
@@ -176,7 +176,19 @@ function StoryModal() {
                     <>
                         <ModalHeader className='flex flex-col gap-1'>连词成文</ModalHeader>
                         <ModalBody className='flex flex-col gap-2'>
-                            <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                        <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                            <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
+                            <FileUpload onChange={async ([file]) => {
+                                const form = new FormData()
+                                form.append('file', file)
+                                const words = await extractWords(form)
+                                setWords(words)
+                            }}></FileUpload>
+                            <div className='flex gap-2 -mt-2 mb-2 items-center'>
+                                <Divider className='flex-1'></Divider>
+                                <span className='opacity-60'>或</span>
+                                <Divider className='flex-1'></Divider>
+                            </div>
                             <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 items-center my-2'>
                                 {
                                     words.map((word, index) => (
@@ -191,7 +203,7 @@ function StoryModal() {
                                 <Button variant='flat' startContent={<PiPlusCircleDuotone />} onPress={() => {
                                     setWords([...words, ''])
                                 }}>
-                                    添加单词
+                                    手动录入
                                 </Button>
                             </div>
                         </ModalBody>

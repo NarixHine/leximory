@@ -1,18 +1,52 @@
 'use server'
 
 import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
-import { generateText, streamText } from 'ai'
+import { generateObject, generateText, streamText } from 'ai'
 import { maxEbookSize } from './components/digest/import'
 import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { getBestModel, Lang, maxArticleLength } from '@/lib/config'
+import { getBestModel, googleModel, Lang, maxArticleLength } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
+import { z } from 'zod'
 
+export async function extractWords(form: FormData) {
+    const { userId } = await getAuthOrThrow()
+    const file = form.get('file') as File
+
+    if (await incrCommentaryQuota(0.25, userId)) {
+        throw new Error('Quota exceeded')
+    }
+
+    console.log(file.type)
+    const { object } = await generateObject({
+        model: googleModel,
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    {
+                        type: 'text',
+                        text: '你会看到一些外语词汇和一些相关信息，只保留这些词汇并去除其他一切信息。以字符串数组形式输出。',
+                    },
+                    {
+                        type: 'file',
+                        data: await file.arrayBuffer(),
+                        mimeType: file.type,
+                    },
+                ],
+            },
+        ],
+        schema: z.array(z.string()).describe('提取出的字符串数组形式的词汇。'),
+        maxTokens: 3000
+    })
+
+    return object
+}
 
 export async function generateStory({ comments, textId }: { comments: string[], textId: string }) {
     const { userId } = await getAuthOrThrow()
