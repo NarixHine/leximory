@@ -181,6 +181,7 @@ function StoryModal() {
                             <FileUpload onChange={async ([file]) => {
                                 const form = new FormData()
                                 form.append('file', file)
+                                toast('提取词汇中……')
                                 const words = await extractWords(form)
                                 setWords(words)
                             }}></FileUpload>

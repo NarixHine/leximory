@@ -31,7 +31,7 @@ export async function extractWords(form: FormData) {
                 content: [
                     {
                         type: 'text',
-                        text: '你会看到一些外语词汇和一些相关信息，只保留这些词汇并去除其他一切信息。以字符串数组形式输出。',
+                        text: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
                     },
                     {
                         type: 'file',
@@ -41,7 +41,7 @@ export async function extractWords(form: FormData) {
                 ],
             },
         ],
-        schema: z.array(z.string()).describe('提取出的字符串数组形式的词汇。'),
+        schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
         maxTokens: 8000
     })
 
