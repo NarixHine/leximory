@@ -6,7 +6,7 @@ import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
 import { parseComment } from '@/lib/lang'
 
-const storyPrompt = async (comments: string[], lang: Lang, userId: string) => ({
+const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
         你是一位专业的${langMap[lang]}教师，擅长为语言学习者创作包含指定词汇的短篇故事，帮助他们记忆单词。
         
@@ -20,6 +20,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string) => ({
         7. 所有给定词汇必须在文中以<must></must>包裹（如<must>word</must>）
         8. 直接输出故事文本，前后不要附带其他内容
         9. 可以对词汇根据语境进行屈折变化或适当变形，但不要改变词性
+        10. 故事风格与内容：${storyStyle}
     `,
     prompt: `
         ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : ''}
@@ -34,7 +35,7 @@ export const generateStory = inngest.createFunction(
     { id: 'generate-daily-story' },
     { event: 'app/story.requested' },
     async ({ step, event }) => {
-        const { comments, userId } = event.data
+        const { comments, userId, storyStyle } = event.data
         let textId: string
         if ('libId' in event.data) {
             const { libId } = event.data
@@ -52,7 +53,7 @@ export const generateStory = inngest.createFunction(
 
         // Generate the story
         const storyConfig = await step.run('get-story-prompt', async () => {
-            return await storyPrompt(comments, lang, userId)
+            return await storyPrompt(comments, lang, userId, storyStyle)
         })
 
         const story = await step.ai.wrap('generate-story', generateText, {

@@ -48,7 +48,7 @@ export async function extractWords(form: FormData) {
     return object
 }
 
-export async function generateStory({ comments, textId }: { comments: string[], textId: string }) {
+export async function generateStory({ comments, textId, storyStyle }: { comments: string[], textId: string, storyStyle?: string }) {
     const { userId } = await getAuthOrThrow()
     await authWriteToText(textId)
 
@@ -64,6 +64,7 @@ export async function generateStory({ comments, textId }: { comments: string[], 
         data: {
             comments,
             userId,
+            storyStyle,
             textId
         }
     })

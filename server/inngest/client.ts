@@ -23,12 +23,12 @@ interface StoryRequested {
     data: {
         comments: string[]
         userId: string
+        storyStyle?: string
+    } & ({
         textId: string
     } | {
-        comments: string[]
-        userId: string
         libId: string
-    }
+    })
 }
 
 type Events = {

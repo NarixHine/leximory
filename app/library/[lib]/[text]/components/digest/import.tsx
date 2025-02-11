@@ -167,6 +167,7 @@ function StoryModal() {
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [isGenerating, startGenerating] = useTransition()
     const text = useAtomValue(textAtom)
+    const [storyStyle, setStoryStyle] = useState('')
     const { track } = useLogSnag()
     return <>
         <Button className='flex-1' isDisabled={isReadOnly} isLoading={isLoading} variant='flat' color='secondary' startContent={<PiTornadoDuotone />} onPress={onOpen}>连词成文</Button>
@@ -176,7 +177,7 @@ function StoryModal() {
                     <>
                         <ModalHeader className='flex flex-col gap-1'>连词成文</ModalHeader>
                         <ModalBody className='flex flex-col gap-2'>
-                        <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                            <div className='prose'><blockquote className='not-italic'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
                             <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
                             <FileUpload onChange={async ([file]) => {
                                 const form = new FormData()
@@ -196,6 +197,7 @@ function StoryModal() {
                                         <Input
                                             key={index}
                                             value={word}
+                                            variant='flat'
                                             className='col-span-1'
                                             onValueChange={(value) => setWords(words.map((w, i) => i === index ? value : w))}
                                         />
@@ -207,6 +209,13 @@ function StoryModal() {
                                     手动录入
                                 </Button>
                             </div>
+                            <Input
+                                fullWidth
+                                variant='flat'
+                                label='故事风格/内容（可选）'
+                                value={storyStyle}
+                                onValueChange={setStoryStyle}
+                            />
                         </ModalBody>
                         <ModalFooter className='flex'>
                             <Button className='justify-end' isLoading={isGenerating} color='secondary' startContent={<PiTornadoDuotone />} onPress={() => {
@@ -220,7 +229,11 @@ function StoryModal() {
                                 })
                                 startGenerating(async () => {
                                     setIsLoading(true)
-                                    const { success, message } = await generateStory({ comments: words.map(word => `{{${word}||${word}||略}}`), textId: text })
+                                    const { success, message } = await generateStory({
+                                        comments: words.map(word => `{{${word}||${word}||略}}`),
+                                        textId: text,
+                                        storyStyle
+                                    })
                                     if (success) {
                                         await setAnnotationProgress({ id: text, progress: 'annotating' })
                                         toast.success(message)
