@@ -16,9 +16,13 @@ export function validateOrThrow(word: string) {
 }
 
 export function parseCommentParams(word: string) {
-    const purifiedParams = word.replaceAll('{{', '').replaceAll('}}', '')
-    const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
-    return parsedParams
+    try {
+        const purifiedParams = word.replaceAll('{{', '').replaceAll('}}', '')
+        const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
+        return parsedParams
+    } catch {
+        return ['ERROR', 'ERROR', `在解析注解\`${word}\`时发生错误，请检查注解格式或联系管理员。`]
+    }
 }
 
 export function parseComment(comment: string) {
