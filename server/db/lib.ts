@@ -116,7 +116,7 @@ export async function summarizeLibsWithWords({ filter }: { filter: Record<string
 
 export async function countPublicLibs() {
     const data = await xata.db.libraries.filter({ access: libAccessStatusMap.public }).summarize({
-        columns: ['id'],
+        columns: [],
         summaries: {
             count: { count: '*' },
         },
