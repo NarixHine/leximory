@@ -39,7 +39,7 @@ export async function getRecentWords({ filter }: { filter: Record<string, any> }
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
-    const sanitizedWord = word.endsWith('||') ? word.slice(0, -2) : word.replaceAll('\n', '')
+    const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
     validateOrThrow(sanitizedWord)
     const rec = await xata.db.lexicon.create({
         lib,
@@ -49,7 +49,7 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
 }
 
 export async function shadowSaveWord({ word, uid }: { word: string, uid: string }) {
-    const sanitizedWord = word.endsWith('||') ? word.slice(0, -2) : word.replaceAll('\n', '')
+    const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
     validateOrThrow(sanitizedWord)
     const shadowSaveLib = await getShadowLib({ owner: uid })
     return await saveWord({ lib: shadowSaveLib.id, word: sanitizedWord })
