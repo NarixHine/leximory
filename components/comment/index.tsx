@@ -135,7 +135,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     tags: { lib }
                 })
                 try {
-                    const savedId = await saveComment({ portions, lib, shadow: isReadOnly })
+                    const savedId = await saveComment({ portions, lib, shadow: isReadOnly, lang })
                     setStatus('saved')
                     setSavedId(savedId)
                 } catch {
@@ -156,7 +156,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
-                        saveComment({ portions: editedPortions, lib, editId, shadow: isReadOnly }).then(async () => {
+                        saveComment({ portions: editedPortions, lib, editId, shadow: isReadOnly, lang }).then(async () => {
                             if (content && text && !isReadOnly) {
                                 await modifyText(text, content.replaceAll(`{{${portions.filter(Boolean).join('||')}}}`, `{{${editedPortions.filter(Boolean).join('||')}}}`))
                             }

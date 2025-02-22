@@ -13,7 +13,7 @@ export async function delComment(id: string) {
     await deleteWord(id)
 }
 
-export async function saveComment({ portions, lib, editId, shadow }: { portions: string[], lib: string, editId?: string, shadow?: boolean }) {
+export async function saveComment({ portions, lib, editId, shadow, lang }: { portions: string[], lib: string, editId?: string, shadow?: boolean, lang: "en" | "zh" | "ja" | "nl" }) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
 
     after(async () => {
@@ -27,7 +27,7 @@ export async function saveComment({ portions, lib, editId, shadow }: { portions:
     const { userId } = await getAuthOrThrow()
     if (editId) {
         if (shadow) {
-            await shadowSaveWord({ word, uid: userId })
+            await shadowSaveWord({ word, uid: userId, lang })
         }
         else {
             const { lib } = await getWord({ id: editId })
@@ -37,7 +37,7 @@ export async function saveComment({ portions, lib, editId, shadow }: { portions:
         return editId
     } else {
         if (shadow) {
-            const { id } = await shadowSaveWord({ word, uid: userId })
+            const { id } = await shadowSaveWord({ word, uid: userId, lang })
             return id
         }
         else {
