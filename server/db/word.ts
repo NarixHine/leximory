@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
-import { welcomeMap } from '@/lib/config'
+import { Lang, welcomeMap } from '@/lib/config'
 import { getXataClient } from '@/server/client/xata'
 import moment from 'moment-timezone'
 import { revalidatePath } from 'next/cache'
@@ -48,10 +48,10 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
     return rec
 }
 
-export async function shadowSaveWord({ word, uid }: { word: string, uid: string }) {
+export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: string, lang: Lang }) {
     const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
     validateOrThrow(sanitizedWord)
-    const shadowSaveLib = await getShadowLib({ owner: uid })
+    const shadowSaveLib = await getShadowLib({ owner: uid, lang })
     return await saveWord({ lib: shadowSaveLib.id, word: sanitizedWord })
 }
 

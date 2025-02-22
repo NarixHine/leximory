@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const portions = parseComment(comment)
     after(async () => {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
-        const { id: lib } = await getShadowLib({ owner: sub })
+        const { id: lib } = await getShadowLib({ owner: sub, lang })
         await saveWord({ lib, word })
         const logsnag = logsnagServer()
         await logsnag.track({
