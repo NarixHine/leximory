@@ -13,6 +13,8 @@ import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
 import { z } from 'zod'
+import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
+import crypto from 'crypto'
 
 export async function extractWords(form: FormData) {
     const { userId } = await getAuthOrThrow()
@@ -131,6 +133,14 @@ export async function generate({ article, textId, onlyComments }: { article: str
 export async function generateSingleComment(prompt: string, lib: string) {
     const stream = createStreamableValue()
     const { userId } = await getAuthOrThrow()
+    const hash = crypto.createHash('sha256').update(prompt).digest('hex')
+    const cache = await getAnnotationCache({ hash, userId })
+    if (cache) {
+        stream.update(cache)
+        stream.done()
+        return { text: cache }
+    }
+
     const { lang } = await authReadToLib(lib)
 
     if (prompt.length > maxArticleLength(lang)) {
@@ -148,7 +158,10 @@ export async function generateSingleComment(prompt: string, lib: string) {
             ${instruction[lang]}
             `,
             prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n\n${prompt}`,
-            maxTokens: 500
+            maxTokens: 500,
+            onFinish: async ({ text }) => {
+                await setAnnotationCache({ hash, userId, cache: text })
+            }
         })
 
         for await (const delta of textStream) {
