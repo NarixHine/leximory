@@ -138,7 +138,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     if (cache) {
         stream.update(cache)
         stream.done()
-        return { text: cache }
+        return { text: stream.value }
     }
 
     const { lang } = await authReadToLib(lib)
