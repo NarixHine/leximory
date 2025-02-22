@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "pnpm": {
+    "overrides": {
+      "react-is": "^19.0.0-rc-69d4b800-20241021"
+    }
+  },
   "dependencies": {
     "@ai-sdk/deepseek": "^0.1.0",
     "@ai-sdk/google": "^1.1.10",

@@ -1,5 +1,5 @@
 import { formatChartData } from '.'
-import { LineChart } from '../ui/line-chart'
+import { AreaChart } from '../ui/area-chart'
 
 type WordData = {
     date: string
@@ -7,7 +7,7 @@ type WordData = {
 }
 
 export default function WordChart({ data }: { data: WordData[] }) {
-    return <LineChart
+    return <AreaChart
         data={data}
         index='date'
         categories={['记忆单词数']}
@@ -18,15 +18,13 @@ export default function WordChart({ data }: { data: WordData[] }) {
 }
 
 export function WordChartSkeleton() {
-    return <LineChart
+    return <AreaChart
         className='opacity-30 animate-pulse'
         data={formatChartData(new Map(), 30)}
         index='date'
         categories={['记忆单词数']}
         showLegend
         colors={['default']}
-
-
         startEndOnly
     />
 } 

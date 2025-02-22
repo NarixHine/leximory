@@ -59,7 +59,14 @@ export default function ImportModal() {
             />}
             <Button
                 isDisabled={isReadOnly}
-                onPress={onOpen} className='flex-1' variant='flat' color='primary' startContent={<PiMagicWandDuotone />} isLoading={isLoading}>导入{!ebook ? '文本／' : ''}电子书</Button>
+                onPress={onOpen}
+                className='flex-1'
+                variant='flat'
+                color='primary'
+                startContent={<PiMagicWandDuotone />}
+                isLoading={isLoading}>
+                导入{!ebook ? '材料' : '电子书'}
+            </Button>
             <StoryModal />
             <Switch
                 startContent={<PiOptionFill />}

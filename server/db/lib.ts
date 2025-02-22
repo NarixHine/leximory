@@ -1,21 +1,21 @@
 import 'server-only'
-import { Lang, libAccessStatusMap, welcomeMap } from '@/lib/config'
+import { Lang, langMap, libAccessStatusMap, welcomeMap } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidatePath } from 'next/cache'
 
 const xata = getXataClient()
 
-export async function getShadowLib({ owner }: { owner: string }) {
-    const rec = await xata.db.libraries.filter({ owner, shadow: true }).getFirst()
+export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
+    const rec = await xata.db.libraries.filter({ owner, shadow: true, lang }).getFirst()
     if (rec) {
         return rec
     }
     return await xata.db.libraries.create({
         owner,
         shadow: true,
-        name: '🗃️ 词汇仓库',
-        lang: 'nl',
+        name: `🗃️ ${langMap[lang]}词汇仓库`,
+        lang,
     })
 }
 
