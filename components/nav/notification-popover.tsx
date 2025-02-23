@@ -25,7 +25,7 @@ export default function NotificationPopover({ notices }: { notices: z.infer<type
 
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpen}>
-            <PopoverTrigger>
+            <PopoverTrigger className='print:hidden'>
                 <Badge shape='circle' variant='flat' color='primary' content={<PiExclamationMarkLight />} isInvisible={!isClient || !isNew}>
                     <Button
                         onPress={handleOpen}

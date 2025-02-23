@@ -48,34 +48,39 @@ export default function ImportModal() {
     const { track } = useLogSnag()
 
     return (<>
-        <div className='px-3 flex justify-center gap-3'>
-            {!ebook && <Switch
-                isDisabled={isReadOnly || isLoading}
-                startContent={<PiKanbanFill />}
-                endContent={<PiKanbanDuotone />}
-                isSelected={hideText}
-                onValueChange={setHideText}
-                color='secondary'
-            />}
-            <Button
-                isDisabled={isReadOnly}
-                onPress={onOpen}
-                className='flex-1'
-                variant='flat'
-                color='primary'
-                startContent={<PiMagicWandDuotone />}
-                isLoading={isLoading}>
-                导入{!ebook ? '材料' : '电子书'}
-            </Button>
-            <StoryModal />
-            <Switch
-                startContent={<PiOptionFill />}
-                endContent={<PiOptionDuotone />}
-                isDisabled={isReadOnly || isLoading}
-                isSelected={editing}
-                onValueChange={setEditing}
-                color='secondary'
-            />
+        <div className='px-3 flex flex-col gap-2'>
+            <div className='flex gap-2'>
+                {!ebook && <Switch
+                    isDisabled={isReadOnly || isLoading}
+                    startContent={<PiKanbanFill />}
+                    endContent={<PiKanbanDuotone />}
+                    isSelected={hideText}
+                    onValueChange={setHideText}
+                    color='secondary'
+                />}
+                <Button
+                    isDisabled={isReadOnly}
+                    onPress={onOpen}
+                    className='flex-1 font-semibold'
+                    variant='flat'
+                    size='sm'
+                    color='primary'
+                    startContent={<PiMagicWandDuotone className='text-lg' />}
+                    isLoading={isLoading}>
+                    导入{!ebook ? '材料' : '电子书'}
+                </Button>
+            </div>
+            <div className='flex gap-2'>
+                <StoryModal />
+                <Switch
+                    startContent={<PiOptionFill />}
+                    endContent={<PiOptionDuotone />}
+                    isDisabled={isReadOnly || isLoading}
+                    isSelected={editing}
+                    onValueChange={setEditing}
+                    color='secondary'
+                />
+            </div>
         </div>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
             <ModalContent>
@@ -177,7 +182,18 @@ function StoryModal() {
     const [storyStyle, setStoryStyle] = useState('')
     const { track } = useLogSnag()
     return <>
-        <Button className='flex-1' isDisabled={isReadOnly} isLoading={isLoading} variant='flat' color='secondary' startContent={<PiTornadoDuotone />} onPress={onOpen}>连词成文</Button>
+        <Button
+            className='flex-1 font-semibold'
+            isDisabled={isReadOnly}
+            isLoading={isLoading}
+            size='sm'
+            variant='flat'
+            color='secondary'
+            startContent={<PiTornadoDuotone className='text-lg' />}
+            onPress={onOpen}
+        >
+            连词成文
+        </Button>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} isKeyboardDismissDisabled={true}>
             <ModalContent>
                 {(onClose) => (

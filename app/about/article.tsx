@@ -8,6 +8,7 @@ import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
 import { exampleEbookLink } from '@/lib/config'
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 
 export function TypedTitle() {
     return <TypeAnimation
@@ -148,6 +149,69 @@ export function Article() {
             Leximory <PiHeartDuotone className='inline-block' /> iOS！
         </motion.p>
         <iframe className='rounded-xl my-4' height={450} src='//player.bilibili.com/player.html?isOutside=true&aid=113730700447501&bvid=BV1XFChYxEbC&cid=27579122683&p=1' width={'100%'} allowFullScreen></iframe>
+
+        <Spacer y={10}></Spacer>
+        <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.8 }}
+        >
+            语境化输入的单词记忆法——
+        </motion.p>
+        <iframe className='rounded-xl my-4' height={450} src='//player.bilibili.com/player.html?isOutside=true&aid=113988952196089&bvid=BV1xUKGenEF5&cid=28347204996&p=1' width={'100%'} allowFullScreen></iframe>
+
+        <Spacer y={10}></Spacer>
+        <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.9 }}
+            className='text-2xl'
+        >
+            附录
+        </motion.h2>
+        <Spacer y={2}></Spacer>
+        <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 1 }}
+        >
+            各项操作所消耗的每月 AI 配额：
+        </motion.p>
+        <Spacer y={4}></Spacer>
+        <Table>
+            <TableHeader>
+                <TableColumn className='font-medium'>操作</TableColumn>
+                <TableColumn className='font-medium'>消耗 AI 注释次数</TableColumn>
+                <TableColumn className='font-medium'>描述</TableColumn>
+            </TableHeader>
+            <TableBody>
+                <TableRow key='article-annotation'>
+                    <TableCell>文章注解</TableCell>
+                    <TableCell>1</TableCell>
+                    <TableCell>对一篇文本的全文进行生词注解</TableCell>
+                </TableRow>
+                <TableRow key='word-annotation'>
+                    <TableCell>词汇动态注解</TableCell>
+                    <TableCell>0.25</TableCell>
+                    <TableCell>根据语境对选中词汇进行动态注解</TableCell>
+                </TableRow>
+                <TableRow key='ebook-word-annotation'>
+                    <TableCell>书籍动态注解</TableCell>
+                    <TableCell>0.25</TableCell>
+                    <TableCell>对电子书内选中词汇根据语境注解</TableCell>
+                </TableRow>
+                <TableRow key='word-list'>
+                    <TableCell>提取词汇</TableCell>
+                    <TableCell>1</TableCell>
+                    <TableCell>提取图像中的外语词汇供连词成文使用</TableCell>
+                </TableRow>
+                <TableRow key='story'>
+                    <TableCell>连词成文</TableCell>
+                    <TableCell>2</TableCell>
+                    <TableCell>在语料本页面或文本页面将词汇串联成文</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
     </article>
 }
 

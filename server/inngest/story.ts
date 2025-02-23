@@ -20,7 +20,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         7. 所有给定词汇必须在文中以<must></must>包裹（如<must>word</must>）
         8. 直接输出故事文本，前后不要附带其他内容
         9. 可以对词汇根据语境进行屈折变化或适当变形，但不要改变词性
-        10. 故事风格与内容：${storyStyle}
+        10. 故事必须按照以下风格与内容创作：${storyStyle}
     `,
     prompt: `
         ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : ''}
@@ -28,7 +28,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         关键词：
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
-    maxTokens: 2000
+    maxTokens: 2500
 })
 
 export const generateStory = inngest.createFunction(
