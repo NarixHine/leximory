@@ -50,7 +50,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<ViewTransitions>
-			<html lang='zh-CN' className='antialiased'>
+			<html suppressHydrationWarning lang='zh-CN' className='antialiased'>
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
 				</head>

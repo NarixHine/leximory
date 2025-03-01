@@ -58,7 +58,7 @@ const MemoizedPopover = memo(function MemoizedPopover({
             <PopoverTrigger>
                 <Button
                     data-event='词汇注解'
-                    data-description={`注解内容: ${prompt}`} 
+                    data-description={`注解内容: ${prompt}`}
                     data-channel='annotation'
                     data-tag-lang={lang}
                     data-icon='🖊️'
@@ -69,9 +69,9 @@ const MemoizedPopover = memo(function MemoizedPopover({
                     variant='light'
                     size='lg'
                     isIconOnly
-                    radius='full'
+                    radius='lg'
                     isDisabled={!prompt}
-                    startContent={<PiMagnifyingGlassDuotone />}
+                    startContent={<PiMagnifyingGlassDuotone className='text-lg' />}
                 />
             </PopoverTrigger>
             <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
@@ -96,7 +96,7 @@ export default function Ebook() {
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
-    
+
     const theme = useSystemColorMode()
     useEffect(() => {
         if (themeRendition.current) {
@@ -132,27 +132,33 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
-            <Button startContent={<PiFrameCornersDuotone />} color='primary' variant={isFullViewport ? 'flat' : 'ghost'} radius='full' fullWidth onPress={async () => {
-                try {
-                    await handleFullScreen.enter()
-                } catch {
-                    setIsFullViewport(!isFullViewport)
-                }
-            }}>
-                全屏模式
-            </Button>
-            <Spacer />
             <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='flex absolute top-2 right-2 gap-1'>
                     <Button
-                        startContent={!savingBookmark && <PiBookmarkDuotone />}
+                        isIconOnly
+                        startContent={<PiFrameCornersDuotone className='text-lg' />}
+                        className='bg-background z-10'
+                        color='primary'
+                        variant='light'
+                        size='lg'
+                        radius='lg'
+                        onPress={async () => {
+                            try {
+                                await handleFullScreen.enter()
+                            } catch {
+                                setIsFullViewport(!isFullViewport)
+                            }
+                        }}
+                    />
+                    <Button
+                        startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
                         isLoading={savingBookmark}
                         isDisabled={!bookmark || isReadOnly}
                         className='bg-background z-10'
                         color='primary'
                         variant='light'
                         size='lg'
-                        radius='full'
+                        radius='lg'
                         isIconOnly
                         onPress={() => {
                             if (bookmark) {
@@ -203,13 +209,22 @@ export default function Ebook() {
                                 'margin-top': '0.6em',
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
-                                'font-family': '"Georgia", serif !important',
+                                'font-family': '"New York", Georgia, serif !important',
                                 'line-height': '1.7 !important',
                             },
                             'div': {
                                 'font-size': '24px !important',
-                                'font-family': '"Georgia", serif !important',
+                                'font-family': '"New York", Georgia, serif !important',
                                 'line-height': '1.7 !important',
+                            },
+                            'h1': {
+                                'font-family': '"Baskerville", serif !important',
+                            },
+                            'h2': {
+                                'font-family': '"Baskerville", serif !important',
+                            },
+                            'h3': {
+                                'font-family': '"Baskerville", serif !important',
                             },
                         })
                         themeRendition.current = rendition
