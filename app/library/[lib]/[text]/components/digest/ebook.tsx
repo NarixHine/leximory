@@ -208,12 +208,12 @@ export default function Ebook() {
                                 'margin-top': '0.6em',
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
-                                'font-family': '"New York", Georgia, serif !important',
+                                'font-family': '"Athelas", serif !important',
                                 'line-height': '1.7 !important',
                             },
                             'div': {
                                 'font-size': '24px !important',
-                                'font-family': '"New York", Georgia, serif !important',
+                                'font-family': '"Athelas", serif !important',
                                 'line-height': '1.7 !important',
                             },
                             'h1': {
