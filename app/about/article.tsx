@@ -181,7 +181,7 @@ export function Article() {
         <Table>
             <TableHeader>
                 <TableColumn className='font-medium'>操作</TableColumn>
-                <TableColumn className='font-medium'>消耗 AI 注释次数</TableColumn>
+                <TableColumn className='font-medium'>消耗 AI 注解次数</TableColumn>
                 <TableColumn className='font-medium'>描述</TableColumn>
             </TableHeader>
             <TableBody>
@@ -214,7 +214,6 @@ export function Article() {
         </Table>
     </article>
 }
-
 
 const GradientCard = ({ text, gradient, title, children, to }: {
     title: string,

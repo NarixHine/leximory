@@ -13,13 +13,40 @@ import Link from 'next/link'
 import { useRef } from 'react'
 import { isReaderModeAtom } from '../../atoms'
 
+type FloatingDockProps = {
+    items: { icon: React.ReactNode; href: string }[]
+    className?: string
+}
+
+type IconContainerProps = {
+    icon: React.ReactNode
+    href: string
+    styles?: string
+}
+
+type IconContainerHorizontalProps = IconContainerProps & {
+    mouseX: MotionValue
+}
+
+type IconContainerVerticalProps = IconContainerProps & {
+    mouseY: MotionValue
+}
+
 export const FloatingDock = ({
     items,
     className,
-}: {
-    items: { icon: React.ReactNode; href: string }[]
-    className?: string
-}) => {
+}: FloatingDockProps) => {
+    return (
+        <>
+            <FloatingDockHorizontal items={items} className={className} />
+            <FloatingDockVertical items={items} className={className} />
+        </>
+    )
+}
+export const FloatingDockHorizontal = ({
+    items,
+    className,
+}: FloatingDockProps) => {
     const mouseX = useMotionValue(Infinity)
     const isReaderMode = useAtomValue(isReaderModeAtom)
     return !isReaderMode && (
@@ -27,28 +54,23 @@ export const FloatingDock = ({
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'fixed bottom-0 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-tl-2xl rounded-tr-2xl backdrop:blur-sm border-x-1 border-t-1 border-default-100/80 bg-background/30 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
+                'md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-tl-2xl rounded-tr-2xl backdrop:blur-sm border-x-1 border-t-1 border-default-100/80 bg-background/30 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
                 className
             )}
         >
             {items.map((item, i) => (
-                <IconContainer mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-100/60 text-default-800'][i]} />
+                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-100/60 text-default-800'][i]} />
             ))}
         </motion.div>
     )
 }
 
-function IconContainer({
+function IconContainerHorizontal({
     mouseX,
     icon,
     href,
     styles,
-}: {
-    mouseX: MotionValue
-    icon: React.ReactNode
-    href: string
-    styles?: string
-}) {
+}: IconContainerHorizontalProps) {
     const ref = useRef<HTMLDivElement>(null)
 
     const distance = useTransform(mouseX, (val) => {
@@ -100,3 +122,87 @@ function IconContainer({
         </Link>
     )
 }
+
+export const FloatingDockVertical = ({
+    items,
+    className,
+}: {
+    items: { icon: React.ReactNode; href: string }[]
+    className?: string
+}) => {
+    const mouseY = useMotionValue(Infinity)
+    const isReaderMode = useAtomValue(isReaderModeAtom)
+
+    return !isReaderMode && (
+        <motion.div
+            onMouseMove={(e) => mouseY.set(e.pageY)}
+            onMouseLeave={() => mouseY.set(Infinity)}
+            className={cn(
+                'hidden md:flex fixed right-0 w-16 bottom-10 flex-col gap-4 items-end rounded-tl-2xl rounded-bl-2xl backdrop:blur-sm border-t-1 border-b-1 border-l-1 border-default-100/80 bg-background/30 backdrop-blur-md backdrop-saturate-150 px-3 py-4',
+                className
+            )}
+        >
+            {items.map((item, i) => (
+                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-100/60 text-default-800'][i]} />
+            ))}
+        </motion.div>
+    )
+}
+
+function IconContainerVertical({
+    mouseY,
+    icon,
+    href,
+    styles,
+}: IconContainerVerticalProps) {
+    const ref = useRef<HTMLDivElement>(null)
+
+    const distance = useTransform(mouseY, (val) => {
+        const bounds = ref.current?.getBoundingClientRect() ?? { y: 0, height: 0 }
+        return val - bounds.y - bounds.height / 2
+    })
+
+    const widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40])
+    const heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40])
+
+    const width = useSpring(widthTransform, {
+        mass: 0.1,
+        stiffness: 150,
+        damping: 12,
+    })
+    const height = useSpring(heightTransform, {
+        mass: 0.1,
+        stiffness: 150,
+        damping: 12,
+    })
+
+    const opacity = useTransform(distance, [-100, 0, 100], [0.9, 1, 0.9])
+
+    const iconScale = useTransform(distance, [-150, 0, 150], [1.3, 2.3, 1.3])
+    const iconSpring = useSpring(iconScale, {
+        mass: 0.1,
+        stiffness: 150,
+        damping: 12,
+    })
+
+    return (
+        <Link href={href}>
+            <motion.div
+                ref={ref}
+                style={{ width, height, opacity }}
+                className={cn(
+                    'aspect-square rounded-full flex items-center justify-center relative',
+                    styles
+                )}
+            >
+                <motion.div
+                    style={{ scale: iconSpring }}
+                    className="flex items-center justify-center"
+                >
+                    {icon}
+                </motion.div>
+            </motion.div>
+        </Link>
+    )
+}
+

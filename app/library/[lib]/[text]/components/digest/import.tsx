@@ -48,9 +48,10 @@ export default function ImportModal() {
     const { track } = useLogSnag()
 
     return (<>
-        <div className='px-3 flex flex-col gap-2'>
+        <div className='flex flex-col gap-2 mt-2'>
             <div className='flex gap-2'>
                 {!ebook && <Switch
+                    size='lg'
                     isDisabled={isReadOnly || isLoading}
                     startContent={<PiKanbanFill />}
                     endContent={<PiKanbanDuotone />}
@@ -63,7 +64,7 @@ export default function ImportModal() {
                     onPress={onOpen}
                     className='flex-1 font-semibold'
                     variant='flat'
-                    size='sm'
+                    radius='full'
                     color='primary'
                     startContent={<PiMagicWandDuotone className='text-lg' />}
                     isLoading={isLoading}>
@@ -79,6 +80,7 @@ export default function ImportModal() {
                     isSelected={editing}
                     onValueChange={setEditing}
                     color='secondary'
+                    size='lg'
                 />
             </div>
         </div>
@@ -106,7 +108,7 @@ export default function ImportModal() {
                                     value={input}
                                     label='文本'
                                     description='AI 注解可能含有错误'
-                                    rows={5}
+                                    rows={7}
                                     onValueChange={setInput}
                                     disableAutosize />
                                 <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='warning'>
@@ -186,7 +188,7 @@ function StoryModal() {
             className='flex-1 font-semibold'
             isDisabled={isReadOnly}
             isLoading={isLoading}
-            size='sm'
+            radius='full'
             variant='flat'
             color='secondary'
             startContent={<PiTornadoDuotone className='text-lg' />}

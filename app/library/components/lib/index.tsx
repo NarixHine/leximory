@@ -119,7 +119,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button color={'secondary'} radius='full' startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <Button color={'secondary'} radius='sm' startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
                 </Button>}
             </CardFooter>

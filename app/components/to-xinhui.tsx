@@ -13,7 +13,7 @@ export function ToXinhui() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
     >
-        <Card className='mx-auto' isPressable isBlurred shadow='none' onPress={() => {
+        <Card className='mx-auto border-x-2 border-x-default-900 pb-2 text-default-900' isPressable isBlurred shadow='none' onPress={() => {
             router.push('/sign-in')
         }}>
             <CardBody className={cn(CHINESE_CALLIGRAPHY.className, 'whitespace-pre-line text-6xl text-center')}>

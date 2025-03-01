@@ -165,7 +165,7 @@ export default async function Home() {
 			<Methodology />
 		</div>
 
-		<Spacer y={8}></Spacer>
+		<Spacer y={10}></Spacer>
 
 		<ToXinhui />
 	</Main >
