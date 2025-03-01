@@ -209,12 +209,14 @@ export default function Ebook() {
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
                                 'font-family': '"Athelas", serif !important',
-                                'line-height': '1.7 !important',
+                                'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
+                                'text-rendering': 'optimizeLegibility',
                             },
                             'div': {
                                 'font-size': '24px !important',
                                 'font-family': '"Athelas", serif !important',
-                                'line-height': '1.7 !important',
+                                'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
+                                'text-rendering': 'optimizeLegibility',
                             },
                             'h1': {
                                 'font-family': '"Baskerville", serif !important',
