@@ -2,7 +2,6 @@
 
 import { Button } from "@heroui/button"
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
-import { Spacer } from "@heroui/spacer"
 import { CircularProgress } from "@heroui/progress"
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
