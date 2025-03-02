@@ -54,12 +54,12 @@ export const FloatingDockHorizontal = ({
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-tl-2xl rounded-tr-2xl backdrop:blur-sm border-x-1 border-t-1 border-default-100/80 bg-background/30 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
+                'md:hidden fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-200/50 dark:bg-stone-900/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
                 className
             )}
         >
             {items.map((item, i) => (
-                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-100/60 text-default-800'][i]} />
+                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-200/60 text-default-800'][i]} />
             ))}
         </motion.div>
     )
@@ -138,12 +138,12 @@ export const FloatingDockVertical = ({
             onMouseMove={(e) => mouseY.set(e.pageY)}
             onMouseLeave={() => mouseY.set(Infinity)}
             className={cn(
-                'hidden md:flex fixed right-0 w-16 bottom-10 flex-col gap-4 items-end rounded-tl-2xl rounded-bl-2xl backdrop:blur-sm border-t-1 border-b-1 border-l-1 border-default-100/80 bg-background/30 backdrop-blur-md backdrop-saturate-150 px-3 py-4',
+                'hidden md:flex fixed right-4 bottom-4 w-16 flex-col gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-200/50 dark:bg-stone-900/90 backdrop-blur-md backdrop-saturate-150 px-3 py-4',
                 className
             )}
         >
             {items.map((item, i) => (
-                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-100/60 text-default-800'][i]} />
+                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-200/60 text-default-800'][i]} />
             ))}
         </motion.div>
     )
