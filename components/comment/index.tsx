@@ -276,7 +276,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             isLoaded
                                 ? <div>
                                     <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
-                                    {(!explicitDisableSave || !isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
+                                    {(!explicitDisableSave || isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <Save />
                                 </div>
                                 : userId ? <div className='space-y-3 w-40'>
