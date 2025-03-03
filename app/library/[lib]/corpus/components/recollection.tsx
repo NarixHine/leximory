@@ -29,7 +29,7 @@ export default function Recollection({ words, cursor, more }: {
             const anotherDay = array[index + 1] && !moment(date).isSame(array[index + 1].date, 'day')
             return <Fragment key={id}>
                 <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
-                    <Markdown md={word} deleteId={isReadOnly || Object.values(welcomeMap).includes(word) ? undefined : id}></Markdown>
+                    <Markdown md={word} disableSave={Object.values(welcomeMap).includes(word)} deleteId={isReadOnly || Object.values(welcomeMap).includes(word) ? undefined : id}></Markdown>
                 </div>
                 {anotherDay && <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
                     <Chip size='lg' variant='flat' color='secondary'>
