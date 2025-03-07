@@ -199,6 +199,7 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
+  const lang = useAtomValue(langAtom)
 
   if (hideText && content) {
     const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
@@ -231,7 +232,10 @@ function ReadingView() {
   return (
     <>
       <Markdown
-        className={isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0'}
+        className={cn(
+          isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
+          lang === 'ja' && 'font-ios-mincho'
+        )}
         md={`<article>\n${content}\n\n</article>`}
       />
       <Define />

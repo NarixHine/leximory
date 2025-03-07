@@ -1,7 +1,6 @@
 import { CommentaryQuotaCard, AudioQuotaCard } from '@/app/library/components/cards'
 import GradientCard from '@/app/library/components/cards/card'
 import Library, { LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
-import Lookback, { LookbackWrapper } from './components/lookback'
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
@@ -37,26 +36,46 @@ async function LibraryList({ mems }: {
 }) {
     const { userId } = await getAuthOrThrow()
     const data = await getData()
+    const shadowLibs = data.filter(({ lib }) => lib?.shadow)
+    const normalLibs = data.filter(({ lib }) => !lib?.shadow)
     return (
-        <>
-            {data.map(({ lib, count }) => lib && (
-                <Library
-                    shadow={lib.shadow}
-                    access={lib.access}
-                    id={lib.id}
-                    key={lib.id}
-                    name={lib.name}
-                    lang={lib.lang}
-                    lexicon={{ count }}
-                    isOwner={lib.owner === userId}
-                    orgs={mems.map((mem) => ({
-                        name: mem.organization.id,
-                        label: mem.organization.name
-                    }))}
-                    orgId={lib.org}
-                />
-            ))}
-        </>
+        <div className='flex flex-col gap-4'>
+            <section className='flex flex-col gap-4'>
+                {normalLibs.map(({ lib, count }) => lib && (
+                    <Library
+                        shadow={false}
+                        access={lib.access}
+                        id={lib.id}
+                        key={lib.id}
+                        name={lib.name}
+                        lang={lib.lang}
+                        lexicon={{ count }}
+                        isOwner={lib.owner === userId}
+                        orgs={mems.map((mem) => ({
+                            name: mem.organization.id,
+                            label: mem.organization.name
+                        }))}
+                        orgId={lib.org}
+                    />
+                ))}
+            </section>
+            {shadowLibs.length > 0 && <section className='flex flex-wrap justify-center my-1 px-2 py-4 border border-dashed border-default-200 rounded-lg'>
+                {shadowLibs.map(({ lib, count }) => lib && (
+                    <Library
+                        shadow={true}
+                        access={lib.access}
+                        id={lib.id}
+                        key={lib.id}
+                        name={lib.name}
+                        lang={lib.lang}
+                        lexicon={{ count }}
+                        isOwner={lib.owner === userId}
+                        orgs={[]}
+                        orgId={lib.org}
+                    />
+                ))}
+            </section>}
+        </div>
     )
 }
 
@@ -68,7 +87,6 @@ export default async function Page() {
     const mems = await getOrgs()
     return <Main className='flex flex-col max-w-screen-sm'>
         <Nav />
-
 
         <H className='text-5xl'><PiBooksDuotone />文库</H>
         <Spacer y={8} />
@@ -87,16 +105,6 @@ export default async function Page() {
                     </GradientCard>
                 }>
                     <AudioQuotaCard />
-                </Suspense>
-            </div>
-
-            <div className='w-full my-6'>
-                <Suspense fallback={
-                    <LookbackWrapper>
-                        <Skeleton className='w-full h-4 rounded-lg mb-3 mt-2' />
-                    </LookbackWrapper>
-                }>
-                    <Lookback />
                 </Suspense>
             </div>
 

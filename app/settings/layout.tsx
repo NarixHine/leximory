@@ -7,11 +7,13 @@ export const metadata: Metadata = { title: '设置' }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
-        <Center>
+        <>
             <ClerkLoading>
-                <CircularProgress color='primary' />
+                <Center>
+                    <CircularProgress color='primary' />
+                </Center>
             </ClerkLoading>
             {children}
-        </Center>
+        </>
     )
 }

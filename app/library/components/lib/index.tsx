@@ -22,6 +22,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 export function LibrarySkeleton() {
     return (
@@ -94,32 +95,38 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
 
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     return (<motion.div
-        className='w-full relative'
+        className={cn('relative', shadow ? 'basis-1/2 px-2' : 'w-full')}
         animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
         transition={{ duration: 1 }}
     >
-        {isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
+        {!shadow && isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
-            <CardBody className='px-6 pt-5'>
-                <a className='text-4xl' style={{
-                    fontFamily: postFontFamily
-                }}>{name}</a>
-                <Spacer y={2}></Spacer>
-                <div className='flex space-x-2'>
-                    {shadow && <Chip key='shadow' variant='flat' color='secondary'>默认</Chip>}
-                    {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary'>{tag}</Chip>)}
-                </div>
-            </CardBody>
+            {shadow
+                ? <CardBody className='px-5 pt-4 pb-0'>
+                    <span className='text-2xl' style={{
+                        fontFamily: postFontFamily
+                    }}>{name}</span>
+                </CardBody>
+                : <CardBody className='px-6 pt-5'>
+                    <a className='text-4xl' style={{
+                        fontFamily: postFontFamily
+                    }}>{name}</a>
+                    <Spacer y={2}></Spacer>
+                    <div className='flex space-x-2'>
+                        {shadow && <Chip key='shadow' variant='flat' color='secondary'>默认</Chip>}
+                        {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary'>{tag}</Chip>)}
+                    </div>
+                </CardBody>}
             <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
+                <Button isIconOnly={shadow} size={shadow ? 'sm' : 'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>{shadow ? '' : '语料本'}</Button>
                 <div className='flex flex-col items-start'>
-                    <p className='text-xs opacity-80'>积累词汇</p>
+                    {!shadow && <p className='text-xs opacity-80'>积累词汇</p>}
                     <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <Button size={shadow ? 'sm' : 'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
                 </Button>}
             </CardFooter>

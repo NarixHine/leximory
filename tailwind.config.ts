@@ -63,6 +63,9 @@ const config: Config = {
           to: { opacity: "0", transform: "translateX(100%)" },
         },
       },
+      fontFamily: {
+        'ios-mincho': ['"Hiragino Mincho ProN"', '"Hiragino Mincho"', 'serif'],
+      },
     },
     animation: {
       hide: "hide 150ms cubic-bezier(0.16, 1, 0.3, 1)",

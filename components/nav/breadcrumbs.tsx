@@ -10,20 +10,20 @@ import { useRouter } from 'next/navigation'
 export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavProps & { tenant: string }) {
     const router = useRouter()
     return <>
-        <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[90%]' classNames={{
+        <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
             list: 'flex-nowrap bg-[#ece1d9]/70 dark:bg-default-200/70 backdrop-blur-sm',
         }}>
             <BreadcrumbItem className='max-w-full' startContent={<PiUserCircleDuotone className='text-[#67595e] dark:text-default-500' />} onPress={() => {
                 router.push(`/library`)
             }}>
-                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] align-middle text-[#67595e] dark:text-default-500'>
+                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-[#67595e] dark:text-default-500'>
                     {tenant}
                 </span>
             </BreadcrumbItem>
             {lib && <BreadcrumbItem className='max-w-full' startContent={<PiBooksDuotone className='text-[#67595e] dark:text-default-500' />} onPress={() => {
                 router.push(`/library/${lib.id}`)
             }}>
-                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[30vw] align-middle text-[#67595e] dark:text-default-500'>
+                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-[#67595e] dark:text-default-500'>
                     {lib.name}
                 </span>
             </BreadcrumbItem>}
@@ -31,7 +31,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             {text && lib && <BreadcrumbItem className='max-w-full' startContent={<PiFileTextDuotone className='text-[#67595e] dark:text-default-500' />} onPress={() => {
                 router.push(`/library/${lib.id}/${text.id}`)
             }}>
-                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[40vw] align-middle text-[#67595e] dark:text-default-500'>
+                <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[30vw] lg:max-w-[40vw] align-middle text-[#67595e] dark:text-default-500'>
                     {text.name}
                 </span>
             </BreadcrumbItem>}

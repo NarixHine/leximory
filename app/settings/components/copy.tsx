@@ -12,13 +12,14 @@ import { Drawer } from 'vaul'
 import { Snippet } from "@heroui/snippet"
 import { Progress } from "@heroui/progress"
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 export default function CopyToken() {
     const [isLoading, startTransition] = useTransition()
     const [token, setToken] = useState<string | null>(null)
     return <Drawer.Root>
         <Drawer.Trigger
-            className={cn('relative flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', CHINESE_ZCOOL.className)}
+            className={cn('relative flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', CHINESE_ZCOOL.className)}
             onClick={() => {
                 setToken(null)
                 startTransition(async () => {
@@ -40,7 +41,7 @@ export default function CopyToken() {
                         pre: 'my-0',
                     }}>{token ? token : 'Loading ...'}</Snippet>
                     <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        通行密钥用于 iOS Shortcut 中向 API 验证你的身份，
+                        通行密钥用于 <Link href='/blog/ios-shortcuts' target='_blank' className='text-primary-500'>iOS Shortcut</Link> 中向 API 验证你的身份，
                         <br />
                         请妥善保管，不要泄露给他人。
                     </p>
@@ -53,9 +54,12 @@ export default function CopyToken() {
 export function CopyProfileLink() {
     const { user } = useUser()
     return <Button
+        variant='bordered'
+        startContent={<PiShareDuotone className='size-4 -mr-1' />}
         size='sm'
-        variant='flat'
-        color='secondary'
+        color='primary'
+        radius='full'
+        className={cn('border-1', CHINESE_ZCOOL.className)}
         onPress={async () => {
             if (!user) return
             const data: ShareData = {
@@ -69,8 +73,7 @@ export function CopyProfileLink() {
                 toast.error('浏览器不支持分享功能')
             }
         }}
-        isIconOnly
     >
-        <PiShareDuotone />
+        分享
     </Button>
 }
