@@ -44,7 +44,7 @@ export default async function LibLayout(
         [isStarredAtom, isStarred],
     ]}>
         {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
-        <div className='flex flex-col items-center gap-2 fixed bottom-4 left-4 z-10'>
+        <div className='flex flex-col items-center gap-2 fixed bottom-3 left-3 z-10'>
             {
                 !isOwner && !isOrganizational &&
                 <>

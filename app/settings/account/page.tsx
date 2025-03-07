@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function AccountPage() {
     return <Center>
-        <div className='flex flex-col gap-10'>
+        <div className='flex flex-col gap-6'>
+            <OrganizationList afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} />
             <div className='flex justify-center gap-5'>
                 <UserButton userProfileUrl='/settings/user' />
                 <OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} organizationProfileUrl='/settings/org' />
             </div>
-            <OrganizationList afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} />
         </div>
     </Center>
 }
