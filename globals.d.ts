@@ -1,8 +1,8 @@
-export { }
+export { Plan } from '@/server/auth/quota'
 
 declare global {
     interface CustomJwtSessionClaims {
-        plan?: 'beginner' | 'interlocutor' | 'communicator'
+        plan?: Plan
     }
 }
 

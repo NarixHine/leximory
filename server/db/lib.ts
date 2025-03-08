@@ -30,16 +30,13 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
     return newStarredBy.includes(userId!)
 }
 
-export async function updateLib({ id, access, name, org }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null }) {
-    await xata.db.libraries.update(id, typeof org === 'string'
-        ? {
-            org: org === 'none' ? null : org,
-            name,
-            access,
-        } : {
-            name,
-            access,
-        })
+export async function updateLib({ id, access, name, org, price }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number }) {
+    await xata.db.libraries.update(id, {
+        org: org === 'none' ? null : org,
+        name,
+        access,
+        price,
+    })
     revalidatePath(`/library/${id}`)
     revalidatePath(`/library`)
 }
@@ -128,15 +125,15 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
     const { records } = await xata.db.libraries
         .filter({ access: libAccessStatusMap.public })
         .sort('xata.createdAt', 'desc')
-        .select(['id', 'name', 'lang', 'owner', 'starredBy'])
+        .select(['id', 'name', 'lang', 'owner', 'starredBy', 'price'])
         .getPaginated({
             pagination: { size, offset: (page - 1) * size }
         })
-    return records.map(({ id, name, lang, owner, starredBy }) => ({ id, name, lang: lang as Lang, owner, starredBy }))
+    return records.map(({ id, name, lang, owner, starredBy, price }) => ({ id, name, lang: lang as Lang, owner, starredBy, price }))
 }
 
 export async function getLib({ id }: { id: string }) {
-    return xata.db.libraries.select(['name', 'lang', 'org', 'access']).filter({ id }).getFirstOrThrow()
+    return xata.db.libraries.select(['name', 'lang', 'org', 'access', 'owner']).filter({ id }).getFirstOrThrow()
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {

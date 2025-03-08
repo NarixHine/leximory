@@ -1,16 +1,15 @@
 import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
 
-import type { JSX } from "react";
-
-const GradientCard = ({ text, gradient, title, children }: {
+const GradientCard = ({ text, className, title, children }: {
     title?: string,
     text?: string,
-    gradient?: string,
-    children?: JSX.Element
+    className?: string,
+    children?: ReactNode
 }) => {
     return (
-        <div className={cn('h-24', gradient ?? 'bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700', 'p-3 relative rounded-lg')}>
+        <div className={cn('h-24', className ?? 'bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700', 'p-3 relative rounded-lg')}>
             {
                 title
                     ? <h2 className='font-xl font-bold opacity-50'>{title}</h2>

@@ -29,7 +29,7 @@ export default function CopyToken() {
             }}
         >
             <PiKeyDuotone />
-            获取通行密钥
+            拷贝
         </Drawer.Trigger>
         <Drawer.Portal>
             <Drawer.Overlay className='fixed inset-0 bg-black/40' />

@@ -16,7 +16,7 @@ export default function Error({
 }) {
     return (
         <Center>
-            <div className={cn('relative w-full max-w-4xl aspect-video bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
+            <div className={cn('relative w-full max-w-4xl aspect-square sm:aspect-video bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden', CHINESE_ZCOOL.className)}>
                 {/* Left side: Error icon and minigame */}
                 <div className='absolute left-0 top-0 bottom-0 w-1/3 bg-[#B8C5B6] flex flex-col items-center justify-end'>
                     <div className='mb-4 flex flex-col items-center justify-center'>

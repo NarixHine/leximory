@@ -15,6 +15,8 @@ import { summarizeLibsWithWords } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
 import { redirect } from 'next/navigation'
 import { getMaintenanceStatus } from '@/server/db/config'
+import { isProd } from '@/lib/env'
+import { getArchivedLibs } from '@/server/db/archive'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -36,13 +38,15 @@ async function LibraryList({ mems }: {
 }) {
     const { userId } = await getAuthOrThrow()
     const data = await getData()
-    const shadowLibs = data.filter(({ lib }) => lib?.shadow)
-    const normalLibs = data.filter(({ lib }) => !lib?.shadow)
+    const archives = await getArchivedLibs({ userId })
+    const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
+    const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
     return (
         <div className='flex flex-col gap-4'>
             <section className='flex flex-col gap-4'>
                 {normalLibs.map(({ lib, count }) => lib && (
                     <Library
+                        price={lib.price}
                         shadow={false}
                         access={lib.access}
                         id={lib.id}
@@ -56,13 +60,15 @@ async function LibraryList({ mems }: {
                             label: mem.organization.name
                         }))}
                         orgId={lib.org}
+                        archived={false}
                     />
                 ))}
             </section>
-            {shadowLibs.length > 0 && <section className='flex flex-wrap justify-center my-1 px-2 py-4 border border-dashed border-default-200 rounded-lg'>
-                {shadowLibs.map(({ lib, count }) => lib && (
+            {compactLibs.length > 0 && <section className='flex flex-wrap justify-center my-1 px-2 py-2 border border-dashed border-default-200 rounded-lg'>
+                {compactLibs.map(({ lib, count }) => lib && (
                     <Library
-                        shadow={true}
+                        price={lib.price}
+                        shadow={lib.shadow}
                         access={lib.access}
                         id={lib.id}
                         key={lib.id}
@@ -72,6 +78,7 @@ async function LibraryList({ mems }: {
                         isOwner={lib.owner === userId}
                         orgs={[]}
                         orgId={lib.org}
+                        archived={archives.includes(lib.id)}
                     />
                 ))}
             </section>}
@@ -81,13 +88,12 @@ async function LibraryList({ mems }: {
 
 export default async function Page() {
     const isMaintenance = await getMaintenanceStatus()
-    if (isMaintenance) {
+    if (isProd && isMaintenance) {
         redirect('/maintenance')
     }
     const mems = await getOrgs()
     return <Main className='flex flex-col max-w-screen-sm'>
         <Nav />
-
         <H className='text-5xl'><PiBooksDuotone />文库</H>
         <Spacer y={8} />
         <div className='flex flex-col gap-4'>

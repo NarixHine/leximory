@@ -2,6 +2,7 @@ import { deepseek } from '@ai-sdk/deepseek'
 import env from './env'
 import { getDeepSeekStatus } from '@/server/db/config'
 import { google } from '@ai-sdk/google'
+import { Plan } from '@/server/auth/quota'
 
 export const elevenLabsVoice = {
     'BrE': 'npp2mvZp4jbUrUkhYg8e',
@@ -53,6 +54,20 @@ export const langMap: Record<Lang, string> = {
     'en': '英文',
     'ja': '日文',
     'nl': '其他'
+} as const
+
+export const planMap: Record<Plan, string> = {
+    'beginner': 'Beginner—初学者',
+    'bilingual': 'Bilingual—双语者',
+    'polyglot': 'Polyglot—语言学人',
+    'leximory': 'Leximory'
+} as const
+
+export const dailyLexicoinClaimMap: Record<Plan, number> = {
+    'beginner': 1,
+    'bilingual': 3,
+    'polyglot': 5,
+    'leximory': 100
 } as const
 
 export const langMaxChunkSizeMap: Record<Lang, number> = {

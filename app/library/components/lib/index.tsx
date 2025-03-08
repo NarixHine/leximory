@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { postFontFamily } from '@/lib/fonts'
@@ -15,12 +15,12 @@ import Form from '../../../../components/form'
 import { Input } from "@heroui/input"
 import { Checkbox } from "@heroui/checkbox"
 import { Select, SelectItem } from "@heroui/select"
-import { create, remove, save } from './actions'
+import { create, remove, save, archive, unarchive } from './actions'
 import { useForm } from 'react-hook-form'
 import { useDisclosure } from "@heroui/react"
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -59,7 +59,7 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow }: {
+function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow, price, archived }: {
     id: string,
     name: string,
     access: number,
@@ -70,8 +70,12 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
     isOwner: boolean,
     orgId: string | null | undefined,
     shadow: boolean,
-    orgs: { label: string, name: string }[]
+    orgs: { label: string, name: string }[],
+    price: number,
+    archived: boolean,
 }) {
+    const compact = shadow || archived
+
     const router = useRouter()
     const topics = ([] as string[])
         .concat(access === libAccessStatusMap.public ? ['共享'] : [])
@@ -84,30 +88,61 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
         name: string,
         access: boolean,
         org: string,
+        price: number,
     }>({
         defaultValues: {
             id,
             name,
             access: access === libAccessStatusMap.public,
             org: orgId ?? 'none',
+            price,
         }
     })
 
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
+
+    const [isTogglingArchive, startTogglingArchive] = useTransition()
+
     return (<motion.div
-        className={cn('relative', shadow ? 'basis-1/2 px-2' : 'w-full')}
+        className={cn('relative', compact ? 'px-2 py-2' : 'w-full')}
         animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
         transition={{ duration: 1 }}
     >
-        {!shadow && isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
+        {!compact && isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
         <Card fullWidth shadow='sm' isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
-            {shadow
-                ? <CardBody className='px-5 pt-4 pb-0'>
-                    <span className='text-2xl' style={{
+            {compact
+                ? <CardBody className='px-5 py-4 flex flex-row items-center gap-4'>
+                    <div className='text-2xl' style={{
                         fontFamily: postFontFamily
-                    }}>{name}</span>
+                    }}>{name}</div>
+                    {
+                        shadow
+                            ? <Button
+                                as={Link}
+                                href={`/library/${id}/corpus`}
+                                size='sm'
+                                startContent={<PiBookBookmarkDuotone />}
+                                color='primary'
+                                variant='flat'
+                                isIconOnly
+                            />
+                            : <Button
+                                size={'sm'}
+                                as={'span'}
+                                isLoading={isTogglingArchive}
+                                startContent={!isTogglingArchive && <PiArchiveFill />}
+                                color='warning'
+                                variant='flat'
+                                isIconOnly
+                                onPress={() => {
+                                    startTogglingArchive(async () => {
+                                        await unarchive({ id })
+                                    })
+                                }}
+                            />
+                    }
                 </CardBody>
                 : <CardBody className='px-6 pt-5'>
                     <a className='text-4xl' style={{
@@ -115,21 +150,33 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     }}>{name}</a>
                     <Spacer y={2}></Spacer>
                     <div className='flex space-x-2'>
-                        {shadow && <Chip key='shadow' variant='flat' color='secondary'>默认</Chip>}
                         {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary'>{tag}</Chip>)}
                     </div>
                 </CardBody>}
-            <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button isIconOnly={shadow} size={shadow ? 'sm' : 'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>{shadow ? '' : '语料本'}</Button>
+            {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
+                <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-start'>
-                    {!shadow && <p className='text-xs opacity-80'>积累词汇</p>}
+                    <p className='text-xs opacity-80'>积累词汇</p>
                     <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button size={shadow ? 'sm' : 'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <Button size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
                 </Button>}
-            </CardFooter>
+                <Button
+                    as={'span'}
+                    isLoading={isTogglingArchive}
+                    startContent={!isTogglingArchive && <PiArchiveDuotone />}
+                    variant='flat'
+                    color='warning'
+                    isIconOnly
+                    onPress={() => {
+                        startTogglingArchive(async () => {
+                            await archive({ id })
+                        })
+                    }}
+                ></Button>
+            </CardFooter>}
         </Card>
 
         <Form
@@ -158,7 +205,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
             title='编辑文库'
         >
             <input type='hidden' {...register('id')} />
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
                 <Input isRequired label='文库名' {...register('name')} />
                 <Select isRequired label='文库所属小组' {...register('org')} >
                     <SelectItem startContent={<PiUserDuotone />} key='none' value='none'>无</SelectItem>
@@ -167,7 +214,9 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>
+                <Input isRequired size='sm' variant='underlined' label='上架价格' type='number' {...register('price')} />
             </div>
+            <p className='text-xs opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
         </Form>
     </motion.div>)
 }

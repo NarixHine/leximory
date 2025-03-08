@@ -1,11 +1,9 @@
 import { authReadToLib, getAuthOrThrow } from '@/server/auth/role'
 import Prompt from './components/prompt'
-import Star from './components/star'
-import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom } from './atoms'
+import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
 import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
-import UserAvatar from '@/components/avatar'
 import { getLib } from '@/server/db/lib'
 import { LibParams } from '@/lib/types'
 
@@ -32,7 +30,7 @@ export default async function LibLayout(
         children
     } = props
 
-    const { starredBy, isReadOnly, isOrganizational, isOwner, lang, owner } = await authReadToLib(params.lib)
+    const { starredBy, isReadOnly, isOrganizational, isOwner, lang, price } = await authReadToLib(params.lib)
     const { userId } = await getAuthOrThrow()
     const isStarred = Boolean(starredBy?.includes(userId))
     return (<HydrationBoundary options={{
@@ -42,17 +40,9 @@ export default async function LibLayout(
         [isReadOnlyAtom, isReadOnly],
         [langAtom, lang as Lang],
         [isStarredAtom, isStarred],
+        [priceAtom, price]
     ]}>
         {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
-        <div className='flex flex-col items-center gap-2 fixed bottom-3 left-3 z-10'>
-            {
-                !isOwner && !isOrganizational &&
-                <>
-                    <UserAvatar uid={owner}></UserAvatar>
-                    <Star></Star>
-                </>
-            }
-        </div>
         {children}
     </HydrationBoundary>)
 }

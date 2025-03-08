@@ -77,7 +77,7 @@ export function Article() {
                 <GradientCard
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
-                    gradient='bg-gradient-to-br from-primary-50/50 to-secondary-100/50'
+                    className='bg-gradient-to-br from-primary-50/50 to-secondary-100/50'
                     to={exampleEbookLink}
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
@@ -93,7 +93,7 @@ export function Article() {
                     title='iOS Shortcuts'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
-                    gradient='bg-gradient-to-bl from-warning-50/50 to-secondary-100/50'
+                    className='bg-gradient-to-bl from-warning-50/50 to-secondary-100/50'
                 >
                     <PiAppleLogoDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -109,7 +109,7 @@ export function Article() {
                     to='/blog/reading-while-listening'
                     title='边听边读'
                     text='语言认知的另一个维度'
-                    gradient='bg-gradient-to-tr from-warning-50/50 to-danger-100/50'
+                    className='bg-gradient-to-tr from-warning-50/50 to-danger-100/50'
                 >
                     <PiDeviceMobileDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -124,7 +124,7 @@ export function Article() {
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
                     to='/blog/install-pwa'
-                    gradient='bg-gradient-to-tl from-primary-50/50 to-warning-100/50'
+                    className='bg-gradient-to-tl from-primary-50/50 to-warning-100/50'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -215,10 +215,10 @@ export function Article() {
     </article>
 }
 
-const GradientCard = ({ text, gradient, title, children, to }: {
+const GradientCard = ({ text, className, title, children, to }: {
     title: string,
     text: string,
-    gradient: string,
+    className: string,
     children?: React.ReactNode
     to: string
 }) => {
@@ -226,7 +226,7 @@ const GradientCard = ({ text, gradient, title, children, to }: {
     return (
         <Card isPressable onPress={() => {
             router.push(to)
-        }} shadow='none' className={cn(gradient, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
+        }} shadow='none' className={cn(className, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
             <CardBody className='overflow-hidden'>
                 <h2 className='text-xl'>{title}</h2>
                 <p className='opacity-60 text-lg'>{text}</p>

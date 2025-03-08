@@ -19,7 +19,7 @@ export const CommentaryQuotaCard = async () => {
 
 export const AudioQuotaCard = async () => {
     const { quota, max, percentage } = await getAudioQuota()
-    return <GradientCard title={'本月 AI 音频额度'} text={`${quota} / ${max}`} gradient={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}>
+    return <GradientCard title={'本月 AI 音频额度'} text={`${quota} / ${max}`} className={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}>
         <CircularProgress
             size='lg'
             value={percentage}

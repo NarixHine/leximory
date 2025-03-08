@@ -28,7 +28,7 @@ export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
 
 export const authReadToLib = async (lib: string) => {
     const { userId, orgId, orgRole } = await getAuthOrThrow()
-    const rec = await xata.db.libraries.select(['owner', 'lang', 'name', 'starredBy', 'org']).filter({
+    const rec = await xata.db.libraries.select(['owner', 'lang', 'name', 'starredBy', 'org', 'price']).filter({
         $all: [
             { id: lib },
             {
@@ -45,7 +45,7 @@ export const authReadToLib = async (lib: string) => {
     const isOwner = rec.owner === (await auth()).userId
     const { lang } = rec
     const isOrganizational = !!orgId && rec.org === orgId
-    return { isReadOnly, isOwner, owner: rec.owner, lang: lang as Lang, isOrganizational, name: rec.name, starredBy: rec.starredBy }
+    return { isReadOnly, isOwner, owner: rec.owner, lang: lang as Lang, isOrganizational, name: rec.name, starredBy: rec.starredBy, price: rec.price }
 }
 
 // auth access to items related to libs

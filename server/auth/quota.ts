@@ -1,28 +1,39 @@
+import 'server-only'
+
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { incrementQuota, getQuota } from '../db/quota'
 import { getAuthOrThrow } from './role'
 
-const getPlan = async (userId?: string) => {
-    return userId ? (await (await clerkClient()).users.getUser(userId)).publicMetadata.plan : (await auth()).sessionClaims?.plan
+export type Plan = 'beginner' | 'bilingual' | 'polyglot' | 'leximory'
+
+export const getPlan = async (userId?: string) => {
+    const plan = userId ? (await (await clerkClient()).users.getUser(userId)).publicMetadata.plan as Plan : (await auth()).sessionClaims?.plan as Plan
+    return plan ?? 'beginner'
 }
 
 export const maxCommentaryQuota = async (userId?: string) => {
     const plan = userId ? await getPlan(userId) : await getPlan()
-    if (plan === 'communicator') {
+    if (plan === 'leximory') {
         return 999
     }
-    else if (plan === 'interlocutor') {
+    else if (plan === 'polyglot') {
+        return 200
+    }
+    else if (plan === 'bilingual') {
         return 100
     }
-    return 50
+    return 30
 }
 
 export const maxAudioQuota = async () => {
     const plan = await getPlan()
-    if (plan === 'communicator') {
-        return 99
+    if (plan === 'leximory') {
+        return 100
     }
-    else if (plan === 'interlocutor') {
+    else if (plan === 'polyglot') {
+        return 20
+    }
+    else if (plan === 'bilingual') {
         return 10
     }
     return 5

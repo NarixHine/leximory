@@ -1,7 +1,7 @@
 'use client'
 
 import { Lang, langMap } from '@/lib/config'
-import { PiPushPinDuotone, PiPushPinFill } from 'react-icons/pi'
+import { PiCoinsDuotone } from 'react-icons/pi'
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Button } from "@heroui/button"
 import H from '@/components/ui/h'
@@ -9,7 +9,9 @@ import { useRouter } from 'next/navigation'
 import { ReactNode, useTransition } from 'react'
 import { Skeleton } from "@heroui/skeleton"
 import { star } from '@/app/library/[lib]/components/actions'
-import { useLogSnag } from '@logsnag/next'
+import { toast } from 'sonner'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { Chip } from '@heroui/chip'
 
 interface LibraryCardProps {
     library: {
@@ -17,6 +19,7 @@ interface LibraryCardProps {
         owner: string
         name: string
         lang: Lang
+        price: number
     }
     isStarred: boolean
     avatar: ReactNode
@@ -25,7 +28,6 @@ interface LibraryCardProps {
 export default function LibraryCard({ library, isStarred, avatar }: LibraryCardProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
-    const { track } = useLogSnag()
 
     return (
         <Card
@@ -37,35 +39,43 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
             isPressable
         >
             <CardBody className='p-5 pb-0'>
-                <div className='space-y-1'>
+                <div className='space-y-2'>
                     <H useNoto disableCenter className='text-2xl '>{library.name}</H>
-                    <p className='text-sm opacity-70'>{langMap[library.lang]}</p>
+                    <Chip variant='flat' color='primary' className='text-sm opacity-70'>{langMap[library.lang]}</Chip>
                 </div>
             </CardBody>
 
             <CardFooter className='flex justify-end gap-3 pb-4 pr-4'>
-                {avatar}
                 <Button
                     as={'div'}
                     size='sm'
+                    isDisabled={isStarred}
                     isLoading={isTransitioning}
-                    startContent={isStarred ? <PiPushPinFill className='text-lg' /> : <PiPushPinDuotone className='text-lg' />}
+                    startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
                     color='primary'
                     variant={'ghost'}
+                    className={CHINESE_ZCOOL.className}
                     onPress={() => {
-                        track({
-                            event: isStarred ? '取消钉选文库' : '钉选文库',
-                            channel: 'resource-sharing',
-                            icon: '📍',
-                            description: `${isStarred ? '取消' : ''}钉选了 ${library.name}`,
-                            tags: { lib: library.id, lang: library.lang }
-                        })
-                        startTransition(() => {
-                            star(library.id)
+                        startTransition(async () => {
+                            const { success, message } = await star(library.id)
+                            if (success) {
+                                toast.success('钉选成功')
+                            }
+                            else {
+                                toast.error(message)
+                            }
                         })
                     }}
                 >
+                    {
+                        isStarred
+                            ? '已购买'
+                            : library.price === 0
+                                ? '免费'
+                                : `用 ${library.price} LexiCoin 购买`
+                    }
                 </Button>
+                {avatar}
             </CardFooter>
         </Card>
     )
@@ -80,7 +90,7 @@ export function LibraryCardSkeleton() {
             <CardBody className='p-5'>
                 <div className='space-y-2'>
                     <Skeleton className='rounded-lg h-8 w-3/4' />
-                    <Skeleton className='rounded-lg h-2 w-1/3' />
+                    <Skeleton className='rounded-lg h-6 w-1/3' />
                 </div>
             </CardBody>
 

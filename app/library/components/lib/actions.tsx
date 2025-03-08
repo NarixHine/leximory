@@ -5,22 +5,25 @@ import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
 import { createLib, deleteLib, updateLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-
+import { addToArchive, removeFromArchive } from '@/server/db/archive'
+import { revalidatePath } from 'next/cache'
 const saveValidator = z.object({
     id: z.string(),
     name: z.string(),
     access: z.boolean(),
     org: z.string().optional(),
+    price: z.number(),
 })
 
 export async function save(data: z.infer<typeof saveValidator>) {
-    const { id, name, access, org } = saveValidator.parse(data)
+    const { id, name, access, org, price } = saveValidator.parse(data)
     await authWriteToLib(id)
-    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null })
+    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null, price })
     return {
         name,
         access,
         org,
+        price,
     }
 }
 
@@ -39,4 +42,16 @@ export async function create(data: z.infer<typeof createValidator>) {
 export async function remove({ id }: { id: string }) {
     await authWriteToLib(id)
     await deleteLib({ id })
+}
+
+export async function archive({ id }: { id: string }) {
+    const { userId } = await getAuthOrThrow()
+    await addToArchive({ userId, libId: id })
+    revalidatePath(`/library`)
+}
+
+export async function unarchive({ id }: { id: string }) {
+    const { userId } = await getAuthOrThrow()
+    await removeFromArchive({ userId, libId: id })
+    revalidatePath(`/library`)
 }
