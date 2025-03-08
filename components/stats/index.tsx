@@ -3,6 +3,7 @@ import moment from 'moment'
 import { getData } from './actions'
 
 export default async function WordStats({ uid }: { uid: string }) {
+    'use cache'
     const data = await getData(uid)
 
     const countMap = new Map(

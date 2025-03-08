@@ -1,12 +1,6 @@
 import { get } from '@vercel/edge-config'
 import { z } from 'zod'
 
-export const getMaintenanceStatus = async () => {
-    const status = await get('is-being-maintained')
-    if (!status) return false
-    return status as boolean
-}
-
 const zNotice = z.object({
     message: z.string(),
     date: z.string(),

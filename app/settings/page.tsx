@@ -27,37 +27,23 @@ import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import NumberFlow from '@number-flow/react'
 export const metadata: Metadata = { title: '设置' }
 
-async function TotalWordsLearned() {
+async function UserHeroSection() {
     const { userId } = await getAuthOrThrow()
+    return <HeroSection userId={userId} />
+}
+
+async function HeroSection({ userId }: { userId: string }) {
+    'use cache'
+    const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(userId)
     const data = await summarizeLibsWithWords({ filter: { 'lib.owner': userId } })
     const totalWordsLearned = data.reduce((acc, curr) => acc + curr.count, 0)
-    return <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 {totalWordsLearned} 个语汇</div></Chip>
-}
-
-async function UserSection() {
-    const { userId } = await getAuthOrThrow()
-    const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(userId)
-    return <UserSectionContent username={username} imageUrl={imageUrl} createdAt={createdAt} />
-}
-
-function UserSectionContent({
-    username,
-    imageUrl,
-    createdAt
-}: {
-    username: string | null,
-    imageUrl: string | null,
-    createdAt: number
-}) {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16' />
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).calendar()} 加入</div></Chip>
-                <Suspense fallback={<Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 <Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 个语汇</div></Chip>}>
-                    <TotalWordsLearned />
-                </Suspense>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 {totalWordsLearned} 个语汇</div></Chip>
             </div>
         </div>
     </section>
@@ -79,7 +65,7 @@ function UserSectionSkeleton() {
 export default async function Settings() {
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
-            <UserSection />
+            <UserHeroSection />
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
             <Suspense fallback={<Skeleton className='w-full h-12 rounded-full' />}>

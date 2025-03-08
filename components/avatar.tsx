@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 
 async function UserAvatarServer({ uid }: { uid: string }) {
+    'use cache'
     try {
         const { imageUrl } = await (await clerkClient()).users.getUser(uid)
         return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
@@ -29,4 +30,3 @@ export default function UserAvatar({ uid }: { uid: string }) {
         isIconOnly
     />
 }
-

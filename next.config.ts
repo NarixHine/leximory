@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
         serverActions: {
             bodySizeLimit: '4mb',
         },
+        useCache: true,
     },
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {

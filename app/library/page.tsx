@@ -13,18 +13,15 @@ import { Suspense } from 'react'
 import { PiBooksDuotone } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
-import { redirect } from 'next/navigation'
-import { getMaintenanceStatus } from '@/server/db/config'
-import { isProd } from '@/lib/env'
-import { getArchivedLibs } from '@/server/db/archive'
+import { getArchivedLibs } from '@/server/db/lib'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 export const metadata: Metadata = {
     title: '文库'
 }
 
-async function getData() {
-    const listed = await isListed()
-    const data = await summarizeLibsWithWords({ filter: listed })
+async function getData(listedFilter: Awaited<ReturnType<typeof isListed>>) {
+    const data = await summarizeLibsWithWords({ filter: listedFilter })
     return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': exampleSharedLib.id } })
 }
 
@@ -33,11 +30,20 @@ async function getOrgs() {
     return data
 }
 
-async function LibraryList({ mems }: {
-    mems: Awaited<ReturnType<typeof getOrgs>>
-}) {
+async function UserLibraryList() {
     const { userId } = await getAuthOrThrow()
-    const data = await getData()
+    const mems = await getOrgs()
+    return <LibraryList userId={userId} mems={mems} listedFilter={await isListed()} />
+}
+
+async function LibraryList({ userId, mems, listedFilter }: {
+    userId: string,
+    mems: Awaited<ReturnType<typeof getOrgs>>,
+    listedFilter: Awaited<ReturnType<typeof isListed>>
+}) {
+    'use cache'
+    cacheTag('libraries')
+    const data = await getData(listedFilter)
     const archives = await getArchivedLibs({ userId })
     const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
@@ -86,12 +92,7 @@ async function LibraryList({ mems }: {
     )
 }
 
-export default async function Page() {
-    const isMaintenance = await getMaintenanceStatus()
-    if (isProd && isMaintenance) {
-        redirect('/maintenance')
-    }
-    const mems = await getOrgs()
+export default function Page() {
     return <Main className='flex flex-col max-w-screen-sm'>
         <Nav />
         <H className='text-5xl'><PiBooksDuotone />文库</H>
@@ -120,7 +121,7 @@ export default async function Page() {
                     <LibrarySkeleton />
                 </div>
             }>
-                <LibraryList mems={mems} />
+                <UserLibraryList />
             </Suspense>
 
             <LibraryAddButton />

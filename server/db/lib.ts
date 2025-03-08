@@ -2,7 +2,7 @@ import 'server-only'
 import { Lang, langMap, libAccessStatusMap, welcomeMap } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
-import { revalidatePath } from 'next/cache'
+import { revalidateTag } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -20,13 +20,12 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
 }
 
 export async function starLib({ lib, userId }: { lib: string, userId: string }) {
+    revalidateTag('libraries')
     const { starredBy } = await xata.db.libraries.select(['starredBy']).filter({ id: lib }).getFirstOrThrow()
     const newStarredBy = starredBy?.includes(userId!)
         ? (starredBy ?? []).filter(x => x !== userId!)
         : [...(starredBy ?? []), userId!]
     await xata.db.libraries.update(lib, { starredBy: newStarredBy })
-    revalidatePath(`/library/${lib}`)
-    revalidatePath(`/marketplace/[page]`)
     return newStarredBy.includes(userId!)
 }
 
@@ -37,8 +36,8 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
         access,
         price,
     })
-    revalidatePath(`/library/${id}`)
-    revalidatePath(`/library`)
+    revalidateTag('libraries')
+    revalidateTag(id)
 }
 
 export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
@@ -67,7 +66,7 @@ export async function createLib({ name, lang, org, owner }: { name: string, lang
             }
         }
     ])
-    revalidatePath(`/library`)
+    revalidateTag('libraries')
     return id
 }
 
@@ -98,7 +97,7 @@ export async function deleteLib({ id }: { id: string }) {
             }
         })),
     ])
-    revalidatePath(`/library`)
+    revalidateTag('libraries')
 }
 
 export async function summarizeLibsWithWords({ filter }: { filter: Record<string, string | undefined | object> }) {
@@ -144,4 +143,24 @@ export async function listShortcutLibs({ owner }: { owner: string }) {
 export async function listLibs({ owner }: { owner: string }) {
     const libs = await xata.db.libraries.select([]).filter({ owner }).getMany()
     return libs.map(({ id }) => id)
+}
+
+export async function getArchivedLibs({ userId }: { userId: string }) {
+    const archive = await xata.db.users.select(['archived_libs']).filter({ id: userId }).getFirst()
+    if (!archive) {
+        return []
+    }
+    return archive.archived_libs ?? []
+}
+
+export async function addToArchive({ userId, libId }: { userId: string, libId: string }) {
+    revalidateTag('libraries')
+    const archive = await getArchivedLibs({ userId })
+    await xata.db.users.update({ id: userId, archived_libs: [...archive, libId] })
+}
+
+export async function removeFromArchive({ userId, libId }: { userId: string, libId: string }) {
+    revalidateTag('libraries')
+    const archive = await getArchivedLibs({ userId })
+    await xata.db.users.update({ id: userId, archived_libs: archive.filter((id) => id !== libId) })
 }

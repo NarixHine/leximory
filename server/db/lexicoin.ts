@@ -1,6 +1,5 @@
 import 'server-only'
 import { getXataClient } from '../client/xata'
-
 const xata = getXataClient()
 
 export async function getLexicoinBalance(uid: string) {

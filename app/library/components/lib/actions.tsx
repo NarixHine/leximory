@@ -5,8 +5,8 @@ import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
 import { createLib, deleteLib, updateLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { addToArchive, removeFromArchive } from '@/server/db/archive'
-import { revalidatePath } from 'next/cache'
+import { addToArchive, removeFromArchive } from '@/server/db/lib'
+
 const saveValidator = z.object({
     id: z.string(),
     name: z.string(),
@@ -47,11 +47,9 @@ export async function remove({ id }: { id: string }) {
 export async function archive({ id }: { id: string }) {
     const { userId } = await getAuthOrThrow()
     await addToArchive({ userId, libId: id })
-    revalidatePath(`/library`)
 }
 
 export async function unarchive({ id }: { id: string }) {
     const { userId } = await getAuthOrThrow()
     await removeFromArchive({ userId, libId: id })
-    revalidatePath(`/library`)
 }
