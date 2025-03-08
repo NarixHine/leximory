@@ -64,7 +64,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        'ios-mincho': ['"Hiragino Mincho ProN"', '"Hiragino Mincho"', 'serif'],
+        'ios-mincho': ['"Hiragino Mincho ProN"', '"ヒラギノ明朝 ProN"', 'serif'],
       },
     },
     animation: {

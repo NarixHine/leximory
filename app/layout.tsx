@@ -6,9 +6,9 @@ import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
 import env from '@/lib/env'
-import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { LogSnagProvider } from '@logsnag/next'
+import Script from 'next/script'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -53,11 +53,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			<html suppressHydrationWarning lang='zh-CN' className='antialiased'>
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
+					{process.env.NODE_ENV === 'production' && <Script defer strategy='lazyOnload' src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 				</head>
 				<body style={{
 					fontFamily: defaultFontFamily,
 				}}>
-					<Analytics />
 					<SpeedInsights />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 						<div className='relative flex flex-col'>

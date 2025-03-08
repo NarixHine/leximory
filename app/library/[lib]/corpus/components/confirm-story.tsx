@@ -15,7 +15,7 @@ export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ c
             <H usePlayfair className='text-2xl'>生成小故事</H>
         </CardHeader>
         
-        <CardBody className='prose prose-p:my-2 prose-ul:my-2'>
+        <CardBody className='prose dark:prose-invert prose-p:my-2 prose-ul:my-2'>
             <p>
                 通过<b>阅读辅助语言习得</b>是最有效记忆词汇的方式。
             </p>
