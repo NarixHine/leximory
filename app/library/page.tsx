@@ -27,7 +27,10 @@ async function getData(listedFilter: Awaited<ReturnType<typeof isListed>>) {
 
 async function getOrgs() {
     const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId: (await auth()).userId! })
-    return data
+    return data.map(({ organization }) => ({
+        id: organization.id,
+        name: organization.name
+    }))
 }
 
 async function UserLibraryList() {
@@ -62,8 +65,8 @@ async function LibraryList({ userId, mems, listedFilter }: {
                         lexicon={{ count }}
                         isOwner={lib.owner === userId}
                         orgs={mems.map((mem) => ({
-                            name: mem.organization.id,
-                            label: mem.organization.name
+                            name: mem.id,
+                            label: mem.name
                         }))}
                         orgId={lib.org}
                         archived={false}

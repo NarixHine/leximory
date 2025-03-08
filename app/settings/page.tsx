@@ -24,7 +24,8 @@ import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
 import { planMap } from '@/lib/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
-import NumberFlow from '@number-flow/react'
+import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
+
 export const metadata: Metadata = { title: '设置' }
 
 async function UserHeroSection() {
@@ -116,7 +117,7 @@ async function UserWordStats() {
 }
 
 function LexicoinBalanceCard({ balance }: { balance?: number }) {
-    return <GradientCard title='LexiCoin 余额' text={balance ? <NumberFlow value={balance} /> : null} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
+    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiCoinsDuotone className='size-7' />
     </GradientCard>
 }
