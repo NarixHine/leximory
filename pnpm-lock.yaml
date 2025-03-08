@@ -143,6 +143,9 @@ importers:
       '@next/mdx':
         specifier: 15.0.4
         version: 15.0.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.0.1)(react@19.0.0))
+      '@number-flow/react':
+        specifier: ^0.5.7
+        version: 0.5.7(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@react-aria/i18n':
         specifier: ^3.12.3
         version: 3.12.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1386,6 +1389,12 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@number-flow/react@0.5.7':
+    resolution: {integrity: sha512-Fm1ZTUx5SYFZcJ3NjNKzC513Sq0XbU//X1yIEJ33MLBNyff+S16akGvez1zD1EjBHbgRGUyyNKQP6U8u0cszvA==}
+    peerDependencies:
+      react: ^18 || ^19
+      react-dom: ^18 || ^19
 
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
@@ -3149,6 +3158,9 @@ packages:
       jiti:
         optional: true
 
+  esm-env@1.2.2:
+    resolution: {integrity: sha512-Epxrv+Nr/CaL4ZcFGPJIYLWFom+YeV1DqMLHJoEd9SYRxNbaFruBwfEX/kkHUJf55j2+TUbmDcmuilbP1TmXHA==}
+
   esniff@2.0.1:
     resolution: {integrity: sha512-kTUIGKQ/mDPFoJ0oVfcmyJn4iBDRptjNVIzwIFR7tqWXdVI9xfA2RMwY/gbSpJG3lkdWNEjLap/NqVHZiJsdfg==}
     engines: {node: '>=0.10'}
@@ -4099,6 +4111,9 @@ packages:
   npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
     engines: {node: '>=8'}
+
+  number-flow@0.5.5:
+    resolution: {integrity: sha512-oE+gyA3S0ar8un2dg80TlEi3hjvi/UnTewHl2bu9dGKMxU7nT8VTUdIf1X7NbRLslqyyTyxdSmIAv/QJhaq1pw==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -6681,6 +6696,13 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
+  '@number-flow/react@0.5.7(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+    dependencies:
+      esm-env: 1.2.2
+      number-flow: 0.5.5
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   '@opentelemetry/api@1.9.0': {}
 
   '@pkgjs/parseargs@0.11.0':
@@ -9026,6 +9048,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  esm-env@1.2.2: {}
+
   esniff@2.0.1:
     dependencies:
       d: 1.0.2
@@ -10173,6 +10197,10 @@ snapshots:
   npm-run-path@4.0.1:
     dependencies:
       path-key: 3.1.1
+
+  number-flow@0.5.5:
+    dependencies:
+      esm-env: 1.2.2
 
   object-assign@4.1.1: {}
 

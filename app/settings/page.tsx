@@ -24,7 +24,7 @@ import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
 import { planMap } from '@/lib/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
-
+import NumberFlow from '@number-flow/react'
 export const metadata: Metadata = { title: '设置' }
 
 async function TotalWordsLearned() {
@@ -129,8 +129,8 @@ async function UserWordStats() {
     return <WordStats uid={userId} />
 }
 
-function LexicoinBalanceCard({ text }: { text?: string }) {
-    return <GradientCard title='LexiCoin 余额' text={text} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
+function LexicoinBalanceCard({ balance }: { balance?: number }) {
+    return <GradientCard title='LexiCoin 余额' text={balance ? <NumberFlow value={balance} /> : null} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiCoinsDuotone className='size-7' />
     </GradientCard>
 }
@@ -138,7 +138,7 @@ function LexicoinBalanceCard({ text }: { text?: string }) {
 async function LexicoinBalance() {
     const { userId } = await getAuthOrThrow()
     const balance = await getLexicoinBalance(userId)
-    return <LexicoinBalanceCard text={`${balance}`} />
+    return <LexicoinBalanceCard balance={balance} />
 }
 
 function PlanCard({ text }: { text?: string }) {
