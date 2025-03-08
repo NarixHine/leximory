@@ -6,15 +6,9 @@ const xata = getXataClient()
 export async function getLexicoinBalance(uid: string) {
     let balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirst()
     if (!balance) {
-        try {
-            balance = await xata.db.users.create({ id: uid })
-        } catch (error) {
-            if (error instanceof Error && error.message.includes('already exists')) {
-                balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirstOrThrow()
-            } else {
-                throw error
-            }
-        }
+        balance = await xata.db.users.create({ id: uid }).catch(() => {
+            return xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirstOrThrow()
+        })
     }
     return balance.lexicoin
 }

@@ -9,7 +9,7 @@ import { logsnagServer } from '@/lib/logsnag'
 export const star = async (lib: string) => {
     const { userId } = await getAuthOrThrow()
     const price = await getLibPrice(lib)
-    const { track } = logsnagServer()
+    const logsnag = logsnagServer()
     const { success, message } = await subtractLexicoinBalance(userId, price)
     if (!success) {
         return { success, message }
@@ -19,7 +19,7 @@ export const star = async (lib: string) => {
         const { owner } = await getLib({ id: lib })
         await addLexicoinBalance(owner, price / 5)
         after(async () => {
-            track({
+            await logsnag.track({
                 event: '购买文库',
                 channel: 'resource-sharing',
                 icon: '🛒',
