@@ -37,11 +37,8 @@ UPSTASH_REDIS_REST_URL=<your_upstash_redis_url>
 UPSTASH_REDIS_REST_TOKEN=<your_upstash_redis_token>
 
 # API keys for AI services
-DEEPSEEK_API_KEY=<your_deepseek_api_key>
 GOOGLE_GENERATIVE_AI_API_KEY=<your_google_api_key>
-ELEVENLABS_API_KEY=<your_elevenlabs_api_key>
-
-# VAPID keys for web push notifications
+ELEVENLABS_API_KEY=<your_elevenlabs_apieys for web push notifications
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=<your_vapid_public_key>
 VAPID_PRIVATE_KEY=<your_vapid_private_key>
 

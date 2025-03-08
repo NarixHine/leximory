@@ -7,4 +7,3 @@ export default async function UID() {
         pre: 'my-0',
     }}>{userId ?? '未登录'}</Snippet>
 }
-
