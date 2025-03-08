@@ -16,8 +16,8 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
         startContent={<PiPiggyBankDuotone />}
         onPress={async () => {
             startTransition(async () => {
-                await getDailyLexicoin()
-                toast.success('领取成功')
+                const { message } = await getDailyLexicoin()
+                toast.success(message)
             })
         }}
         variant='ghost'

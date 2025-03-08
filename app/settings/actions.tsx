@@ -33,8 +33,8 @@ export async function getDailyLexicoin() {
 	if (lastDailyClaim && moment(lastDailyClaim).isAfter(moment().subtract(1, 'day'))) {
 		throw new Error('今天已领取 LexiCoin')
 	}
-	const balance = await addLexicoinBalance(userId, dailyLexicoinClaimMap[plan])
+	await addLexicoinBalance(userId, dailyLexicoinClaimMap[plan])
 	await setLastClaimDate(userId)
 	revalidatePath('/settings')
-	return balance
+	return { message: `领取成功，LexiCoin + ${dailyLexicoinClaimMap[plan]}` }
 }

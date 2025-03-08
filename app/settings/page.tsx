@@ -45,16 +45,16 @@ function UserSectionContent({
     imageUrl,
     createdAt
 }: {
-    username?: string | null,
-    imageUrl?: string | null,
-    createdAt?: number
+    username: string | null,
+    imageUrl: string | null,
+    createdAt: number
 }) {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16' />
-        <div className='flex flex-col gap-1 items-center'>
-            {username && <span className='text-3xl ml-1 font-mono'>@{username}</span>}
+        <div className='flex flex-col gap-1'>
+            <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : 'Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{createdAt ? moment(createdAt).calendar() : <Skeleton className='w-5 h-2 opacity-50 rounded-full' />} 加入</div></Chip>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).calendar()} 加入</div></Chip>
                 <Suspense fallback={<Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 <Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 个语汇</div></Chip>}>
                     <TotalWordsLearned />
                 </Suspense>
@@ -63,9 +63,22 @@ function UserSectionContent({
     </section>
 }
 
+function UserSectionSkeleton() {
+    return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
+        <Avatar isBordered color={'primary'} className='!size-16' />
+        <div className='flex flex-col gap-1'>
+            <span className='text-3xl ml-1 font-mono'>@loading...</span>
+            <div className='flex gap-3 w-full mt-2'>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 <Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 个语汇</div></Chip>
+            </div>
+        </div>
+    </section>
+}
+
 export default async function Settings() {
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
-        <Suspense fallback={<UserSectionContent />}>
+        <Suspense fallback={<UserSectionSkeleton />}>
             <UserSection />
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
