@@ -4,10 +4,17 @@ import { getXataClient } from '../client/xata'
 const xata = getXataClient()
 
 export async function getLexicoinBalance(uid: string) {
-    const balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirst()
+    let balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirst()
     if (!balance) {
-        const { lexicoin } = await xata.db.users.create({ id: uid })
-        return lexicoin
+        try {
+            balance = await xata.db.users.create({ id: uid })
+        } catch (error) {
+            if (error instanceof Error && error.message.includes('already exists')) {
+                balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirstOrThrow()
+            } else {
+                throw error
+            }
+        }
     }
     return balance.lexicoin
 }
@@ -37,6 +44,9 @@ export async function getLibPrice(lib: string) {
 }
 
 export async function getLastDailyClaim(uid: string) {
-    const user = await xata.db.users.select(['last_daily_claim']).filter({ id: uid }).getFirstOrThrow()
+    const user = await xata.db.users.select(['last_daily_claim']).filter({ id: uid }).getFirst()
+    if (!user) {
+        return null
+    }
     return user.last_daily_claim
 }

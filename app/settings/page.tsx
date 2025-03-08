@@ -52,7 +52,7 @@ function UserSectionContent({
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16' />
         <div className='flex flex-col gap-1'>
-            <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : 'Hi.'}</span>
+            <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).calendar()} 加入</div></Chip>
                 <Suspense fallback={<Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 <Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 个语汇</div></Chip>}>
