@@ -3,6 +3,7 @@ import { Lang, langMap, libAccessStatusMap, welcomeMap } from '@/lib/config'
 import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidateTag } from 'next/cache'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 const xata = getXataClient()
 
@@ -111,6 +112,8 @@ export async function summarizeLibsWithWords({ filter }: { filter: Record<string
 }
 
 export async function countPublicLibs() {
+    'use cache'
+    cacheTag('libraries')
     const data = await xata.db.libraries.filter({ access: libAccessStatusMap.public }).summarize({
         columns: [],
         summaries: {
@@ -121,6 +124,8 @@ export async function countPublicLibs() {
 }
 
 export async function getPaginatedPublicLibs({ page, size }: { page: number, size: number }) {
+    'use cache'
+    cacheTag('libraries')
     const { records } = await xata.db.libraries
         .filter({ access: libAccessStatusMap.public })
         .sort('xata.createdAt', 'desc')
@@ -136,16 +141,22 @@ export async function getLib({ id }: { id: string }) {
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {
+    'use cache'
+    cacheTag('libraries')
     const libs = await xata.db.libraries.filter({ owner }).getMany()
     return libs.map(({ id, name }) => ({ id, name }))
 }
 
 export async function listLibs({ owner }: { owner: string }) {
+    'use cache'
+    cacheTag('libraries')
     const libs = await xata.db.libraries.select([]).filter({ owner }).getMany()
     return libs.map(({ id }) => id)
 }
 
 export async function getArchivedLibs({ userId }: { userId: string }) {
+    'use cache'
+    cacheTag('libraries')
     const archive = await xata.db.users.select(['archived_libs']).filter({ id: userId }).getFirst()
     if (!archive) {
         return []

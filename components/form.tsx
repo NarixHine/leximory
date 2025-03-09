@@ -8,7 +8,7 @@ import { DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, Drawer } from "@
 import { PiFloppyDiskDuotone } from 'react-icons/pi'
 
 export default function Form({ isOpen, onOpenChange, children, className, isLoading, onSubmit, title, actionButton, ...props }: { isOpen: boolean, onOpenChange: (open: boolean) => void, title: string, children: ReactNode, isLoading: boolean, actionButton?: ReactNode } & FormProps) {
-    return <Drawer placement='top' className='bg-default-50' isOpen={isOpen} onOpenChange={onOpenChange}>
+    return <Drawer placement='bottom' className='bg-default-50' isOpen={isOpen} onOpenChange={onOpenChange}>
         <DrawerContent>
             {(onClose) => (
                 <HeroUIForm onSubmit={async (props) => {
