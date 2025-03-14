@@ -8,6 +8,7 @@ import { revalidateTag } from 'next/cache'
 import { Lang } from '@/lib/config'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { pick } from 'remeda'
 
 const xata = getXataClient()
 
@@ -67,7 +68,7 @@ export async function getTextContent({ id }: { id: string }) {
     if (!lib) {
         throw new Error('lib not found')
     }
-    return { content, ebook: ebook?.url, title, topics, lib }
+    return { content, ebook: ebook?.url, title, topics, lib: pick(lib, ['id', 'name']) }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {

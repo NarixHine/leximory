@@ -151,7 +151,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     }
 
     (async () => {
-        const { textStream } = await streamText({
+        const { textStream } = streamText({
             model: await getBestModel(lang),
             system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
