@@ -4,17 +4,22 @@ import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { Lang, welcomeMap } from '@/lib/config'
 import { getXataClient } from '@/server/client/xata'
 import moment from 'moment-timezone'
-import { revalidatePath } from 'next/cache'
+import { revalidateTag } from 'next/cache'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/lang'
 
 const xata = getXataClient()
 
 export async function getAllWordsInLib({ lib }: { lib: string }) {
+    'use cache'
+    cacheTag(lib)
     return await xata.db.lexicon.filter({ lib }).select(['word', 'id']).getAll()
 }
 
 export async function getWord({ id }: { id: string }) {
+    'use cache'
+    cacheTag(id)
     return await xata.db.lexicon.filter({ id }).getFirstOrThrow()
 }
 
@@ -25,6 +30,8 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
         lib,
         word: sanitizedWord
     })
+    revalidateTag('words')
+    revalidateTag(`words:${lib}`)
     return rec
 }
 
@@ -32,6 +39,8 @@ export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: s
     const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
     validateOrThrow(sanitizedWord)
     const shadowSaveLib = await getShadowLib({ owner: uid, lang })
+    revalidateTag('words')
+    revalidateTag(`words:${shadowSaveLib.id}`)
     return await saveWord({ lib: shadowSaveLib.id, word: sanitizedWord })
 }
 
@@ -43,7 +52,8 @@ export async function updateWord({ id, word }: { id: string, word: string }) {
 
 export async function deleteWord(id: string) {
     const rec = await xata.db.lexicon.delete(id)
-    revalidatePath(`/library/${rec!.lib!.id}/corpus`)
+    revalidateTag('words')
+    revalidateTag(`words:${rec!.lib!.id}`)
     return rec
 }
 
@@ -60,6 +70,8 @@ export async function drawWords({ lib, start, end, size }: { lib: string, start:
 }
 
 export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, filter: Record<string, any> }) {
+    'use cache'
+    cacheTag('words')
     const words = await xata.db.lexicon.select(['id', 'word']).filter({
         $all: [
             filter,

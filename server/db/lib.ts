@@ -4,20 +4,24 @@ import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { pick } from 'remeda'
 
 const xata = getXataClient()
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const rec = await xata.db.libraries.filter({ owner, shadow: true, lang }).getFirst()
     if (rec) {
+        cacheTag(`lib:${rec.id}`)
         return rec
     }
-    return await xata.db.libraries.create({
+    const lib = await xata.db.libraries.create({
         owner,
         shadow: true,
         name: `🗃️ ${langMap[lang]}词汇仓库`,
         lang,
     })
+    revalidateTag(`lib:${lib.id}`)
+    return lib
 }
 
 export async function starLib({ lib, userId }: { lib: string, userId: string }) {
@@ -38,7 +42,7 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
         price,
     })
     revalidateTag('libraries')
-    revalidateTag(id)
+    revalidateTag(`lib:${id}`)
 }
 
 export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
@@ -102,13 +106,17 @@ export async function deleteLib({ id }: { id: string }) {
 }
 
 export async function summarizeLibsWithWords({ filter }: { filter: Record<string, string | undefined | object> }) {
+    'use cache'
     const data = await xata.db.lexicon.filter(filter).summarize({
         columns: ['lib'],
         summaries: {
             count: { count: '*' },
         },
     })
-    return data.summaries
+    return data.summaries.map(({ lib, count }) => ({
+        lib: pick(lib!, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
+        count
+    }))
 }
 
 export async function countPublicLibs() {
