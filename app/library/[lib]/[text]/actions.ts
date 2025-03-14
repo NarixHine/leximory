@@ -134,7 +134,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     const stream = createStreamableValue()
     const { userId } = await getAuthOrThrow()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
-    const cache = await getAnnotationCache({ hash, userId })
+    const cache = await getAnnotationCache({ hash })
     if (cache) {
         stream.update(cache)
         stream.done()
@@ -160,7 +160,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
             prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}。截断并删去词汇的前后文。\n\n${prompt}`,
             maxTokens: 500,
             onFinish: async ({ text }) => {
-                await setAnnotationCache({ hash, userId, cache: text })
+                await setAnnotationCache({ hash, cache: text })
             }
         })
 

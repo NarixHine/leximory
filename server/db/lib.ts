@@ -4,6 +4,7 @@ import { randomID } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { pick } from 'remeda'
 
 const xata = getXataClient()
 
@@ -113,7 +114,7 @@ export async function summarizeLibsWithWords({ filter }: { filter: Record<string
         },
     })
     return data.summaries.map(({ lib, count }) => ({
-        lib: lib!.toSerializable(),
+        lib: pick(lib!, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
         count
     }))
 }
