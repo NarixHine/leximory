@@ -208,24 +208,24 @@ export default function Ebook() {
                                 'margin-top': '0.6em',
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
-                                'font-family': '"Athelas", serif !important',
+                                'font-family': '"Athelas", Georgia, serif !important',
                                 'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
                                 'text-rendering': 'optimizeLegibility',
                             },
                             'div': {
                                 'font-size': '24px !important',
-                                'font-family': '"Athelas", serif !important',
+                                'font-family': '"Athelas", Georgia, serif !important',
                                 'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
                                 'text-rendering': 'optimizeLegibility',
                             },
                             'h1': {
-                                'font-family': '"Baskerville", serif !important',
+                                'font-family': '"Baskerville", Georgia, serif !important',
                             },
                             'h2': {
-                                'font-family': '"Baskerville", serif !important',
+                                'font-family': '"Baskerville", Georgia, serif !important',
                             },
                             'h3': {
-                                'font-family': '"Baskerville", serif !important',
+                                'font-family': '"Baskerville", Georgia, serif !important',
                             },
                         })
                         themeRendition.current = rendition

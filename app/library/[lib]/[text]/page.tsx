@@ -29,7 +29,7 @@ export default async function Page(props: LibAndTextParams) {
     return (<HydrationBoundary hydrateAtoms={[
         [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
         [topicsAtom, topics ?? []],
-        [ebookAtom, ebook?.url],
+        [ebookAtom, ebook],
         [textAtom, text],
         [titleAtom, title],
         [inputAtom, '']

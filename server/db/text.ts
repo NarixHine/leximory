@@ -48,7 +48,12 @@ export async function getTexts({ lib }: { lib: string }) {
     'use cache'
     cacheTag(`texts:${lib}`)
     const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url']).filter({ lib }).getAll()
-    return texts
+    return texts.map(text => ({
+        id: text.id,
+        title: text.title,
+        topics: text.topics,
+        hasEbook: !!text.ebook?.url
+    }))
 }
 
 export async function getTextContent({ id }: { id: string }) {
@@ -62,7 +67,7 @@ export async function getTextContent({ id }: { id: string }) {
     if (!lib) {
         throw new Error('lib not found')
     }
-    return { content, ebook, title, topics, lib }
+    return { content, ebook: ebook?.url, title, topics, lib }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {

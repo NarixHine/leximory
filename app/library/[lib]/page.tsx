@@ -9,7 +9,7 @@ import { LibParams } from '@/lib/types'
 async function getData(lib: string) {
     const { name, isReadOnly } = await authReadToLib(lib)
     const texts = await getTexts({ lib })
-    return { texts: texts.map(t => ({ id: t.id, title: t.title, topics: t.topics, hasEbook: !!t.ebook?.url })), name, isReadOnly }
+    return { texts, name, isReadOnly }
 }
 
 export default async function Page(props: LibParams) {
