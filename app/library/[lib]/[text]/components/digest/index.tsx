@@ -199,7 +199,6 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
-  const lang = useAtomValue(langAtom)
 
   if (hideText && content) {
     const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
