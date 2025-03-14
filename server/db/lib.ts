@@ -107,6 +107,7 @@ export async function deleteLib({ id }: { id: string }) {
 
 export async function summarizeLibsWithWords({ filter }: { filter: Record<string, string | undefined | object> }) {
     'use cache'
+    cacheTag('libraries')
     const data = await xata.db.lexicon.filter(filter).summarize({
         columns: ['lib'],
         summaries: {
