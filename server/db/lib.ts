@@ -159,7 +159,7 @@ export async function listShortcutLibs({ owner }: { owner: string }) {
 export async function listLibs({ owner }: { owner: string }) {
     'use cache'
     cacheTag('libraries')
-    const libs = await xata.db.libraries.select([]).filter({ owner }).getMany()
+    const libs = await xata.db.libraries.select([]).filter({ owner }).getAll()
     return libs.map(({ id }) => id)
 }
 

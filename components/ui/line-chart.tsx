@@ -28,7 +28,7 @@ import {
     hasOnlyOneValueForKey,
 } from "@/lib/chart-utils"
 import { cn as cx } from "@/lib/utils"
-import { useOnWindowResize } from '@/lib/use-on-window-resize'
+import { useOnWindowResize } from '@/lib/hooks'
 
 //#region Legend
 

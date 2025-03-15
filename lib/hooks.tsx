@@ -13,3 +13,8 @@ export const useOnWindowResize = (handler: { (): void }) => {
         return () => window.removeEventListener("resize", handleResize)
     }, [handler])
 }
+
+export const useIsIos = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    return /iphone|ipad|ipod|macintosh|safari/.test(userAgent)
+}

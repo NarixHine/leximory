@@ -28,7 +28,7 @@ import {
   getYAxisDomain,
   hasOnlyOneValueForKey,
 } from "@/lib/chart-utils"
-import { useOnWindowResize } from "@/lib/use-on-window-resize"
+import { useOnWindowResize } from "@/lib/hooks"
 import { cn as cx } from "@/lib/utils"
 
 //#region Legend
