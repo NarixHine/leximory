@@ -18,7 +18,7 @@ import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextA
 import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
 import { useLogSnag } from '@logsnag/next'
 import { Tabs, Tab } from '@heroui/tabs'
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from '@heroui/drawer'
+import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 
 export const maxEbookSize = 4 * 1024 * 1024
