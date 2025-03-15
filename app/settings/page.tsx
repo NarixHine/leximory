@@ -85,7 +85,7 @@ export default async function Settings() {
             <div className='border col-span-2 border-dashed border-primary-200 rounded-lg p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>账号管理</H>
                 <div className='flex gap-2'>
-                    <OrganizationSwitcher />
+                    <OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} organizationProfileUrl='/settings/org' />
                     <Button variant='bordered' href='/settings/account' as={Link} startContent={<PiDotsThreeVerticalBold className='size-4 -mr-1' />} size='sm' color='primary' radius='full' className={cn('border-1', CHINESE_ZCOOL.className)}>更多</Button>
                     <CopyProfileLink />
                 </div>
