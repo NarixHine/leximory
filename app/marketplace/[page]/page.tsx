@@ -19,7 +19,7 @@ async function LibraryList({ page }: {
     const { userId } = await auth()
     const libs = await getPaginatedPublicLibs({ page, size: MARKETPLACE_PAGE_SIZE })
     return (
-        <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
+        <div className='grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3'>
             {libs.map((lib) => (
                 <LibraryCard
                     avatar={<UserAvatar uid={lib.owner} />}

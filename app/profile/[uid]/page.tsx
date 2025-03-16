@@ -10,8 +10,11 @@ import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Chip } from "@heroui/chip"
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
+    'use cache'
+    cacheLife('days')
     moment.locale('zh-CN')
     const uid = (await params).uid
     const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(uid)
