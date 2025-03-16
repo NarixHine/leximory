@@ -39,6 +39,8 @@ UPSTASH_REDIS_REST_TOKEN=<your_upstash_redis_token>
 # API keys for AI services
 GOOGLE_GENERATIVE_AI_API_KEY=<your_google_api_key>
 ELEVENLABS_API_KEY=<your_elevenlabs_apieys for web push notifications
+
+# Web push keys
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=<your_vapid_public_key>
 VAPID_PRIVATE_KEY=<your_vapid_private_key>
 
@@ -46,8 +48,8 @@ VAPID_PRIVATE_KEY=<your_vapid_private_key>
 INNGEST_SIGNING_KEY=<your_inggest_signing_key>
 INNGEST_EVENT_KEY=<your_inggest_event_key>
 
-# Vercel Edge Config for AI provider status
-EDGE_CONFIG=your_vercel_edge_config_url
+# Vercel Edge Config
+EDGE_CONFIG=<your_vercel_edge_config_url>
 
 NEXT_PUBLIC_URL=https://leximory.com
 ```

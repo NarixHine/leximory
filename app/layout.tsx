@@ -5,10 +5,10 @@ import { defaultFontFamily } from '@/lib/fonts'
 import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
-import env, { isProd } from '@/lib/env'
+import env from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { LogSnagProvider } from '@logsnag/next'
-import Script from 'next/script'
+import { Analytics } from '@vercel/analytics/next'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -53,12 +53,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 			<html suppressHydrationWarning lang='zh-CN' className='antialiased'>
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
-					{isProd && <Script defer strategy='lazyOnload' src='/stats/script.js' data-website-id='fd3e7b19-4579-4bb2-a355-b6f60faea9ed'></Script>}
 				</head>
 				<body style={{
 					fontFamily: defaultFontFamily,
 				}}>
 					<SpeedInsights />
+					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 						<div className='relative flex flex-col'>
 							{children}

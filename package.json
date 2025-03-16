@@ -68,6 +68,7 @@
     "@types/react": "19.0.1",
     "@types/react-dom": "19.0.1",
     "@upstash/redis": "^1.31.6",
+    "@vercel/analytics": "^1.5.0",
     "@vercel/edge-config": "^1.4.0",
     "@vercel/speed-insights": "^1.1.0",
     "@xata.io/client": "^0.30.1",
