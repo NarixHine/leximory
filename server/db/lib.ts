@@ -11,7 +11,7 @@ const xata = getXataClient()
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const rec = await xata.db.libraries.filter({ owner, shadow: true, lang }).getFirst()
     if (rec) {
-        revalidateTag(`lib:${lib.id}`)
+        revalidateTag(`lib:${rec.id}`)
         return rec
     }
     const lib = await xata.db.libraries.create({
