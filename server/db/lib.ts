@@ -11,7 +11,7 @@ const xata = getXataClient()
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const rec = await xata.db.libraries.filter({ owner, shadow: true, lang }).getFirst()
     if (rec) {
-        cacheTag(`lib:${rec.id}`)
+        revalidateTag(`lib:${lib.id}`)
         return rec
     }
     const lib = await xata.db.libraries.create({
@@ -20,7 +20,6 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
         name: `🗃️ ${langMap[lang]}词汇仓库`,
         lang,
     })
-    revalidateTag(`lib:${lib.id}`)
     return lib
 }
 
