@@ -25,6 +25,7 @@ import GradientCard from '../library/components/cards/card'
 import { planMap } from '@/lib/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
+import Upgrade from './components/upgrade'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -63,15 +64,25 @@ function UserSectionSkeleton() {
     </section>
 }
 
+async function UpgradeServer() {
+    const plan = await getPlan()
+    return <Upgrade isOnFreeTier={plan === 'beginner'} />
+}
+
 export default async function Settings() {
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
             <UserHeroSection />
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
-            <Suspense fallback={<Skeleton className='w-full h-12 rounded-full' />}>
-                <ClaimDailyLexicoinServer />
-            </Suspense>
+            <div className='flex gap-4 w-full'>
+                <Suspense fallback={<Skeleton className='w-[109px] h-12 rounded-full' />}>
+                    <UpgradeServer />
+                </Suspense>
+                <Suspense fallback={<Skeleton className='flex-1 h-12 rounded-full' />}>
+                    <ClaimDailyLexicoinServer />
+                </Suspense>
+            </div>
             <div className='grid grid-cols-2 gap-4 w-full'>
                 <Suspense fallback={<LexicoinBalanceCard />}>
                     <LexicoinBalance />

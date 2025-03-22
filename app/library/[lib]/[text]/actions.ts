@@ -56,7 +56,7 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
     if (await incrCommentaryQuota(2)) {
         return {
             success: false,
-            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。`
+            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`
         }
     }
 
@@ -116,7 +116,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(Math.ceil(length / 8000))) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。` }
+        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
     await inngest.send({
@@ -147,7 +147,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(0.25)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。` }
+        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
     (async () => {
@@ -175,7 +175,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
     if (await incrCommentaryQuota(0.25, userId)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。` }
+        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
     const { text } = await generateText({

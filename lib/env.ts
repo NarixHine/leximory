@@ -14,6 +14,8 @@ const env = createEnv({
         DEEPSEEK_API_KEY: z.string().min(1),
         LOGSNAG_SECRET_KEY: z.string().min(1),
         EDGE_CONFIG: z.string().min(1),
+        CREEM_API_KEY: z.string().min(1),
+        CREEM_WEBHOOK_SECRET: z.string().min(1),
     },
 
     client: {
@@ -40,6 +42,8 @@ const env = createEnv({
         NEXT_PUBLIC_LOGSNAG_API_KEY: process.env.NEXT_PUBLIC_LOGSNAG_API_KEY,
         NEXT_PUBLIC_LOGSNAG_PROJECT: process.env.NEXT_PUBLIC_LOGSNAG_PROJECT,
         EDGE_CONFIG: process.env.EDGE_CONFIG,
+        CREEM_API_KEY: process.env.CREEM_API_KEY,
+        CREEM_WEBHOOK_SECRET: process.env.CREEM_WEBHOOK_SECRET,
     },
 })
 

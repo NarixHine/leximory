@@ -28,7 +28,7 @@ export async function generateStory({ comments, lib }: { comments: string[], lib
     if (await incrCommentaryQuota(2)) {
         return {
             success: false,
-            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。该额度为防止滥用而设置，你可以在 B 站联系我们免费提高额度。`
+            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`
         }
     }
 

@@ -22,8 +22,8 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
-import { bilibiliLink } from '@/lib/config'
 import { parseCommentParams } from '@/lib/lang'
+import { useRouter } from 'next/navigation'
 
 interface CommentProps {
     params: string
@@ -44,6 +44,7 @@ interface CommentState {
 }
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, shadow }: CommentProps) {
+    const router = useRouter()
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
     const text = useAtomValue(textAtom)
@@ -74,8 +75,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             toast.error(error, {
                 duration: 10000,
                 action: {
-                    label: '联系我们',
-                    onClick: () => window.open(bilibiliLink, '_blank')
+                    label: '升级',
+                    onClick: () => router.push('/settings')
                 }
             })
         }

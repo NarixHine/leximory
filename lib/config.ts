@@ -1,4 +1,4 @@
-import env from './env'
+import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
@@ -86,7 +86,7 @@ export const libAccessStatusMap = {
     public: 1,
 } as const
 
-export const prefixUrl = (url: string) => `${env.NEXT_PUBLIC_URL}${url}`
+export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'https://localhost:3000'}${url}`
 
 export const accessOptions = [
     { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },
@@ -103,3 +103,12 @@ export const maxArticleLength = (lang: Lang): number => {
 }
 
 export const MARKETPLACE_PAGE_SIZE = 6
+
+export type PaidTier = 'bilingual' | 'polyglot'
+export const creemProductIdMap: Record<PaidTier, string> = isProd ? {
+    'bilingual': 'prod_4M08q7qmqNgs2WYgZGEJwG',
+    'polyglot': 'prod_CpdFa9JGOurneLpm9Mhyu',
+} as const : {
+    'bilingual': 'prod_1rKh3LrLlDsk3F91W97Wjk',
+    'polyglot': 'prod_4zgqjFSYwLoPNE7IRFw7QR',
+} as const

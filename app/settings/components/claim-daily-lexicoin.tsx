@@ -11,7 +11,6 @@ import { useTransition } from 'react'
 export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
     const [isPending, startTransition] = useTransition()
     return <Button
-        fullWidth
         isLoading={isPending}
         startContent={<PiPiggyBankDuotone />}
         onPress={async () => {
@@ -24,7 +23,7 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
         color='primary'
         radius='full'
         size='lg'
-        className={cn(CHINESE_ZCOOL.className, 'text-lg')}
+        className={cn(CHINESE_ZCOOL.className, 'text-lg flex-1')}
         isDisabled={hasClaimed}
     >
         {hasClaimed ? '今日已领取' : '领取每日 LexiCoin'}

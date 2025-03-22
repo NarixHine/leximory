@@ -65,6 +65,7 @@ const tables = [
       { name: "accent", type: "text", notNull: true, defaultValue: "AmE" },
       { name: "last_daily_claim", type: "datetime" },
       { name: "archived_libs", type: "multiple" },
+      { name: "creem_id", type: "text" },
     ],
   },
 ] as const;
