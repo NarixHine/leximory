@@ -48,7 +48,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                         }}
                         radius='lg'
                         isIconOnly
-                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm'
+                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm print:hidden'
                         startContent={<PiSkipBackCircleDuotone className='text-[#67595e] dark:text-default-500 text-lg' />}
                     />
                     : <Button
@@ -58,7 +58,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                         as={Link}
                         radius='lg'
                         isIconOnly
-                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm'
+                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm print:hidden'
                         startContent={<PiBookBookmarkDuotone className='text-[#67595e] dark:text-default-500 text-medium' />}
                     />
             )

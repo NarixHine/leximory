@@ -1,9 +1,10 @@
 import { creemProductIdMap } from '@/lib/config'
 import { createWebhookHandler } from '@/lib/creem-sdk/webhook-handler'
 import env from '@/lib/env'
+import { logsnagServer } from '@/lib/logsnag'
 import { creem } from '@/server/client/creem'
 import { getRequestUserId, fillCustomerId, getUserIdByCustomerId, toggleOrgCreationAccess, updateSubscription } from '@/server/db/creem'
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 
 const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
     'checkout.completed': async (event) => {
@@ -16,6 +17,17 @@ const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
         const planIsPolyglot = creemProductIdMap.polyglot === subscription!.product.id
         await updateSubscription({ userId, plan: planIsPolyglot ? 'polyglot' : 'bilingual' })
         await toggleOrgCreationAccess({ userId, enabled: planIsPolyglot })
+
+        after(async () => {
+            const logsnag = logsnagServer()
+            await logsnag.track({
+                event: '订阅升级',
+                channel: 'payments',
+                icon: '💰',
+                description: `订阅升级为 ${planIsPolyglot ? 'Polyglot' : 'Bilingual'}`,
+                user_id: userId,
+            })
+        })
     },
 
     'subscription.canceled': async (event) => {

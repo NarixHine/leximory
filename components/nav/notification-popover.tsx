@@ -25,8 +25,8 @@ export default function NotificationPopover({ notices }: { notices: z.infer<type
 
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpen}>
-            <PopoverTrigger className='print:hidden'>
-                <Badge shape='circle' variant='flat' color='primary' content={<PiExclamationMarkLight />} isInvisible={!isClient || !isNew}>
+            <PopoverTrigger>
+                <Badge shape='circle' variant='flat' color='primary' content={<PiExclamationMarkLight />} className='print:hidden' isInvisible={!isClient || !isNew}>
                     <Button
                         onPress={handleOpen}
                         isIconOnly
@@ -34,7 +34,7 @@ export default function NotificationPopover({ notices }: { notices: z.infer<type
                         color='primary'
                         radius='full'
                         size='sm'
-                        className='opacity-80 backdrop-blur-sm'
+                        className='opacity-80 backdrop-blur-sm print:hidden'
                         startContent={<PiBellDuotone className='text-lg' />}
                     />
                 </Badge>

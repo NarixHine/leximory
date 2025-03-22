@@ -57,7 +57,6 @@ const MemoizedPopover = memo(function MemoizedPopover({
             <PopoverTrigger>
                 <Button
                     data-event='词汇注解'
-                    data-description={`注解内容: ${prompt}`}
                     data-channel='annotation'
                     data-tag-lang={lang}
                     data-icon='🖊️'

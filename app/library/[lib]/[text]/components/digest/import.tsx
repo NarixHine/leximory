@@ -49,42 +49,54 @@ export default function ImportModal() {
 
     const { track } = useLogSnag()
 
+    const KanbanSwitch = () => (
+        <Switch
+            size='lg'
+            startContent={<PiKanbanFill />}
+            endContent={<PiKanbanDuotone />}
+            isDisabled={isLoading}
+            isSelected={hideText}
+            onValueChange={setHideText}
+            color='secondary' />
+    )
+
+    const ImportButton = () => (
+        <Button
+            isDisabled={isReadOnly}
+            onPress={onOpen}
+            className='flex-1 font-semibold'
+            variant='flat'
+            radius='full'
+            color='primary'
+            startContent={<PiMagicWandDuotone className='text-lg' />}
+            isLoading={isLoading}
+        >
+            导入{!ebook ? '材料' : '电子书'}
+        </Button>
+    )
+
+    const EditSwitch = () => (
+        <Switch
+            startContent={<PiOptionFill />}
+            endContent={<PiOptionDuotone />}
+            isDisabled={isReadOnly || isLoading}
+            isSelected={editing}
+            onValueChange={setEditing}
+            color='secondary'
+            size='lg'
+        />
+    )
+
     return (<>
         <div className='flex flex-col gap-2 mt-2'>
             <div className='flex gap-2'>
-                {!ebook && <Switch
-                    size='lg'
-                    isDisabled={isReadOnly || isLoading}
-                    startContent={<PiKanbanFill />}
-                    endContent={<PiKanbanDuotone />}
-                    isSelected={hideText}
-                    onValueChange={setHideText}
-                    color='secondary'
-                />}
-                <Button
-                    isDisabled={isReadOnly}
-                    onPress={onOpen}
-                    className='flex-1 font-semibold'
-                    variant='flat'
-                    radius='full'
-                    color='primary'
-                    startContent={<PiMagicWandDuotone className='text-lg' />}
-                    isLoading={isLoading}>
-                    导入{!ebook ? '材料' : '电子书'}
-                </Button>
+                <ImportButton />
+                {ebook ? <EditSwitch /> : <KanbanSwitch />}
             </div>
-            <div className='flex gap-2'>
+            {!ebook && <div className='flex gap-2'>
+                <EditSwitch />
                 <StoryModal />
-                <Switch
-                    startContent={<PiOptionFill />}
-                    endContent={<PiOptionDuotone />}
-                    isDisabled={isReadOnly || isLoading}
-                    isSelected={editing}
-                    onValueChange={setEditing}
-                    color='secondary'
-                    size='lg'
-                />
-            </div>
+            </div>}
         </div>
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange} disableAnimation isDismissable={false} placement='bottom' className='bg-default-50'>
             <DrawerContent className='max-h-dvh'>
