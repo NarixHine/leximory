@@ -6,7 +6,8 @@ import { incrAudioQuota } from '@/server/auth/quota'
 import { maxAudioQuota } from '@/server/auth/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { getAccentPreference } from '@/server/db/preference'
-import { ElevenLabsClient } from 'elevenlabs'
+import { speak } from 'orate'
+import { ElevenLabs } from 'orate/elevenlabs'
 
 export async function retrieve(id: string) {
     const url = await retrieveAudioUrl({ id })
@@ -23,12 +24,11 @@ export async function generate(id: string, lib: string, text: string) {
     }
 
     const { userId } = await getAuthOrThrow()
-    const lab = new ElevenLabsClient()
     const accent = await getAccentPreference({ userId })
-    const audio = await lab.generate({
-        voice: elevenLabsVoice[accent],
-        text,
-        model_id: 'eleven_multilingual_v2'
+
+    const audio = await speak({
+        model: new ElevenLabs().tts('eleven_multilingual_v2', elevenLabsVoice[accent]),
+        prompt: text,
     })
 
     return uploadAudio({ id, lib, audio })

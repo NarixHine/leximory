@@ -5,18 +5,6 @@ import { z } from 'zod'
 
 export const randomID = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(16)
 
-export async function convertReadableToBinaryFile(readable: Readable) {
-    let dataBuffer = Buffer.alloc(0)
-    readable.on('data', (chunk) => {
-        dataBuffer = Buffer.concat([dataBuffer, chunk])
-    })
-    await new Promise((resolve, reject) => {
-        readable.on('end', resolve)
-        readable.on('error', reject)
-    })
-    return new File([dataBuffer], 'file', { type: 'audio/mpeg' })
-}
-
 export function getSelectedChunk(selection: Selection) {
     const start = Math.min(selection.anchorOffset, selection.focusOffset)
     const end = Math.max(selection.anchorOffset, selection.focusOffset)

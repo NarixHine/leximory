@@ -1,8 +1,6 @@
 import 'server-only'
 
 import { getXataClient } from '@/server/client/xata'
-import { convertReadableToBinaryFile } from '@/lib/utils'
-import { Readable } from 'stream'
 
 const xata = getXataClient()
 
@@ -11,7 +9,7 @@ export async function retrieveAudioUrl({ id }: { id: string }) {
     return audio?.gen?.url
 }
 
-export async function uploadAudio({ id, lib, audio }: { id: string, lib: string, audio: Readable }) {
+export async function uploadAudio({ id, lib, audio }: { id: string, lib: string, audio: File }) {
     await xata.db.audio.create({
         id,
         lib,
@@ -19,7 +17,7 @@ export async function uploadAudio({ id, lib, audio }: { id: string, lib: string,
             enablePublicUrl: true,
         }
     })
-    await xata.files.upload({ table: 'audio', column: 'gen', record: id }, await convertReadableToBinaryFile(audio), {
+    await xata.files.upload({ table: 'audio', column: 'gen', record: id }, audio, {
         mediaType: 'audio/mpeg',
     })
 

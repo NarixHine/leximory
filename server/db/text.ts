@@ -89,7 +89,9 @@ export async function getTextAnnotationProgress({ id }: { id: string }) {
 }
 
 export async function setTextAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
-    await redis.set(`text:${id}:annotation`, progress)
+    await redis.set(`text:${id}:annotation`, progress, {
+        ex: 60 * 5,
+    })
 }
 
 export async function getLibIdAndLangOfText({ id }: { id: string }) {
