@@ -8,7 +8,7 @@ export async function getLexicoinBalance(uid: string) {
     cacheTag('lexicoin')
     let balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirst()
     if (!balance) {
-        balance = await xata.db.users.create({ id: uid }).catch(() => {
+        balance = await xata.db.users.create({ id: uid, lexicoin: 20 }).catch(() => {
             return xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirstOrThrow()
         })
     }
