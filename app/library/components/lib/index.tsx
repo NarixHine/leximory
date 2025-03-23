@@ -155,8 +155,8 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
-                <div className='flex flex-col items-start'>
-                    <p className='text-xs opacity-80'>积累词汇</p>
+                <div className='flex flex-col items-center'>
+                    <p className='text-xs opacity-80'>词汇量</p>
                     <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>

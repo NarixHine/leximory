@@ -10,11 +10,14 @@ import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PiBooksDuotone } from 'react-icons/pi'
+import { PiBooksDuotone, PiVideo } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
 import { getArchivedLibs } from '@/server/db/lib'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { Button } from '@heroui/button'
+import Link from 'next/link'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -128,6 +131,12 @@ export default function Page() {
             </Suspense>
 
             <LibraryAddButton />
+
+            <footer className='flex justify-center p-1'>
+                    <Button as={Link} href='/about' variant='light' startContent={<PiVideo />} className={CHINESE_ZCOOL.className}>
+                        使用教程
+                    </Button>
+            </footer>
         </div>
     </Main>
 }
