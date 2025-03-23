@@ -8,13 +8,13 @@ import { after, NextRequest, NextResponse } from 'next/server'
 
 const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
     'checkout.completed': async (event) => {
-        const { request_id, customer, subscription } = event.object
-        if (!request_id) {
+        const { request_id, customer, subscription, product } = event.object
+        if (!request_id || subscription?.status !== 'active') {
             return
         }
         const userId = await getRequestUserId(request_id)
         await fillCustomerId({ userId, customerId: customer.id })
-        const planIsPolyglot = creemProductIdMap.polyglot === subscription!.product.id
+        const planIsPolyglot = creemProductIdMap.polyglot === product.id
         await updateSubscription({ userId, plan: planIsPolyglot ? 'polyglot' : 'bilingual' })
         await toggleOrgCreationAccess({ userId, enabled: planIsPolyglot })
 
@@ -30,7 +30,7 @@ const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
         })
     },
 
-    'subscription.canceled': async (event) => {
+    'subscription.expired': async (event) => {
         const { customer } = event.object
         const userId = await getUserIdByCustomerId(customer.id)
         await updateSubscription({ userId, plan: 'beginner' })

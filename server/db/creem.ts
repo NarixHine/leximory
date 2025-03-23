@@ -48,7 +48,6 @@ export async function getRequestUserId(requestId: string) {
     if (!userId) {
         throw new Error('Request not found')
     }
-    await redis.del(`creem:request:${requestId}`)
     return userId
 }
 
