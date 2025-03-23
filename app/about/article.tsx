@@ -2,7 +2,7 @@
 
 import { Card, CardBody } from "@heroui/card"
 import { motion } from 'framer-motion'
-import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone, PiHeartDuotone } from 'react-icons/pi'
+import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
