@@ -22,7 +22,7 @@ export const maxCommentaryQuota = async (userId?: string) => {
     else if (plan === 'bilingual') {
         return 100
     }
-    return 30
+    return 20
 }
 
 export const maxAudioQuota = async () => {
@@ -36,7 +36,7 @@ export const maxAudioQuota = async () => {
     else if (plan === 'bilingual') {
         return 10
     }
-    return 5
+    return 3
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {

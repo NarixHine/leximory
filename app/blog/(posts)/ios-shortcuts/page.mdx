@@ -1,3 +1,5 @@
+import CopyToken from '@/app/settings/components/copy'
+
 export const metadata = {
     title: 'iOS Shortcuts 快捷保存词汇',
     description: 'Leximory 支持通过 iOS Shortcuts 快捷保存词汇，无需导入全文即可利用 Leximory 的生词本功能。本文将介绍如何设置和使用这个功能。',
@@ -8,7 +10,6 @@ export const metadata = {
 ![快捷指令](/ios-shortcuts/shortcuts.webp)
 
 > 快捷指令（Shortcuts）是 iOS 上的官方工作应用程序，让用户可运用多个步骤来制作专属的快捷指令。
-
 
 在 iOS 设备上可以**通过 [Shortcuts](https://apps.apple.com/app/shortcuts/id1462947752) 快速将生词保存到 Leximory**，无需导入全文即可利用 Leximory 的生词本功能。
 
@@ -29,13 +30,12 @@ export const metadata = {
 
 ## 第三步：设置通信密钥
 
-首次使用时，Shortcut 会要求您输入通信密钥：
+首次使用时，Shortcut 会要求用户输入通信密钥。
 
-1. 登录 Leximory
-2. 点击右下角设置
-3. 点击**拷贝通信密钥**
-4. 将密钥粘贴到 Shortcut 的提示框中
+登录后，点击下方**拷贝通信密钥**，将密钥粘贴到 Shortcut 的提示框中。
+
+<CopyToken />
 
 ## 大功告成
 
-现在可以在 iOS 设备上随时随地快速保存生词了！Leximory 会自动识别语言，注解后保存到词汇仓库并将注解发送回 Shortcut。每当遇到不熟悉的词汇，只需选中并分享到 Leximory 的 iOS Shortcut，词汇就会自动保存到您指定的文库中，供君随时复习。
+现在可以在 iOS 设备上随时随地快速保存生词了！Leximory 会自动识别语言，注解后保存到词汇仓库并将注解发送回 Shortcut。每当遇到不熟悉的词汇，只需选中并分享到 Leximory 的 iOS Shortcut，词汇就会自动保存到指定的文库中，供君随时复习。
