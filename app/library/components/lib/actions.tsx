@@ -12,7 +12,7 @@ const saveValidator = z.object({
     name: z.string(),
     access: z.boolean(),
     org: z.string().optional(),
-    price: z.number(),
+    price: z.number().nonnegative().max(100),
 })
 
 export async function save(data: z.infer<typeof saveValidator>) {

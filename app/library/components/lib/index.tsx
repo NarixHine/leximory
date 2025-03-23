@@ -214,7 +214,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>
-                <Input isRequired size='sm' variant='underlined' label='上架价格' type='number' {...register('price')} />
+                <Input isRequired size='sm' placeholder='0~100' variant='underlined' label='上架价格' type='number' {...register('price')} />
             </div>
             <p className='text-xs opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
         </Form>
