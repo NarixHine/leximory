@@ -79,7 +79,7 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
     'use cache'
     cacheTag('words')
     cacheLife('hours')
-    const words = await xata.db.lexicon.select(['id', 'word']).filter({
+    const words = await xata.db.lexicon.select(['id', 'word', 'lib.lang']).filter({
         $all: [
             filter,
             {
@@ -95,7 +95,7 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
             }
         ]
     }).getAll()
-    return words.map(({ word, id }) => ({ word, id }))
+    return words.map(({ word, id, lib }) => ({ word, id, lang: lib!.lang as Lang }))
 }
 
 export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {

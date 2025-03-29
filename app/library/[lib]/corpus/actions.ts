@@ -21,7 +21,7 @@ export async function getWithin({ lib, start, end }: { lib: string, start: Date,
     return words.map(({ word }) => (word))
 }
 
-export async function generateStory({ comments, lib }: { comments: string[], lib: string }) {
+export async function generateStory({ comments, lib, isShadow = false }: { comments: string[], lib: string, isShadow?: boolean }) {
     const { userId } = await getAuthOrThrow()
     await authWriteToLib(lib)
 
@@ -43,6 +43,6 @@ export async function generateStory({ comments, lib }: { comments: string[], lib
 
     return {
         success: true,
-        message: '生成后故事会出现在本文库文本内'
+        message: `生成后故事会出现在${isShadow ? '词汇仓库' : '本文库'}文本内`
     }
 }

@@ -11,6 +11,8 @@ import WordStats from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
 import { getSubsStatus } from '@/server/db/subs'
 import { getAuthOrThrow } from '@/server/auth/role'
+import { HydrationBoundary } from 'jotai-ssr'
+import { hasSubsAtom } from './atoms'
 
 export const metadata: Metadata = {
     title: '每日汇总',
@@ -21,28 +23,32 @@ export default async function Daily() {
     const { hasSubs, hour } = await getSubsStatus({ userId })
 
     return (
-        <Main className='max-w-screen-lg pt-12'>
-            <H><PiRewindDuotone />每日汇总</H>
-            <div className='my-12 h-80'>
-                <Suspense fallback={<WordChartSkeleton />}>
-                    <WordStats uid={userId} />
+        <HydrationBoundary hydrateAtoms={[
+            [hasSubsAtom, hasSubs]
+        ]}>
+            <Main className='max-w-screen-lg pt-12'>
+                <H><PiRewindDuotone />每日汇总</H>
+                <div className='my-12 h-80'>
+                    <Suspense fallback={<WordChartSkeleton />}>
+                        <WordStats uid={userId} />
+                    </Suspense>
+                </div>
+                <Spacer y={6}></Spacer>
+                <Bell hasSubs={hasSubs} hour={hour}></Bell>
+                <Suspense fallback={<Loading></Loading>}>
+                    <Report day='今天记忆'></Report>
                 </Suspense>
-            </div>
-            <Spacer y={6}></Spacer>
-            <Bell hasSubs={hasSubs} hour={hour}></Bell>
-            <Suspense fallback={<Loading></Loading>}>
-                <Report day='今天记忆'></Report>
-            </Suspense>
-            <Suspense fallback={<Loading></Loading>}>
-                <Report day='一天前记忆'></Report>
-            </Suspense>
-            <Suspense fallback={<Loading></Loading>}>
-                <Report day='四天前记忆'></Report>
-            </Suspense>
-            <Suspense fallback={<Loading></Loading>}>
-                <Report day='七天前记忆'></Report>
-            </Suspense>
-        </Main>
+                <Suspense fallback={<Loading></Loading>}>
+                    <Report day='一天前记忆'></Report>
+                </Suspense>
+                <Suspense fallback={<Loading></Loading>}>
+                    <Report day='四天前记忆'></Report>
+                </Suspense>
+                <Suspense fallback={<Loading></Loading>}>
+                    <Report day='七天前记忆'></Report>
+                </Suspense>
+            </Main>
+        </HydrationBoundary>
     )
 }
 

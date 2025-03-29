@@ -11,6 +11,17 @@ import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
 import { useLogSnag } from '@logsnag/next'
 
+export const subscribe = async (hour: number) => {
+    const register = await navigator.serviceWorker.register('/sw.js')
+
+    const subscription = await register.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    })
+
+    await save({ subs: subscription as unknown as PushSubscription, hour })
+}
+
 export default function Bell({ hasSubs, hour = 22 }: {
     hasSubs: boolean
     hour?: number
@@ -18,17 +29,6 @@ export default function Bell({ hasSubs, hour = 22 }: {
     const { track } = useLogSnag()
     const [isUpdating, startUpdating] = useTransition()
     const [selectedHour, setSelectedHour] = useState(hour)
-
-    const subscribe = async () => {
-        const register = await navigator.serviceWorker.register('/sw.js')
-
-        const subscription = await register.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        })
-
-        await save({ subs: subscription as unknown as PushSubscription, hour: selectedHour })
-    }
 
     return (
         <div className='flex flex-col justify-center items-center space-y-3'>
@@ -55,7 +55,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                                             hour: selectedHour
                                         }
                                     })
-                                    await subscribe()
+                                    await subscribe(selectedHour)
                                 } catch {
                                     toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
                                 }
