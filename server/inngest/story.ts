@@ -13,14 +13,12 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         规则：
         1. 必须使用所有给定的词汇
         2. 故事长度尽可能短
-        3. 故事要有趣且符合逻辑
-        4. 语言难度要简易
-        5. 确保故事内容无任何不当内容
-        6. 故事全文使用关键词所属语言
-        7. 所有给定词汇必须在文中以<must></must>包裹（如<must>word</must>）
-        8. 直接输出故事文本，前后不要附带其他内容
-        9. 可以对词汇根据语境进行屈折变化或适当变形，但不要改变词性
-        10. 故事必须按照以下风格与内容创作：${storyStyle}
+        3. 故事要有趣且符合逻辑，易读性高
+        4. 可以对词汇根据语境进行屈折变化，但不要改变词性；可以把诸如someone之类的代词用him/her/it/them等词代替
+        5. 故事全文使用关键词所属语言
+        6. 所有给定词汇必须在文中以<must></must>包裹（如<must>word</must>）
+        7. 直接输出故事文本，前后不要附带其他内容
+        8. 故事必须按照以下风格与内容创作：${storyStyle}
     `,
     prompt: `
         ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : ''}
