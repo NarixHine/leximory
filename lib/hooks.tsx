@@ -2,6 +2,11 @@
 
 import { useEffect } from 'react'
 
+export const useIsMobileIos = () => {
+    const userAgent = globalThis.navigator.userAgent.toLowerCase()
+    return /iphone|ipad|ipod|macintosh|safari/.test(userAgent) && !/chrome/.test(userAgent) && !/android/.test(userAgent)
+}
+
 export const useOnWindowResize = (handler: { (): void }) => {
     useEffect(() => {
         const handleResize = () => {
@@ -12,9 +17,4 @@ export const useOnWindowResize = (handler: { (): void }) => {
 
         return () => window.removeEventListener("resize", handleResize)
     }, [handler])
-}
-
-export const useIsIos = () => {
-    const userAgent = window.navigator.userAgent.toLowerCase()
-    return /iphone|ipad|ipod|macintosh|safari/.test(userAgent)
 }
