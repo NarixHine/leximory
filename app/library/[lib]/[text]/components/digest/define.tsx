@@ -10,7 +10,7 @@ import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useEventListener } from 'usehooks-ts'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { useAtomValue } from 'jotai'
-
+import { useIsMobileIos } from '@/lib/hooks'
 export default function Define() {
     const ref = useRef(globalThis.document)
     const [rect, setRect] = useState<DOMRect | null>(null)
@@ -31,6 +31,7 @@ export default function Define() {
     }, ref)
 
     const MotionTrigger = motion.create(Drawer.Trigger)
+    const isMobileIos = useIsMobileIos()
 
     return <Drawer.Root>
         <AnimatePresence>
@@ -39,10 +40,10 @@ export default function Define() {
                     left: rect.left + rect.width / 2,
                     top: scrollY + rect.bottom + 10
                 }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, display: 'none' }}
-                transition={{ duration: 0.2 }}
+                initial={isMobileIos ? undefined : { opacity: 0 }}
+                animate={isMobileIos ? undefined : { opacity: 1 }}
+                exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
+                transition={isMobileIos ? undefined : { duration: 0.2 }}
                 data-event='词汇注解'
                 data-description={`进行了动态注解`}
                 data-channel='annotation'

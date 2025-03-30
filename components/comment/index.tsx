@@ -244,7 +244,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             <Note omitOriginal portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                         </motion.div>
                     </motion.div>
-                    {portions[2] && prompt && <Save />}
+                    {portions[2] && <Save />}
                 </div>}
             </CardBody>
         </Card>
