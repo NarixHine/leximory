@@ -3,7 +3,7 @@
 import { Drawer } from 'vaul'
 import Comment from '@/components/comment'
 import { useRef, useState } from 'react'
-import { cn, getBracketedSelection } from '@/lib/utils'
+import { cn, getBracketedSelection, resetSelection } from '@/lib/utils'
 import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { motion } from 'framer-motion'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
@@ -19,13 +19,15 @@ export default function Define() {
     const lang = useAtomValue(langAtom)
 
     useEventListener('selectionchange', () => {
-        const selection = getSelection()
-        if (selection && selection.rangeCount) {
-            const range = selection.getRangeAt(0)
-            const rect = range.getBoundingClientRect()
-            setRect(rect)
-            setSelection(selection)
+        const newSelection = getSelection()
+        if (!newSelection) {
+            if (selection) {
+                resetSelection()
+            }
+            return
         }
+        setRect(newSelection.getRangeAt(0).getBoundingClientRect())
+        setSelection(newSelection)
     }, ref)
 
     return <motion.div
@@ -54,10 +56,10 @@ export default function Define() {
                 注解
             </Drawer.Trigger>}
             <Drawer.Portal>
-                <Drawer.Overlay className='fixed inset-0 bg-black/40 z-40' />
-                <Drawer.Content className='h-fit fixed rounded-t-xl bottom-0 left-0 right-0 outline-none pb-10 z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
+                <Drawer.Overlay className='fixed inset-0 bg-black/30 z-40' />
+                <Drawer.Content className='h-fit fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    {selection && selection.anchorNode?.textContent && selection.toString() && <Comment asCard prompt={getBracketedSelection(selection)} params='["", "🔄 加载中"]'></Comment>}
+                    <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='["", "🔄 加载中"]'></Comment>
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>

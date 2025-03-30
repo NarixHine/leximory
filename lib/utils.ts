@@ -4,6 +4,18 @@ import { z } from 'zod'
 
 export const randomID = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(16)
 
+export function resetSelection() {
+    const tempInput = document.createElement('input')
+    // Position it offscreen and invisible so it doesn’t affect layout
+    tempInput.style.cssText = 'position:absolute; left:-9999px; opacity:0;'
+    document.body.appendChild(tempInput)
+    tempInput.focus()
+    setTimeout(() => {
+        tempInput.blur()
+        tempInput.remove()
+    }, 100)
+}
+
 export function getSelectedChunk(selection: Selection) {
     const start = Math.min(selection.anchorOffset, selection.focusOffset)
     const end = Math.max(selection.anchorOffset, selection.focusOffset)

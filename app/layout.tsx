@@ -60,7 +60,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-						<div className='relative flex flex-col'>
+						<div className='relative flex flex-col print:bg-white'>
 							{children}
 							<Dock />
 						</div>

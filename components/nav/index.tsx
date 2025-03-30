@@ -22,7 +22,7 @@ export default async function Nav(props: NavProps) {
     const { orgSlug } = await auth()
     const tenant = orgSlug ?? (await currentUser())!.username ?? 'You'
     return (
-        <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-2'>
+        <div className='sticky flex justify-center mb-6 -mt-6 top-4 z-30 left-0 w-full space-x-2 print:hidden'>
             <NavBreadcrumbs {...props} tenant={tenant} />
             <Suspense
                 fallback={<Button

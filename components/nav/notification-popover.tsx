@@ -34,7 +34,7 @@ export default function NotificationPopover({ notices }: { notices: z.infer<type
                         color='primary'
                         radius='full'
                         size='sm'
-                        className='opacity-80 backdrop-blur-sm print:hidden'
+                        className='opacity-80 backdrop-blur-sm'
                         startContent={<PiBellDuotone className='text-lg' />}
                     />
                 </Badge>

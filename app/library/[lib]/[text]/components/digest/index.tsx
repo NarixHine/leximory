@@ -45,6 +45,9 @@ function ReaderModeToggle() {
       }>
         <Button
           onPress={() => {
+            if (!isReaderMode) {
+              setTimeout(print)
+            }
             toggleReaderMode()
             setIsEditing(false)
           }}

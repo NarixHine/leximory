@@ -97,7 +97,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     useEffect(() => {
-        if (prompt) {
+        if (prompt && prompt !== '') {
             commentWord(prompt)
             setStatus('idle')
             setUid(randomID())
