@@ -13,30 +13,30 @@ export const getPlan = async (userId?: string) => {
 
 export const maxCommentaryQuota = async (userId?: string) => {
     const plan = userId ? await getPlan(userId) : await getPlan()
-    if (plan === 'leximory') {
-        return 999
+    switch (plan) {
+        case 'leximory':
+            return 999
+        case 'polyglot':
+            return 200
+        case 'bilingual':
+            return 100
+        default:
+            return 20
     }
-    else if (plan === 'polyglot') {
-        return 200
-    }
-    else if (plan === 'bilingual') {
-        return 100
-    }
-    return 20
 }
 
 export const maxAudioQuota = async () => {
     const plan = await getPlan()
-    if (plan === 'leximory') {
-        return 100
+    switch (plan) {
+        case 'leximory':
+            return 100
+        case 'polyglot':
+            return 20
+        case 'bilingual':
+            return 10
+        default:
+            return 3
     }
-    else if (plan === 'polyglot') {
-        return 20
-    }
-    else if (plan === 'bilingual') {
-        return 10
-    }
-    return 3
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {

@@ -1,4 +1,4 @@
-import { creemProductIdMap } from '@/lib/config'
+import { getPlanFromProductId } from '@/lib/config'
 import { createWebhookHandler } from '@/lib/creem-sdk/webhook-handler'
 import env from '@/lib/env'
 import { logsnagServer } from '@/lib/logsnag'
@@ -14,9 +14,9 @@ const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
         }
         const userId = await getRequestUserId(request_id)
         await fillCustomerId({ userId, customerId: customer.id })
-        const planIsPolyglot = creemProductIdMap.polyglot === product.id
-        await updateSubscription({ userId, plan: planIsPolyglot ? 'polyglot' : 'bilingual' })
-        await toggleOrgCreationAccess({ userId, enabled: planIsPolyglot })
+        const plan = getPlanFromProductId(product.id)
+        await updateSubscription({ userId, plan })
+        await toggleOrgCreationAccess({ userId, enabled: plan === 'polyglot' })
 
         after(async () => {
             const logsnag = logsnagServer()
@@ -24,7 +24,7 @@ const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
                 event: '订阅升级',
                 channel: 'payments',
                 icon: '💰',
-                description: `订阅升级为 ${planIsPolyglot ? 'Polyglot' : 'Bilingual'}`,
+                description: `订阅升级为 ${plan}`,
                 user_id: userId,
             })
         })
@@ -48,5 +48,6 @@ export async function POST(req: NextRequest) {
         json: (data: any, init?: { status?: number }) =>
             NextResponse.json(data, { status: init?.status || 200 })
     })
+    console.log(response)
     return response
 } 

@@ -95,7 +95,7 @@ export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, f
             }
         ]
     }).getAll()
-    return words.map(({ word, id, lib }) => ({ word, id, lang: lib!.lang as Lang }))
+    return words.map(({ word, id, lib }) => ({ word, id, lang: lib!.lang as Lang, lib: lib!.id }))
 }
 
 export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {

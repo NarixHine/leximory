@@ -63,7 +63,7 @@ export const planMap: Record<Plan, string> = {
 export const dailyLexicoinClaimMap: Record<Plan, number> = {
     'beginner': 1,
     'bilingual': 3,
-    'polyglot': 5,
+    'polyglot': 10,
     'leximory': 100
 } as const
 
@@ -112,3 +112,13 @@ export const creemProductIdMap: Record<PaidTier, string> = isProd ? {
     'bilingual': 'prod_1rKh3LrLlDsk3F91W97Wjk',
     'polyglot': 'prod_4zgqjFSYwLoPNE7IRFw7QR',
 } as const
+export const getPlanFromProductId = (productId: typeof creemProductIdMap[keyof typeof creemProductIdMap]): PaidTier => {
+    switch (productId) {
+        case creemProductIdMap.bilingual:
+            return 'bilingual'
+        case creemProductIdMap.polyglot:
+            return 'polyglot'
+        default:
+            throw new Error('Invalid product id')
+    }
+}

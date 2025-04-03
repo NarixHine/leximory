@@ -4,6 +4,8 @@ import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
 import StoryGen from './story-gen'
 import { supportedLangs } from '@/lib/config'
+import { HydrationBoundary } from 'jotai-ssr'
+import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 
 export const forgetCurve = {
     '今天记忆': [0, -1],
@@ -29,8 +31,10 @@ export default async function Report({ day }: {
                 ))}
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                {words.map((word) => (
-                    <Markdown key={word.id} md={word.word} asCard shadow disableSave></Markdown>
+                {words.map(({ word, id, lang, lib }) => (
+                    <HydrationBoundary key={id} hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
+                        <Markdown key={id} md={word} asCard deleteId={id}></Markdown>
+                    </HydrationBoundary>
                 ))}
             </div>
         </div>

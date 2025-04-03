@@ -40,7 +40,7 @@ async function HeroSection({ userId }: { userId: string }) {
     const data = await summarizeLibsWithWords({ filter: { 'lib.owner': userId } })
     const totalWordsLearned = data.reduce((acc, curr) => acc + curr.count, 0)
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16' />
+        <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>

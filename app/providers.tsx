@@ -81,6 +81,9 @@ function LogSnagInit() {
 		setDebug(!isProd)
 		if (isLoaded && user) {
 			const { id, emailAddresses, username } = user
+			if (!isProd) {
+				console.log(id)
+			}
 			const email = emailAddresses[0].emailAddress
 			setUserId(id)
 			identify({
