@@ -32,16 +32,26 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 		<ClerkProvider localization={zhCN} afterSignOutUrl={'/'} appearance={{
 			baseTheme: mode === 'dark' ? dark : undefined,
 			variables: {
-				colorPrimary: mode === 'dark' ? '#7697a6' : '#7D9161',
-				colorDanger: mode === 'dark' ? '#384d80' : '#5F6F65',
-				colorSuccess: mode === 'dark' ? '#7893a3' : '#9ABB8B',
-				colorWarning: mode === 'dark' ? '#6198d3' : '#808D7C',
-				colorNeutral: mode === 'dark' ? '#495463' : '#2D6824',
-				colorText: mode === 'dark' ? '#d0d5dd' : '#345119',
-				colorTextSecondary: mode === 'dark' ? '#949eae' : '#617943',
-				colorBackground: mode === 'dark' ? '#15202B' : '#F8FAF0',
-				colorInputText: mode === 'dark' ? '#d0d5dd' : '#345119',
-				colorInputBackground: mode === 'dark' ? '#1B2D48' : '#F8FAF0',
+				// Core Color Tokens
+				colorPrimary: mode === 'dark' ? '#5A6F5A' : '#A0B998',
+				colorDanger: mode === 'dark' ? '#7A4C4C' : '#C29994',
+				colorSuccess: mode === 'dark' ? '#5A6F5A' : '#A0B998',
+				colorWarning: mode === 'dark' ? '#7F7A4C' : '#CBC48B',
+				colorNeutral: mode === 'dark' ? '#FFFFFF' : '#222222',
+
+				// Text Colors
+				colorText: mode === 'dark' ? '#FFFFFF' : '#222222',
+				colorTextOnPrimaryBackground: '#FFFFFF', // Always white for strong contrast on primary backgrounds
+				colorTextSecondary: mode === 'dark' ? '#E0E0E0' : '#3A3A3A',
+
+				// Backgrounds
+				colorBackground: mode === 'dark' ? '#1C1E1A' : '#F8F5ED',
+				colorInputText: mode === 'dark' ? '#FFFFFF' : '#222222',
+				colorInputBackground: mode === 'dark' ? '#2A2C28' : '#F8F5ED',
+
+				// Misc
+				colorShimmer: mode === 'dark' ? '#3A3A3A' : '#E0E0E0',
+
 				fontFamily: CHINESE_ZCOOL.style.fontFamily,
 			}
 		}}>

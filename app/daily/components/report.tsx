@@ -30,7 +30,7 @@ export default async function Report({ day }: {
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {words.map((word) => (
-                    <Markdown key={word.id} md={word.word} asCard shadow></Markdown>
+                    <Markdown key={word.id} md={word.word} asCard shadow disableSave></Markdown>
                 ))}
             </div>
         </div>
