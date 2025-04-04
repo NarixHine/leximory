@@ -6,11 +6,11 @@ import { getAccentPreference, setAccentPreference } from '@/server/db/preference
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import moment from 'moment'
 import { revalidatePath } from 'next/cache'
-import { creemProductIdMap, dailyLexicoinClaimMap, prefixUrl, type PaidTier } from '@/lib/config'
+import { dailyLexicoinClaimMap } from '@/lib/config'
 import { getPlan } from '@/server/auth/quota'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
-import { createRequest, getCustomerId } from '@/server/db/creem'
+import { getCustomerId } from '@/server/db/creem'
 
 export default async function getToken() {
 	const { getToken } = await auth()
@@ -40,16 +40,6 @@ export async function getDailyLexicoin() {
 	await setLastClaimDate(userId)
 	revalidatePath('/settings')
 	return { message: `领取成功，LexiCoin + ${dailyLexicoinClaimMap[plan]}` }
-}
-
-export async function upgrade({ plan }: { plan: PaidTier }) {
-	const { userId } = await getAuthOrThrow()
-	const session = await creem.createCheckoutSession({
-		success_url: prefixUrl('/settings'),
-		product_id: creemProductIdMap[plan],
-		request_id: await createRequest(userId),
-	})
-	redirect(session.checkout_url)
 }
 
 export async function manageSubscription() {

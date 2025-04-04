@@ -40,7 +40,7 @@ export function Article() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            我们相信，只有通过大量的阅读，才能<span
+            事实证明，只有通过大量的阅读，才能<span
                 className='bg-primary-50/50 dark:bg-primary-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >真正习得词汇与文法</span>。
         </motion.p>
@@ -138,7 +138,7 @@ export function Article() {
         >
             核心功能的演示视频：
         </motion.p>
-        <iframe className='rounded-xl my-4' height={338} src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1' width={'100%'} allowFullScreen></iframe>
+        <iframe className='rounded-xl my-4 md:h-[360px] sm:h-[320px] h-[280px]' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1' width={'100%'} allowFullScreen></iframe>
 
         <Spacer y={10}></Spacer>
         <motion.h2

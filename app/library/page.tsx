@@ -18,6 +18,7 @@ import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { Button } from '@heroui/button'
 import Link from 'next/link'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -76,7 +77,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
                     />
                 ))}
             </section>
-            {compactLibs.length > 0 && <section className='flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg md:before:content-["Archive↝"] before:content-["Archive↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm'>
+            {compactLibs.length > 0 && <section className={cn('flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm before:', CHINESE_ZCOOL.className)}>
                 {compactLibs.map(({ lib, count }) => lib && (
                     <Library
                         price={lib.price}
@@ -133,9 +134,9 @@ export default function Page() {
             <LibraryAddButton />
 
             <footer className='flex justify-center p-1'>
-                    <Button as={Link} href='/about' variant='light' startContent={<PiVideo />} className={CHINESE_ZCOOL.className}>
-                        使用教程
-                    </Button>
+                <Button as={Link} href='/about' variant='light' startContent={<PiVideo />} className={CHINESE_ZCOOL.className}>
+                    使用教程
+                </Button>
             </footer>
         </div>
     </Main>
