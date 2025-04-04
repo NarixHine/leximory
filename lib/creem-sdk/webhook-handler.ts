@@ -1,4 +1,4 @@
-import { CreemSDK } from './index';
+import { CreemSDK } from './index'
 import {
     CheckoutCompletedEvent,
     RefundCreatedEvent,
@@ -8,48 +8,48 @@ import {
     SubscriptionPaidEvent,
     WebhookEvent,
     WebhookHandlers
-} from './types';
+} from './types'
 
 /**
  * Type guard to check if event is a checkout completed event
  */
 function isCheckoutCompleted(event: WebhookEvent): event is CheckoutCompletedEvent {
-    return event.eventType === 'checkout.completed';
+    return event.eventType === 'checkout.completed'
 }
 
 /**
  * Type guard to check if event is a subscription active event
  */
 function isSubscriptionActive(event: WebhookEvent): event is SubscriptionActiveEvent {
-    return event.eventType === 'subscription.active';
+    return event.eventType === 'subscription.active'
 }
 
 /**
  * Type guard to check if event is a subscription paid event
  */
 function isSubscriptionPaid(event: WebhookEvent): event is SubscriptionPaidEvent {
-    return event.eventType === 'subscription.paid';
+    return event.eventType === 'subscription.paid'
 }
 
 /**
  * Type guard to check if event is a subscription canceled event
  */
 function isSubscriptionCanceled(event: WebhookEvent): event is SubscriptionCanceledEvent {
-    return event.eventType === 'subscription.canceled';
+    return event.eventType === 'subscription.canceled'
 }
 
 /**
  * Type guard to check if event is a subscription expired event
  */
 function isSubscriptionExpired(event: WebhookEvent): event is SubscriptionExpiredEvent {
-    return event.eventType === 'subscription.expired';
+    return event.eventType === 'subscription.expired'
 }
 
 /**
  * Type guard to check if event is a refund created event
  */
 function isRefundCreated(event: WebhookEvent): event is RefundCreatedEvent {
-    return event.eventType === 'refund.created';
+    return event.eventType === 'refund.created'
 }
 
 /**
@@ -82,63 +82,63 @@ export function createWebhookHandler(
 ) {
     return async function handler(req: any, res: any) {
         if (req.method !== 'POST') {
-            return res.json({ message: 'Method not allowed' }, { status: 405 });
+            return res.json({ message: 'Method not allowed' }, { status: 405 })
         }
 
-        const signature = req.headers['creem-signature'] as string;
+        const signature = req.headers['creem-signature'] as string
         if (!signature) {
-            return res.json({ message: 'No signature found' }, { status: 400 });
+            return res.json({ message: 'No signature found' }, { status: 400 })
         }
 
-        const payload = JSON.stringify(req.body);
-        const isValid = creem.verifyWebhookSignature(payload, signature, webhookSecret);
+        const payload = JSON.stringify(req.body)
+        const isValid = creem.verifyWebhookSignature(payload, signature, webhookSecret)
 
         if (!isValid) {
-            return res.json({ message: 'Invalid signature' }, { status: 400 });
+            return res.json({ message: 'Invalid signature' }, { status: 400 })
         }
 
-        const event = req.body as WebhookEvent;
+        const event = req.body as WebhookEvent
 
         try {
             switch (event.eventType) {
                 case 'checkout.completed':
                     if (handlers['checkout.completed'] && isCheckoutCompleted(event)) {
-                        await handlers['checkout.completed'](event);
+                        await handlers['checkout.completed'](event)
                     }
-                    break;
+                    break
                 case 'subscription.active':
                     if (handlers['subscription.active'] && isSubscriptionActive(event)) {
-                        await handlers['subscription.active'](event);
+                        await handlers['subscription.active'](event)
                     }
-                    break;
+                    break
                 case 'subscription.paid':
                     if (handlers['subscription.paid'] && isSubscriptionPaid(event)) {
-                        await handlers['subscription.paid'](event);
+                        await handlers['subscription.paid'](event)
                     }
-                    break;
+                    break
                 case 'subscription.canceled':
                     if (handlers['subscription.canceled'] && isSubscriptionCanceled(event)) {
-                        await handlers['subscription.canceled'](event);
+                        await handlers['subscription.canceled'](event)
                     }
-                    break;
+                    break
                 case 'subscription.expired':
                     if (handlers['subscription.expired'] && isSubscriptionExpired(event)) {
-                        await handlers['subscription.expired'](event);
+                        await handlers['subscription.expired'](event)
                     }
-                    break;
+                    break
                 case 'refund.created':
                     if (handlers['refund.created'] && isRefundCreated(event)) {
-                        await handlers['refund.created'](event);
+                        await handlers['refund.created'](event)
                     }
-                    break;
+                    break
                 default:
-                    return res.json({ message: `Unhandled event type: ${event}` }, { status: 400 });
+                    return res.json({ message: `Unhandled event type: ${event}` }, { status: 400 })
             }
 
-            return res.json({ received: true }, { status: 200 });
+            return res.json({ received: true }, { status: 200 })
         } catch (error) {
-            console.error('Webhook handler error:', error);
-            return res.json({ message: 'Webhook handler failed' }, { status: 500 });
+            console.error('Webhook handler error:', error)
+            return res.json({ message: 'Webhook handler failed' }, { status: 500 })
         }
-    };
+    }
 } 

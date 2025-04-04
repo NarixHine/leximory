@@ -1,21 +1,20 @@
-import crypto from 'crypto';
-import { ActivateLicenseParams, BillingPortalSession, CancelSubscriptionParams, CheckoutSession, CreateBillingPortalSessionParams, CreateCheckoutSessionParams, CreateDiscountParams, CreateProductParams, Customer, DeactivateLicenseParams, DiscountCode, GetCustomerParams, GetSubscriptionParams, LicenseActivation, LicenseDeactivation, LicenseValidation, Product, ProductListResponse, ProductSearchParams, RedirectParams, Subscription, TransactionListResponse, TransactionSearchParams, ValidateLicenseParams } from './types';
-
+import crypto from 'crypto'
+import { ActivateLicenseParams, BillingPortalSession, CancelSubscriptionParams, CheckoutSession, CreateBillingPortalSessionParams, CreateCheckoutSessionParams, CreateDiscountParams, CreateProductParams, Customer, DeactivateLicenseParams, DiscountCode, GetCustomerParams, GetSubscriptionParams, LicenseActivation, LicenseDeactivation, LicenseValidation, Product, ProductListResponse, ProductSearchParams, RedirectParams, Subscription, TransactionListResponse, TransactionSearchParams, ValidateLicenseParams } from './types'
 
 export class CreemSDK {
-    private apiKey: string;
-    private baseUrl: string;
+    private apiKey: string
+    private baseUrl: string
 
     constructor({ apiKey }: { apiKey: string }) {
         if (!apiKey.startsWith('creem_')) {
-            throw new Error('Invalid API key format. API key must start with "creem_"');
+            throw new Error('Invalid API key format. API key must start with "creem_"')
         }
 
-        this.apiKey = apiKey;
-        const mode = apiKey.startsWith('creem_test_') ? 'test' : 'live';
+        this.apiKey = apiKey
+        const mode = apiKey.startsWith('creem_test_') ? 'test' : 'live'
         this.baseUrl = mode === 'test'
             ? 'https://test-api.creem.io'
-            : 'https://api.creem.io';
+            : 'https://api.creem.io'
     }
 
     private async request<T, P = Record<string, unknown>>(
@@ -30,14 +29,14 @@ export class CreemSDK {
                 'x-api-key': this.apiKey,
             },
             ...(data && { body: JSON.stringify(data) }),
-        });
+        })
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Request failed');
+            const error = await response.json()
+            throw new Error(error.message || 'Request failed')
         }
 
-        return response.json();
+        return response.json()
     }
 
     /**
@@ -64,7 +63,7 @@ export class CreemSDK {
      * });
      */
     async createCheckoutSession(params: CreateCheckoutSessionParams): Promise<CheckoutSession> {
-        return this.request<CheckoutSession, CreateCheckoutSessionParams>('/v1/checkouts', 'POST', params);
+        return this.request<CheckoutSession, CreateCheckoutSessionParams>('/v1/checkouts', 'POST', params)
     }
 
     /**
@@ -82,14 +81,14 @@ export class CreemSDK {
      * const customer = await creemSDK.getCustomer({ email: 'user@example.com' });
      */
     async getCustomer(params: GetCustomerParams): Promise<Customer> {
-        const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams()
         if (params.customer_id) {
-            queryParams.append('customer_id', params.customer_id);
+            queryParams.append('customer_id', params.customer_id)
         }
         if (params.email) {
-            queryParams.append('email', params.email);
+            queryParams.append('email', params.email)
         }
-        return this.request<Customer>(`/v1/customers?${queryParams.toString()}`);
+        return this.request<Customer>(`/v1/customers?${queryParams.toString()}`)
     }
 
     /**
@@ -105,8 +104,8 @@ export class CreemSDK {
      * });
      */
     async getSubscription(params: GetSubscriptionParams): Promise<Subscription> {
-        const queryParams = new URLSearchParams({ subscription_id: params.subscription_id });
-        return this.request<Subscription>(`/v1/subscriptions?${queryParams.toString()}`);
+        const queryParams = new URLSearchParams({ subscription_id: params.subscription_id })
+        return this.request<Subscription>(`/v1/subscriptions?${queryParams.toString()}`)
     }
 
     /**
@@ -125,7 +124,7 @@ export class CreemSDK {
         return this.request<Subscription>(
             `/v1/subscriptions/${params.id}/cancel`,
             'POST'
-        );
+        )
     }
 
     /**
@@ -151,9 +150,9 @@ export class CreemSDK {
         const computedSignature = crypto
             .createHmac('sha256', webhookSecret)
             .update(payload)
-            .digest('hex');
+            .digest('hex')
 
-        return computedSignature === signature;
+        return computedSignature === signature
     }
 
     /**
@@ -179,14 +178,14 @@ export class CreemSDK {
             .filter(([, value]) => value !== null && value !== undefined)
             .map(([key, value]) => `${key}=${value}`)
             .concat(`salt=${this.apiKey}`)
-            .join('|');
+            .join('|')
 
         const computedSignature = crypto
             .createHash('sha256')
             .update(data)
-            .digest('hex');
+            .digest('hex')
 
-        return computedSignature === signature;
+        return computedSignature === signature
     }
 
     // License Key Management
@@ -205,7 +204,7 @@ export class CreemSDK {
      * });
      */
     async validateLicense(params: ValidateLicenseParams): Promise<LicenseValidation> {
-        return this.request<LicenseValidation, ValidateLicenseParams>('/v1/licenses/validate', 'POST', params);
+        return this.request<LicenseValidation, ValidateLicenseParams>('/v1/licenses/validate', 'POST', params)
     }
 
     /**
@@ -226,7 +225,7 @@ export class CreemSDK {
             '/v1/licenses/activate',
             'POST',
             params
-        );
+        )
     }
 
     /**
@@ -243,7 +242,7 @@ export class CreemSDK {
      * });
      */
     async deactivateLicense(params: DeactivateLicenseParams): Promise<LicenseDeactivation> {
-        return this.request<LicenseDeactivation, DeactivateLicenseParams>('/v1/licenses/deactivate', 'POST', params);
+        return this.request<LicenseDeactivation, DeactivateLicenseParams>('/v1/licenses/deactivate', 'POST', params)
     }
 
     // Products
@@ -256,7 +255,7 @@ export class CreemSDK {
      * const product = await creemSDK.getProduct('prod_123');
      */
     async getProduct(productId: string): Promise<Product> {
-        return this.request<Product>(`/v1/products?product_id=${encodeURIComponent(productId)}`);
+        return this.request<Product>(`/v1/products?product_id=${encodeURIComponent(productId)}`)
     }
 
     /**
@@ -274,7 +273,7 @@ export class CreemSDK {
      * });
      */
     async createProduct(params: CreateProductParams): Promise<Product> {
-        return this.request<Product, CreateProductParams>('/v1/products', 'POST', params);
+        return this.request<Product, CreateProductParams>('/v1/products', 'POST', params)
     }
 
     /**
@@ -291,17 +290,17 @@ export class CreemSDK {
      * });
      */
     async listProducts(params?: ProductSearchParams): Promise<ProductListResponse> {
-        const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams()
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    queryParams.append(key, value.toString());
+                    queryParams.append(key, value.toString())
                 }
-            });
+            })
         }
         return this.request<ProductListResponse>(
             `/v1/products/search?${queryParams.toString()}`
-        );
+        )
     }
 
     // Discount Codes
@@ -333,7 +332,7 @@ export class CreemSDK {
      * });
      */
     async createDiscountCode(params: CreateDiscountParams): Promise<DiscountCode> {
-        return this.request<DiscountCode, CreateDiscountParams>('/v1/discounts', 'POST', params);
+        return this.request<DiscountCode, CreateDiscountParams>('/v1/discounts', 'POST', params)
     }
 
     // Transactions
@@ -353,17 +352,17 @@ export class CreemSDK {
      * });
      */
     async listTransactions(params?: TransactionSearchParams): Promise<TransactionListResponse> {
-        const queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams()
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    queryParams.append(key, value.toString());
+                    queryParams.append(key, value.toString())
                 }
-            });
+            })
         }
         return this.request<TransactionListResponse>(
             `/v1/transactions/search?${queryParams.toString()}`
-        );
+        )
     }
 
     /**
@@ -386,8 +385,8 @@ export class CreemSDK {
             '/v1/customers/billing',
             'POST',
             params
-        );
+        )
     }
 }
 
-export * from './types';
+export * from './types'

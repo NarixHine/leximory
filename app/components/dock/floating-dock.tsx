@@ -135,7 +135,7 @@ export const FloatingDockVertical = ({
 
     return !isReaderMode && (
         <motion.div
-            onMouseMove={(e) => mouseY.set(e.pageY)}
+            onMouseMove={(e) => mouseY.set(e.clientY)}
             onMouseLeave={() => mouseY.set(Infinity)}
             className={cn(
                 'hidden z-50 md:flex fixed right-3 bottom-3 w-16 flex-col gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-default-50/90 backdrop-blur-md backdrop-saturate-150 px-3 py-4',
