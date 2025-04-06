@@ -13,7 +13,7 @@ importers:
     dependencies:
       '@ai-sdk/google':
         specifier: ^1.1.25
-        version: 1.1.25(zod@3.24.1)
+        version: 1.1.25(zod@3.24.2)
       '@clerk/localizations':
         specifier: ^3.9.7
         version: 3.10.4
@@ -160,7 +160,7 @@ importers:
         version: 9.0.11(next@15.3.0-canary.39(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(typescript@5.7.3)
       '@t3-oss/env-nextjs':
         specifier: ^0.11.1
-        version: 0.11.1(typescript@5.7.3)(zod@3.24.1)
+        version: 0.11.1(typescript@5.7.3)(zod@3.24.2)
       '@types/node':
         specifier: 20.5.7
         version: 20.5.7
@@ -187,7 +187,7 @@ importers:
         version: 0.30.1(typescript@5.7.3)
       ai:
         specifier: ^4.1.61
-        version: 4.1.61(react@19.0.0)(zod@3.24.1)
+        version: 4.1.61(react@19.0.0)(zod@3.24.2)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -238,7 +238,7 @@ importers:
         version: 0.3.4(next@15.3.0-canary.39(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       orate:
         specifier: ^1.7.4
-        version: 1.7.4(@types/node@20.5.7)(bufferutil@4.0.9)(jiti@1.21.7)(utf-8-validate@5.0.10)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.24.1)
+        version: 1.7.4(@types/node@20.5.7)(bufferutil@4.0.9)(jiti@1.21.7)(utf-8-validate@5.0.10)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.24.2)
       react:
         specifier: ^19.0.0
         version: 19.0.0
@@ -315,8 +315,8 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4
       zod:
-        specifier: ^3.23.8
-        version: 3.24.1
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       '@tailwindcss/forms':
         specifier: ^0.5.9
@@ -6194,9 +6194,6 @@ packages:
   zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
-
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
@@ -6205,42 +6202,42 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/google@1.1.25(zod@3.24.1)':
+  '@ai-sdk/google@1.1.25(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.0.11
-      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.1)
-      zod: 3.24.1
+      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.2)
+      zod: 3.24.2
 
-  '@ai-sdk/provider-utils@2.1.13(zod@3.24.1)':
+  '@ai-sdk/provider-utils@2.1.13(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.0.11
       eventsource-parser: 3.0.0
       nanoid: 3.3.8
       secure-json-parse: 2.7.0
     optionalDependencies:
-      zod: 3.24.1
+      zod: 3.24.2
 
   '@ai-sdk/provider@1.0.11':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@1.1.23(react@19.0.0)(zod@3.24.1)':
+  '@ai-sdk/react@1.1.23(react@19.0.0)(zod@3.24.2)':
     dependencies:
-      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.1)
-      '@ai-sdk/ui-utils': 1.1.19(zod@3.24.1)
+      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.2)
+      '@ai-sdk/ui-utils': 1.1.19(zod@3.24.2)
       swr: 2.3.2(react@19.0.0)
       throttleit: 2.1.0
     optionalDependencies:
       react: 19.0.0
-      zod: 3.24.1
+      zod: 3.24.2
 
-  '@ai-sdk/ui-utils@1.1.19(zod@3.24.1)':
+  '@ai-sdk/ui-utils@1.1.19(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.0.11
-      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.1)
-      zod-to-json-schema: 3.24.1(zod@3.24.1)
+      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.2)
+      zod-to-json-schema: 3.24.1(zod@3.24.2)
     optionalDependencies:
-      zod: 3.24.1
+      zod: 3.24.2
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -9593,16 +9590,16 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@t3-oss/env-core@0.11.1(typescript@5.7.3)(zod@3.24.1)':
+  '@t3-oss/env-core@0.11.1(typescript@5.7.3)(zod@3.24.2)':
     dependencies:
-      zod: 3.24.1
+      zod: 3.24.2
     optionalDependencies:
       typescript: 5.7.3
 
-  '@t3-oss/env-nextjs@0.11.1(typescript@5.7.3)(zod@3.24.1)':
+  '@t3-oss/env-nextjs@0.11.1(typescript@5.7.3)(zod@3.24.2)':
     dependencies:
-      '@t3-oss/env-core': 0.11.1(typescript@5.7.3)(zod@3.24.1)
-      zod: 3.24.1
+      '@t3-oss/env-core': 0.11.1(typescript@5.7.3)(zod@3.24.2)
+      zod: 3.24.2
     optionalDependencies:
       typescript: 5.7.3
 
@@ -9905,18 +9902,18 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@4.1.61(react@19.0.0)(zod@3.24.1):
+  ai@4.1.61(react@19.0.0)(zod@3.24.2):
     dependencies:
       '@ai-sdk/provider': 1.0.11
-      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.1)
-      '@ai-sdk/react': 1.1.23(react@19.0.0)(zod@3.24.1)
-      '@ai-sdk/ui-utils': 1.1.19(zod@3.24.1)
+      '@ai-sdk/provider-utils': 2.1.13(zod@3.24.2)
+      '@ai-sdk/react': 1.1.23(react@19.0.0)(zod@3.24.2)
+      '@ai-sdk/ui-utils': 1.1.19(zod@3.24.2)
       '@opentelemetry/api': 1.9.0
       eventsource-parser: 3.0.0
       jsondiffpatch: 0.6.0
     optionalDependencies:
       react: 19.0.0
-      zod: 3.24.1
+      zod: 3.24.2
 
   ajv@6.12.6:
     dependencies:
@@ -11372,7 +11369,7 @@ snapshots:
       url-join: 4.0.1
       uuid: 9.0.1
       ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      zod: 3.24.1
+      zod: 3.24.2
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -12368,7 +12365,7 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
-  openai@4.89.0(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.1):
+  openai@4.89.0(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2):
     dependencies:
       '@types/node': 18.19.81
       '@types/node-fetch': 2.6.12
@@ -12379,7 +12376,7 @@ snapshots:
       node-fetch: 2.7.0
     optionalDependencies:
       ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      zod: 3.24.1
+      zod: 3.24.2
     transitivePeerDependencies:
       - encoding
 
@@ -12392,7 +12389,7 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  orate@1.7.4(@types/node@20.5.7)(bufferutil@4.0.9)(jiti@1.21.7)(utf-8-validate@5.0.10)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.24.1):
+  orate@1.7.4(@types/node@20.5.7)(bufferutil@4.0.9)(jiti@1.21.7)(utf-8-validate@5.0.10)(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(yaml@2.7.0)(zod@3.24.2):
     dependencies:
       '@cartesia/cartesia-js': 2.1.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@deepgram/sdk': 3.11.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -12412,7 +12409,7 @@ snapshots:
       ky: 1.7.5
       lmnt-node: 2.3.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       microsoft-cognitiveservices-speech-sdk: 1.43.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      openai: 4.89.0(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.1)
+      openai: 4.89.0(ws@8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.24.2)
       replicate: 1.0.1
       revai-node-sdk: 3.8.5
       typescript: 5.8.2
@@ -13774,15 +13771,13 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-to-json-schema@3.24.1(zod@3.24.1):
+  zod-to-json-schema@3.24.1(zod@3.24.2):
     dependencies:
-      zod: 3.24.1
+      zod: 3.24.2
 
   zod@3.22.5: {}
 
   zod@3.23.8: {}
-
-  zod@3.24.1: {}
 
   zod@3.24.2: {}
 

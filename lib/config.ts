@@ -68,8 +68,8 @@ export const dailyLexicoinClaimMap: Record<Plan, number> = {
 } as const
 
 export const langMaxChunkSizeMap: Record<Lang, number> = {
-    'zh': 400,
-    'en': 4000,
+    'zh': 500,
+    'en': 5000,
     'ja': 1000,
     'nl': 1000
 } as const
