@@ -14,7 +14,7 @@ import { PiBooksDuotone, PiVideo } from 'react-icons/pi'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
 import { getArchivedLibs } from '@/server/db/lib'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { unstable_cacheTag as cacheTag, unstable_cacheLife as cacheLife } from 'next/cache'
 import { Button } from '@heroui/button'
 import Link from 'next/link'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
@@ -50,13 +50,14 @@ async function LibraryList({ userId, mems, listedFilter }: {
 }) {
     'use cache'
     cacheTag('libraries')
+    cacheLife('days')
     const data = await getData(listedFilter)
     const archives = await getArchivedLibs({ userId })
     const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
     return (
-        <div className='flex flex-col gap-4'>
-            <section className='flex flex-col gap-4'>
+        <div className='flex flex-col gap-4 w-full'>
+            <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
                 {normalLibs.map(({ lib, count }) => lib && (
                     <Library
                         price={lib.price}
@@ -77,7 +78,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
                     />
                 ))}
             </section>
-            {compactLibs.length > 0 && <section className={cn('flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm before:', CHINESE_ZCOOL.className)}>
+            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm before:', CHINESE_ZCOOL.className)}>
                 {compactLibs.map(({ lib, count }) => lib && (
                     <Library
                         price={lib.price}
@@ -100,44 +101,55 @@ async function LibraryList({ userId, mems, listedFilter }: {
 }
 
 export default function Page() {
-    return <Main className='flex flex-col max-w-screen-sm'>
+    return <Main className='flex flex-col max-w-screen-md'>
         <Nav />
-        <H className='text-5xl'><PiBooksDuotone />文库</H>
-        <Spacer y={8} />
-        <div className='flex flex-col gap-4'>
-            <div className='grid grid-cols-2 justify-center gap-4'>
-                <Suspense fallback={
-                    <GradientCard title='本月 AI 注解额度'>
-                        <Skeleton className='w-full h-8' />
-                    </GradientCard>
-                }>
-                    <CommentaryQuotaCard />
-                </Suspense>
-                <Suspense fallback={
-                    <GradientCard title='本月 AI 音频额度'>
-                        <Skeleton className='w-full h-8' />
-                    </GradientCard>
-                }>
-                    <AudioQuotaCard />
-                </Suspense>
-            </div>
 
-            <Suspense fallback={
-                <div className='flex flex-col gap-4'>
-                    <LibrarySkeleton />
-                    <LibrarySkeleton />
+        <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
+            <H className='text-5xl'><PiBooksDuotone />文库</H>
+            <Spacer y={8} />
+            <div className='flex flex-col gap-4'>
+                <div className='grid grid-cols-2 justify-center gap-4'>
+                    <Suspense fallback={
+                        <GradientCard title='本月 AI 注解额度'>
+                            <Skeleton className='w-full h-8' />
+                        </GradientCard>
+                    }>
+                        <CommentaryQuotaCard />
+                    </Suspense>
+                    <Suspense fallback={
+                        <GradientCard title='本月 AI 音频额度'>
+                            <Skeleton className='w-full h-8' />
+                        </GradientCard>
+                    }>
+                        <AudioQuotaCard />
+                    </Suspense>
                 </div>
-            }>
-                <UserLibraryList />
-            </Suspense>
-
-            <LibraryAddButton />
-
-            <footer className='flex justify-center p-1'>
-                <Button as={Link} href='/about' variant='light' startContent={<PiVideo />} className={CHINESE_ZCOOL.className}>
-                    使用教程
-                </Button>
-            </footer>
+            </div>
         </div>
+
+        <Spacer y={4} />
+
+        <Suspense fallback={
+            <div className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
+                <LibrarySkeleton />
+                <LibrarySkeleton />
+            </div>
+        }>
+            <UserLibraryList />
+        </Suspense>
+
+        <Spacer y={4} />
+
+        <div className='mx-auto'>
+            <LibraryAddButton />
+        </div>
+
+        <Spacer y={4} />
+
+        <footer className='flex justify-center'>
+            <Button as={Link} href='/about' variant='light' startContent={<PiVideo />} className={CHINESE_ZCOOL.className}>
+                使用教程
+            </Button>
+        </footer>
     </Main>
 }

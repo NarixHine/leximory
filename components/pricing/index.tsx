@@ -57,7 +57,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         <H usePlayfair disableCenter className="text-2xl">Bilingual 双语者</H>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-semibold">US$4.49</span>
-                            <span className="text-default-500 text-sm">/月（≈32元人民币）</span>
+                            <span className="text-default-500 text-sm">/月（≈32元）</span>
                         </div>
                     </div>
 
@@ -109,7 +109,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         </div>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-semibold">US$6.00</span>
-                            <span className="text-default-500 text-sm">/月（≈43元人民币）</span>
+                            <span className="text-default-500 text-sm">/月（≈43元）</span>
                         </div>
                     </div>
 

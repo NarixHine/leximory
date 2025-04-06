@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function About() {
     return (
-        <Main className={cn(CHINESE_ZCOOL.className, 'max-w-6xl')}>
+        <Main className={cn(CHINESE_ZCOOL.className, 'max-w-7xl')}>
             <section className='max-w-screen-sm mx-auto'>
                 <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
                     <TypedTitle />
@@ -65,7 +65,7 @@ export default function About() {
                 </div>
                 <Article />
             </section>
-            <section className='max-w-6xl mx-auto mt-5'>
+            <section className='max-w-7xl mx-auto mt-5'>
                 <H usePlayfair disableCenter className='text-2xl pl-4'>订价</H>
                 <Pricing hideUpgradeButton />
             </section>
