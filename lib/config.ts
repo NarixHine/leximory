@@ -102,7 +102,7 @@ export const maxArticleLength = (lang: Lang): number => {
     }
 }
 
-export const MARKETPLACE_PAGE_SIZE = 6
+export const MARKETPLACE_PAGE_SIZE = 9
 
 export type PaidTier = 'bilingual' | 'polyglot'
 export const creemProductIdMap: Record<PaidTier, string> = isProd ? {

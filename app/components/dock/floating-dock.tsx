@@ -216,14 +216,16 @@ function Indicator({
     const { pending } = useLinkStatus()
     const MotionSpinner = motion.create(Spinner)
     return (
-        <AnimatePresence>
+        <AnimatePresence mode='wait'>
             {pending ? (
-                <MotionSpinner size='sm' color='white' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+                <MotionSpinner key='spinner' variant='gradient' size='sm' color='white' initial={{ opacity: 0, scale: 0.5 }} transition={{ duration: 0.1 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} />
             ) : (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    key='icon'
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.1 }}
                 >
                     {icon}
                 </motion.div>

@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { NumberInput } from '@heroui/number-input'
 
 export function LibrarySkeleton() {
     return (
@@ -206,15 +207,17 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
         >
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
-                <Input isRequired label='文库名' {...register('name')} />
-                <Select isRequired label='文库所属小组' {...register('org')} >
+                <Input label='文库名' {...register('name')} />
+                <Select label='文库所属小组' {...register('org')} >
                     <SelectItem startContent={<PiUserDuotone />} key='none' value='none'>无</SelectItem>
                     {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name} value={org.name}>{org.label}</SelectItem>) as any}
                 </Select>
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>
-                <Input isRequired size='sm' placeholder='0~100' variant='underlined' label='上架价格' type='number' {...register('price')} />
+                <NumberInput size='sm' placeholder='0~100' minValue={0} maxValue={100} variant='underlined' label='上架价格' {...register('price')} onChange={(e) => {
+                    register('price').onChange({ target: { value: e } })
+                }} />
             </div>
             <p className='text-xs opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
         </Form>
