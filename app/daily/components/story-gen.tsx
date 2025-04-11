@@ -22,7 +22,7 @@ export default function StoryGen({ comments, lang }: {
     return <Button
         size='sm'
         className={CHINESE_ZCOOL.className}
-        variant='flat'
+        variant='light'
         startContent={isGenerating ? null : <PiMagicWandDuotone className='text-xl' />}
         color='primary'
         radius='full'

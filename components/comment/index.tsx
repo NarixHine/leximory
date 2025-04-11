@@ -171,6 +171,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         })
                     } else {
                         setEditedPortions([...portions])
+                        setIsVisible(true)
                         setIsEditing(true)
                     }
                 }}
@@ -221,14 +222,16 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
-                        <Button
-                            variant='ghost'
-                            isIconOnly
-                            startContent={<PiEyesFill />}
-                            color='secondary'
-                            className='absolute rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10'
-                            onPress={() => setIsVisible(!isVisible)}
-                        ></Button>
+                        <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pb-7'>
+                            <Button
+                                variant='ghost'
+                                isIconOnly
+                                startContent={<PiEyesFill />}
+                                color='secondary'
+                                radius='full'
+                                onPress={() => setIsVisible(!isVisible)}
+                            />
+                        </div>
                     )}
                     <motion.div
                         transition={{ duration: 0.5 }}
@@ -243,8 +246,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         >
                             <Note omitOriginal portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                         </motion.div>
+                        {portions[2] && <Save />}
                     </motion.div>
-                    {portions[2] && <Save />}
                 </div>}
             </CardBody>
         </Card>

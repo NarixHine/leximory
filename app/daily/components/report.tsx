@@ -6,6 +6,7 @@ import StoryGen from './story-gen'
 import { supportedLangs } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
+import ScopeProvider from '@/components/jotai/scope-provider'
 
 export const forgetCurve = {
     '今天记忆': [0, -1],
@@ -21,7 +22,6 @@ export default async function Report({ day }: {
     day: ForgetCurvePoint
 }) {
     const words = await getForgetCurve({ day, filter: await isListed() })
-
     return words.length > 0 ? (
         <div className='my-8'>
             <div className='flex gap-3 items-start'>
@@ -32,9 +32,11 @@ export default async function Report({ day }: {
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {words.map(({ word, id, lang, lib }) => (
-                    <HydrationBoundary key={id} hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                        <Markdown key={id} md={word} asCard deleteId={id}></Markdown>
-                    </HydrationBoundary>
+                    <ScopeProvider key={id} atoms={[langAtom]}>
+                        <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
+                            <Markdown md={word} asCard deleteId={id}></Markdown>
+                        </HydrationBoundary>
+                    </ScopeProvider>
                 ))}
             </div>
         </div>

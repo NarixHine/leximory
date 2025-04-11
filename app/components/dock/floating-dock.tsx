@@ -9,9 +9,11 @@ import {
     useTransform,
 } from 'framer-motion'
 import { useAtomValue } from 'jotai'
-import Link from 'next/link'
-import { useRef } from 'react'
+import Link, { useLinkStatus } from 'next/link'
+import { ReactNode, useRef } from 'react'
 import { isReaderModeAtom } from '../../atoms'
+import { Spinner } from '@heroui/spinner'
+import { AnimatePresence } from 'framer-motion'
 
 type FloatingDockProps = {
     items: { icon: React.ReactNode; href: string }[]
@@ -51,7 +53,7 @@ export const FloatingDockHorizontal = ({
     const isReaderMode = useAtomValue(isReaderModeAtom)
     return !isReaderMode && (
         <motion.div
-            onMouseMove={(e) => mouseX.set(e.pageX)}
+            onMouseMove={(e) => mouseX.set(e.clientX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
                 'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-default-50/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3',
@@ -116,7 +118,7 @@ function IconContainerHorizontal({
                     style={{ scale: iconSpring }}
                     className="flex items-center justify-center"
                 >
-                    {icon}
+                    <Indicator icon={icon} />
                 </motion.div>
             </motion.div>
         </Link>
@@ -199,10 +201,34 @@ function IconContainerVertical({
                     style={{ scale: iconSpring }}
                     className="flex items-center justify-center"
                 >
-                    {icon}
+                    <Indicator icon={icon} />
                 </motion.div>
             </motion.div>
         </Link>
+    )
+}
+
+function Indicator({
+    icon,
+}: {
+    icon: ReactNode
+}) {
+    const { pending } = useLinkStatus()
+    const MotionSpinner = motion.create(Spinner)
+    return (
+        <AnimatePresence>
+            {pending ? (
+                <MotionSpinner size='sm' color='white' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            ) : (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    {icon}
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 }
 

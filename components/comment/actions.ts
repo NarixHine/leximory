@@ -6,6 +6,7 @@ import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
 import { logsnagServer } from '@/lib/logsnag'
+import { revalidateTag } from 'next/cache'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })
@@ -17,6 +18,8 @@ export async function saveComment({ portions, lib, editId, shadow, lang }: { por
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
 
     after(async () => {
+        revalidateTag(`words:${lib}`)
+        revalidateTag(`words`)
         await logsnagServer().insight.increment({
             title: '用户保存的词汇',
             value: 1,
