@@ -19,7 +19,7 @@ export const subscribe = async (hour: number) => {
         applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
     })
 
-    await save({ subs: subscription as unknown as PushSubscription, hour })
+    await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 
 export default function Bell({ hasSubs, hour = 22 }: {
@@ -79,7 +79,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                     isDisabled={hasSubs}
                 >
                     {new Array(24).fill(0).map((_, i) => (
-                        <SelectItem key={i} value={i.toString()}>{i.toString()}</SelectItem>
+                        <SelectItem key={i}>{i.toString()}</SelectItem>
                     ))}
                 </Select>
             </div>

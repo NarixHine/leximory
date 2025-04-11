@@ -209,8 +209,8 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
                 <Input label='文库名' {...register('name')} />
                 <Select label='文库所属小组' {...register('org')} >
-                    <SelectItem startContent={<PiUserDuotone />} key='none' value='none'>无</SelectItem>
-                    {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name} value={org.name}>{org.label}</SelectItem>) as any}
+                    <SelectItem startContent={<PiUserDuotone />} key='none'>无</SelectItem>
+                    {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name}>{org.label}</SelectItem>) as any}
                 </Select>
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
@@ -259,7 +259,7 @@ export function LibraryAddButton() {
                     if (!value) return '请选择语言'
                     return true
                 }}>
-                    {Object.entries(langMap).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
+                    {Object.entries(langMap).map(([key, value]) => <SelectItem key={key}>{value}</SelectItem>)}
                 </Select>
             </div>
         </Form>
