@@ -35,7 +35,11 @@ function ReaderModeToggle() {
   const setIsEditing = useSetAtom(isEditingAtom)
 
   return (
-    <div className={isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit'}>
+    <div className={cn(
+      isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
+      'print:hidden',
+      CHINESE_ZCOOL.className
+    )}>
       <Tooltip content={
         <div>
           按 <Snippet hideCopyButton symbol='' className='bg-transparent'>
@@ -46,7 +50,7 @@ function ReaderModeToggle() {
         <Button
           onPress={() => {
             if (!isReaderMode) {
-              setTimeout(print)
+              setTimeout(print, 500)
             }
             toggleReaderMode()
             setIsEditing(false)
@@ -336,7 +340,7 @@ export default function Digest() {
 
   return (
     <>
-      <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5'>
+      <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
             <ReaderModeToggle />
@@ -359,7 +363,7 @@ export default function Digest() {
       <div className={isReaderMode ? '' : 'max-w-[650px] mx-auto'}>
         {!isReaderMode && (
           <>
-            <Spacer y={4} />
+            <Spacer y={5} />
             <ImportModal />
           </>
         )}

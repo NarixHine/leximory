@@ -169,7 +169,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                         </>
                     }
                 </CardBody>
-                : <CardBody className='px-6 pt-5'>
+                : <CardBody className='px-6 pt-6'>
                     <a className='text-4xl' style={{
                         fontFamily: postFontFamily
                     }}>{name}</a>
@@ -182,7 +182,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
                 <div className='flex flex-col items-center'>
                     <p className='text-xs opacity-80'>词汇量</p>
-                    <Chip color='primary' variant='dot' className='border-none'>{lexicon.count}</Chip>
+                    <Chip color='primary' variant='dot' className='border-none -mt-1'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
                 {recentAccessItem && <Button size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>

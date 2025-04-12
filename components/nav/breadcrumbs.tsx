@@ -7,7 +7,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { NavProps } from '.'
 import DefaultLoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
+import { AnimatePresence, motion, useMotionValueEvent } from 'framer-motion'
+import { useScroll } from 'framer-motion'
 
 function LoadingIndicatorWrapper({ children }: { children: ReactNode }) {
     return <DefaultLoadingIndicatorWrapper
@@ -28,92 +30,112 @@ interface NavPropsExtended extends NavProps {
 }
 
 export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPropsExtended) {
-    const router = useRouter()
+    const { scrollYProgress } = useScroll()
+    const [visible, setVisible] = useState(true)
+    useMotionValueEvent(scrollYProgress, "change", (current) => {
+        // Check if current is not undefined and is a number
+        if (typeof current === "number") {
+            const direction = current! - scrollYProgress.getPrevious()!
+            if (direction < 0) {
+                setVisible(true)
+            } else {
+                setVisible(false)
+            }
+        }
+    })
 
+    const router = useRouter()
     const iconClassName = 'text-[#67595e] dark:text-default-500 text-lg'
 
-    return <>
-        <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
-            list: 'flex-nowrap bg-[#ece1d9]/70 dark:bg-default-200/70 backdrop-blur-sm',
-        }}>
-            {/* Tenant Breadcrumb */}
-            <BreadcrumbItem className='max-w-full'>
-                <Link href={`/library`} prefetch={false} className="flex items-center gap-1">
-                    <LoadingIndicatorWrapper>
-                        <PiUserCircleDuotone className={iconClassName} />
-                    </LoadingIndicatorWrapper>
-                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-[#67595e] dark:text-default-500'>
-                        {tenant}
-                    </span>
-                </Link>
-            </BreadcrumbItem>
-
-            {/* Library Breadcrumb */}
-            {lib && (
+    return <AnimatePresence mode="wait">
+        <motion.div
+            initial={{ opacity: 1, y: 4 }}
+            animate={{ opacity: visible ? 1 : 0, y: visible ? 4 : -100 }}
+            transition={{ duration: 0.3 }}
+            className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'
+        >
+            <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
+                list: 'flex-nowrap bg-[#ece1d9]/70 dark:bg-default-200/70 backdrop-blur-sm',
+            }}>
+                {/* Tenant Breadcrumb */}
                 <BreadcrumbItem className='max-w-full'>
-                    <Link href={`/library/${lib.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
+                    <Link href={`/library`} prefetch={false} className="flex items-center gap-1">
                         <LoadingIndicatorWrapper>
-                            <PiBooksDuotone className={iconClassName} />
+                            <PiUserCircleDuotone className={iconClassName} />
                         </LoadingIndicatorWrapper>
                         <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-[#67595e] dark:text-default-500'>
-                            {lib.name}
+                            {tenant}
                         </span>
                     </Link>
                 </BreadcrumbItem>
-            )}
 
-            {/* Corpus Static Breadcrumb */}
-            {isAtCorpus && (
-                <BreadcrumbItem
-                    className='max-w-full text-[#67595e] dark:text-default-500'
-                    startContent={<PiBookBookmarkDuotone className={iconClassName} />}
-                >
-                    语料本
-                </BreadcrumbItem>
-            )}
+                {/* Library Breadcrumb */}
+                {lib && (
+                    <BreadcrumbItem className='max-w-full'>
+                        <Link href={`/library/${lib.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
+                            <LoadingIndicatorWrapper>
+                                <PiBooksDuotone className={iconClassName} />
+                            </LoadingIndicatorWrapper>
+                            <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-[#67595e] dark:text-default-500'>
+                                {lib.name}
+                            </span>
+                        </Link>
+                    </BreadcrumbItem>
+                )}
 
-            {/* Text Breadcrumb */}
-            {text && lib && (
-                <BreadcrumbItem className='max-w-full'>
-                    <Link href={`/library/${lib.id}/${text.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
+                {/* Corpus Static Breadcrumb */}
+                {isAtCorpus && (
+                    <BreadcrumbItem
+                        className='max-w-full text-[#67595e] dark:text-default-500'
+                        startContent={<PiBookBookmarkDuotone className={iconClassName} />}
+                    >
+                        语料本
+                    </BreadcrumbItem>
+                )}
+
+                {/* Text Breadcrumb */}
+                {text && lib && (
+                    <BreadcrumbItem className='max-w-full'>
+                        <Link href={`/library/${lib.id}/${text.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
+                            <LoadingIndicatorWrapper>
+                                <PiFileTextDuotone className={iconClassName} />
+                            </LoadingIndicatorWrapper>
+                            <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[30vw] lg:max-w-[40vw] align-middle text-[#67595e] dark:text-default-500'>
+                                {text.name}
+                            </span>
+                        </Link>
+                    </BreadcrumbItem>
+                )}
+            </Breadcrumbs>
+
+            {lib && (
+                isAtCorpus
+                    ? <Button
+                        size='sm'
+                        variant='flat'
+                        onPress={() => {
+                            router.back()
+                        }}
+                        radius='lg'
+                        isIconOnly
+                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
+                        startContent={<PiSkipBackCircleDuotone className='text-[#67595e] dark:text-default-500 text-lg' />}
+                    />
+                    : <Button
+                        size='sm'
+                        variant='flat'
+                        href={`/library/${lib.id}/corpus`}
+                        as={Link}
+                        radius='lg'
+                        isIconOnly
+                        className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
+                    >
                         <LoadingIndicatorWrapper>
-                            <PiFileTextDuotone className={iconClassName} />
+                            <PiBookBookmarkDuotone className='text-[#67595e] dark:text-default-500 text-medium' />
                         </LoadingIndicatorWrapper>
-                        <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[30vw] lg:max-w-[40vw] align-middle text-[#67595e] dark:text-default-500'>
-                            {text.name}
-                        </span>
-                    </Link>
-                </BreadcrumbItem>
-            )}
-        </Breadcrumbs>
-
-        {lib && (
-            isAtCorpus
-                ? <Button
-                    size='sm'
-                    variant='flat'
-                    onPress={() => {
-                        router.back()
-                    }}
-                    radius='lg'
-                    isIconOnly
-                    className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
-                    startContent={<PiSkipBackCircleDuotone className='text-[#67595e] dark:text-default-500 text-lg' />}
-                />
-                : <Button
-                    size='sm'
-                    variant='flat'
-                    href={`/library/${lib.id}/corpus`}
-                    as={Link}
-                    radius='lg'
-                    isIconOnly
-                    className='bg-[#e4d4c8]/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
-                >
-                    <LoadingIndicatorWrapper>
-                        <PiBookBookmarkDuotone className='text-[#67595e] dark:text-default-500 text-medium' />
-                    </LoadingIndicatorWrapper>
-                </Button>
-        )
-        }
-    </>
+                    </Button>
+            )
+            }
+        </motion.div>
+    </AnimatePresence>
 }

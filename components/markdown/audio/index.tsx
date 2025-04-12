@@ -10,7 +10,10 @@ import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
 import { isReaderModeAtom } from '@/app/atoms'
+import { langAtom } from '@/app/library/[lib]/atoms'
 import { MAX_TTS_LENGTH } from '@/lib/config'
+import { postFontFamily } from '@/lib/fonts'
+import { cn } from '@/lib/utils'
 
 export default function AudioPlayer({ id, md, ...props }: {
     id: string,
@@ -20,6 +23,7 @@ export default function AudioPlayer({ id, md, ...props }: {
     const ref = useRef<HTMLDivElement>(null)
     const [status, setStatus] = useState<'loading' | 'ungenerated' | 'generating' | 'ready' | 'lengthy'>('loading')
     const [url, setUrl] = useState<string | null>(null)
+    const lang = useAtomValue(langAtom)
 
     const isReaderMode = useAtomValue(isReaderModeAtom)
 
@@ -59,7 +63,7 @@ export default function AudioPlayer({ id, md, ...props }: {
         })
     }, [id])
 
-    const MarkdownComponent = <Markdown hasWrapped md={decodeURIComponent(md)} {...props}></Markdown>
+    const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? postFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
     return isReaderMode ? MarkdownComponent : <Card className='sm:-mx-10 px-5 mt-3 mb-6 bg-transparent' isBlurred>
         <CardBody>

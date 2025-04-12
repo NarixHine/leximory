@@ -5,12 +5,13 @@ import { Radio, RadioGroup } from "@heroui/radio"
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { cn } from '@/lib/utils'
 import { CustomLexicon } from '@/lib/types'
+import { CHINESE_ZCOOL } from '@/lib/fonts'
 
 export default function LexiconSelector({ className }: { className?: string }) {
   const [customLexicon, setCustomLexicon] = useAtom(lexiconAtom)
 
   return (
-    <div className={cn('flex justify-center items-center', className)}>
+    <div className={cn('flex justify-center items-center', CHINESE_ZCOOL.className, className)}>
       <RadioGroup
         value={customLexicon}
         orientation='horizontal'
