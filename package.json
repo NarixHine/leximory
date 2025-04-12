@@ -64,9 +64,6 @@
     "@react-aria/visually-hidden": "^3.8.17",
     "@serwist/next": "^9.0.5",
     "@t3-oss/env-nextjs": "^0.11.1",
-    "@types/node": "20.5.7",
-    "@types/react": "19.0.1",
-    "@types/react-dom": "19.0.1",
     "@upstash/redis": "^1.31.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.1.0",
@@ -89,9 +86,9 @@
     "next-themes": "^0.2.1",
     "next-view-transitions": "^0.3.4",
     "orate": "^1.7.4",
-    "react": "^19.0.0",
+    "react": "^19.1.0",
     "react-call": "^1.7.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.1.0",
     "react-dropzone": "^14.2.3",
     "react-full-screen": "^1.1.1",
     "react-hook-form": "^7.54.2",
@@ -121,6 +118,9 @@
     "@tailwindcss/typography": "^0.5.15",
     "@types/is-url": "^1.2.32",
     "@types/mdx": "^2.0.13",
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.2",
     "@types/sanitize-html": "^2.11.0",
     "@types/web-push": "^3.6.3",
     "autoprefixer": "^10.4.20",
@@ -128,12 +128,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.1.4",
     "postcss": "^8.4.41",
-    "serwist": "^9.0.2",
+    "serwist": "^9.0.13",
     "tailwindcss": "^3.4.10",
     "tailwindcss-animate": "^1.0.7"
-  },
-  "overrides": {
-    "@types/react": "19.0.1",
-    "@types/react-dom": "19.0.1"
   }
 }

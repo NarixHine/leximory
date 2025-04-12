@@ -41,7 +41,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 
 				// Text Colors
 				colorText: mode === 'dark' ? '#FFFFFF' : '#222222',
-				colorTextOnPrimaryBackground: '#FFFFFF', // Always white for strong contrast on primary backgrounds
+				colorTextOnPrimaryBackground: '#FFFFFF',
 				colorTextSecondary: mode === 'dark' ? '#E0E0E0' : '#3A3A3A',
 
 				// Backgrounds
@@ -60,7 +60,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 					<JotaiProvider>
 						<Toaster toastOptions={{
 							classNames: {
-								toast: cn('bg-primary-50 text-primary-900 dark:text-sky-100 dark:bg-primary-900 dark:border-0', CHINESE_ZCOOL.className),
+								toast: cn('bg-primary-50 text-primary-900 dark:text-default-100 dark:bg-default-800 dark:border-0', CHINESE_ZCOOL.className),
 							}
 						}}></Toaster>
 						<LogSnagInit />

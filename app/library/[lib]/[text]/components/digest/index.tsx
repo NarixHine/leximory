@@ -363,7 +363,7 @@ export default function Digest() {
       <div className={isReaderMode ? '' : 'max-w-[650px] mx-auto'}>
         {!isReaderMode && (
           <>
-            <Spacer y={5} />
+            <Spacer y={6} />
             <ImportModal />
           </>
         )}

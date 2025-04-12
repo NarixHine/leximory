@@ -91,10 +91,10 @@ export default function ImportModal() {
         <div className='flex flex-col gap-2 mt-2'>
             <div className='flex gap-2'>
                 <ImportButton />
-                {ebook ? <EditSwitch /> : <KanbanSwitch />}
+                <EditSwitch />
             </div>
             {!ebook && <div className='flex gap-2'>
-                <EditSwitch />
+                <KanbanSwitch />
                 <StoryModal />
             </div>}
         </div>
