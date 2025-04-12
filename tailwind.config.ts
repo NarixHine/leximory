@@ -1,4 +1,4 @@
-import { heroui } from "@heroui/react"
+import { heroui } from '@heroui/react'
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
@@ -90,11 +90,9 @@ const config: Config = {
       themes: {
         light: {
           colors: {
-            // Light theme background set to "paper"
             background: '#FFFCF0',
             foreground: '#100F0F',
 
-            // Use "base" scale for default (in normal order)
             default: {
               DEFAULT: '#9F9D96',
               50: '#F2F0E5',
@@ -109,7 +107,6 @@ const config: Config = {
               900: '#282726',
             },
 
-            // Primary: Green (normal order)
             primary: {
               DEFAULT: '#879A39',
               50: '#EDEECF',
@@ -124,7 +121,6 @@ const config: Config = {
               900: '#252D09',
             },
 
-            // Secondary: Cyan (normal order)
             secondary: {
               DEFAULT: '#3AA99F',
               50: '#DDF1E4',
@@ -139,7 +135,6 @@ const config: Config = {
               900: '#122F2C',
             },
 
-            // Warning: Blue (normal order)
             warning: {
               DEFAULT: '#4385BE',
               50: '#E1ECEB',
@@ -154,7 +149,6 @@ const config: Config = {
               900: '#12253B',
             },
 
-            // Danger: Magenta (normal order)
             danger: {
               DEFAULT: '#CE5D97',
               50: '#FEE4E5',
@@ -173,11 +167,9 @@ const config: Config = {
 
         dark: {
           colors: {
-            // Dark theme background set to "black"
             background: '#100F0F',
             foreground: '#CECDC3',
 
-            // Use "base" scale for default (reversed order)
             default: {
               DEFAULT: '#878580',
               50: '#282726',
@@ -192,7 +184,6 @@ const config: Config = {
               900: '#F2F0E5',
             },
 
-            // Primary: Green (reversed order)
             primary: {
               DEFAULT: '#768D21',
               50: '#252D09',
@@ -207,7 +198,6 @@ const config: Config = {
               900: '#EDEECF',
             },
 
-            // Secondary: Cyan (reversed order)
             secondary: {
               DEFAULT: '#2F968D',
               50: '#122F2C',
@@ -222,7 +212,6 @@ const config: Config = {
               900: '#DDF1E4',
             },
 
-            // Warning: Blue (reversed order)
             warning: {
               DEFAULT: '#3171B2',
               50: '#12253B',
@@ -237,7 +226,6 @@ const config: Config = {
               900: '#E1ECEB',
             },
 
-            // Danger: Magenta (reversed order)
             danger: {
               DEFAULT: '#B74583',
               50: '#39172B',

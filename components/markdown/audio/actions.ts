@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
-import { elevenLabsVoice } from '@/lib/config'
+import { elevenLabsVoiceConfig } from '@/lib/config'
 import { incrAudioQuota } from '@/server/auth/quota'
 import { maxAudioQuota } from '@/server/auth/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
@@ -26,10 +26,10 @@ export async function generate(id: string, lib: string, text: string) {
         return { error: `你已用完本月的 ${await maxAudioQuota()} 次 AI 音频生成额度。` }
     }
 
-    const voice = lang === 'en' ? elevenLabsVoice[await getAccentPreference({ userId })] : elevenLabsVoice[lang]
+    const { voice, options } = lang === 'en' ? elevenLabsVoiceConfig[await getAccentPreference({ userId })] : elevenLabsVoiceConfig[lang]
 
     const audio = await speak({
-        model: new ElevenLabs().tts('eleven_turbo_v2_5', voice),
+        model: new ElevenLabs().tts('eleven_turbo_v2_5', voice, options),
         prompt: text,
     })
 

@@ -61,10 +61,11 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow, price, archived }: {
+function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow, price, archived, isStarred }: {
     id: string,
     name: string,
     access: number,
+    isStarred: boolean,
     lexicon: {
         count: number,
     },
@@ -147,7 +148,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                             />
                     }
                     {
-                        access === libAccessStatusMap.public && !isOwner && <>
+                        isStarred && <>
                             <ConfirmUnstar.Root></ConfirmUnstar.Root>
                             <Button
                                 size={'sm'}

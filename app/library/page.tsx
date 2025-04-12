@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     title: '文库'
 }
 
-async function getData(listedFilter: Awaited<ReturnType<typeof isListed>>) {
-    const data = await summarizeLibsWithWords({ filter: listedFilter })
-    return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': exampleSharedLib.id } })
+async function getData(listedFilter: Awaited<ReturnType<typeof isListed>>, userId: string) {
+    const data = await summarizeLibsWithWords({ filter: listedFilter, userId })
+    return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': exampleSharedLib.id }, userId })
 }
 
 async function getOrgs() {
@@ -51,18 +51,19 @@ async function LibraryList({ userId, mems, listedFilter }: {
     'use cache'
     cacheTag('libraries')
     cacheLife('days')
-    const data = await getData(listedFilter)
+    const data = await getData(listedFilter, userId)
     const archives = await getArchivedLibs({ userId })
     const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
     return (
         <div className='flex flex-col gap-4 w-full'>
             <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
-                {normalLibs.map(({ lib, count }) => lib && (
+                {normalLibs.map(({ lib, count, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={false}
                         access={lib.access}
+                        isStarred={isStarred}
                         id={lib.id}
                         key={lib.id}
                         name={lib.name}
@@ -79,11 +80,12 @@ async function LibraryList({ userId, mems, listedFilter }: {
                 ))}
             </section>
             {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm before:', CHINESE_ZCOOL.className)}>
-                {compactLibs.map(({ lib, count }) => lib && (
+                {compactLibs.map(({ lib, count, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={lib.shadow}
                         access={lib.access}
+                        isStarred={isStarred}
                         id={lib.id}
                         key={lib.id}
                         name={lib.name}

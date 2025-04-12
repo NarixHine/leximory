@@ -3,12 +3,37 @@ import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
 export const MAX_TTS_LENGTH = 10000
-export const elevenLabsVoice = {
-    'BrE': '0sGQQaD2G2X1s87kHM5b',
-    'AmE': 'Z3R5wn05IrDiVCyEkUrK',
-    'ja': 'GxxMAMfQkDlnqjpzjLHH',
-    'zh': 'FjfxJryh105iTLL4ktHB',
-    'nl': '0sGQQaD2G2X1s87kHM5b',
+export const elevenLabsVoiceConfig = {
+    'BrE': {
+        voice: '0sGQQaD2G2X1s87kHM5b',
+        options: {
+        }
+    },
+    'AmE': {
+        voice: 'Z3R5wn05IrDiVCyEkUrK',
+        options: {
+            voice_settings: {
+                stability: 0.4,
+                similarity_boost: 0.4,
+                speed: 1.15,
+            }
+        }
+    },
+    'ja': {
+        voice: 'GxxMAMfQkDlnqjpzjLHH',
+        options: {
+        }
+    },
+    'zh': {
+        voice: 'FjfxJryh105iTLL4ktHB',
+        options: {
+        }
+    },
+    'nl': {
+        voice: '0sGQQaD2G2X1s87kHM5b',
+        options: {
+        }
+    },
 } as const
 
 export const exampleSharedLib = {

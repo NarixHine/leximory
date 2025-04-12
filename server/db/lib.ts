@@ -111,7 +111,7 @@ export async function deleteLib({ id }: { id: string }) {
     revalidateTag('libraries')
 }
 
-export async function summarizeLibsWithWords({ filter }: { filter: Record<string, string | undefined | object> }) {
+export async function summarizeLibsWithWords({ filter, userId }: { filter: Record<string, string | undefined | object>, userId?: string }) {
     'use cache'
     cacheTag('libraries')
     const data = await xata.db.lexicon.filter(filter).summarize({
@@ -122,7 +122,8 @@ export async function summarizeLibsWithWords({ filter }: { filter: Record<string
     })
     return data.summaries.map(({ lib, count }) => ({
         lib: pick(lib!, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
-        count
+        count,
+        isStarred: userId && lib?.starredBy ? lib.starredBy.includes(userId) : false
     }))
 }
 
