@@ -2,7 +2,7 @@
 
 import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
 import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
-import { createLib, deleteLib, updateLib } from '@/server/db/lib'
+import { createLib, deleteLib, updateLib, unstarLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { addToArchive, removeFromArchive } from '@/server/db/lib'
@@ -52,4 +52,9 @@ export async function archive({ id }: { id: string }) {
 export async function unarchive({ id }: { id: string }) {
     const { userId } = await getAuthOrThrow()
     await removeFromArchive({ userId, libId: id })
+}
+
+export async function unstar({ id }: { id: string }) {
+    const { userId } = await getAuthOrThrow()
+    await unstarLib({ lib: id, userId })
 }

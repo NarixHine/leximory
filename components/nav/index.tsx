@@ -2,9 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import NavBreadcrumbs from './breadcrumbs'
 import { Suspense } from 'react'
 import { PiBellDuotone } from 'react-icons/pi'
-import NotificationPopover from './notification-popover'
 import { Button } from '@heroui/button'
-import { getNotices } from '@/server/db/config'
 
 export type NavProps = {
     lib?: {
@@ -32,22 +30,10 @@ export default async function Nav(props: NavProps) {
                     color='primary'
                     radius='full'
                     size='sm'
-                    className='opacity-80 backdrop-blur-sm'
+                    className='opacity-70 backdrop-blur-sm'
                     startContent={<PiBellDuotone className='text-lg' />}
                 />}>
-                <Notices />
             </Suspense>
         </div>
     )
-}
-
-async function Notices() {
-    try {
-        const notices = await getNotices()
-        return (
-            <NotificationPopover notices={notices} />
-        )
-    } catch {
-        return null
-    }
 }

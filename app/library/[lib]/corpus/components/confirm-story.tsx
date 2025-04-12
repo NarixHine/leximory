@@ -10,7 +10,7 @@ import { PiTornadoDuotone } from 'react-icons/pi'
 type Response = boolean
 
 export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ call, comments }) => (
-    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-6' shadow='sm'>
+    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-6'>
         <CardHeader>
             <H usePlayfair className='text-2xl'>生成小故事</H>
         </CardHeader>
@@ -51,4 +51,3 @@ export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ c
         </CardFooter>
     </Card>
 ))
-

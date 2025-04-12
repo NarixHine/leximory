@@ -33,6 +33,13 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
     return newStarredBy.includes(userId!)
 }
 
+export async function unstarLib({ lib, userId }: { lib: string, userId: string }) {
+    revalidateTag('libraries')
+    const { starredBy } = await xata.db.libraries.select(['starredBy']).filter({ id: lib }).getFirstOrThrow()
+    const newStarredBy = starredBy?.filter(x => x !== userId!)
+    await xata.db.libraries.update(lib, { starredBy: newStarredBy })
+}
+
 export async function updateLib({ id, access, name, org, price }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number }) {
     await xata.db.libraries.update(id, {
         org: org === 'none' ? null : org,

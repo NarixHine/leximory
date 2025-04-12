@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { postFontFamily } from '@/lib/fonts'
@@ -15,7 +15,7 @@ import Form from '../../../../components/form'
 import { Input } from "@heroui/input"
 import { Checkbox } from "@heroui/checkbox"
 import { Select, SelectItem } from "@heroui/select"
-import { create, remove, save, archive, unarchive } from './actions'
+import { create, remove, save, archive, unarchive, unstar } from './actions'
 import { useForm } from 'react-hook-form'
 import { useDisclosure } from "@heroui/react"
 import { motion } from 'framer-motion'
@@ -24,6 +24,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
+import { ConfirmUnstar } from './confirm-unstar'
 
 export function LibrarySkeleton() {
     return (
@@ -103,6 +104,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
     const [isTogglingArchive, startTogglingArchive] = useTransition()
+    const [isUnstarring, startUnstarring] = useTransition()
 
     return (<motion.div
         className={cn('relative', compact ? 'px-2 py-2' : 'w-full')}
@@ -110,11 +112,11 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
         transition={{ duration: 1 }}
     >
         {!compact && isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
-        <Card fullWidth shadow='sm' isPressable onPress={() => {
+        <Card fullWidth shadow='sm' as={'div'} isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
             {compact
-                ? <CardBody className='px-5 py-4 flex flex-row items-center gap-4'>
+                ? <CardBody className='px-5 py-4 flex flex-row items-center gap-3'>
                     <div className='text-2xl' style={{
                         fontFamily: postFontFamily
                     }}>{name}</div>
@@ -143,6 +145,27 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                                     })
                                 }}
                             />
+                    }
+                    {
+                        access === libAccessStatusMap.public && !isOwner && <>
+                            <ConfirmUnstar.Root></ConfirmUnstar.Root>
+                            <Button
+                                size={'sm'}
+                                as={'span'}
+                                isLoading={isUnstarring}
+                                startContent={!isUnstarring && <PiStackMinusDuotone />}
+                                color='danger'
+                                isIconOnly
+                                variant='flat'
+                                onPress={async () => {
+                                    if (await ConfirmUnstar.call()) {
+                                        startUnstarring(async () => {
+                                            await unstar({ id })
+                                        })
+                                    }
+                                }}
+                            />
+                        </>
                     }
                 </CardBody>
                 : <CardBody className='px-6 pt-5'>

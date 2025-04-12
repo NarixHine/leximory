@@ -19,7 +19,7 @@ The platform is built with Next.js, Xata, Clerk, Upstash, Vercel AI SDK and Inng
 
 ### Environment Variables
 
-Create a `.env.local` file in the project root and fill it with the following variables:
+Create a `.env` file in the project root and fill it with the following variables:
 
 ```shell
 # Clerk authentication keys
@@ -47,9 +47,6 @@ VAPID_PRIVATE_KEY=<your_vapid_private_key>
 # Inngest keys
 INNGEST_SIGNING_KEY=<your_inggest_signing_key>
 INNGEST_EVENT_KEY=<your_inggest_event_key>
-
-# Vercel Edge Config
-EDGE_CONFIG=<your_vercel_edge_config_url>
 
 NEXT_PUBLIC_URL=https://leximory.com
 ```
