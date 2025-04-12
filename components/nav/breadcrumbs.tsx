@@ -35,7 +35,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     useMotionValueEvent(scrollYProgress, "change", (current) => {
         // Check if current is not undefined and is a number
         if (typeof current === "number") {
-            if (scrollYProgress < 0.05) {
+            if (current < 0.05) {
                 setVisible(true)
                 return
             }
