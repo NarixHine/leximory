@@ -14,14 +14,14 @@ import { Snippet } from "@heroui/snippet"
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiBookOpenDuotone, PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
+import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
 import Define from './define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { CHINESE_ZCOOL, postFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
 import { toast } from 'sonner'
@@ -35,7 +35,7 @@ function ReaderModeToggle() {
   const setIsEditing = useSetAtom(isEditingAtom)
 
   return (
-    <div className={isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center mb-1 mt-2 sm:mt-0 sm:mb-0 sm:w-fit'}>
+    <div className={isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit'}>
       <Tooltip content={
         <div>
           按 <Snippet hideCopyButton symbol='' className='bg-transparent'>
@@ -55,10 +55,9 @@ function ReaderModeToggle() {
           variant={'light'}
           color={'default'}
           radius='sm'
-          endContent={<PiPrinterDuotone />}
-          startContent={<PiBookOpenDuotone />}
+          startContent={<PiPrinterDuotone />}
         >
-          读者模式／印刷模式
+          印刷模式
         </Button>
       </Tooltip>
     </div>
@@ -202,6 +201,7 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
+  const lang = useAtomValue(langAtom)
 
   if (hideText && content) {
     const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
@@ -236,7 +236,9 @@ function ReadingView() {
       <Markdown
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
+          '!prose-lg'
         )}
+        fontFamily={lang === 'en' ? postFontFamily : undefined}
         md={`<article>\n${content}\n\n</article>`}
       />
       <Define />

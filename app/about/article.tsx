@@ -40,7 +40,7 @@ export function Article() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            事实证明，只有通过大量的阅读，才能<span
+            科学研究表明，只有通过大量的阅读，才能<span
                 className='bg-primary-50/50 dark:bg-primary-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >真正习得词汇与文法</span>。
         </motion.p>

@@ -15,7 +15,7 @@ export const elevenLabsVoiceConfig = {
             voice_settings: {
                 stability: 0.4,
                 similarity_boost: 0.4,
-                speed: 1.15,
+                speed: 1.1,
             }
         }
     },

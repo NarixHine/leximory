@@ -23,9 +23,10 @@ export type MarkdownProps = {
     onlyComments?: boolean
     print?: boolean
     shadow?: boolean
+    fontFamily?: string
 }
 
-export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow }: MarkdownProps) {
+export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow,fontFamily }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
 
     let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
@@ -59,7 +60,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
             },
         }}
         style={{
-            fontFamily: defaultFontFamily,
+            fontFamily: fontFamily ?? defaultFontFamily,
         }}
         className={cn('dark:prose-invert prose prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-headings:font-serif prose-headings:font-semibold', className)}
     >{result}</MarkdownToJSX>)

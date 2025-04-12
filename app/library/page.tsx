@@ -79,7 +79,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
                     />
                 ))}
             </section>
-            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm before:', CHINESE_ZCOOL.className)}>
+            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-200 rounded-lg', CHINESE_ZCOOL.className, 'md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm', CHINESE_ZCOOL.className)}>
                 {compactLibs.map(({ lib, count, isStarred }) => lib && (
                     <Library
                         price={lib.price}
