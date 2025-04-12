@@ -8,6 +8,7 @@ import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { getAccentPreference } from '@/server/db/preference'
 import { speak } from 'orate'
 import { ElevenLabs } from 'orate/elevenlabs'
+import { MAX_TTS_LENGTH } from '@/lib/config'
 
 export async function retrieve(id: string) {
     const url = await retrieveAudioUrl({ id })
@@ -15,19 +16,20 @@ export async function retrieve(id: string) {
 }
 
 export async function generate(id: string, lib: string, text: string) {
-    await authWriteToLib(lib)
-    if (text.length > 5000) {
-        return { error: '文本长度超过 5000 字符。' }
+    const { userId } = await getAuthOrThrow()
+    const { lang } = await authWriteToLib(lib)
+
+    if (text.length > MAX_TTS_LENGTH) {
+        return { error: `文本长度超过 ${MAX_TTS_LENGTH} 字符。` }
     }
     if (await incrAudioQuota()) {
         return { error: `你已用完本月的 ${await maxAudioQuota()} 次 AI 音频生成额度。` }
     }
 
-    const { userId } = await getAuthOrThrow()
-    const accent = await getAccentPreference({ userId })
+    const voice = lang === 'en' ? elevenLabsVoice[await getAccentPreference({ userId })] : elevenLabsVoice[lang]
 
     const audio = await speak({
-        model: new ElevenLabs().tts('eleven_multilingual_v2', elevenLabsVoice[accent]),
+        model: new ElevenLabs().tts('eleven_turbo_v2_5', voice),
         prompt: text,
     })
 

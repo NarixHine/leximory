@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
 import { isReaderModeAtom } from '@/app/atoms'
+import { MAX_TTS_LENGTH } from '@/lib/config'
 
 export default function AudioPlayer({ id, md, ...props }: {
     id: string,
@@ -27,7 +28,7 @@ export default function AudioPlayer({ id, md, ...props }: {
         if (current) {
             if (status === 'ungenerated') {
                 const { innerText } = current
-                if (innerText.length > 5000) {
+                if (innerText.length > MAX_TTS_LENGTH) {
                     setStatus('lengthy')
                     return
                 }
@@ -69,7 +70,7 @@ export default function AudioPlayer({ id, md, ...props }: {
                     src={url}
                 /> : <Button isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={() => action()}>
                     {
-                        status === 'lengthy' ? '录音文本不多于 5000 字' :
+                        status === 'lengthy' ? `录音文本不多于 ${MAX_TTS_LENGTH} 字` :
                             status === 'loading' ? '加载中' :
                                 status === 'ungenerated' ? '生成' :
                                     status === 'generating' ? '生成中' :

@@ -2,9 +2,13 @@ import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
+export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoice = {
-    'BrE': 'rfkTsdZrVWEVhDycUYn9',
+    'BrE': '0sGQQaD2G2X1s87kHM5b',
     'AmE': 'Z3R5wn05IrDiVCyEkUrK',
+    'ja': 'GxxMAMfQkDlnqjpzjLHH',
+    'zh': 'FjfxJryh105iTLL4ktHB',
+    'nl': '0sGQQaD2G2X1s87kHM5b',
 } as const
 
 export const exampleSharedLib = {
