@@ -37,7 +37,9 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
         if (typeof current === "number") {
             if (scrollYProgress < 0.05) {
                 setVisible(true)
+                return
             }
+
             const direction = current! - scrollYProgress.getPrevious()!
             if (direction < 0) {
                 setVisible(true)
