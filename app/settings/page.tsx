@@ -5,7 +5,7 @@ import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
 import { Chip } from '@heroui/chip'
 import { PiCalendarBlankDuotone, PiCoinsDuotone, PiDotsThreeVerticalBold, PiNotebookDuotone, PiPlanetDuotone } from 'react-icons/pi'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { clerkClient } from '@clerk/nextjs/server'
 import { getPlan } from '@/server/auth/quota'
@@ -26,7 +26,7 @@ import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
-import 'moment/locale/en'
+import 'moment/locale/en-gb'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -71,7 +71,7 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    const month = moment().locale('en').format('MMMM')
+    const month = moment().locale('en-gb').format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
             <UserHeroSection />
@@ -153,5 +153,5 @@ async function Plan() {
 async function ClaimDailyLexicoinServer() {
     const { userId } = await getAuthOrThrow()
     const lastClaimDate = await getLastDailyClaim(userId)
-    return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? moment(lastClaimDate).isAfter(moment().subtract(1, 'day')) : false} />
+    return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? moment.tz(lastClaimDate, 'Asia/Shanghai').isSame(moment.tz('Asia/Shanghai'), 'day') : false} />
 }

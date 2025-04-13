@@ -4,7 +4,7 @@ import { getAuthOrThrow } from '@/server/auth/role'
 import { auth } from '@clerk/nextjs/server'
 import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { revalidatePath } from 'next/cache'
 import { dailyLexicoinClaimMap } from '@/lib/config'
 import { getPlan } from '@/server/auth/quota'
@@ -33,7 +33,7 @@ export async function getDailyLexicoin() {
 	const { userId } = await getAuthOrThrow()
 	const plan = await getPlan(userId)
 	const lastDailyClaim = await getLastDailyClaim(userId)
-	if (lastDailyClaim && moment(lastDailyClaim).isAfter(moment().subtract(1, 'day'))) {
+	if (lastDailyClaim && moment.tz(lastDailyClaim, 'Asia/Shanghai').isSame(moment.tz('Asia/Shanghai'), 'day')) {
 		throw new Error('今天已领取 LexiCoin')
 	}
 	await addLexicoinBalance(userId, dailyLexicoinClaimMap[plan])
