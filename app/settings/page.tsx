@@ -26,6 +26,7 @@ import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
+import 'moment/locale/en'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -70,7 +71,7 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    const month = moment().format('MMMM')
+    const month = moment().locale('en').format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
             <UserHeroSection />

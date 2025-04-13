@@ -23,7 +23,7 @@ export async function WordStats({ uid }: { uid: string }) {
 
 export async function UserWordStats() {
     const { userId } = await getAuthOrThrow()
-    return <WordHeatmap uid={userId} />
+    return <WordStats uid={userId} />
 }
 
 export async function WordHeatmap({ uid }: { uid: string }) {

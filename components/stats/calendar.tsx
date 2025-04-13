@@ -77,11 +77,11 @@ export default function VocabularyCalendar({ wordCountData }: VocabularyCalendar
 
         // For darker backgrounds, use light text
         if (count >= 20) {
-            return "text-gray-100"
+            return "text-default-100"
         }
 
         // For lighter backgrounds, use dark text
-        return "text-gray-800"
+        return "text-default-800"
     }
 
     return (
@@ -120,7 +120,7 @@ export default function VocabularyCalendar({ wordCountData }: VocabularyCalendar
                                 )}
                             >
                                 {wordCount > 0 ? (
-                                    <div className="flex items-center text-xs text-default-800">
+                                    <div className="flex items-center text-xs">
                                         <PiNotebookDuotone className="h-3 w-3 mr-0.5" />
                                         {wordCount}
                                     </div>
