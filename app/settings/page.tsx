@@ -117,7 +117,7 @@ export default async function Settings() {
             </div>
         </section>
         <div className='w-full pr-6 pl-0 py-3 flex flex-col gap-4'>
-            <H disableCenter usePlayfair className='items-end text-4xl text-primary-200 text-pretty'>What you learned in {month}</H>
+            <H usePlayfair className='items-end text-4xl text-primary-200 text-pretty'>What you learned in {month}</H>
             <Suspense fallback={<HeatmapSkeleton />}>
                 <UserWordHeatmap />
             </Suspense>
