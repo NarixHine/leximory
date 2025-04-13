@@ -12,6 +12,7 @@ export default function MdImg({ src, alt = 'Image', title }: {
     const isReaderMode = useAtomValue(isReaderModeAtom)
     return isReaderMode ? <></> : (
         <Image
+            isBlurred
             isZoomed
             title={title}
             alt={alt}

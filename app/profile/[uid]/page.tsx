@@ -5,7 +5,7 @@ import { Avatar } from "@heroui/avatar"
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { Suspense } from 'react'
-import WordStats from '@/components/stats'
+import { WordStats } from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Chip } from "@heroui/chip"
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'

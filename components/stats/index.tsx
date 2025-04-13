@@ -1,19 +1,40 @@
 import WordChart from './word-chart'
 import moment from 'moment'
 import { getData } from './actions'
+import VocabularyCalendar from './calendar'
+import { getAuthOrThrow } from '@/server/auth/role'
 
-export default async function WordStats({ uid }: { uid: string }) {
+const getCountMap = async (uid: string) => {
     'use cache'
     const data = await getData(uid)
-
-    const countMap = new Map(
+    return new Map(
         data.map(bucket => [
             new Date(bucket.$key).toISOString().split('T')[0],
             bucket.$count
         ])
     )
+}
 
+export async function WordStats({ uid }: { uid: string }) {
+    'use cache'
+    const countMap = await getCountMap(uid)
     return <WordChart data={formatChartData(countMap, 30)} />
+}
+
+export async function UserWordStats() {
+    const { userId } = await getAuthOrThrow()
+    return <WordHeatmap uid={userId} />
+}
+
+export async function WordHeatmap({ uid }: { uid: string }) {
+    'use cache'
+    const countMap = await getCountMap(uid)
+    return <VocabularyCalendar wordCountData={countMap} />
+}
+
+export async function UserWordHeatmap() {
+    const { userId } = await getAuthOrThrow()
+    return <WordHeatmap uid={userId} />
 }
 
 export function formatChartData(countMap: Map<string, number>, size: number) {

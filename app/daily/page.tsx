@@ -7,7 +7,7 @@ import { Spacer } from "@heroui/spacer"
 import { Skeleton } from "@heroui/skeleton"
 import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
-import WordStats from '@/components/stats'
+import { UserWordStats } from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
 import { getSubsStatus } from '@/server/db/subs'
 import { getAuthOrThrow } from '@/server/auth/role'
@@ -30,7 +30,7 @@ export default async function Daily() {
                 <H><PiRewindDuotone />每日汇总</H>
                 <div className='my-12 h-80'>
                     <Suspense fallback={<WordChartSkeleton />}>
-                        <WordStats uid={userId} />
+                        <UserWordStats />
                     </Suspense>
                 </div>
                 <Spacer y={6}></Spacer>

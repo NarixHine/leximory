@@ -37,7 +37,7 @@ export default function ImportModal() {
     const [hideText, setHideText] = useAtom(hideTextAtom)
     const [isPopulating, startPopulating] = useTransition()
     const populate = async () => {
-        const res = await ky.get(url, { prefixUrl: 'https://r.jina.ai' }).text()
+        const res = await ky.get(url, { prefixUrl: 'https://r.jina.ai', timeout: 60000 }).text()
         const markdown = (/Markdown Content:\n([\s\S]*)/.exec(res) as string[])[1]
         const title = (/^Title: (.+)/.exec(res) as string[])[1]
         setInput(markdown.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1') /* remove links */)

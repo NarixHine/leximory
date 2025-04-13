@@ -9,7 +9,6 @@ import moment from 'moment'
 import { summarizeLibsWithWords } from '@/server/db/lib'
 import { clerkClient } from '@clerk/nextjs/server'
 import { getPlan } from '@/server/auth/quota'
-import WordStats from '@/components/stats'
 import { Suspense } from 'react'
 import Main from '@/components/ui/main'
 import Preference from './components/preference'
@@ -26,6 +25,7 @@ import { planMap } from '@/lib/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
+import { UserWordHeatmap } from '@/components/stats'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -70,6 +70,7 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
+    const month = moment().format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
             <UserHeroSection />
@@ -114,18 +115,16 @@ export default async function Settings() {
                 </ClerkLoaded>
             </div>
         </section>
-        <div className='h-80 w-full pr-6 pl-0 py-3'>
+        <div className='w-full pr-6 pl-0 py-3 flex flex-col gap-4'>
+            <H disableCenter usePlayfair className='items-end text-4xl text-primary-200 text-pretty'>What you learned, in {month}</H>
             <Suspense fallback={<WordChartSkeleton />}>
-                <UserWordStats />
+                <UserWordHeatmap />
             </Suspense>
         </div>
     </Main>
 }
 
-async function UserWordStats() {
-    const { userId } = await getAuthOrThrow()
-    return <WordStats uid={userId} />
-}
+
 
 function LexicoinBalanceCard({ balance }: { balance?: number }) {
     return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
