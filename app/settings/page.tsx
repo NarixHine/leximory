@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import { getAuthOrThrow } from '@/server/auth/role'
-import { WordChartSkeleton } from '@/components/stats/word-chart'
 import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
 import { Chip } from '@heroui/chip'
@@ -26,6 +25,7 @@ import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
+import { HeatmapSkeleton } from '@/components/stats/calendar'
 import 'moment/locale/en-gb'
 
 export const metadata: Metadata = { title: '设置' }
@@ -117,8 +117,8 @@ export default async function Settings() {
             </div>
         </section>
         <div className='w-full pr-6 pl-0 py-3 flex flex-col gap-4'>
-            <H disableCenter usePlayfair className='items-end text-4xl text-primary-200 text-pretty'>What you learned, in {month}</H>
-            <Suspense fallback={<WordChartSkeleton />}>
+            <H disableCenter usePlayfair className='items-end text-4xl text-primary-200 text-pretty'>What you learned in {month}</H>
+            <Suspense fallback={<HeatmapSkeleton />}>
                 <UserWordHeatmap />
             </Suspense>
         </div>

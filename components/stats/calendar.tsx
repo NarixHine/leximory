@@ -5,6 +5,7 @@ import { PiNotebookDuotone } from 'react-icons/pi'
 import { Card, CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { formatChartData } from '.'
 
 interface VocabularyCalendarProps {
     wordCountData: Map<string, number>
@@ -85,7 +86,10 @@ export default function VocabularyCalendar({ wordCountData }: VocabularyCalendar
     }
 
     return (
-        <Card className="backdrop-blur-md bg-white/80 dark:bg-default-50/80 border-0 shadow-lg rounded-3xl overflow-hidden">
+        <Card className={cn(
+            "backdrop-blur-md bg-white/80 dark:bg-default-50/80 border-0 shadow-lg rounded-3xl overflow-hidden",
+            wordCountData.size === 0 && 'animate-pulse',
+        )}>
             <CardBody className="p-6">
                 <div className="grid grid-cols-7 gap-2">
                     {/* Day headers */}
@@ -134,4 +138,8 @@ export default function VocabularyCalendar({ wordCountData }: VocabularyCalendar
             </CardBody>
         </Card>
     )
+}
+
+export function HeatmapSkeleton() {
+    return <VocabularyCalendar wordCountData={new Map()} />
 }

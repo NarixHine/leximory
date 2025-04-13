@@ -17,6 +17,10 @@ const config: Config = {
           from: { opacity: "1" },
           to: { opacity: "0" },
         },
+        pulse: {
+          '0%, 100%': { opacity: '0.7' },
+          '50%': { opacity: '0.3' },
+        },
         slideDownAndFade: {
           from: { opacity: "0", transform: "translateY(-6px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -83,6 +87,7 @@ const config: Config = {
       drawerSlideLeftAndFade:
         "drawerSlideLeftAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       drawerSlideRightAndFade: "drawerSlideRightAndFade 150ms ease-in",
+      pulse: "pulse 2s ease-in-out infinite",
     },
   },
   plugins: [
