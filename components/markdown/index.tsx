@@ -31,6 +31,8 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
 
     let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
         .replaceAll('||}}', '}}')
+        .replaceAll('|||', '||')
+        .replaceAll(')} ', ')}} ')
         .replaceAll('}} ,', '}},')
         .replaceAll('}} .', '}}.')
 
