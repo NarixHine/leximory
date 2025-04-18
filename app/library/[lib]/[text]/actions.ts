@@ -7,7 +7,7 @@ import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { getBestModel, googleModel, Lang, maxArticleLength } from '@/lib/config'
+import { getBestCommentaryModel, googleModels, Lang, maxArticleLength } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -25,7 +25,7 @@ export async function extractWords(form: FormData) {
     }
 
     const { object } = await generateObject({
-        model: googleModel,
+        model: googleModels['flash-2.0'],
         messages: [
             {
                 role: 'user',
@@ -152,7 +152,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
     (async () => {
         const { textStream } = streamText({
-            model: await getBestModel(lang),
+            model: await getBestCommentaryModel(lang),
             system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
@@ -179,7 +179,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
     }
 
     const { text } = await generateText({
-        model: await getBestModel(lang),
+        model: await getBestCommentaryModel(lang),
         system: `
         生成词汇注解（形如<must>vocabulary</must>、<must></must>中的部分必须注解）。
 

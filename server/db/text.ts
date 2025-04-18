@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { randomID } from '@/lib/utils'
+import { nanoid } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
@@ -12,11 +12,13 @@ import { pick } from 'remeda'
 
 const xata = getXataClient()
 
-export async function createText({ lib }: { lib: string }) {
+export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const { id } = await xata.db.texts.create({
-        id: randomID(),
+        id: nanoid(),
         lib,
-        title: '',
+        title: title ?? 'New Text',
+        content,
+        topics
     })
     revalidateTag(`texts:${lib}`)
     return id

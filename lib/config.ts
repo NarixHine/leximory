@@ -50,31 +50,40 @@ export const bilibiliLink = 'https://space.bilibili.com/3494376432994441/' as co
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
-export const googleModel = google('gemini-2.0-flash-001', {
-    safetySettings: [{
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_NONE',
-    }, {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_NONE',
-    }, {
-        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-        threshold: 'BLOCK_NONE',
-    }, {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_NONE',
-    }]
-})
-
-export const getBestModel = async (lang: Lang) => {
+export const googleModels = {
+    'flash-2.0': google('gemini-2.0-flash-001', {
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }]
+    }),
+}
+export const getBestArticleAnnotationModel = async (lang: Lang) => {
     switch (lang) {
-        case 'zh': return googleModel
-        case 'en': return googleModel
-        case 'nl': return googleModel
-        case 'ja': return googleModel
+        case 'zh': return googleModels['flash-2.0']
+        case 'en': return googleModels['flash-2.0']
+        case 'nl': return googleModels['flash-2.0']
+        case 'ja': return googleModels['flash-2.0']
     }
 }
 
+export const getBestCommentaryModel = async (lang: Lang) => {
+    switch (lang) {
+        case 'zh': return googleModels['flash-2.0']
+        case 'en': return googleModels['flash-2.0']
+        case 'nl': return googleModels['flash-2.0']
+        case 'ja': return googleModels['flash-2.0']
+    }
+}
 export const langMap: Record<Lang, string> = {
     'zh': '文言文',
     'en': '英文',

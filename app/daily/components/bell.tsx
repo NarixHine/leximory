@@ -34,7 +34,6 @@ export default function Bell({ hasSubs, hour = 22 }: {
         <div className='flex flex-col justify-center items-center space-y-3'>
             <div className='flex gap-2 items-center'>
                 <Button
-                    data-tag-hour={selectedHour}
                     variant={hasSubs ? 'flat' : 'ghost'}
                     isLoading={isUpdating}
                     onPress={() => {

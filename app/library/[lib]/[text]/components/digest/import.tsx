@@ -5,22 +5,21 @@ import { Divider } from "@heroui/divider"
 import { Input } from "@heroui/input"
 import { Switch } from "@heroui/switch"
 import { Textarea } from "@heroui/input"
-import ky from 'ky'
 import { useState, useTransition } from 'react'
 import isUrl from 'is-url'
 import { maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
-import { PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
-import { useAtom, useAtomValue } from 'jotai'
-import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom } from '../../atoms'
+import { PiAirplaneInFlightDuotone, PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
 import { useLogSnag } from '@logsnag/next'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
-
+import { getArticleFromUrl } from '@/lib/utils'
 export const maxEbookSize = 4 * 1024 * 1024
 
 export default function ImportModal() {
@@ -36,12 +35,12 @@ export default function ImportModal() {
     const [url, setUrl] = useState('')
     const [hideText, setHideText] = useAtom(hideTextAtom)
     const [isPopulating, startPopulating] = useTransition()
+    const setTitle = useSetAtom(titleAtom)
     const populate = async () => {
-        const res = await ky.get(url, { prefixUrl: 'https://r.jina.ai', timeout: 60000 }).text()
-        const markdown = (/Markdown Content:\n([\s\S]*)/.exec(res) as string[])[1]
-        const title = (/^Title: (.+)/.exec(res) as string[])[1]
-        setInput(markdown.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1') /* remove links */)
+        const { title, content } = await getArticleFromUrl(url)
+        setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
         save({ id: text, title })
+        setTitle(title)
     }
     const exceeded = hideText ? false : input.length > maxArticleLength(lang)
 
@@ -115,7 +114,7 @@ export default function ImportModal() {
                                             value={url}
                                             onValueChange={(value) => setUrl(value.trim())}
                                             variant='underlined' />
-                                        <Button isLoading={isPopulating} color='primary' radius='full' endContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                        <Button isLoading={isPopulating} startContent={<PiLinkSimpleHorizontalDuotone />} color='primary' radius='full' endContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength(lang)} 字符` : undefined}
@@ -130,10 +129,10 @@ export default function ImportModal() {
                                         仅生成词摘
                                     </Switch>
                                     <Button
-                                        data-tag-library={lib}
                                         className='mt-2'
                                         color='primary'
                                         fullWidth
+                                        startContent={<PiAirplaneInFlightDuotone className='text-xl' />}
                                         isDisabled={isLoading || exceeded || isGenerating}
                                         onPress={() => {
                                             track({

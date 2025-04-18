@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation'
 import { NavProps } from '.'
 import DefaultLoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { ReactNode } from 'react'
+import { useAtomValue } from 'jotai'
+import { isReaderModeAtom } from '@/app/atoms'
 
 function LoadingIndicatorWrapper({ children }: { children: ReactNode }) {
     return <DefaultLoadingIndicatorWrapper
@@ -29,9 +31,10 @@ interface NavPropsExtended extends NavProps {
 
 export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPropsExtended) {
     const router = useRouter()
+    const isReaderMode = useAtomValue(isReaderModeAtom)
     const iconClassName = 'text-primary-900 dark:text-default-500 text-lg'
 
-    return <div className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'>
+    return !isReaderMode && <div className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'>
         <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
             list: 'flex-nowrap bg-primary-50/50 dark:bg-default-200/70 backdrop-blur-sm',
         }}>

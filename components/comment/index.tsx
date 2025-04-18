@@ -9,7 +9,7 @@ import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiSignInDuotone, PiEyesFill } from 'react-icons/pi'
-import { cn, getClickedChunk, randomID } from '@/lib/utils'
+import { cn, getClickedChunk, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
@@ -58,7 +58,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [isLoaded, setIsLoaded] = useState(!isOnDemand)
     const [status, setStatus] = useState<CommentState['status']>('idle')
     const [savedId, setSavedId] = useState<CommentState['savedId']>(null)
-    const [uid, setUid] = useState<string>(randomID())
+    const [uid, setUid] = useState<string>(nanoid())
     const [isEditing, setIsEditing] = useState(false)
     const [editedPortions, setEditedPortions] = useState<string[]>([])
 
@@ -100,7 +100,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         if (prompt && prompt !== '') {
             commentWord(prompt)
             setStatus('idle')
-            setUid(randomID())
+            setUid(nanoid())
             setSavedId(null)
         }
     }, [prompt])

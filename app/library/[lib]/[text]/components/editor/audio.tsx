@@ -1,11 +1,11 @@
-import { randomID } from '@/lib/utils'
+import { nanoid } from '@/lib/utils'
 import { PiFileAudioDuotone } from 'react-icons/pi'
 import { PluginProps } from 'react-markdown-editor-lite'
 
 const Reader = (props: PluginProps) => {
     const handleClick = () => {
         const select = props.editor.getSelection().text
-        props.editor.insertText(`:::${randomID()}\n${select}\n:::`, true)
+        props.editor.insertText(`:::${nanoid()}\n${select}\n:::`, true)
     }
 
     return (

@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, getBestModel, langMap } from '@/lib/config'
+import { Lang, getBestCommentaryModel, langMap } from '@/lib/config'
 import { accentPreferencePrompt } from '@/lib/prompt'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
@@ -55,7 +55,7 @@ export const generateStory = inngest.createFunction(
         })
 
         const story = await step.ai.wrap('generate-story', generateText, {
-            model: await getBestModel(lang),
+            model: await getBestCommentaryModel(lang),
             ...storyConfig
         })
 

@@ -1,6 +1,6 @@
 import 'server-only'
 import { Lang, langMap, libAccessStatusMap, welcomeMap } from '@/lib/config'
-import { randomID } from '@/lib/utils'
+import { nanoid } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
@@ -52,7 +52,7 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
 }
 
 export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
-    const id = randomID()
+    const id = nanoid()
     await xata.transactions.run([
         {
             insert: {
