@@ -58,13 +58,12 @@ export function getBracketedSelection(selection: Selection): string {
     const range = selection.getRangeAt(0)
     const { startContainer } = range
 
-    // Find the closest <div> ancestor of a node
+    // Find the closest <div> or <p> ancestor of a node
     function findAncestorParagraph(node: Node | null): HTMLParagraphElement | null {
         while (node) {
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
-                (node as Element).tagName === 'DIV' ||
-                (node as Element).tagName === 'P'
+                ((node as Element).tagName === 'DIV' || (node as Element).tagName === 'P')
             ) {
                 return node as HTMLParagraphElement
             }

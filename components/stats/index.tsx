@@ -1,40 +1,42 @@
 import WordChart from './word-chart'
 import moment from 'moment'
-import { getData } from './actions'
 import VocabularyCalendar from './calendar'
 import { getAuthOrThrow } from '@/server/auth/role'
+import { listLibs } from '@/server/db/lib'
+import { aggrWordHistogram } from '@/server/db/word'
 
-const getCountMap = async (uid: string) => {
+const getCountMap = async ({ uid, orgId }: { uid: string, orgId?: string }) => {
     'use cache'
-    const data = await getData(uid)
+    const libs = await listLibs({ owner: uid, orgId })
+    const results = await aggrWordHistogram({ libs, size: 30 })
     return new Map(
-        data.map(bucket => [
+        results.map(bucket => [
             new Date(bucket.$key).toISOString().split('T')[0],
             bucket.$count
         ])
     )
 }
 
-export async function WordStats({ uid }: { uid: string }) {
+export async function WordStats({ uid, orgId }: { uid: string, orgId?: string }) {
     'use cache'
-    const countMap = await getCountMap(uid)
+    const countMap = await getCountMap({ uid, orgId })
     return <WordChart data={formatChartData(countMap, 30)} />
 }
 
 export async function UserWordStats() {
-    const { userId } = await getAuthOrThrow()
-    return <WordStats uid={userId} />
+    const { userId, orgId } = await getAuthOrThrow()
+    return <WordStats uid={userId} orgId={orgId} />
 }
 
-export async function WordHeatmap({ uid }: { uid: string }) {
+export async function WordHeatmap({ uid, orgId }: { uid: string, orgId?: string }) {
     'use cache'
-    const countMap = await getCountMap(uid)
+    const countMap = await getCountMap({ uid, orgId })
     return <VocabularyCalendar wordCountData={countMap} />
 }
 
 export async function UserWordHeatmap() {
-    const { userId } = await getAuthOrThrow()
-    return <WordHeatmap uid={userId} />
+    const { userId, orgId } = await getAuthOrThrow()
+    return <WordHeatmap uid={userId} orgId={orgId} />
 }
 
 export function formatChartData(countMap: Map<string, number>, size: number) {
