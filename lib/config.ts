@@ -109,7 +109,7 @@ export const langMaxChunkSizeMap: Record<Lang, number> = {
     'zh': 500,
     'en': 5000,
     'ja': 1000,
-    'nl': 1000
+    'nl': 2000
 } as const
 
 export const welcomeMap: Record<Lang, string> = {
@@ -136,7 +136,7 @@ export const maxArticleLength = (lang: Lang): number => {
         case 'en': return 20000
         case 'ja':
         case 'zh': return 3000
-        default: return 5000
+        default: return 10000
     }
 }
 

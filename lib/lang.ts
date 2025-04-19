@@ -17,7 +17,7 @@ export function validateOrThrow(word: string) {
 
 export function parseCommentParams(word: string) {
     try {
-        const purifiedParams = word.replaceAll('{{', '').replaceAll('}}', '')
+        const purifiedParams = word.replaceAll('{{', '').replaceAll('}}', '').replaceAll('<must>', '').replaceAll('</must>', '')
         const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
         return parsedParams
     } catch {
