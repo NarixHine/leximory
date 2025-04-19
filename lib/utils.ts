@@ -41,14 +41,14 @@ export function resetSelection() {
 }
 
 /**
- * Returns the HTML of the paragraph containing the current selection,
+ * Returns the paragraph containing the current selection,
  * with the selected content wrapped in <must>...</must> tags.
  *
  * Handles selections spanning text nodes and nested elements.
  * Falls back to a simple HTML-replacement approach if direct surroundContents fails.
  *
  * @param selection - The Selection object.
- * @returns The paragraph's HTML as a string, with the selection bracketed.
+ * @returns The paragraph containing the current selection, with the selection bracketed.
  */
 export function getBracketedSelection(selection: Selection): string {
     if (!selection || selection.rangeCount === 0) {
@@ -63,7 +63,8 @@ export function getBracketedSelection(selection: Selection): string {
         while (node) {
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
-                (node as Element).tagName === 'DIV'
+                (node as Element).tagName === 'DIV' ||
+                (node as Element).tagName === 'P'
             ) {
                 return node as HTMLParagraphElement
             }
