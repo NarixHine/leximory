@@ -214,7 +214,7 @@ function Indicator({
     icon: ReactNode
 }) {
     const { pending } = useLinkStatus()
-    const MotionSpinner = motion.create(Spinner)
+    const MotionSpinner = motion(Spinner)
     return (
         <AnimatePresence mode='wait'>
             {pending ? (

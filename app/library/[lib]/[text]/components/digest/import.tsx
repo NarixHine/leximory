@@ -114,7 +114,7 @@ export default function ImportModal() {
                                             value={url}
                                             onValueChange={(value) => setUrl(value.trim())}
                                             variant='underlined' />
-                                        <Button isLoading={isPopulating} startContent={<PiLinkSimpleHorizontalDuotone />} color='primary' radius='full' endContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                        <Button isLoading={isPopulating} color='primary' radius='full' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength(lang)} 字符` : undefined}

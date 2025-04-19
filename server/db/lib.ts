@@ -175,7 +175,7 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
                 : {
                     $all: [
                         { owner },
-                        { $notExists: { org: null } }
+                        { $notExists: 'org' }
                     ]
                 }
         )
