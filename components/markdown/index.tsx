@@ -65,7 +65,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
             fontFamily: fontFamily ?? defaultFontFamily,
         }}
         className={cn(
-            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-headings:font-serif prose-headings:font-semibold',
+            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]',
             className
         )}
     >{result}</MarkdownToJSX>)

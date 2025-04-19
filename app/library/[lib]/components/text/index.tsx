@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { Chip } from "@heroui/chip"
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
@@ -20,28 +19,35 @@ import { getArticleFromUrl } from '@/lib/utils'
 import { useState } from 'react'
 import { isLoadingAtom } from '../../[text]/atoms'
 import isUrl from 'is-url'
-function Text({ id, title, topics, hasEbook }: {
+import moment from 'moment-timezone'
+import Topics from '../../[text]/components/topics'
+
+function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
     id: string,
     title: string,
     topics: string[],
-    hasEbook: boolean
+    hasEbook: boolean,
+    createdAt: string,
+    updatedAt: string,
 }) {
     const lib = useAtomValue(libAtom)
     const router = useRouter()
+
     return (<div className='w-full h-full relative'>
         <Card shadow='sm' fullWidth className='h-full' isPressable onPress={() => {
             router.push(`/library/${lib}/${id}`)
         }}>
-            <CardBody className='p-7'>
+            <CardBody className='flex flex-col gap-1 p-7'>
                 <a className='text-2xl text-balance' style={{
                     fontFamily: postFontFamily
                 }}>{title}</a>
-            </CardBody>
-            <CardFooter className='p-7'>
-                <div className='gap-2 flex flex-wrap align-middle items-center'>
-                    {topics.map(topic => <Chip key={topic} variant='flat' color={'primary'}>{topic}</Chip>)}
-                    {hasEbook && <Chip variant='flat' color={'secondary'}>电子书</Chip>}
+                <div className='gap-0.5 flex flex-wrap align-middle items-center'>
+                    <Topics topics={topics.concat(hasEbook ? ['电子书'] : [])}></Topics>
                 </div>
+            </CardBody>
+            <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
+                <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
+                <time className='text-sm text-default-400 font-mono'>Updated: {moment(updatedAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
             </CardFooter>
         </Card>
     </div>)
@@ -78,7 +84,7 @@ export function AddTextButton() {
                             key='text'
                             title={
                                 <div className='flex items-center space-x-2'>
-                                        <PiLinkSimpleHorizontal />
+                                    <PiLinkSimpleHorizontal />
                                     <span>网址导入外刊</span>
                                 </div>
                             }

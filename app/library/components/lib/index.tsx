@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
+import Topics from '../../[lib]/[text]/components/topics'
 
 export function LibrarySkeleton() {
     return (
@@ -169,14 +170,11 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                         </>
                     }
                 </CardBody>
-                : <CardBody className='px-6 pt-6'>
+                : <CardBody className='px-6 pt-6 flex flex-col justify-start'>
                     <a className='text-4xl' style={{
                         fontFamily: postFontFamily
                     }}>{name}</a>
-                    <Spacer y={2}></Spacer>
-                    <div className='flex space-x-2'>
-                        {[langMap[lang as Lang]].concat(topics).map(tag => <Chip key={tag} variant='flat' color='primary'>{tag}</Chip>)}
-                    </div>
+                    <Topics topics={topics.concat([langMap[lang as Lang]])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>

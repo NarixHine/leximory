@@ -172,7 +172,12 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
         .filter(
             orgId
                 ? { owner, org: orgId }
-                : { owner, org: null }
+                : {
+                    $all: [
+                        { owner },
+                        { $notExists: { org: null } }
+                    ]
+                }
         )
         .getAll()
     return libs.map(({ id }) => id)

@@ -21,13 +21,15 @@ export default async function Page(props: LibParams) {
         <Nav lib={{ id: lib, name }}></Nav>
         <H usePlayfair={lang === 'zh' || lang === 'en'} useNoto={lang === 'ja'} className='mb-10 text-5xl'>{name}</H>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-            {texts.map(({ title, id, topics, hasEbook }) => (
+            {texts.map(({ title, id, topics, hasEbook, createdAt, updatedAt }) => (
                 <Text
                     id={id}
                     key={id}
                     title={title}
                     topics={topics ?? []}
                     hasEbook={hasEbook}
+                    createdAt={createdAt}
+                    updatedAt={updatedAt}
                 ></Text>
             ))}
             {!isReadOnly && <AddTextButton />}

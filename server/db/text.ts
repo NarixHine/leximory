@@ -51,11 +51,13 @@ export async function getTexts({ lib }: { lib: string }) {
     'use cache'
     cacheTag(`texts:${lib}`)
     const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url']).filter({ lib }).getAll()
-    return texts.map(text => ({
-        id: text.id,
-        title: text.title,
-        topics: text.topics,
-        hasEbook: !!text.ebook?.url
+    return texts.map(({ id, title, topics, ebook, xata }) => ({
+        id,
+        title,
+        topics,
+        hasEbook: !!ebook?.url,
+        createdAt: xata.createdAt.toISOString(),
+        updatedAt: xata.updatedAt.toISOString()
     }))
 }
 

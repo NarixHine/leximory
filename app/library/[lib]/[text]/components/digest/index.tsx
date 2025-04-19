@@ -240,7 +240,7 @@ function ReadingView() {
       <Markdown
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
-          '!prose-lg'
+          '!prose-lg text-pretty'
         )}
         fontFamily={lang === 'en' ? postFontFamily : undefined}
         md={`<article>\n${content}\n\n</article>`}

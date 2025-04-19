@@ -37,7 +37,7 @@ export default async function Page(props: LibAndTextParams) {
         <Main className='max-w-screen-xl'>
             <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
             <EditableH></EditableH>
-            <Topics topics={topics}></Topics>
+            <Topics topics={topics} className='justify-center'></Topics>
             <Digest></Digest>
         </Main>
     </HydrationBoundary>)
