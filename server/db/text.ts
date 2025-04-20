@@ -8,7 +8,7 @@ import { revalidateTag } from 'next/cache'
 import { Lang } from '@/lib/config'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
-import { pick } from 'remeda'
+import { pick } from 'es-toolkit'
 
 const xata = getXataClient()
 

@@ -114,7 +114,7 @@ export function AddTextButton() {
                                     const id = await add({ title, lib })
                                     router.push(`/library/${lib}/${id}`)
                                 })
-                            }}>导入</Button>
+                            }}>创建</Button>
                         </Tab>
                     </Tabs>
                 </DrawerBody>

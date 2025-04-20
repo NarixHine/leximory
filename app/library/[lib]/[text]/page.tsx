@@ -5,15 +5,17 @@ import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from './components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom } from './atoms'
+import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom, isLoadingAtom } from './atoms'
 import { getTextContent } from '@/server/db/text'
 import { LibAndTextParams } from '@/lib/types'
+import ScopeProvider from '@/components/jotai/scope-provider'
+import { isReaderModeAtom } from '@/app/atoms'
 
 export async function generateMetadata(props: LibAndTextParams) {
     const params = await props.params
     const { title } = await getTextContent({ id: params.text })
     return {
-        title: typeof title === 'string' && title !== '' ? title : '未命名'
+        title: typeof title === 'string' && title !== '' ? title : '新文本'
     }
 }
 
@@ -26,19 +28,21 @@ export default async function Page(props: LibAndTextParams) {
     const { text } = await props.params
     const { title, content, topics, ebook, lib } = await getData(text)
 
-    return (<HydrationBoundary hydrateAtoms={[
-        [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
-        [topicsAtom, topics ?? []],
-        [ebookAtom, ebook],
-        [textAtom, text],
-        [titleAtom, title],
-        [inputAtom, '']
-    ]}>
-        <Main className='max-w-screen-xl'>
-            <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
-            <EditableH></EditableH>
-            <Topics topics={topics} className='justify-center'></Topics>
-            <Digest></Digest>
-        </Main>
-    </HydrationBoundary>)
+    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom]}>
+        <HydrationBoundary hydrateAtoms={[
+            [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
+            [topicsAtom, topics ?? []],
+            [ebookAtom, ebook],
+            [textAtom, text],
+            [titleAtom, title],
+            [inputAtom, '']
+        ]}>
+            <Main className='max-w-screen-xl'>
+                <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
+                <EditableH></EditableH>
+                <Topics topics={topics} className='justify-center'></Topics>
+                <Digest></Digest>
+            </Main>
+        </HydrationBoundary>
+    </ScopeProvider>)
 }

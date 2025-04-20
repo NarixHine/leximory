@@ -4,7 +4,7 @@ import { nanoid } from '@/lib/utils'
 import { getXataClient } from '@/server/client/xata'
 import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
-import { pick } from 'remeda'
+import { pick } from 'es-toolkit'
 
 const xata = getXataClient()
 

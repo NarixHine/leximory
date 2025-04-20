@@ -30,7 +30,7 @@ export default function Define() {
         setSelection(newSelection)
     }, ref)
 
-    const MotionTrigger = motion(Drawer.Trigger)
+    const MotionTrigger = motion.create(Drawer.Trigger)
     const isMobileIos = useIsMobileIos()
 
     return <Drawer.Root>
