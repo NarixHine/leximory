@@ -12,18 +12,18 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
         <UserInfo uid={uid} />
         <div className='flex flex-col md:flex-row gap-4 md:gap-12'>
             <WordStatsSection uid={uid} />
-            <div className='w-full'>
-                <H className='text-xl mb-4'>公开文库</H>
-                <Suspense fallback={
-                    <div className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
+            <Suspense fallback={
+                <div className='basis-3/5'>
+                    <H className='text-xl mb-4'>公开文库</H>
+                    <div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
                         {[...Array(2)].map((_, i) => (
                             <LibraryCardSkeleton key={i} />
                         ))}
                     </div>
-                }>
-                    <PublicLibraries uid={uid} />
-                </Suspense>
-            </div>
+                </div>
+            }>
+                <PublicLibraries uid={uid} />
+            </Suspense>
         </div>
     </Center>
 }

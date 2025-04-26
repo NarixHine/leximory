@@ -1,8 +1,8 @@
 import { clerkClient } from '@clerk/nextjs/server'
-import { Avatar } from "@heroui/avatar"
+import { Avatar } from '@heroui/avatar'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
-import { Chip } from "@heroui/chip"
+import { Chip } from '@heroui/chip'
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
 import H from '@/components/ui/h'
 import { unstable_cacheLife as cacheLife } from 'next/cache'
