@@ -23,9 +23,10 @@ interface LibraryCardProps {
     }
     isStarred: boolean
     avatar: ReactNode
+    hideAvatar?: boolean
 }
 
-export default function LibraryCard({ library, isStarred, avatar }: LibraryCardProps) {
+export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: LibraryCardProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
 
@@ -39,7 +40,7 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
             isPressable
         >
             <CardBody className='p-5 pb-0'>
-                <div className='space-y-2'>
+                <div className='space-y-1'>
                     <H useNoto disableCenter className='text-2xl '>{library.name}</H>
                     <Chip variant='flat' color='primary' className='text-sm opacity-70'>{langMap[library.lang]}</Chip>
                 </div>
@@ -75,7 +76,7 @@ export default function LibraryCard({ library, isStarred, avatar }: LibraryCardP
                                 : `用 ${library.price} LexiCoin 购买`
                     }
                 </Button>
-                {avatar}
+                {!hideAvatar && avatar}
             </CardFooter>
         </Card>
     )

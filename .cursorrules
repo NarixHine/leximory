@@ -1,0 +1,50 @@
+# Cursor Rules for Next.js Application
+
+## Code Style Guidelines
+
+1. Always use single quotes where possible
+2. No semicolons at the end of statements
+3. Use 4 spaces for indentation
+4. Maximum line length of 100 characters
+5. Use LF line endings
+6. No trailing commas
+
+## Component Structure
+
+1. Use function declarations instead of arrow functions for components
+2. Export components as default exports
+3. Destructure props in function parameters
+4. Use TypeScript types for props and state
+5. Keep components focused and modular
+
+## File Organization
+
+1. Components should be in their own directories
+2. Use index.tsx for component exports
+3. Keep related components together
+4. Use meaningful file and directory names
+
+## React/Next.js Conventions
+
+1. Use 'use client' directive for client components
+2. Follow Next.js 15+ app directory structure
+3. Use server components by default
+4. Implement proper error boundaries
+5. Use proper loading states
+
+## Best Practices
+
+1. Keep components small and focused
+2. Use proper TypeScript types
+3. Implement proper error handling
+4. Use proper state management
+5. Follow React hooks rules
+6. Use proper memoization when needed
+
+## Tech Stack
+
+- Next.js 15+
+- TypeScript
+- Tailwind CSS
+- HeroUI (`@heroui/...`, formerly NextUI)
+- React Icons (`react-icons/pi`)

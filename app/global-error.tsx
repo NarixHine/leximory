@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { Card, CardBody, CardHeader } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import Center from '@/components/ui/center'
 import Link from 'next/link'
@@ -19,16 +18,14 @@ export default function GlobalError({
     <html>
       <body>
         <Center>
-          <Card className={cn('max-w-lg', ENGLISH_SERIF.className)} isBlurred shadow='none'>
-            <CardHeader className='flex flex-col items-center gap-3'>
+          <div className={cn('max-w-lg', ENGLISH_SERIF.className)}>
+            <div className='flex flex-col items-center gap-3'>
               <div className='flex items-center justify-center rounded-full'>
                 <PiWarningCircle className='text-5xl text-danger' />
               </div>
               <h2 className='text-3xl font-medium tracking-tight text-foreground/90'>
                 Error
               </h2>
-            </CardHeader>
-            <CardBody className='flex flex-col items-center gap-3'>
               <div className='flex gap-4'>
                 <Button
                   color='primary'
@@ -54,10 +51,10 @@ export default function GlobalError({
                 <div className='h-2 w-2 rounded-full bg-destructive'></div>
               </div>
               <p className='text-center text-sm opacity-50'>
-                Digest: {error.digest ?? 'Unknown error'}
+                Digest: {error.digest ?? 'Unknown'}
               </p>
-            </CardBody>
-          </Card>
+            </div>
+          </div>
         </Center>
       </body>
     </html>

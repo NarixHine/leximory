@@ -51,7 +51,7 @@ export default function Error({
                         <div className='h-2 w-2 rounded-full bg-warning'></div>
                     </div>
                     <p className='text-center text-sm opacity-50'>
-                        Digest: {error.digest ?? 'Unknown error'}
+                        Digest: {error.digest ?? 'Unknown'}
                     </p>
                 </CardBody>
             </Card>

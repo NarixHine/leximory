@@ -183,7 +183,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     <Chip color='primary' variant='dot' className='border-none -mt-1'>{lexicon.count}</Chip>
                 </div>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <Button className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
                 </Button>}
                 <Button
