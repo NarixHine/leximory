@@ -10,20 +10,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
     const uid = (await params).uid
     return <Center className='flex-col max-w-screen-xl gap-4'>
         <UserInfo uid={uid} />
-        <div className='flex flex-col md:flex-row gap-4 md:gap-12'>
+        <div className='flex flex-col md:flex-row gap-12 w-full'>
             <WordStatsSection uid={uid} />
-            <Suspense fallback={
-                <div className='basis-3/5'>
-                    <H className='text-xl mb-4'>公开文库</H>
+            <div className='basis-full md:basis-3/5'>
+                <H className='text-xl mb-4'>公开文库</H>
+                <Suspense fallback={
                     <div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
                         {[...Array(2)].map((_, i) => (
                             <LibraryCardSkeleton key={i} />
                         ))}
                     </div>
-                </div>
-            }>
-                <PublicLibraries uid={uid} />
-            </Suspense>
+                }>
+                    <PublicLibraries uid={uid} />
+                </Suspense>
+            </div>
         </div>
     </Center>
 }

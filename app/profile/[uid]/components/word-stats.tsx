@@ -9,7 +9,7 @@ export default async function WordStatsSection({ uid }: { uid: string }) {
     cacheLife('days')
 
     return (
-        <div className='flex flex-col basis-2/5 gap-4 sm:min-w-96'>
+        <div className='flex flex-col basis-full md:basis-2/5 gap-4 sm:min-w-96'>
             <div className='h-80'>
                 <Suspense fallback={<WordChartSkeleton />}>
                     <WordStats uid={uid} />
