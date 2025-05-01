@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
-import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone } from 'react-icons/pi'
+import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone, PiCursorClickDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -93,10 +93,13 @@ export default async function Home() {
 			<div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
 				<div className='md:col-span-2'>
 					<BentoCard title='AI 注解 + AI 朗读'>
-						<div className='px-8 sm:px-16'>
+						<div className='px-8 sm:px-16 flex flex-col'>
 							<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
 								<ShowcaseAnnotation />
 							</HydrationBoundary>
+							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light' className={cn(CHINESE_ZCOOL.className)}>
+								查看更多
+							</Button>
 						</div>
 					</BentoCard>
 				</div>

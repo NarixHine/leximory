@@ -214,7 +214,7 @@ function StoryModal() {
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
                         <DrawerBody className='flex flex-col gap-4 max-w-screen-sm mx-auto'>
-                            <div className='prose'><blockquote className='not-italic border-l-secondary-300'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                            <div className='prose dark:prose-invert'><blockquote className='not-italic border-l-secondary-300'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
                             <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
                             <FileUpload onChange={async ([file]) => {
                                 const form = new FormData()
