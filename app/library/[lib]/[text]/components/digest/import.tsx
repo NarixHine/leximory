@@ -7,7 +7,7 @@ import { Switch } from "@heroui/switch"
 import { Textarea } from "@heroui/input"
 import { useState, useTransition } from 'react'
 import isUrl from 'is-url'
-import { maxArticleLength } from '@/lib/config'
+import { MAX_FILE_SIZE, maxArticleLength } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
@@ -20,7 +20,6 @@ import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getArticleFromUrl } from '@/lib/utils'
-export const maxEbookSize = 4 * 1024 * 1024
 
 export default function ImportModal() {
     const lib = useAtomValue(libAtom)
@@ -164,8 +163,8 @@ export default function ImportModal() {
                                             toast.error('发生错误，文件需为 .epub 格式。')
                                             return
                                         }
-                                        if (ebook.size > maxEbookSize) {
-                                            toast.error(`发生错误，文件需小于 ${maxEbookSize / 1024 / 1024}MB。`)
+                                        if (ebook.size > MAX_FILE_SIZE) {
+                                            toast.error(`发生错误，文件需小于 ${MAX_FILE_SIZE / 1024 / 1024}MB。`)
                                             return
                                         }
                                         toast.info('上传中……')

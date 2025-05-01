@@ -2,6 +2,8 @@ import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
+export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
+
 export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoiceConfig = {
     'BrE': {

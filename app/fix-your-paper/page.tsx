@@ -18,6 +18,13 @@ import H from '@/components/ui/h'
 import { CHINESE_ZCOOL, ENGLISH_SERIF, postFontFamily } from '@/lib/fonts'
 import Main from '@/components/ui/main'
 import Markdown from '@/components/markdown'
+import { MAX_FILE_SIZE } from '@/lib/config'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Fix Your Paper',
+    description: '你的 AI 审题人'
+}
 
 export default function FixPaperPage() {
     const [paperFile, setPaperFile] = useAtom(paperFileAtom)
@@ -35,6 +42,11 @@ export default function FixPaperPage() {
 
     const handleFix = async () => {
         if (!canSubmit) return
+
+        if (paperFile[0].size + answerFile[0].size > MAX_FILE_SIZE) {
+            toast.error('文件总大小不能超过4.5MB。')
+            return
+        }
 
         setIsLoading(true)
         try {

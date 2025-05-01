@@ -2,12 +2,11 @@
 
 import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
 import { generateObject, generateText, streamText } from 'ai'
-import { maxEbookSize } from './components/digest/import'
 import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { getBestCommentaryModel, googleModels, Lang, maxArticleLength } from '@/lib/config'
+import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -96,7 +95,7 @@ export async function saveEbook(id: string, form: FormData) {
     if (ebook.type !== 'application/epub+zip') {
         throw new Error('Not an epub file')
     }
-    if (ebook.size > maxEbookSize) {
+    if (ebook.size > MAX_FILE_SIZE) {
         throw new Error('File too large')
     }
     await authWriteToText(id)

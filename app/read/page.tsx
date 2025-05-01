@@ -5,6 +5,11 @@ import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
 import Topics from '@/app/library/[lib]/[text]/components/topics'
 import { postFontFamily } from '@/lib/fonts'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: exampleSharedLib.name,
+}
 
 export default async function ReadPage() {
     const texts = await getTexts({ lib: exampleSharedLib.id })
