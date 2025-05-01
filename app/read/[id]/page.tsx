@@ -17,12 +17,13 @@ function ReturnButton({ ...props }: ButtonProps) {
     )
 }
 
-export default async function ArticlePage({ params }: { params: { id: string } }) {
-    const { content, title, topics } = await getTextContent({ id: params.id })
+export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const { content, title, topics } = await getTextContent({ id })
 
     return (
         <Main className='container mx-auto py-16 px-4 max-w-4xl'>
-            <ReturnButton className='text-sm mb-8 opacity-80 font-mono' />
+            <ReturnButton className='text-sm mb-8 opacity-80 underline underline-offset-4 font-mono' />
             <H className='text-4xl font-bold mb-2 text-default-900 tracking-tight'>{title}</H>
             <Topics topics={topics} className='mb-6 flex justify-center' />
             <Markdown
@@ -31,7 +32,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 md={`<article>\n${content}\n\n</article>`}
             />
             <Spacer y={3} />
-            <ReturnButton fullWidth size='lg' className='mx-auto font-mono' />
+            <ReturnButton fullWidth size='lg' className='mx-auto underline underline-offset-4 font-mono' />
         </Main>
     )
 }
