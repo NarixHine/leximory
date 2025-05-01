@@ -252,8 +252,8 @@ importers:
         specifier: ^7.54.2
         version: 7.54.2(react@19.1.0)
       react-icons:
-        specifier: ^5.3.0
-        version: 5.4.0(react@19.1.0)
+        specifier: ^5.5.0
+        version: 5.5.0(react@19.1.0)
       react-ios-pwa-prompt:
         specifier: ^2.0.6
         version: 2.0.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -261,8 +261,8 @@ importers:
         specifier: ^1.3.4
         version: 1.3.4(react@19.1.0)
       react-reader:
-        specifier: ^2.0.11
-        version: 2.0.12(react@19.1.0)
+        specifier: ^2.0.13
+        version: 2.0.13(react@19.1.0)
       react-type-animation:
         specifier: ^3.2.0
         version: 3.2.0(prop-types@15.8.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -282,8 +282,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       sonner:
-        specifier: ^1.7.0
-        version: 1.7.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: ^2.0.3
+        version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       tailwind-merge:
         specifier: ^2.5.2
         version: 2.6.0
@@ -4847,8 +4847,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-icons@5.4.0:
-    resolution: {integrity: sha512-7eltJxgVt7X64oHh6wSWNwwbKTCtMfK35hcjvJS0yxEAhPM8oUKdS3+kqaW1vicIltw+kR2unHaa12S9pPALoQ==}
+  react-icons@5.5.0:
+    resolution: {integrity: sha512-MEFcXdkP3dLo8uumGI5xN3lDFNsRtrjbOEKDLD7yv76v4wpnEq2Lt2qeHaQOr34I/wPN3s3+N08WkQ+CW37Xiw==}
     peerDependencies:
       react: '*'
 
@@ -4866,8 +4866,8 @@ packages:
     peerDependencies:
       react: ^16.9.0 || ^17.0.0 || ^18.0.0
 
-  react-reader@2.0.12:
-    resolution: {integrity: sha512-yO1o/l4Qh6XyYs6NVjNQBJqEIdWpTMZg9KubKgH2Ik5s7nRu/YMXAcEd8ZM1XPG+aWochZdgdEPPqQ8Sglj2IA==}
+  react-reader@2.0.13:
+    resolution: {integrity: sha512-g8Y4Wz0LAEYR+JHRdYuR0dxHK+qmHLmJr4yrS820WNzB3oJGFGKk6EEOj2bnE6P0fo642M6QluPLaPL1sh8T8Q==}
 
   react-remove-scroll-bar@2.3.8:
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
@@ -5195,8 +5195,8 @@ packages:
     resolution: {integrity: sha512-Sj51kE1zC7zh6TDlNNz0/Jn1n5HiHdoQErxO8jLtnyrkJW/M5PrI7x05uDgY3BO7OUQYKCvmeMurW6BPUdwEOw==}
     engines: {node: '>=18'}
 
-  sonner@1.7.4:
-    resolution: {integrity: sha512-DIS8z4PfJRbIyfVFDVnK9rO3eYDtse4Omcm6bt0oEr5/jtLgysmjuBl1frJ9E/EQZrFmKx2A8m/s5s9CRXIzhw==}
+  sonner@2.0.3:
+    resolution: {integrity: sha512-njQ4Hht92m0sMqqHVDL32V2Oun9W1+PHO9NDv9FHfJjT3JT22IG4Jpo3FPQy+mouRKCXFWO+r67v6MrHX2zeIA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
@@ -11618,7 +11618,7 @@ snapshots:
     dependencies:
       react: 19.1.0
 
-  react-icons@5.4.0(react@19.1.0):
+  react-icons@5.5.0(react@19.1.0):
     dependencies:
       react: 19.1.0
 
@@ -11637,7 +11637,7 @@ snapshots:
       react: 19.1.0
       uuid: 8.3.2
 
-  react-reader@2.0.12(react@19.1.0):
+  react-reader@2.0.13(react@19.1.0):
     dependencies:
       epubjs: 0.3.93
       react-swipeable: 7.0.2(react@19.1.0)
@@ -12104,7 +12104,7 @@ snapshots:
       snake-case: 3.0.4
       type-fest: 4.37.0
 
-  sonner@1.7.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  sonner@2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)

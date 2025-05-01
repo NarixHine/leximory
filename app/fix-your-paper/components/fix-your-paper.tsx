@@ -1,6 +1,6 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@heroui/react'
@@ -21,9 +21,9 @@ export default function FixPaper() {
     const [paperFile, setPaperFile] = useAtom(paperFileAtom)
     const [answerFile, setAnswerFile] = useAtom(answerFileAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
-    const [result, setResult] = useAtom(resultAtom)
+    const setResult = useSetAtom(resultAtom)
     const [canSubmit] = useAtom(canSubmitAtom)
-    const [paperAnalysis, setPaperAnalysis] = useAtom(paperAnalysisAtom)
+    const setPaperAnalysis = useSetAtom(paperAnalysisAtom)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (files: File[]) => void) => {
         if (e.target.files && e.target.files.length > 0) {
