@@ -132,7 +132,7 @@ export async function analyzePaper(paperFile: File) {
     const paperAnalysis = await generateText({
         model,
         messages,
-        temperature: 0.03,
+        temperature: 0,
         maxTokens: 20000
     })
 
@@ -148,7 +148,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
     const comparison = await generateText({
         model,
         messages,
-        temperature: 0.03,
+        temperature: 0,
         maxTokens: 20000
     })
 
