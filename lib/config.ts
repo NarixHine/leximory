@@ -66,7 +66,17 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
+    'pro-2.5': google('gemini-2.5-pro-exp-03-25', {
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }],
+    }),
 }
+
 export const getBestArticleAnnotationModel = async (lang: Lang) => {
     switch (lang) {
         case 'zh': return googleModels['flash-2.0']
