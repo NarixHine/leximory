@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
         mdxRs: true,
         ppr: 'incremental',
         serverActions: {
-            bodySizeLimit: '8mb',
+            bodySizeLimit: '4.5mb',
         },
         useCache: true,
     },

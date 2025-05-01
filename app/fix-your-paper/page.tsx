@@ -15,7 +15,7 @@ import {
 } from './atoms'
 import { PiSealCheckDuotone, PiUpload } from 'react-icons/pi'
 import H from '@/components/ui/h'
-import { CHINESE_ZCOOL, postFontFamily } from '@/lib/fonts'
+import { CHINESE_ZCOOL, ENGLISH_SERIF, postFontFamily } from '@/lib/fonts'
 import Main from '@/components/ui/main'
 import Markdown from '@/components/markdown'
 
@@ -51,8 +51,21 @@ export default function FixPaperPage() {
         }
     }
 
-    return (<Main className='max-w-3xl flex flex-col items-center pt-40'>
+    return (<Main className='max-w-3xl flex flex-col items-center pt-32'>
         <H usePlayfair>Fix. Your. Paper.</H>
+
+        <Spacer y={3} />
+
+        <p className={cn(ENGLISH_SERIF.className, 'text-center text-balance text-lg text-default-700')}>
+            Quality papers are crafted with <span className='font-bold relative inline-block'>
+                amiability
+                <span className='absolute bottom-0 left-0 w-full h-1/2 bg-primary-200/40' />
+            </span>. Not <span className='font-bold relative inline-block'>
+                ambiguity
+                <span className='absolute bottom-0 left-0 w-full h-1/2 bg-danger-200/40' />
+            </span>.
+        </p>
+
         <Spacer y={6} />
 
         <div className='space-y-6 w-full'>
