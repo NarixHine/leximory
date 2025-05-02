@@ -160,11 +160,11 @@ export default function ImportModal() {
                                     <FileUpload acceptableTypes={['application/epub+zip']} onChange={async (files) => {
                                         const ebook = files[files.length - 1]
                                         if (ebook.type !== 'application/epub+zip') {
-                                            toast.error('发生错误，文件需为 .epub 格式。')
+                                            toast.error('发生错误，文件需为 .epub 格式')
                                             return
                                         }
                                         if (ebook.size > MAX_FILE_SIZE) {
-                                            toast.error(`发生错误，文件需小于 ${MAX_FILE_SIZE / 1024 / 1024}MB。`)
+                                            toast.error(`发生错误，文件需小于 ${MAX_FILE_SIZE / 1024 / 1024}MB`)
                                             return
                                         }
                                         toast.info('上传中……')

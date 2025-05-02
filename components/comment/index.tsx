@@ -91,7 +91,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     }
                 }
             } catch {
-                toast.error('生成中止。')
+                toast.error('生成中止')
             }
         }
     }

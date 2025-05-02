@@ -68,7 +68,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'pro-2.5': google('gemini-2.5-pro-exp-03-25', {
+    'pro-2.5': google('gemini-2.5-pro-preview-03-25', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',

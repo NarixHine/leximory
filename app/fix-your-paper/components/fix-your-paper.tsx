@@ -28,7 +28,7 @@ export default function FixPaper() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (files: File[]) => void) => {
         if (e.target.files && e.target.files.length > 0) {
             if (e.target.files[0].size > MAX_FILE_SIZE) {
-                toast.error('文件大小不能超过4.5MB')
+                toast.error(`文件大小不能超过 ${MAX_FILE_SIZE / 1024 / 1024}MB`)
                 return
             }
             toast.success('文件上传成功')
@@ -39,8 +39,6 @@ export default function FixPaper() {
     }
 
     const handleFix = async () => {
-        if (!canSubmit) return
-
         setIsLoading(true)
         try {
             // Step 1: Analyze the paper
@@ -50,7 +48,7 @@ export default function FixPaper() {
             const comparison = await compareAnswers(paperFile[0], answerFile[0], paperAnalysis)
             setResult(comparison)
         } catch {
-            toast.error('发生错误，可能是请求超时或额度不足。')
+            toast.error('发生错误，可能是请求超时或额度不足')
         } finally {
             setIsLoading(false)
         }
