@@ -7,39 +7,60 @@ import { postFontFamily } from '@/lib/fonts'
 import Markdown from '@/components/markdown'
 import { resultAtom, paperAnalysisAtom, isLoadingAtom } from '../atoms'
 import { PiChatTeardropDots, PiFlask, PiQuestion } from 'react-icons/pi'
+import { HydrationBoundary } from 'jotai-ssr'
+import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
+import { useEffect, useState } from 'react'
 
 export default function Results() {
     const [result] = useAtom(resultAtom)
     const [paperAnalysis] = useAtom(paperAnalysisAtom)
     const [isLoading] = useAtom(isLoadingAtom)
+    
+    const [expandedKeys, setExpandedKeys] = useState(new Set(['ai-answer']))
+
+    useEffect(() => {
+        if (isLoading && paperAnalysis !== '') setExpandedKeys(new Set(['ai-answer']))
+        if (isLoading && result !== '') setExpandedKeys(new Set(['review-report']))
+        setExpandedKeys(new Set(['ai-answer']))
+    }, [isLoading, paperAnalysis, result])
+
     return (
-        <>
+        <HydrationBoundary hydrateAtoms={[[lexiconAtom, 'none']]}>
             <Spacer y={8} />
 
-            <Accordion className='w-full max-w-none gap-6' defaultExpandedKeys={['review-report']}>
+            <Accordion 
+                className='w-full max-w-none gap-6' 
+                selectedKeys={expandedKeys}
+                onSelectionChange={setExpandedKeys as any}
+            >
                 <AccordionItem
                     key='ai-answer'
                     startContent={isLoading && !paperAnalysis ? <Spinner variant='gradient' color='default' /> : <PiFlask className='text-2xl ml-2' />}
                     title={<H usePlayfair disableCenter className='text-lg'>初步作答</H>}
                     subtitle='For reference only. No need to acknowledge everything AI says.'
                 >
-                    <Markdown fontFamily={postFontFamily} md={paperAnalysis ?? '<article>\n> 未生成\n</article>'} />
+                    <Markdown fontFamily={postFontFamily} md={paperAnalysis === '' ? '<article>\n> 未生成\n</article>' : paperAnalysis} />
                 </AccordionItem>
 
                 <AccordionItem
                     key='review-report'
                     startContent={isLoading && !result ? <Spinner variant='gradient' color='default' /> : <PiChatTeardropDots className='text-2xl ml-2' />}
                     title={<H usePlayfair disableCenter className='text-lg'>审题报告</H>}
-                    subtitle='A third-party opinion from which to pick what sounds reasonable to you.'
+                    subtitle='A third-party opinion, from which to pick what&apos;s reasonable.'
                 >
                     <div className='max-w-none'>
-                        <Markdown fontFamily={postFontFamily} md={result ?? '<article>\n> 未生成\n</article>'} />
+                        <Markdown fontFamily={postFontFamily} md={result === '' ? '<article>\n> 未生成\n</article>' : result} />
                     </div>
                 </AccordionItem>
 
-                <AccordionItem startContent={<PiQuestion />} key='ai-role' title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最好审题人</H>} subtitle='AI is your impartial, independent, native-level ESL exam paper reviewer.'>
+                <AccordionItem
+                    startContent={<PiQuestion />}
+                    key='ai-role'
+                    title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最好审题人？</H>}
+                    subtitle='Independent. Impartial. Instant. Incomparable in language proficiency.'
+                >
                     <div style={{ fontFamily: postFontFamily }} className='prose prose-sm max-w-none'>
-                        <p>It helps you spot <span className='italic'>the grammatically possible but contextually impossible</span>, or <span className='italic'>the contextually suitable but pragmatically unnatural</span>, or questions subject to multiple interpretations. It evaluates the linguistic appropriateness of exam content with native-like intuition and analytical precision.</p>
+                        <p>Artificial Intelligence helps you spot <span className='italic'>the grammatically possible but contextually impossible</span>, or <span className='italic'>the contextually suitable but pragmatically unnatural</span>, or questions subject to multiple interpretations. It evaluates the linguistic appropriateness of exam content with native-like intuition and analytical precision.</p>
 
                         <p>For example, AI can flag questions that are technically correct in grammar but misleading in real-world use. It also identifies awkward phrasing, idiomatic misuse, and vague prompts that allow multiple valid answers—issues that undermine the fairness and clarity of an exam.</p>
 
@@ -47,6 +68,6 @@ export default function Results() {
                     </div>
                 </AccordionItem>
             </Accordion>
-        </>
+        </HydrationBoundary>
     )
 } 

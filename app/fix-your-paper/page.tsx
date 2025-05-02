@@ -2,10 +2,13 @@ import { Metadata } from 'next'
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/react'
 import H from '@/components/ui/h'
-import { ENGLISH_SERIF } from '@/lib/fonts'
+import { CHINESE_ZCOOL, ENGLISH_SERIF } from '@/lib/fonts'
 import Main from '@/components/ui/main'
 import FixPaper from './components/fix-your-paper'
 import Results from './components/results'
+import Link from 'next/link'
+import { Button } from '@heroui/button'
+import { PiGithubLogo, PiInfo } from 'react-icons/pi'
 
 export const metadata: Metadata = {
     title: 'Fix. Your. Paper.',
@@ -13,7 +16,9 @@ export const metadata: Metadata = {
 }
 
 export default function FixPaperPage() {
-    return (<Main className='max-w-3xl flex flex-col items-center pt-32'>
+    return (<Main className='max-w-3xl flex flex-col items-center'>
+        <Spacer y={10} className='hidden sm:block print:hidden' />
+
         <H usePlayfair>Fix. Your. Paper.</H>
 
         <Spacer y={3} />
@@ -37,5 +42,30 @@ export default function FixPaperPage() {
 
         <Spacer y={6} />
 
+        <footer className={cn(CHINESE_ZCOOL.className, 'text-center text-sm text-default-700 print:hidden')}>
+            <div className='flex justify-center'>
+                <span>每次审题消耗五<Link href='/library' className='underline'>额度</Link></span>
+            </div>
+            <div className='flex justify-center'>
+               <Button
+                    className='rounded-full text-lg text-default-700'
+                    startContent={<PiGithubLogo />}
+                    isIconOnly
+                    size='sm'
+                    as={Link}
+                    variant='light'
+                    href='https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper'
+                ></Button>
+                <Button
+                    className='rounded-full text-lg text-default-700'
+                    startContent={<PiInfo />}
+                    isIconOnly
+                    size='sm'
+                    as={Link}
+                    variant='light'
+                    href='https://hello.leximory.com/blog/fix-your-paper'
+                ></Button>
+            </div>
+        </footer>
     </Main>)
 } 

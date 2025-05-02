@@ -27,21 +27,21 @@ const SYSTEM_PROMPT = `
 
 ## 语法填空（Grammar & Vocabulary: Section A）
 
-对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦禁止填入副词。
+对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦**禁止填入副词（如even/only）**或表示完成时的have/has/had。
 
 而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。
 
 ## 选词填空（Grammar & Vocabulary: Section B）
 
-以语篇的形式呈现，设置10道空白处，要求考生从所提供的有11个单词构成的词库里选出最合适的词分别填入各空白处，使短文意思和结构完整。每个单词只能选一次。在这11个词中有1个单词为干扰项。
+以语篇的形式呈现，设置10道空白处，要求考生从所提供的有11个单词构成的词库里选出最合适的词分别填入各空白处，使短文意思和结构完整。每个单词只能选一次，有1个单词为干扰项。
 
 ## 完形填空（Reading Comprehension: Section A）
 
-在语篇长度约为400-500的短文中删去原词，留出15个空格，不考核语法形式的区别。完形填空的四个备选答案，一般都属于同一词类，同一语义范畴。
+在短文中删去原词，留出15个空格，不考核语法形式的区别。完形填空的四个备选答案，一般都属于同一词类，同一语义范畴。
 
 ## 阅读理解（Reading Comprehension: Section B）
 
-包含三篇阅读文章，每篇文章下的题目都是四选一式的选择题。每篇设题数量为3~4题不等，但三篇的总题数为11题。
+包含三篇阅读文章，每篇文章下的题目都是四选一式的选择题。每篇设题数量为3~4题不等，但三篇总题数为11题。错误选项的常见设置方式有细节出入、逻辑错误、内容无关、以偏概全等，需要小心。
 
 ## 六选四（Reading Comprehension: Section C）
 
@@ -72,7 +72,7 @@ const COMPARISON_PROMPT = `
 >
 > ……
 
-如果没有，直接输出“No issues found. Your paper is already good to go!”。`
+如果没有，直接输出"No issues found. Your paper is already good to go!"。`
 
 async function buildMessages(params: {
     paperFile: File,
@@ -126,8 +126,8 @@ async function buildMessages(params: {
 }
 
 export async function analyzePaper(paperFile: File) {
-    if (await incrCommentaryQuota(5)) {
-        throw new Error('本月 AI 审题生成额度耗尽。')
+    if (await incrCommentaryQuota(2)) {
+        return { error: '本月 AI 审题额度耗尽' }
     }
 
     const messages = await buildMessages({ paperFile })
@@ -138,12 +138,12 @@ export async function analyzePaper(paperFile: File) {
         maxTokens: 20000
     })
 
-    return paperAnalysis.text
+    return { output: paperAnalysis.text }
 }
 
 export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
-    if (await incrCommentaryQuota(5)) {
-        throw new Error('本月 AI 审题生成额度耗尽。')
+    if (await incrCommentaryQuota(3)) {
+        return { error: '本月 AI 审题额度耗尽' }
     }
 
     const messages = await buildMessages({ paperFile, answerFile, paperAnalysis })
@@ -154,11 +154,5 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
         maxTokens: 20000
     })
 
-    return comparison.text
-}
-
-export async function fixPaper(paperFile: File, answerFile: File) {
-    const paperAnalysis = await analyzePaper(paperFile)
-    const comparison = await compareAnswers(paperFile, answerFile, paperAnalysis)
-    return comparison
+    return { output: comparison.text }
 }

@@ -31,10 +31,11 @@ export default function FixPaper() {
                 toast.error(`文件大小不能超过 ${MAX_FILE_SIZE / 1024 / 1024}MB`)
                 return
             }
-            toast.success('文件上传成功')
+
+            toast.success('文件就绪')
             setFile([e.target.files[0]])
-            setResult(null)
-            setPaperAnalysis(null)
+            setResult('')
+            setPaperAnalysis('')
         }
     }
 
@@ -42,13 +43,26 @@ export default function FixPaper() {
         setIsLoading(true)
         try {
             // Step 1: Analyze the paper
-            const paperAnalysis = await analyzePaper(paperFile[0])
-            setPaperAnalysis(paperAnalysis)
+            const { output: paperAnalysisOutput, error: paperAnalysisError } = await analyzePaper(paperFile[0])
+            if (paperAnalysisError) {
+                toast.error(paperAnalysisError)
+                return
+            }
+            if (paperAnalysisOutput) {
+                setPaperAnalysis(paperAnalysisOutput)
+            }
+
             // Step 2: Compare with answer key
-            const comparison = await compareAnswers(paperFile[0], answerFile[0], paperAnalysis)
-            setResult(comparison)
+            const { output: comparisonOutput, error: comparisonError } = await compareAnswers(paperFile[0], answerFile[0], paperAnalysisOutput || '')
+            if (comparisonError) {
+                toast.error(comparisonError)
+                return
+            }
+            if (comparisonOutput) {
+                setResult(comparisonOutput)
+            }
         } catch {
-            toast.error('发生错误，可能是请求超时或额度不足')
+            toast.error('发生错误，可能是请求超时')
         } finally {
             setIsLoading(false)
         }
