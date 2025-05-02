@@ -23,7 +23,7 @@ export default function Results() {
             case isLoading && paperAnalysis !== '' && result === '':
                 setExpandedKeys(new Set(['ai-answer']))
                 break
-            case isLoading && result !== '':
+            case result !== '':
                 setExpandedKeys(new Set(['review-report']))
                 break
             default:

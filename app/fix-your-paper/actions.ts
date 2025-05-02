@@ -15,11 +15,11 @@ const SYSTEM_PROMPT = `
 
 对每道在上述范围内的题，依次输出：
 
-> 题号：答案。
+> **大题名称** 题号：答案。题号：答案。……
 
 对于填空题，答案写单词。
 
-对于选择题，答案写字母代号。
+对于选择题，答案只写字母代号。
 
 # 需要完成的题型及其规则
 
@@ -72,7 +72,14 @@ const COMPARISON_PROMPT = `
 >
 > ……
 
-如果没有，直接输出"No issues found. Your paper is already good to go!"。`
+如果没有，直接输出：
+
+\`\`\`
+## No Issues Found
+
+Your paper is already good to go!
+\`\`\`
+`
 
 async function buildMessages(params: {
     paperFile: File,
