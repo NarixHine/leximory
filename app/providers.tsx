@@ -60,7 +60,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 					<JotaiProvider>
 						<Toaster toastOptions={{
 							classNames: {
-								toast: cn('bg-primary-50 text-primary-900 dark:text-default-100 dark:bg-default-800 dark:border-0', CHINESE_ZCOOL.className),
+								toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100', CHINESE_ZCOOL.className),
 							}
 						}}></Toaster>
 						<LogSnagInit />

@@ -14,7 +14,7 @@ import {
     paperAnalysisAtom
 } from '../atoms'
 import { PiSealCheckDuotone, PiUpload } from 'react-icons/pi'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
+import { CHINESE_ZCOOL, postFontFamily } from '@/lib/fonts'
 import { MAX_FILE_SIZE } from '@/lib/config'
 
 export default function FixPaper() {
@@ -27,6 +27,11 @@ export default function FixPaper() {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (files: File[]) => void) => {
         if (e.target.files && e.target.files.length > 0) {
+            if (e.target.files[0].size > MAX_FILE_SIZE) {
+                toast.error('文件大小不能超过4.5MB')
+                return
+            }
+            toast.success('文件上传成功')
             setFile([e.target.files[0]])
             setResult(null)
             setPaperAnalysis(null)
@@ -35,11 +40,6 @@ export default function FixPaper() {
 
     const handleFix = async () => {
         if (!canSubmit) return
-
-        if (paperFile[0].size + answerFile[0].size > MAX_FILE_SIZE) {
-            toast.error('文件总大小不能超过4.5MB。')
-            return
-        }
 
         setIsLoading(true)
         try {
@@ -73,7 +73,7 @@ export default function FixPaper() {
                     >
                         <div className='flex flex-col items-center justify-center text-center'>
                             <PiUpload className='text-2xl mb-2 text-neutral-400 group-hover:text-primary transition-colors' />
-                            <span className='text-sm font-medium'>
+                            <span style={{ fontFamily: postFontFamily }} className='text-sm font-medium'>
                                 {paperFile.length > 0 ? paperFile[0].name : '上传试卷'}
                             </span>
                         </div>
@@ -94,7 +94,7 @@ export default function FixPaper() {
                     >
                         <div className='flex flex-col items-center justify-center text-center'>
                             <PiUpload className='text-2xl mb-2 text-neutral-400 group-hover:text-primary transition-colors' />
-                            <span className='text-sm font-medium'>
+                            <span style={{ fontFamily: postFontFamily }} className='text-sm font-medium'>
                                 {answerFile.length > 0 ? answerFile[0].name : '上传答案'}
                             </span>
                         </div>
@@ -105,7 +105,7 @@ export default function FixPaper() {
             <div className='flex justify-center w-full'>
                 <Button
                     onPress={handleFix}
-                    disabled={!canSubmit}
+                    isDisabled={!canSubmit}
                     className={cn('w-full md:w-48', CHINESE_ZCOOL.className)}
                     color='primary'
                     variant='flat'
