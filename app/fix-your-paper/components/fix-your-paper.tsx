@@ -28,6 +28,8 @@ export default function FixPaper() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (files: File[]) => void) => {
         if (e.target.files && e.target.files.length > 0) {
             setFile([e.target.files[0]])
+            setResult(null)
+            setPaperAnalysis(null)
         }
     }
 
@@ -48,7 +50,7 @@ export default function FixPaper() {
             const comparison = await compareAnswers(paperFile[0], answerFile[0], paperAnalysis)
             setResult(comparison)
         } catch {
-            toast.error('发生错误，可能是请求超时。')
+            toast.error('发生错误，可能是请求超时或额度不足。')
         } finally {
             setIsLoading(false)
         }

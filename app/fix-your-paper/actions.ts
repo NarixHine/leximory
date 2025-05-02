@@ -27,7 +27,7 @@ const SYSTEM_PROMPT = `
 
 ## 语法填空（Grammar & Vocabulary: Section A）
 
-对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），且每道题含有1～3个空格，每空格填一词。根据空格数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词（如实义动词、副词）。对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。
+对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词（如实义动词、副词）。而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。
 
 ## 选词填空（Grammar & Vocabulary: Section B）
 
@@ -58,7 +58,7 @@ const COMPARISON_PROMPT = `
 
 例如：
 
-### 101
+### 44
 
 修改建议：
 
@@ -70,7 +70,7 @@ const COMPARISON_PROMPT = `
 >
 > ……
 
-如果没有，直接输出 NONE。`
+如果没有，直接输出“No issues found. Your paper is already good to go!”。`
 
 async function buildMessages(params: {
     paperFile: File,
@@ -132,7 +132,7 @@ export async function analyzePaper(paperFile: File) {
     const paperAnalysis = await generateText({
         model,
         messages,
-        temperature: 0,
+        temperature: 0.01,
         maxTokens: 20000
     })
 
@@ -148,7 +148,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
     const comparison = await generateText({
         model,
         messages,
-        temperature: 0,
+        temperature: 0.01,
         maxTokens: 20000
     })
 
