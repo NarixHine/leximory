@@ -34,5 +34,8 @@ export default function FixPaperPage() {
             <FixPaper />
             <Results />
         </div>
+
+        <Spacer y={6} />
+
     </Main>)
 } 

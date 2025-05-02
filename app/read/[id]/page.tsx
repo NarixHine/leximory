@@ -8,6 +8,15 @@ import { Button, ButtonProps } from '@heroui/button'
 import Link from 'next/link'
 import { PiArrowLeftDuotone } from 'react-icons/pi'
 import { Spacer } from '@heroui/spacer'
+import { LibAndTextParams } from '@/lib/types'
+
+export async function generateMetadata(props: LibAndTextParams) {
+    const params = await props.params
+    const { title } = await getTextContent({ id: params.text })
+    return {
+        title
+    }
+}
 
 function ReturnButton({ ...props }: ButtonProps) {
     return (
