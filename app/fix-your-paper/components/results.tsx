@@ -19,9 +19,16 @@ export default function Results() {
     const [expandedKeys, setExpandedKeys] = useState(new Set(['ai-answer']))
 
     useEffect(() => {
-        if (isLoading && paperAnalysis !== '') setExpandedKeys(new Set(['ai-answer']))
-        if (isLoading && result !== '') setExpandedKeys(new Set(['review-report']))
-        setExpandedKeys(new Set(['ai-answer']))
+        switch (true) {
+            case isLoading && paperAnalysis !== '':
+                setExpandedKeys(new Set(['ai-answer']))
+                break
+            case isLoading && result !== '':
+                setExpandedKeys(new Set(['review-report']))
+                break
+            default:
+                setExpandedKeys(new Set(['ai-answer']))
+        }
     }, [isLoading, paperAnalysis, result])
 
     return (
