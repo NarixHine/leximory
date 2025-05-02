@@ -20,7 +20,7 @@ export default function Results() {
 
     useEffect(() => {
         switch (true) {
-            case isLoading && paperAnalysis !== '':
+            case isLoading && paperAnalysis !== '' && result === '':
                 setExpandedKeys(new Set(['ai-answer']))
                 break
             case isLoading && result !== '':

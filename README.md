@@ -13,6 +13,8 @@ Leximory integrates features like:
 - Saving through our **iOS Shortcuts Integration**,
 - Sharing study resources using **Study Groups** or in the **Library Market**.
 
+There is also a feature built for exam setters: `Fix. Your. Paper.`.
+
 The platform is built with Next.js, Xata, Clerk, Upstash, Vercel AI SDK and Inngest.
 
 ## Running the Project
