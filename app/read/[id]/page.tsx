@@ -8,11 +8,31 @@ import { Button, ButtonProps } from '@heroui/button'
 import Link from 'next/link'
 import { PiArrowLeftDuotone } from 'react-icons/pi'
 import { Spacer } from '@heroui/spacer'
-import { LibAndTextParams } from '@/lib/types'
+import { exampleSharedLib } from '@/lib/config'
+import { notFound } from 'next/navigation'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
-export async function generateMetadata(props: LibAndTextParams) {
-    const params = await props.params
-    const { title } = await getTextContent({ id: params.text })
+type ArticlePageProps = {
+    params: Promise<{ id: string }>
+}
+
+const getData = async (id: string) => {
+    const { content, title, topics, lib } = await getTextContent({ id })
+    if (lib.id === exampleSharedLib.id) {
+        return {
+            title,
+            content,
+            topics
+        }
+    }
+    else {
+        notFound()
+    }
+}
+
+export async function generateMetadata({ params }: ArticlePageProps) {
+    const { id } = await params
+    const { title } = await getData(id)
     return {
         title
     }
@@ -26,9 +46,12 @@ function ReturnButton({ ...props }: ButtonProps) {
     )
 }
 
-export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ArticlePage({ params }: ArticlePageProps) {
+    'use cache'
+    cacheLife('days')
+
     const { id } = await params
-    const { content, title, topics } = await getTextContent({ id })
+    const { title, topics, content } = await getData(id)
 
     return (
         <Main className='container mx-auto py-16 px-4 max-w-4xl'>

@@ -6,12 +6,16 @@ import H from '@/components/ui/h'
 import Topics from '@/app/library/[lib]/[text]/components/topics'
 import { postFontFamily } from '@/lib/fonts'
 import { Metadata } from 'next'
+import { unstable_cacheLife as cacheLife } from 'next/cache'
 
 export const metadata: Metadata = {
     title: exampleSharedLib.name,
 }
 
 export default async function ReadPage() {
+    'use cache'
+    cacheLife('days')
+
     const texts = await getTexts({ lib: exampleSharedLib.id })
 
     return (
@@ -19,12 +23,12 @@ export default async function ReadPage() {
             <H usePlayfair disableCenter className={'text-3xl mb-12 text-default-900'}>{exampleSharedLib.name}</H>
             <div className='space-y-8' style={{ fontFamily: postFontFamily }}>
                 {texts.map((text) => (
-                        <Link href={`/read/${text.id}`} key={text.id} className='block'>
-                            <h2 className='text-xl font-medium text-default-900 group-hover:text-default-600 transition-colors'>
-                                {text.title}
-                            </h2>
-                            <Topics topics={text.topics} />
-                        </Link>
+                    <Link prefetch href={`/read/${text.id}`} key={text.id} className='block'>
+                        <h2 className='text-xl font-medium text-default-900 group-hover:text-default-600 transition-colors'>
+                            {text.title}
+                        </h2>
+                        <Topics topics={text.topics} />
+                    </Link>
                 ))}
             </div>
         </Main>
