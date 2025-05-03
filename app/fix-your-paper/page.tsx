@@ -53,6 +53,7 @@ export default function FixPaperPage() {
                     isIconOnly
                     size='sm'
                     as={Link}
+                    target='_blank'
                     variant='light'
                     href='https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper'
                 ></Button>
@@ -62,6 +63,7 @@ export default function FixPaperPage() {
                     isIconOnly
                     size='sm'
                     as={Link}
+                    target='_blank'
                     variant='light'
                     href='https://hello.leximory.com/blog/fix-your-paper'
                 ></Button>

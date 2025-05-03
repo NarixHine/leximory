@@ -41,6 +41,8 @@ export default function FixPaper() {
 
     const handleFix = async () => {
         setIsLoading(true)
+        setResult('')
+        setPaperAnalysis('')
         try {
             // Step 1: Analyze the paper
             const { output: paperAnalysisOutput, error: paperAnalysisError } = await analyzePaper(paperFile[0])
@@ -53,7 +55,7 @@ export default function FixPaper() {
             }
 
             // Step 2: Compare with answer key
-            const { output: comparisonOutput, error: comparisonError } = await compareAnswers(paperFile[0], answerFile[0], paperAnalysisOutput || '')
+            const { output: comparisonOutput, error: comparisonError } = await compareAnswers(paperFile[0], answerFile[0], paperAnalysisOutput!)
             if (comparisonError) {
                 toast.error(comparisonError)
                 return

@@ -63,11 +63,11 @@ export default function Results() {
                 <AccordionItem
                     startContent={<PiQuestion />}
                     key='ai-role'
-                    title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最好审题人？</H>}
+                    title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最佳审题人？</H>}
                     subtitle='Independent. Impartial. Instant. Incomparable in language proficiency.'
                 >
-                    <div style={{ fontFamily: postFontFamily }} className='prose prose-sm max-w-none'>
-                        <p>Artificial Intelligence helps you spot <span className='italic'>the grammatically possible but contextually impossible</span>, or <span className='italic'>the contextually suitable but pragmatically unnatural</span>, or questions subject to multiple interpretations. It evaluates the linguistic appropriateness of exam content with native-like intuition and analytical precision.</p>
+                    <div style={{ fontFamily: postFontFamily }} className='prose prose-sm dark:prose-invert max-w-none'>
+                        <p>Artificial Intelligence is like a <span className='italic'>brutally objective native speaker</span>, who helps you spot questions subject to multiple interpretations. It evaluates the linguistic appropriateness of exam content with native-like intuition and analytical precision.</p>
 
                         <p>For example, AI can flag questions that are technically correct in grammar but misleading in real-world use. It also identifies awkward phrasing, idiomatic misuse, and vague prompts that allow multiple valid answers—issues that undermine the fairness and clarity of an exam.</p>
 
