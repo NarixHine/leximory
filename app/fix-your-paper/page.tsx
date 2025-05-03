@@ -9,6 +9,7 @@ import Results from './components/results'
 import Link from 'next/link'
 import { Button } from '@heroui/button'
 import { PiGithubLogo, PiInfo } from 'react-icons/pi'
+import Privacy from './components/privacy'
 
 export const metadata: Metadata = {
     title: 'Fix. Your. Paper.',
@@ -17,8 +18,6 @@ export const metadata: Metadata = {
 
 export default function FixPaperPage() {
     return (<Main className='max-w-3xl flex flex-col items-center'>
-        <Spacer y={10} className='hidden sm:block print:hidden' />
-
         <H usePlayfair>Fix. Your. Paper.</H>
 
         <Spacer y={3} />
@@ -46,8 +45,9 @@ export default function FixPaperPage() {
             <div className='flex justify-center'>
                 <span>每次审题消耗五<Link href='/library' className='underline'>额度</Link></span>
             </div>
+            <Spacer y={0.5} />
             <div className='flex justify-center'>
-               <Button
+                <Button
                     className='rounded-full text-lg text-default-700'
                     startContent={<PiGithubLogo />}
                     isIconOnly
@@ -67,6 +67,7 @@ export default function FixPaperPage() {
                     variant='light'
                     href='https://hello.leximory.com/blog/fix-your-paper'
                 ></Button>
+                <Privacy />
             </div>
         </footer>
     </Main>)

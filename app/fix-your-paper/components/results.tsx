@@ -53,7 +53,7 @@ export default function Results() {
                     key='review-report'
                     startContent={isLoading && !result ? <Spinner variant='gradient' color='default' /> : <PiChatTeardropDots className='text-2xl ml-2' />}
                     title={<H usePlayfair disableCenter className='text-lg'>审题报告</H>}
-                    subtitle='A third-party opinion, from which to pick what&apos;s reasonable.'
+                    subtitle='A third-party opinion. Just pick what&apos;s reasonable in it.'
                 >
                     <div className='max-w-none'>
                         <Markdown fontFamily={postFontFamily} md={result === '' ? '<article>\n> 未生成\n</article>' : result} />

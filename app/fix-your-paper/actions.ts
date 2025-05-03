@@ -6,10 +6,23 @@ import incrCommentaryQuota from '@/server/auth/quota'
 
 const model = googleModels['pro-2.5']
 
-const SYSTEM_PROMPT = `
-你是上海英语高考审题人，你将会看到一张初步创作完成的试卷，你需要评估其中的除听力（Listening Comprehension）外的**客观题**（含语法填空至六选四）中题目的正确性和合理性。
+const SECTION_PROMPTS = {
+    '语法填空（Grammar & Vocabulary: Section A）':
+        `对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，横线中间以空格分隔，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦**禁止填入副词（如even/only）**或表示完成时的have/has/had，但可以填even if/even though。\n\n而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。`,
+    '选词填空（Grammar & Vocabulary: Section B）':
+        `以语篇的形式呈现，设置10道空白处，要求考生从所提供的有11个单词构成的词库里选出最合适的词分别填入各空白处，使短文意思和结构完整。每个单词只能选一次，有1个单词为干扰项。`,
+    '完形填空（Reading Comprehension: Section A）':
+        `在短文中删去原词，留出15个空格，不考核语法形式的区别。完形填空的四个备选答案，一般都属于同一词类，同一语义范畴。`,
+    '阅读理解（Reading Comprehension: Section B）':
+        `包含三篇阅读文章，每篇文章下的题目都是四选一式的选择题。每篇设题数量为3~4题不等，但三篇总题数为11题。错误选项的常见设置方式有细节出入、逻辑错误、内容无关、以偏概全等，需要小心。`,
+    '六选四（Reading Comprehension: Section C）':
+        `六选四即从六个句子中选取四个填入文中适当位置，具体呈现方式为：给出一篇缺少4个句子的语篇，对应有6个句子选项，其中2个为干扰项。`
+} as const
 
-首先，你需要忽略答案，自行完成所有题目的作答。直接给出答案。
+const SYSTEM_PROMPT = `
+你是上海英语高考审题人，你将会看到一张初步创作完成的试卷，你需要评估其中的除听力（Listening Comprehension）外的**客观题**（含语法填空至六选四）中题目的合理性。
+
+首先，你需要自行完成用户所指定的**一个**大题的作答。直接给出答案。
 
 # 输出格式
 
@@ -18,34 +31,7 @@ const SYSTEM_PROMPT = `
 > 题号: 答案. 题号: 答案. ……
 
 对于填空题，答案写单词。对于选择题，答案只写字母代号。
-
-省略大题名称，而是在每大题之间用一个空行隔开。
-
-# 需要完成的题型及其规则
-
-# 需要审核的题型
-
-## 语法填空（Grammar & Vocabulary: Section A）
-
-对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，横线中间以空格分隔，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦**禁止填入副词（如even/only）**或表示完成时的have/has/had，但可以填even if/even though。
-
-而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。
-
-## 选词填空（Grammar & Vocabulary: Section B）
-
-以语篇的形式呈现，设置10道空白处，要求考生从所提供的有11个单词构成的词库里选出最合适的词分别填入各空白处，使短文意思和结构完整。每个单词只能选一次，有1个单词为干扰项。
-
-## 完形填空（Reading Comprehension: Section A）
-
-在短文中删去原词，留出15个空格，不考核语法形式的区别。完形填空的四个备选答案，一般都属于同一词类，同一语义范畴。
-
-## 阅读理解（Reading Comprehension: Section B）
-
-包含三篇阅读文章，每篇文章下的题目都是四选一式的选择题。每篇设题数量为3~4题不等，但三篇总题数为11题。错误选项的常见设置方式有细节出入、逻辑错误、内容无关、以偏概全等，需要小心。
-
-## 六选四（Reading Comprehension: Section C）
-
-六选四即从六个句子中选取四个填入文中适当位置，具体呈现方式为：给出一篇缺少4个句子的语篇，对应有6个句子选项，其中2个为干扰项。`
+` as const
 
 const COMPARISON_PROMPT = `
 接下来，你会看到本卷参考答案。请你与参考答案逐个比对自己的答案，观察是否与标准答案存在差异。据此来评判出题正确性。如果存在不一致答案的题目，再次进行判断是否存在歧义或出题不当。 
@@ -77,14 +63,15 @@ const COMPARISON_PROMPT = `
 \`\`\`
 ## No Issues Found
 
-Your paper is already good to go!
+> Your paper is already good to go!
 \`\`\`
 
 禁止在开头统一输出先前答案或其他多余内容。严格遵循上述格式输出。
-`
+` as const
 
 async function buildMessages(params: {
     paperFile: File,
+    partToAnalyze: keyof typeof SECTION_PROMPTS
 } | {
     paperFile: File,
     answerFile: File,
@@ -92,16 +79,17 @@ async function buildMessages(params: {
 }): Promise<CoreMessage[]> {
     const { paperFile } = params
     const { paperAnalysis, answerFile } = 'paperAnalysis' in params ? params : { paperAnalysis: null, answerFile: null }
+    const partToAnalyze = 'partToAnalyze' in params ? params.partToAnalyze : null
 
     const messages: CoreMessage[] = [{
         role: 'system',
-        content: SYSTEM_PROMPT
+        content: partToAnalyze ? SYSTEM_PROMPT : `${SYSTEM_PROMPT}\n\n## 各大题规则\n\n${Object.keys(SECTION_PROMPTS).map(section => `### ${section}\n\n${SECTION_PROMPTS[section as keyof typeof SECTION_PROMPTS]}`).join('\n\n')}`
     }, {
         role: 'user',
         content: [
             {
                 type: 'text',
-                text: '请分析以下试卷：'
+                text: partToAnalyze ? `在本试卷中，你**只需要完成以下范围**的题目：\n\n## ${partToAnalyze}\n\n${SECTION_PROMPTS[partToAnalyze]}` : '请分析以下试卷。'
             },
             {
                 type: 'file',
@@ -139,15 +127,21 @@ export async function analyzePaper(paperFile: File) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
-    const messages = await buildMessages({ paperFile })
-    const paperAnalysis = await generateText({
-        model,
-        messages,
-        temperature: 0.01,
-        maxTokens: 20000
-    })
+    const paperAnalysis = await Promise.all(Object.keys(SECTION_PROMPTS).map(async section => {
+        const messages = await buildMessages({ paperFile, partToAnalyze: section as keyof typeof SECTION_PROMPTS })
+        const paperAnalysis = await generateText({
+            model,
+            messages,
+            temperature: 0.01,
+            maxTokens: 6000
+        })
+        return {
+            section,
+            analysis: paperAnalysis.text
+        }
+    }))
 
-    return { output: paperAnalysis.text }
+    return { output: paperAnalysis.map(({ section, analysis }) => `**${section}**\n\n${analysis}`).join('\n\n') }
 }
 
 export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
@@ -160,7 +154,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000
+        maxTokens: 20000,
     })
 
     return { output: comparison.text }
