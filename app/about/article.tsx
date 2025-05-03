@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
 import { exampleEbookLink } from '@/lib/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
+import Link from 'next/link'
 
 export function TypedTitle() {
     return <TypeAnimation
@@ -138,7 +139,7 @@ export function Article() {
         >
             核心功能的演示视频：
         </motion.p>
-        <iframe className='rounded-xl my-4 md:h-[360px] sm:h-[320px] h-[280px]' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1' width={'100%'} allowFullScreen></iframe>
+        <iframe className='rounded-xl my-4 md:h-[360px] sm:h-[320px] h-[280px]' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' width={'100%'} allowFullScreen></iframe>
 
         <Spacer y={10}></Spacer>
         <motion.h2
@@ -188,7 +189,12 @@ export function Article() {
                 <TableRow key='story'>
                     <TableCell>连词成文</TableCell>
                     <TableCell>2</TableCell>
-                    <TableCell>在语料本页面或文本页面将词汇串联成文</TableCell>
+                    <TableCell>在语料本或文本页面将词汇串联成文</TableCell>
+                </TableRow>
+                <TableRow key='fix-your-paper'>
+                    <TableCell><Link href='/fix-your-paper' className='underline underline-offset-2'>Fix. Your. Paper.</Link></TableCell>
+                    <TableCell>5</TableCell>
+                    <TableCell>（面向出题人）审阅高考规格英语试卷</TableCell>
                 </TableRow>
             </TableBody>
         </Table>
