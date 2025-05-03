@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { Button } from '@heroui/button'
 import { PiGithubLogo, PiInfo } from 'react-icons/pi'
 import Privacy from './components/privacy'
+import { fixYourPaperGitHubLink, fixYourPaperBlogLink } from '@/lib/config'
 
 export const metadata: Metadata = {
     title: 'Fix. Your. Paper.',
@@ -39,7 +40,7 @@ export default function FixPaperPage() {
             <Results />
         </div>
 
-        <Spacer y={6} />
+        <Spacer y={10} />
 
         <footer className={cn(CHINESE_ZCOOL.className, 'text-center text-sm text-default-700 print:hidden')}>
             <div className='flex justify-center'>
@@ -55,7 +56,7 @@ export default function FixPaperPage() {
                     as={Link}
                     target='_blank'
                     variant='light'
-                    href='https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper'
+                    href={fixYourPaperGitHubLink}
                 ></Button>
                 <Button
                     className='rounded-full text-lg text-default-700'
@@ -65,7 +66,7 @@ export default function FixPaperPage() {
                     as={Link}
                     target='_blank'
                     variant='light'
-                    href='https://hello.leximory.com/blog/fix-your-paper'
+                    href={fixYourPaperBlogLink}
                 ></Button>
                 <Privacy />
             </div>

@@ -113,8 +113,8 @@ async function buildMessages(params: {
                 text: '拟定试卷参考答案：'
             }, {
                 type: 'file',
-                data: await answerFile!.arrayBuffer(),
-                mimeType: answerFile!.type,
+                data: await answerFile.arrayBuffer(),
+                mimeType: answerFile.type,
             }]
         })
     }
@@ -154,7 +154,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000,
+        maxTokens: 8000,
     })
 
     return { output: comparison.text }
