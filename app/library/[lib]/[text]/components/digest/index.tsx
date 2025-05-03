@@ -243,7 +243,7 @@ function ReadingView() {
           '!prose-lg text-pretty'
         )}
         fontFamily={lang === 'en' ? postFontFamily : undefined}
-        md={`<article>\n${content}\n\n</article>`}
+        md={`<article>${content}</article>`}
       />
       <Define />
     </>

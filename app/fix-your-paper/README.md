@@ -18,10 +18,6 @@ There are occasional issues with this approach. For example, AI sometimes strugg
 
 This experiment also limits itself to objective questions only (excluding listening comprehension). 
 
-## Applying to Our Exams
-
-Despite the presence of an independent reviewer, problems in our own school’s exams are more common and more serious. In monthly exams — including midterms and finals — an average of three controversial items were detected per paper. Many of these involved an alternative answer, which could not only be an equally proper choice, but also arguably be a *better* one.
-
 ## Conclusion  
 
 Given AI’s unique strengths in objectivity and linguistic mastery, it shows great promise not only to assist but, in some cases — especially school-level exams — to replace human proofreading altogether. Not only does AI streamline this process (*Fix. Your. Paper.* takes about two minutes per English paper of Shanghai Gaokao specifications), but it also tends to enhance paper quality beyond what purely human review can achieve.
