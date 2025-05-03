@@ -8,7 +8,7 @@ const model = googleModels['pro-2.5']
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
-        `填空题：对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，横线中间以空格分隔，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦**禁止填入副词（如even/only）**或表示完成时的have/has/had，但可以填even if/even though。\n\n而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。`,
+        `填空题：对于不给关键词的空格，考生需要填入适当的虚词（如介词、连词、冠词、代词等），**且每一小题含有1～3条横线，横线中间以空格分隔，每横线都只填一词**（i.e. there may be multiple blanks for one question）。根据横线数量，每道题可以填入1～3个词，请仔细观察。此处不允许填入实词，亦**禁止填入副词（如even/only）**或表示完成时的have/has/had，但可以填even if/even though/have to。\n\n而对于在括号内给出关键词的空格，考生则需要填入所给关键词的适当形式，如形容词和副词的比较级和最高级，动词的各种时态、语态形式，非谓语形式等。`,
     '十一选十/选词（Grammar & Vocabulary: Section B）':
         `选择题：以语篇的形式呈现，设置10道空白处，要求考生从所提供的有11个单词构成的词库里选出最合适的词分别填入各空白处，使短文意思和结构完整。每个单词只能选一次，有1个单词为干扰项。`,
     '完形/Cloze（Reading Comprehension: Section A）':
