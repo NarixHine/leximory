@@ -11,6 +11,8 @@ import { after } from 'next/server'
 
 const xata = getXataClient()
 
+const sanitized = (word: string): string => word.replaceAll('\n', '').replace('||}}', '}}')
+
 export async function getAllWordsInLib({ lib }: { lib: string }) {
     'use cache'
     cacheTag(lib)
@@ -24,7 +26,7 @@ export async function getWord({ id }: { id: string }) {
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
-    const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
+    const sanitizedWord = sanitized(word)
     validateOrThrow(sanitizedWord)
     const rec = await xata.db.lexicon.create({
         lib,
@@ -38,16 +40,11 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
 }
 
 export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: string, lang: Lang }) {
-    const sanitizedWord = word.replaceAll('\n', '').replace('||}}', '}}')
+    const sanitizedWord = sanitized(word)
     validateOrThrow(sanitizedWord)
     const shadowSaveLib = await getShadowLib({ owner: uid, lang })
-    after(() => {
-        revalidateTag('words')
-        revalidateTag(`words:${shadowSaveLib.id}`)
-    })
     return await saveWord({ lib: shadowSaveLib.id, word: sanitizedWord })
 }
-
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
     const rec = await xata.db.lexicon.update(id, { word })

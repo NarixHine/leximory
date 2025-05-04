@@ -29,14 +29,9 @@ export async function saveComment({ portions, lib, editId, shadow, lang }: { por
 
     const { userId } = await getAuthOrThrow()
     if (editId) {
-        if (shadow) {
-            await shadowSaveWord({ word, uid: userId, lang })
-        }
-        else {
-            const { lib } = await getWord({ id: editId })
-            await authWriteToLib(lib!.id)
-            await updateWord({ id: editId, word })
-        }
+        const { lib } = await getWord({ id: editId })
+        await authWriteToLib(lib!.id)
+        await updateWord({ id: editId, word })
         return editId
     } else {
         if (shadow) {
