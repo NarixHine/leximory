@@ -1,6 +1,7 @@
 import createMDX from '@next/mdx'
 import withSerwistInit from '@serwist/next'
 import { NextConfig } from 'next'
+import { fixYourPaperBlogLink } from './lib/config'
 
 const nextConfig: NextConfig = {
     experimental: {
@@ -13,26 +14,21 @@ const nextConfig: NextConfig = {
     },
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
-        return [
-            {
-                source: '/try',
-                destination: '/library/3e4f1126',
-                permanent: true,
-            },
-            {
-                source: '/intro',
-                destination: '/blog/from-memorisation-to-acquisition',
-                permanent: true,
-            },
-        ]
+        return [{
+            source: '/try',
+            destination: '/read',
+            permanent: true,
+        }, {
+            source: '/fix',
+            destination: fixYourPaperBlogLink,
+            permanent: true,
+        },]
     },
     async rewrites() {
-        return [
-            {
-                source: '/ebooks/:id\\.epub',
-                destination: 'https://us-east-1.storage.xata.sh/:id'
-            },
-        ]
+        return [{
+            source: '/ebooks/:id\\.epub',
+            destination: 'https://us-east-1.storage.xata.sh/:id'
+        }]
     },
 }
 

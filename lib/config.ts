@@ -46,7 +46,7 @@ export const exampleSharedLib = {
     price: 0
 } as const
 
-export const exampleEbookLink = '/library/3e4f1126/5c4e8e4e' as const
+export const exampleEbookLink = '/library/1309fe3b/2dd46083' as const
 export const bilibiliLink = 'https://space.bilibili.com/3494376432994441/' as const
 export const fixYourPaperGitHubLink = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
 export const fixYourPaperBlogLink = 'https://hello.leximory.com/blog/fix-your-paper' as const
