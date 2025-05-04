@@ -24,6 +24,7 @@ import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
+import { postFontFamily } from "@/lib/fonts"
 
 interface CommentProps {
     params: string
@@ -218,7 +219,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     return asCard
         ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
-            <CardBody className='p-6 py-4 leading-snug'>
+            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: postFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -246,7 +247,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         >
                             <Note omitOriginal portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                         </motion.div>
-                        {portions[2] && <Save />}
+                        {portions[2] && <><Spacer y={3} /><Save /></>}
                     </motion.div>
                 </div>}
             </CardBody>
@@ -320,7 +321,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''}>
+    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: postFontFamily }}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea
@@ -341,7 +342,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                     onValueChange={(value) => handleEdit(2, value)}
                     placeholder='释义'
                 />
-                : <Markdown className='prose-em:font-light before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
+                : <Markdown className='before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
             }
         </div>}
         {portions[3] && <div className={margin}>
