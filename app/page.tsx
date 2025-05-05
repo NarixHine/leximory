@@ -24,6 +24,7 @@ import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
+import ScopeProvider from '@/components/jotai/scope-provider'
 
 export default async function Home() {
 	const { userId } = await auth()
@@ -83,9 +84,11 @@ export default async function Home() {
 				</div>
 				<div className='col-span-3'>
 					<BentoCard title='考纲词汇高亮'>
-						<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
-							<LexiconSelector />
-						</HydrationBoundary>
+						<ScopeProvider atoms={[lexiconAtom]}>
+							<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
+								<LexiconSelector />
+							</HydrationBoundary>
+						</ScopeProvider>
 					</BentoCard>
 				</div>
 			</div>
@@ -94,9 +97,7 @@ export default async function Home() {
 				<div className='md:col-span-2'>
 					<BentoCard title='AI 注解 + AI 朗读'>
 						<div className='px-8 sm:px-16 flex flex-col'>
-							<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
-								<ShowcaseAnnotation />
-							</HydrationBoundary>
+							<ShowcaseAnnotation />
 							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light' className={cn(CHINESE_ZCOOL.className)}>
 								查看更多
 							</Button>
@@ -123,14 +124,16 @@ export default async function Home() {
 							title='语料本'
 							description='以往生词汇集一处，供君复盘、自测'
 						>
-							<HydrationBoundary
-								hydrateAtoms={[
-									[libAtom, exampleSharedLib.id],
-									[isReadOnlyAtom, true]
-								]}
-							>
-								<Test latestTime={'2025-01-16'} />
-							</HydrationBoundary>
+							<ScopeProvider atoms={[libAtom, isReadOnlyAtom]}>
+								<HydrationBoundary
+									hydrateAtoms={[
+										[libAtom, exampleSharedLib.id],
+										[isReadOnlyAtom, true]
+									]}
+								>
+									<Test latestTime={'2025-01-16'} />
+								</HydrationBoundary>
+							</ScopeProvider>
 						</BentoCard>
 					</div>
 				</div>
@@ -139,15 +142,17 @@ export default async function Home() {
 			<div className='grid grid-cols-1 gap-3 md:grid-cols-3 w-full'>
 				<div className='col-span-1 sm:col-span-2'>
 					<BentoCard title='多语言' description='日语、文言文……'>
-						<HydrationBoundary hydrateAtoms={[[langAtom, 'ja']]}>
-							<Markdown
-								disableSave
-								md={
-									'<div/>\n' +
-									'> 自分は{{透き徹る||透き徹る||**［動］（すきとおる／透彻）**光が完全に通る。}}ほど深く見えるこの黒眼の色沢を眺めて、これでも死ぬのかと思った。それで、{{ねんごろ||ねんごろ||**［形動］（懇ろ／亲切）**心がこもっているさま。親切であるさま。}}に枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうね、とまた聞き返した。すると女は黒い眼を眠そうに{{睁た||睁る||**［動］（みはる／睁眼）**目を見開く。}}まま、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。\n\n'
-								}
-							/>
-						</HydrationBoundary>
+						<ScopeProvider atoms={[langAtom]}>
+							<HydrationBoundary hydrateAtoms={[[langAtom, 'ja']]}>
+								<Markdown
+									disableSave
+									md={
+										'<div/>\n' +
+										'> 自分は{{透き徹る||透き徹る||**［動］（すきとおる／透彻）**光が完全に通る。}}ほど深く見えるこの黒眼の色沢を眺めて、これでも死ぬのかと思った。それで、{{ねんごろ||ねんごろ||**［形動］（懇ろ／亲切）**心がこもっているさま。親切であるさま。}}に枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうね、とまた聞き返した。すると女は黒い眼を眠そうに{{睁た||睁る||**［動］（みはる／睁眼）**目を見開く。}}まま、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。\n\n'
+									}
+								/>
+							</HydrationBoundary>
+						</ScopeProvider>
 					</BentoCard>
 				</div>
 				<div className='col-span-1'>
