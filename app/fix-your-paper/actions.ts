@@ -123,7 +123,7 @@ async function buildMessages(params: {
 }
 
 export async function analyzePaper(paperFile: File) {
-    if (await incrCommentaryQuota(2)) {
+    if (await incrCommentaryQuota(4)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
@@ -145,7 +145,7 @@ export async function analyzePaper(paperFile: File) {
 }
 
 export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
-    if (await incrCommentaryQuota(3)) {
+    if (await incrCommentaryQuota(1)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
@@ -154,7 +154,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 6000,
+        maxTokens: 7000,
     })
 
     return { output: comparison.text }

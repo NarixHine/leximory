@@ -96,7 +96,7 @@ export default function ImportModal() {
                 <StoryModal />
             </div>}
         </div>
-        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} disableAnimation isDismissable={false} placement='bottom' className='bg-default-50'>
+        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} placement='bottom' className='bg-default-50'>
             <DrawerContent className='max-h-dvh'>
                 {(onClose) => (
                     <form className='w-full'>
@@ -207,7 +207,7 @@ function StoryModal() {
         >
             连词成文
         </Button>
-        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} disableAnimation isDismissable={false} placement='bottom' className='bg-default-50'>
+        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} placement='bottom' className='bg-default-50'>
             <DrawerContent className='max-h-dvh'>
                 {(onClose) => (
                     <>
