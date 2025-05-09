@@ -22,7 +22,7 @@ const SECTION_PROMPTS = {
 const SYSTEM_PROMPT = `
 你是上海英语高考审题人，你将会看到一张初步创作完成的试卷，你需要评估其中的除听力（Listening Comprehension）外的**客观题**（含语法填空至六选四）中题目的合理性。
 
-首先，你需要自行完成用户所指定的**一个**大题的作答。直接给出答案。
+首先，你需要自行完成用户所指定大题的作答。直接给出答案。
 
 # 输出格式
 
@@ -30,7 +30,7 @@ const SYSTEM_PROMPT = `
 
 > 题号: 答案. 题号: 答案. ……
 
-对于填空题，答案写单词。对于选择题，答案只写字母代号。
+对于填空题，答案写单词。对于选择题，答案只写字母代号。不要在开头输出其他多余内容。
 ` as const
 
 const COMPARISON_PROMPT = `
@@ -44,8 +44,11 @@ const COMPARISON_PROMPT = `
 2. 用中文给出修改建议；
 3. 用中文解释原有参考答案的不合理或不自然处/未必一定填此答案的理由/存在其他合理答案的理由。
 
+在解释时，使用Markdown语法来清晰输出你的观点。你可以使用反引号（Markdown行内代码语法）而非括号来包裹选项，用\*（Markdown斜体语法）而非引号来包裹原文、表示引用。禁止使用代码块语法（三个反引号）。
+
 例如：
 
+\`\`\`
 ### 44
 
 ### 修改建议
@@ -57,6 +60,7 @@ const COMPARISON_PROMPT = `
 > 参考答案指出……
 >
 > ……
+\`\`\`
 
 如果没有，直接输出：
 
@@ -66,12 +70,11 @@ const COMPARISON_PROMPT = `
 > Your paper is already good to go!
 \`\`\`
 
-禁止在开头统一输出先前答案或其他多余内容。严格遵循上述格式输出。
+严格遵循上述格式输出。
 ` as const
 
 async function buildMessages(params: {
     paperFile: File,
-    partToAnalyze: keyof typeof SECTION_PROMPTS
 } | {
     paperFile: File,
     answerFile: File,
@@ -79,17 +82,16 @@ async function buildMessages(params: {
 }): Promise<CoreMessage[]> {
     const { paperFile } = params
     const { paperAnalysis, answerFile } = 'paperAnalysis' in params ? params : { paperAnalysis: null, answerFile: null }
-    const partToAnalyze = 'partToAnalyze' in params ? params.partToAnalyze : null
 
     const messages: CoreMessage[] = [{
         role: 'system',
-        content: partToAnalyze ? SYSTEM_PROMPT : `${SYSTEM_PROMPT}\n\n## 各大题规则\n\n${Object.keys(SECTION_PROMPTS).map(section => `### ${section}\n\n${SECTION_PROMPTS[section as keyof typeof SECTION_PROMPTS]}`).join('\n\n')}`
+        content: `${SYSTEM_PROMPT}\n\n## 各大题规则\n\n${Object.keys(SECTION_PROMPTS).map(section => `### ${section}\n\n${SECTION_PROMPTS[section as keyof typeof SECTION_PROMPTS]}`).join('\n\n')}`
     }, {
         role: 'user',
         content: [
             {
                 type: 'text',
-                text: partToAnalyze ? `在本试卷中，你**只需要完成以下范围**的题目：\n\n## ${partToAnalyze}\n\n${SECTION_PROMPTS[partToAnalyze]}` : '请分析以下试卷。'
+                text: '请分析以下试卷。'
             },
             {
                 type: 'file',
@@ -123,39 +125,33 @@ async function buildMessages(params: {
 }
 
 export async function analyzePaper(paperFile: File) {
-    if (await incrCommentaryQuota(4)) {
+    if (await incrCommentaryQuota(3)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
-    const paperAnalysis = await Promise.all(Object.keys(SECTION_PROMPTS).map(async section => {
-        const messages = await buildMessages({ paperFile, partToAnalyze: section as keyof typeof SECTION_PROMPTS })
-        const paperAnalysis = await generateText({
-            model,
-            messages,
-            temperature: 0.01,
-            maxTokens: 6000
-        })
-        return {
-            section,
-            analysis: paperAnalysis.text
-        }
-    }))
+    const messages = await buildMessages({ paperFile })
+    const { text } = await generateText({
+        model,
+        messages,
+        temperature: 0.01,
+        maxTokens: 10000
+    })
 
-    return { output: paperAnalysis.map(({ section, analysis }) => `**${section}**\n\n${analysis}`).join('\n\n') }
+    return { output: text }
 }
 
 export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
-    if (await incrCommentaryQuota(1)) {
+    if (await incrCommentaryQuota(2)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
     const messages = await buildMessages({ paperFile, answerFile, paperAnalysis })
-    const comparison = await generateText({
+    const { text } = await generateText({
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 7000,
+        maxTokens: 10000,
     })
 
-    return { output: comparison.text }
+    return { output: text }
 }

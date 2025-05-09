@@ -55,7 +55,7 @@ export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
 export const googleModels = {
-    'flash-2.0': google('gemini-2.0-flash-001', {
+    'flash-2.0': google('gemini-2.0-flash', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -70,7 +70,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'pro-2.5': google('gemini-2.5-pro-preview-03-25', {
+    'pro-2.5': google('gemini-2.5-pro-preview-05-06', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
