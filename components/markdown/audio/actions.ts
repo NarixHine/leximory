@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
-import { elevenLabsVoiceConfig } from '@/lib/config'
+import { elevenLabsVoiceConfig, googleModels } from '@/lib/config'
 import { incrAudioQuota } from '@/server/auth/quota'
 import { maxAudioQuota } from '@/server/auth/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
@@ -9,6 +9,7 @@ import { getAccentPreference } from '@/server/db/preference'
 import { speak } from 'orate'
 import { ElevenLabs } from 'orate/elevenlabs'
 import { MAX_TTS_LENGTH } from '@/lib/config'
+import { generateText } from 'ai'
 
 export async function retrieve(id: string) {
     const url = await retrieveAudioUrl({ id })
@@ -28,10 +29,21 @@ export async function generate(id: string, lib: string, text: string) {
 
     const { voice, options } = lang === 'en' ? elevenLabsVoiceConfig[await getAccentPreference({ userId })] : elevenLabsVoiceConfig[lang]
 
+    const prompt = lang === 'ja' ? await japaneseToKana(text) : text
+
     const audio = await speak({
         model: new ElevenLabs().tts('eleven_turbo_v2_5', voice, options),
-        prompt: text,
+        prompt,
     })
 
     return uploadAudio({ id, lib, audio })
+}
+
+async function japaneseToKana(text: string) {
+    const result = await generateText({
+        model: googleModels['flash-2.0'],
+        prompt: `将以下日文文章全部用片假名改写输出：\n\n${text}`,
+        temperature: 0
+    })
+    return result.text
 }

@@ -262,7 +262,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
                                     !isReaderMode && 'underline decoration-wavy underline-offset-[3px]',
-                                    isOnDemand ? 'decoration-default-300' : 'decoration-default-500'
+                                    isOnDemand ? 'decoration-default-200' : 'decoration-default-500'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
