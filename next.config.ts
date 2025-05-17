@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
         },
         useCache: true,
     },
+    turbopack: {},
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
         return [{

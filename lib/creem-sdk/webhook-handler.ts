@@ -136,7 +136,7 @@ export function createWebhookHandler(
             }
 
             return res.json({ received: true }, { status: 200 })
-        } catch (error) {
+        } catch {
             return res.json({ message: 'Webhook handler failed' }, { status: 500 })
         }
     }

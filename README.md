@@ -1,5 +1,7 @@
 # Leximory
 
+![](./screenshot.png)
+
 ## Introduction
 
 > *Leximory* is a language learning platform designed to enhance foreign language proficiency, vocabulary in particular, by means of **intensive input**. 
