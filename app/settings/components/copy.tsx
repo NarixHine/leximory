@@ -33,7 +33,8 @@ export default function CopyToken() {
         </Drawer.Trigger>
         <Drawer.Portal>
             <Drawer.Overlay className='fixed inset-0 bg-black/40' />
-            <Drawer.Content className='h-fit fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-default-50 flex flex-col justify-center items-center'>
+            <Drawer.Content className='h-fit z-[999] fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-default-50 flex flex-col justify-center items-center'>
+                <Drawer.Title className='sr-only'>通行密钥</Drawer.Title>
                 <div className='p-4 pb-20 md:pb-6 prose prose-sm w-full relative'>
                     {isLoading && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}
                     <Snippet symbol={<PiKeyDuotone className='inline-block mr-3' />} classNames={{

@@ -48,6 +48,5 @@ export async function POST(req: NextRequest) {
         json: (data: any, init?: { status?: number }) =>
             NextResponse.json(data, { status: init?.status || 200 })
     })
-    console.log(response)
     return response
 } 
