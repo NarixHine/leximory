@@ -76,8 +76,8 @@ export const FileUpload = ({
                                     key={file.name}
                                     layoutId={idx === 0 ? 'file-upload' : 'file-upload-' + idx}
                                     className={cn(
-                                        'relative overflow-hidden z-40 flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md',
-                                        'shadow-sm'
+                                        'relative overflow-hidden z-40 flex flex-col items-start justify-start md:h-24 p-4 pb-2 mt-4 w-full mx-auto rounded-md',
+                                        'shadow-sm bg-white dark:bg-default-100',
                                     )}
                                 >
                                     <div className='flex justify-between w-full items-center gap-4'>
@@ -96,7 +96,7 @@ export const FileUpload = ({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             layout
-                                            className='px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 '
+                                            className='px-1 py-0.5 rounded-md bg-default-50 dark:bg-neutral-800 '
                                         >
                                             {file.type}
                                         </motion.p>

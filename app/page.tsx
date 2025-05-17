@@ -111,7 +111,7 @@ export default async function Home() {
 							description='创建学习小组，分发精读资料'
 						>
 							<div className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
-								<h2 className='font-bold opacity-50'>学习小组：</h2>
+								<h2 className='font-bold opacity-50'>学习小组</h2>
 								<p className='opacity-60 font-bold'>新知</p>
 								<div className='absolute bottom-0 right-0 p-4'>
 									<PiUsersDuotone className='w-10 h-10 opacity-30' />
@@ -169,7 +169,7 @@ export default async function Home() {
 
 		<Spacer y={12}></Spacer>
 
-		<div className='prose dark:prose-invert max-w-xl mx-auto'>
+		<div className='prose prose-lg dark:prose-invert max-w-xl mx-auto'>
 			<Methodology />
 		</div>
 
