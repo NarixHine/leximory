@@ -154,8 +154,8 @@ export const accessOptions = [
 export const maxArticleLength = (lang: Lang): number => {
     switch (lang) {
         case 'en': return 20000
-        case 'ja':
-        case 'zh': return 3000
+        case 'ja': return 6000
+        case 'zh': return 4000
         default: return 10000
     }
 }

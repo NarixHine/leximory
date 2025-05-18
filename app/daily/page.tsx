@@ -54,7 +54,7 @@ export default async function Daily() {
 
 const Loading = () => (<div className='my-8 overflow-hidden'>
     <Skeleton className='w-20 rounded-lg h-7'></Skeleton>
-    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 my-5'>
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 my-5'>
         <Skeleton className='w-full h-32 rounded-lg'></Skeleton>
         <Skeleton className='w-full h-32 rounded-lg hidden sm:block'></Skeleton>
         <Skeleton className='w-full h-32 rounded-lg hidden md:block'></Skeleton>

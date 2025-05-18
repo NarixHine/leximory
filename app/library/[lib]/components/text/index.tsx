@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
@@ -21,6 +20,7 @@ import { isLoadingAtom } from '../../[text]/atoms'
 import isUrl from 'is-url'
 import moment from 'moment-timezone'
 import Topics from '../../[text]/components/topics'
+import Link from "next/link"
 
 function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
     id: string,
@@ -31,16 +31,12 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
     updatedAt: string,
 }) {
     const lib = useAtomValue(libAtom)
-    const router = useRouter()
-
     return (<div className='w-full h-full relative'>
-        <Card shadow='sm' fullWidth className='h-full' isPressable onPress={() => {
-            router.push(`/library/${lib}/${id}`)
-        }}>
+        <Card shadow='sm' fullWidth className='h-full' as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
-                <a className='text-2xl text-balance' style={{
+                <h2 className='text-2xl text-balance' style={{
                     fontFamily: postFontFamily
-                }}>{title}</a>
+                }}>{title}</h2>
                 <div className='gap-0.5 flex flex-wrap align-middle items-center'>
                     <Topics topics={topics.concat(hasEbook ? ['电子书'] : [])}></Topics>
                 </div>

@@ -4,7 +4,7 @@ import { Drawer } from 'vaul'
 import Comment from '@/components/comment'
 import { useRef, useState } from 'react'
 import { cn, getBracketedSelection, resetSelection } from '@/lib/utils'
-import { PiMagnifyingGlassDuotone } from 'react-icons/pi'
+import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useEventListener } from 'usehooks-ts'
@@ -53,12 +53,12 @@ export default function Define() {
                 data-icon='🖊️'
                 className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', CHINESE_ZCOOL.className)}
             >
-                <PiMagnifyingGlassDuotone />
+                <PiMagnifyingGlass />
                 注解
             </MotionTrigger>}
         </AnimatePresence>
         <Drawer.Portal>
-            <Drawer.Overlay className='fixed inset-0 bg-black/30 z-40' />
+            <Drawer.Overlay className='fixed inset-0 z-50 bg-black/30' />
             <Drawer.Content className='h-fit fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
                 <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
                 <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='["", "🔄 加载中"]'></Comment>

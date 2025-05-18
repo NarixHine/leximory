@@ -1,7 +1,7 @@
 'use server'
 
 import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
-import { generateObject, generateText, streamText } from 'ai'
+import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
@@ -160,7 +160,8 @@ export async function generateSingleComment(prompt: string, lib: string) {
             maxTokens: 500,
             onFinish: async ({ text }) => {
                 await setAnnotationCache({ hash, cache: text })
-            }
+            },
+            experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined)
         })
 
         for await (const delta of textStream) {
