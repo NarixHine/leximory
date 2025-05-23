@@ -19,7 +19,7 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     ${await accentPreferencePrompt({ lang, userId })}
     
     ${input}`,
-    maxTokens: 3000
+    maxTokens: 3000,
 })
 
 const topicsPrompt = async (input: string) => ({
@@ -118,7 +118,15 @@ export const annotateFullArticle = inngest.createFunction(
 
         const [topics, ...annotatedChunks] = await Promise.all([
             step.ai.wrap('annotate-topics', generateText, { model: await getBestArticleAnnotationModel(lang), ...topicsConfig }),
-            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, { model: await getBestArticleAnnotationModel(lang), ...config }))
+            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, {
+                model: await getBestArticleAnnotationModel(lang), providerOptions: {
+                    google: {
+                        thinkingConfig: {
+                            thinkingBudget: 0,
+                        },
+                    }
+                }, ...config
+            }))
         ])
 
         const content = annotatedChunks.map(chunk => chunk.text).join('\n\n')

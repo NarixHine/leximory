@@ -70,6 +70,22 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
+    'flash-2.5': google('gemini-2.5-flash-preview-04-17', {
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }],
+        
+    }),
     'pro-2.5': google('gemini-2.5-pro-preview-05-06', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
@@ -90,7 +106,7 @@ export const googleModels = {
 export const getBestArticleAnnotationModel = async (lang: Lang) => {
     switch (lang) {
         case 'zh': return googleModels['flash-2.0']
-        case 'en': return googleModels['flash-2.0']
+        case 'en': return googleModels['flash-2.5']
         case 'nl': return googleModels['flash-2.0']
         case 'ja': return googleModels['flash-2.0']
     }
