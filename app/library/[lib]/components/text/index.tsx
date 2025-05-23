@@ -32,9 +32,9 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
 }) {
     const lib = useAtomValue(libAtom)
     return (<div className='w-full h-full relative'>
-        <Card shadow='sm' fullWidth className='h-full' as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
+        <Card shadow='sm' fullWidth className='h-full visited:h2:text-default-700' as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
-                <h2 className='text-2xl text-balance visited:text-default-700' style={{
+                <h2 className='text-2xl text-balance' style={{
                     fontFamily: postFontFamily
                 }}>{title}</h2>
                 <div className='gap-0.5 flex flex-wrap align-middle items-center'>
