@@ -121,7 +121,7 @@ export default function ImportModal() {
                                         value={input}
                                         label='文本'
                                         description='AI 注解可能含有错误'
-                                        rows={10}
+                                        rows={15}
                                         onValueChange={setInput}
                                         disableAutosize />
                                     <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='warning'>

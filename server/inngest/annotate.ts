@@ -20,6 +20,13 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     
     ${input}`,
     maxTokens: 3000,
+    providerOptions: {
+        google: {
+            thinkingConfig: {
+                thinkingBudget: 0,
+            },
+        }
+    }
 })
 
 const topicsPrompt = async (input: string) => ({
@@ -29,7 +36,14 @@ const topicsPrompt = async (input: string) => ({
     prompt: `请从下文提取出1~3个中文标签表示下文的话题或关键词：
     
     ${input}`,
-    maxTokens: 100
+    maxTokens: 100,
+    providerOptions: {
+        google: {
+            thinkingConfig: {
+                thinkingBudget: 0,
+            },
+        }
+    }
 })
 
 const chunkText = (text: string, maxLength: number): string[] => {
@@ -119,13 +133,7 @@ export const annotateFullArticle = inngest.createFunction(
         const [topics, ...annotatedChunks] = await Promise.all([
             step.ai.wrap('annotate-topics', generateText, { model: await getBestArticleAnnotationModel(lang), ...topicsConfig }),
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, {
-                model: await getBestArticleAnnotationModel(lang), providerOptions: {
-                    google: {
-                        thinkingConfig: {
-                            thinkingBudget: 0,
-                        },
-                    }
-                }, ...config
+                model: await getBestArticleAnnotationModel(lang), ...config
             }))
         ])
 
