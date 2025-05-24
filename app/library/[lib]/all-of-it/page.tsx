@@ -29,7 +29,7 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
     return (
         <Main className='max-w-screen-xl'>
             <Nav lib={{ id: lib.id, name: lib.name }}></Nav>
-            {texts.map(text => (
+            {texts.map((text, index) => (
                 <div key={text.id} className='space-y-4 print:break-inside-avoid'>
                     <ScopeProvider atoms={[titleAtom, contentAtom, topicsAtom, textAtom, allOfItAtom]}>
                         <HydrationBoundary hydrateAtoms={[
@@ -39,14 +39,15 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
                             [textAtom, text.id],
                             [allOfItAtom, true]
                         ]}>
-                            <div className='flex flex-col justify-left w-3/5 mt-8 first:mt-0'>
+                            <div className={cn('flex flex-col justify-left w-3/5', index === 0 ? 'mt-0' : 'mt-10')}>
                                 <EditableH />
                                 <Topics topics={text.topics} className='justify-center'></Topics>
                             </div>
                             <Markdown
                                 className={cn(
                                     'w-3/5 block',
-                                    '!prose-lg text-pretty'
+                                    '!prose-lg text-pretty',
+                                    'print:first-letter:[initial-letter:2] print:first-letter:pr-2'
                                 )}
                                 fontFamily={lib.lang === 'en' ? postFontFamily : undefined}
                                 md={`<article>${text.content}</article>`}
