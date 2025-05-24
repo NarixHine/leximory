@@ -1,6 +1,6 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
 import env from '@/lib/env'
-import { originals, parseComment } from '@/lib/lang'
+import { originals, parseComment, removeRubyFurigana } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { verifyToken } from '@clerk/nextjs/server'
@@ -22,7 +22,7 @@ const schema = z.object({
 export async function POST(request: Request) {
     const { token, word: rawWord } = await parseBody(request, schema)
     const { sub } = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY })
-    if (await incrCommentaryQuota(0.25, sub)) {
+    if (await incrCommentaryQuota(0.20, sub)) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
     }
 
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         })
     })
 
-    const plainPortions = portions.map((md) => removeMd(sanitize(md)))
+    const plainPortions = portions.map((md) => removeMd(removeRubyFurigana(md)))
     return NextResponse.json({ word: plainPortions[1], def: plainPortions[2], etym: plainPortions[3] ?? '无', cognates: plainPortions[4] ?? '无' })
 }
 

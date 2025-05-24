@@ -145,7 +145,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     if (prompt.length > maxArticleLength(lang)) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(0.25)) {
+    if (await incrCommentaryQuota(0.20)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
@@ -174,7 +174,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 }
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
-    if (await incrCommentaryQuota(0.25, userId)) {
+    if (await incrCommentaryQuota(0.20, userId)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 

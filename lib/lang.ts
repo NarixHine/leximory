@@ -57,3 +57,7 @@ export default function wrap(text: string, lexicon?: CustomLexicon): string {
         return checkAndReplace(match) // It's not part of a larger phrase and not within parentheses, sandwich it
     })
 }
+
+export function removeRubyFurigana(textWithRuby: string) {
+    return textWithRuby.replace(/<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g, '$1')
+}
