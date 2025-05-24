@@ -25,7 +25,7 @@ export default async function Page(props: LibParams) {
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
         <H usePlayfair={lang === 'zh' || lang === 'en'} useNoto={lang === 'ja'} className='mb-4 text-5xl'>{name}</H>
-        <div className='flex justify-center mb-4'>
+        <div className='flex justify-center mb-5'>
             <Button variant='light' startContent={<PiBookOpen />} className={cn(CHINESE_ZCOOL.className)} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印所有文章
             </Button>
