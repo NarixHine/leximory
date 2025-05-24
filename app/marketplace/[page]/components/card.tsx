@@ -25,10 +25,10 @@ interface LibraryCardProps {
     }
     isStarred: boolean
     avatar: ReactNode
-    hideAvatar?: boolean
+    hideFooter?: boolean
 }
 
-export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: LibraryCardProps) {
+export default function LibraryCard({ library, isStarred, avatar, hideFooter }: LibraryCardProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
 
@@ -41,7 +41,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: 
             }}
             isPressable
         >
-            <CardBody className='p-5 pb-0'>
+            <CardBody className={cn('p-5', !hideFooter && 'pb-0')}>
                 <div className='flex flex-col'>
                     <H useNoto disableCenter className='text-2xl '>{library.name}</H>
                     <Spacer y={1} />
@@ -50,7 +50,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: 
                 </div>
             </CardBody>
 
-            <CardFooter className='flex justify-end pb-4 pr-4'>
+            {!hideFooter && <CardFooter className='flex justify-end pb-4 pr-4'>
                 <Button
                     as={'div'}
                     size='sm'
@@ -80,8 +80,8 @@ export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: 
                                 : `用 ${library.price} LexiCoin 购买`
                     }
                 </Button>
-                {!hideAvatar && avatar}
-            </CardFooter>
+                {avatar}
+            </CardFooter>}
         </Card>
     )
 }

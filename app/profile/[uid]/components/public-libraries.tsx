@@ -29,7 +29,7 @@ export default async function PublicLibraries({ uid }: { uid: string }) {
     return (<div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
         {publicLibraries.map((lib) => (
             <LibraryCard
-                hideAvatar
+                hideFooter
                 key={lib.id}
                 library={{
                     id: lib.id,
