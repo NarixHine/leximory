@@ -25,6 +25,7 @@ import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
 import { postFontFamily } from '@/lib/fonts'
+import styles from '@/styles/sidenote.module.css'
 
 interface CommentProps {
     params: string
@@ -269,8 +270,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             >
                                 {portions[0]}
                                 {isReaderMode && portions[2] && <>
-                                    <label htmlFor={uid} className='margin-toggle sidenote-number'></label>
-                                    <input type='checkbox' id={uid} className='margin-toggle' />
+                                    <label htmlFor={uid} className={styles['sidenote-number']}></label>
+                                    <input type='checkbox' id={uid} className={styles['margin-toggle']} />
                                 </>}
                             </button>
                     }
@@ -296,7 +297,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 </PopoverContent>
             </Popover>
             {
-                isReaderMode && portions[2] && <span className='sidenote text-sm'>
+                isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm')}>
                     <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                 </span>
             }

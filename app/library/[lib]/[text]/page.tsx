@@ -37,7 +37,7 @@ export default async function Page(props: LibAndTextParams) {
             [titleAtom, title],
             [inputAtom, '']
         ]}>
-            <Main className='max-w-screen-xl'>
+            <Main className='max-w-screen-xl [counter-reset:sidenote-counter]'>
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
                 <EditableH></EditableH>
                 <Topics topics={topics} className='justify-center'></Topics>

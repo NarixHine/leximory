@@ -28,7 +28,7 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
         <Main className='max-w-screen-xl'>
             <Nav lib={{ id: lib.id, name: lib.name }}></Nav>
             {texts.map((text, index) => (
-                <div key={text.id} className='space-y-4 print:break-inside-avoid'>
+                <div key={text.id} className='space-y-4 print:break-inside-avoid [counter-reset:sidenote-counter]'>
                     <ScopeProvider atoms={[titleAtom, contentAtom, topicsAtom, textAtom, allOfItAtom]}>
                         <HydrationBoundary hydrateAtoms={[
                             [titleAtom, text.title],
