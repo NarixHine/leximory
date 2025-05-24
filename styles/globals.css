@@ -16,9 +16,10 @@ blockquote .marginnote,
     position: relative;
     font-style: normal;
     font-size: 0.7rem;
-    width: 80%;
-    margin-right: -80%;
+    width: 85%;
+    margin-right: -85%;
     padding-left: 3rem;
+    margin-top: 1rem;
 }
 
 .sidenote-number {
@@ -41,8 +42,10 @@ blockquote .marginnote,
 .sidenote:before {
     content: counter(sidenote-counter) " ";
     font-size: 0.9rem;
-    left: -1rem;
-    top: 1rem;
+    top: -0.3rem;
+    transform: translateX(-130%);
+    position: absolute;
+
 }
 
 label.sidenote-number {

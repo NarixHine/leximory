@@ -173,12 +173,12 @@ export function Article() {
                 </TableRow>
                 <TableRow key='word-annotation'>
                     <TableCell>词汇动态注解</TableCell>
-                    <TableCell>0.20</TableCell>
+                    <TableCell>0.25</TableCell>
                     <TableCell>根据语境对选中词汇进行动态注解</TableCell>
                 </TableRow>
                 <TableRow key='ebook-word-annotation'>
                     <TableCell>书籍动态注解</TableCell>
-                    <TableCell>0.20</TableCell>
+                    <TableCell>0.25</TableCell>
                     <TableCell>对电子书内选中词汇根据语境注解</TableCell>
                 </TableRow>
                 <TableRow key='word-list'>

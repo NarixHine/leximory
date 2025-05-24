@@ -24,7 +24,7 @@ import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
-import { postFontFamily } from "@/lib/fonts"
+import { postFontFamily } from '@/lib/fonts'
 
 interface CommentProps {
     params: string

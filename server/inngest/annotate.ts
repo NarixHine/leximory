@@ -19,7 +19,7 @@ const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: 
     ${await accentPreferencePrompt({ lang, userId })}
     
     ${input}`,
-    maxTokens: 5000,
+    maxTokens: 6000,
     providerOptions: {
         google: {
             thinkingConfig: {

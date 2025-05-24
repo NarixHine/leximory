@@ -145,7 +145,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
     if (prompt.length > maxArticleLength(lang)) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(0.20)) {
+    if (await incrCommentaryQuota(0.25)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
@@ -161,6 +161,13 @@ export async function generateSingleComment(prompt: string, lib: string) {
             onFinish: async ({ text }) => {
                 await setAnnotationCache({ hash, cache: text })
             },
+            providerOptions: {
+                google: {
+                    thinkingConfig: {
+                        thinkingBudget: 0,
+                    },
+                }
+            },
             experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined)
         })
 
@@ -174,7 +181,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 }
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
-    if (await incrCommentaryQuota(0.20, userId)) {
+    if (await incrCommentaryQuota(0.25, userId)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
@@ -186,7 +193,14 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
         ${instruction[lang]}
         `,
         prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n你要注解的是：\n${prompt}`,
-        maxTokens: 500
+        maxTokens: 500,
+        providerOptions: {
+            google: {
+                thinkingConfig: {
+                    thinkingBudget: 0,
+                },
+            }
+        }
     })
 
     return text

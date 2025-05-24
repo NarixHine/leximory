@@ -58,6 +58,6 @@ export default function wrap(text: string, lexicon?: CustomLexicon): string {
     })
 }
 
-export function removeRubyFurigana(textWithRuby: string) {
-    return textWithRuby.replace(/<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g, '$1')
+export function removeRubyFurigana(textWithRuby: string): string {
+    return textWithRuby.replace(/<ruby>([^<]+)<rt>[^<]+<\/rt><\/ruby>/g, '$1')
 }

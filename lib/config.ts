@@ -105,7 +105,7 @@ export const googleModels = {
 
 export const getBestArticleAnnotationModel = async (lang: Lang) => {
     switch (lang) {
-        case 'zh': return googleModels['flash-2.0']
+        case 'zh': return googleModels['flash-2.5']
         case 'en': return googleModels['flash-2.5']
         case 'nl': return googleModels['flash-2.0']
         case 'ja': return googleModels['flash-2.0']
@@ -114,10 +114,10 @@ export const getBestArticleAnnotationModel = async (lang: Lang) => {
 
 export const getBestCommentaryModel = async (lang: Lang) => {
     switch (lang) {
-        case 'zh': return googleModels['flash-2.0']
-        case 'en': return googleModels['flash-2.0']
+        case 'zh': return googleModels['flash-2.5']
+        case 'en': return googleModels['flash-2.5']
         case 'nl': return googleModels['flash-2.0']
-        case 'ja': return googleModels['flash-2.0']
+        case 'ja': return googleModels['flash-2.5']
     }
 }
 export const langMap: Record<Lang, string> = {

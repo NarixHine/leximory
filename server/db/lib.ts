@@ -203,3 +203,18 @@ export async function removeFromArchive({ userId, libId }: { userId: string, lib
     const archive = await getArchivedLibs({ userId })
     await xata.db.users.update({ id: userId, archived_libs: archive.filter((id) => id !== libId) })
 }
+
+export async function getAllTextsInLib({ libId }: { libId: string }) {
+    'use cache'
+    cacheTag(`lib:${libId}`)
+    const texts = await xata.db.texts
+        .filter({ lib: libId })
+        .select(['id', 'title', 'content', 'topics'])
+        .getAll()
+    return texts.map(text => ({
+        id: text.id,
+        title: text.title,
+        content: text.content,
+        topics: text.topics ?? []
+    }))
+}
