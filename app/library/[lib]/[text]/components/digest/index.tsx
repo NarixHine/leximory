@@ -2,7 +2,7 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom } from '../../atoms'
-import { langAtom, libAtom } from '../../../atoms'
+import { langAtom, libAtom, visitedTextsAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
 import { Button } from "@heroui/button"
@@ -332,10 +332,17 @@ export default function Digest() {
   const text = useAtomValue(textAtom)
   const [recentAccess, setRecentAccess] = useAtom(recentAccessAtom)
   const title = useAtomValue(titleAtom)
+  const [visitedTexts, setVisitedTexts] = useAtom(visitedTextsAtom)
   useEffect(() => {
     const newRecentAccess = { ...recentAccess }
     newRecentAccess[lib] = { id: text, title }
     setRecentAccess(newRecentAccess)
+    const timer = setTimeout(() => {
+      const newVisitedTexts = { ...visitedTexts }
+      newVisitedTexts[text] = true
+      setVisitedTexts(newVisitedTexts)
+    }, 1000)
+    return () => clearTimeout(timer)
   }, [lib, text, title])
 
   return (

@@ -8,10 +8,11 @@ import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlig
 import { useTransitionRouter } from 'next-view-transitions'
 import { useTransition } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { libAtom } from '../../atoms'
+import { libAtom, visitedTextsAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
+import { cn } from '@/lib/utils'
 import { Input } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { getArticleFromUrl } from '@/lib/utils'
@@ -31,10 +32,11 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
     updatedAt: string,
 }) {
     const lib = useAtomValue(libAtom)
+    const visited = useAtomValue(visitedTextsAtom)
     return (<div className='w-full h-full relative'>
-        <Card shadow='sm' fullWidth className='h-full visited:h2:text-default-700' as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
+        <Card shadow='sm' fullWidth className={'h-full'} as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
-                <h2 className='text-2xl text-balance' style={{
+                <h2 className={cn('text-2xl text-balance', visited[id] && 'text-default-700')} style={{
                     fontFamily: postFontFamily
                 }}>{title}</h2>
                 <div className='gap-0.5 flex flex-wrap align-middle items-center'>
@@ -44,6 +46,7 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
             <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
                 <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
                 <time className='text-sm text-default-400 font-mono'>Updated: {moment(updatedAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
+                <div className='text-sm text-default-400 font-mono'>{visited[id] ? 'Have Visited Before' : 'Not Visited Yet'}</div>
             </CardFooter>
         </Card>
     </div>)

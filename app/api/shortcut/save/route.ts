@@ -12,6 +12,7 @@ import { googleModels, Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { logsnagServer } from '@/lib/logsnag'
+import sanitize from 'sanitize-html'
 
 const schema = z.object({
     word: z.string(),
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
         })
     })
 
-    const plainPortions = portions.map((md) => removeMd(md))
+    const plainPortions = portions.map((md) => removeMd(sanitize(md)))
     return NextResponse.json({ word: plainPortions[1], def: plainPortions[2], etym: plainPortions[3] ?? '无', cognates: plainPortions[4] ?? '无' })
 }
 
