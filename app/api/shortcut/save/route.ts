@@ -12,7 +12,6 @@ import { googleModels, Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { logsnagServer } from '@/lib/logsnag'
-import sanitize from 'sanitize-html'
 
 const schema = z.object({
     word: z.string(),
