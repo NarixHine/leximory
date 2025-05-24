@@ -11,12 +11,10 @@ import { titleAtom, contentAtom, topicsAtom, textAtom } from '../[text]/atoms'
 import { cn } from '@/lib/utils'
 import Markdown from '@/components/markdown'
 import { postFontFamily } from '@/lib/fonts'
+import { Metadata } from 'next'
 
-export async function generateMetadata({ params }: { params: Promise<{ lib: string }> }) {
-    const lib = await getLib({ id: (await params).lib })
-    return {
-        title: `${lib.name} - 所有文章`
-    }
+export const metadata: Metadata = {
+    title: 'All of It'
 }
 
 export default async function AllOfItPage({ params }: { params: Promise<{ lib: string }> }) {

@@ -28,7 +28,8 @@ async function LibraryList({ page }: {
                         name: lib.name,
                         lang: lib.lang,
                         owner: lib.owner,
-                        price: lib.price
+                        price: lib.price,
+                        readers: lib.starredBy?.length ?? 0
                     }}
                     isStarred={lib.starredBy?.includes(userId!) ?? false}
                     key={lib.id}

@@ -8,14 +8,14 @@ async function UserAvatarServer({ uid }: { uid: string }) {
     'use cache'
     try {
         const { imageUrl } = await (await clerkClient()).users.getUser(uid)
-        return <Avatar isBordered color={'primary'} src={imageUrl} size='sm' />
+        return <Avatar src={imageUrl} />
     } catch {
-        return <Avatar isBordered color={'primary'} size='sm' />
+        return <Avatar />
     }
 }
 
 function UserAvatarFallback() {
-    return <Avatar isBordered color={'primary'} size='sm' />
+    return <Avatar />
 }
 
 export default function UserAvatar({ uid }: { uid: string }) {

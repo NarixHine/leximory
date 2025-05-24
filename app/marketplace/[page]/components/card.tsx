@@ -11,7 +11,8 @@ import { Skeleton } from "@heroui/skeleton"
 import { star } from '@/app/library/[lib]/components/actions'
 import { toast } from 'sonner'
 import { CHINESE_ZCOOL } from '@/lib/fonts'
-import { Chip } from '@heroui/chip'
+import { cn } from '@/lib/utils'
+import { Spacer } from '@heroui/spacer'
 
 interface LibraryCardProps {
     library: {
@@ -20,6 +21,7 @@ interface LibraryCardProps {
         name: string
         lang: Lang
         price: number
+        readers: number
     }
     isStarred: boolean
     avatar: ReactNode
@@ -40,13 +42,15 @@ export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: 
             isPressable
         >
             <CardBody className='p-5 pb-0'>
-                <div className='space-y-1'>
+                <div className='flex flex-col'>
                     <H useNoto disableCenter className='text-2xl '>{library.name}</H>
-                    <Chip variant='flat' color='primary' className='text-sm opacity-70'>{langMap[library.lang]}</Chip>
+                    <Spacer y={1} />
+                    <span className={cn(CHINESE_ZCOOL.className, 'text-sm opacity-60')}>语言：{langMap[library.lang]}</span>
+                    <span className={cn(CHINESE_ZCOOL.className, 'text-sm opacity-60')}>读者：{library.readers} 人</span>
                 </div>
             </CardBody>
 
-            <CardFooter className='flex justify-end gap-3 pb-4 pr-4'>
+            <CardFooter className='flex justify-end pb-4 pr-4'>
                 <Button
                     as={'div'}
                     size='sm'
@@ -54,8 +58,8 @@ export default function LibraryCard({ library, isStarred, avatar, hideAvatar }: 
                     isLoading={isTransitioning}
                     startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
                     color='primary'
-                    variant={'ghost'}
-                    className={CHINESE_ZCOOL.className}
+                    variant={'flat'}
+                    className={cn(CHINESE_ZCOOL.className, '-mr-5 pr-6')}
                     onPress={() => {
                         startTransition(async () => {
                             const { success, message } = await star(library.id)
