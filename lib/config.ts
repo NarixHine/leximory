@@ -43,7 +43,8 @@ export const exampleSharedLib = {
     name: '📚 外刊泛读入门',
     lang: 'en',
     owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt',
-    price: 0
+    price: 0,
+    readers: 324
 } as const
 
 export const exampleEbookLink = '/library/1309fe3b/2dd46083' as const
