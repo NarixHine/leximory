@@ -341,7 +341,7 @@ export default function Digest() {
       const newVisitedTexts = { ...visitedTexts }
       newVisitedTexts[text] = true
       setVisitedTexts(newVisitedTexts)
-    }, 1000)
+    }, 60 * 1000)
     return () => clearTimeout(timer)
   }, [lib, text, title])
 

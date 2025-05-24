@@ -46,7 +46,6 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
             <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
                 <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
                 <time className='text-sm text-default-400 font-mono'>Updated: {moment(updatedAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
-                <div className='text-sm text-default-400 font-mono'>{visited[id] ? 'Have Visited Before' : 'Not Visited Yet'}</div>
             </CardFooter>
         </Card>
     </div>)
