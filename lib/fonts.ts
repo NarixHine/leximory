@@ -10,3 +10,4 @@ export const ENGLISH_PLAYFAIR = Playfair_Display({ subsets: ['latin'], weight: [
 export const defaultFontFamily = [ENGLISH.style.fontFamily, CHINESE.style.fontFamily].join(',')
 export const postFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE.style.fontFamily].join(',')
 export const hFontFamily = [ENGLISH_PLAYFAIR.style.fontFamily, CHINESE_ZCOOL.style.fontFamily].join(',')
+export const chatFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE_ZCOOL.style.fontFamily].join(',')

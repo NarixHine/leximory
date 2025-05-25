@@ -182,6 +182,13 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
     return libs.map(({ id }) => id)
 }
 
+export async function listLibsWithFullInfo({ owner, orgId }: { owner: string, orgId?: string }) {
+    'use cache'
+    cacheTag('libraries')
+    const libs = await xata.db.libraries.select(['id', 'name', 'lang', 'access', 'org', 'owner', 'price', 'shadow', 'starredBy']).filter(orgId ? { owner, org: orgId } : { owner }).getAll()
+    return libs.map(({ id, name, lang, access, org, owner, price, shadow, starredBy }) => ({ id, name, lang, access, org, owner, price, shadow, starredBy }))
+}
+
 export async function getArchivedLibs({ userId }: { userId: string }) {
     'use cache'
     cacheTag('libraries')
@@ -209,12 +216,15 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
     cacheTag(`lib:${libId}`)
     const texts = await xata.db.texts
         .filter({ lib: libId })
-        .select(['id', 'title', 'content', 'topics'])
+        .select(['id', 'title', 'content', 'topics', 'ebook'])
         .getAll()
     return texts.map(text => ({
         id: text.id,
         title: text.title,
         content: text.content,
-        topics: text.topics ?? []
+        topics: text.topics ?? [],
+        hasEbook: text.ebook !== null,
+        createdAt: text.xata.createdAt.toDateString(),
+        updatedAt: text.xata.updatedAt.toDateString(),
     }))
 }
