@@ -3,6 +3,7 @@ import 'server-only'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { incrementQuota, getQuota } from '../db/quota'
 import { getAuthOrThrow } from './role'
+import { isProd } from '@/lib/env'
 
 export type Plan = 'beginner' | 'bilingual' | 'polyglot' | 'leximory'
 
@@ -42,7 +43,7 @@ export const maxAudioQuota = async () => {
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {
     const userId = explicitUserId ?? (await getAuthOrThrow()).userId
     const quota = await incrementQuota(userId, 'commentary', incrBy)
-    return quota > await maxCommentaryQuota(explicitUserId)
+    return isProd && quota > await maxCommentaryQuota(explicitUserId)
 }
 
 export async function getCommentaryQuota() {
@@ -55,7 +56,7 @@ export async function getCommentaryQuota() {
 export async function incrAudioQuota() {
     const { userId } = await getAuthOrThrow()
     const quota = await incrementQuota(userId, 'audio')
-    return quota > await maxAudioQuota()
+    return isProd && quota > await maxAudioQuota()
 }
 
 

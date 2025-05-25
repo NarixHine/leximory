@@ -15,6 +15,16 @@ import { isReaderModeAtom } from '../../atoms'
 import { Spinner } from '@heroui/spinner'
 import { AnimatePresence } from 'framer-motion'
 
+// Shared color classes for dock items
+const colorClasses = [
+    'bg-primary-100/60 text-primary-400',
+    'bg-secondary-100/60 text-secondary-400',
+    'bg-warning-100/60 text-warning-300',
+    'bg-danger-50/60 text-danger-400',
+    'bg-success-100/60 text-success-600',
+    'bg-default-200/60 text-default-400',
+]
+
 type FloatingDockProps = {
     items: { icon: React.ReactNode; href: string }[]
     className?: string
@@ -61,7 +71,7 @@ export const FloatingDockHorizontal = ({
             )}
         >
             {items.map((item, i) => (
-                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-200/60 text-default-800'][i]} />
+                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={colorClasses[i % colorClasses.length]} />
             ))}
         </motion.div>
     )
@@ -134,7 +144,6 @@ export const FloatingDockVertical = ({
 }) => {
     const mouseY = useMotionValue(Infinity)
     const isReaderMode = useAtomValue(isReaderModeAtom)
-
     return !isReaderMode && (
         <motion.div
             onMouseMove={(e) => mouseY.set(e.clientY)}
@@ -145,7 +154,7 @@ export const FloatingDockVertical = ({
             )}
         >
             {items.map((item, i) => (
-                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={['bg-primary-100/60 text-primary-800', 'bg-secondary-100/60 text-secondary-800', 'bg-warning-100/60 text-warning-800', 'bg-danger-100/60 text-danger-800', 'bg-default-200/60 text-default-800'][i]} />
+                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={colorClasses[i % colorClasses.length]} />
             ))}
         </motion.div>
     )
