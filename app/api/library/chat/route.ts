@@ -7,8 +7,9 @@ import { NextRequest } from 'next/server'
 import { googleModels } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { forgetCurve } from '@/app/daily/components/report'
-import { authReadToLib, authReadToText, getAuthOrThrow, isListed } from '@/server/auth/role'
-import { getPlan } from '@/server/auth/quota'
+import { authReadToLib, authReadToText, isListed } from '@/server/auth/role'
+import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
+import { isProd } from '@/lib/env'
 
 const tools: ToolSet = {
     getLib: {
@@ -56,8 +57,7 @@ const tools: ToolSet = {
         description: 'Get a list of all libraries accessible to the user.',
         parameters: toolSchemas.listLibs,
         execute: async () => {
-            const { userId, orgId } = await getAuthOrThrow()
-            return listLibsWithFullInfo({ owner: userId, orgId })
+            return listLibsWithFullInfo({ filter: await isListed() })
         }
     },
     getForgetCurve: {
@@ -88,6 +88,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。
    - 先自行呼叫listLibs工具获取用户可访问的文库列表。
    - 根据这一信息来匹配用户提及的文库的名称。
    - 将名称最相似的文库视为匹配，然后根据它的ID使用其他工具获取文库的详细信息。
+   - 注意：所有文库自动呈现给用户，所以禁止在回答中重复输出文库列表。
 
 4. 当且**仅当有必要**的时候，你可以使用getAllTextsInLib工具获取文库中的所有文本及其内容，然后根据用户的问题进行操作。
 
@@ -113,12 +114,18 @@ const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。
 
 export async function POST(req: NextRequest) {
     const plan = await getPlan()
+    if (isProd && plan === 'beginner') {
+        return new Response('You are not authorized to use this tool.', { status: 403 })
+    }
+    if (await incrCommentaryQuota(1)) {
+        return new Response('You have reached the maximum number of commentary quota.', { status: 403 })
+    }
 
     const body = await req.json()
     const messages = body.messages
 
     const result = streamText({
-        model: googleModels['flash-2.5'],
+        model: googleModels['pro-2.5'],
         tools,
         messages: [
             {
@@ -128,14 +135,7 @@ export async function POST(req: NextRequest) {
             ...messages
         ],
         maxSteps: 10,
-        maxTokens: 20000,
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingBudget: 0,
-                }
-            }
-        }
+        maxTokens: 10000,
     })
 
     return result.toDataStreamResponse()

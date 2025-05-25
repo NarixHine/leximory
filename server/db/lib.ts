@@ -182,11 +182,20 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
     return libs.map(({ id }) => id)
 }
 
-export async function listLibsWithFullInfo({ owner, orgId }: { owner: string, orgId?: string }) {
+export async function listLibsWithFullInfo({ filter, userId }: { filter: Record<string, string | undefined | object>, userId?: string }) {
     'use cache'
     cacheTag('libraries')
-    const libs = await xata.db.libraries.select(['id', 'name', 'lang', 'access', 'org', 'owner', 'price', 'shadow', 'starredBy']).filter(orgId ? { owner, org: orgId } : { owner }).getAll()
-    return libs.map(({ id, name, lang, access, org, owner, price, shadow, starredBy }) => ({ id, name, lang, access, org, owner, price, shadow, starredBy }))
+    const data = await xata.db.lexicon.filter(filter).summarize({
+        columns: ['lib'],
+        summaries: {
+            count: { count: '*' },
+        },
+    })
+    return data.summaries.map(({ lib, count }) => ({
+        lib: pick(lib!, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
+        count,
+        isStarred: userId && lib?.starredBy ? lib.starredBy.includes(userId) : false
+    }))
 }
 
 export async function getArchivedLibs({ userId }: { userId: string }) {

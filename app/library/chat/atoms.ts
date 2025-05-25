@@ -1,44 +1,19 @@
 'use client'
 
-import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
+import type { Message as UIMessage } from '@ai-sdk/react'
 
-export type ChatMessage = {
-    id: string
-    role: 'user' | 'assistant' | 'system' | 'data'
-    content: string
-    parts?: any[]
-}
+export type Message = UIMessage
 
-function getInitialMessages(): ChatMessage[] {
-    if (typeof window === 'undefined') return []
-    try {
-        const stored = localStorage.getItem('library-chat-messages')
-        return stored ? JSON.parse(stored) : []
-    } catch {
-        return []
+export const messagesAtom = atomWithStorage<Message[]>('chat-messages', [], {
+    getItem: (key, initialValue) => {
+        const storedValue = localStorage.getItem(key)
+        return storedValue ? JSON.parse(storedValue) : initialValue
+    },
+    setItem: (key, value) => {
+        localStorage.setItem(key, JSON.stringify(value))
+    },
+    removeItem: (key) => {
+        localStorage.removeItem(key)
     }
-}
-
-export const messagesAtom = atom<ChatMessage[]>(getInitialMessages())
-
-messagesAtom.onMount = set => {
-    if (typeof window === 'undefined') return
-    const update = () => {
-        try {
-            const stored = localStorage.getItem('library-chat-messages')
-            set(stored ? JSON.parse(stored) : [])
-        } catch {}
-    }
-    window.addEventListener('storage', update)
-    return () => window.removeEventListener('storage', update)
-}
-
-export const persistMessagesAtom = atom(
-    null,
-    (get, set, messages: ChatMessage[]) => {
-        set(messagesAtom, messages)
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('library-chat-messages', JSON.stringify(messages))
-        }
-    }
-) 
+})
