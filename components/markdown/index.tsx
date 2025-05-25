@@ -57,7 +57,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
                     component: AudioPlayer
                 },
                 img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
-                p: (props) => (<div {...props} className='mb-5' />),
+                p: (props) => (<div {...props} className='mb-5 last:mb-0' />),
                 a: (props) => (<Link {...props} className='underline underline-offset-4' />),
             },
         }}
