@@ -67,6 +67,13 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
+                                <span>Talk to Your Library</span>
+                                <span className="text-default-500 text-sm">自动化复盘：对话 AI，玩转词汇</span>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <PiCheck className="text-success-500 w-4 h-4 mt-1" />
+                            <div className="flex flex-col">
                                 <span>100 次文章注解</span>
                                 <span className="text-default-500 text-sm">相当于 400 次词汇注解</span>
                             </div>
@@ -116,6 +123,13 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                     <Divider />
 
                     <div className="flex flex-col gap-3">
+                        <div className="flex items-start gap-2">
+                            <PiCheck className="text-success-500 w-4 h-4 mt-1" />
+                            <div className="flex flex-col">
+                                <span>Talk to Your Library</span>
+                                <span className="text-default-500 text-sm">自动化复盘：对话 AI，玩转词汇</span>
+                            </div>
+                        </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">

@@ -207,11 +207,11 @@ const initialPrompts = [ {
 export default function ChatInterface({ plan }: { plan: Plan }) {
     const [messages, setMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const { messages: aiMessages, input, setInput, handleSubmit, status, setData, stop } = useChat({
+    const { messages: aiMessages, input, setInput, handleSubmit, status, setData, stop, setMessages: setAiMessages} = useChat({
         api: '/api/library/chat',
         initialMessages: messages,
-        onFinish: () => {
-            setMessages(aiMessages)
+        onFinish: (message) => {
+            setMessages([...aiMessages, message])
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
         },
         onError: () => {
@@ -221,6 +221,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
 
     const startNewConversation = () => {
         setMessages([])
+        setAiMessages([])
         setInput('')
         setData([])
     }
@@ -305,7 +306,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                     disabled={status === 'streaming'}
                     maxRows={15}
                     autoComplete='off'
-                    startContent={<PiChatCircleDotsDuotone className='text-default-400' />}
+                    startContent={<PiChatCircleDotsDuotone className='text-default-500 mt-0.5' />}
                 />
                 <Button
                     type='button'

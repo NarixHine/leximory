@@ -4,7 +4,7 @@ import { Metadata } from 'next'
 import { getAuthOrThrow } from '@/server/auth/role'
 
 export const metadata: Metadata = {
-    title: 'AI 聊天',
+    title: 'Talk to Your Library',
     description: '与 AI 聊天，自动化操作文库',
 }
 

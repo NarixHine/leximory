@@ -20,7 +20,7 @@ export default function UpgradeMessage() {
                         </p>
                         <Button
                             as={Link}
-                            href='/settings/billing'
+                            href='/settings'
                             color='primary'
                             variant='flat'
                         >

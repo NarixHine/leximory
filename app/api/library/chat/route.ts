@@ -63,7 +63,7 @@ const tools: ToolSet = {
     getForgetCurve: {
         description: 'Get words that need review based on the forgetting curve.',
         parameters: z.object({
-            day: z.enum(Object.keys(forgetCurve) as [keyof typeof forgetCurve]).describe('The time period to get words for'),
+            day: z.enum(Object.keys(forgetCurve) as [keyof typeof forgetCurve]).describe('The time period to get words for. You can only choose from: ' + Object.keys(forgetCurve).join(', ')),
         }),
         execute: async ({ day }: { day: keyof typeof forgetCurve }) => {
             return await getForgetCurve({ day, filter: await isListed() })
@@ -102,14 +102,22 @@ const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。
 
 ### 高分词汇词组
 
-只选取可运用于作文的高分词汇词组，不要选取过于简单或过于复杂的词汇词组。
+只选取可运用于作文的高分词汇词组，不要选取过于简单或过于复杂的词汇词组。选取高级语块，质量要高，数量要少。
 
-### 作文
+### 翻译出题
 
-请根据用户的问题，生成一篇作文。
+用中文给出翻译题（中译外），在括号里给出必须使用的外语关键词（每道题可以有1～2个关键词），考察用户对单词用法的掌握。禁止在被翻译的原句中夹杂外语。不同语种的翻译题要分开。
 
-### 词组复习
+例如：
 
+1. 虽然他尽心尽力，但计划还是出了差错。\`awry\`
+2. 这个古老的传统节日是早期文化的残留物，至今仍在一些偏远地区庆祝，但被一些人视为杂务。\`remote\` \`grunt work\` 
+
+要逐词批改，找出错译漏译之处，追求贴切愿意。尤其注意关键词的使用。
+
+一次性出多道题，然后提示用户逐句翻译。在批改完一句之后，重复一遍下一题。
+
+如果用户要求针对本周学习的新单词出题，请使用getForgetCurve工具获取本周范围内所有需要复习的单词，然后根据这些单词出题。
 `
 
 export async function POST(req: NextRequest) {
@@ -125,7 +133,7 @@ export async function POST(req: NextRequest) {
     const messages = body.messages
 
     const result = streamText({
-        model: googleModels['pro-2.5'],
+        model: googleModels['flash-2.5'],
         tools,
         messages: [
             {
@@ -134,7 +142,7 @@ export async function POST(req: NextRequest) {
             },
             ...messages
         ],
-        maxSteps: 10,
+        maxSteps: 5,
         maxTokens: 10000,
     })
 

@@ -192,9 +192,9 @@ export function Article() {
                     <TableCell>在语料本或文本页面将词汇串联成文</TableCell>
                 </TableRow>
                 <TableRow key='chat'>
-                    <TableCell>AI 聊天</TableCell>
+                    <TableCell>Talk to Your Library</TableCell>
                     <TableCell>1</TableCell>
-                    <TableCell>与 AI 聊天，自动化操作文库</TableCell>
+                    <TableCell>自动化复盘：对话 AI，玩转词汇</TableCell>
                 </TableRow>
                 <TableRow key='fix-your-paper'>
                     <TableCell><Link href='/fix-your-paper' className='underline underline-offset-2'>Fix. Your. Paper.</Link></TableCell>
