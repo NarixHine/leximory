@@ -1,12 +1,11 @@
 import { z } from 'zod'
-import { streamText, ToolSet } from 'ai'
+import { smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent } from '@/server/db/text'
 import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { googleModels } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { forgetCurve } from '@/app/daily/components/report'
 import { authReadToLib, authReadToText, isListed } from '@/server/auth/role'
 import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
@@ -61,22 +60,33 @@ const tools: ToolSet = {
         }
     },
     getForgetCurve: {
-        description: 'Get words that need review based on the forgetting curve.',
+        description: 'Get words that the user learned during a certain period of time.',
         parameters: z.object({
-            day: z.enum(Object.keys(forgetCurve) as [keyof typeof forgetCurve]).describe('The time period to get words for. You can only choose from: ' + Object.keys(forgetCurve).join(', ')),
+            period: z.enum(['day', 'week']).describe('The time period to get words for. You can only choose from: day, week'),
         }),
-        execute: async ({ day }: { day: keyof typeof forgetCurve }) => {
-            return await getForgetCurve({ day, filter: await isListed() })
+        execute: async ({ period }: { period: 'day' | 'week' }) => {
+            const filter = await isListed()
+            switch (period) {
+                case 'day':
+                    return getForgetCurve({ day: '今天记忆', filter })
+                case 'week':
+                    return Promise.all([
+                        getForgetCurve({ day: '今天记忆', filter }),
+                        getForgetCurve({ day: '一天前记忆', filter }),
+                        getForgetCurve({ day: '四天前记忆', filter }),
+                        getForgetCurve({ day: '七天前记忆', filter }),
+                    ])
+            }
         }
     }
 }
 
-const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。你可以：
+const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每个文库是一个语言学习资料的文件夹，其中包含多篇文本。
 
 1. 你有时会在文库中遇到{{原文形式||原形||释义||语源||同源词}}格式注解单词，你需要理解它，也可以主动使用这一语法注解单词。例如：
    {{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)}}
 
-2. 帮助用户：
+2. 你可以帮助用户：
    - 查找特定文本或单词的信息
    - 分析文本内容和词汇
    - 提供上下文和解释
@@ -98,11 +108,15 @@ const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。
 
 7. 请用中文回复，并使用 Markdown 格式。语气不要过度正式，请你保持简洁。
 
+8. 直接执行工具，无需向用户请求许可。
+
 ## 具体操作示例
 
 ### 高分词汇词组
 
 只选取可运用于作文的高分词汇词组，不要选取过于简单或过于复杂的词汇词组。选取高级语块，质量要高，数量要少。
+
+如果数量过多，超过三十个，分多次输出，每次询问是否继续。
 
 ### 翻译出题
 
@@ -117,7 +131,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户管理图书馆的智能助手。
 
 一次性出多道题，然后提示用户逐句翻译。在批改完一句之后，重复一遍下一题。
 
-如果用户要求针对本周学习的新单词出题，请使用getForgetCurve工具获取本周范围内所有需要复习的单词，然后根据这些单词出题。
+如果用户要求针对今天/本周学习的新单词出题，请使用getForgetCurve工具获取今天（day）/本周（week）记忆的单词，然后根据这些单词出题。
 `
 
 export async function POST(req: NextRequest) {
@@ -144,6 +158,7 @@ export async function POST(req: NextRequest) {
         ],
         maxSteps: 5,
         maxTokens: 10000,
+        experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
     })
 
     return result.toDataStreamResponse()

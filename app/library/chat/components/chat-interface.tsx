@@ -22,6 +22,25 @@ import UpgradeMessage from './upgrade-message'
 import type { Plan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 
+const initialPrompts = [ {
+    title: '高分语块',
+    prompt: '对于文库【文库名称】中的【所有】文章，提取出适合用在作文里的高分词汇和词组，量少而精。',
+    icon: PiSparkleDuotone
+}, {
+    title: '本周复习',
+    prompt: '这周我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我复习。',
+    icon: PiClockClockwiseDuotone
+}, {
+    title: '实战训练',
+    prompt: '根据文库【文库名称】中的文章，提炼出可以运用于以下作文的语块，然后给出范文。',
+    icon: PiExamDuotone
+}, {
+    title: '造句巩固',
+    prompt: '针对这周学习的新单词，选出几个单词，对每个单词用中文出一道翻译题，考察我对单词用法的掌握。',
+    icon: PiPencilCircleDuotone
+}
+]
+
 type MessagePart = {
     type: 'text' | 'reasoning' | 'tool-invocation' | 'source' | 'step-start'
     text?: string
@@ -184,25 +203,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
             return <></>
     }
 }
-
-const initialPrompts = [ {
-        title: '高分语块',
-        prompt: '对于文库【文库名称】中的文章，提取出适合用在作文里的高分词汇和词组，量少而精。',
-        icon: PiSparkleDuotone
-    }, {
-        title: '本周复习',
-        prompt: '这周我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我复习。',
-        icon: PiClockClockwiseDuotone
-    }, {
-        title: '实战训练',
-        prompt: '根据文章【文章标题】，提炼出可以运用于以下作文的语块，然后给出范文。',
-        icon: PiExamDuotone
-    }, {
-        title: '造句巩固',
-        prompt: '针对这周学习的新单词，选出几个单词，对每个单词用中文出一道翻译题，考察我对单词用法的掌握。',
-        icon: PiPencilCircleDuotone
-    }
-]
 
 export default function ChatInterface({ plan }: { plan: Plan }) {
     const [messages, setMessages] = useAtom(messagesAtom)

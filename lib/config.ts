@@ -69,6 +69,9 @@ export const googleModels = {
         }, {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
             threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+            threshold: 'BLOCK_NONE',
         }]
     }),
     'flash-2.5': google('gemini-2.5-flash-preview-04-17', {
@@ -84,8 +87,10 @@ export const googleModels = {
         }, {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
             threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+            threshold: 'BLOCK_NONE',
         }],
-        
     }),
     'pro-2.5': google('gemini-2.5-pro-preview-05-06', {
         safetySettings: [{
@@ -99,6 +104,9 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }, {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
             threshold: 'BLOCK_NONE',
         }],
     }),
