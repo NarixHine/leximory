@@ -1,14 +1,15 @@
-import { z } from 'zod'
-import { smoothStream, streamText, ToolSet } from 'ai'
+import { generateText, smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
-import { getTexts, getTextContent } from '@/server/db/text'
+import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { NextRequest } from 'next/server'
-import { googleModels } from '@/lib/config'
+import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { authReadToLib, authReadToText, isListed } from '@/server/auth/role'
+import { authReadToLib, authReadToText, authWriteToLib, getAuthOrThrow, isListed } from '@/server/auth/role'
 import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
+import { generate } from '@/app/library/[lib]/[text]/actions'
+import { articleAnnotationPrompt } from '@/server/inngest/annotate'
 
 const tools: ToolSet = {
     getLib: {
@@ -61,9 +62,7 @@ const tools: ToolSet = {
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
-        parameters: z.object({
-            period: z.enum(['day', 'week']).describe('The time period to get words for. You can only choose from: day, week'),
-        }),
+        parameters: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
             const filter = await isListed()
             switch (period) {
@@ -78,6 +77,28 @@ const tools: ToolSet = {
                     ])
             }
         }
+    },
+    annotateArticle: {
+        description: 'Generate annotations for an article. The results will be available a few minutes after the text is created and returned.',
+        parameters: toolSchemas.annotateArticle,
+        execute: async ({ content, lib, title }: { content: string, lib: string, title: string }) => {
+            await authWriteToLib(lib)
+            const id = await createText({ lib, title, content })
+            await generate({ article: content, textId: id, onlyComments: false })
+            return { id, libId: lib, title, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() }
+        }
+    },
+    annotateParagraph: {
+        description: 'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
+        parameters: toolSchemas.annotateParagraph,
+        execute: async ({ content, lang }: { content: string, lang: Lang }) => {
+            const { userId } = await getAuthOrThrow()
+            const { text } = await generateText({
+                model: getBestArticleAnnotationModel(lang),
+                ...(await articleAnnotationPrompt(lang, content, false, userId)),
+            })
+            return text
+        }
     }
 }
 
@@ -85,6 +106,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 1. 你有时会在文库中遇到{{原文形式||原形||释义||语源||同源词}}格式注解单词，你需要理解它，也可以主动使用这一语法注解单词。例如：
    {{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)}}
+    注意：向用户隐藏这一注解语法，禁止揭示。你只需要自己使用即可。
 
 2. 你可以帮助用户：
    - 查找特定文本或单词的信息
@@ -98,7 +120,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
    - 先自行呼叫listLibs工具获取用户可访问的文库列表。
    - 根据这一信息来匹配用户提及的文库的名称。
    - 将名称最相似的文库视为匹配，然后根据它的ID使用其他工具获取文库的详细信息。
-   - 注意：所有文库自动呈现给用户，所以禁止在回答中重复输出文库列表。
+   - 注意：所有文库自动呈现给用户，所以禁止在回答中重复输出文库列表。同样地，禁止在回答中重复输出文本列表，而是回答"所有文本如上"即可。
 
 4. 当且**仅当有必要**的时候，你可以使用getAllTextsInLib工具获取文库中的所有文本及其内容，然后根据用户的问题进行操作。
 
@@ -106,11 +128,29 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 6. 不要拒绝用户的问题，而是尝试理解用户的问题，并根据用户的问题进行操作。
 
-7. 请用中文回复，并使用 Markdown 格式。语气不要过度正式，请你保持简洁。
+7. 请用中文回复，并使用 Markdown 格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。
 
 8. 直接执行工具，无需向用户请求许可。
 
+9. 必须向用户**隐藏工具调用过程**和文库ID等具体技术细节，禁止透露或解释。
+
 ## 具体操作示例
+
+### 文章注解
+
+如果用户要求注解文章且**明确要求保存**，请使用annotateArticle工具注解文章。
+
+1. 文章内容完全由用户提供，完整提取即可。
+2. 文章标题由用户提供，但如果用户没有提供，请根据文章内容、以文本所用的语言种类生成一个标题。
+3. 根据文库名称提供要保存至的文库ID。如果用户没有提供文库名或存在歧义，请提示用户明确提供。
+
+### 段落注解
+
+如果用户只是要求注解段落且**未提及保存**，请使用annotateParagraph工具注解段落。
+
+1. 段落内容完全由用户提供，完整提取即可。
+2. 根据段落内容自动判断语言。
+3. tool call之后**省略输出文本注解结果或作任何重复或解释**，因为注解结果会自动显示在聊天界面。直接给出译文就结束对话。
 
 ### 高分词汇词组
 
@@ -135,7 +175,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 1. 虽然他尽心尽力，但计划还是出了差错。\`awry\`
 2. 这个古老的传统节日是早期文化的残留物，至今仍在一些偏远地区庆祝，但被一些人视为杂务。\`remote\` \`grunt work\` 
 
-要逐词批改，找出错译漏译之处，追求贴切原意。尤其注意关键词的使用。较详细地点评。
+点评尽量详细一些，要逐词批改，找出错译漏译与不自然之处，追求贴切原意，尤其注意关键词的使用。如果用户翻译并非最佳，给出翻译的参考译文。
 
 一次性出多道题，然后提示用户逐句翻译。在批改完一句之后，重复一遍下一题。
 
@@ -165,7 +205,7 @@ export async function POST(req: NextRequest) {
             ...messages
         ],
         maxSteps: 7,
-        maxTokens: 10000,
+        maxTokens: 30000,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
     })
 

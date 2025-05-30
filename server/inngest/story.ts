@@ -55,7 +55,7 @@ export const generateStory = inngest.createFunction(
         })
 
         const story = await step.ai.wrap('generate-story', generateText, {
-            model: await getBestCommentaryModel(lang),
+            model: getBestCommentaryModel(lang),
             ...storyConfig
         })
 

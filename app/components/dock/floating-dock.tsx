@@ -20,9 +20,8 @@ const colorClasses = [
     'bg-primary-100/60 text-primary-400',
     'bg-secondary-100/60 text-secondary-400',
     'bg-warning-100/60 text-warning-300',
-    'bg-danger-50/60 text-danger-400',
-    'bg-success-100/60 text-success-600',
-    'bg-default-200/60 text-default-400',
+    'bg-danger-50/70 text-danger-400',
+    'bg-default-100/70 text-default-500',
 ]
 
 type FloatingDockProps = {

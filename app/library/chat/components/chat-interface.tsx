@@ -3,8 +3,8 @@
 import { useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiSpinnerGap, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone } from 'react-icons/pi'
-import { useRef } from 'react'
+import { PiPaperPlaneRightFill, PiSpinnerGap, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone } from 'react-icons/pi'
+import { useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
@@ -14,21 +14,34 @@ import { chatFontFamily, postFontFamily } from '@/lib/fonts'
 import type { ToolResult, ToolName } from '../types'
 import Main from '@/components/ui/main'
 import LibraryComponent from '@/app/library/components/lib'
-import TextComponent from '@/app/library/[lib]/components/text'
 import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
 import { Accordion, AccordionItem } from '@heroui/react'
 import UpgradeMessage from './upgrade-message'
 import type { Plan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
+import H from '@/components/ui/h'
+import { useCopyToClipboard } from 'usehooks-ts'
+import Text from '@/app/library/[lib]/components/text'
+import { ScopeProvider } from 'jotai-scope'
+import { libAtom } from '../../[lib]/atoms'
+import { HydrationBoundary } from 'jotai-ssr'
 
-const initialPrompts = [ {
+const initialPrompts = [{
+    title: '注解段落',
+    prompt: '注解以下段落，无需保存。\n',
+    icon: PiNewspaperClippingDuotone
+}, {
+    title: '注解文章',
+    prompt: '注解下文并存入【词汇仓库】文库。\n',
+    icon: PiNewspaperDuotone
+}, {
     title: '高分语块',
     prompt: '对于文库【文库名称】中的【所有】文章，提取出适合用在作文里的高分词汇和词组，量少而精。',
     icon: PiSparkleDuotone
 }, {
     title: '本周复习',
-    prompt: '这周我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我复习。',
+    prompt: '【本周】我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
     icon: PiClockClockwiseDuotone
 }, {
     title: '实战训练',
@@ -36,10 +49,9 @@ const initialPrompts = [ {
     icon: PiExamDuotone
 }, {
     title: '造句巩固',
-    prompt: '针对这周学习的新单词，选出几个单词，对每个单词用中文出一道翻译题，考察我对单词用法的掌握。',
+    prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
-}
-]
+}] as const
 
 type MessagePart = {
     type: 'text' | 'reasoning' | 'tool-invocation' | 'source' | 'step-start'
@@ -62,7 +74,7 @@ function ToolState({ state, toolName }: { state: string; toolName: string }) {
     if (state === 'loading') {
         return (
             <div className='flex items-center gap-2 text-sm text-default-400'>
-                <PiSpinnerGap className='animate-spin' size={16} />
+                <PiSpinnerGap />
                 <span>Loading {toolName}...</span>
             </div>
         )
@@ -78,13 +90,31 @@ function ToolState({ state, toolName }: { state: string; toolName: string }) {
 }
 
 function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
+    const [, copy] = useCopyToClipboard()
+    const [copiedId, setCopiedId] = useState<string | null>(null)
+
+    const handleCopy = async (text: string, id: string) => {
+        await copy(text)
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 1000)
+    }
+
     switch (toolName) {
         case 'listLibs':
             return (
                 <ul className='mt-2 flex flex-col gap-2'>
+                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiBooks /> All Libraries</span>
                     {(result as Awaited<ToolResult['listLibs']>).map(({ lib }) => (
-                        <li className='font-mono text-sm text-default-500' key={lib.id}>
+                        <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={lib.id}>
                             {lib.name} — {lib.lang}
+                            <Button
+                                variant='light'
+                                size='sm'
+                                className='text-default-700 size-5'
+                                isIconOnly
+                                startContent={copiedId === lib.id ? <PiCheck /> : <PiCopy />}
+                                onPress={() => handleCopy(lib.name, lib.id)}
+                            />
                         </li>
                     ))}
                 </ul>
@@ -112,20 +142,24 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
 
         case 'getAllTextsInLib':
         case 'getTexts':
+            const res = result as Awaited<ToolResult['getAllTextsInLib']>
             return (
-                <div className='mt-2 grid grid-cols-1 md:grid-cols-2 gap-5'>
-                    {(result as Awaited<ToolResult['getAllTextsInLib']>).map((text) => (
-                        <TextComponent
-                            key={text.id}
-                            id={text.id}
-                            title={text.title}
-                            topics={text.topics || []}
-                            hasEbook={text.hasEbook || false}
-                            createdAt={text.createdAt}
-                            updatedAt={text.updatedAt}
-                        />
+                <ul className='mt-2 flex flex-col gap-2'>
+                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiPackage /> Library - {res[0].libName}</span>
+                    {res.map((text, index) => (
+                        <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
+                            {index + 1}. {text.title}
+                            <Button
+                                variant='light'
+                                size='sm'
+                                className='text-default-700 size-5'
+                                isIconOnly
+                                startContent={copiedId === text.id ? <PiCheck /> : <PiCopy />}
+                                onPress={() => handleCopy(text.title, text.id)}
+                            />
+                        </li>
                     ))}
-                </div>
+                </ul>
             )
 
         case 'getTextContent':
@@ -140,6 +174,36 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     </CardBody>
                 </Card>
             )
+        case 'annotateParagraph':
+            return (
+                <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
+                    <CardBody className='p-6'>
+                        <div className='text-default-600 dark:text-default-400'>
+                            <Markdown md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
+                        </div>
+                    </CardBody>
+                </Card>
+            )
+
+        case 'annotateArticle':
+            const { id, title, updatedAt, createdAt, libId } = result as ToolResult['annotateArticle']
+            return (
+                <div className='mt-2 flex flex-col gap-2 mb-1'>
+                    <span className='text-sm text-default-400'>注解完成后会显示在文本中</span>
+                    <ScopeProvider atoms={[libAtom]}>
+                        <HydrationBoundary hydrateAtoms={[[libAtom, libId]]}>
+                            <Text
+                                id={id}
+                                title={title}
+                                topics={[]}
+                                hasEbook={false}
+                                createdAt={createdAt}
+                                updatedAt={updatedAt}
+                            />
+                        </HydrationBoundary>
+                    </ScopeProvider>
+                </div>
+            )
 
         case 'getForgetCurve':
             return (
@@ -147,7 +211,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     <span className='text-sm text-default-400 font-mono'>Retrieving words ...</span>
                 </div>
             )
-
         default:
             return null
     }
@@ -199,6 +262,12 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     <ToolState state={part.toolInvocation?.state || ''} toolName={part.toolInvocation?.toolName || ''} />
                 </div>
             )
+        case 'step-start':
+            return (
+                <div className='mt-4'>
+                    <span className='text-sm text-default-400 font-mono flex items-center gap-2'><PiSpinnerGap className='animate-spin' size={16} /> Thinking ...</span>
+                </div>
+            )
         default:
             return <></>
     }
@@ -207,15 +276,25 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 export default function ChatInterface({ plan }: { plan: Plan }) {
     const [messages, setMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const { messages: aiMessages, input, setInput, handleSubmit, status, setData, stop, setMessages: setAiMessages} = useChat({
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [files, setFiles] = useState<FileList | undefined>(undefined)
+    const { messages: aiMessages, input, setInput, handleSubmit, status, setData, stop, setMessages: setAiMessages } = useChat({
         api: '/api/library/chat',
         initialMessages: messages,
         onFinish: (message) => {
             setMessages([...aiMessages, message])
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            setFiles(undefined)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
         },
         onError: () => {
             toast.error('发生错误')
+            setFiles(undefined)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
         }
     })
 
@@ -226,11 +305,20 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
         setData([])
     }
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setFiles(e.target.files)
+        }
+    }
+
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!input.trim() || status === 'streaming') return
+
+        handleSubmit(e, {
+            experimental_attachments: files
+        })
         setInput('')
-        handleSubmit(e)
     }
 
     const handleButtonClick = () => {
@@ -247,10 +335,13 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
 
     return (
         <Main style={{ fontFamily: chatFontFamily }} className='flex flex-col max-w-2xl'>
-            <div className='flex justify-end mb-4'>
+            <div className='flex justify-between items-center mb-4'>
+                <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent'}>
+                    Talk to Your Library
+                </H>
                 <Button
                     color='primary'
-                    variant='flat'
+                    variant='light'
                     startContent={<PiPlusCircleDuotone />}
                     onPress={startNewConversation}
                 >
@@ -283,13 +374,37 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                     ))}
                 </div>
             )}
-            {aiMessages.map((m, i) => (
+            {aiMessages.map(({ parts, role, experimental_attachments }, i) => (
                 <div key={i} className={cn(
                     'mb-4 flex flex-col',
-                    m.role === 'user' ? 'items-end' : 'items-start'
+                    role === 'user' ? 'items-end' : 'items-start'
                 )}>
-                    {m.parts?.map((part, j) => (
-                        <MessagePart key={j} part={part as MessagePart} isUser={m.role === 'user'} />
+                    {experimental_attachments && experimental_attachments.length > 0 && (
+                        <div className='flex flex-col gap-2'>
+                            {experimental_attachments.map((att, idx) => (
+                                <div
+                                    key={idx}
+                                    className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
+                                >
+                                    <PiPaperclipFill className='text-primary-500' size={20} />
+                                    <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
+                                        {att.name}
+                                    </span>
+                                    <a
+                                        href={att.url}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        className='text-primary-600 underline text-xs'
+                                        download={att.name}
+                                    >
+                                        下载
+                                    </a>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {parts?.map((part, j) => (
+                        <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
                     ))}
                 </div>
             ))}
@@ -298,6 +413,13 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                 onSubmit={handleFormSubmit}
                 className='flex items-center gap-2'
             >
+                <input
+                    type='file'
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className='hidden'
+                    accept='.pdf,.txt,.md'
+                />
                 <Textarea
                     className='flex-1'
                     value={input}
@@ -306,8 +428,23 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                     disabled={status === 'streaming'}
                     maxRows={15}
                     autoComplete='off'
-                    startContent={<PiChatCircleDotsDuotone className='text-default-500 mt-0.5' />}
+                    startContent={
+                        <div className='flex items-center gap-2'>
+                            <PiChatCircleDotsDuotone className='text-default-500 mt-0.5' />
+                        </div>
+                    }
                 />
+                <Button
+                    type='button'
+                    color='primary'
+                    variant='light'
+                    isIconOnly
+                    className='self-start'
+                    startContent={
+                        files && files.length > 0 ? <PiPaperclipFill size={22} /> : <PiPaperclipDuotone size={22} />
+                    }
+                    onPress={() => fileInputRef.current?.click()}
+                ></Button>
                 <Button
                     type='button'
                     color='primary'
@@ -316,13 +453,8 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                     isDisabled={(plan === 'beginner' && isProd) || (status !== 'streaming' && !input.trim())}
                     aria-label={status === 'streaming' ? '停止' : '发送'}
                     onPress={handleButtonClick}
-                >
-                    {status === 'streaming' ? (
-                        <PiStopCircleDuotone size={22} />
-                    ) : (
-                        <PiPaperPlaneRightFill size={22} />
-                    )}
-                </Button>
+                    startContent={status === 'streaming' ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
+                ></Button>
             </form>
         </Main>
     )

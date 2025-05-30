@@ -5,7 +5,7 @@ import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '..
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
 
-const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string) => ({
+export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string) => ({
     system: `
         生成文本注解（形如 [[vocabulary]] 双重中括号内的词以及形如<must>vocabulary</must>的词必须注解，除此以外***尽可能多***地挑选。
 
@@ -133,7 +133,7 @@ export const annotateFullArticle = inngest.createFunction(
         const [topics, ...annotatedChunks] = await Promise.all([
             step.ai.wrap('annotate-topics', generateText, { model: await getBestArticleAnnotationModel(lang), ...topicsConfig }),
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, {
-                model: await getBestArticleAnnotationModel(lang), ...config
+                model: getBestArticleAnnotationModel(lang), ...config
             }))
         ])
 

@@ -306,7 +306,7 @@ function GeneratingView() {
   }
 
   return (
-    <div className='flex flex-col justify-center items-center h-[500px] gap-4'>
+    <div className='flex flex-col justify-center items-center h-[calc(100dvh-350px)] gap-4'>
       <Progress
         classNames={{ label: cn(CHINESE_ZCOOL.className) }}
         color='primary'

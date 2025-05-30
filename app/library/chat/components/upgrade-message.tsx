@@ -16,7 +16,7 @@ export default function UpgradeMessage() {
                     <div className='flex-1'>
                         <h3 className='text-lg font-medium mb-1'>升级</h3>
                         <p className='text-sm text-default-500 mb-4'>
-                            Chat 是高级版的专属功能。
+                            Talk to Your Library 是高级版的专属功能。
                         </p>
                         <Button
                             as={Link}

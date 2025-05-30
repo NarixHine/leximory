@@ -36,7 +36,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
 
     return !isReaderMode && <div className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'>
         <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
-            list: 'flex-nowrap bg-primary-50/50 dark:bg-default-200/70 backdrop-blur-sm',
+            list: 'flex-nowrap bg-primary-50/50 dark:bg-default-50/70 backdrop-blur-sm',
         }}>
             {/* Tenant Breadcrumb */}
             <BreadcrumbItem className='max-w-full'>
@@ -99,7 +99,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     }}
                     radius='lg'
                     isIconOnly
-                    className='bg-primary-50/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
+                    className='bg-primary-50/50 dark:bg-default-50/50 backdrop-blur-sm ml-2'
                     startContent={<PiSkipBackCircleDuotone className='text-primary-900 dark:text-default-500 text-lg' />}
                 />
                 : <Button
@@ -109,7 +109,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     as={Link}
                     radius='lg'
                     isIconOnly
-                    className='bg-primary-50/50 dark:bg-default-200/50 backdrop-blur-sm ml-2'
+                    className='bg-primary-50/50 dark:bg-default-50/50 backdrop-blur-sm ml-2'
                 >
                     <LoadingIndicatorWrapper>
                         <PiBookBookmarkDuotone className='text-primary-900 dark:text-default-500 text-medium' />

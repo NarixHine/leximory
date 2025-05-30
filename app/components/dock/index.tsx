@@ -1,4 +1,4 @@
-import { PiBooksFill, PiRewindFill, PiStorefrontFill, PiChatCircleDotsFill, PiUserCircleGearFill, PiInfoFill } from 'react-icons/pi'
+import { PiBooksFill, PiRewindFill, PiStorefrontFill, PiChatCircleDotsFill, PiUserCircleGearFill } from 'react-icons/pi'
 import { FloatingDock } from './floating-dock'
 
 export default function Dock() {
@@ -17,8 +17,5 @@ export default function Dock() {
     }, {
             icon: <PiUserCircleGearFill />,
         href: '/settings'
-    }, {
-        icon: <PiInfoFill />,
-        href: '/about',
     }]} />
 }

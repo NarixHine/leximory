@@ -23,7 +23,7 @@ import moment from 'moment-timezone'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
 
-function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
+function Text({ id, title, topics:textTopics, hasEbook, createdAt, updatedAt }: {
     id: string,
     title: string,
     topics: string[],
@@ -33,15 +33,18 @@ function Text({ id, title, topics, hasEbook, createdAt, updatedAt }: {
 }) {
     const lib = useAtomValue(libAtom)
     const visited = useAtomValue(visitedTextsAtom)
+    const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
     return (<div className='w-full h-full relative'>
         <Card shadow='sm' fullWidth className={'h-full'} as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
                 <h2 className={cn('text-2xl text-balance', visited[id] && 'text-default-700')} style={{
                     fontFamily: postFontFamily
                 }}>{title}</h2>
-                <div className='gap-0.5 flex flex-wrap align-middle items-center'>
-                    <Topics topics={topics.concat(hasEbook ? ['电子书'] : [])}></Topics>
-                </div>
+                {topics.length > 0  && (
+                    <div className='gap-0.5 flex flex-wrap align-middle items-center'>
+                        <Topics topics={topics}></Topics>
+                    </div>
+                )}
             </CardBody>
             <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
                 <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>

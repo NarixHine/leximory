@@ -151,7 +151,7 @@ export async function generateSingleComment(prompt: string, lib: string) {
 
     (async () => {
         const { textStream } = streamText({
-            model: await getBestCommentaryModel(lang),
+            model: getBestCommentaryModel(lang),
             system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
@@ -186,7 +186,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
     }
 
     const { text } = await generateText({
-        model: await getBestCommentaryModel(lang),
+        model: getBestCommentaryModel(lang),
         system: `
         生成词汇注解（形如<must>vocabulary</must>、<must></must>中的部分必须注解）。
 
