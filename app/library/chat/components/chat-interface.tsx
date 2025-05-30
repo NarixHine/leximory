@@ -169,7 +169,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     <CardBody className='p-6'>
                         <div className='text-2xl mb-2' style={{ fontFamily: postFontFamily }}>{text.title}</div>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
+                            <Markdown disableSave md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
                         </div>
                     </CardBody>
                 </Card>
@@ -179,7 +179,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
+                            <Markdown disableSave md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
                         </div>
                     </CardBody>
                 </Card>
@@ -227,6 +227,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                         : 'bg-primary-50/50 text-default-900'
                 )}>
                     {part.text ? <Markdown
+                        disableSave
                         fontFamily={chatFontFamily}
                         md={part.text}
                         className='prose dark:prose-invert max-w-none'
@@ -239,6 +240,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 <Accordion className='mt-2' defaultExpandedKeys={['reasoning']}>
                     <AccordionItem key={'reasoning'} title={part.text || ''}>
                         <Markdown
+                            disableSave
                             fontFamily={chatFontFamily}
                             md={part.text || ''}
                             className='prose dark:prose-invert max-w-none'

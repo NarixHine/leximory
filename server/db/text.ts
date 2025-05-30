@@ -50,14 +50,15 @@ export async function deleteText({ id }: { id: string }) {
 export async function getTexts({ lib }: { lib: string }) {
     'use cache'
     cacheTag(`texts:${lib}`)
-    const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url']).filter({ lib }).getAll()
-    return texts.map(({ id, title, topics, ebook, xata }) => ({
+    const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url','lib.name']).filter({ lib }).getAll()
+    return texts.map(({ id, title, topics, ebook, xata, lib }) => ({
         id,
         title,
         topics,
         hasEbook: !!ebook?.url,
         createdAt: xata.createdAt.toISOString(),
-        updatedAt: xata.updatedAt.toISOString()
+        updatedAt: xata.updatedAt.toISOString(),
+        libName: lib!.name
     }))
 }
 
