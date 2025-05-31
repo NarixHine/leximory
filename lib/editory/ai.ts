@@ -12,8 +12,9 @@ export default async function generate({ prompt, type }: { prompt: string, type:
         prompt,
         system,
         schema,
-        maxTokens: 10000,
+        maxTokens: 15000,
     })
+    console.log(object)
     return {
         ...object,
         text: object.text?.replaceAll('\n', '<br>')

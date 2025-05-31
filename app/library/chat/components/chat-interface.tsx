@@ -1,10 +1,10 @@
 'use client'
 
-import { useChat } from '@ai-sdk/react'
+import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark } from 'react-icons/pi'
-import { useRef, useState } from 'react'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone } from 'react-icons/pi'
+import { useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
@@ -47,7 +47,7 @@ const initialPrompts = [{
     icon: PiClockClockwiseDuotone
 }, {
     title: '实战训练',
-    prompt: '根据文库【文库名称】中的文章，提炼出可以运用于以下作文的语块，然后给出范文。',
+    prompt: '对于以下作文，尽可能多地使用文库【文库名称】里文章中的语块，给出范文。',
     icon: PiExamDuotone
 }, {
     title: '造句巩固',
@@ -98,7 +98,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
     switch (toolName) {
         case 'listLibs':
             return (
-                <ul className='mt-2 flex flex-col gap-2'>
+                <ul className='mt-2 flex flex-col gap-1'>
                     <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiBooks /> All Libraries</span>
                     {(result as Awaited<ToolResult['listLibs']>).map(({ lib }) => (
                         <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={lib.id}>
@@ -140,7 +140,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'getTexts':
             const res = result as Awaited<ToolResult['getAllTextsInLib']>
             return (
-                <ul className='mt-2 flex flex-col gap-2'>
+                <ul className='mt-2 flex flex-col gap-1'>
                     <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiPackage /> Library - {res[0].libName}</span>
                     {res.map((text, index) => (
                         <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
@@ -294,16 +294,54 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
     }
 }
 
+export function ChatMessages({ messages }: { messages: Message[] }) {
+    return <>{
+        messages.map(({ parts, role, experimental_attachments }, i) => (
+            <div key={i} className={cn(
+                'mb-4 flex flex-col',
+                role === 'user' ? 'items-end' : 'items-start'
+            )}>
+                {experimental_attachments && experimental_attachments.length > 0 && (
+                    <div className='flex flex-col gap-2'>
+                        {experimental_attachments.map((att, idx) => (
+                            <div
+                                key={idx}
+                                className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
+                            >
+                                <PiPaperclipFill className='text-primary-500' size={20} />
+                                <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
+                                    {att.name}
+                                </span>
+                                <a
+                                    href={att.url}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    className='text-primary-600 underline text-xs'
+                                    download={att.name}
+                                >
+                                    下载
+                                </a>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {parts?.map((part, j) => (
+                    <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+                ))}
+            </div>
+        ))
+    }</>
+}
+
 export default function ChatInterface({ plan }: { plan: Plan }) {
-    const [messages, setMessages] = useAtom(messagesAtom)
+    const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
-    const { messages: aiMessages, input, setInput, handleSubmit, status, setData, stop, setMessages: setAiMessages } = useChat({
+    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
         api: '/api/library/chat',
-        initialMessages: messages,
-        onFinish: (message) => {
-            setMessages([...aiMessages, message])
+        initialMessages: storedMessages,
+        onFinish: () => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
             setFiles(undefined)
             if (fileInputRef.current) {
@@ -319,9 +357,15 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
         }
     })
 
+    useEffect(() => {
+        if (messages.length > 0) {
+            setStoredMessages(messages)
+        }
+    }, [messages])
+
     const startNewConversation = () => {
+        setStoredMessages([])
         setMessages([])
-        setAiMessages([])
         setInput('')
         setData([])
     }
@@ -354,20 +398,34 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
         setInput(prompt)
     }
 
+    const [, copy] = useCopyToClipboard()
+
     return (
         <Main style={{ fontFamily: chatFontFamily }} className='flex flex-col max-w-2xl'>
             <div className='flex justify-between items-center mb-4'>
                 <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
-                <Button
-                    color='primary'
-                    variant='light'
-                    startContent={<PiPlusCircleDuotone />}
-                    onPress={startNewConversation}
-                >
-                    开始新对话
-                </Button>
+                <div className='flex items-center gap-2'>
+                    {!isProd && (<Button
+                        color='primary'
+                        variant='light'
+                        startContent={<PiCopyDuotone />}
+                        onPress={() => {
+                            copy(JSON.stringify(messages))
+                            toast.success('已复制到剪贴板')
+                        }}
+                        isIconOnly
+                    ></Button>)}
+                    <Button
+                        color='primary'
+                        variant='light'
+                        startContent={<PiPlusCircleDuotone />}
+                        onPress={startNewConversation}
+                    >
+                        开始新对话
+                    </Button>
+                </div>
             </div>
             {plan === 'beginner' && <UpgradeMessage />}
             {messages.length === 0 && (
@@ -395,40 +453,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                     ))}
                 </div>
             )}
-            {aiMessages.map(({ parts, role, experimental_attachments }, i) => (
-                <div key={i} className={cn(
-                    'mb-4 flex flex-col',
-                    role === 'user' ? 'items-end' : 'items-start'
-                )}>
-                    {experimental_attachments && experimental_attachments.length > 0 && (
-                        <div className='flex flex-col gap-2'>
-                            {experimental_attachments.map((att, idx) => (
-                                <div
-                                    key={idx}
-                                    className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
-                                >
-                                    <PiPaperclipFill className='text-primary-500' size={20} />
-                                    <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
-                                        {att.name}
-                                    </span>
-                                    <a
-                                        href={att.url}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        className='text-primary-600 underline text-xs'
-                                        download={att.name}
-                                    >
-                                        下载
-                                    </a>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    {parts?.map((part, j) => (
-                        <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
-                    ))}
-                </div>
-            ))}
+            <ChatMessages messages={messages} />
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}

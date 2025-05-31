@@ -12,3 +12,4 @@ export const defaultFontFamily = [ENGLISH.style.fontFamily, CHINESE.style.fontFa
 export const postFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE.style.fontFamily].join(',')
 export const hFontFamily = [ENGLISH_PLAYFAIR.style.fontFamily, CHINESE_ZCOOL.style.fontFamily].join(',')
 export const chatFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE_ZCOOL.style.fontFamily, JAPANESE_MINCHO.style.fontFamily,].join(',')
+export const UIFontFamily = [ENGLISH.style.fontFamily, CHINESE_ZCOOL.style.fontFamily, JAPANESE_MINCHO.style.fontFamily].join(',')

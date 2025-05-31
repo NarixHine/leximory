@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
-import { defaultFontFamily } from '@/lib/fonts'
 import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
@@ -50,13 +49,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<ViewTransitions>
-			<html suppressHydrationWarning lang='zh-CN' className='antialiased'>
+			<html lang='zh-CN' className='antialiased'>
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
 				</head>
-				<body style={{
-					fontFamily: defaultFontFamily,
-				}}>
+				<body>
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>

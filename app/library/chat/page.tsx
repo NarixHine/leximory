@@ -2,6 +2,8 @@ import { getPlan } from '@/server/auth/quota'
 import ChatInterface from './components/chat-interface'
 import { Metadata } from 'next'
 import { getAuthOrThrow } from '@/server/auth/role'
+import { HydrationBoundary } from 'jotai-ssr'
+import { lexiconAtom } from '../[lib]/[text]/atoms'
 
 export const metadata: Metadata = {
     title: 'Talk to Your Library',
@@ -12,5 +14,7 @@ export default async function Page() {
     const { userId } = await getAuthOrThrow()
     const plan = await getPlan(userId)
 
-    return <ChatInterface plan={plan} />
+    return <HydrationBoundary hydrateAtoms={[[lexiconAtom, 'none']]}>
+        <ChatInterface plan={plan} />
+    </HydrationBoundary>
 } 
