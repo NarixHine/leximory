@@ -36,7 +36,7 @@ export function generatePaper(data: QuizData[]) {
     let start = 1
 
     return data.map((data) => {
-        let generator = generator_getter(data, { start })()
+        const generator = generator_getter(data, { start })()
         if (generator === null) {
             return ""
         }
@@ -49,7 +49,7 @@ export function generateKey(data: QuizData[]) {
     let start = 1
 
     return data.map((data) => {
-        let generator = generator_getter(data, { start })()
+        const generator = generator_getter(data, { start })()
         if (generator === null) {
             return ""
         }
@@ -88,12 +88,12 @@ abstract class Generator<T extends QuizData> {
             this.paper = new Element('section', { class: 'paper-content' }, [])
         }
         this.onAfterWalk()
-        const articleTypeElement = attr.displayName ? [new Element(
+        const articconstypeElement = attr.displayName ? [new Element(
             'h2', { class: 'text-2xl font-bold section-name-title' },
             [new Text(NAME_MAP[data.type])]
         )] : []
         this.paper = new Element('article', { class: 'flex flex-col my-4' }, [
-            ...articleTypeElement,
+            ...articconstypeElement,
             ...this.addPaper(),
         ])
         const key = this.generateKey()
@@ -104,7 +104,7 @@ abstract class Generator<T extends QuizData> {
                 return new Element(
                     'td', { class: 'key-item px-2' },
                     [new Text(number.toString() + ". "), element])
-            }), attr.keyPerLine) : key.map(([_, element]) => element)
+            }), attr.keyPerLine) : key.map(([, element]) => element)
         )
     }
 
@@ -123,7 +123,7 @@ abstract class Generator<T extends QuizData> {
     }
 
     public getSeed(content: string | number) {
-        return crypto.getRandomValues(new Uint32Array(1))[0]
+        return content.toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     }
 
     public getNumber(): number {
@@ -131,7 +131,7 @@ abstract class Generator<T extends QuizData> {
     }
 
     public getBlankElement(number?: number): Element {
-        let _number = number ?? this.getNumber()
+        const _number = number ?? this.getNumber()
         return new Element('u', {}, [
             new Text(this.spaces + _number.toString() + this.spaces)
         ])
@@ -182,7 +182,7 @@ class FishingGenerator extends Generator<FishingData> {
     }
 
     protected onBeforeWalk() {
-        this.options = new Array()
+        this.options = []
     }
 
     protected replacer(node: DOMNode): Element | Text | undefined {
@@ -404,7 +404,7 @@ class ReadingGenerator extends Generator<ReadingData> {
 
     protected onBeforeWalk() { }
 
-    protected replacer(node: DOMNode): undefined { return }
+    protected replacer(): undefined { return }
 
     protected onAfterWalk(): void { }
 
@@ -446,7 +446,7 @@ class ListeningGenerator extends Generator<ListeningData> {
 
     protected onBeforeWalk() { }
 
-    protected replacer(node: DOMNode): undefined { return }
+    protected replacer(): undefined { return }
 
     protected onAfterWalk(): void { }
 
@@ -483,7 +483,7 @@ class CustomGenerator extends Generator<CustomData> {
 
     protected onBeforeWalk() { }
 
-    protected replacer(node: DOMNode): undefined { return }
+    protected replacer(): undefined { return }
 
     protected onAfterWalk(): void { }
 

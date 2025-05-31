@@ -3,10 +3,10 @@
 import { useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiSpinnerGap, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark } from 'react-icons/pi'
 import { useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
-import { cn, nanoid } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
 import { Textarea } from '@heroui/input'
@@ -73,10 +73,11 @@ type MessagePart = {
 }
 
 function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
+    console.log(state, toolName)
     if (state === 'call') {
         return (
-            <div className='flex items-center gap-2 text-sm text-default-400'>
-                <Spinner size='sm' />
+            <div className='flex items-center gap-2 text-sm text-default-400 font-mono mt-2'>
+                <Spinner size='sm' color='default' variant='spinner' />
                 <span>{toolDescriptions[toolName]}</span>
             </div>
         )
@@ -201,15 +202,26 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'getForgetCurve':
+            const words = (result as Awaited<ToolResult['getForgetCurve']>).flat()
             return (
-                <div className='mt-2'>
-                    <span className='text-sm text-default-400 font-mono'>Retrieving words ...</span>
+                <div className={cn('mt-2 gap-2', words.length > 0 ? 'flex flex-col' : 'flex items-center')}>
+                    <span className='text-sm text-default-600 font-mono flex items-center gap-3'><PiBookmark />Words to review</span>
+                    {
+                        words.length > 0
+                            ? <ul className='flex flex-wrap gap-2'>
+                                {words.map(({ id, word }) => (
+                                    <li className=' flex gap-1 items-center' key={id}>
+                                        <Markdown disableSave md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                    </li>
+                                ))}
+                            </ul>
+                            : <span className='text-sm text-default-400 font-mono'><PiEmpty /></span>
+                    }
                 </div>
             )
 
         case 'generateQuiz':
             const quiz = result as ToolResult['generateQuiz']
-            console.log(quiz)
             return (
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
@@ -274,7 +286,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'step-start':
             return (
                 <div className='mt-4'>
-                    <span className='text-sm text-default-400 font-mono flex items-center gap-2'><PiLightbulb className='animate-spin' size={16} /> Thinking ...</span>
+                    <span className='text-sm text-default-600 font-mono flex items-center gap-2'><PiLightbulb className='animate-spin' size={16} /> Thinking ...</span>
                 </div>
             )
         default:

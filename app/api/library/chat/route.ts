@@ -57,7 +57,7 @@ const tools: ToolSet = {
         }
     },
     listLibs: {
-        description: 'Get a list of all libraries accessible to the user.',
+        description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
         parameters: toolSchemas.listLibs,
         execute: async () => {
             return listLibsWithFullInfo({ filter: await isListed() })
@@ -110,7 +110,6 @@ const tools: ToolSet = {
             if (await incrCommentaryQuota(1)) {
                 throw new Error('You have reached the maximum number of commentary quota.')
             }
-            throw new Error('Not implemented')
             const result = await generateQuiz({ prompt: content, type })
             return { ...result, type, id: nanoid() }
         }
