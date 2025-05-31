@@ -8,6 +8,7 @@ import env from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { LogSnagProvider } from '@logsnag/next'
 import { Analytics } from '@vercel/analytics/next'
+import { defaultFontFamily } from '@/lib/fonts'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -53,7 +54,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
 				</head>
-				<body>
+				<body style={{
+					fontFamily: defaultFontFamily,
+				}}>
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
