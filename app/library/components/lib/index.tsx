@@ -7,7 +7,7 @@ import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
-import { postFontFamily } from '@/lib/fonts'
+import { CHINESE_ZCOOL, postFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import { Skeleton } from "@heroui/skeleton"
@@ -177,9 +177,9 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     <Topics topics={topics.concat([langMap[lang as Lang]])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} color='primary' variant='flat'>语料本</Button>
+                <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} className={CHINESE_ZCOOL.className} variant='flat'>语料本</Button>
                 {lexicon && <div className='flex flex-col items-center'>
-                    <p className='text-xs opacity-80'>词汇量</p>
+                    <p className={cn('text-xs opacity-80', CHINESE_ZCOOL.className)}>词汇量</p>
                     <Chip color='primary' variant='dot' className='border-none -mt-1'>{lexicon.count}</Chip>
                 </div>}
                 <div className='flex-1'></div>
