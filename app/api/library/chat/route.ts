@@ -10,6 +10,9 @@ import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
 import { articleAnnotationPrompt } from '@/server/inngest/annotate'
+import generateQuiz from '@/lib/editory/ai'
+import { AIGenQuizDataType } from '@/lib/editory/types'
+import { nanoid } from 'nanoid'
 
 const tools: ToolSet = {
     getLib: {
@@ -99,6 +102,18 @@ const tools: ToolSet = {
             })
             return text
         }
+    },
+    generateQuiz: {
+        description: 'Generate a quiz from the given text content.',
+        parameters: toolSchemas.generateQuiz,
+        execute: async ({ content, type }: { content: string, type: AIGenQuizDataType }) => {
+            if (await incrCommentaryQuota(1)) {
+                throw new Error('You have reached the maximum number of commentary quota.')
+            }
+            throw new Error('Not implemented')
+            const result = await generateQuiz({ prompt: content, type })
+            return { ...result, type, id: nanoid() }
+        }
     }
 }
 
@@ -130,7 +145,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。
 
-8. 直接执行工具，无需向用户请求许可。
+8. 直接执行工具，无需向用户请求许可。**持续执行**工具，直到完成任务。
 
 9. 必须向用户**隐藏工具调用过程**和文库ID等具体技术细节，禁止透露或解释。
 
@@ -180,6 +195,14 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 一次性出多道题，然后提示用户逐句翻译。在批改完一句之后，重复一遍下一题。
 
 如果用户要求针对今天/本周学习的新单词出题，请使用getForgetCurve工具获取今天（day）/本周（week）记忆的单词，然后根据这些单词出题。
+
+### 生成试卷
+
+如果用户要求生成试卷，请使用generateQuiz工具生成试卷。
+
+1. 试卷类型由用户提供，例如：cloze (fill in the blanks/完形填空), 4/6 (sentence choice), reading (reading comprehension)
+2. 生成完成后无需输出试卷内容。试卷会自动显示在聊天界面。
+3. 对于传递给generateQuiz工具的文本，将所有注解语法用原文形式替换回原文，例如{{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)}}用transpires替换。
 `
 
 export async function POST(req: NextRequest) {

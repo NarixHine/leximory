@@ -4,6 +4,20 @@ import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
+import QuizData, { AI_GEN_QUIZ_DATA_TYPE_LIST } from '@/lib/editory/types'
+
+export const toolDescriptions = {
+    listLibs: 'Fetching available libraries ...',
+    getLib: 'Loading library details ...',
+    getAllWordsInLib: 'Retrieving words from library ...',
+    getTexts: 'Loading library texts ...',
+    getTextContent: 'Fetching text content ...',
+    getAllTextsInLib: 'Retrieving library texts ...',
+    annotateArticle: 'Creating annotated article ...',
+    getForgetCurve: 'Looking for words to review ...',
+    annotateParagraph: 'Adding annotations ...',
+    generateQuiz: 'Generating quiz questions ...'
+} as const
 
 export type ToolResult = {
     listLibs: ReturnType<typeof listLibsWithFullInfo>
@@ -21,6 +35,7 @@ export type ToolResult = {
         libId: string
     }
     annotateParagraph: string
+    generateQuiz: QuizData
 }
 
 export const toolSchemas = {
@@ -28,7 +43,6 @@ export const toolSchemas = {
     getAllWordsInLib: z.object({ lib: z.string().describe('The id of the library') }),
     getTexts: z.object({ lib: z.string().describe('The id of the library') }),
     getTextContent: z.object({ id: z.string().describe('The id of the text') }),
-    getWord: z.object({ id: z.string().describe('The id of the word') }),
     getAllTextsInLib: z.object({ libId: z.string().describe('The id of the library') }),
     listLibs: z.object({}),
     annotateArticle: z.object({
@@ -40,6 +54,10 @@ export const toolSchemas = {
     annotateParagraph: z.object({
         content: z.string().describe('The content of the paragraph to annotate'),
         lang: z.enum(Object.keys(langMap) as [Lang, ...Lang[]]).describe('The language of the paragraph')
+    }),
+    generateQuiz: z.object({
+        content: z.string().describe('The text content to generate quiz from'),
+        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
     })
 } as const
 

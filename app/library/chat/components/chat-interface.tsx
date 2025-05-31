@@ -3,10 +3,10 @@
 import { useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiSpinnerGap, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiSpinnerGap, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb } from 'react-icons/pi'
 import { useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
-import { cn } from '@/lib/utils'
+import { cn, nanoid } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
 import { Textarea } from '@heroui/input'
@@ -26,6 +26,8 @@ import Text from '@/app/library/[lib]/components/text'
 import { ScopeProvider } from 'jotai-scope'
 import { libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
+import Paper from '@/components/editory/paper'
+import { toolDescriptions } from '../types'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -70,23 +72,16 @@ type MessagePart = {
     }
 }
 
-function ToolState({ state, toolName }: { state: string; toolName: string }) {
-    if (state === 'loading') {
+function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
+    if (state === 'call') {
         return (
             <div className='flex items-center gap-2 text-sm text-default-400'>
-                <PiSpinnerGap />
-                <span>Loading {toolName}...</span>
+                <Spinner size='sm' />
+                <span>{toolDescriptions[toolName]}</span>
             </div>
         )
     }
-    if (state === 'error') {
-        return (
-            <div className='text-sm text-danger'>
-                Failed to load {toolName}
-            </div>
-        )
-    }
-    return null
+    return <></>
 }
 
 function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
@@ -211,6 +206,18 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     <span className='text-sm text-default-400 font-mono'>Retrieving words ...</span>
                 </div>
             )
+
+        case 'generateQuiz':
+            const quiz = result as ToolResult['generateQuiz']
+            console.log(quiz)
+            return (
+                <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
+                    <CardBody className='p-6'>
+                        <Paper data={[quiz]} />
+                    </CardBody>
+                </Card>
+            )
+
         default:
             return null
     }
@@ -261,13 +268,13 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
             }
             return (
                 <div className='mt-4'>
-                    <ToolState state={part.toolInvocation?.state || ''} toolName={part.toolInvocation?.toolName || ''} />
+                    <ToolState state={part.toolInvocation?.state || ''} toolName={part.toolInvocation?.toolName as ToolName} />
                 </div>
             )
         case 'step-start':
             return (
                 <div className='mt-4'>
-                    <span className='text-sm text-default-400 font-mono flex items-center gap-2'><PiSpinnerGap className='animate-spin' size={16} /> Thinking ...</span>
+                    <span className='text-sm text-default-400 font-mono flex items-center gap-2'><PiLightbulb className='animate-spin' size={16} /> Thinking ...</span>
                 </div>
             )
         default:
