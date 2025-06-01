@@ -3,10 +3,10 @@ import localFont from 'next/font/local'
 
 export const CHINESE = localFont({
     src: [{
-        path: './mincho.ttf',
+        path: './mincho-r.ttf',
         weight: '400',
     }, {
-        path: './mincho-bold.ttf',
+        path: './mincho-b.ttf',
         weight: '700',
     }]
 })
