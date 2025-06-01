@@ -10,7 +10,6 @@ import { ReactNode, useTransition } from 'react'
 import { Skeleton } from "@heroui/skeleton"
 import { star } from '@/app/library/[lib]/components/actions'
 import { toast } from 'sonner'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/spacer'
 
@@ -43,10 +42,10 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
         >
             <CardBody className={cn('p-5', !hideFooter && 'pb-0')}>
                 <div className='flex flex-col'>
-                    <H useNoto disableCenter className='text-2xl '>{library.name}</H>
+                    <H disableCenter className='text-2xl'>{library.name}</H>
                     <Spacer y={1} />
-                    <span className={cn(CHINESE_ZCOOL.className, 'text-sm opacity-60')}>语言：{langMap[library.lang]}</span>
-                    <span className={cn(CHINESE_ZCOOL.className, 'text-sm opacity-60')}>读者：{library.readers} 人</span>
+                    <span className={cn('text-sm opacity-60')}>语言：{langMap[library.lang]}</span>
+                    <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
                 </div>
             </CardBody>
 
@@ -59,7 +58,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                     startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
                     color='primary'
                     variant={'flat'}
-                    className={cn(CHINESE_ZCOOL.className, '-mr-5 pr-7')}
+                    className={cn('-mr-5 pr-7')}
                     onPress={() => {
                         startTransition(async () => {
                             const { success, message } = await star(library.id)

@@ -6,7 +6,6 @@ import { PiTelevisionDuotone } from 'react-icons/pi'
 import Link from 'next/link'
 import { FaBilibili } from 'react-icons/fa6'
 import { cn } from '@heroui/react'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { showFollowUsModal } from './actions'
 import { useRouter } from 'next/navigation'
 import { bilibiliLink } from '@/lib/config'
@@ -26,7 +25,7 @@ export default function FollowUs() {
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader className={cn('flex items-center gap-2', CHINESE_ZCOOL.className)}>
+                        <ModalHeader className={cn('flex items-center gap-2')}>
                             <FaBilibili />在 B 站上关注 Leximory
                         </ModalHeader>
 
@@ -50,7 +49,7 @@ export default function FollowUs() {
                                 await showFollowUsModal()
                                 router.push(bilibiliLink)
                                 onClose()
-                            }} startContent={<PiTelevisionDuotone />} color='primary' className={cn(CHINESE_ZCOOL.className)}>
+                            }} startContent={<PiTelevisionDuotone />} color='primary'>
                                 关注我们
                             </Button>
                         </ModalFooter>

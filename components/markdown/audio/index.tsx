@@ -12,7 +12,7 @@ import { libAtom } from '@/app/library/[lib]/atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { MAX_TTS_LENGTH } from '@/lib/config'
-import { postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 
 export default function AudioPlayer({ id, md, ...props }: {
@@ -63,7 +63,7 @@ export default function AudioPlayer({ id, md, ...props }: {
         })
     }, [id])
 
-    const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? postFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
+    const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? contentFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
     return isReaderMode ? MarkdownComponent : <Card className='sm:-mx-10 px-5 mt-3 mb-6 bg-transparent' isBlurred>
         <CardBody>

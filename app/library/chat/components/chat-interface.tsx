@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
 import { Textarea } from '@heroui/input'
-import { chatFontFamily, postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import type { ToolResult, ToolName } from '../types'
 import Main from '@/components/ui/main'
 import LibraryComponent from '@/app/library/components/lib'
@@ -163,9 +163,9 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             return (
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
-                        <div className='text-2xl mb-2' style={{ fontFamily: postFontFamily }}>{text.title}</div>
+                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{text.title}</div>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
+                            <Markdown disableSave md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
                         </div>
                     </CardBody>
                 </Card>
@@ -175,7 +175,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={postFontFamily} />
+                            <Markdown disableSave md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
                         </div>
                     </CardBody>
                 </Card>
@@ -247,7 +247,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 )}>
                     {part.text ? <Markdown
                         disableSave
-                        fontFamily={chatFontFamily}
                         md={part.text}
                         className='prose dark:prose-invert max-w-none'
                         hasWrapped={true}
@@ -260,7 +259,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     <AccordionItem key={'reasoning'} title={part.text || ''}>
                         <Markdown
                             disableSave
-                            fontFamily={chatFontFamily}
                             md={part.text || ''}
                             className='prose dark:prose-invert max-w-none'
                         />
@@ -297,7 +295,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 export function ChatMessages({ messages }: { messages: Message[] }) {
     return <>{
         messages.map(({ parts, role, experimental_attachments }, i) => (
-            <div key={i} className={cn(
+            <div style={{ fontFamily: contentFontFamily }} key={i} className={cn(
                 'mb-4 flex flex-col',
                 role === 'user' ? 'items-end' : 'items-start'
             )}>
@@ -401,7 +399,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
     const [, copy] = useCopyToClipboard()
 
     return (
-        <Main style={{ fontFamily: chatFontFamily }} className='flex flex-col max-w-2xl'>
+        <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
             <div className='flex justify-between items-center mb-4 sticky p-2 top-10 z-10 backdrop-blur bg-background/50'>
                 <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent'}>
                     Talk to Your Library

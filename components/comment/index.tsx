@@ -24,7 +24,7 @@ import { useAuth } from '@clerk/nextjs'
 import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
-import { postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import styles from '@/styles/sidenote.module.css'
 
 interface CommentProps {
@@ -220,7 +220,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     return asCard
         ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
-            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: postFontFamily }}>
+            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: contentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -322,7 +322,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: postFontFamily }}>
+    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: contentFontFamily }}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea

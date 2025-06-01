@@ -3,7 +3,7 @@
 import { useAtom } from 'jotai'
 import { Accordion, AccordionItem, Spacer, Spinner } from '@heroui/react'
 import H from '@/components/ui/h'
-import { postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import Markdown from '@/components/markdown'
 import { resultAtom, paperAnalysisAtom, isLoadingAtom } from '../atoms'
 import { PiChatTeardropDots, PiFlask, PiQuestion } from 'react-icons/pi'
@@ -46,7 +46,7 @@ export default function Results() {
                     title={<H usePlayfair disableCenter className='text-lg'>初步作答</H>}
                     subtitle='For reference only. No need to acknowledge everything AI says.'
                 >
-                    <Markdown fontFamily={postFontFamily} md={paperAnalysis === '' ? '<article>\n> 未生成\n</article>' : paperAnalysis} />
+                    <Markdown fontFamily={contentFontFamily} md={paperAnalysis === '' ? '<article>\n> 未生成\n</article>' : paperAnalysis} />
                 </AccordionItem>
 
                 <AccordionItem
@@ -56,7 +56,7 @@ export default function Results() {
                     subtitle='A third-party opinion. Just pick what&apos;s reasonable in it.'
                 >
                     <div className='max-w-none'>
-                        <Markdown className='prose-blockquote:!mb-0 prose-h3:mt-0' fontFamily={postFontFamily} md={result === '' ? '<article>\n> 未生成\n</article>' : result} />
+                        <Markdown className='prose-blockquote:!mb-0 prose-h3:mt-0' fontFamily={contentFontFamily} md={result === '' ? '<article>\n> 未生成\n</article>' : result} />
                     </div>
                 </AccordionItem>
 
@@ -66,7 +66,7 @@ export default function Results() {
                     title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最佳审题人？</H>}
                     subtitle='Independent. Impartial. Instant. Incomparable in language proficiency.'
                 >
-                    <div style={{ fontFamily: postFontFamily }} className='prose prose-sm dark:prose-invert max-w-none'>
+                    <div style={{ fontFamily: contentFontFamily }} className='prose prose-sm dark:prose-invert max-w-none'>
                         <p>Artificial Intelligence is like a <span className='italic'>brutally objective native speaker</span>, who helps you spot questions subject to multiple interpretations. It evaluates the linguistic appropriateness of exam content with native-like intuition and analytical precision.</p>
 
                         <p>For example, AI can flag questions that are technically correct in grammar but misleading in real-world use. It also identifies awkward phrasing, idiomatic misuse, and vague prompts that allow multiple valid answers—issues that undermine the fairness and clarity of an exam.</p>

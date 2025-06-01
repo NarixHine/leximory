@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils'
 import { Chip } from "@heroui/chip"
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 
 export default function Topics({ topics, remove, className }: { topics: string[] | null | undefined, remove?: (topic: string) => void, className?: string }) {
   const isReaderMode = useAtomValue(isReaderModeAtom)
@@ -15,7 +14,7 @@ export default function Topics({ topics, remove, className }: { topics: string[]
         size='sm'
         variant={'light'}
         classNames={{
-          base: cn('border-none underline decoration-1 underline-offset-4 decoration-default-700 text-default-700', CHINESE_ZCOOL.className),
+          base: cn('border-none underline decoration-1 underline-offset-4 decoration-default-700 text-default-700'),
           content: 'px-0'
         }}
         onClose={remove && (() => {

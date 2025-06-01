@@ -4,7 +4,6 @@ import getToken from '../actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
 import { Button } from "@heroui/button"
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { prefixUrl } from '@/lib/config'
 import { useUser } from '@clerk/nextjs'
 import { useState, useTransition } from 'react'
@@ -19,7 +18,7 @@ export default function CopyToken() {
     const [token, setToken] = useState<string | null>(null)
     return <Drawer.Root>
         <Drawer.Trigger
-            className={cn('relative flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', CHINESE_ZCOOL.className)}
+            className={cn('relative flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             onClick={() => {
                 setToken(null)
                 startTransition(async () => {
@@ -55,12 +54,12 @@ export default function CopyToken() {
 export function CopyProfileLink() {
     const { user } = useUser()
     return <Button
-        variant='bordered'
+        variant='flat'
         startContent={<PiShareDuotone className='size-4 -mr-1' />}
         size='sm'
         color='primary'
         radius='full'
-        className={cn('border-1', CHINESE_ZCOOL.className)}
+        className={cn('border-1')}
         onPress={async () => {
             if (!user) return
             const data: ShareData = {

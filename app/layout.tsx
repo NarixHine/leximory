@@ -54,9 +54,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 				<head>
 					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
 				</head>
-				<body style={{
-					fontFamily: defaultFontFamily,
-				}}>
+				<body style={{ fontFamily: defaultFontFamily }}>
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>

@@ -6,7 +6,6 @@ import { useRef, useState } from 'react'
 import { cn, getBracketedSelection, resetSelection } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useEventListener } from 'usehooks-ts'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { useAtomValue } from 'jotai'
@@ -51,7 +50,7 @@ export default function Define() {
                 data-tag-lang={lang}
                 data-tag-context={'文章'}
                 data-icon='🖊️'
-                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', CHINESE_ZCOOL.className)}
+                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             >
                 <PiMagnifyingGlass />
                 注解

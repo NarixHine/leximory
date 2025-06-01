@@ -2,7 +2,6 @@
 
 import { Button } from '@heroui/button'
 import { PiPiggyBankDuotone } from 'react-icons/pi'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { toast } from 'sonner'
 import { getDailyLexicoin } from '../actions'
 import { cn } from '@/lib/utils'
@@ -23,7 +22,7 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
         color='primary'
         radius='full'
         size='lg'
-        className={cn(CHINESE_ZCOOL.className, 'text-lg flex-1')}
+        className={cn('text-lg flex-1')}
         isDisabled={hasClaimed}
     >
         {hasClaimed ? '今日已领取' : '领取每日 LexiCoin'}

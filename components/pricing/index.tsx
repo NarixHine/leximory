@@ -6,7 +6,6 @@ import { PiCheck } from 'react-icons/pi'
 import { Divider } from '@heroui/divider'
 import { Button } from '@heroui/button'
 import { cn } from '@/lib/utils'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { upgrade } from './actions'
 
 export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boolean }) {
@@ -112,7 +111,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 justify-between">
                             <H usePlayfair disableCenter className="text-2xl">Polyglot 语言学人</H>
-                            <span className={cn("text-primary-500 text-xs bg-primary-50 px-2 py-1 rounded-full", CHINESE_ZCOOL.className)}>推荐</span>
+                            <span className={cn("text-primary-500 text-xs bg-primary-50 px-2 py-1 rounded-full")}>推荐</span>
                         </div>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-semibold">US$6.00</span>

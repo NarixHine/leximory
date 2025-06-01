@@ -31,60 +31,55 @@ export default function Bell({ hasSubs, hour = 22 }: {
     const [selectedHour, setSelectedHour] = useState(hour)
 
     return (
-        <div className='flex flex-col justify-center items-center space-y-3'>
-            <div className='flex gap-2 items-center'>
-                <Button
-                    variant={hasSubs ? 'flat' : 'ghost'}
-                    isLoading={isUpdating}
-                    onPress={() => {
-                        startUpdating(async () => {
-                            if (hasSubs) {
+        <div className='flex gap-2 items-center justify-center'>
+            <Button
+                variant={hasSubs ? 'flat' : 'ghost'}
+                isLoading={isUpdating}
+                onPress={() => {
+                    startUpdating(async () => {
+                        if (hasSubs) {
+                            track({
+                                event: '关闭每日复习提醒',
+                                channel: 'notification',
+                            })
+                            await remove()
+                        } else {
+                            try {
                                 track({
-                                    event: '关闭每日复习提醒',
+                                    event: '开启每日复习提醒',
                                     channel: 'notification',
+                                    description: `开启每日于 ${selectedHour} 时提醒`,
+                                    tags: {
+                                        hour: selectedHour
+                                    }
                                 })
-                                await remove()
-                            } else {
-                                try {
-                                    track({
-                                        event: '开启每日复习提醒',
-                                        channel: 'notification',
-                                        description: `开启每日于 ${selectedHour} 时提醒`,
-                                        tags: {
-                                            hour: selectedHour
-                                        }
-                                    })
-                                    await subscribe(selectedHour)
-                                } catch {
-                                    toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
-                                }
+                                await subscribe(selectedHour)
+                            } catch {
+                                toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
                             }
-                        })
-                    }}
-                    size='lg'
-                    radius='full'
-                    color='primary'
-                    startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
-                >
-                    {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
-                </Button>
-                <Select
-                    size='sm'
-                    selectedKeys={[selectedHour.toString()]}
-                    onSelectionChange={(e) => setSelectedHour(parseInt(e.currentKey ?? '22'))}
-                    className='w-28'
-                    startContent='于'
-                    endContent={<span className='text-sm'>时</span>}
-                    isDisabled={hasSubs}
-                >
-                    {new Array(24).fill(0).map((_, i) => (
-                        <SelectItem key={i}>{i.toString()}</SelectItem>
-                    ))}
-                </Select>
-            </div>
-            <div className='opacity-50 text-sm text-balance text-center'>
-                更换设备后需要重新开启
-            </div>
+                        }
+                    })
+                }}
+                size='lg'
+                radius='full'
+                color='primary'
+                startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
+            >
+                {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
+            </Button>
+            <Select
+                size='sm'
+                selectedKeys={[selectedHour.toString()]}
+                onSelectionChange={(e) => setSelectedHour(parseInt(e.currentKey ?? '22'))}
+                className='w-28'
+                startContent='于'
+                endContent={<span className='text-sm'>时</span>}
+                isDisabled={hasSubs}
+            >
+                {new Array(24).fill(0).map((_, i) => (
+                    <SelectItem key={i}>{i.toString()}</SelectItem>
+                ))}
+            </Select>
         </div>
     )
 }

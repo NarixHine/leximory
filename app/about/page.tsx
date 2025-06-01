@@ -1,5 +1,5 @@
 import Main from '@/components/ui/main'
-import { CHINESE_ZCOOL, ENGLISH_PLAYFAIR } from '@/lib/fonts'
+import { ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Button } from "@heroui/button"
 import Link from 'next/link'
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function About() {
     return (
-        <Main className={cn(CHINESE_ZCOOL.className, 'max-w-7xl')}>
+        <Main className={cn('max-w-7xl')}>
             <section className='max-w-screen-sm mx-auto'>
                 <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
                     <TypedTitle />

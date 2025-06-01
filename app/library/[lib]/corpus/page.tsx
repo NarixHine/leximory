@@ -29,7 +29,7 @@ export default async function Page(props: LibParams) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
-        <H useNoto>
+        <H>
             {name}
         </H>
         <Spacer y={5}></Spacer>

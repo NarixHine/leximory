@@ -25,7 +25,7 @@ export default async function Report({ day }: {
     return words.length > 0 ? (
         <div className='my-8'>
             <div className='flex gap-3 items-start'>
-                <H disableCenter className='text-xl font-semibold opacity-80 -mb-2'>{day}</H>
+                <H disableCenter className='text-xl font-bold opacity-80 -mb-2'>{day}</H>
                 {supportedLangs.filter((lang) => words.some((word) => word.lang === lang)).map((lang) => (
                     <StoryGen key={lang} comments={words.filter((word) => word.lang === lang).map(({ word }) => word)} lang={lang} />
                 ))}

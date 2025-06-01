@@ -1,5 +1,5 @@
 import { getTextContent } from '@/server/db/text'
-import { postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import Markdown from '@/components/markdown'
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
@@ -59,7 +59,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <H className='text-4xl font-bold mb-2 text-default-900 tracking-tight'>{title}</H>
             <Topics topics={topics} className='mb-6 flex justify-center' />
             <Markdown
-                fontFamily={postFontFamily}
+                fontFamily={contentFontFamily}
                 className={'max-w-[650px] mx-auto block px-4 sm:px-0 !prose-lg text-pretty'}
                 md={`<article>\n${content}\n\n</article>`}
             />

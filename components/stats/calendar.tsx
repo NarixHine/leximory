@@ -4,7 +4,6 @@ import moment from 'moment-timezone'
 import { PiBookBookmark } from 'react-icons/pi'
 import { Card, CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useState } from 'react'
 
 interface VocabularyCalendarProps {
@@ -84,10 +83,7 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
                 <div className='grid grid-cols-7 gap-2'>
                     {/* Day headers */}
                     {dayNames.map((day, index) => (
-                        <div key={index} className={cn(
-                            'text-center text-xs font-medium py-1',
-                            CHINESE_ZCOOL.className
-                        )}>
+                        <div key={index} className={cn('text-center text-xs font-medium py-1',)}>
                             {day}
                         </div>
                     ))}

@@ -10,6 +10,7 @@ import { Spacer } from "@heroui/spacer"
 import { exampleEbookLink } from '@/lib/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import Link from 'next/link'
+import { contentFontFamily } from "@/lib/fonts"
 
 export function TypedTitle() {
     return <TypeAnimation
@@ -26,7 +27,7 @@ export function TypedTitle() {
 }
 
 export function Article() {
-    return <article className='text-xl'>
+    return <article style={{ fontFamily: contentFontFamily }} className='text-xl'>
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

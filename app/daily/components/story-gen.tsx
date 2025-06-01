@@ -9,7 +9,6 @@ import { genStoryInShadowLib } from '../actions'
 import { subscribe } from './bell'
 import { hasSubsAtom } from '../atoms'
 import { useAtomValue } from 'jotai'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { useTransition } from 'react'
 
 export default function StoryGen({ comments, lang }: {
@@ -21,7 +20,6 @@ export default function StoryGen({ comments, lang }: {
     const [isGenerating, startTransition] = useTransition()
     return <Button
         size='sm'
-        className={CHINESE_ZCOOL.className}
         variant='light'
         startContent={isGenerating ? null : <PiMagicWandDuotone className='text-xl' />}
         color='primary'

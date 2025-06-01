@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/react'
 import H from '@/components/ui/h'
-import { CHINESE_ZCOOL, ENGLISH_SERIF } from '@/lib/fonts'
+import { ENGLISH_SERIF } from '@/lib/fonts'
 import Main from '@/components/ui/main'
 import FixPaper from './components/fix-your-paper'
 import Results from './components/results'
@@ -42,7 +42,7 @@ export default function FixPaperPage() {
 
         <Spacer y={10} />
 
-        <footer className={cn(CHINESE_ZCOOL.className, 'text-center text-sm text-default-700 print:hidden')}>
+        <footer className={cn('text-center text-sm text-default-700 print:hidden')}>
             <div className='flex justify-center'>
                 <span>每次审题消耗五<Link href='/library' className='underline'>额度</Link></span>
             </div>

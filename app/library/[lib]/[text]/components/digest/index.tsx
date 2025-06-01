@@ -21,7 +21,7 @@ import Markdown from '@/components/markdown'
 import Define from './define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
-import { CHINESE_ZCOOL, postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
 import { toast } from 'sonner'
@@ -37,8 +37,7 @@ function ReaderModeToggle() {
   return (
     <div className={cn(
       isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
-      'print:hidden',
-      CHINESE_ZCOOL.className
+      'print:hidden'
     )}>
       <Tooltip content={
         <div>
@@ -224,7 +223,7 @@ function ReadingView() {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn(CHINESE_ZCOOL.className, 'text-md'), base: 'max-w-[650px] mx-auto', description: cn(CHINESE_ZCOOL.className, 'text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-[650px] mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>
             <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
             <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
@@ -242,7 +241,7 @@ function ReadingView() {
           isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
           '!prose-lg text-pretty'
         )}
-        fontFamily={lang === 'en' ? postFontFamily : undefined}
+        fontFamily={lang === 'en' ? contentFontFamily : undefined}
         md={`<article>${content}</article>`}
       />
       <Define />
@@ -308,13 +307,13 @@ function GeneratingView() {
   return (
     <div className='flex flex-col justify-center items-center h-[calc(100dvh-350px)] gap-4'>
       <Progress
-        classNames={{ label: cn(CHINESE_ZCOOL.className) }}
+        classNames={{ label: cn('text-md') }}
         color='primary'
         size='lg'
         value={currentProgress}
         label={progressLabel[annotationProgress]}
       />
-      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', CHINESE_ZCOOL.className)}>
+      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', 'text-md')}>
         <li className='flex items-center gap-2'><PiChatDotsDuotone /><span>生成完成后注解版会自动出现</span></li>
         <li className='flex items-center gap-2'><PiBellDuotone /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
       </ul>

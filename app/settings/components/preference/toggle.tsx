@@ -3,7 +3,6 @@
 import { CircularProgress, cn, Switch } from "@heroui/react"
 import { useState, useTransition } from 'react'
 import { setPreference } from '../../actions'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { Accent } from '@/server/db/preference'
 import { PiHamburgerDuotone } from 'react-icons/pi'
 import { PiCoffeeDuotone } from 'react-icons/pi'
@@ -25,6 +24,6 @@ export default function PreferenceToggle({ accent }: { accent: Accent }) {
         }}
         thumbIcon={isUpdating ? <CircularProgress color='secondary' size='sm' /> : isBrE ? <PiCoffeeDuotone /> : <PiHamburgerDuotone />}
     >
-        <span className={cn(CHINESE_ZCOOL.className, 'text-sm')}>{isBrE ? '英式英语' : '美式英语'}</span>
+        <span className={cn('text-sm')}>{isBrE ? '英式英语' : '美式英语'}</span>
     </Switch>
 }

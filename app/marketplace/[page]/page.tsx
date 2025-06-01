@@ -8,7 +8,6 @@ import { Suspense } from 'react'
 import H from '@/components/ui/h'
 import { PiStorefrontDuotone } from 'react-icons/pi'
 import { Alert } from "@heroui/alert"
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
@@ -53,8 +52,8 @@ export default async function MarketplacePage({ params }: {
             <Spacer y={10} />
             {
                 orgId ?
-                    <Alert description='收藏文库在个人工作区中才会显示' color='primary' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: cn('text-xs', CHINESE_ZCOOL.className), base: 'mb-5' }} title='你正在小组工作区中'></Alert> :
-                    <Alert description={`Moderator's E-mail: report@leximory.com`} color='primary' variant='bordered' classNames={{ title: cn('text-md', CHINESE_ZCOOL.className), description: 'text-xs', base: 'mb-5' }} title='共享文库由用户发布'></Alert>
+                    <Alert description='收藏文库在个人工作区中才会显示' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: cn('text-xs'), base: 'mb-5' }} title='你正在小组工作区中'></Alert> :
+                    <Alert description='共享文库由用户发布' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: 'text-xs', base: 'mb-5' }} title='共享文库'></Alert>
             }
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />

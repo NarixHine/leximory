@@ -1,7 +1,7 @@
 import Main from '@/components/ui/main'
 import { auth } from '@clerk/nextjs/server'
 import H from '@/components/ui/h'
-import { CHINESE_CALLIGRAPHY, CHINESE_ZCOOL } from '@/lib/fonts'
+import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Markdown from '@/components/markdown'
@@ -98,7 +98,7 @@ export default async function Home() {
 					<BentoCard title='AI 注解 + AI 朗读'>
 						<div className='px-8 sm:px-16 flex flex-col'>
 							<ShowcaseAnnotation />
-							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light' className={cn(CHINESE_ZCOOL.className)}>
+							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light'>
 								查看更多
 							</Button>
 						</div>
@@ -199,7 +199,7 @@ const BentoCard = ({ title, children, description, }: {
 }) => {
 	return <Card shadow='sm' className={'w-full h-full'}>
 		<CardBody className='p-5'>
-			<H className={cn(CHINESE_ZCOOL.className, 'text-2xl', !description && 'mb-2')} disableCenter>
+			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}
 			</H>
 			{description && <div className='text-sm mb-2'>{description}</div>}

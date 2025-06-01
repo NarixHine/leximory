@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { postFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
 import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone } from 'react-icons/pi'
@@ -38,7 +38,7 @@ function Text({ id, title, topics:textTopics, hasEbook, createdAt, updatedAt }: 
         <Card shadow='sm' fullWidth className={'h-full'} as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
                 <h2 className={cn('text-2xl text-balance', visited[id] && 'text-default-700')} style={{
-                    fontFamily: postFontFamily
+                    fontFamily: contentFontFamily
                 }}>{title}</h2>
                 {topics.length > 0  && (
                     <div className='gap-0.5 flex flex-wrap align-middle items-center'>

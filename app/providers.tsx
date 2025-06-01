@@ -11,7 +11,6 @@ import { dark } from '@clerk/themes'
 import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import dynamic from 'next/dynamic'
 import { useLogSnag } from '@logsnag/next'
@@ -51,8 +50,6 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 
 				// Misc
 				colorShimmer: mode === 'dark' ? '#3A3A3A' : '#E0E0E0',
-
-				fontFamily: CHINESE_ZCOOL.style.fontFamily,
 			}
 		}}>
 			<HeroUIProvider navigate={router.push}>
@@ -60,7 +57,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 					<JotaiProvider>
 						<Toaster toastOptions={{
 							classNames: {
-								toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100', CHINESE_ZCOOL.className),
+								toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100'),
 							}
 						}}></Toaster>
 						<LogSnagInit />

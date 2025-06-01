@@ -15,8 +15,6 @@ import { ClerkLoaded, OrganizationSwitcher } from '@clerk/nextjs'
 import CopyToken, { CopyProfileLink } from './components/copy'
 import { Button } from '@heroui/button'
 import Link from 'next/link'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@heroui/skeleton'
 import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
@@ -99,7 +97,7 @@ export default async function Settings() {
                 <H disableCenter className=''>账号管理</H>
                 <div className='flex gap-2'>
                     <OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} organizationProfileUrl='/settings/org' />
-                    <Button variant='bordered' href='/settings/account' as={Link} startContent={<PiDotsThreeVerticalBold className='size-4 -mr-1' />} size='sm' color='primary' radius='full' className={cn('border-1', CHINESE_ZCOOL.className)}>更多</Button>
+                    <Button variant='flat' href='/settings/account' as={Link} startContent={<PiDotsThreeVerticalBold className='size-4 -mr-1' />} size='sm' color='primary' radius='full'>更多</Button>
                     <CopyProfileLink />
                 </div>
             </div>

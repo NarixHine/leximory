@@ -1,15 +1,11 @@
 'use client'
 
 import { ChatMessages } from '@/app/library/chat/components/chat-interface'
-import { CHINESE_ZCOOL } from '@/lib/fonts'
 import { Accordion, AccordionItem } from '@heroui/react'
 
 function ShowcaseWrapper({ children, title, defaultExpanded }: { children: React.ReactNode, title: string, defaultExpanded?: boolean }) {
     return <Accordion variant='bordered' className='not-prose my-5' defaultExpandedKeys={defaultExpanded ? [title] : []}>
-        <AccordionItem key={title} title={title} subtitle='点击以展开' classNames={{
-            title: CHINESE_ZCOOL.className,
-            subtitle: CHINESE_ZCOOL.className,
-        }}>
+        <AccordionItem key={title} title={title} subtitle='点击以展开'>
             {children}
         </AccordionItem>
     </Accordion>

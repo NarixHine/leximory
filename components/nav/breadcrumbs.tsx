@@ -10,7 +10,6 @@ import DefaultLoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { ReactNode } from 'react'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
-import { UIFontFamily } from "@/lib/fonts"
 
 function LoadingIndicatorWrapper({ children }: { children: ReactNode }) {
     return <DefaultLoadingIndicatorWrapper
@@ -35,7 +34,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const iconClassName = 'text-primary-900 dark:text-default-500 text-lg'
 
-    return !isReaderMode && <div style={{ fontFamily: UIFontFamily }} className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'>
+    return !isReaderMode && <div className='sticky flex justify-center mb-6 -mt-6 z-30 top-4 left-0 w-full space-x-2 print:hidden'>
         <Breadcrumbs underline='hover' variant='solid' radius='lg' className='overflow-x-hidden max-w-[95vw]' classNames={{
             list: 'flex-nowrap bg-primary-50/50 dark:bg-default-50/70 backdrop-blur-sm',
         }}>

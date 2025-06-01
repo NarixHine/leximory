@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
-import { defaultFontFamily } from '@/lib/fonts'
+import { contentFontFamily, defaultFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 
 export type MarkdownProps = {
@@ -62,7 +62,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
             },
         }}
         style={{
-            fontFamily: fontFamily ?? defaultFontFamily,
+            fontFamily: fontFamily ?? contentFontFamily,
         }}
         className={cn(
             'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]',
