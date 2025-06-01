@@ -8,13 +8,12 @@ import { QuizDataType } from './types'
 export default async function generate({ prompt, type }: { prompt: string, type: QuizDataType }) {
     const { system, schema } = getConfig(type)
     const { object } = await generateObject({
-        model: googleModels['pro-2.5'],
+        model: googleModels['flash-2.5'],
         prompt,
         system,
         schema,
         maxTokens: 15000,
     })
-    console.log(object)
     return {
         ...object,
         text: object.text?.replaceAll('\n', '<br>')

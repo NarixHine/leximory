@@ -211,7 +211,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                             ? <ul className='flex flex-wrap gap-2'>
                                 {words.map(({ id, word }) => (
                                     <li className=' flex gap-1 items-center' key={id}>
-                                        <Markdown disableSave md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                        <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
                                     </li>
                                 ))}
                             </ul>
