@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
             permanent: true,
         }, {
             source: '/library/chat',
-            destination: '/chat',
+            destination: '/blog/ai-agent',
             permanent: true,
         }]
     },
