@@ -13,7 +13,8 @@ Leximory integrates features like:
 - **Combination of listening** with reading, 
 - **Easy reviewing** of saved words,
 - Saving through our **iOS Shortcuts Integration**,
-- Sharing study resources using **Study Groups** or in the **Library Market**.
+- Sharing study resources using **Study Groups** or in the **Library Market**,
+- Talking to your library, i.e. **agentic workflows**.
 
 There is also a feature built for exam setters: `Fix. Your. Paper.`.
 

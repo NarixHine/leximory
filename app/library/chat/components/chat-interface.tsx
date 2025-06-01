@@ -28,6 +28,7 @@ import { libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
+import { useLogSnag } from '@logsnag/next'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -161,7 +162,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'getTextContent':
             const text = result as Awaited<ToolResult['getTextContent']>
             return (
-                <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
+                <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{text.title}</div>
                         <div className='text-default-600 dark:text-default-400'>
@@ -223,7 +224,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'generateQuiz':
             const quiz = result as ToolResult['generateQuiz']
             return (
-                <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
+                <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <Paper data={[quiz]} />
                     </CardBody>
@@ -362,6 +363,8 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         initialInput: initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined
     })
 
+    const { track } = useLogSnag()
+
     useEffect(() => {
         if (messages.length > 0) {
             setStoredMessages(messages)
@@ -373,6 +376,12 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         setMessages([])
         setInput('')
         setData([])
+        track({
+            event: '开始新对话',
+            channel: 'agent',
+            description: `新建了一条与 AI 的对话`,
+            icon: '🆕',
+        })
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,6 +398,13 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             experimental_attachments: files
         })
         setInput('')
+
+        track({
+            event: '发送消息',
+            channel: 'agent',
+            description: `向 AI 发送了一条指令`,
+            icon: '💬',
+        })
     }
 
     const handleButtonClick = () => {
