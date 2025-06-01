@@ -4,7 +4,6 @@ import H from '@/components/ui/h'
 import { useAtom, useAtomValue } from 'jotai'
 import { isEditingAtom, titleAtom } from '../atoms'
 import { Input } from "@heroui/input"
-import { langAtom } from '../../atoms'
 
 export default function EditableH() {
     const [title, setTitle] = useAtom(titleAtom)

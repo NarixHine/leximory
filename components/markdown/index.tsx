@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
-import { contentFontFamily, defaultFontFamily } from '@/lib/fonts'
+import { contentFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 
 export type MarkdownProps = {
