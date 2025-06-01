@@ -59,7 +59,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                     startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
                     color='primary'
                     variant={'flat'}
-                    className={cn(CHINESE_ZCOOL.className, '-mr-5 pr-6')}
+                    className={cn(CHINESE_ZCOOL.className, '-mr-5 pr-7')}
                     onPress={() => {
                         startTransition(async () => {
                             const { success, message } = await star(library.id)

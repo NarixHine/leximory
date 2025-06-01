@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
             destination: fixYourPaperBlogLink,
             permanent: true,
         }, {
-            source: '/library/chat',
+            source: '/chat',
             destination: '/blog/ai-agent',
             permanent: true,
         }]
