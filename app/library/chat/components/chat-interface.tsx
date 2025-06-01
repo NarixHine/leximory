@@ -402,7 +402,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
 
     return (
         <Main style={{ fontFamily: chatFontFamily }} className='flex flex-col max-w-2xl'>
-            <div className='flex justify-between items-center mb-4 sticky top-10 z-10 backdrop-blur bg-background/50'>
+            <div className='flex justify-between items-center mb-4 sticky p-2 top-10 z-10 backdrop-blur bg-background/50'>
                 <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>

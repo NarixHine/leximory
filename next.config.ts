@@ -23,7 +23,11 @@ const nextConfig: NextConfig = {
             source: '/fix',
             destination: fixYourPaperBlogLink,
             permanent: true,
-        },]
+        }, {
+            source: '/library/chat',
+            destination: '/chat',
+            permanent: true,
+        }]
     },
     async rewrites() {
         return [{
