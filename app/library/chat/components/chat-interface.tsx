@@ -457,7 +457,7 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}
-                className='flex items-center gap-2'
+                className='flex items-center gap-2 sticky bottom-10'
             >
                 <input
                     type='file'
