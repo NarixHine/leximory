@@ -331,7 +331,7 @@ export function ChatMessages({ messages }: { messages: Message[] }) {
     }</>
 }
 
-export default function ChatInterface({ plan }: { plan: Plan }) {
+export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan, initialPromptIndex: number | null }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -346,13 +346,20 @@ export default function ChatInterface({ plan }: { plan: Plan }) {
                 fileInputRef.current.value = ''
             }
         },
+        onToolCall() {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        },
+        onResponse: () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        },
         onError: () => {
             toast.error('发生错误')
             setFiles(undefined)
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''
             }
-        }
+        },
+        initialInput: initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined
     })
 
     useEffect(() => {

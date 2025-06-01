@@ -70,7 +70,10 @@ const tools: ToolSet = {
             const filter = await isListed()
             switch (period) {
                 case 'day':
-                    return getForgetCurve({ day: '今天记忆', filter })
+                    return Promise.all([
+                        getForgetCurve({ day: '今天记忆', filter }),
+                        getForgetCurve({ day: '一天前记忆', filter }),
+                    ])
                 case 'week':
                     return Promise.all([
                         getForgetCurve({ day: '今天记忆', filter }),

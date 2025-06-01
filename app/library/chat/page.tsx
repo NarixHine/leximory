@@ -10,11 +10,12 @@ export const metadata: Metadata = {
     description: '与 AI 聊天，自动化操作文库',
 }
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ prompt: string }> }) {
     const { userId } = await getAuthOrThrow()
     const plan = await getPlan(userId)
+    const { prompt } = await searchParams
 
     return <HydrationBoundary hydrateAtoms={[[lexiconAtom, 'none']]}>
-        <ChatInterface plan={plan} />
+        <ChatInterface plan={plan} initialPromptIndex={prompt ? parseInt(prompt) : null} />
     </HydrationBoundary>
 } 

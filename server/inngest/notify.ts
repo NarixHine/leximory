@@ -28,9 +28,9 @@ export const fanNotification = inngest.createFunction(
             ({ subscription, uid }) => ({
                 name: 'app/notify',
                 data: {
-                    title: 'Leximory 日报',
-                    body: '回顾你在今日、昨日、四日前、七日前、十四日前记忆的语汇。',
-                    url: prefixUrl('/daily'),
+                    title: '今日词汇复盘',
+                    body: '📝 回顾你近两天在 Leximory 上学习的语汇',
+                    url: prefixUrl('/library/chat?prompt=5'),
                     subscription: JSON.stringify(subscription),
                 },
                 user: { uid },

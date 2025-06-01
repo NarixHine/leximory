@@ -15,6 +15,7 @@ import { ThemeProviderProps } from 'next-themes/dist/types'
 import dynamic from 'next/dynamic'
 import { useLogSnag } from '@logsnag/next'
 import { isProd } from '@/lib/env'
+import { CHINESE } from "@/lib/fonts"
 
 const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false })
 
@@ -57,7 +58,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 					<JotaiProvider>
 						<Toaster toastOptions={{
 							classNames: {
-								toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100'),
+								toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100', CHINESE.className),
 							}
 						}}></Toaster>
 						<LogSnagInit />
