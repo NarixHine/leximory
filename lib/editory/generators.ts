@@ -1,6 +1,6 @@
 import type QuizData from './types'
 import type { FishingData, ClozeData, GrammarData, SentenceChoiceData, ReadingData, ListeningData, CustomData, Config } from './types'
-import { ABCD_SET, ALPHABET_SET, NAME_MAP } from './config'
+import { ALPHABET_SET, NAME_MAP } from './config'
 
 import fastShuffle from 'fast-shuffle'
 
@@ -218,7 +218,7 @@ class FishingGenerator extends Generator<FishingData> {
     protected generateKey(): [number, Element | Text][] {
         return this.correctAnswers.map((correctAnswer, index) => [
             this.start + index,
-            new Text(ABCD_SET[this.options.indexOf(correctAnswer)])
+            new Text(ALPHABET_SET[this.options.indexOf(correctAnswer)])
         ])
     }
 }
