@@ -22,7 +22,7 @@ export default async function Page(props: LibProps) {
         <Nav lib={{ id: lib, name }}></Nav>
         <div className='flex items-center gap-2 mb-5 justify-center'>
             <PiUsersDuotone className='text-2xl' />
-            <H usePlayfair className='text-3xl'>读者</H>
+            <H className='text-3xl'>读者</H>
         </div>
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-fit mx-auto'>
             {readers.map((uid) => (

@@ -485,7 +485,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     className='hidden'
-                    accept='.pdf,.txt,.md'
+                    accept='.pdf,.txt,.md,.jpg,.jpeg,.png'
                 />
                 <Textarea
                     className='flex-1'
