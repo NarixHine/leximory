@@ -23,10 +23,11 @@ import moment from 'moment-timezone'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
 
-function Text({ id, title, topics:textTopics, hasEbook, createdAt, updatedAt }: {
+function Text({ id, title, topics: textTopics, hasEbook, createdAt, updatedAt, disablePrefetch }: {
     id: string,
     title: string,
     topics: string[],
+    disablePrefetch?: boolean,
     hasEbook: boolean,
     createdAt: string,
     updatedAt: string,
@@ -35,12 +36,12 @@ function Text({ id, title, topics:textTopics, hasEbook, createdAt, updatedAt }: 
     const visited = useAtomValue(visitedTextsAtom)
     const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
     return (<div className='w-full h-full relative'>
-        <Card shadow='sm' fullWidth className={'h-full'} as={Link} prefetch href={`/library/${lib}/${id}`} isPressable>
+        <Card shadow='sm' fullWidth className={'h-full'} as={Link} prefetch={!disablePrefetch} href={`/library/${lib}/${id}`} isPressable>
             <CardBody className='flex flex-col gap-1 p-7'>
                 <h2 className={cn('text-2xl text-balance', visited[id] && 'text-default-700')} style={{
                     fontFamily: contentFontFamily
                 }}>{title}</h2>
-                {topics.length > 0  && (
+                {topics.length > 0 && (
                     <div className='gap-0.5 flex flex-wrap align-middle items-center'>
                         <Topics topics={topics}></Topics>
                     </div>

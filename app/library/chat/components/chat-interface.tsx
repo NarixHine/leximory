@@ -196,6 +196,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                 hasEbook={false}
                                 createdAt={createdAt}
                                 updatedAt={updatedAt}
+                                disablePrefetch
                             />
                         </HydrationBoundary>
                     </ScopeProvider>
