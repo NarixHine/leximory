@@ -8,17 +8,18 @@ import { LibProps } from '@/lib/types'
 import { Button } from '@heroui/button'
 import { PiBookOpen, PiUsers } from 'react-icons/pi'
 import Link from 'next/link'
+import { libAccessStatusMap } from '@/lib/config'
 
 async function getData(lib: string) {
-    const { name, isReadOnly, lang, isOwner } = await authReadToLib(lib)
+    const { name, isReadOnly, lang, isOwner, access } = await authReadToLib(lib)
     const texts = await getTexts({ lib })
-    return { texts, name, isReadOnly, lang, isOwner }
+    return { texts, name, isReadOnly, lang, isOwner, access }
 }
 
 export default async function Page(props: LibProps) {
     const params = await props.params
     const { lib } = params
-    const { texts, name, isReadOnly, lang, isOwner } = await getData(lib)
+    const { texts, name, isReadOnly, lang, isOwner, access } = await getData(lib)
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
@@ -27,7 +28,7 @@ export default async function Page(props: LibProps) {
             <Button variant='light' startContent={<PiBookOpen />} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印所有文章
             </Button>
-            {isOwner && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
+            {isOwner && access === libAccessStatusMap.public && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
                 查看所有读者
             </Button>}
         </div>
