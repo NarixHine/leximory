@@ -2,6 +2,7 @@ import 'server-only'
 import { getXataClient } from '../client/xata'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import moment from 'moment-timezone'
+import { supabase } from '../client/supabase'
 
 const xata = getXataClient()
 
@@ -26,7 +27,11 @@ export async function addLexicoinBalance(uid: string, amount: number) {
 
 export async function setLastClaimDate(uid: string) {
     revalidateTag('lexicoin')
-    await xata.db.users.update({ id: uid, last_daily_claim: moment.tz('Asia/Shanghai').toDate() })
+    const { error } = await supabase
+        .from('users')
+        .update({ last_daily_claim: moment.tz('Asia/Shanghai').toISOString() })
+        .eq('id', uid)
+    if (error) throw error
 }
 
 export async function subtractLexicoinBalance(uid: string, amount: number) {

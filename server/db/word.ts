@@ -2,41 +2,51 @@ import 'server-only'
 
 import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { Lang, welcomeMap } from '@/lib/config'
-import { getXataClient } from '@/server/client/xata'
+import { supabase } from '@/server/client/supabase'
 import moment from 'moment-timezone'
 import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/lang'
 import { after } from 'next/server'
 
-const xata = getXataClient()
-
 const sanitized = (word: string): string => word.replaceAll('\n', '').replace('||}}', '}}')
 
 export async function getAllWordsInLib({ lib }: { lib: string }) {
     'use cache'
     cacheTag(lib)
-    return await xata.db.lexicon.filter({ lib }).select(['word', 'id']).getAll()
+    const { data } = await supabase
+        .from('lexicon')
+        .select('word, id')
+        .eq('lib', lib)
+    return data ?? []
 }
 
 export async function getWord({ id }: { id: string }) {
     'use cache'
     cacheTag(id)
-    return await xata.db.lexicon.filter({ id }).getFirstOrThrow()
+    const { data, error } = await supabase
+        .from('lexicon')
+        .select('*')
+        .eq('id', id)
+        .single()
+    if (error) throw error
+    return data
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
     const sanitizedWord = sanitized(word)
     validateOrThrow(sanitizedWord)
-    const rec = await xata.db.lexicon.create({
-        lib,
-        word: sanitizedWord
-    })
+    const { data, error } = await supabase
+        .from('lexicon')
+        .insert({ lib, word: sanitizedWord })
+        .select()
+        .single()
+    if (error) throw error
     after(() => {
         revalidateTag('words')
         revalidateTag(`words:${lib}`)
     })
-    return rec
+    return data
 }
 
 export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: string, lang: Lang }) {
@@ -47,78 +57,107 @@ export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: s
 }
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
-    const rec = await xata.db.lexicon.update(id, { word })
-    return rec
+    const { data, error } = await supabase
+        .from('lexicon')
+        .update({ word })
+        .eq('id', id)
+        .select()
+        .single()
+    if (error) throw error
+    return data
 }
 
 export async function deleteWord(id: string) {
-    const rec = await xata.db.lexicon.delete(id)
+    const { data, error } = await supabase
+        .from('lexicon')
+        .delete()
+        .eq('id', id)
+        .select('lib')
+        .single()
+    if (error) throw error
     after(() => {
         revalidateTag('words')
-        revalidateTag(`words:${rec!.lib!.id}`)
+        revalidateTag(`words:${data.lib}`)
     })
-    return rec
+    return data
 }
 
 export async function loadWords({ lib, cursor }: { lib: string, cursor?: string }) {
-    const res = await xata.db.lexicon.filter({ lib }).sort('xata.createdAt', 'desc').select(['word']).getPaginated({
-        pagination: { size: 20, after: cursor },
-    })
-    return { words: res.records.map(({ word, id, xata }) => ({ word, id, date: xata.createdAt.toISOString().split('T')[0] })), cursor: res.meta.page.cursor, more: res.meta.page.more }
+    const { data, error } = await supabase
+        .from('lexicon')
+        .select('word, id, created_at')
+        .eq('lib', lib)
+        .order('created_at', { ascending: false })
+        .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
+    if (error) throw error
+    return { 
+        words: data.map(({ word, id, created_at }) => ({ 
+            word, 
+            id, 
+            date: created_at ? new Date(created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        })), 
+        cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
+        more: data.length === 20
+    }
 }
 
 export async function drawWords({ lib, start, end, size }: { lib: string, start: Date, end: Date, size: number }) {
-    const words = await xata.db.lexicon.sort('*', 'random').select(['word']).filter({ 'lib.id': lib, 'xata.createdAt': { $gt: start, $lt: end } }).getMany({ pagination: { size } })
-    return words
+    const { data, error } = await supabase
+        .from('lexicon')
+        .select('word')
+        .eq('lib', lib)
+        .gte('created_at', start.toISOString())
+        .lt('created_at', end.toISOString())
+        .limit(size)
+    if (error) throw error
+    return data
 }
 
 export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, filter: Record<string, any> }) {
     'use cache'
     cacheTag('words')
     cacheLife('hours')
-    const words = await xata.db.lexicon.select(['id', 'word', 'lib.lang']).filter({
-        $all: [
-            filter,
-            {
-                'xata.createdAt': { $ge: moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][0], 'day').utc().toDate() }
-            },
-            {
-                'xata.createdAt': { $lt: moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][1], 'day').utc().toDate() }
-            },
-            {
-                $not: {
-                    'word': { $any: Object.values(welcomeMap) }
-                }
-            }
-        ]
-    }).getAll()
-    return words.map(({ word, id, lib }) => ({ word, id, lang: lib!.lang as Lang, lib: lib!.id }))
+    
+    const startDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][0], 'day').utc().toDate()
+    const endDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][1], 'day').utc().toDate()
+    
+    const filterConditions = Object.entries(filter).map(([key, value]) => `${key}.eq.${value}`).join(',')
+    
+    const { data, error } = await supabase
+        .from('lexicon')
+        .select('id, word, lib:libraries!inner(id, lang)')
+        .gte('created_at', startDate.toISOString())
+        .lt('created_at', endDate.toISOString())
+        .not('word', 'in', `(${Object.values(welcomeMap).map(w => `'${w}'`).join(',')})`)
+        .or(filterConditions)
+    
+    if (error) throw error
+    return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }
 
 export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {
     if (libs.length === 0) {
         return []
     }
-    const results = await xata.db.lexicon.aggregate({
-        wordsByDate: {
-            dateHistogram: {
-                column: 'day',
-                calendarInterval: 'day',
-            }
-        }
-    }, {
-        $all: [
-            {
-                day: {
-                    $ge: moment().subtract(size, 'days').toDate()
-                }
-            },
-            {
-                lib: {
-                    $any: libs
-                }
-            }
-        ]
-    })
-    return results.aggs.wordsByDate.values
+    const startDate = moment().subtract(size, 'days').toDate()
+    
+    const { data, error } = await supabase
+        .from('lexicon')
+        .select('created_at')
+        .in('lib', libs)
+        .gte('created_at', startDate.toISOString())
+    
+    if (error) throw error
+    
+    // Group by date and count
+    const histogram = data.reduce((acc: Record<string, number>, curr) => {
+        const date = curr.created_at ? new Date(curr.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        acc[date] = (acc[date] || 0) + 1
+        return acc
+    }, {})
+    
+    return Object.entries(histogram).map(([date, count]) => ({
+        date,
+        count
+    }))
 }

@@ -4,14 +4,14 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import { getAuthOrThrow, isListed } from '@/server/auth/role'
+import { getAuthOrThrow, isListedFilter } from '@/server/auth/role'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PiBooksDuotone, PiVideo } from 'react-icons/pi'
-import { summarizeLibsWithWords } from '@/server/db/lib'
+import { listLibsWithFullInfo } from '@/server/db/lib'
 import { exampleSharedLib } from '@/lib/config'
 import { getArchivedLibs } from '@/server/db/lib'
 import { unstable_cacheTag as cacheTag, unstable_cacheLife as cacheLife } from 'next/cache'
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     title: '文库'
 }
 
-async function getData(listedFilter: Awaited<ReturnType<typeof isListed>>, userId: string) {
-    const data = await summarizeLibsWithWords({ filter: listedFilter, userId })
-    return data.length > 0 ? data : await summarizeLibsWithWords({ filter: { 'lib.id': exampleSharedLib.id }, userId })
+async function getData(listedFilter: Awaited<ReturnType<typeof isListedFilter>>, userId: string) {
+    const data = await listLibsWithFullInfo({ filter: listedFilter, userId })
+    return data.length > 0 ? data : await listLibsWithFullInfo({ filter: { 'lib.id': exampleSharedLib.id }, userId })
 }
 
 async function getOrgs() {
@@ -39,13 +39,13 @@ async function getOrgs() {
 async function UserLibraryList() {
     const { userId } = await getAuthOrThrow()
     const mems = await getOrgs()
-    return <LibraryList userId={userId} mems={mems} listedFilter={await isListed()} />
+    return <LibraryList userId={userId} mems={mems} listedFilter={await isListedFilter()} />
 }
 
 async function LibraryList({ userId, mems, listedFilter }: {
     userId: string,
     mems: Awaited<ReturnType<typeof getOrgs>>,
-    listedFilter: Awaited<ReturnType<typeof isListed>>
+    listedFilter: Awaited<ReturnType<typeof isListedFilter>>
 }) {
     'use cache'
     cacheTag('libraries')
@@ -58,7 +58,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
         <div className='flex flex-col gap-4 w-full'>
             <ConfirmUnstarRoot />
             <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
-                {normalLibs.map(({ lib, count, isStarred }) => lib && (
+                {normalLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={false}
@@ -68,7 +68,6 @@ async function LibraryList({ userId, mems, listedFilter }: {
                         key={lib.id}
                         name={lib.name}
                         lang={lib.lang}
-                        lexicon={{ count }}
                         isOwner={lib.owner === userId}
                         orgs={mems.map((mem) => ({
                             name: mem.id,
@@ -80,7 +79,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
                 ))}
             </section>
             {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-300 rounded-lg md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm')}>
-                {compactLibs.map(({ lib, count, isStarred }) => lib && (
+                {compactLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={lib.shadow}
@@ -90,7 +89,6 @@ async function LibraryList({ userId, mems, listedFilter }: {
                         key={lib.id}
                         name={lib.name}
                         lang={lib.lang}
-                        lexicon={{ count }}
                         isOwner={lib.owner === userId}
                         orgs={[]}
                         orgId={lib.org}

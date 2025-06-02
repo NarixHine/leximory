@@ -2,7 +2,7 @@
 
 ## Code Style Guidelines
 
-1. Always use single quotes where possible
+1. Always use *single* quotes where possible
 2. No semicolons at the end of statements
 3. Use 4 spaces for indentation
 4. Maximum line length of 100 characters

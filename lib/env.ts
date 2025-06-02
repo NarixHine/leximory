@@ -16,6 +16,8 @@ const env = createEnv({
         EDGE_CONFIG: z.string().min(1),
         CREEM_API_KEY: z.string().min(1),
         CREEM_WEBHOOK_SECRET: z.string().min(1),
+        SUPABASE_URL: z.string().min(1),
+        SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     },
 
     client: {
@@ -44,6 +46,8 @@ const env = createEnv({
         EDGE_CONFIG: process.env.EDGE_CONFIG,
         CREEM_API_KEY: process.env.CREEM_API_KEY,
         CREEM_WEBHOOK_SECRET: process.env.CREEM_WEBHOOK_SECRET,
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
 })
 

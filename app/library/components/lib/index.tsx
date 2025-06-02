@@ -66,14 +66,11 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow, price, archived, isStarred }: {
+function Library({ id, name, lang, isOwner, access, orgId, orgs, shadow, price, archived, isStarred }: {
     id: string,
     name: string,
     access: number,
     isStarred: boolean,
-    lexicon?: {
-        count: number,
-    },
     lang: string,
     isOwner: boolean,
     orgId: string | null | undefined,
@@ -181,10 +178,6 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} variant='flat'>语料本</Button>
-                {lexicon && <div className='flex flex-col items-center'>
-                    <p className={cn('text-xs opacity-80')}>词汇量</p>
-                    <Chip color='primary' variant='dot' className='border-none -mt-1'>{lexicon.count}</Chip>
-                </div>}
                 <div className='flex-1'></div>
                 {recentAccessItem && <Button className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>

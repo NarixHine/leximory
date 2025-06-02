@@ -1,4 +1,4 @@
-import { isListed } from '@/server/auth/role'
+import { isListedFilter } from '@/server/auth/role'
 import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
@@ -21,7 +21,7 @@ export type ForgetCurvePoint = keyof typeof forgetCurve
 export default async function Report({ day }: {
     day: ForgetCurvePoint
 }) {
-    const words = await getForgetCurve({ day, filter: await isListed() })
+    const words = await getForgetCurve({ day, filter: await isListedFilter() })
     return words.length > 0 ? (
         <div className='my-8'>
             <div className='flex gap-3 items-start'>

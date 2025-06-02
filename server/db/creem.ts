@@ -1,30 +1,35 @@
 import 'server-only'
-import { getXataClient } from '../client/xata'
+import { supabase } from '../client/supabase'
 import { Plan } from '@/server/auth/quota'
 import { clerkClient } from '@clerk/nextjs/server'
 import { redis } from '../client/redis'
 
-const xata = getXataClient()
-
 export async function getCustomerId(userId: string) {
-    const customer = await xata.db.users.filter({
-        id: userId,
-    }).getFirstOrThrow()
-    return customer.creem_id
+    const { data, error } = await supabase
+        .from('users')
+        .select('creem_id')
+        .eq('id', userId)
+        .single()
+    if (error) throw error
+    return data.creem_id
 }
 
 export async function fillCustomerId({ userId, customerId }: { userId: string, customerId: string }) {
-    await xata.db.users.updateOrThrow({
-        id: userId,
-        creem_id: customerId,
-    })
+    const { error } = await supabase
+        .from('users')
+        .update({ creem_id: customerId })
+        .eq('id', userId)
+    if (error) throw error
 }
 
 export async function getUserIdByCustomerId(customerId: string) {
-    const customer = await xata.db.users.filter({
-        creem_id: customerId,
-    }).getFirstOrThrow()
-    return customer.id
+    const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('creem_id', customerId)
+        .single()
+    if (error) throw error
+    return data.id
 }
 
 export async function updateSubscription({ userId, plan }: { userId: string, plan: Plan }) {

@@ -5,7 +5,7 @@ import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { authReadToLib, authReadToText, authWriteToLib, getAuthOrThrow, isListed } from '@/server/auth/role'
+import { authReadToLib, authReadToText, authWriteToLib, getAuthOrThrow, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
@@ -60,14 +60,14 @@ const tools: ToolSet = {
         description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
         parameters: toolSchemas.listLibs,
         execute: async () => {
-            return listLibsWithFullInfo({ filter: await isListed() })
+            return listLibsWithFullInfo({ filter: await isListedFilter() })
         }
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
         parameters: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
-            const filter = await isListed()
+            const filter = await isListedFilter()
             switch (period) {
                 case 'day':
                     return Promise.all([
