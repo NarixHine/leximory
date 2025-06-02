@@ -6,27 +6,30 @@ import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibParams } from '@/lib/types'
 import { Button } from '@heroui/button'
-import { PiBookOpen } from 'react-icons/pi'
+import { PiBookOpen, PiUsers } from 'react-icons/pi'
 import Link from 'next/link'
 
 async function getData(lib: string) {
-    const { name, isReadOnly, lang } = await authReadToLib(lib)
+    const { name, isReadOnly, lang, isOwner } = await authReadToLib(lib)
     const texts = await getTexts({ lib })
-    return { texts, name, isReadOnly, lang }
+    return { texts, name, isReadOnly, lang, isOwner }
 }
 
 export default async function Page(props: LibParams) {
     const params = await props.params
     const { lib } = params
-    const { texts, name, isReadOnly, lang } = await getData(lib)
+    const { texts, name, isReadOnly, lang, isOwner } = await getData(lib)
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
         <H usePlayfair={lang === 'zh' || lang === 'en'} className='mb-4 text-5xl'>{name}</H>
-        <div className='flex justify-center mb-5'>
+        <div className='flex justify-center mb-5 gap-2'>
             <Button variant='light' startContent={<PiBookOpen />} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印所有文章
             </Button>
+            {isOwner && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
+                查看所有读者
+            </Button>}
         </div>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
             {texts.map(({ title, id, topics, hasEbook, createdAt, updatedAt }) => (

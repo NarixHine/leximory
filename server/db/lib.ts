@@ -152,7 +152,7 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
 }
 
 export async function getLib({ id }: { id: string }) {
-    return xata.db.libraries.select(['name', 'lang', 'org', 'access', 'owner']).filter({ id }).getFirstOrThrow()
+    return xata.db.libraries.select(['name', 'lang', 'org', 'access', 'owner', 'starredBy']).filter({ id }).getFirstOrThrow()
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {
