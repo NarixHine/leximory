@@ -7,11 +7,11 @@ import Topics from './components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom, isLoadingAtom } from './atoms'
 import { getTextContent } from '@/server/db/text'
-import { LibAndTextParams } from '@/lib/types'
+import { LibAndTextProps } from '@/lib/types'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isReaderModeAtom } from '@/app/atoms'
 
-export async function generateMetadata(props: LibAndTextParams) {
+export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
     const { title } = await getTextContent({ id: params.text })
     return {
@@ -24,7 +24,7 @@ const getData = async (text: string) => {
     return { title, content, topics, ebook, lib }
 }
 
-export default async function Page(props: LibAndTextParams) {
+export default async function Page(props: LibAndTextProps) {
     const { text } = await props.params
     const { title, content, topics, ebook, lib } = await getData(text)
 

@@ -5,6 +5,7 @@ import UserAvatar from '@/components/avatar'
 import { PiUsersDuotone } from 'react-icons/pi'
 import { getLib } from '@/server/db/lib'
 import { authWriteToLib } from '@/server/auth/role'
+import { LibProps } from '@/lib/types'
 
 async function getData(lib: string) {
     await authWriteToLib(lib)
@@ -12,8 +13,9 @@ async function getData(lib: string) {
     return { readers: starredBy ?? [], name }
 }
 
-export default async function Page(props: { params: { lib: string } }) {
-    const { lib } = props.params
+export default async function Page(props: LibProps) {
+    const params = await props.params
+    const { lib } = params
     const { readers, name } = await getData(lib)
 
     return <Main>

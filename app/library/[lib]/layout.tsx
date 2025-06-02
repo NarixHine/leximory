@@ -5,9 +5,9 @@ import { Lang } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { getLib } from '@/server/db/lib'
-import { LibParams } from '@/lib/types'
+import { LibProps } from '@/lib/types'
 
-export async function generateMetadata(props: LibParams) {
+export async function generateMetadata(props: LibProps) {
     const params = await props.params
     const { name } = await getLib({ id: params.lib })
     return {

@@ -1,10 +1,10 @@
-export type LibParams = {
+export type LibProps = {
     params: Promise<{
         lib: string
     }>
 }
 
-export type LibAndTextParams = {
+export type LibAndTextProps = {
     params: Promise<{
         lib: string
         text: string

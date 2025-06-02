@@ -1,6 +1,6 @@
 import { CommentaryQuotaCard, AudioQuotaCard } from '@/app/library/components/cards'
 import GradientCard from '@/app/library/components/cards/card'
-import Library, { LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
+import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
@@ -56,6 +56,7 @@ async function LibraryList({ userId, mems, listedFilter }: {
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
     return (
         <div className='flex flex-col gap-4 w-full'>
+            <ConfirmUnstarRoot />
             <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
                 {normalLibs.map(({ lib, count, isStarred }) => lib && (
                     <Library

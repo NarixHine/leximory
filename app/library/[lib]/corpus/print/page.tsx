@@ -1,4 +1,4 @@
-import { LibParams } from '@/lib/types'
+import { LibProps } from '@/lib/types'
 import H from '@/components/ui/h'
 import Markdown from '@/components/markdown'
 import { getAllWordsInLib } from '@/server/db/word'
@@ -14,7 +14,7 @@ const getData = async (lib: string) => {
     return words
 }
 
-export default async function PrintPage({ params }: LibParams) {
+export default async function PrintPage({ params }: LibProps) {
     const { lib } = await params
     const words = await getData(lib)
 

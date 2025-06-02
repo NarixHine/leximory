@@ -7,7 +7,7 @@ import Test from './components/test'
 import Nav from '@/components/nav'
 import { Metadata } from 'next'
 import { getLib } from '@/server/db/lib'
-import { LibParams } from '@/lib/types'
+import { LibProps } from '@/lib/types'
 import Link from 'next/link'
 import { Button } from '@heroui/button'
 import { PiPrinterDuotone } from 'react-icons/pi'
@@ -22,7 +22,7 @@ const getData = async (lib: string) => {
     return { words, cursor, more, name }
 }
 
-export default async function Page(props: LibParams) {
+export default async function Page(props: LibProps) {
     const params = await props.params
     const { lib } = params
     const { words, cursor, more, name } = await getData(lib)

@@ -27,6 +27,10 @@ import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
 import Topics from '../../[lib]/[text]/components/topics'
 
+export function ConfirmUnstarRoot() {
+    return <ConfirmUnstar.Root></ConfirmUnstar.Root>
+}
+
 export function LibrarySkeleton() {
     return (
         <Card className='w-full opacity-60' shadow='sm'>
@@ -150,7 +154,6 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     }
                     {
                         isStarred && <>
-                            <ConfirmUnstar.Root></ConfirmUnstar.Root>
                             <Button
                                 size={'sm'}
                                 as={'span'}

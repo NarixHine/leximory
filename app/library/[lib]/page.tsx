@@ -4,7 +4,7 @@ import H from '@/components/ui/h'
 import Text, { AddTextButton } from './components/text'
 import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
-import { LibParams } from '@/lib/types'
+import { LibProps } from '@/lib/types'
 import { Button } from '@heroui/button'
 import { PiBookOpen, PiUsers } from 'react-icons/pi'
 import Link from 'next/link'
@@ -15,7 +15,7 @@ async function getData(lib: string) {
     return { texts, name, isReadOnly, lang, isOwner }
 }
 
-export default async function Page(props: LibParams) {
+export default async function Page(props: LibProps) {
     const params = await props.params
     const { lib } = params
     const { texts, name, isReadOnly, lang, isOwner } = await getData(lib)
