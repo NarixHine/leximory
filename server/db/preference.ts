@@ -7,24 +7,24 @@ import { revalidateTag } from 'next/cache'
 export type Accent = 'BrE' | 'AmE'
 
 export async function setAccentPreference({ accent, userId }: { accent: Accent, userId: string }) {
-    const { error } = await supabase
+    await supabase
         .from('users')
         .update({ accent })
         .eq('id', userId)
-    if (error) throw error
+        .throwOnError()
     revalidateTag('accent')
 }
 
 export async function getAccentPreference({ userId }: { userId: string }) {
     'use cache'
     cacheTag('accent')
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('users')
         .select('accent')
         .eq('id', userId)
         .single()
 
-    if (error || !data) {
+    if (!data) {
         const { data: newUser, error: createError } = await supabase
             .from('users')
             .insert({ id: userId })
@@ -37,7 +37,8 @@ export async function getAccentPreference({ userId }: { userId: string }) {
                 .select('accent')
                 .eq('id', userId)
                 .single()
-            return existingUser?.accent as Accent
+                .throwOnError()
+            return existingUser.accent as Accent
         }
         return newUser.accent as Accent
     }

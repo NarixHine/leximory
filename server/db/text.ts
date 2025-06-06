@@ -12,7 +12,7 @@ import { pick } from 'es-toolkit'
 
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const id = nanoid()
-    const { error } = await supabase
+    await supabase
         .from('texts')
         .insert({
             id,
@@ -21,14 +21,13 @@ export async function createText({ lib, title, content, topics }: { lib: string 
             content,
             topics
         })
-
-    if (error) throw error
+        .throwOnError()
     revalidateTag(`texts:${lib}`)
     return id
 }
 
 export async function createTextWithData({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('texts')
         .insert({
             lib,
@@ -38,42 +37,37 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
         })
         .select()
         .single()
-
-    if (error) throw error
+        .throwOnError()
     revalidateTag(`texts:${lib}`)
     return data
 }
 
 export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    const { data: rec, error } = await supabase
+    const { data: rec } = await supabase
         .from('texts')
         .update({ title, content, topics })
         .eq('id', id)
         .select('lib')
         .single()
-
-    if (error) throw error
-    if (!rec?.lib) throw new Error('Library not found')
+        .throwOnError()
     revalidateTag(`texts:${rec.lib}`)
     revalidateTag(`texts:${id}`)
 }
 
 export async function deleteText({ id }: { id: string }) {
-    const { data: rec, error } = await supabase
+    const { data: rec } = await supabase
         .from('texts')
         .delete()
         .eq('id', id)
         .select('lib, ebook')
         .single()
-
-    if (rec?.ebook) {
+        .throwOnError()
+    if (rec.ebook) {
         await supabase.storage
             .from('user-files')
             .remove([rec.ebook])
     }
 
-    if (error) throw error
-    if (!rec?.lib) throw new Error('Library not found')
     revalidateTag(`texts:${rec.lib}`)
     revalidateTag(`texts:${id}`)
 }
@@ -185,7 +179,7 @@ export async function setTextAnnotationProgress({ id, progress }: { id: string, 
 export async function getLibIdAndLangOfText({ id }: { id: string }) {
     'use cache'
     cacheTag(`texts:${id}`)
-    const { data: text, error } = await supabase
+    const { data: text } = await supabase
         .from('texts')
         .select(`
             lib:libraries (
@@ -195,9 +189,7 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
         `)
         .eq('id', id)
         .single()
+        .throwOnError()
 
-    if (error) throw error
-    if (!text?.lib?.id || !text?.lib?.lang) throw new Error('Library not found')
-
-    return { libId: text.lib.id, lang: text.lib.lang as Lang }
+    return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
 }

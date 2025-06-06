@@ -9,12 +9,11 @@ export async function getSubsStatus({ userId }: { userId: string }) {
         .select('hour, subscription')
         .eq('uid', userId)
         .single()
-        .throwOnError()
 
     return {
         hasSubs: !!data,
-        hour: data.hour,
-        subscription: data.subscription ? JSON.stringify(data.subscription) : undefined
+        hour: data?.hour,
+        subscription: data?.subscription ? JSON.stringify(data.subscription) : undefined
     }
 }
 
@@ -32,22 +31,22 @@ export async function getHourlySubs(hour: number) {
 }
 
 export default async function saveSubs({ userId, subs, hour }: { userId: string, subs: PushSubscription, hour: number }) {
-    const { error } = await supabase
+    await supabase
         .from('subs')
         .insert({
             uid: userId,
             subscription: JSON.parse(JSON.stringify(subs)),
             hour
         })
-    if (error) throw error
+        .throwOnError()
     revalidatePath(`/daily`)
 }
 
 export async function delSubs({ userId }: { userId: string }) {
-    const { error } = await supabase
+    await supabase
         .from('subs')
         .delete()
         .eq('uid', userId)
-    if (error) throw error
+        .throwOnError()
     revalidatePath(`/daily`)
 }

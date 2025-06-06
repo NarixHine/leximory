@@ -35,21 +35,21 @@ export async function getLexicoinBalance(uid: string) {
 export async function addLexicoinBalance(uid: string, amount: number) {
     revalidateTag('lexicoin')
     const balance = await getLexicoinBalance(uid)
-    const { error } = await supabase
+    await supabase
         .from('users')
         .update({ lexicoin: balance + amount })
         .eq('id', uid)
-    if (error) throw error
+        .throwOnError()
     return { success: true, message: `余额增加 ${amount} LexiCoin` }
 }
 
 export async function setLastClaimDate(uid: string) {
     revalidateTag('lexicoin')
-    const { error } = await supabase
+    await supabase
         .from('users')
         .update({ last_daily_claim: moment.tz('Asia/Shanghai').toISOString() })
         .eq('id', uid)
-    if (error) throw error
+        .throwOnError()
 }
 
 export async function subtractLexicoinBalance(uid: string, amount: number) {
@@ -58,32 +58,32 @@ export async function subtractLexicoinBalance(uid: string, amount: number) {
     if (balance < amount) {
         return { success: false, message: `余额不足，你还有 ${balance} LexiCoin` }
     }
-    const { error } = await supabase
+    await supabase
         .from('users')
         .update({ lexicoin: balance - amount })
         .eq('id', uid)
-    if (error) throw error
+        .throwOnError()
     return { success: true }
 }
 
 export async function getLibPrice(lib: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('libraries')
         .select('price')
         .eq('id', lib)
         .single()
-    if (error) throw error
+        .throwOnError()
     return data.price
 }
 
 export async function getLastDailyClaim(uid: string) {
     'use cache'
     cacheTag('lexicoin')
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('users')
         .select('last_daily_claim')
         .eq('id', uid)
         .single()
-    if (error || !data) return null
-    return data.last_daily_claim
+        
+    return data?.last_daily_claim
 }
