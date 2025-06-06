@@ -4,27 +4,27 @@ import { PushSubscription } from 'web-push'
 import { revalidatePath } from 'next/cache'
 
 export async function getSubsStatus({ userId }: { userId: string }) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('subs')
         .select('hour, subscription')
         .eq('uid', userId)
         .single()
+        .throwOnError()
 
-    if (error && error.code !== 'PGRST116') throw error
     return {
         hasSubs: !!data,
-        hour: data?.hour,
-        subscription: data?.subscription ? JSON.stringify(data.subscription) : undefined
+        hour: data.hour,
+        subscription: data.subscription ? JSON.stringify(data.subscription) : undefined
     }
 }
 
 export async function getHourlySubs(hour: number) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('subs')
         .select('uid, subscription')
         .eq('hour', hour)
+        .throwOnError()
 
-    if (error) throw error
     return data.map(({ uid, subscription }) => ({
         uid,
         subscription: JSON.parse(JSON.stringify(subscription)) as PushSubscription

@@ -150,8 +150,9 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
         .eq('access', libAccessStatusMap.public)
         .order('created_at', { ascending: false })
         .range((page - 1) * size, page * size - 1)
+        .throwOnError()
 
-    return data?.map(({ id, name, lang, owner, starred_by, price }) => ({
+    return data.map(({ id, name, lang, owner, starred_by, price }) => ({
         id,
         name,
         lang: lang as Lang,
@@ -164,9 +165,10 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
 export async function getLib({ id }: { id: string }) {
     const { data } = await supabase
         .from('libraries')
-        .select('name, lang, org, access, owner, starred_by')
+        .select('id, name, lang, org, access, owner, starred_by')
         .eq('id', id)
         .single()
+        .throwOnError()
     return data
 }
 
@@ -177,7 +179,8 @@ export async function listShortcutLibs({ owner }: { owner: string }) {
         .from('libraries')
         .select('id, name')
         .eq('owner', owner)
-    return data?.map(({ id, name }) => ({ id, name })) ?? []
+        .throwOnError()
+    return data.map(({ id, name }) => ({ id, name })) ?? []
 }
 
 export async function listLibs({ owner, orgId }: { owner: string, orgId?: string }) {
@@ -194,23 +197,19 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
         query.is('org', null)
     }
 
-    const { data } = await query
-    return data?.map(({ id }) => id) ?? []
+    const { data } = await query.throwOnError()
+    return data.map(({ id }) => id) ?? []
 }
 
 export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: OrFilter, userId?: string }) {
     'use cache'
     cacheTag('libraries')
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('libraries')
         .select('id, name, lang, owner, price, shadow, access, org, starred_by')
         .or(filters)
-
-    if (error) {
-        throw error
-    }
-    if (!data) return []
+        .throwOnError()
 
     return data.map(lib => ({
         lib: pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
@@ -226,7 +225,9 @@ export async function getArchivedLibs({ userId }: { userId: string }) {
         .select('archived_libs')
         .eq('id', userId)
         .single()
-    return data?.archived_libs ?? []
+        .throwOnError()
+
+    return data.archived_libs ?? []
 }
 
 export async function addToArchive({ userId, libId }: { userId: string, libId: string }) {
@@ -265,8 +266,9 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             )
         `)
         .eq('lib', libId)
+        .throwOnError()
 
-    return data?.map(text => ({
+    return data.map(text => ({
         id: text.id,
         title: text.title,
         content: text.content,

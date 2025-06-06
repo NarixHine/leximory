@@ -5,30 +5,31 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { redis } from '../client/redis'
 
 export async function getCustomerId(userId: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('users')
         .select('creem_id')
         .eq('id', userId)
         .single()
-    if (error) throw error
+        .throwOnError()
+
     return data.creem_id
 }
 
 export async function fillCustomerId({ userId, customerId }: { userId: string, customerId: string }) {
-    const { error } = await supabase
+    await supabase
         .from('users')
         .update({ creem_id: customerId })
         .eq('id', userId)
-    if (error) throw error
+        .throwOnError()
 }
 
 export async function getUserIdByCustomerId(customerId: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('users')
         .select('id')
         .eq('creem_id', customerId)
         .single()
-    if (error) throw error
+        .throwOnError()
     return data.id
 }
 

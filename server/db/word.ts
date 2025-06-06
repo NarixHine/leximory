@@ -19,30 +19,31 @@ export async function getAllWordsInLib({ lib }: { lib: string }) {
         .from('lexicon')
         .select('word, id')
         .eq('lib', lib)
-    return data ?? []
+        .throwOnError()
+    return data
 }
 
 export async function getWord({ id }: { id: string }) {
     'use cache'
     cacheTag(id)
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .select('*')
         .eq('id', id)
         .single()
-    if (error) throw error
+        .throwOnError()
     return { ...data, lib: data.lib! }
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
     const sanitizedWord = sanitized(word)
     validateOrThrow(sanitizedWord)
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .insert({ lib, word: sanitizedWord })
         .select()
         .single()
-    if (error) throw error
+        .throwOnError()
     after(() => {
         revalidateTag('words')
         revalidateTag(`words:${lib}`)
@@ -58,24 +59,24 @@ export async function shadowSaveWord({ word, uid, lang }: { word: string, uid: s
 }
 
 export async function updateWord({ id, word }: { id: string, word: string }) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .update({ word })
         .eq('id', id)
         .select()
         .single()
-    if (error) throw error
+        .throwOnError()
     return data
 }
 
 export async function deleteWord(id: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .delete()
         .eq('id', id)
         .select('lib')
         .single()
-    if (error) throw error
+        .throwOnError()
     after(() => {
         revalidateTag('words')
         revalidateTag(`words:${data.lib}`)
@@ -84,13 +85,13 @@ export async function deleteWord(id: string) {
 }
 
 export async function loadWords({ lib, cursor }: { lib: string, cursor?: string }) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .select('word, id, created_at')
         .eq('lib', lib)
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
-    if (error) throw error
+        .throwOnError()
     return {
         words: data.map(({ word, id, created_at }) => ({
             word,
@@ -103,14 +104,14 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
 }
 
 export async function drawWords({ lib, start, end, size }: { lib: string, start: Date, end: Date, size: number }) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .select('word')
         .eq('lib', lib)
         .gte('created_at', start.toISOString())
         .lt('created_at', end.toISOString())
         .limit(size)
-    if (error) throw error
+        .throwOnError()
     return data
 }
 
@@ -122,15 +123,15 @@ export async function getForgetCurve({ day, or: { filters, options } }: { day: F
     const startDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][0], 'day').utc().toDate()
     const endDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][1], 'day').utc().toDate()
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .select('id, word, lib:libraries!inner(id, lang)')
         .gte('created_at', startDate.toISOString())
         .lt('created_at', endDate.toISOString())
         .not('word', 'in', `(${Object.values(welcomeMap).map(w => `'${w}'`).join(',')})`)
         .or(filters, options)
+        .throwOnError()
 
-    if (error) throw error
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }
 
@@ -140,13 +141,12 @@ export async function aggrWordHistogram({ libs, size }: { libs: string[], size: 
     }
     const startDate = moment().subtract(size, 'days').toDate()
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('lexicon')
         .select('created_at')
         .in('lib', libs)
         .gte('created_at', startDate.toISOString())
-
-    if (error) throw error
+        .throwOnError()
 
     // Group by date and count
     const histogram = data.reduce((acc: Record<string, number>, curr) => {

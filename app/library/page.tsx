@@ -25,11 +25,12 @@ export const metadata: Metadata = {
 
 async function getData(orFilter: OrFilter, userId: string) {
     const data = await listLibsWithFullInfo({ or: orFilter, userId })
-    return data.length > 0 ? data : await listLibsWithFullInfo({ or: { filters: `lib.id.eq.${exampleSharedLib.id}`, options: { referencedTable: 'libraries' } }, userId })
+    return data
 }
 
 async function getOrgs() {
-    const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId: (await auth()).userId! })
+    const { userId } = await getAuthOrThrow()
+    const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId })
     return data.map(({ organization }) => ({
         id: organization.id,
         name: organization.name

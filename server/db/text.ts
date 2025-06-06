@@ -81,7 +81,7 @@ export async function deleteText({ id }: { id: string }) {
 export async function getTexts({ lib }: { lib: string }) {
     'use cache'
     cacheTag(`texts:${lib}`)
-    const { data: texts, error } = await supabase
+    const { data: texts } = await supabase
         .from('texts')
         .select(`
             id,
@@ -95,8 +95,8 @@ export async function getTexts({ lib }: { lib: string }) {
             )
         `)
         .eq('lib', lib)
+        .throwOnError()
 
-    if (error) throw error
     return texts.map(({ id, title, topics, ebook, created_at, updated_at, lib }) => ({
         id,
         title,
@@ -111,7 +111,7 @@ export async function getTexts({ lib }: { lib: string }) {
 export async function getTextContent({ id }: { id: string }) {
     'use cache'
     cacheTag(`texts:${id}`)
-    const { data: text, error } = await supabase
+    const { data: text } = await supabase
         .from('texts')
         .select(`
             content,
@@ -125,8 +125,8 @@ export async function getTextContent({ id }: { id: string }) {
         `)
         .eq('id', id)
         .single()
+        .throwOnError()
 
-    if (error) throw error
     if (!text) {
         notFound()
     }
@@ -136,10 +136,11 @@ export async function getTextContent({ id }: { id: string }) {
         throw new Error('lib not found')
     }
     if (ebook) {
-        const { data } = await supabase.storage
+        const { data, error } = await supabase.storage
             .from('user-files')
             .createSignedUrl(ebook, 60 * 60 * 24 * 30)
-        return { content, ebook: data!.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
+        if (error) throw error
+        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
     }
     return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name']) }
 }
