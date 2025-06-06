@@ -31,8 +31,8 @@ const nextConfig: NextConfig = {
     },
     async rewrites() {
         return [{
-            source: '/ebooks/:id\\.epub',
-            destination: 'https://us-east-1.storage.xata.sh/:id'
+            source: '/ebooks/:token/:id\\.epub',
+            destination: 'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token'
         }]
     },
 }

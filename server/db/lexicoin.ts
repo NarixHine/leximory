@@ -18,7 +18,7 @@ export async function getLexicoinBalance(uid: string) {
             .insert({ id: uid, lexicoin: 20 })
             .select('lexicoin')
             .single()
-        
+
         if (createError) {
             const { data: existingUser } = await supabase
                 .from('users')

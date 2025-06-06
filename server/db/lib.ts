@@ -201,7 +201,7 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
 export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: OrFilter, userId?: string }) {
     'use cache'
     cacheTag('libraries')
-    
+
     const { data, error } = await supabase
         .from('libraries')
         .select('id, name, lang, owner, price, shadow, access, org, starred_by')

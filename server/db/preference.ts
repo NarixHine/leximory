@@ -30,7 +30,7 @@ export async function getAccentPreference({ userId }: { userId: string }) {
             .insert({ id: userId })
             .select('accent')
             .single()
-        
+
         if (createError) {
             const { data: existingUser } = await supabase
                 .from('users')

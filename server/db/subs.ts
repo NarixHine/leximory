@@ -9,12 +9,12 @@ export async function getSubsStatus({ userId }: { userId: string }) {
         .select('hour, subscription')
         .eq('uid', userId)
         .single()
-    
+
     if (error && error.code !== 'PGRST116') throw error
-    return { 
-        hasSubs: !!data, 
-        hour: data?.hour, 
-        subscription: data?.subscription ? JSON.stringify(data.subscription) : undefined 
+    return {
+        hasSubs: !!data,
+        hour: data?.hour,
+        subscription: data?.subscription ? JSON.stringify(data.subscription) : undefined
     }
 }
 
@@ -23,11 +23,11 @@ export async function getHourlySubs(hour: number) {
         .from('subs')
         .select('uid, subscription')
         .eq('hour', hour)
-    
+
     if (error) throw error
-    return data.map(({ uid, subscription }) => ({ 
-        uid, 
-        subscription: JSON.parse(JSON.stringify(subscription)) as PushSubscription 
+    return data.map(({ uid, subscription }) => ({
+        uid,
+        subscription: JSON.parse(JSON.stringify(subscription)) as PushSubscription
     }))
 }
 

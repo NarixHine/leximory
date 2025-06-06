@@ -138,7 +138,7 @@ export async function getTextContent({ id }: { id: string }) {
     if (ebook) {
         const { data } = await supabase.storage
             .from('user-files')
-            .createSignedUrl(ebook, 60 * 60 * 24 * 30) 
+            .createSignedUrl(ebook, 60 * 60 * 24 * 30)
         return { content, ebook: data!.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
     }
     return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name']) }

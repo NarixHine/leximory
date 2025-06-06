@@ -22,6 +22,15 @@ import { toast } from 'sonner'
 import { memo } from 'react'
 import { useLogSnag } from '@logsnag/next'
 
+function transformEbookUrl(url: string) {
+    const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
+    if (match) {
+        const [, id, token] = match
+        return `/ebooks/${token}/${id}.epub`
+    }
+    return url
+}
+
 const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
@@ -107,8 +116,6 @@ export default function Ebook() {
     const containerRef = useRef<HTMLDivElement>(null!)
 
     const { track } = useLogSnag()
-
-    console.log(src)
 
     return src && (
         <motion.div
@@ -240,7 +247,7 @@ export default function Ebook() {
                         allowPopups: true,
                         allowScriptedContent: true,
                     }}
-                    url={src}
+                    url={transformEbookUrl(src)}
                 />
             </FullScreen>
         </motion.div>
