@@ -11,8 +11,8 @@ const getCountMap = async ({ uid, orgId }: { uid: string, orgId?: string }) => {
     const results = await aggrWordHistogram({ libs, size: 30 })
     return new Map(
         results.map(bucket => [
-            new Date(bucket.$key).toISOString().split('T')[0],
-            bucket.$count
+            bucket.date,
+            bucket.count
         ])
     )
 }

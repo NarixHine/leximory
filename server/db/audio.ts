@@ -1,26 +1,47 @@
 import 'server-only'
-
-import { getXataClient } from '@/server/client/xata'
-
-const xata = getXataClient()
+import { supabase } from '@/server/client/supabase'
+import { revalidateTag } from 'next/cache'
 
 export async function retrieveAudioUrl({ id }: { id: string }) {
-    const audio = await xata.db.audio.select(['gen']).filter({ id }).getFirst()
-    return audio?.gen?.url
+    const { data, error } = await supabase
+        .from('audio')
+        .select('gen')
+        .eq('id', id)
+        .single()
+    
+    if (error) throw error
+    if (!data?.gen) return null
+
+    const { data: { signedUrl } } = await supabase.storage
+        .from('user-files')
+        .createSignedUrl(data.gen, 60 * 60 * 24 * 30) as { data: { signedUrl: string } }
+        
+    return signedUrl
 }
 
 export async function uploadAudio({ id, lib, audio }: { id: string, lib: string, audio: File }) {
-    await xata.db.audio.create({
-        id,
-        lib,
-        gen: {
-            enablePublicUrl: true,
-        }
-    })
-    await xata.files.upload({ table: 'audio', column: 'gen', record: id }, audio, {
-        mediaType: 'audio/mpeg',
-    })
+    const path = `audio/${id}.mp3`
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user-files')
+        .upload(path, await audio.arrayBuffer(), {
+            contentType: 'audio/mpeg',
+            upsert: true
+        })
 
-    const url = await retrieveAudioUrl({ id }) as string
+    if (uploadError) throw uploadError
+    if (!uploadData?.path) throw new Error('Failed to upload audio')
+
+    await supabase
+        .from('audio')
+        .insert({
+            id,
+            lib,
+            gen: uploadData.path
+        })
+
+    const url = await retrieveAudioUrl({ id })
+    
+    revalidateTag(`audio:${id}`)
     return url
 }

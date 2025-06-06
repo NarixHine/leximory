@@ -37,7 +37,7 @@ export const authReadToLib = async (lib: string) => {
         .from('libraries')
         .select('owner, lang, name, starred_by, org, price')
         .eq('id', lib)
-        .or(`owner.eq.${userId}${orgId ? `,org.eq.${orgId}` : ''},access.eq.${libAccessStatusMap.public}`)
+        .or(`owner.eq.${userId}${orgId ? `,org.eq.${orgId}` : ''},and(access.eq.${libAccessStatusMap.public},starred_by.cs.{"${userId}"})`)
         .single()
 
     if (error || !rec) {
@@ -114,32 +114,18 @@ export const authReadToText = async (text: string) => {
 
 // Filter helpers for building queries
 
-export const isPublicFilter = () => `access.eq.${libAccessStatusMap.public}`
-
-export const isStarredByUserFilter = async () => {
-    const { userId } = await getAuthOrThrow()
-    return `starred_by.cs.{${userId}}`
-}
-
-export const isOwnedByUserFilter = async () => {
-    const { userId } = await getAuthOrThrow()
-    return `owner.eq.${userId}`
-}
-
-export const isAccessibleToUserOnlyFilter = async () => {
-    const { userId } = await getAuthOrThrow()
-    return `or(owner.eq.${userId},and(starred_by.cs.{${userId}},access.eq.${libAccessStatusMap.public}))`
-}
-
-export const isAccessibleToUserOrgFilter = async () => {
-    const { orgId } = await getAuthOrThrow()
-    return `org.eq.${orgId}`
-}
+export type OrFilter = Awaited<ReturnType<typeof isListedFilter>>
 
 export const isListedFilter = async () => {
     const { userId, orgId } = await getAuthOrThrow()
     if (orgId) {
-        return [`org.eq.${orgId}`, { referencedTable: 'libraries' }]
+        return {
+            filters: `org.eq.${orgId}`,
+            options: { referencedTable: 'libraries' }
+        }
     }
-    return [`owner.eq.${userId},access.eq.${libAccessStatusMap.public}`, { referencedTable: 'libraries' }]
+    return {
+        filters: `owner.eq.${userId},and(starred_by.cs.{"${userId}"},access.eq.${libAccessStatusMap.public})`,
+        options: { referencedTable: 'libraries' }
+    }
 }

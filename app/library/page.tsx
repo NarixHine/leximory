@@ -4,7 +4,7 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import { getAuthOrThrow, isListedFilter } from '@/server/auth/role'
+import { getAuthOrThrow, isListedFilter, OrFilter } from '@/server/auth/role'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     title: '文库'
 }
 
-async function getData(listedFilter: Awaited<ReturnType<typeof isListedFilter>>, userId: string) {
-    const data = await listLibsWithFullInfo({ filter: listedFilter, userId })
-    return data.length > 0 ? data : await listLibsWithFullInfo({ filter: { 'lib.id': exampleSharedLib.id }, userId })
+async function getData(orFilter: OrFilter, userId: string) {
+    const data = await listLibsWithFullInfo({ or: orFilter, userId })
+    return data.length > 0 ? data : await listLibsWithFullInfo({ or: { filters: `lib.id.eq.${exampleSharedLib.id}`, options: { referencedTable: 'libraries' } }, userId })
 }
 
 async function getOrgs() {
@@ -39,18 +39,18 @@ async function getOrgs() {
 async function UserLibraryList() {
     const { userId } = await getAuthOrThrow()
     const mems = await getOrgs()
-    return <LibraryList userId={userId} mems={mems} listedFilter={await isListedFilter()} />
+    return <LibraryList userId={userId} mems={mems} orFilter={await isListedFilter()} />
 }
 
-async function LibraryList({ userId, mems, listedFilter }: {
+async function LibraryList({ userId, mems, orFilter }: {
     userId: string,
     mems: Awaited<ReturnType<typeof getOrgs>>,
-    listedFilter: Awaited<ReturnType<typeof isListedFilter>>
+    orFilter: Awaited<ReturnType<typeof isListedFilter>>
 }) {
     'use cache'
     cacheTag('libraries')
     cacheLife('days')
-    const data = await getData(listedFilter, userId)
+    const data = await getData(orFilter, userId)
     const archives = await getArchivedLibs({ userId })
     const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))

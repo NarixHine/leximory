@@ -92,7 +92,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
-    'pro-2.5': google('gemini-2.5-pro-preview-05-06', {
+    'pro-2.5': google('gemini-2.5-pro-preview-06-05', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',

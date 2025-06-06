@@ -21,7 +21,7 @@ export async function createText({ lib, title, content, topics }: { lib: string 
             content,
             topics
         })
-    
+
     if (error) throw error
     revalidateTag(`texts:${lib}`)
     return id
@@ -38,7 +38,7 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
         })
         .select()
         .single()
-    
+
     if (error) throw error
     revalidateTag(`texts:${lib}`)
     return data
@@ -51,7 +51,7 @@ export async function updateText({ id, title, content, topics }: { id: string } 
         .eq('id', id)
         .select('lib')
         .single()
-    
+
     if (error) throw error
     if (!rec?.lib) throw new Error('Library not found')
     revalidateTag(`texts:${rec.lib}`)
@@ -63,9 +63,15 @@ export async function deleteText({ id }: { id: string }) {
         .from('texts')
         .delete()
         .eq('id', id)
-        .select('lib')
+        .select('lib, ebook')
         .single()
-    
+
+    if (rec?.ebook) {
+        await supabase.storage
+            .from('user-files')
+            .remove([rec.ebook])
+    }
+
     if (error) throw error
     if (!rec?.lib) throw new Error('Library not found')
     revalidateTag(`texts:${rec.lib}`)
@@ -89,7 +95,7 @@ export async function getTexts({ lib }: { lib: string }) {
             )
         `)
         .eq('lib', lib)
-    
+
     if (error) throw error
     return texts.map(({ id, title, topics, ebook, created_at, updated_at, lib }) => ({
         id,
@@ -119,46 +125,49 @@ export async function getTextContent({ id }: { id: string }) {
         `)
         .eq('id', id)
         .single()
-    
+
     if (error) throw error
     if (!text) {
         notFound()
     }
-    
+
     const { content, ebook, title, topics, lib } = text
     if (!lib) {
         throw new Error('lib not found')
     }
-    return { content, ebook: typeof ebook === 'string' ? ebook : null, title, topics, lib: pick(lib, ['id', 'name']) }
+    if (ebook) {
+        const { data } = await supabase.storage
+            .from('user-files')
+            .createSignedUrl(ebook, 60 * 60 * 24 * 30) 
+        return { content, ebook: data!.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
+    }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name']) }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
-    const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('ebooks')
-        .upload(`${id}/${ebook.name}`, await ebook.arrayBuffer(), {
-            contentType: ebook.type
+    const { data: uploadData } = await supabase.storage
+        .from('user-files')
+        .upload(`ebooks/${id}.epub`, await ebook.arrayBuffer(), {
+            contentType: ebook.type,
+            upsert: true,
         })
-    
-    if (uploadError) throw uploadError
+
     if (!uploadData?.path) throw new Error('Failed to upload ebook')
-    
-    const { data: { publicUrl } } = supabase.storage
-        .from('ebooks')
-        .getPublicUrl(uploadData.path)
-    
+    const { path } = uploadData
+
     const { data: text, error: updateError } = await supabase
         .from('texts')
-        .update({ ebook: publicUrl })
+        .update({ ebook: path })
         .eq('id', id)
         .select('lib')
         .single()
-    
+
     if (updateError) throw updateError
     if (!text?.lib) throw new Error('Library not found')
-    
+
     revalidateTag(`texts:${text.lib}`)
     revalidateTag(`texts:${id}`)
-    return publicUrl
+    return path
 }
 
 export async function getTextAnnotationProgress({ id }: { id: string }) {
@@ -185,9 +194,9 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
         `)
         .eq('id', id)
         .single()
-    
+
     if (error) throw error
     if (!text?.lib?.id || !text?.lib?.lang) throw new Error('Library not found')
-    
+
     return { libId: text.lib.id, lang: text.lib.lang as Lang }
 }

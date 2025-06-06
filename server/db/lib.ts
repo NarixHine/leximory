@@ -5,6 +5,7 @@ import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
 import { supabase } from '@/server/client/supabase'
+import { OrFilter } from '../auth/role'
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const { data: rec } = await supabase
@@ -85,7 +86,7 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
 
 export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
     const id = nanoid()
-    
+
     await supabase.from('libraries').insert({
         id,
         owner,
@@ -197,15 +198,18 @@ export async function listLibs({ owner, orgId }: { owner: string, orgId?: string
     return data?.map(({ id }) => id) ?? []
 }
 
-export async function listLibsWithFullInfo({ filter, userId }: { filter: any, userId?: string }) {
+export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: OrFilter, userId?: string }) {
     'use cache'
     cacheTag('libraries')
     
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('libraries')
         .select('id, name, lang, owner, price, shadow, access, org, starred_by')
-        .or(filter)
+        .or(filters)
 
+    if (error) {
+        throw error
+    }
     if (!data) return []
 
     return data.map(lib => ({

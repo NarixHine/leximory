@@ -21,7 +21,7 @@ export type ForgetCurvePoint = keyof typeof forgetCurve
 export default async function Report({ day }: {
     day: ForgetCurvePoint
 }) {
-    const words = await getForgetCurve({ day, filter: await isListedFilter() })
+    const words = await getForgetCurve({ day, or: await isListedFilter() })
     return words.length > 0 ? (
         <div className='my-8'>
             <div className='flex gap-3 items-start'>

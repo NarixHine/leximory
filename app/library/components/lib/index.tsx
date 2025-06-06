@@ -2,7 +2,6 @@
 
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'

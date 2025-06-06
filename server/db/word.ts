@@ -8,6 +8,7 @@ import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as ca
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/lang'
 import { after } from 'next/server'
+import { OrFilter } from '../auth/role'
 
 const sanitized = (word: string): string => word.replaceAll('\n', '').replace('||}}', '}}')
 
@@ -30,7 +31,7 @@ export async function getWord({ id }: { id: string }) {
         .eq('id', id)
         .single()
     if (error) throw error
-    return data
+    return { ...data, lib: data.lib! }
 }
 
 export async function saveWord({ lib, word }: { lib: string, word: string }) {
@@ -90,12 +91,12 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
     if (error) throw error
-    return { 
-        words: data.map(({ word, id, created_at }) => ({ 
-            word, 
-            id, 
+    return {
+        words: data.map(({ word, id, created_at }) => ({
+            word,
+            id,
             date: created_at ? new Date(created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-        })), 
+        })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
         more: data.length === 20
     }
@@ -113,24 +114,22 @@ export async function drawWords({ lib, start, end, size }: { lib: string, start:
     return data
 }
 
-export async function getForgetCurve({ day, filter }: { day: ForgetCurvePoint, filter: Record<string, any> }) {
+export async function getForgetCurve({ day, or: { filters, options } }: { day: ForgetCurvePoint, or: OrFilter }) {
     'use cache'
     cacheTag('words')
     cacheLife('hours')
-    
+
     const startDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][0], 'day').utc().toDate()
     const endDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][1], 'day').utc().toDate()
-    
-    const filterConditions = Object.entries(filter).map(([key, value]) => `${key}.eq.${value}`).join(',')
-    
+
     const { data, error } = await supabase
         .from('lexicon')
         .select('id, word, lib:libraries!inner(id, lang)')
         .gte('created_at', startDate.toISOString())
         .lt('created_at', endDate.toISOString())
         .not('word', 'in', `(${Object.values(welcomeMap).map(w => `'${w}'`).join(',')})`)
-        .or(filterConditions)
-    
+        .or(filters, options)
+
     if (error) throw error
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }
@@ -140,22 +139,22 @@ export async function aggrWordHistogram({ libs, size }: { libs: string[], size: 
         return []
     }
     const startDate = moment().subtract(size, 'days').toDate()
-    
+
     const { data, error } = await supabase
         .from('lexicon')
         .select('created_at')
         .in('lib', libs)
         .gte('created_at', startDate.toISOString())
-    
+
     if (error) throw error
-    
+
     // Group by date and count
     const histogram = data.reduce((acc: Record<string, number>, curr) => {
-        const date = curr.created_at ? new Date(curr.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        const date = moment(curr.created_at).tz('Asia/Shanghai').startOf('day').utc().format('YYYY-MM-DD')
         acc[date] = (acc[date] || 0) + 1
         return acc
     }, {})
-    
+
     return Object.entries(histogram).map(([date, count]) => ({
         date,
         count

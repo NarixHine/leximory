@@ -57,7 +57,7 @@ export const toolSchemas = {
     }),
     generateQuiz: z.object({
         content: z.string().describe('The text content to generate quiz from'),
-        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
+        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十/小猫钓鱼), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
     })
 } as const
 

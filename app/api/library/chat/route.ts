@@ -60,26 +60,26 @@ const tools: ToolSet = {
         description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
         parameters: toolSchemas.listLibs,
         execute: async () => {
-            return listLibsWithFullInfo({ filter: await isListedFilter() })
+            return listLibsWithFullInfo({ or: await isListedFilter() })
         }
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
         parameters: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
-            const filter = await isListedFilter()
+            const or = await isListedFilter()
             switch (period) {
                 case 'day':
                     return Promise.all([
-                        getForgetCurve({ day: '今天记忆', filter }),
-                        getForgetCurve({ day: '一天前记忆', filter }),
+                        getForgetCurve({ day: '今天记忆', or }),
+                        getForgetCurve({ day: '一天前记忆', or }),
                     ])
                 case 'week':
                     return Promise.all([
-                        getForgetCurve({ day: '今天记忆', filter }),
-                        getForgetCurve({ day: '一天前记忆', filter }),
-                        getForgetCurve({ day: '四天前记忆', filter }),
-                        getForgetCurve({ day: '七天前记忆', filter }),
+                        getForgetCurve({ day: '今天记忆', or }),
+                        getForgetCurve({ day: '一天前记忆', or }),
+                        getForgetCurve({ day: '四天前记忆', or }),
+                        getForgetCurve({ day: '七天前记忆', or }),
                     ])
             }
         }

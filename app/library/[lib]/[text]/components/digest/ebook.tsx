@@ -108,6 +108,8 @@ export default function Ebook() {
 
     const { track } = useLogSnag()
 
+    console.log(src)
+
     return src && (
         <motion.div
             className='bg-background'
@@ -238,7 +240,7 @@ export default function Ebook() {
                         allowPopups: true,
                         allowScriptedContent: true,
                     }}
-                    url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
+                    url={src}
                 />
             </FullScreen>
         </motion.div>

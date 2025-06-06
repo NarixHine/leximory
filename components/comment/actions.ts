@@ -10,7 +10,7 @@ import { revalidateTag } from 'next/cache'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })
-    await authWriteToLib(lib!.id)
+    await authWriteToLib(lib)
     await deleteWord(id)
 }
 
@@ -30,7 +30,7 @@ export async function saveComment({ portions, lib, editId, shadow, lang }: { por
     const { userId } = await getAuthOrThrow()
     if (editId) {
         const { lib } = await getWord({ id: editId })
-        await authWriteToLib(lib!.id)
+        await authWriteToLib(lib!)
         await updateWord({ id: editId, word })
         return editId
     } else {

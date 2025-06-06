@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
-import { getAuthOrThrow, isListedFilter } from '@/server/auth/role'
+import { getAuthOrThrow } from '@/server/auth/role'
 import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
 import { Chip } from '@heroui/chip'
-import { PiCalendarBlankDuotone, PiCoinsDuotone, PiDotsThreeVerticalBold, PiNotebookDuotone, PiPlanetDuotone } from 'react-icons/pi'
+import { PiCalendarBlankDuotone, PiCoinsDuotone, PiDotsThreeVerticalBold, PiPlanetDuotone } from 'react-icons/pi'
 import moment from 'moment-timezone'
 import { clerkClient } from '@clerk/nextjs/server'
 import { getPlan } from '@/server/auth/quota'
@@ -24,7 +24,6 @@ import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
 import 'moment/locale/en-gb'
-import { listLibsWithFullInfo } from '@/server/db/lib'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -36,15 +35,12 @@ async function UserHeroSection() {
 async function HeroSection({ userId }: { userId: string }) {
     'use cache'
     const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(userId)
-    const data = await listLibsWithFullInfo({ filter: await isListedFilter() })
-    const totalWordsLearned = data.reduce((acc, curr) => acc + curr.lib.count, 0)
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).calendar()} 加入</div></Chip>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 {totalWordsLearned} 个语汇</div></Chip>
             </div>
         </div>
     </section>
@@ -57,7 +53,6 @@ function UserSectionSkeleton() {
             <span className='text-3xl ml-1 font-mono'>@loading...</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiNotebookDuotone className='size-4' />学习了 <Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 个语汇</div></Chip>
             </div>
         </div>
     </section>
