@@ -84,6 +84,6 @@ export async function getLastDailyClaim(uid: string) {
         .select('last_daily_claim')
         .eq('id', uid)
         .single()
-        
+
     return data?.last_daily_claim
 }

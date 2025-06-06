@@ -106,7 +106,7 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
 export async function drawWords({ lib, start, end, size }: { lib: string, start: Date, end: Date, size: number }) {
     const { data } = await supabase
         .from('lexicon')
-        .select('word')
+        .select('word, id')
         .eq('lib', lib)
         .gte('created_at', start.toISOString())
         .lt('created_at', end.toISOString())
