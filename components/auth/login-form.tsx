@@ -12,6 +12,7 @@ import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -31,10 +32,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         email,
         password,
       })
-      if (error) throw error
-      router.push('/library')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      if (error) {
+        toast.error('发生错误') 
+        setError(error.message)
+      } else {
+        router.push('/library')
+      }
     } finally {
       setIsLoading(false)
     }

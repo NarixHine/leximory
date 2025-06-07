@@ -3,8 +3,10 @@
 ![](./screenshot.png)
 
 > ### TODO
-> [] Reimplement iOS Shortcuts auth
-> [] Implement settings
+>
+> - [ ] Reimplement iOS Shortcuts auth
+> - [ ] Implement settings
+> - [ ] Sign in redirection error fix
 
 ## Introduction
 
