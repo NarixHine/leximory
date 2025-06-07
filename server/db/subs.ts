@@ -10,11 +10,11 @@ export async function getSubsStatus({ userId }: { userId: string }) {
         .eq('uid', userId)
         .single()
 
-    return {
-        hasSubs: !!data,
-        hour: data?.hour,
-        subscription: data?.subscription ? JSON.stringify(data.subscription) : undefined
-    }
+    return data ? {
+        hasSubs: true,
+        hour: data.hour,
+        subscription: data.subscription ? JSON.stringify(data.subscription) : undefined
+    } : { hasSubs: false, hour: null, subscription: null }
 }
 
 export async function getHourlySubs(hour: number) {

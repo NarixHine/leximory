@@ -155,7 +155,7 @@ export const annotateFullArticle = inngest.createFunction(
             return await getSubsStatus({ userId })
         })
 
-        if (hasSubs) {
+        if (hasSubs && subscription) {
             await step.sendEvent('notify-user-on-article-imported', {
                 name: 'app/notify',
                 data: {
