@@ -14,7 +14,7 @@ export async function getUserOrThrow() {
     const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) {
-        redirect('/sign-in')
+        redirect('/auth/login')
     }
     const { id, email, user_metadata: { username, avatar_url }, last_sign_in_at, created_at } = user
     return {
@@ -43,7 +43,7 @@ export async function updatePlan(userId: string, plan: Plan) {
 export async function getUserById(userId: string) {
     const { data: { user }, error } = await supabase.auth.getUser(userId)
     if (error || !user) {
-        redirect('/sign-in')
+        redirect('/auth/login')
     }
     const { id, email, user_metadata: { username, avatar_url, plan }, last_sign_in_at, created_at } = user
     return {

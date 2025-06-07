@@ -9,7 +9,7 @@ import { getUserOrThrow } from '@/server/auth/user'
 export async function upgrade({ plan }: { plan: PaidTier }) {
     const { userId } = await getUserOrThrow()
     if (!userId) {
-        redirect('/sign-in')
+        redirect('/auth/login')
     }
     const session = await creem.createCheckoutSession({
         success_url: prefixUrl('/settings'),
