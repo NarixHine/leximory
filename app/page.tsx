@@ -1,9 +1,7 @@
 import Main from '@/components/ui/main'
-import { auth } from '@clerk/nextjs/server'
 import H from '@/components/ui/h'
 import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
 import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone, PiCursorClickDuotone } from 'react-icons/pi'
@@ -25,10 +23,11 @@ import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
+import { getSession } from '@/server/auth/user'
+import { redirect } from 'next/navigation'
 
 export default async function Home() {
-	const { userId } = await auth()
-	if (userId) {
+	if (await getSession()) {
 		redirect('/library')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>

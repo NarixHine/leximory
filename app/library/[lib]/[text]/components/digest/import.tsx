@@ -14,15 +14,13 @@ import { saveEbook, generate, save, setAnnotationProgress, generateStory, extrac
 import { PiAirplaneInFlightDuotone, PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
-import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
-import { useLogSnag } from '@logsnag/next'
+import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getArticleFromUrl } from '@/lib/utils'
 
 export default function ImportModal() {
-    const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const lang = useAtomValue(langAtom)
     const text = useAtomValue(textAtom)
@@ -44,8 +42,6 @@ export default function ImportModal() {
     const exceeded = hideText ? false : input.length > maxArticleLength(lang)
 
     const [isGenerating, startGenerating] = useTransition()
-
-    const { track } = useLogSnag()
 
     const KanbanSwitch = () => (
         <Switch
@@ -134,17 +130,6 @@ export default function ImportModal() {
                                         startContent={<PiAirplaneInFlightDuotone className='text-xl' />}
                                         isDisabled={isLoading || exceeded || isGenerating}
                                         onPress={() => {
-                                            track({
-                                                event: '文章注解',
-                                                channel: 'annotation',
-                                                description: '生成注解',
-                                                icon: '📝',
-                                                tags: {
-                                                    lib,
-                                                    text,
-                                                    lang
-                                                }
-                                            })
                                             startGenerating(async () => {
                                                 await setAnnotationProgress({ id: text, progress: 'annotating' })
                                                 setIsLoading(true)
@@ -193,7 +178,6 @@ function StoryModal() {
     const [isGenerating, startGenerating] = useTransition()
     const text = useAtomValue(textAtom)
     const [storyStyle, setStoryStyle] = useState('')
-    const { track } = useLogSnag()
     return <>
         <Button
             className='flex-1 font-semibold'
@@ -259,14 +243,6 @@ function StoryModal() {
                                 color='secondary'
                                 startContent={<PiTornadoDuotone />}
                                 onPress={() => {
-                                    track({
-                                        channel: 'annotation',
-                                        event: '生成小故事',
-                                        icon: '🌪️',
-                                        tags: {
-                                            text,
-                                        }
-                                    })
                                     startGenerating(async () => {
                                         setIsLoading(true)
                                         const { success, message } = await generateStory({

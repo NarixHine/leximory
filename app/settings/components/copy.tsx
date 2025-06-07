@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
 import { Button } from "@heroui/button"
 import { prefixUrl } from '@/lib/config'
-import { useUser } from '@clerk/nextjs'
 import { useState, useTransition } from 'react'
 import { Drawer } from 'vaul'
 import { Snippet } from "@heroui/snippet"
@@ -51,21 +50,20 @@ export default function CopyToken() {
     </Drawer.Root>
 }
 
-export function CopyProfileLink() {
-    const { user } = useUser()
+export function CopyProfileLink({ userId }: { userId: string }) {
     return <Button
         variant='flat'
-        startContent={<PiShareDuotone className='size-4 -mr-1' />}
-        size='sm'
+        startContent={<PiShareDuotone />}
+        size='lg'
         color='primary'
-        radius='full'
+        radius='lg'
         className={cn('border-1')}
+        isIconOnly
         onPress={async () => {
-            if (!user) return
             const data: ShareData = {
                 title: 'Leximory',
                 text: '我在 Leximory 上学语言',
-                url: prefixUrl(`/profile/${user.id}`),
+                url: prefixUrl(`/profile/${userId}`),
             }
             if (navigator.canShare(data)) {
                 navigator.share(data)
@@ -73,7 +71,5 @@ export function CopyProfileLink() {
                 toast.error('浏览器不支持分享功能')
             }
         }}
-    >
-        分享
-    </Button>
+    />
 }

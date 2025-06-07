@@ -2,7 +2,6 @@ import Main from '@/components/ui/main'
 import Pagination from './pagination'
 import { MARKETPLACE_PAGE_SIZE } from '@/lib/config'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
-import { auth } from '@clerk/nextjs/server'
 import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
 import H from '@/components/ui/h'
@@ -11,11 +10,12 @@ import { Alert } from "@heroui/alert"
 import { cn } from '@/lib/utils'
 import UserAvatar from '@/components/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
+import { getUserOrThrow } from '@/server/auth/user'
 
 async function LibraryList({ page }: {
     page: number
 }) {
-    const { userId } = await auth()
+    const { userId } = await getUserOrThrow()
     const libs = await getPaginatedPublicLibs({ page, size: MARKETPLACE_PAGE_SIZE })
     return (
         <div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
@@ -44,17 +44,12 @@ export default async function MarketplacePage({ params }: {
     }>
 }) {
     const page = parseInt((await params).page)
-    const { orgId } = await auth()
 
     return (
         <Main className='max-w-screen-lg'>
             <H className='text-5xl'><PiStorefrontDuotone />文库集市</H>
             <Spacer y={10} />
-            {
-                orgId ?
-                    <Alert description='收藏文库在个人工作区中才会显示' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: cn('text-xs'), base: 'mb-5' }} title='你正在小组工作区中'></Alert> :
-                    <Alert description='共享文库由用户发布' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: 'text-xs', base: 'mb-5' }} title='共享文库'></Alert>
-            }
+            <Alert description='共享文库由用户发布' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: 'text-xs', base: 'mb-5' }} title='共享文库'></Alert>
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />
             </Suspense>

@@ -6,6 +6,7 @@ import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
 import { supabase } from '@/server/client/supabase'
 import { OrFilter } from '../auth/role'
+import { getLexicoinBalance } from './lexicoin'
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const { data: rec } = await supabase
@@ -84,7 +85,7 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
     revalidateTag(`lib:${id}`)
 }
 
-export async function createLib({ name, lang, org, owner }: { name: string, lang: Lang, org: string | null, owner: string }) {
+export async function createLib({ name, lang, owner }: { name: string, lang: Lang, owner: string }) {
     const id = nanoid()
 
     await supabase.from('libraries').insert({
@@ -93,7 +94,6 @@ export async function createLib({ name, lang, org, owner }: { name: string, lang
         name,
         lang,
         access: libAccessStatusMap.private,
-        org
     })
 
     await supabase.from('lexicon').insert({
@@ -183,19 +183,13 @@ export async function listShortcutLibs({ owner }: { owner: string }) {
     return data.map(({ id, name }) => ({ id, name })) ?? []
 }
 
-export async function listLibs({ owner, orgId }: { owner: string, orgId?: string }) {
+export async function listLibs({ owner }: { owner: string }) {
     'use cache'
     cacheTag('libraries')
     const query = supabase
         .from('libraries')
         .select('id')
         .eq('owner', owner)
-
-    if (orgId) {
-        query.eq('org', orgId)
-    } else {
-        query.is('org', null)
-    }
 
     const { data } = await query.throwOnError()
     return data.map(({ id }) => id) ?? []
@@ -220,6 +214,7 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
 export async function getArchivedLibs({ userId }: { userId: string }) {
     'use cache'
     cacheTag('libraries')
+    await getLexicoinBalance(userId)
     const { data } = await supabase
         .from('users')
         .select('archived_libs')

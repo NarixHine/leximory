@@ -4,8 +4,7 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import { getAuthOrThrow, isListedFilter, OrFilter } from '@/server/auth/role'
-import { clerkClient } from '@clerk/nextjs/server'
+import { isListedFilter, OrFilter } from '@/server/auth/role'
 import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
@@ -17,6 +16,7 @@ import { unstable_cacheTag as cacheTag, unstable_cacheLife as cacheLife } from '
 import { Button } from '@heroui/button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -27,24 +27,13 @@ async function getData(orFilter: OrFilter, userId: string) {
     return data
 }
 
-async function getOrgs() {
-    const { userId } = await getAuthOrThrow()
-    const { data } = await (await clerkClient()).users.getOrganizationMembershipList({ userId })
-    return data.map(({ organization }) => ({
-        id: organization.id,
-        name: organization.name
-    }))
-}
-
 async function UserLibraryList() {
-    const { userId } = await getAuthOrThrow()
-    const mems = await getOrgs()
-    return <LibraryList userId={userId} mems={mems} orFilter={await isListedFilter()} />
+    const { userId } = await getUserOrThrow()
+    return <LibraryList userId={userId} orFilter={await isListedFilter()} />
 }
 
-async function LibraryList({ userId, mems, orFilter }: {
+async function LibraryList({ userId, orFilter }: {
     userId: string,
-    mems: Awaited<ReturnType<typeof getOrgs>>,
     orFilter: Awaited<ReturnType<typeof isListedFilter>>
 }) {
     'use cache'
@@ -69,11 +58,6 @@ async function LibraryList({ userId, mems, orFilter }: {
                         name={lib.name}
                         lang={lib.lang}
                         isOwner={lib.owner === userId}
-                        orgs={mems.map((mem) => ({
-                            name: mem.id,
-                            label: mem.name
-                        }))}
-                        orgId={lib.org}
                         archived={false}
                     />
                 ))}
@@ -90,8 +74,6 @@ async function LibraryList({ userId, mems, orFilter }: {
                         name={lib.name}
                         lang={lib.lang}
                         isOwner={lib.owner === userId}
-                        orgs={[]}
-                        orgId={lib.org}
                         archived={archives.includes(lib.id)}
                     />
                 ))}

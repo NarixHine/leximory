@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { contentFontFamily } from '@/lib/fonts'
@@ -65,16 +65,14 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lang, isOwner, access, orgId, orgs, shadow, price, archived, isStarred }: {
+function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred }: {
     id: string,
     name: string,
     access: number,
     isStarred: boolean,
     lang: string,
     isOwner: boolean,
-    orgId: string | null | undefined,
     shadow: boolean,
-    orgs: { label: string, name: string }[],
     price: number,
     archived: boolean,
 }) {
@@ -91,14 +89,12 @@ function Library({ id, name, lang, isOwner, access, orgId, orgs, shadow, price, 
         id: string,
         name: string,
         access: boolean,
-        org: string,
         price: number,
     }>({
         defaultValues: {
             id,
             name,
             access: access === libAccessStatusMap.public,
-            org: orgId ?? 'none',
             price,
         }
     })
@@ -225,10 +221,6 @@ function Library({ id, name, lang, isOwner, access, orgId, orgs, shadow, price, 
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
                 <Input label='文库名' {...register('name')} />
-                <Select label='文库所属小组' {...register('org')} >
-                    <SelectItem startContent={<PiUserDuotone />} key='none'>无</SelectItem>
-                    {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name}>{org.label}</SelectItem>) as any}
-                </Select>
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>

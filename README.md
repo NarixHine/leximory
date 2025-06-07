@@ -2,6 +2,10 @@
 
 ![](./screenshot.png)
 
+> ### TODO
+> [] Reimplement iOS Shortcuts auth
+> [] Implement settings
+
 ## Introduction
 
 > *Leximory* is a language learning platform designed to enhance foreign language proficiency, vocabulary in particular, by means of **intensive input**. 
@@ -27,12 +31,6 @@ The platform is built with Next.js, Supabase, Clerk, Upstash, Vercel AI SDK and 
 Create a `.env` file in the project root and fill it with the following variables:
 
 ```shell
-# Clerk authentication keys
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<your_clerk_publishable_key>
-CLERK_SECRET_KEY=<your_clerk_secret_key>
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-
 # Supabase configuration
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=

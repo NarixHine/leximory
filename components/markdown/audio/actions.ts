@@ -1,6 +1,6 @@
 'use server'
 
-import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
+import { authWriteToLib } from '@/server/auth/role'
 import { elevenLabsVoiceConfig, googleModels } from '@/lib/config'
 import { incrAudioQuota } from '@/server/auth/quota'
 import { maxAudioQuota } from '@/server/auth/quota'
@@ -10,6 +10,7 @@ import { speak } from 'orate'
 import { ElevenLabs } from 'orate/elevenlabs'
 import { MAX_TTS_LENGTH } from '@/lib/config'
 import { generateText } from 'ai'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function retrieve(id: string) {
     const url = await retrieveAudioUrl({ id })
@@ -17,7 +18,7 @@ export async function retrieve(id: string) {
 }
 
 export async function generate(id: string, lib: string, text: string) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const { lang } = await authWriteToLib(lib)
 
     if (text.length > MAX_TTS_LENGTH) {

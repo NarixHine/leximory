@@ -10,16 +10,16 @@ import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { UserWordStats } from '@/components/stats'
 import { PiRewindDuotone } from 'react-icons/pi'
 import { getSubsStatus } from '@/server/db/subs'
-import { getAuthOrThrow } from '@/server/auth/role'
 import { HydrationBoundary } from 'jotai-ssr'
 import { hasSubsAtom } from './atoms'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export const metadata: Metadata = {
     title: '每日汇总',
 }
 
 export default async function Daily() {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const { hasSubs, hour } = await getSubsStatus({ userId })
 
     return (

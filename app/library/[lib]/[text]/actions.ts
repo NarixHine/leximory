@@ -1,6 +1,6 @@
 'use server'
 
-import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
+import { authReadToText, authWriteToText } from '@/server/auth/role'
 import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { createStreamableValue } from 'ai/rsc'
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
@@ -14,9 +14,10 @@ import { AnnotationProgress } from '@/lib/types'
 import { z } from 'zod'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function extractWords(form: FormData) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const file = form.get('file') as File
 
     if (await incrCommentaryQuota(1, userId)) {
@@ -49,7 +50,7 @@ export async function extractWords(form: FormData) {
 }
 
 export async function generateStory({ comments, textId, storyStyle }: { comments: string[], textId: string, storyStyle?: string }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await authWriteToText(textId)
 
     if (await incrCommentaryQuota(2)) {
@@ -105,7 +106,7 @@ export async function saveEbook(id: string, form: FormData) {
 }
 
 export async function generate({ article, textId, onlyComments }: { article: string, textId: string, onlyComments: boolean }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const { lib } = await authWriteToText(textId)
     const libId = lib!.id
     const { lang } = await authWriteToLib(libId)
@@ -131,7 +132,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
 
 export async function generateSingleComment(prompt: string, lib: string) {
     const stream = createStreamableValue()
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
     const cache = await getAnnotationCache({ hash })
     if (cache) {

@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { getUserOrThrow } from '@/server/auth/user'
 import NavBreadcrumbs from './breadcrumbs'
 
 export type NavProps = {
@@ -14,7 +14,7 @@ export type NavProps = {
 }
 
 export default async function Nav(props: NavProps) {
-    const { orgSlug } = await auth()
-    const tenant = orgSlug ?? (await currentUser())!.username ?? 'You'
+    const user = await getUserOrThrow()
+    const tenant = user.username ?? 'You'
     return <NavBreadcrumbs {...props} tenant={tenant} />
 }

@@ -1,10 +1,9 @@
 import { getPlanFromProductId } from '@/lib/config'
 import { createWebhookHandler } from '@/lib/creem-sdk/webhook-handler'
 import env from '@/lib/env'
-import { logsnagServer } from '@/lib/logsnag'
 import { creem } from '@/server/client/creem'
-import { getRequestUserId, fillCustomerId, getUserIdByCustomerId, toggleOrgCreationAccess, updateSubscription } from '@/server/db/creem'
-import { after, NextRequest, NextResponse } from 'next/server'
+import { getRequestUserId, fillCustomerId, getUserIdByCustomerId, updateSubscription } from '@/server/db/creem'
+import { NextRequest, NextResponse } from 'next/server'
 
 const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
     'checkout.completed': async (event) => {
@@ -16,25 +15,12 @@ const webhookHandler = createWebhookHandler(creem, env.CREEM_WEBHOOK_SECRET, {
         await fillCustomerId({ userId, customerId: customer.id })
         const plan = getPlanFromProductId(product.id)
         await updateSubscription({ userId, plan })
-        await toggleOrgCreationAccess({ userId, enabled: plan === 'polyglot' })
-
-        after(async () => {
-            const logsnag = logsnagServer()
-            await logsnag.track({
-                event: '订阅升级',
-                channel: 'payments',
-                icon: '💰',
-                description: `订阅升级为 ${plan}`,
-                user_id: userId,
-            })
-        })
     },
 
     'subscription.expired': async (event) => {
         const { customer } = event.object
         const userId = await getUserIdByCustomerId(customer.id)
         await updateSubscription({ userId, plan: 'beginner' })
-        await toggleOrgCreationAccess({ userId, enabled: false })
     }
 })
 

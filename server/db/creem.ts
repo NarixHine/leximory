@@ -1,8 +1,8 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
-import { Plan } from '@/server/auth/quota'
-import { clerkClient } from '@clerk/nextjs/server'
+import { Plan } from '@/server/auth/quota'  
 import { redis } from '../client/redis'
+import { updatePlan } from '../auth/user'
 
 export async function getCustomerId(userId: string) {
     const { data } = await supabase
@@ -34,11 +34,7 @@ export async function getUserIdByCustomerId(customerId: string) {
 }
 
 export async function updateSubscription({ userId, plan }: { userId: string, plan: Plan }) {
-    await (await clerkClient()).users.updateUserMetadata(userId, {
-        publicMetadata: {
-            plan,
-        },
-    })
+    await updatePlan(userId, plan)
 }
 
 export async function createRequest(userId: string) {
@@ -57,8 +53,3 @@ export async function getRequestUserId(requestId: string) {
     return userId
 }
 
-export async function toggleOrgCreationAccess({ userId, enabled }: { userId: string, enabled: boolean }) {
-    await (await clerkClient()).users.updateUser(userId, {
-        createOrganizationEnabled: enabled,
-    })
-}

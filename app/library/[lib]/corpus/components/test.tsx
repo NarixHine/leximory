@@ -15,7 +15,6 @@ import { I18nProvider } from '@react-aria/i18n'
 import { ConfirmStory } from './confirm-story'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { useLogSnag } from '@logsnag/next'
 
 export default function Test({ latestTime }: {
     latestTime: string
@@ -34,7 +33,6 @@ export default function Test({ latestTime }: {
     }, [])
     const [isGettingWithin, startGettingWithin] = useTransition()
     const router = useRouter()
-    const { track } = useLogSnag()
 
     return <div>
         <ConfirmStory.Root></ConfirmStory.Root>
@@ -86,14 +84,6 @@ export default function Test({ latestTime }: {
                                 generateStory({ comments, lib })
                                     .then(async ({ success, message }) => {
                                         if (success) {
-                                            track({
-                                                channel: 'annotation',
-                                                event: '生成小故事',
-                                                icon: '🌪️',
-                                                tags: {
-                                                    lib,
-                                                }
-                                            })
                                             toast.success(message, {
                                                 action: {
                                                     label: '设置提醒',

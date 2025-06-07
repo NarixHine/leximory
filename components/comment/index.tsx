@@ -8,7 +8,7 @@ import { Card, CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiSignInDuotone, PiEyesFill } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
 import { cn, getClickedChunk, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -20,8 +20,6 @@ import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useAuth } from '@clerk/nextjs'
-import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
 import { contentFontFamily } from '@/lib/fonts'
@@ -109,16 +107,14 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const wordElement = useRef<HTMLButtonElement>(null)
 
-    const { userId } = useAuth()
     const init = useCallback(() => {
         const element = wordElement.current
-        if (isOnDemand && !isLoaded && element && userId) {
+        if (isOnDemand && !isLoaded && element) {
             commentWord(getClickedChunk(element))
         }
     }, [isOnDemand, isLoaded, prompt])
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
-    const { track } = useLogSnag()
     const Save = () => <div className='flex gap-2'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
@@ -130,13 +126,6 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             variant='flat'
             onPress={async () => {
                 setStatus('loading')
-                track({
-                    event: '词汇保存',
-                    channel: 'corpus',
-                    description: `保存了 ${portions[1]}`,
-                    icon: '💾',
-                    tags: { lib }
-                })
                 try {
                     const savedId = await saveComment({ portions, lib, shadow: isReadOnly, lang })
                     setStatus('saved')
@@ -276,7 +265,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             </button>
                     }
                 </PopoverTrigger>
-                <PopoverContent className={cn('max-w-80', !userId && !isLoaded && 'bg-background/50')}>
+                <PopoverContent className={cn('max-w-80', !isLoaded && 'bg-background/50')}>
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
@@ -285,13 +274,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     {(!explicitDisableSave || isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <Save />
                                 </div>
-                                : userId ? <div className='space-y-3 w-40'>
+                                : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-4/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-2/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-full rounded-lg h-3'></Skeleton>
                                 </div>
-                                    : <Button startContent={<PiSignInDuotone />} as={Link} href='/sign-in' color='secondary' variant='shadow'>登录</Button>
                         }
                     </div>
                 </PopoverContent>

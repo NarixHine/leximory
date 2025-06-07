@@ -1,5 +1,5 @@
 import { getPaginatedPublicLibs } from '@/server/db/lib'
-import { auth } from '@clerk/nextjs/server'
+import { getUserOrThrow } from '@/server/auth/user'
 import LibraryCard from '@/app/marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { unstable_cacheLife as cacheLife } from 'next/cache'
@@ -16,7 +16,7 @@ async function getPublicLibraries(uid: string, userId?: string | null) {
 }
 
 export default async function PublicLibraries({ uid }: { uid: string }) {
-    const { userId } = await auth()
+    const { userId } = await getUserOrThrow()
     const publicLibraries = await getPublicLibraries(uid, userId)
 
     if (publicLibraries.length === 0) {

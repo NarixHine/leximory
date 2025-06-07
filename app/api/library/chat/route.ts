@@ -5,14 +5,15 @@ import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { authReadToLib, authReadToText, authWriteToLib, getAuthOrThrow, isListedFilter } from '@/server/auth/role'
-import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
+import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
+import incrCommentaryQuota from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
 import { articleAnnotationPrompt } from '@/server/inngest/annotate'
 import generateQuiz from '@/lib/editory/ai'
 import { AIGenQuizDataType } from '@/lib/editory/types'
 import { nanoid } from 'nanoid'
+import { getPlan, getUserOrThrow } from '@/server/auth/user'
 
 const tools: ToolSet = {
     getLib: {
@@ -98,7 +99,7 @@ const tools: ToolSet = {
         description: 'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
         parameters: toolSchemas.annotateParagraph,
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
-            const { userId } = await getAuthOrThrow()
+            const { userId } = await getUserOrThrow()
             const { text } = await generateText({
                 model: getBestArticleAnnotationModel(lang),
                 ...(await articleAnnotationPrompt(lang, content, false, userId)),

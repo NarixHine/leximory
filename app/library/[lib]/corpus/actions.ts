@@ -2,7 +2,7 @@
 
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import { loadWords, drawWords } from '@/server/db/word'
-import { getAuthOrThrow } from '@/server/auth/role'
+import { getUserOrThrow } from '@/server/auth/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { inngest } from '@/server/inngest/client'
 
@@ -22,7 +22,7 @@ export async function getWithin({ lib, start, end }: { lib: string, start: Date,
 }
 
 export async function generateStory({ comments, lib, isShadow = false }: { comments: string[], lib: string, isShadow?: boolean }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await authWriteToLib(lib)
 
     if (await incrCommentaryQuota(2)) {

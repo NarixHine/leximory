@@ -1,11 +1,12 @@
 'use server'
 
-import { authWriteToLib, getAuthOrThrow } from '@/server/auth/role'
+import { authWriteToLib } from '@/server/auth/role'
 import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
 import { createLib, deleteLib, updateLib, unstarLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { addToArchive, removeFromArchive } from '@/server/db/lib'
+import { getUserOrThrow } from '@/server/auth/user'
 
 const saveValidator = z.object({
     id: z.string(),
@@ -34,8 +35,8 @@ const createValidator = z.object({
 
 export async function create(data: z.infer<typeof createValidator>) {
     const { name, lang } = createValidator.parse(data)
-    const { orgId, userId } = await getAuthOrThrow()
-    const id = await createLib({ name, lang: lang as Lang, org: orgId ?? null, owner: userId })
+    const { userId } = await getUserOrThrow()
+    const id = await createLib({ name, lang: lang as Lang, owner: userId })
     redirect(`/library/${id}`)
 }
 
@@ -45,16 +46,16 @@ export async function remove({ id }: { id: string }) {
 }
 
 export async function archive({ id }: { id: string }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await addToArchive({ userId, libId: id })
 }
 
 export async function unarchive({ id }: { id: string }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await removeFromArchive({ userId, libId: id })
 }
 
 export async function unstar({ id }: { id: string }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await unstarLib({ lib: id, userId })
 }

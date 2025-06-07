@@ -1,19 +1,13 @@
 import { Metadata } from 'next'
-import { getAuthOrThrow } from '@/server/auth/role'
 import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
 import { Chip } from '@heroui/chip'
-import { PiCalendarBlankDuotone, PiCoinsDuotone, PiDotsThreeVerticalBold, PiPlanetDuotone } from 'react-icons/pi'
+import { PiCalendarBlankDuotone, PiCoinsDuotone, PiPlanetDuotone } from 'react-icons/pi'
 import moment from 'moment-timezone'
-import { clerkClient } from '@clerk/nextjs/server'
-import { getPlan } from '@/server/auth/quota'
 import { Suspense } from 'react'
 import Main from '@/components/ui/main'
 import Preference from './components/preference'
-import { ClerkLoaded, OrganizationSwitcher } from '@clerk/nextjs'
-import CopyToken, { CopyProfileLink } from './components/copy'
-import { Button } from '@heroui/button'
-import Link from 'next/link'
+import CopyToken from './components/copy'
 import { Skeleton } from '@heroui/skeleton'
 import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
@@ -24,26 +18,28 @@ import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
 import 'moment/locale/en-gb'
+import 'moment/locale/zh-cn'
+import { getPlan, getUserOrThrow } from '@/server/auth/user'
+import UpdateProfile from './components/update-profile'
 
 export const metadata: Metadata = { title: '设置' }
 
-async function UserHeroSection() {
-    const { userId } = await getAuthOrThrow()
-    return <HeroSection userId={userId} />
-}
-
-async function HeroSection({ userId }: { userId: string }) {
-    'use cache'
-    const { username, imageUrl, createdAt } = await (await clerkClient()).users.getUser(userId)
+async function HeroSection() {
+    const { username, image, createdAt } = await getUserOrThrow()
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar src={imageUrl ?? undefined} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
+        <Avatar src={image} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).calendar()} 加入</div></Chip>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
             </div>
         </div>
     </section>
+}
+
+async function UserSection() {
+    const { userId, username, image } = await getUserOrThrow()
+    return <UpdateProfile userId={userId} username={username} image={image} />
 }
 
 function UserSectionSkeleton() {
@@ -67,7 +63,7 @@ export default async function Settings() {
     const month = moment().locale('en-gb').format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<UserSectionSkeleton />}>
-            <UserHeroSection />
+            <HeroSection />
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
             <div className='flex gap-4 w-full'>
@@ -88,13 +84,14 @@ export default async function Settings() {
             </div>
         </section>
         <section className='grid grid-cols-2 gap-4'>
-            <div className='border col-span-2 border-dashed border-primary-200 rounded-lg p-4 flex flex-col gap-2'>
-                <H disableCenter className=''>账号管理</H>
-                <div className='flex gap-2'>
-                    <OrganizationSwitcher afterSelectPersonalUrl={'/library'} afterSelectOrganizationUrl={'/library'} organizationProfileUrl='/settings/org' />
-                    <Button variant='flat' href='/settings/account' as={Link} startContent={<PiDotsThreeVerticalBold className='size-4 -mr-1' />} size='sm' color='primary' radius='full'>更多</Button>
-                    <CopyProfileLink />
-                </div>
+            <div className='border col-span-2 border-dashed border-primary-200 rounded-lg px-4 flex flex-col gap-2'>
+                    <Suspense fallback={<>
+                        <Skeleton className='w-full h-8 rounded-full' />
+                        <Skeleton className='w-full h-8 rounded-full' />
+                        <Skeleton className='w-full h-8 rounded-full' />
+                        </>}>
+                        <UserSection />
+                    </Suspense>
             </div>
             <div className='border border-dashed border-secondary-200 rounded-lg p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>英语偏好</H>
@@ -104,9 +101,7 @@ export default async function Settings() {
             </div>
             <div className='border border-dashed border-default-200 rounded-lg p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>通行密钥</H>
-                <ClerkLoaded>
-                    <CopyToken />
-                </ClerkLoaded>
+                <CopyToken />
             </div>
         </section>
         <div className='w-full pr-6 pl-0 py-3 flex flex-col gap-4'>
@@ -127,7 +122,7 @@ function LexicoinBalanceCard({ balance }: { balance?: number }) {
 }
 
 async function LexicoinBalance() {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const balance = await getLexicoinBalance(userId)
     return <LexicoinBalanceCard balance={balance} />
 }
@@ -144,7 +139,7 @@ async function Plan() {
 }
 
 async function ClaimDailyLexicoinServer() {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const lastClaimDate = await getLastDailyClaim(userId)
     return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? moment.tz(lastClaimDate, 'Asia/Shanghai').isSame(moment.tz('Asia/Shanghai'), 'day') : false} />
 }

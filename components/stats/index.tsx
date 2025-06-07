@@ -1,13 +1,13 @@
 import WordChart from './word-chart'
 import moment from 'moment'
 import VocabularyCalendar from './calendar'
-import { getAuthOrThrow } from '@/server/auth/role'
+import { getUserOrThrow } from '@/server/auth/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
 
-const getCountMap = async ({ uid, orgId }: { uid: string, orgId?: string }) => {
+const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'
-    const libs = await listLibs({ owner: uid, orgId })
+    const libs = await listLibs({ owner: uid })
     const results = await aggrWordHistogram({ libs, size: 30 })
     return new Map(
         results.map(bucket => [
@@ -17,26 +17,26 @@ const getCountMap = async ({ uid, orgId }: { uid: string, orgId?: string }) => {
     )
 }
 
-export async function WordStats({ uid, orgId }: { uid: string, orgId?: string }) {
+export async function WordStats({ uid }: { uid: string }) {
     'use cache'
-    const countMap = await getCountMap({ uid, orgId })
+    const countMap = await getCountMap({ uid })
     return <WordChart data={formatChartData(countMap, 30)} />
 }
 
 export async function UserWordStats() {
-    const { userId, orgId } = await getAuthOrThrow()
-    return <WordStats uid={userId} orgId={orgId} />
+    const { userId } = await getUserOrThrow()
+    return <WordStats uid={userId} />
 }
 
-export async function WordHeatmap({ uid, orgId }: { uid: string, orgId?: string }) {
+export async function WordHeatmap({ uid }: { uid: string }) {
     'use cache'
-    const countMap = await getCountMap({ uid, orgId })
+    const countMap = await getCountMap({ uid })
     return <VocabularyCalendar wordCountData={countMap} />
 }
 
 export async function UserWordHeatmap() {
-    const { userId, orgId } = await getAuthOrThrow()
-    return <WordHeatmap uid={userId} orgId={orgId} />
+    const { userId } = await getUserOrThrow()
+    return <WordHeatmap uid={userId} />
 }
 
 export function formatChartData(countMap: Map<string, number>, size: number) {
