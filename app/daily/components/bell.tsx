@@ -23,10 +23,10 @@ export const subscribe = async (hour: number) => {
 
 export default function Bell({ hasSubs, hour = 22 }: {
     hasSubs: boolean
-    hour?: number
+    hour?: number | null
 }) {
     const [isUpdating, startUpdating] = useTransition()
-    const [selectedHour, setSelectedHour] = useState(hour)
+    const [selectedHour, setSelectedHour] = useState(hour ?? 22)
 
     return (
         <div className='flex gap-2 items-center justify-center'>
