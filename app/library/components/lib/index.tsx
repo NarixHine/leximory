@@ -220,7 +220,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         >
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
-                <Input label='文库名' {...register('name')} />
+                <Input className='col-span-2' label='文库名' {...register('name')} />
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>

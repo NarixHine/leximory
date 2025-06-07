@@ -8,6 +8,8 @@ import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { SIGN_IN_URL } from '@/lib/config'
+import { toast } from 'sonner'
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -34,9 +36,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         email,
         password,
       })
-      if (error) throw error
+      if (error) {
+        toast.error(error.message)
+        throw error
+      }
       setSuccess('Check your email to confirm your account!')
-      setTimeout(() => router.push('/auth/login'), 2000)
+      setTimeout(() => router.push(SIGN_IN_URL), 2000)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -97,7 +102,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
             </Button>
             <div className="text-center text-sm">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-primary hover:underline">Sign in</Link>
+              <Link href={SIGN_IN_URL} className="text-primary hover:underline">Sign in</Link>
             </div>
           </form>
         </CardBody>

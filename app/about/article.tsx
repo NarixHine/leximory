@@ -73,7 +73,7 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
                 className='col-span-3'
             >
                 <GradientCard
@@ -88,7 +88,7 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
                 className='col-span-2'
             >
                 <GradientCard
@@ -104,7 +104,7 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
                 className='col-span-2'
             >
                 <GradientCard
@@ -119,7 +119,7 @@ export function Article() {
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
                 className='col-span-3'
             >
                 <GradientCard
@@ -136,7 +136,7 @@ export function Article() {
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: 0.9 }}
         >
             核心功能的演示视频：
         </motion.p>
@@ -146,7 +146,7 @@ export function Article() {
         <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.9 }}
+            transition={{ duration: 0.8, delay: 1 }}
             className='text-2xl'
         >
             附录
@@ -155,7 +155,7 @@ export function Article() {
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 1 }}
+            transition={{ duration: 0.9, delay: 1.1 }}
         >
             各项操作所消耗的每月 AI 配额：
         </motion.p>

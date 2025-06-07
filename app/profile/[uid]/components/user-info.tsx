@@ -15,7 +15,7 @@ export default async function UserInfo({ uid }: { uid: string }) {
     const { username, image, lastActiveAt, createdAt } = await getUserById(uid)
     return (
         <>
-            <Avatar src={image ?? undefined} isBordered color={'primary'} className='!size-16' />
+            <Avatar src={image} isBordered color={'primary'} className='!size-16' />
             {username && <H className='text-2xl !font-mono'>@{username}</H>}
             <div className='flex justify-center gap-6 w-full mt-2'>
                 <div className='flex flex-col items-center gap-1'>

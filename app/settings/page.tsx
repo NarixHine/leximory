@@ -20,7 +20,7 @@ import { HeatmapSkeleton } from '@/components/stats/calendar'
 import 'moment/locale/en-gb'
 import 'moment/locale/zh-cn'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
-import UpdateProfile from './components/update-profile'
+import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -85,13 +85,9 @@ export default async function Settings() {
         </section>
         <section className='grid grid-cols-2 gap-4'>
             <div className='border col-span-2 border-dashed border-primary-200 rounded-lg px-4 flex flex-col gap-2'>
-                    <Suspense fallback={<>
-                        <Skeleton className='w-full h-8 rounded-full' />
-                        <Skeleton className='w-full h-8 rounded-full' />
-                        <Skeleton className='w-full h-8 rounded-full' />
-                        </>}>
-                        <UserSection />
-                    </Suspense>
+                <Suspense fallback={<UpdateProfileSkeleton />}>
+                    <UserSection />
+                </Suspense>
             </div>
             <div className='border border-dashed border-secondary-200 rounded-lg p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>英语偏好</H>

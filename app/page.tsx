@@ -21,7 +21,7 @@ import Test from './library/[lib]/corpus/components/test'
 import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
-import { exampleSharedLib } from '@/lib/config'
+import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { getSession } from '@/server/auth/user'
 import { redirect } from 'next/navigation'
@@ -47,7 +47,7 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<Button startContent={<PiShootingStarDuotone />} color='primary' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
+				<Button startContent={<PiShootingStarDuotone />} color='primary' href={SIGN_IN_URL} as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
 			</div>
 		</div>
 

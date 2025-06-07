@@ -8,6 +8,8 @@ import { Button } from '@heroui/button'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { CopyProfileLink } from './copy'
+import { SIGN_IN_URL } from '@/lib/config'
+import { Skeleton } from '@heroui/skeleton'
 
 function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
@@ -75,7 +77,7 @@ function AvatarSection({ avatar: currentAvatar, onSuccess }: { avatar?: string, 
         setIsLoading(true)
         setError(null)
         setSuccess(null)
-        
+
         // TODO: upload avatar to supabase storage 
     }
 
@@ -146,28 +148,28 @@ function EmailSection({ onSuccess }: { onSuccess?: () => void }) {
         <SectionCard title='Update Email' footer={<Button type='submit' className='w-full h-10' disabled={isLoading || !email} variant='flat' color='primary'>
             {isLoading ? 'Updating...' : 'Update Email'}
         </Button>} onSubmit={async e => {
-                e.preventDefault()
-                setIsLoading(true)
-                setError(null)
-                setSuccess(null)
-                try {
-                    const { error } = await supabase.auth.updateUser({ email })
-                    if (error) throw error
-                    setSuccess('Email updated!')
-                    setEmail('')
-                    onSuccess?.()
-                } catch (err: any) {
-                    setError(err.message || 'An error occurred')
-                } finally {
-                    setIsLoading(false)
-                }
-            }}>
-                <div className='space-y-2'>
-                    <label htmlFor='email' className='text-sm font-medium leading-none'>Email</label>
-                    <Input id='email' type='email' value={email} onChange={e => setEmail(e.target.value)} placeholder='Email' className='h-10' />
-                </div>
-                {error && <div className='rounded bg-destructive/10 p-2 text-xs text-destructive'>{error}</div>}
-                {success && <div className='rounded bg-success/10 p-2 text-xs text-success'>{success}</div>}
+            e.preventDefault()
+            setIsLoading(true)
+            setError(null)
+            setSuccess(null)
+            try {
+                const { error } = await supabase.auth.updateUser({ email })
+                if (error) throw error
+                setSuccess('Email updated!')
+                setEmail('')
+                onSuccess?.()
+            } catch (err: any) {
+                setError(err.message || 'An error occurred')
+            } finally {
+                setIsLoading(false)
+            }
+        }}>
+            <div className='space-y-2'>
+                <label htmlFor='email' className='text-sm font-medium leading-none'>Email</label>
+                <Input id='email' type='email' value={email} onChange={e => setEmail(e.target.value)} placeholder='Email' className='h-10' />
+            </div>
+            {error && <div className='rounded bg-destructive/10 p-2 text-xs text-destructive'>{error}</div>}
+            {success && <div className='rounded bg-success/10 p-2 text-xs text-success'>{success}</div>}
         </SectionCard>
     )
 }
@@ -181,41 +183,41 @@ function PasswordSection({ onSuccess }: { onSuccess?: () => void }) {
     const supabase = createClient()
     return (
         <SectionCard title='Update Password' onSubmit={async e => {
-                e.preventDefault()
-                setIsLoading(true)
-                setError(null)
-                setSuccess(null)
-                if (password !== confirmPassword) {
-                    setError('Passwords do not match')
-                    setIsLoading(false)
-                    return
-                }
-                try {
-                    const { error } = await supabase.auth.updateUser({ password })
-                    if (error) throw error
-                    setSuccess('Password updated!')
-                    setPassword('')
-                    setConfirmPassword('')
-                    onSuccess?.()
-                } catch (err: any) {
-                    setError(err.message || 'An error occurred')
-                } finally {
-                    setIsLoading(false)
-                }
-            }}>
-                <div>
-                    <label htmlFor='password' className='text-sm font-medium leading-none'>New Password</label>
-                    <Input id='password' type='password' value={password} onChange={e => setPassword(e.target.value)} placeholder='New password' className='h-10' />
-                </div>
-                <div className='my-4'>
-                    <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>Confirm Password</label>
-                    <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='Confirm password' className='h-10' />
-                </div>
-                {error && <div className='rounded bg-destructive/10 p-2 text-xs text-destructive'>{error}</div>}
-                {success && <div className='rounded bg-success/10 p-2 text-xs text-success'>{success}</div>}
-                <Button type='submit' className='w-full h-10' disabled={isLoading || !password || !confirmPassword} variant='flat' color='primary'>
-                    {isLoading ? 'Updating...' : 'Update Password'}
-                </Button>
+            e.preventDefault()
+            setIsLoading(true)
+            setError(null)
+            setSuccess(null)
+            if (password !== confirmPassword) {
+                setError('Passwords do not match')
+                setIsLoading(false)
+                return
+            }
+            try {
+                const { error } = await supabase.auth.updateUser({ password })
+                if (error) throw error
+                setSuccess('Password updated!')
+                setPassword('')
+                setConfirmPassword('')
+                onSuccess?.()
+            } catch (err: any) {
+                setError(err.message || 'An error occurred')
+            } finally {
+                setIsLoading(false)
+            }
+        }}>
+            <div>
+                <label htmlFor='password' className='text-sm font-medium leading-none'>New Password</label>
+                <Input id='password' type='password' value={password} onChange={e => setPassword(e.target.value)} placeholder='New password' className='h-10' />
+            </div>
+            <div className='my-4'>
+                <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>Confirm Password</label>
+                <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='Confirm password' className='h-10' />
+            </div>
+            {error && <div className='rounded bg-destructive/10 p-2 text-xs text-destructive'>{error}</div>}
+            {success && <div className='rounded bg-success/10 p-2 text-xs text-success'>{success}</div>}
+            <Button type='submit' className='w-full h-10' disabled={isLoading || !password || !confirmPassword} variant='flat' color='primary'>
+                {isLoading ? 'Updating...' : 'Update Password'}
+            </Button>
         </SectionCard>
     )
 }
@@ -226,10 +228,10 @@ function LogoutSection() {
     const supabase = createClient()
     return (
         <SectionCard title='Logout'>
-            <Button onClick={async () => {
+            <Button onPress={async () => {
                 setIsLoading(true)
                 await supabase.auth.signOut()
-                router.push('/auth/login')
+                router.push(SIGN_IN_URL)
             }} className='w-full h-10' color='primary' variant='flat' disabled={isLoading}>
                 Logout
             </Button>
@@ -252,6 +254,25 @@ export default function UpdateProfile({ userId, username, image, className, ...p
             <div className='flex justify-center items-center'>
                 <ProfileLink userId={userId} />
             </div>
+        </div>
+    )
+}
+
+export function UpdateProfileSkeleton({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+    return (
+        <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[60vh] w-full items-center justify-center bg-background py-8', className)} {...props}>
+            <SectionCard title='Update Username'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
+            <SectionCard title='Update Avatar'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
+            <SectionCard title='Update Email'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
+            <SectionCard title='Update Password'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
         </div>
     )
 }

@@ -3,7 +3,7 @@ import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
 import StoryGen from './story-gen'
-import { supportedLangs } from '@/lib/config'
+import { supportedLangs, welcomeMap } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
@@ -34,7 +34,7 @@ export default async function Report({ day }: {
                 {words.map(({ word, id, lang, lib }) => (
                     <ScopeProvider key={id} atoms={[langAtom]}>
                         <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                            <Markdown md={word} asCard deleteId={id}></Markdown>
+                            <Markdown md={word} asCard deleteId={welcomeMap[lang] === word ? undefined : id}></Markdown>
                         </HydrationBoundary>
                     </ScopeProvider>
                 ))}

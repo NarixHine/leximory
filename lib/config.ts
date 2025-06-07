@@ -4,6 +4,8 @@ import { Plan } from '@/server/auth/quota'
 
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
+export const SIGN_IN_URL = '/auth/login' as const
+
 export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoiceConfig = {
     'BrE': {
@@ -169,7 +171,7 @@ export const libAccessStatusMap = {
     public: 1,
 } as const
 
-export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'https://localhost:3000'}${url}`
+export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'http://localhost:3000'}${url}`
 
 export const accessOptions = [
     { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },

@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useState } from 'react'
+import { SIGN_IN_URL } from '@/lib/config'
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -61,7 +62,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
               {isLoading ? 'Sending...' : 'Send reset link'}
             </Button>
             <div className="text-center text-sm">
-              <Link href="/auth/login" className="text-primary hover:underline">Back to login</Link>
+              <Link href={SIGN_IN_URL} className="text-primary hover:underline">Back to login</Link>
             </div>
           </form>
         </CardBody>

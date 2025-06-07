@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Input } from '@heroui/input'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { SIGN_IN_URL } from '@/lib/config'
 
 export function UpdatePasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [password, setPassword] = useState('')
@@ -31,7 +32,7 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
       setSuccess('Password updated!')
-      setTimeout(() => router.push('/auth/login'), 2000)
+      setTimeout(() => router.push(SIGN_IN_URL), 2000)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
