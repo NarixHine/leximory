@@ -211,9 +211,9 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         words.length > 0
                             ? <ul className='flex flex-wrap gap-2'>
                                 {words.map(({ id, word, lang }) => (
-                                    <ScopeProvider atoms={[langAtom]}>
+                                    <ScopeProvider key={id} atoms={[langAtom]}>
                                         <HydrationBoundary hydrateAtoms={[[langAtom, lang]]}>
-                                            <li className=' flex gap-1 items-center' key={id}>
+                                            <li className=' flex gap-1 items-center'>
                                                 <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
                                             </li>
                                         </HydrationBoundary>
@@ -341,7 +341,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
-    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages,data } = useChat({
+    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
         api: '/api/library/chat',
         initialMessages: storedMessages,
         onFinish: () => {
