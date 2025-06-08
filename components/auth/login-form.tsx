@@ -36,7 +36,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         toast.error('发生错误') 
         setError(error.message)
       } else {
-        router.push('/library')
+        router.replace('/library') 
+        router.refresh()
       }
     } finally {
       setIsLoading(false)
