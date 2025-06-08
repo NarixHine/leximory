@@ -24,7 +24,7 @@ import H from '@/components/ui/h'
 import { useCopyToClipboard } from 'usehooks-ts'
 import Text from '@/app/library/[lib]/components/text'
 import { ScopeProvider } from 'jotai-scope'
-import { libAtom } from '../../[lib]/atoms'
+import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
@@ -74,7 +74,6 @@ type MessagePart = {
 }
 
 function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
-    console.log(state, toolName)
     if (state === 'call') {
         return (
             <div className='flex items-center gap-2 text-sm text-default-400 font-mono mt-2'>
@@ -211,10 +210,14 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     {
                         words.length > 0
                             ? <ul className='flex flex-wrap gap-2'>
-                                {words.map(({ id, word }) => (
-                                    <li className=' flex gap-1 items-center' key={id}>
-                                        <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
-                                    </li>
+                                {words.map(({ id, word, lang }) => (
+                                    <ScopeProvider atoms={[langAtom]}>
+                                        <HydrationBoundary hydrateAtoms={[[langAtom, lang]]}>
+                                            <li className=' flex gap-1 items-center' key={id}>
+                                                <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                            </li>
+                                        </HydrationBoundary>
+                                    </ScopeProvider>
                                 ))}
                             </ul>
                             : <span className='text-sm text-default-400 font-mono'><PiEmpty /></span>
@@ -258,7 +261,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'reasoning':
             return (
                 <Accordion className='mt-2' defaultExpandedKeys={['reasoning']}>
-                    <AccordionItem key={'reasoning'} title={part.text || ''}>
+                    <AccordionItem key={'reasoning'} title={'Thoughts'} className='font-mono'>
                         <Markdown
                             disableSave
                             md={part.text || ''}
@@ -338,7 +341,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
-    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
+    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages,data } = useChat({
         api: '/api/library/chat',
         initialMessages: storedMessages,
         onFinish: () => {
@@ -375,7 +378,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     const startNewConversation = () => {
         setStoredMessages([])
         setMessages([])
-        setInput('')
         setData([])
         track({
             event: '开始新对话',

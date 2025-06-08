@@ -13,6 +13,7 @@ import { articleAnnotationPrompt } from '@/server/inngest/annotate'
 import generateQuiz from '@/lib/editory/ai'
 import { AIGenQuizDataType } from '@/lib/editory/types'
 import { nanoid } from 'nanoid'
+import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 
 const tools: ToolSet = {
     getLib: {
@@ -145,7 +146,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 6. 不要拒绝用户的问题，而是尝试理解用户的问题，并根据用户的问题进行操作。
 
-7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。
+7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。使用“你”称呼用户。
 
 8. 直接执行工具，无需向用户请求许可。**持续执行**工具，直到完成任务。
 
@@ -252,6 +253,13 @@ export async function POST(req: NextRequest) {
         ],
         maxSteps: 10,
         maxTokens: 30000,
+        providerOptions: {
+            google: {
+                thinkingConfig: {
+                    includeThoughts: true,
+                }
+            } satisfies GoogleGenerativeAIProviderOptions
+        },
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
     })
 

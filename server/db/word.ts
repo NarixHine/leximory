@@ -1,6 +1,5 @@
 import 'server-only'
 
-import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { Lang, welcomeMap } from '@/lib/config'
 import { getXataClient } from '@/server/client/xata'
 import moment from 'moment-timezone'
@@ -8,6 +7,7 @@ import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as ca
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/lang'
 import { after } from 'next/server'
+import { forgetCurve, ForgetCurvePoint } from '@/lib/types'
 
 const xata = getXataClient()
 
