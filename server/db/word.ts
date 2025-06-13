@@ -116,23 +116,22 @@ export async function drawWords({ lib, start, end, size }: { lib: string, start:
 }
 
 export async function getForgetCurve({ day, or: { filters, options } }: { day: ForgetCurvePoint, or: OrFilter }) {
+    const data = await getWordsWithin({ fromDayAgo: forgetCurve[day][0], toDayAgo: forgetCurve[day][1], or: { filters, options } })
+    return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
+}
+
+export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, options } }: { fromDayAgo: number, toDayAgo: number, or: OrFilter }) {
     'use cache'
     cacheTag('words')
     cacheLife('hours')
-
-    const startDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][0], 'day').utc().toDate()
-    const endDate = moment().tz('Asia/Shanghai').startOf('day').subtract(forgetCurve[day][1], 'day').utc().toDate()
-
     const { data } = await supabase
         .from('lexicon')
-        .select('id, word, lib:libraries!inner(id, lang)')
-        .gte('created_at', startDate.toISOString())
-        .lt('created_at', endDate.toISOString())
-        .not('word', 'in', `(${Object.values(welcomeMap).map(w => `'${w}'`).join(',')})`)
+        .select('word, id, lib:libraries!inner(id, lang)')
+        .gte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(fromDayAgo, 'day').toISOString())
+        .lt('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(toDayAgo, 'day').toISOString())
         .or(filters, options)
         .throwOnError()
-
-    return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
+    return data
 }
 
 export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {
@@ -150,7 +149,7 @@ export async function aggrWordHistogram({ libs, size }: { libs: string[], size: 
 
     // Group by date and count
     const histogram = data.reduce((acc: Record<string, number>, curr) => {
-        const date = moment(curr.created_at).tz('Asia/Shanghai').startOf('day').utc().format('YYYY-MM-DD')
+        const date = moment(curr.created_at).tz('Asia/Shanghai').startOf('day').format('YYYY-MM-DD')
         acc[date] = (acc[date] || 0) + 1
         return acc
     }, {})

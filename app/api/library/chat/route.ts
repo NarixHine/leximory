@@ -1,7 +1,7 @@
 import { generateText, smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
-import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
+import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
@@ -71,17 +71,9 @@ const tools: ToolSet = {
             const or = await isListedFilter()
             switch (period) {
                 case 'day':
-                    return Promise.all([
-                        getForgetCurve({ day: '今天记忆', or }),
-                        getForgetCurve({ day: '一天前记忆', or }),
-                    ])
+                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 2, or })
                 case 'week':
-                    return Promise.all([
-                        getForgetCurve({ day: '今天记忆', or }),
-                        getForgetCurve({ day: '一天前记忆', or }),
-                        getForgetCurve({ day: '四天前记忆', or }),
-                        getForgetCurve({ day: '七天前记忆', or }),
-                    ])
+                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 7, or })
             }
         }
     },
@@ -198,9 +190,9 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 如果用户要求出翻译题，你应该默认遵循以下要求：
 
-用中文给出翻译题（中译外），在括号里给出必须使用的外语关键词（每道题可以有1～2个关键词），考察用户对单词用法的掌握。禁止在被翻译的原句中夹杂外语。禁止帮用户回顾单词用法。
+用中文给出翻译题（中译外），在括号里给出必须使用的外语关键词（每道题可以有1～2个关键词），考察用户对单词用法的掌握。原句全部使用中文，不要在被翻译的原句中夹杂外语。禁止帮用户回顾单词用法。
 
-例如：
+形式如：
 
 1. 虽然他尽心尽力，但计划还是出了差错。\`awry\`
 2. 这个古老的传统节日是早期文化的残留物，至今仍在一些偏远地区庆祝，但被一些人视为杂务。\`remote\` \`grunt work\` 
@@ -211,7 +203,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 - 语法错误
 - 用词不当
-- 原文漏译了一部分
+- 原文漏译一部分
 - 关键词使用
 
 如果用户翻译并非最佳，给出翻译的参考译文。
