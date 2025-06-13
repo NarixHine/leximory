@@ -4,8 +4,8 @@
 
 > ### TODO
 >
-> - [ ] Reimplement iOS Shortcuts auth
-> - [ ] Implement avatar upload
+> - [x] Reimplement iOS Shortcuts auth
+> - [x] Implement avatar upload
 > - [ ] Sign in redirection error fix
 > - [ ] Redesign auth
 

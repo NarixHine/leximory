@@ -9,10 +9,17 @@ import { dailyLexicoinClaimMap } from '@/lib/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'
+import { supabase } from '@/server/client/supabase'
+import { getOrCreateToken, revokeToken } from '@/server/db/token'
 
-export default async function getToken() {
-	// TODO: implement this
-	return 'null'
+export async function getUserToken() {
+	const { userId } = await getUserOrThrow()
+	return await getOrCreateToken(userId)
+}
+
+export async function revokeUserToken() {
+	const { userId } = await getUserOrThrow()
+	return await revokeToken(userId)
 }
 
 export async function setPreference(isBrE: boolean) {
@@ -49,4 +56,16 @@ export async function manageSubscription() {
 		customer_id: customerId,
 	})
 	redirect(session.customer_portal_link)
+}
+
+export async function uploadAvatar(file: File) {
+	if (!file) throw new Error('No file provided')
+	const user = await getUserOrThrow()
+	const { error } = await supabase.storage.from('avatars').upload(user.userId, file, {
+		upsert: true,
+		contentType: file.type
+	})
+	if (error) throw new Error(error.message)
+	const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(user.userId)
+	return publicUrl
 }

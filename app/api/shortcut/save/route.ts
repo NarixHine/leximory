@@ -9,6 +9,7 @@ import { generateText } from 'ai'
 import { googleModels, Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
+import { verifyToken } from '@/server/db/token'
 
 const schema = z.object({
     word: z.string(),
@@ -16,9 +17,8 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-    const { word: rawWord } = await parseBody(request, schema)
-    // TODO: implement this
-    const { sub } = { sub: '' }
+    const { word: rawWord, token } = await parseBody(request, schema)
+    const sub = await verifyToken(token)
     if (await incrCommentaryQuota(0.25, sub)) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
     }

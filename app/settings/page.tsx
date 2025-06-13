@@ -42,7 +42,7 @@ async function UserSection() {
     return <UpdateProfile userId={userId} username={username} image={image} />
 }
 
-function UserSectionSkeleton() {
+function HeroSectionSkeleton() {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar isBordered color={'primary'} className='!size-16' />
         <div className='flex flex-col gap-1'>
@@ -62,7 +62,7 @@ async function UpgradeServer() {
 export default async function Settings() {
     const month = moment().locale('en-gb').format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
-        <Suspense fallback={<UserSectionSkeleton />}>
+        <Suspense fallback={<HeroSectionSkeleton />}>
             <HeroSection />
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
@@ -84,7 +84,7 @@ export default async function Settings() {
             </div>
         </section>
         <section className='grid grid-cols-2 gap-4'>
-            <div className='border col-span-2 border-dashed border-primary-200 rounded-lg px-4 flex flex-col gap-2'>
+            <div className='col-span-2 flex flex-col gap-2'>
                 <Suspense fallback={<UpdateProfileSkeleton />}>
                     <UserSection />
                 </Suspense>
