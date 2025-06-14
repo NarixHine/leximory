@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
         },
         useCache: true,
     },
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'pcsjszvydprmevipvpva.supabase.co',
+            },
+        ],
+    },
     turbopack: {},
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {

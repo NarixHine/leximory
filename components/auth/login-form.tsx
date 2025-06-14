@@ -10,7 +10,7 @@ import {
 } from '@heroui/card'
 import { Input } from '@heroui/input'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -19,7 +19,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,11 +32,10 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         password,
       })
       if (error) {
-        toast.error('发生错误') 
+        toast.error('发生错误')
         setError(error.message)
       } else {
-        router.push('/library') 
-        router.refresh()
+        redirect('/library')
       }
     } finally {
       setIsLoading(false)
@@ -53,8 +51,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         <CardBody>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Email
@@ -71,8 +69,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label 
-                  htmlFor="password" 
+                <label
+                  htmlFor="password"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Password
@@ -98,9 +96,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 {error}
               </div>
             )}
-            <Button 
-              type="submit" 
-              className="w-full h-10" 
+            <Button
+              type="submit"
+              className="w-full h-10"
               disabled={isLoading}
               color="primary"
             >
@@ -108,8 +106,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             </Button>
             <div className="text-center text-sm">
               Don&apos;t have an account?{' '}
-              <Link 
-                href="/auth/sign-up" 
+              <Link
+                href="/auth/sign-up"
                 className="text-primary hover:underline"
               >
                 Sign up

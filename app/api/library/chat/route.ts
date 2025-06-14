@@ -71,7 +71,7 @@ const tools: ToolSet = {
             const or = await isListedFilter()
             switch (period) {
                 case 'day':
-                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 2, or })
+                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 1, or })
                 case 'week':
                     return getWordsWithin({ fromDayAgo: 0, toDayAgo: 7, or })
             }
@@ -197,7 +197,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 1. 虽然他尽心尽力，但计划还是出了差错。\`awry\`
 2. 这个古老的传统节日是早期文化的残留物，至今仍在一些偏远地区庆祝，但被一些人视为杂务。\`remote\` \`grunt work\` 
 
-然后，作为一个冷静、客观、极端严格的阅卷人，仔细对比原文与用户翻译，对用户翻译进行全面而详细的批改。以一段连贯的话输出，请重点评估译文的是否符合母语者表达习惯，是否存在语言运用不当，是否遗漏关键信息。
+然后，作为一个冷静、客观、极端严格的阅卷人，仔细对比原文与用户翻译，对用户翻译进行全面而详细的批改。结合用户的译文（用Markdown斜体引用），以一段连贯的话输出评析，请重点评估译文的是否符合母语者表达习惯，是否存在语言运用不当，是否遗漏关键信息。
 
 重点关注：
 
