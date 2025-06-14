@@ -5,6 +5,7 @@ import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
 import QuizData, { AI_GEN_QUIZ_DATA_TYPE_LIST } from '@/lib/editory/types'
+import { annotateParagraph } from '@/server/ai/annotate'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',
@@ -30,11 +31,10 @@ export type ToolResult = {
     annotateArticle: {
         id: string
         title: string
-        updatedAt: string
         createdAt: string
         libId: string
     }
-    annotateParagraph: string
+    annotateParagraph: ReturnType<typeof annotateParagraph>
     generateQuiz: QuizData
 }
 

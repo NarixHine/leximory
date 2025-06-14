@@ -2,6 +2,8 @@ import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
+export const ADMIN_UID = 'b2b5b44e-5f3b-4af1-866a-5d162e51be8b' as const
+
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
 export const SIGN_IN_URL = '/auth/login' as const
@@ -58,7 +60,7 @@ export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
 export const googleModels = {
-    'flash-2.0': google('gemini-2.0-flash', {
+    'image-gen': google('gemini-2.0-flash-preview-image-generation', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -76,7 +78,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'flash-2.5': google('gemini-2.5-flash-preview-04-17', {
+    'flash-2.5': google('gemini-2.5-flash-preview-05-20', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -93,6 +95,25 @@ export const googleModels = {
             category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
             threshold: 'BLOCK_NONE',
         }],
+    }),
+    'flash-2.5-search': google('gemini-2.5-flash-preview-05-20', {
+        useSearchGrounding: true,
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+            threshold: 'BLOCK_NONE',
+        }]
     }),
     'pro-2.5': google('gemini-2.5-pro-preview-06-05', {
         safetySettings: [{

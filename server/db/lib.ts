@@ -255,7 +255,6 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             topics,
             ebook,
             created_at,
-            updated_at,
             lib:libraries (
                 name
             )
@@ -263,14 +262,13 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
         .eq('lib', libId)
         .throwOnError()
 
-    return data.map(text => ({
-        id: text.id,
-        title: text.title,
-        content: text.content,
-        topics: text.topics ?? [],
-        hasEbook: text.ebook !== null,
-        createdAt: new Date(text.created_at!).toDateString(),
-        updatedAt: new Date(text.updated_at!).toDateString(),
-        libName: text.lib?.name ?? 'Unknown Library',
+    return data.map(({ id, title, content, topics, ebook, created_at, lib }) => ({
+        id,
+        title,
+        content,
+        topics: topics ?? [],
+        hasEbook: ebook !== null,
+        createdAt: new Date(created_at!).toDateString(),
+        libName: lib?.name ?? 'Unknown Library',
     })) ?? []
 }

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
-        model: googleModels['flash-2.0'],
+        model: googleModels['flash-2.5'],
         prompt: `请判断下述词汇最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
     })

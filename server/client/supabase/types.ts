@@ -219,6 +219,33 @@ export type Database = {
           },
         ]
       }
+      times: {
+        Row: {
+          cover: string
+          created_at: string
+          date: string
+          id: number
+          news: string
+          novel: string
+        }
+        Insert: {
+          cover: string
+          created_at?: string
+          date: string
+          id?: number
+          news: string
+          novel: string
+        }
+        Update: {
+          cover?: string
+          created_at?: string
+          date?: string
+          id?: number
+          news?: string
+          novel?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           accent: string

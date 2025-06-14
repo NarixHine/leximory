@@ -3,6 +3,7 @@ import { inngest } from '@/server/inngest/client'
 import { fanNotification, notify } from '@/server/inngest/notify'
 import { serve } from 'inngest/next'
 import { generateStory } from '@/server/inngest/story'
+import { generateTimes } from '@/server/inngest/times'
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -10,6 +11,7 @@ export const { GET, POST, PUT } = serve({
     fanNotification,
     notify,
     annotateFullArticle,
-    generateStory
+    generateStory,
+    generateTimes
   ],
 })

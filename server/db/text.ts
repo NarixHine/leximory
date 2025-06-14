@@ -83,7 +83,6 @@ export async function getTexts({ lib }: { lib: string }) {
             topics,
             ebook,
             created_at,
-            updated_at,
             lib:libraries (
                 name
             )
@@ -91,13 +90,12 @@ export async function getTexts({ lib }: { lib: string }) {
         .eq('lib', lib)
         .throwOnError()
 
-    return texts.map(({ id, title, topics, ebook, created_at, updated_at, lib }) => ({
+    return texts.map(({ id, title, topics, ebook, created_at, lib }) => ({
         id,
         title,
         topics,
         hasEbook: !!ebook,
         createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
-        updatedAt: updated_at ? new Date(updated_at).toISOString() : new Date().toISOString(),
         libName: lib?.name ?? 'Unknown Library'
     }))
 }

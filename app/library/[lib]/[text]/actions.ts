@@ -25,7 +25,7 @@ export async function extractWords(form: FormData) {
     }
 
     const { object } = await generateObject({
-        model: googleModels['flash-2.0'],
+        model: googleModels['flash-2.5'],
         messages: [
             {
                 role: 'user',

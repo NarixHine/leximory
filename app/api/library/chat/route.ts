@@ -1,19 +1,19 @@
-import { generateText, smoothStream, streamText, ToolSet } from 'ai'
+import { smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
-import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
+import { googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
-import { articleAnnotationPrompt } from '@/server/inngest/annotate'
 import generateQuiz from '@/lib/editory/ai'
 import { AIGenQuizDataType } from '@/lib/editory/types'
 import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
+import { annotateParagraph } from '@/server/ai/annotate'
 
 const tools: ToolSet = {
     getLib: {
@@ -92,11 +92,7 @@ const tools: ToolSet = {
         parameters: toolSchemas.annotateParagraph,
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
             const { userId } = await getUserOrThrow()
-            const { text } = await generateText({
-                model: getBestArticleAnnotationModel(lang),
-                ...(await articleAnnotationPrompt(lang, content, false, userId)),
-            })
-            return text
+            return await annotateParagraph({ content, lang, userId })
         }
     },
     generateQuiz: {

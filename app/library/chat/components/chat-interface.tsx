@@ -180,7 +180,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'annotateArticle':
-            const { id, title, updatedAt, createdAt, libId } = result as ToolResult['annotateArticle']
+            const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
                 <div className='mt-2 flex flex-col gap-2 mb-1'>
                     <span className='text-sm text-default-400'>注解完成后会显示在文本中</span>
@@ -192,7 +192,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                 topics={[]}
                                 hasEbook={false}
                                 createdAt={createdAt}
-                                updatedAt={updatedAt}
                                 disablePrefetch
                             />
                         </HydrationBoundary>
