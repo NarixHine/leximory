@@ -1,3 +1,4 @@
+import 'server-only'
 import { getLexicoinBalance } from './lexicoin'
 import { nanoid } from 'nanoid'
 import { supabase } from '../client/supabase'

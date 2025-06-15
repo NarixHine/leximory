@@ -1,5 +1,4 @@
 import 'server-only'
-
 import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
 import { Lang, welcomeMap } from '@/lib/config'
 import { supabase } from '@/server/client/supabase'

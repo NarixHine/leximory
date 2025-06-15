@@ -4,6 +4,7 @@ import { supabase } from '../client/supabase'
 import { ADMIN_UID, googleModels } from '@/lib/config'
 import moment from 'moment-timezone'
 import { annotateParagraph } from '../ai/annotate'
+import { revalidateTag } from 'next/cache'
 
 const EDITOR_GUIDE_PROMPT = ` 
 You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords for today's story and pin down the language style. Output them.
@@ -36,7 +37,7 @@ You're the novelist who writes for the Daily Novel section of the online publica
 
 The content and stylistic suggestions from the editor are as follows. All suggestions are voluntary. Feel free to ignore any item that you feel hampers your writing.
 
-Before your novel, add a one-liner intro for readers, preceded by the Markdown quotation mark \`>\`.
+Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then Use \`###\` to indicate the TITLE of the novel. At last the NOVEL itself.
 `.trim()
 
 const NEWS_PROMPT = `
@@ -54,7 +55,7 @@ Write in a journalistic style, rather than with AI summary vibes.
 const IMAGE_PROMPT = `
 Imagery matters in online publications. Even if it bears no actual relation to the content, it serves as a decorative element on the website and captures reader's attention. 
 
-Now write an AI image generation prompt whose CONTENT is remotely redolent of the novel today in a loosely connected and perhaps slightly fanciful way, but not so strictly restricted to it that it loses the aesthetic appeal. The STYLE is: IMPRESSIONALIST (make it prominent in your prompt; also prioritise aesthetic, rich, muted colour palette), soft focus, gentle brushstrokes, nostalgic feel, tranquil, no human presence. Require the full frame to be filled with colours, no blank/black emptiness.
+Now write an AI image generation prompt whose CONTENT is remotely redolent of the novel today in a loosely connected and perhaps slightly fanciful way, but not so strictly restricted to it that it loses the aesthetic appeal. The STYLE is: IMPRESSIONALIST (make it prominent in your prompt; also prioritise aesthetic, wide-ranging, muted colour palette), elements of landscape painting, colours of nature, soft focus, nostalgic feel, tranquil, no human presence. Require the full frame to be filled with colours, no blank/black emptiness.
 
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt, no other text.
 `.trim()
@@ -72,7 +73,8 @@ export const generateTimes = inngest.createFunction(
         const editorGuide = await step.ai.wrap('generate-editor-guide', generateText, {
             model: googleModels['flash-2.5'],
             prompt: EDITOR_GUIDE_PROMPT,
-            maxTokens: 2000
+            maxTokens: 2000,
+            temperature: 0.3
         })
 
         // Step 2: Generate novel
@@ -80,7 +82,8 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['flash-2.5'],
             system: NOVEL_PROMPT,
             prompt: editorGuide.text,
-            maxTokens: 6000
+            maxTokens: 10000,
+            temperature: 0.3
         })
 
         const annotatedNovel = await step.run('annotate-novel', async () => {
@@ -90,8 +93,10 @@ export const generateTimes = inngest.createFunction(
         // Step 3: Generate daily news
         const { text: news } = await step.ai.wrap('generate-news', generateText, {
             model: googleModels['flash-2.5-search'],
-            prompt: NEWS_PROMPT,
-            maxTokens: 6000
+            system: NEWS_PROMPT,
+            prompt: `Today is ${date}. Write today's news.`,
+            maxTokens: 10000,
+            temperature: 0.2
         })
 
         // Step 4: Annotate news
@@ -108,7 +113,8 @@ export const generateTimes = inngest.createFunction(
             Novel: ${novel}
             
             The prompt should be detailed and specific, suitable for an AI image generation model.`,
-            maxTokens: 2000
+            maxTokens: 2000,
+            temperature: 0.5
         })
 
         // Step 6: Generate and upload image
@@ -138,10 +144,11 @@ export const generateTimes = inngest.createFunction(
                 .insert({
                     novel: annotatedNovel,
                     news: annotatedNews,
-                    cover: imageUrl,
+                    cover: `${imageUrl}?ai`,
                     date
                 })
                 .throwOnError()
+            revalidateTag('times')
         })
     }
 )
