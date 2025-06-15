@@ -42,7 +42,7 @@ export async function generate(id: string, lib: string, text: string) {
 
 async function japaneseToKana(text: string) {
     const result = await generateText({
-        model: googleModels['flash-2.0'],
+        model: googleModels['flash-2.5'],
         prompt: `将以下日文文章全部用片假名改写输出：\n\n${text}`,
         temperature: 0
     })

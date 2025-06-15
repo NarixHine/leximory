@@ -8,6 +8,8 @@ export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
 export const SIGN_IN_URL = '/auth/login' as const
 
+export const TIMES_PAGE_SIZE = 7 as const
+
 export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoiceConfig = {
     'BrE': {
