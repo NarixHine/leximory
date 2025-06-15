@@ -22,8 +22,8 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
-import { contentFontFamily } from '@/lib/fonts'
 import styles from '@/styles/sidenote.module.css'
+import { commentFontFamilyAtom } from './atoms'
 
 interface CommentProps {
     params: string
@@ -203,13 +203,15 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         {(lang === 'en' || lang === 'zh') && <Button as={Link} href={lang === 'en' ? `https://www.etymonline.com/word/${portions[1]}` : `https://www.zdic.net/hans/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
     </div>
 
+    const commentFontFamily = useAtomValue(commentFontFamilyAtom)
+
     if (print) {
         return <Note portions={portions}></Note>
     }
 
     return asCard
         ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
-            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: contentFontFamily }}>
+            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: commentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -299,6 +301,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
     editedPortions?: string[]
     onEdit?: (portions: string[]) => void
 }) {
+    const commentFontFamily = useAtomValue(commentFontFamilyAtom)
     const isCompact = useAtomValue(isReaderModeAtom)
     const margin = isCompact ? 'mt-1' : 'my-2'
 
@@ -310,7 +313,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: contentFontFamily }}>
+    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: commentFontFamily }}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea
