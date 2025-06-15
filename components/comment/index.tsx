@@ -251,8 +251,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             : <button
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
-                                    !isReaderMode && 'underline decoration-wavy underline-offset-[3px]',
-                                    isOnDemand ? 'decoration-default-200' : 'decoration-default-500'
+                                    !isReaderMode && 'relative after:absolute after:bottom-1.5 after:left-0 after:w-full after:h-1/4',
+                                    isOnDemand ? 'after:bg-default-200/40' : 'after:bg-primary-200/40'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
