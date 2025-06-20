@@ -25,7 +25,6 @@ import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { getSession } from '@/server/auth/user'
 import { redirect } from 'next/navigation'
-import moment from 'moment-timezone'
 
 export default async function Home() {
 	if (await getSession()) {
