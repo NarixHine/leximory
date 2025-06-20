@@ -25,7 +25,7 @@ Leximory integrates features like:
 
 There is also a feature built for exam setters: `Fix. Your. Paper.`.
 
-The platform is built with Next.js, Supabase, Clerk, Upstash, Vercel AI SDK and Inngest.
+The platform is built with Next.js, Supabase, Upstash, Vercel AI SDK and Inngest.
 
 ## Running the Project
 

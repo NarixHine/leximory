@@ -1,10 +1,10 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
-import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
+import { CHINESE_CALLIGRAPHY, contentFontFamily } from '@/lib/fonts'
 import Link from 'next/link'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
-import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone, PiCursorClickDuotone } from 'react-icons/pi'
+import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiCursorClickDuotone, PiNewspaperDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -25,6 +25,7 @@ import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { getSession } from '@/server/auth/user'
 import { redirect } from 'next/navigation'
+import moment from 'moment-timezone'
 
 export default async function Home() {
 	if (await getSession()) {
@@ -106,16 +107,18 @@ export default async function Home() {
 				<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3'>
 					<div>
 						<BentoCard
-							title='共享文库'
-							description='创建学习小组，分发精读资料'
+							title='每日资源'
+							description='每日更新的小说和新闻'
 						>
-							<div className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
-								<h2 className='font-bold opacity-50'>学习小组</h2>
-								<p className='opacity-60 font-bold'>新知</p>
-								<div className='absolute bottom-0 right-0 p-4'>
-									<PiUsersDuotone className='w-10 h-10 opacity-30' />
-								</div>
-							</div>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
+								<CardBody style={{ fontFamily: contentFontFamily }}>
+									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
+									<p className='opacity-60 font-bold'>24 March, 2025</p>
+									<div className='absolute bottom-0 right-0 p-4'>
+										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
+									</div>
+								</CardBody>
+							</Card>
 						</BentoCard>
 					</div>
 					<div>

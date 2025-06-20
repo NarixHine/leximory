@@ -84,7 +84,7 @@ function TimesContent() {
             {/* Header */}
             <div>
                 <h1 className='mb-2 font-semibold'>{moment(data.date).format('LL')}</h1>
-                <span className='text-xl opacity-80'>Brought to you with AI by The Leximory Times</span>
+                <span className='text-xl opacity-80'>Brought to you with AI by <span className='font-semibold'>The Leximory Times</span></span>
             </div>
 
             {/* Cover Image */}
@@ -192,9 +192,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
     }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     return (
-        <div className='flex md:h-full md:min-w-60 md:flex-col md:overflow-y-auto overflow-x-auto'>
+        <div className='flex md:h-full md:min-w-64 md:flex-col md:overflow-y-auto overflow-x-auto'>
             <div className='flex flex-row md:flex-col md:static inset-y-0 left-0 z-40'>
-                <div className='p-6'>
+                <div className='p-6 md:ml-6'>
                     <div className='flex flex-row md:flex-col space-x-4 md:space-x-0 md:space-y-3'>
                         {data?.pages.map((page) =>
                             page.data.map(({ date, cover }: TimesSummaryData) => (
@@ -217,9 +217,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
 
 export default function Panel({ recentData }: PanelProps) {
     return (
-        <div className={cn('h-dvh w-dvw p-3', ENGLISH_MODERN.className)}>
+        <div className={cn('h-dvh w-dvw', ENGLISH_MODERN.className)}>
             {/* Main Paper Container */}
-            <div className='w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900 shadow rounded-3xl'>
+            <div className='w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900 rounded-3xl'>
                 <TimesSidebar
                     data={recentData}
                 />
