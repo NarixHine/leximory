@@ -58,7 +58,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="yourname@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -97,7 +97,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             <Button 
               type="submit" 
               className="w-full h-10" 
-              disabled={isLoading}
+              isLoading={isLoading}
               color="primary"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
@@ -105,7 +105,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             <div className="text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link 
-                href="/auth/sign-up" 
+                href='/sign-up'
                 className="text-primary hover:underline"
               >
                 Sign up

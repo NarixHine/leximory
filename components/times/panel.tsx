@@ -8,13 +8,14 @@ import { Accordion, AccordionItem, Skeleton } from '@heroui/react'
 import moment from 'moment-timezone'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { TimesSummaryData } from './types'
-import { fetchIssue, fetchMoreIssues } from './actions'
+import { fetchIssue, fetchLatestIssue, fetchMoreIssues } from './actions'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { getRecentTimesData } from '@/server/db/times'
 import { Suspense, useEffect } from 'react'
 import { TIMES_PAGE_SIZE } from '@/lib/config'
 import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
+import { Spinner } from '@heroui/spinner'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -68,11 +69,10 @@ function TimesContentSkeleton() {
 }
 
 function TimesContent() {
-    const [dateQuery] = useQueryState('date')
-    const date = dateQuery ?? moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+    const [date] = useQueryState('date')
     const { data } = useQuery({
         queryKey: ['times', date],
-        queryFn: () => fetchIssue(date),
+        queryFn: () => date ? fetchIssue(date) : fetchLatestIssue(),
     })
 
     if (!data) {
@@ -204,7 +204,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
                             ))
                         )}
                         {hasNextPage && (
-                            <div ref={ref} className='h-4 w-full' />
+                            <div ref={ref} className='h-4 w-full flex items-center justify-center'>
+                                <Spinner variant='dots' />
+                            </div>
                         )}
                     </div>
                 </div>

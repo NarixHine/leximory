@@ -1,6 +1,10 @@
 'use server'
 
-import { getRecentTimesData, getTimesDataByDate } from '@/server/db/times'
+import { getLatestTimesData, getRecentTimesData, getTimesDataByDate } from '@/server/db/times'
+
+export async function fetchLatestIssue() {
+    return getLatestTimesData()
+}
 
 export async function fetchIssue(date: string) {
     return getTimesDataByDate(date)

@@ -26,7 +26,7 @@ Pick several topics, and 1~3 events thereof, but every piece chosen should be el
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate more advanced vocabulary in your reporting, for the sake of English learning.
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*, and with the date; use Markdown quotation mark \`>\` to indicate the opening & closing remarks) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last concise closing remarks.
+Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*, and with the date; use Markdown quotation mark \`>\` to indicate the opening & closing remarks) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks.
 
 Write in a journalistic style, rather than with AI summary vibes.
 `.trim()
@@ -47,7 +47,8 @@ export const generateTimes = inngest.createFunction(
     { cron: 'TZ=Asia/Shanghai 0 8 * * *' }, // Run daily at eight p.m. in Shanghai
     async ({ step }) => {
         const date = await step.run('get-date', async () => {
-            return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            return '2025-06-17'
+            // return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
         })
 
         // Step 1: Generate editor's guide
@@ -55,7 +56,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['flash-2.5'],
             prompt: EDITOR_GUIDE_PROMPT,
             maxTokens: 5000,
-            temperature: 0.3
+            temperature: 0.5
         })
 
         // Step 2: Generate novel

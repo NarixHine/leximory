@@ -92,7 +92,7 @@ const tools: ToolSet = {
         parameters: toolSchemas.annotateParagraph,
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
             const { userId } = await getUserOrThrow()
-            return await annotateParagraph({ content, lang, userId })
+            return { annotation: await annotateParagraph({ content, lang, userId }), lang }
         }
     },
     generateQuiz: {
@@ -172,7 +172,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 如果数量过多，超过三十个，分多次输出，每次询问是否继续。
 
-以词形变化的原形输出单词。
+**以词形变化的原形**输出单词或词组。
 
 ### 故事生成
 

@@ -3,27 +3,25 @@
 import { cn } from '@/lib/utils'
 import { createClient } from '@/server/client/supabase/client'
 import { Button } from '@heroui/button'
-import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Input } from '@heroui/input'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SIGN_IN_URL } from '@/lib/config'
+import { PiLockKey } from 'react-icons/pi'
+import H from '../ui/h'
+import { toast } from 'sonner'
 
 export function UpdatePasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
-    setSuccess(null)
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      toast.error('两次输入的密码不一致')
       setIsLoading(false)
       return
     }
@@ -31,57 +29,45 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
     try {
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
-      setSuccess('Password updated!')
+      toast.success('密码已更新！')
       setTimeout(() => router.push(SIGN_IN_URL), 2000)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+    } catch {
+      toast.error('发生错误')
     } finally {
       setIsLoading(false)
     }
   }
 
-  return (
-    <div className={cn('flex min-h-[80vh] items-center justify-center', className)} {...props}>
-      <Card className="w-96 p-3" shadow="sm">
-        <CardHeader className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Update your password</h1>
-        </CardHeader>
-        <CardBody>
-          <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium leading-none">New Password</label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="confirm-password" className="text-sm font-medium leading-none">Confirm Password</label>
-              <Input
-                id="confirm-password"
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            {error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{error}</div>
-            )}
-            {success && (
-              <div className="rounded-md bg-success/15 p-3 text-sm text-success">{success}</div>
-            )}
-            <Button type="submit" className="w-full h-10" disabled={isLoading} color="primary">
-              {isLoading ? 'Updating...' : 'Update password'}
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
-    </div>
-  )
+  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6', className)} {...props}>
+    <H className='mb-1 text-3xl'>更新密码</H>
+    <form onSubmit={handleUpdatePassword} className='space-y-4'>
+      <div className='space-y-1'>
+        <label htmlFor='password' className='text-sm font-medium leading-none'>新密码</label>
+        <Input
+          id='password'
+          type='password'
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className='h-10'
+          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+        />
+      </div>
+      <div className='space-y-1'>
+        <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>确认密码</label>
+        <Input
+          id='confirm-password'
+          type='password'
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className='h-10'
+          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+        />
+      </div>
+      <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>
+        {isLoading ? '更新中…' : '更新密码'}
+      </Button>
+    </form>
+  </div>
 } 

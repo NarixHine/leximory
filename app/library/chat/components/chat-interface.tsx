@@ -24,7 +24,7 @@ import H from '@/components/ui/h'
 import { useCopyToClipboard } from 'usehooks-ts'
 import Text from '@/app/library/[lib]/components/text'
 import { ScopeProvider } from 'jotai-scope'
-import { libAtom } from '../../[lib]/atoms'
+import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
@@ -73,7 +73,6 @@ type MessagePart = {
 }
 
 function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
-    console.log(state, toolName)
     if (state === 'call') {
         return (
             <div className='flex items-center gap-2 text-sm text-default-400 font-mono mt-2'>
@@ -163,17 +162,22 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     <CardBody className='p-6'>
                         <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{text.title}</div>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
+                            <Markdown md={text.content} className='prose dark:prose-invert max-w-none' />
                         </div>
                     </CardBody>
                 </Card>
             )
         case 'annotateParagraph':
+            const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
+                            <ScopeProvider atoms={[langAtom]}>
+                                <HydrationBoundary hydrateAtoms={[[langAtom, lang]]}>
+                                    <Markdown md={annotation} className='prose dark:prose-invert max-w-none' />
+                                </HydrationBoundary>
+                            </ScopeProvider>
                         </div>
                     </CardBody>
                 </Card>
@@ -209,7 +213,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                             ? <ul className='flex flex-wrap gap-2'>
                                 {words.map(({ id, word }) => (
                                     <li className=' flex gap-1 items-center' key={id}>
-                                        <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                        <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
                                     </li>
                                 ))}
                             </ul>
@@ -244,7 +248,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                         : 'bg-primary-50/50 text-default-900'
                 )}>
                     {part.text ? <Markdown
-                        disableSave
                         md={part.text}
                         className='prose dark:prose-invert max-w-none'
                         hasWrapped={true}
@@ -256,7 +259,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 <Accordion className='mt-2' defaultExpandedKeys={['reasoning']}>
                     <AccordionItem key={'reasoning'} title={part.text || ''}>
                         <Markdown
-                            disableSave
                             md={part.text || ''}
                             className='prose dark:prose-invert max-w-none'
                         />
@@ -293,7 +295,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 export function ChatMessages({ messages }: { messages: Message[] }) {
     return <>{
         messages.map(({ parts, role, experimental_attachments }, i) => (
-            <div style={{ fontFamily: contentFontFamily }} key={i} className={cn(
+            <div key={i} className={cn(
                 'mb-4 flex flex-col',
                 role === 'user' ? 'items-end' : 'items-start'
             )}>
@@ -474,7 +476,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder='输入你的问题...'
-                    disabled={status === 'streaming'}
                     maxRows={15}
                     autoComplete='off'
                     startContent={

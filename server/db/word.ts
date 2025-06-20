@@ -1,6 +1,5 @@
 import 'server-only'
-import { forgetCurve, ForgetCurvePoint } from '@/app/daily/components/report'
-import { Lang, welcomeMap } from '@/lib/config'
+import { forgetCurve, ForgetCurvePoint, Lang } from '@/lib/config'
 import { supabase } from '@/server/client/supabase'
 import moment from 'moment-timezone'
 import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'

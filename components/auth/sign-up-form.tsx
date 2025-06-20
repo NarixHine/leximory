@@ -3,30 +3,27 @@
 import { cn } from '@/lib/utils'
 import { createClient } from '@/server/client/supabase/client'
 import { Button } from '@heroui/button'
-import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SIGN_IN_URL } from '@/lib/config'
 import { toast } from 'sonner'
+import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
+import H from '../ui/h'
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
-    setSuccess(null)
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      toast.error('两次输入的密码不一致')
       setIsLoading(false)
       return
     }
@@ -40,73 +37,62 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         toast.error(error.message)
         throw error
       }
-      setSuccess('Check your email to confirm your account!')
+      toast.success('请查收邮箱以确认账号！')
       setTimeout(() => router.push(SIGN_IN_URL), 2000)
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+    } catch {
+      toast.error('发生错误')
     } finally {
       setIsLoading(false)
     }
   }
 
-  return (
-    <div className={cn('flex min-h-[80vh] items-center justify-center', className)} {...props}>
-      <Card className="w-96 p-3" shadow="sm">
-        <CardHeader className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
-        </CardHeader>
-        <CardBody>
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium leading-none">Email</label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium leading-none">Password</label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="confirm-password" className="text-sm font-medium leading-none">Confirm Password</label>
-              <Input
-                id="confirm-password"
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            {error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{error}</div>
-            )}
-            {success && (
-              <div className="rounded-md bg-success/15 p-3 text-sm text-success">{success}</div>
-            )}
-            <Button type="submit" className="w-full h-10" disabled={isLoading} color="primary">
-              {isLoading ? 'Signing up...' : 'Sign up'}
-            </Button>
-            <div className="text-center text-sm">
-              Already have an account?{' '}
-              <Link href={SIGN_IN_URL} className="text-primary hover:underline">Sign in</Link>
-            </div>
-          </form>
-        </CardBody>
-      </Card>
-    </div>
-  )
+  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6', className)} {...props}>
+    <H className='mb-1 text-3xl'>欢迎加入 Leximory！</H>
+    <form onSubmit={handleSignUp} className='space-y-4'>
+      <div className='space-y-1'>
+        <label htmlFor='email' className='text-sm font-medium leading-none'>邮箱</label>
+        <Input
+          id='email'
+          type='email'
+          placeholder='yourname@example.com'
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className='h-10'
+          startContent={<PiEnvelopeSimple className='text-xl text-muted-foreground' />}
+        />
+      </div>
+      <div className='space-y-1'>
+        <label htmlFor='password' className='text-sm font-medium leading-none'>密码</label>
+        <Input
+          id='password'
+          type='password'
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className='h-10'
+          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+        />
+      </div>
+      <div className='space-y-1'>
+        <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>确认密码</label>
+        <Input
+          id='confirm-password'
+          type='password'
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className='h-10'
+          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+        />
+      </div>
+      <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>
+        {isLoading ? '注册中…' : '注册'}
+      </Button>
+      <div className='text-center text-sm'>
+        已有账号？{' '}
+        <Link href={SIGN_IN_URL} className='text-primary hover:underline'>登录</Link>
+      </div>
+    </form>
+  </div>
 } 

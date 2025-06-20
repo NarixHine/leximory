@@ -34,7 +34,10 @@ export type ToolResult = {
         createdAt: string
         libId: string
     }
-    annotateParagraph: ReturnType<typeof annotateParagraph>
+    annotateParagraph: {
+        annotation: Awaited<ReturnType<typeof annotateParagraph>>
+        lang: Lang
+    }
     generateQuiz: QuizData
 }
 

@@ -6,9 +6,9 @@ export const ADMIN_UID = 'b2b5b44e-5f3b-4af1-866a-5d162e51be8b' as const
 
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
-export const SIGN_IN_URL = '/auth/login' as const
+export const SIGN_IN_URL = '/login' as const
 
-export const TIMES_PAGE_SIZE = 7 as const
+export const TIMES_PAGE_SIZE = 4 as const
 
 export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoiceConfig = {
@@ -80,7 +80,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'flash-2.5': google('gemini-2.5-flash-preview-05-20', {
+    'flash-2.5': google('gemini-2.5-flash', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -98,7 +98,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
-    'flash-2.5-search': google('gemini-2.5-flash-preview-05-20', {
+    'flash-2.5-search': google('gemini-2.5-flash', {
         useSearchGrounding: true,
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
@@ -117,7 +117,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'pro-2.5': google('gemini-2.5-pro-preview-06-05', {
+    'pro-2.5': google('gemini-2.5-pro', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -230,3 +230,14 @@ export const getPlanFromProductId = (productId: typeof creemProductIdMap[keyof t
             throw new Error('Invalid product id')
     }
 }
+
+export const forgetCurve = {
+    '今天记忆': [0, -1],
+    '一天前记忆': [1, 0],
+    '四天前记忆': [4, 3],
+    '七天前记忆': [7, 6],
+    '十四天前记忆': [14, 13],
+}
+
+export type ForgetCurvePoint = keyof typeof forgetCurve
+

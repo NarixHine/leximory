@@ -27,3 +27,4 @@ export const JAPANESE_MINCHO = CHINESE
 export const defaultFontFamily = [ENGLISH.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
 export const contentFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
 export const hFontFamily = [ENGLISH_PLAYFAIR.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
+export const jpFontFamily = [ENGLISH_SERIF.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')

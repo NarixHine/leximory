@@ -3,20 +3,11 @@ import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
 import StoryGen from './story-gen'
-import { supportedLangs, welcomeMap } from '@/lib/config'
+import { ForgetCurvePoint, supportedLangs, welcomeMap } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
 
-export const forgetCurve = {
-    '今天记忆': [0, -1],
-    '一天前记忆': [1, 0],
-    '四天前记忆': [4, 3],
-    '七天前记忆': [7, 6],
-    '十四天前记忆': [14, 13],
-}
-
-export type ForgetCurvePoint = keyof typeof forgetCurve
 
 export default async function Report({ day }: {
     day: ForgetCurvePoint

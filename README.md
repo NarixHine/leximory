@@ -7,7 +7,7 @@
 > - [x] Reimplement iOS Shortcuts auth
 > - [x] Implement avatar upload
 > - [ ] Sign in redirection error fix
-> - [ ] Redesign auth
+> - [x] Redesign auth
 
 ## Introduction
 

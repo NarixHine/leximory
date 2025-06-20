@@ -1,8 +1,8 @@
 import ChatInterface from './components/chat-interface'
 import { Metadata } from 'next'
-import { HydrationBoundary } from 'jotai-ssr'
 import { getPlan } from '@/server/auth/user'
-import { lexiconAtom } from '../[lib]/[text]/atoms'
+import { isReadOnlyAtom } from '../[lib]/atoms'
+import { HydrationBoundary } from 'jotai-ssr'
 
 export const metadata: Metadata = {
     title: 'Talk to Your Library',
@@ -13,7 +13,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     const plan = await getPlan()
     const { prompt } = await searchParams
 
-    return <HydrationBoundary hydrateAtoms={[[lexiconAtom, 'none']]}>
+    return <HydrationBoundary hydrateAtoms={[[isReadOnlyAtom, true]]}>
         <ChatInterface plan={plan} initialPromptIndex={prompt ? parseInt(prompt) : null} />
     </HydrationBoundary>
 } 

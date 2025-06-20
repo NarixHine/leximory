@@ -58,7 +58,7 @@ export default function ImportModal() {
         <Button
             isDisabled={isReadOnly}
             onPress={onOpen}
-            className='flex-1 font-semibold'
+            className='flex-1'
             variant='flat'
             radius='full'
             color='primary'
@@ -180,7 +180,7 @@ function StoryModal() {
     const [storyStyle, setStoryStyle] = useState('')
     return <>
         <Button
-            className='flex-1 font-semibold'
+            className='flex-1'
             isDisabled={isReadOnly}
             isLoading={isLoading}
             radius='full'

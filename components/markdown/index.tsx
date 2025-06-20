@@ -9,8 +9,9 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
-import { contentFontFamily } from '@/lib/fonts'
+import { contentFontFamily, jpFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
+import { langAtom } from '@/app/library/[lib]/atoms'
 
 export type MarkdownProps = {
     md: string,
@@ -28,6 +29,8 @@ export type MarkdownProps = {
 
 export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow, fontFamily }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
+    const lang = useAtomValue(langAtom)
+    console.log(lang)
 
     let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
         .replaceAll('||}}', '}}')
@@ -62,7 +65,7 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
             },
         }}
         style={{
-            fontFamily: fontFamily ?? contentFontFamily,
+            fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),
         }}
         className={cn(
             'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]',
