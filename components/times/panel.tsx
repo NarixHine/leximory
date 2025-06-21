@@ -16,6 +16,7 @@ import { TIMES_PAGE_SIZE } from '@/lib/config'
 import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
+import Define from '../define'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -231,6 +232,8 @@ export default function Panel({ recentData }: PanelProps) {
                     </Suspense>
                 </div>
             </div>
+
+            <Define />
         </div>
     )
 }

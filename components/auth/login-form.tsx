@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import H from '../ui/h'
 import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
-import redirectToLibrary from './actions'
+import { redirect } from 'next/navigation'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -29,7 +29,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       if (error) {
         toast.error('发生错误')
       } else {
-        redirectToLibrary()
+        redirect('/library')
       }
     } finally {
       setIsLoading(false)

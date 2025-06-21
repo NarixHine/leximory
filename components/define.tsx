@@ -8,6 +8,8 @@ import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
 import { useIsMobileIos } from '@/lib/hooks'
+import { CHINESE, ENGLISH } from '@/lib/fonts'
+
 export default function Define() {
     const ref = useRef(globalThis.document)
     const [rect, setRect] = useState<DOMRect | null>(null)
@@ -39,10 +41,10 @@ export default function Define() {
                 animate={isMobileIos ? undefined : { opacity: 1 }}
                 exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
                 transition={isMobileIos ? undefined : { duration: 0.2 }}
-                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
+                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', ENGLISH.className)}
             >
                 <PiMagnifyingGlass />
-                注解
+                Define
             </MotionTrigger>}
         </AnimatePresence>
         <Drawer.Portal>

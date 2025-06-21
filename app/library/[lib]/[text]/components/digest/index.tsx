@@ -18,7 +18,7 @@ import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphone
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
-import Define from './define'
+import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { contentFontFamily } from '@/lib/fonts'
