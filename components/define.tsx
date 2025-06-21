@@ -8,7 +8,7 @@ import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
 import { useIsMobileIos } from '@/lib/hooks'
-import { CHINESE, ENGLISH } from '@/lib/fonts'
+import { ENGLISH } from '@/lib/fonts'
 
 export default function Define() {
     const ref = useRef(globalThis.document)
