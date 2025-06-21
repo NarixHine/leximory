@@ -83,7 +83,6 @@ export function CopyProfileLink({ userId }: { userId: string }) {
         startContent={<PiShareDuotone />}
         color='primary'
         radius='lg'
-        className={cn('border-1')}
         onPress={async () => {
             const data: ShareData = {
                 title: 'Leximory',

@@ -37,9 +37,16 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    const { pathname } = request.nextUrl
+    if (user && pathname === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/library'
+        return NextResponse.redirect(url)
+    }
+
     if (
         !user &&
-        isProtectedRoute(request.nextUrl.pathname)
+        isProtectedRoute(pathname)
     ) {
         const url = request.nextUrl.clone()
         url.pathname = SIGN_IN_URL

@@ -40,3 +40,4 @@ next-env.d.ts
 .xata
 
 certificates
+.inngest/main.db
