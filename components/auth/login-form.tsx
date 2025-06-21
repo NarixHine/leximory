@@ -4,7 +4,7 @@ import { createClient } from '@/server/client/supabase/client'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import H from '../ui/h'
 import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
@@ -14,14 +14,12 @@ import { redirect } from 'next/navigation'
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, startTransition] = useTransition()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
-    setIsLoading(true)
-
-    try {
+    startTransition(async () => {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -31,9 +29,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       } else {
         redirect('/library')
       }
-    } finally {
-      setIsLoading(false)
-    }
+    })
   }
 
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6', className)} {...props}>
