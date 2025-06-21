@@ -3,7 +3,10 @@
 import { useEffect } from 'react'
 
 export const useIsMobileIos = () => {
-    const userAgent = globalThis.navigator.userAgent.toLowerCase()
+    const { navigator } = globalThis
+    if (!navigator)
+        return false
+    const userAgent = navigator.userAgent.toLowerCase()
     return /iphone|ipad|ipod|macintosh|safari/.test(userAgent) && !/chrome/.test(userAgent) && !/android/.test(userAgent)
 }
 

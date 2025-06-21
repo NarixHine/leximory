@@ -1,9 +1,7 @@
 import type QuizData from './types'
 import type { FishingData, ClozeData, GrammarData, SentenceChoiceData, ReadingData, ListeningData, CustomData, Config } from './types'
 import { ALPHABET_SET, NAME_MAP } from './config'
-
 import fastShuffle from 'fast-shuffle'
-
 import render from 'dom-serializer'
 import { parseDocument } from 'htmlparser2'
 import { ElementType } from 'domelementtype'
