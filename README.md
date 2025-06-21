@@ -2,13 +2,6 @@
 
 ![](./screenshot.png)
 
-> ### TODO
->
-> - [x] Reimplement iOS Shortcuts auth
-> - [x] Implement avatar upload
-> - [ ] Sign in redirection error fix
-> - [x] Redesign auth
-
 ## Introduction
 
 > *Leximory* is a language learning platform designed to enhance foreign language proficiency, vocabulary in particular, by means of **intensive input**. 
@@ -25,11 +18,9 @@ Leximory integrates features like:
 
 There is also a feature built for exam setters: `Fix. Your. Paper.`.
 
-The platform is built with Next.js, Supabase, Upstash, Vercel AI SDK and Inngest.
+The platform is built with Next.js, Supabase, Upstash, and Inngest. AI providers are Google and ElevenLabs.
 
-## Running the Project
-
-### Environment Variables
+## Environment Variables
 
 Create a `.env` file in the project root and fill it with the following variables:
 
@@ -56,17 +47,3 @@ INNGEST_EVENT_KEY=<your_inggest_event_key>
 
 NEXT_PUBLIC_URL=https://leximory.com
 ```
-
-### Initialise Database
-
-You need to initialise the Xata database first according to [the schema](./server/client/xata.ts).
-
-### Starting Development Server
-
-After installing dependencies, run:
-
-```bash
-pnpm run dev
-```
-
-Access the application at `http://localhost:3000`.

@@ -26,7 +26,7 @@ export const authReadToLib = async (lib: string) => {
 
     const { data: rec, error } = await supabase
         .from('libraries')
-        .select('owner, lang, name, starred_by, price')
+        .select('owner, lang, name, starred_by, price, access')
         .eq('id', lib)
         .or(`owner.eq.${userId},and(access.eq.${libAccessStatusMap.public},starred_by.cs.{"${userId}"})`)
         .single()
@@ -45,7 +45,8 @@ export const authReadToLib = async (lib: string) => {
         lang: lang as Lang,
         name: rec.name,
         starredBy: rec.starred_by,
-        price: rec.price
+        price: rec.price,
+        access: rec.access
     }
 }
 
