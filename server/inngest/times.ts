@@ -8,7 +8,7 @@ import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords for today's story and pin down the language style. Output them.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Output them.
 `.trim()
 
 const NOVEL_PROMPT = `
@@ -44,7 +44,7 @@ It will serve as the cover image of today's issue on the website. The novel toda
 
 export const generateTimes = inngest.createFunction(
     { id: 'generate-times' },
-    { cron: 'TZ=Asia/Shanghai 0 8 * * *' }, // Run daily at eight p.m. in Shanghai
+    { cron: 'TZ=Asia/Shanghai 0 20 * * *' }, // Runs every day at 8 p.m.
     async ({ step }) => {
         const date = await step.run('get-date', async () => {
             return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
@@ -55,7 +55,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['flash-2.5'],
             prompt: EDITOR_GUIDE_PROMPT,
             maxTokens: 5000,
-            temperature: 0.5
+            temperature: 0.6
         })
 
         // Step 2: Generate novel
@@ -64,7 +64,7 @@ export const generateTimes = inngest.createFunction(
             system: NOVEL_PROMPT,
             prompt: editorGuide,
             maxTokens: 10000,
-            temperature: 0.3
+            temperature: 0.4
         })
 
         const annotatedNovel = await step.run('annotate-novel', async () => {

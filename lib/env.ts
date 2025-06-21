@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createEnv } from '@t3-oss/env-nextjs'
 
 export const isProd = process.env.NODE_ENV === 'production'
+
 const env = createEnv({
     server: {
         GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
