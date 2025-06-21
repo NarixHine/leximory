@@ -1,41 +1,26 @@
 'use client'
 
-import { createClient } from '@/server/client/supabase/client'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
-import { toast } from 'sonner'
 import H from '../ui/h'
 import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
-import { redirect } from 'next/navigation'
+import { login } from './actions'
+import { Form } from '@heroui/form'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, startTransition] = useTransition()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    startTransition(async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) {
-        toast.error('发生错误')
-      } else {
-        redirect('/library')
-      }
-    })
-  }
-
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6', className)} {...props}>
     <H className='mb-1 text-3xl'>欢迎回到 Leximory。</H>
-    <form onSubmit={handleLogin} className='space-y-4'>
-      <div className='space-y-1'>
+    <Form action={() => {
+      startTransition(() => login({ email, password }))
+    }} className='space-y-4 max-w-sm'>
+      <div className='space-y-1 w-full'>
         <label
           htmlFor='email'
           className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
@@ -43,7 +28,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           邮箱
         </label>
         <Input
-          id='email'
+          name='email'
           type='email'
           placeholder='yourname@example.com'
           required
@@ -53,7 +38,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           startContent={<PiEnvelopeSimple className='text-xl text-muted-foreground' />}
         />
       </div>
-      <div className='space-y-1'>
+      <div className='space-y-1 w-full'>
         <div className='flex items-center justify-between'>
           <label
             htmlFor='password'
@@ -69,7 +54,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           </Link>
         </div>
         <Input
-          id='password'
+          name='password'
           type='password'
           required
           value={password}
@@ -95,6 +80,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           注册
         </Link>
       </div>
-    </form>
+    </Form>
   </div>
 }
