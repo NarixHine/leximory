@@ -1,9 +1,9 @@
 'use server'
 
-import { authReadToText, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
+import { authReadToText, authWriteToText } from '@/server/auth/role'
 import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { createStreamableValue } from 'ai/rsc'
-import { authReadToLib, authWriteToLib } from '@/server/auth/role'
+import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
 import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE } from '@/lib/config'
@@ -14,9 +14,10 @@ import { AnnotationProgress } from '@/lib/types'
 import { z } from 'zod'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function extractWords(form: FormData) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const file = form.get('file') as File
 
     if (await incrCommentaryQuota(1, userId)) {
@@ -24,7 +25,7 @@ export async function extractWords(form: FormData) {
     }
 
     const { object } = await generateObject({
-        model: googleModels['flash-2.0'],
+        model: googleModels['flash-2.5'],
         messages: [
             {
                 role: 'user',
@@ -49,7 +50,7 @@ export async function extractWords(form: FormData) {
 }
 
 export async function generateStory({ comments, textId, storyStyle }: { comments: string[], textId: string, storyStyle?: string }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     await authWriteToText(textId)
 
     if (await incrCommentaryQuota(2)) {
@@ -105,7 +106,7 @@ export async function saveEbook(id: string, form: FormData) {
 }
 
 export async function generate({ article, textId, onlyComments }: { article: string, textId: string, onlyComments: boolean }) {
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     const { lib } = await authWriteToText(textId)
     const libId = lib!.id
     const { lang } = await authWriteToLib(libId)
@@ -129,9 +130,9 @@ export async function generate({ article, textId, onlyComments }: { article: str
     })
 }
 
-export async function generateSingleComment(prompt: string, lib: string) {
+export async function generateSingleComment({prompt, lang}: {prompt: string, lang: Lang}) {
+    const { userId } = await getUserOrThrow()
     const stream = createStreamableValue()
-    const { userId } = await getAuthOrThrow()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
     const cache = await getAnnotationCache({ hash })
     if (cache) {
@@ -139,8 +140,6 @@ export async function generateSingleComment(prompt: string, lib: string) {
         stream.done()
         return { text: stream.value }
     }
-
-    const { lang } = await authReadToLib(lib)
 
     if (prompt.length > maxArticleLength(lang)) {
         throw new Error('Text too long')

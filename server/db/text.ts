@@ -1,7 +1,6 @@
 import 'server-only'
-
 import { nanoid } from '@/lib/utils'
-import { getXataClient } from '@/server/client/xata'
+import { supabase } from '@/server/client/supabase'
 import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
 import { revalidateTag } from 'next/cache'
@@ -10,82 +9,157 @@ import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
 
-const xata = getXataClient()
-
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    const { id } = await xata.db.texts.create({
-        id: nanoid(),
-        lib,
-        title: title ?? 'New Text',
-        content,
-        topics
-    })
+    const id = nanoid()
+    await supabase
+        .from('texts')
+        .insert({
+            id,
+            lib,
+            title: title ?? 'New Text',
+            content,
+            topics
+        })
+        .throwOnError()
     revalidateTag(`texts:${lib}`)
     return id
 }
 
 export async function createTextWithData({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    const text = await xata.db.texts.create({
-        lib,
-        title,
-        content,
-        topics
-    })
+    const { data } = await supabase
+        .from('texts')
+        .insert({
+            lib,
+            title,
+            content,
+            topics
+        })
+        .select()
+        .single()
+        .throwOnError()
     revalidateTag(`texts:${lib}`)
-    return text
+    return data
 }
 
 export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    const rec = await xata.db.texts.update(id, { title, content, topics })
-    revalidateTag(`texts:${rec!.lib!.id}`)
+    const { data: rec } = await supabase
+        .from('texts')
+        .update({ title, content, topics })
+        .eq('id', id)
+        .select('lib')
+        .single()
+        .throwOnError()
+    revalidateTag(`texts:${rec.lib}`)
     revalidateTag(`texts:${id}`)
 }
 
 export async function deleteText({ id }: { id: string }) {
-    const rec = await xata.db.texts.delete(id)
-    revalidateTag(`texts:${rec!.lib!.id}`)
+    const { data: rec } = await supabase
+        .from('texts')
+        .delete()
+        .eq('id', id)
+        .select('lib, has_ebook')
+        .single()
+        .throwOnError()
+    if (rec.has_ebook) {
+        await supabase.storage
+            .from('user-files')
+            .remove([`ebooks/${id}.epub`])
+    }
+
+    revalidateTag(`texts:${rec.lib}`)
     revalidateTag(`texts:${id}`)
 }
 
 export async function getTexts({ lib }: { lib: string }) {
     'use cache'
     cacheTag(`texts:${lib}`)
-    const texts = await xata.db.texts.select(['title', 'topics', 'ebook.url','lib.name']).filter({ lib }).getAll()
-    return texts.map(({ id, title, topics, ebook, xata, lib }) => ({
+    const { data: texts } = await supabase
+        .from('texts')
+        .select(`
+            id,
+            title,
+            topics,
+            has_ebook,
+            created_at,
+            lib:libraries (
+                name
+            )
+        `)
+        .eq('lib', lib)
+        .throwOnError()
+
+    return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
         id,
         title,
         topics,
-        hasEbook: !!ebook?.url,
-        createdAt: xata.createdAt.toISOString(),
-        updatedAt: xata.updatedAt.toISOString(),
-        libName: lib!.name
+        hasEbook: has_ebook,
+        createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
+        libName: lib?.name ?? 'Unknown Library'
     }))
 }
 
 export async function getTextContent({ id }: { id: string }) {
     'use cache'
     cacheTag(`texts:${id}`)
-    const text = await xata.db.texts.select(['content', 'ebook', 'title', 'topics', 'lib.name']).filter({ id }).getFirst()
+    const { data: text } = await supabase
+        .from('texts')
+        .select(`
+            content,
+            has_ebook,
+            title,
+            topics,
+            lib:libraries (
+                id,
+                name
+            )
+        `)
+        .eq('id', id)
+        .single()
+        .throwOnError()
+
     if (!text) {
         notFound()
     }
-    const { content, ebook, title, topics, lib } = text
+
+    const { content, has_ebook, title, topics, lib } = text
     if (!lib) {
         throw new Error('lib not found')
     }
-    return { content, ebook: ebook?.url, title, topics, lib: pick(lib, ['id', 'name']) }
+    if (has_ebook) {
+        const { data, error } = await supabase.storage
+            .from('user-files')
+            .createSignedUrl(`ebooks/${id}.epub`, 60 * 60 * 24 * 30)
+        if (error) throw error
+        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
+    }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name']) }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
-    const { url } = await xata.files.upload(
-        { table: 'texts', column: 'ebook', record: id },
-        await ebook.arrayBuffer(),
-        { mediaType: ebook.type }
-    )
-    const { lib } = await xata.db.texts.select(['lib.id']).filter({ id }).getFirstOrThrow()
-    revalidateTag(`texts:${lib!.id}`)
+    const { data: uploadData } = await supabase.storage
+        .from('user-files')
+        .upload(`ebooks/${id}.epub`, await ebook.arrayBuffer(), {
+            contentType: ebook.type,
+            upsert: true,
+        })
+
+    if (!uploadData?.path) throw new Error('Failed to upload ebook')
+    const { path } = uploadData
+
+    const { data: text, error: updateError } = await supabase
+        .from('texts')
+        .update({ has_ebook: true })
+        .eq('id', id)
+        .select('lib')
+        .single()
+
+    if (updateError) throw updateError
+    if (!text?.lib) throw new Error('Library not found')
+
+    revalidateTag(`texts:${text.lib}`)
     revalidateTag(`texts:${id}`)
-    return url
+    return path
 }
 
 export async function getTextAnnotationProgress({ id }: { id: string }) {
@@ -102,6 +176,17 @@ export async function setTextAnnotationProgress({ id, progress }: { id: string, 
 export async function getLibIdAndLangOfText({ id }: { id: string }) {
     'use cache'
     cacheTag(`texts:${id}`)
-    const text = await xata.db.texts.select(['lib.id', 'lib.lang']).filter({ id }).getFirstOrThrow()
+    const { data: text } = await supabase
+        .from('texts')
+        .select(`
+            lib:libraries (
+                id,
+                lang
+            )
+        `)
+        .eq('id', id)
+        .single()
+        .throwOnError()
+
     return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
 }

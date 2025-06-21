@@ -1,4 +1,4 @@
-import { authReadToLib, getAuthOrThrow } from '@/server/auth/role'
+import { authReadToLib } from '@/server/auth/role'
 import Prompt from './components/prompt'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
 import { Lang } from '@/lib/config'
@@ -6,6 +6,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function generateMetadata(props: LibProps) {
     const params = await props.params
@@ -30,8 +31,8 @@ export default async function LibLayout(
         children
     } = props
 
-    const { starredBy, isReadOnly, isOrganizational, isOwner, lang, price } = await authReadToLib(params.lib)
-    const { userId } = await getAuthOrThrow()
+    const { starredBy, isReadOnly, isOwner, lang, price } = await authReadToLib(params.lib)
+    const { userId } = await getUserOrThrow()
     const isStarred = Boolean(starredBy?.includes(userId))
     return (<HydrationBoundary options={{
         enableReHydrate: true
@@ -42,7 +43,7 @@ export default async function LibLayout(
         [isStarredAtom, isStarred],
         [priceAtom, price]
     ]}>
-        {!isOwner && !isStarred && !isOrganizational && <Prompt></Prompt>}
+        {!isOwner && !isStarred && <Prompt></Prompt>}
         {children}
     </HydrationBoundary>)
 }

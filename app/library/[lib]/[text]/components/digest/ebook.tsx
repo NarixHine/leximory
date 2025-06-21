@@ -11,16 +11,24 @@ import { cn, getBracketedSelection } from '@/lib/utils'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from '../../atoms'
-import { isReadOnlyAtom, langAtom, libAtom } from '../../../atoms'
+import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { useAtom, useAtomValue } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
-import { save } from '../../actions'
 import { toast } from 'sonner'
 import { memo } from 'react'
-import { useLogSnag } from '@logsnag/next'
+import { save } from "../../actions"
+
+function transformEbookUrl(url: string) {
+    const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
+    if (match) {
+        const [, id, token] = match
+        return `/ebooks/${token}/${id}.epub`
+    }
+    return url
+}
 
 const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
@@ -50,18 +58,10 @@ const MemoizedPopover = memo(function MemoizedPopover({
     prompt: string | null
     containerRef: React.RefObject<HTMLDivElement>
 }) {
-    const lib = useAtomValue(libAtom)
-    const lang = useAtomValue(langAtom)
     return (
         <Popover placement='right' isDismissable portalContainer={containerRef.current}>
             <PopoverTrigger>
                 <Button
-                    data-event='词汇注解'
-                    data-channel='annotation'
-                    data-tag-lang={lang}
-                    data-icon='🖊️'
-                    data-tag-context={'电子书'}
-                    data-tag-library={lib}
                     className='bg-background'
                     color='primary'
                     variant='light'
@@ -82,7 +82,6 @@ const MemoizedPopover = memo(function MemoizedPopover({
 export default function Ebook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
-    const lib = useAtomValue(libAtom)
     const [content, setContent] = useAtom(contentAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
@@ -105,8 +104,6 @@ export default function Ebook() {
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null!)
-
-    const { track } = useLogSnag()
 
     return src && (
         <motion.div
@@ -160,16 +157,6 @@ export default function Ebook() {
                         isIconOnly
                         onPress={() => {
                             if (bookmark) {
-                                track({
-                                    event: '文摘保存',
-                                    channel: 'annotation',
-                                    description: '保存文摘',
-                                    icon: '🔖',
-                                    tags: {
-                                        lib,
-                                        text
-                                    }
-                                })
                                 startSavingBookmark(async () => {
                                     const newContent = content.concat(bookmark)
                                     await save({ id: text, content: newContent })
@@ -238,7 +225,7 @@ export default function Ebook() {
                         allowPopups: true,
                         allowScriptedContent: true,
                     }}
-                    url={`${src.replace('https://us-east-1.storage.xata.sh/', '/ebooks/')}.epub`}
+                    url={transformEbookUrl(src)}
                 />
             </FullScreen>
         </motion.div>

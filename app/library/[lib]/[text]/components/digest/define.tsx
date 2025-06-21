@@ -7,15 +7,11 @@ import { cn, getBracketedSelection, resetSelection } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
-import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
-import { useAtomValue } from 'jotai'
 import { useIsMobileIos } from '@/lib/hooks'
 export default function Define() {
     const ref = useRef(globalThis.document)
     const [rect, setRect] = useState<DOMRect | null>(null)
     const [selection, setSelection] = useState<Selection | null>(null)
-    const lib = useAtomValue(libAtom)
-    const lang = useAtomValue(langAtom)
 
     useEventListener('selectionchange', () => {
         const newSelection = getSelection()
@@ -43,13 +39,6 @@ export default function Define() {
                 animate={isMobileIos ? undefined : { opacity: 1 }}
                 exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
                 transition={isMobileIos ? undefined : { duration: 0.2 }}
-                data-event='词汇注解'
-                data-description={`进行了动态注解`}
-                data-channel='annotation'
-                data-tag-library={lib}
-                data-tag-lang={lang}
-                data-tag-context={'文章'}
-                data-icon='🖊️'
                 className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             >
                 <PiMagnifyingGlass />

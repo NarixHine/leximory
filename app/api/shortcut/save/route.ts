@@ -1,9 +1,7 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
-import env from '@/lib/env'
 import { originals, parseComment, removeRubyFurigana } from '@/lib/lang'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
-import { verifyToken } from '@clerk/nextjs/server'
 import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
@@ -11,7 +9,7 @@ import { generateText } from 'ai'
 import { googleModels, Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
-import { logsnagServer } from '@/lib/logsnag'
+import { verifyToken } from '@/server/db/token'
 
 const schema = z.object({
     word: z.string(),
@@ -19,8 +17,8 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-    const { token, word: rawWord } = await parseBody(request, schema)
-    const { sub } = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY })
+    const { word: rawWord, token } = await parseBody(request, schema)
+    const sub = await verifyToken(token)
     if (await incrCommentaryQuota(0.25, sub)) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
     }
@@ -37,20 +35,6 @@ export async function POST(request: Request) {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
         const { id: lib } = await getShadowLib({ owner: sub, lang })
         await saveWord({ lib, word })
-        const logsnag = logsnagServer()
-        await logsnag.track({
-            event: '快捷注解',
-            channel: 'annotation',
-            icon: '🍎',
-            description: `利用 iOS Shortcuts 注解并保存了 ${portions[1]}`,
-            tags: { lib, lang },
-            user_id: sub,
-        })
-        await logsnag.insight.increment({
-            title: '用户保存的词汇',
-            value: 1,
-            icon: '💾',
-        })
     })
 
     const plainPortions = portions.map((md) => removeMd(removeRubyFurigana(md)))
@@ -59,7 +43,7 @@ export async function POST(request: Request) {
 
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
-        model: googleModels['flash-2.0'],
+        model: googleModels['flash-2.5'],
         prompt: `请判断下述词汇最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
     })

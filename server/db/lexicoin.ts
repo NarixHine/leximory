@@ -1,32 +1,55 @@
 import 'server-only'
-import { getXataClient } from '../client/xata'
+import { supabase } from '../client/supabase'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import moment from 'moment-timezone'
-
-const xata = getXataClient()
 
 export async function getLexicoinBalance(uid: string) {
     'use cache'
     cacheTag('lexicoin')
-    let balance = await xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirst()
-    if (!balance) {
-        balance = await xata.db.users.create({ id: uid, lexicoin: 20 }).catch(() => {
-            return xata.db.users.select(['lexicoin']).filter({ id: uid }).getFirstOrThrow()
-        })
+    const { data, error } = await supabase
+        .from('users')
+        .select('lexicoin')
+        .eq('id', uid)
+        .single()
+
+    if (error || !data) {
+        const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({ id: uid, lexicoin: 20 })
+            .select('lexicoin')
+            .single()
+
+        if (createError) {
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('lexicoin')
+                .eq('id', uid)
+                .single()
+            return existingUser?.lexicoin ?? 0
+        }
+        return newUser.lexicoin
     }
-    return balance.lexicoin
+    return data.lexicoin
 }
 
 export async function addLexicoinBalance(uid: string, amount: number) {
     revalidateTag('lexicoin')
     const balance = await getLexicoinBalance(uid)
-    await xata.db.users.update({ id: uid, lexicoin: balance + amount })
+    await supabase
+        .from('users')
+        .update({ lexicoin: balance + amount })
+        .eq('id', uid)
+        .throwOnError()
     return { success: true, message: `余额增加 ${amount} LexiCoin` }
 }
 
 export async function setLastClaimDate(uid: string) {
     revalidateTag('lexicoin')
-    await xata.db.users.update({ id: uid, last_daily_claim: moment.tz('Asia/Shanghai').toDate() })
+    await supabase
+        .from('users')
+        .update({ last_daily_claim: moment.tz('Asia/Shanghai').toISOString() })
+        .eq('id', uid)
+        .throwOnError()
 }
 
 export async function subtractLexicoinBalance(uid: string, amount: number) {
@@ -35,21 +58,32 @@ export async function subtractLexicoinBalance(uid: string, amount: number) {
     if (balance < amount) {
         return { success: false, message: `余额不足，你还有 ${balance} LexiCoin` }
     }
-    await xata.db.users.update({ id: uid, lexicoin: balance - amount })
+    await supabase
+        .from('users')
+        .update({ lexicoin: balance - amount })
+        .eq('id', uid)
+        .throwOnError()
     return { success: true }
 }
 
 export async function getLibPrice(lib: string) {
-    const { price } = await xata.db.libraries.select(['price']).filter({ id: lib }).getFirstOrThrow()
-    return price
+    const { data } = await supabase
+        .from('libraries')
+        .select('price')
+        .eq('id', lib)
+        .single()
+        .throwOnError()
+    return data.price
 }
 
 export async function getLastDailyClaim(uid: string) {
     'use cache'
     cacheTag('lexicoin')
-    const user = await xata.db.users.select(['last_daily_claim']).filter({ id: uid }).getFirst()
-    if (!user) {
-        return null
-    }
-    return user.last_daily_claim
+    const { data } = await supabase
+        .from('users')
+        .select('last_daily_claim')
+        .eq('id', uid)
+        .single()
+
+    return data?.last_daily_claim
 }

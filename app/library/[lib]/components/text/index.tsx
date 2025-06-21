@@ -23,14 +23,13 @@ import moment from 'moment-timezone'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
 
-function Text({ id, title, topics: textTopics, hasEbook, createdAt, updatedAt, disablePrefetch }: {
+function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch }: {
     id: string,
     title: string,
     topics: string[],
     disablePrefetch?: boolean,
     hasEbook: boolean,
     createdAt: string,
-    updatedAt: string,
 }) {
     const lib = useAtomValue(libAtom)
     const visited = useAtomValue(visitedTextsAtom)
@@ -49,7 +48,6 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, updatedAt, d
             </CardBody>
             <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
                 <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
-                <time className='text-sm text-default-400 font-mono'>Updated: {moment(updatedAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
             </CardFooter>
         </Card>
     </div>)

@@ -5,6 +5,8 @@ import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
 import QuizData, { AI_GEN_QUIZ_DATA_TYPE_LIST } from '@/lib/editory/types'
+import { annotateParagraph } from '@/server/ai/annotate'
+import { getArticleFromUrl } from '@/lib/utils'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',
@@ -16,7 +18,8 @@ export const toolDescriptions = {
     annotateArticle: 'Creating annotated article ...',
     getForgetCurve: 'Looking for words to review ...',
     annotateParagraph: 'Adding annotations ...',
-    generateQuiz: 'Generating quiz questions ...'
+    generateQuiz: 'Generating quiz questions ...',
+    extractArticleFromWebpage: 'Extracting article from webpage ...'
 } as const
 
 export type ToolResult = {
@@ -30,11 +33,14 @@ export type ToolResult = {
     annotateArticle: {
         id: string
         title: string
-        updatedAt: string
         createdAt: string
         libId: string
     }
-    annotateParagraph: string
+    annotateParagraph: {
+        annotation: Awaited<ReturnType<typeof annotateParagraph>>
+        lang: Lang
+    }
+    extractArticleFromWebpage: Awaited<ReturnType<typeof getArticleFromUrl>>
     generateQuiz: QuizData
 }
 
@@ -57,7 +63,10 @@ export const toolSchemas = {
     }),
     generateQuiz: z.object({
         content: z.string().describe('The text content to generate quiz from'),
-        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
+        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十/小猫钓鱼), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
+    }),
+    extractArticleFromWebpage: z.object({
+        url: z.string().describe('The URL of the webpage to extract the article from')
     })
 } as const
 

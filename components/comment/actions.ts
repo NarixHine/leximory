@@ -1,16 +1,16 @@
 'use server'
 
-import { authWriteToLib, authWriteToText, getAuthOrThrow } from '@/server/auth/role'
+import { authWriteToLib, authWriteToText } from '@/server/auth/role'
 import { extractSaveForm } from '@/lib/lang'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
-import { logsnagServer } from '@/lib/logsnag'
 import { revalidateTag } from 'next/cache'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })
-    await authWriteToLib(lib!.id)
+    await authWriteToLib(lib)
     await deleteWord(id)
 }
 
@@ -20,17 +20,12 @@ export async function saveComment({ portions, lib, editId, shadow, lang }: { por
     after(async () => {
         revalidateTag(`words:${lib}`)
         revalidateTag(`words`)
-        await logsnagServer().insight.increment({
-            title: '用户保存的词汇',
-            value: 1,
-            icon: '💾',
-        })
     })
 
-    const { userId } = await getAuthOrThrow()
+    const { userId } = await getUserOrThrow()
     if (editId) {
         const { lib } = await getWord({ id: editId })
-        await authWriteToLib(lib!.id)
+        await authWriteToLib(lib!)
         await updateWord({ id: editId, word })
         return editId
     } else {

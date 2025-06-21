@@ -1,4 +1,3 @@
-import { Lang } from '@/lib/config'
 import { EventSchemas, Inngest } from 'inngest'
 
 type NotifyUser = {

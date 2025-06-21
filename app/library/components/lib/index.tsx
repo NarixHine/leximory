@@ -2,9 +2,8 @@
 
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { Chip } from "@heroui/chip"
 import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiUsersDuotone, PiUserDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
 import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
 import Link from 'next/link'
 import { contentFontFamily } from '@/lib/fonts'
@@ -66,19 +65,14 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow, price, archived, isStarred }: {
+function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred }: {
     id: string,
     name: string,
     access: number,
     isStarred: boolean,
-    lexicon?: {
-        count: number,
-    },
     lang: string,
     isOwner: boolean,
-    orgId: string | null | undefined,
     shadow: boolean,
-    orgs: { label: string, name: string }[],
     price: number,
     archived: boolean,
 }) {
@@ -95,14 +89,12 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
         id: string,
         name: string,
         access: boolean,
-        org: string,
         price: number,
     }>({
         defaultValues: {
             id,
             name,
             access: access === libAccessStatusMap.public,
-            org: orgId ?? 'none',
             price,
         }
     })
@@ -180,11 +172,14 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
                     <Topics topics={topics.concat([langMap[lang as Lang]])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} variant='flat'>语料本</Button>
-                {lexicon && <div className='flex flex-col items-center'>
-                    <p className={cn('text-xs opacity-80')}>词汇量</p>
-                    <Chip color='primary' variant='dot' className='border-none -mt-1'>{lexicon.count}</Chip>
-                </div>}
+                <Button
+                    size={'md'}
+                    as={Link}
+                    href={`/library/${id}/corpus`}
+                    startContent={<PiBookBookmarkDuotone />}
+                    variant='flat'
+                    className='bg-default/20'
+                >语料本</Button>
                 <div className='flex-1'></div>
                 {recentAccessItem && <Button className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
@@ -232,11 +227,7 @@ function Library({ id, name, lexicon, lang, isOwner, access, orgId, orgs, shadow
         >
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
-                <Input label='文库名' {...register('name')} />
-                <Select label='文库所属小组' {...register('org')} >
-                    <SelectItem startContent={<PiUserDuotone />} key='none'>无</SelectItem>
-                    {orgs.map(org => <SelectItem startContent={<PiUsersDuotone />} key={org.name}>{org.label}</SelectItem>) as any}
-                </Select>
+                <Input className='col-span-2' label='文库名' {...register('name')} />
                 <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>

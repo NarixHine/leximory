@@ -22,7 +22,7 @@ export function parseCommentParams(word: string) {
         const parsedParams = JSON.parse(purifiedParams.split('}')[0]) as string[]
         return parsedParams
     } catch {
-        return ['ERROR', 'ERROR', `在解析注解\`${word}\`时发生错误，请检查注解格式或联系管理员。`]
+        return ['ERROR', 'ERROR', `在解析注解\`${word}\`时发生错误，请检查注解格式或联系开发者。`]
     }
 }
 

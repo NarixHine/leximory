@@ -8,7 +8,7 @@ import { Card, CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiSignInDuotone, PiEyesFill } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
 import { cn, getClickedChunk, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
@@ -20,12 +20,10 @@ import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useAuth } from '@clerk/nextjs'
-import { useLogSnag } from '@logsnag/next'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
-import { contentFontFamily } from '@/lib/fonts'
 import styles from '@/styles/sidenote.module.css'
+import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
 
 interface CommentProps {
     params: string
@@ -67,12 +65,16 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     useEffect(() => {
         setIsLoaded(!isOnDemand)
         setStatus('idle')
-    }, [])
+    }, [isOnDemand])
+
+    useEffect(() => {
+        setPortions(parsedParams)
+    }, [params])
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
     const commentWord = async (prompt: string) => {
-        const { text, error } = await generateSingleComment(prompt, lib)
+        const { text, error } = await generateSingleComment({ prompt, lang })
         if (error) {
             toast.error(error, {
                 duration: 10000,
@@ -109,16 +111,14 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const wordElement = useRef<HTMLButtonElement>(null)
 
-    const { userId } = useAuth()
     const init = useCallback(() => {
         const element = wordElement.current
-        if (isOnDemand && !isLoaded && element && userId) {
+        if (isOnDemand && !isLoaded && element) {
             commentWord(getClickedChunk(element))
         }
     }, [isOnDemand, isLoaded, prompt])
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
-    const { track } = useLogSnag()
     const Save = () => <div className='flex gap-2'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
@@ -130,13 +130,6 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             variant='flat'
             onPress={async () => {
                 setStatus('loading')
-                track({
-                    event: '词汇保存',
-                    channel: 'corpus',
-                    description: `保存了 ${portions[1]}`,
-                    icon: '💾',
-                    tags: { lib }
-                })
                 try {
                     const savedId = await saveComment({ portions, lib, shadow: isReadOnly, lang })
                     setStatus('saved')
@@ -220,7 +213,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     return asCard
         ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
-            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: contentFontFamily }}>
+            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -262,8 +255,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             : <button
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
-                                    !isReaderMode && 'underline decoration-wavy underline-offset-[3px]',
-                                    isOnDemand ? 'decoration-default-200' : 'decoration-default-500'
+                                    !isReaderMode && 'relative after:absolute after:bottom-1.5 after:left-0 after:w-full after:h-1/4',
+                                    isOnDemand ? 'after:bg-default-400/40' : 'after:bg-primary-200/40'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
@@ -276,7 +269,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             </button>
                     }
                 </PopoverTrigger>
-                <PopoverContent className={cn('max-w-80', !userId && !isLoaded && 'bg-background/50')}>
+                <PopoverContent className={cn('max-w-80')}>
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
@@ -285,13 +278,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     {(!explicitDisableSave || isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
                                     <Save />
                                 </div>
-                                : userId ? <div className='space-y-3 w-40'>
+                                : <div className='space-y-3 w-40'>
                                     <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-4/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-2/5 rounded-lg h-3'></Skeleton>
                                     <Skeleton className='w-full rounded-lg h-3'></Skeleton>
                                 </div>
-                                    : <Button startContent={<PiSignInDuotone />} as={Link} href='/sign-in' color='secondary' variant='shadow'>登录</Button>
                         }
                     </div>
                 </PopoverContent>
@@ -311,6 +303,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
     editedPortions?: string[]
     onEdit?: (portions: string[]) => void
 }) {
+    const lang = useAtomValue(langAtom)
     const isCompact = useAtomValue(isReaderModeAtom)
     const margin = isCompact ? 'mt-1' : 'my-2'
 
@@ -322,7 +315,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: contentFontFamily }}>
+    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea
@@ -335,7 +328,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                 : <div className={isCompact ? 'font-bold text-medium' : 'font-extrabold text-large'}>{portions[1]}</div>
         )}
         {portions[2] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>释义</div>}
+            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '意味' : '释义'}</div>}
             {isEditing
                 ? <Textarea
                     size='sm'
@@ -347,7 +340,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
             }
         </div>}
         {portions[3] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>语源</div>}
+            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '語源' : '语源'}</div>}
             {
                 isEditing
                     ? <Textarea

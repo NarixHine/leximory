@@ -2,7 +2,13 @@ import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
+export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
+
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
+
+export const SIGN_IN_URL = '/login' as const
+
+export const TIMES_PAGE_SIZE = 7 as const
 
 export const MAX_TTS_LENGTH = 10000
 export const elevenLabsVoiceConfig = {
@@ -42,7 +48,7 @@ export const exampleSharedLib = {
     id: '4c33b971',
     name: '📚 外刊泛读入门',
     lang: 'en',
-    owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt',
+    owner: '3599113b-8407-46b7-85bc-4f9a1c425c59',
     price: 0,
     readers: 324
 } as const
@@ -56,7 +62,7 @@ export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
 export const googleModels = {
-    'flash-2.0': google('gemini-2.0-flash', {
+    'image-gen': google('gemini-2.0-flash-preview-image-generation', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -74,7 +80,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'flash-2.5': google('gemini-2.5-flash-preview-05-20', {
+    'flash-2.5': google('gemini-2.5-flash', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -92,7 +98,26 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
-    'pro-2.5': google('gemini-2.5-pro-preview-06-05', {
+    'flash-2.5-search': google('gemini-2.5-flash', {
+        useSearchGrounding: true,
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+            threshold: 'BLOCK_NONE',
+        }]
+    }),
+    'pro-2.5': google('gemini-2.5-pro', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -169,12 +194,7 @@ export const libAccessStatusMap = {
     public: 1,
 } as const
 
-export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'https://localhost:3000'}${url}`
-
-export const accessOptions = [
-    { name: 'private' as const, label: '私有（仅自己及小组成员可见）' },
-    { name: 'public' as const, label: '公开（所有用户都可见，且显示于文库集市中）' }
-] as const
+export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'http://localhost:3000'}${url}`
 
 export const maxArticleLength = (lang: Lang): number => {
     switch (lang) {
@@ -205,3 +225,14 @@ export const getPlanFromProductId = (productId: typeof creemProductIdMap[keyof t
             throw new Error('Invalid product id')
     }
 }
+
+export const forgetCurve = {
+    '今天记忆': [0, -1],
+    '一天前记忆': [1, 0],
+    '四天前记忆': [4, 3],
+    '七天前记忆': [7, 6],
+    '十四天前记忆': [14, 13],
+}
+
+export type ForgetCurvePoint = keyof typeof forgetCurve
+

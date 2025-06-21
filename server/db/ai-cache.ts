@@ -1,3 +1,4 @@
+import 'server-only'
 import { redis } from "../client/redis"
 
 export const getAnnotationCache = async ({ hash }: { hash: string }) => {

@@ -33,7 +33,7 @@ export default async function Page(props: LibProps) {
             </Button>}
         </div>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-            {texts.map(({ title, id, topics, hasEbook, createdAt, updatedAt }) => (
+            {texts.map(({ title, id, topics, hasEbook, createdAt }) => (
                 <Text
                     id={id}
                     key={id}
@@ -41,7 +41,6 @@ export default async function Page(props: LibProps) {
                     topics={topics ?? []}
                     hasEbook={hasEbook}
                     createdAt={createdAt}
-                    updatedAt={updatedAt}
                 ></Text>
             ))}
             {!isReadOnly && <AddTextButton />}

@@ -1,12 +1,11 @@
 'use client'
 
-import getToken from '../actions'
+import { revokeUserToken, getUserToken } from '../actions'
 import { toast } from 'sonner'
-import { PiKeyDuotone, PiShareDuotone } from 'react-icons/pi'
+import { PiKeyDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
 import { Button } from "@heroui/button"
 import { prefixUrl } from '@/lib/config'
-import { useUser } from '@clerk/nextjs'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 import { Drawer } from 'vaul'
 import { Snippet } from "@heroui/snippet"
 import { Progress } from "@heroui/progress"
@@ -14,17 +13,30 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function CopyToken() {
-    const [isLoading, startTransition] = useTransition()
+    const [isLoading, startLoading] = useTransition()
     const [token, setToken] = useState<string | null>(null)
+    const [isRevoking, startRevoking] = useTransition()
+    const handleFetchToken = useCallback(async () => {
+        const token = await getUserToken()
+        setToken(token)
+    }, [])
+    const handleRevokeToken = useCallback(async () => {
+        try {
+            await revokeUserToken()
+            setToken(null)
+            toast.success('密钥已撤销')
+        } catch {
+            toast.error('撤销失败')
+        } finally {
+            startLoading(handleFetchToken)
+        }
+    }, [])
     return <Drawer.Root>
         <Drawer.Trigger
             className={cn('relative flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             onClick={() => {
                 setToken(null)
-                startTransition(async () => {
-                    const token = await getToken()
-                    setToken(token)
-                })
+                startLoading(handleFetchToken)
             }}
         >
             <PiKeyDuotone />
@@ -40,7 +52,20 @@ export default function CopyToken() {
                         base: 'w-full',
                         pre: 'my-0',
                     }}>{token ? token : 'Loading ...'}</Snippet>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
+                    <div className='flex gap-2 mt-4'>
+                        <Button
+                            color='danger'
+                            variant='flat'
+                            startContent={!isRevoking && <PiTrashDuotone className='size-5' />}
+                            isLoading={isRevoking}
+                            onPress={async () => {
+                                startRevoking(handleRevokeToken)
+                            }}
+                        >
+                            撤销密钥
+                        </Button>
+                    </div>
+                    <p className='text-default-600 mt-4'>
                         通行密钥用于 <Link href='/blog/ios-shortcuts' target='_blank' className='text-primary-500'>iOS Shortcut</Link> 中向 API 验证你的身份，
                         <br />
                         请妥善保管，不要泄露给他人。
@@ -51,21 +76,19 @@ export default function CopyToken() {
     </Drawer.Root>
 }
 
-export function CopyProfileLink() {
-    const { user } = useUser()
+export function CopyProfileLink({ userId }: { userId: string }) {
     return <Button
         variant='flat'
-        startContent={<PiShareDuotone className='size-4 -mr-1' />}
-        size='sm'
+        fullWidth
+        startContent={<PiShareDuotone />}
         color='primary'
-        radius='full'
+        radius='lg'
         className={cn('border-1')}
         onPress={async () => {
-            if (!user) return
             const data: ShareData = {
                 title: 'Leximory',
                 text: '我在 Leximory 上学语言',
-                url: prefixUrl(`/profile/${user.id}`),
+                url: prefixUrl(`/profile/${userId}`),
             }
             if (navigator.canShare(data)) {
                 navigator.share(data)
@@ -74,6 +97,6 @@ export function CopyProfileLink() {
             }
         }}
     >
-        分享
+        分享学习进度
     </Button>
 }

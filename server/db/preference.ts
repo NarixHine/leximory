@@ -1,24 +1,45 @@
 import 'server-only'
-
 import { unstable_cacheTag as cacheTag } from 'next/cache'
-import { getXataClient } from '../client/xata'
+import { supabase } from '../client/supabase'
 import { revalidateTag } from 'next/cache'
-
-const xata = getXataClient()
 
 export type Accent = 'BrE' | 'AmE'
 
 export async function setAccentPreference({ accent, userId }: { accent: Accent, userId: string }) {
-    await xata.db.users.update({ id: userId, accent: accent })
+    await supabase
+        .from('users')
+        .update({ accent })
+        .eq('id', userId)
+        .throwOnError()
     revalidateTag('accent')
 }
 
 export async function getAccentPreference({ userId }: { userId: string }) {
     'use cache'
     cacheTag('accent')
-    let user = await xata.db.users.select(['accent']).filter({ id: userId }).getFirst()
-    if (!user) {
-        user = await xata.db.users.create({ id: userId }).catch(() => xata.db.users.select(['accent']).filter({ id: userId }).getFirstOrThrow())
+    const { data } = await supabase
+        .from('users')
+        .select('accent')
+        .eq('id', userId)
+        .single()
+
+    if (!data) {
+        const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({ id: userId })
+            .select('accent')
+            .single()
+
+        if (createError) {
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('accent')
+                .eq('id', userId)
+                .single()
+                .throwOnError()
+            return existingUser.accent as Accent
+        }
+        return newUser.accent as Accent
     }
-    return user?.accent as Accent
+    return data.accent as Accent
 }

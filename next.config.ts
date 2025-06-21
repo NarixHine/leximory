@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
         },
         useCache: true,
     },
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'pcsjszvydprmevipvpva.supabase.co',
+            },
+        ],
+    },
     turbopack: {},
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
@@ -31,8 +39,8 @@ const nextConfig: NextConfig = {
     },
     async rewrites() {
         return [{
-            source: '/ebooks/:id\\.epub',
-            destination: 'https://us-east-1.storage.xata.sh/:id'
+            source: '/ebooks/:token/:id\\.epub',
+            destination: 'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token'
         }]
     },
 }

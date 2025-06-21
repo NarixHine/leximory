@@ -6,7 +6,6 @@ import type { ReactNode } from 'react'
 import Dock from './components/dock'
 import env from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { LogSnagProvider } from '@logsnag/next'
 import { Analytics } from '@vercel/analytics/next'
 import { defaultFontFamily } from '@/lib/fonts'
 
@@ -51,9 +50,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	return (
 		<ViewTransitions>
 			<html lang='zh-CN' className='antialiased'>
-				<head>
-					<LogSnagProvider token={env.NEXT_PUBLIC_LOGSNAG_API_KEY} project={env.NEXT_PUBLIC_LOGSNAG_PROJECT} />
-				</head>
 				<body style={{ fontFamily: defaultFontFamily }}>
 					<SpeedInsights />
 					<Analytics />

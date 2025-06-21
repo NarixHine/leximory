@@ -1,18 +1,15 @@
 import Main from '@/components/ui/main'
-import { auth } from '@clerk/nextjs/server'
 import H from '@/components/ui/h'
-import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
+import { CHINESE_CALLIGRAPHY, contentFontFamily } from '@/lib/fonts'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
-import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiUsersDuotone, PiCursorClickDuotone } from 'react-icons/pi'
+import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiNewspaperDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
 import { isReadOnlyAtom, langAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/ui/flip'
-import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
 import { Spacer } from "@heroui/spacer"
 import { Button } from "@heroui/button"
@@ -23,12 +20,13 @@ import Test from './library/[lib]/corpus/components/test'
 import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
-import { exampleSharedLib } from '@/lib/config'
+import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
+import { getSession } from '@/server/auth/user'
+import { redirect } from 'next/navigation'
 
 export default async function Home() {
-	const { userId } = await auth()
-	if (userId) {
+	if (await getSession()) {
 		redirect('/library')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
@@ -48,7 +46,7 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<Button startContent={<PiShootingStarDuotone />} color='primary' href='/sign-in' as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
+				<Button startContent={<PiShootingStarDuotone />} color='primary' href={SIGN_IN_URL} as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
 			</div>
 		</div>
 
@@ -84,11 +82,7 @@ export default async function Home() {
 				</div>
 				<div className='col-span-3'>
 					<BentoCard title='考纲词汇高亮'>
-						<ScopeProvider atoms={[lexiconAtom]}>
-							<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
-								<LexiconSelector />
-							</HydrationBoundary>
-						</ScopeProvider>
+						<LexiconSelector />
 					</BentoCard>
 				</div>
 			</div>
@@ -98,25 +92,24 @@ export default async function Home() {
 					<BentoCard title='AI 注解 + AI 朗读'>
 						<div className='px-8 sm:px-16 flex flex-col'>
 							<ShowcaseAnnotation />
-							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light'>
-								查看更多
-							</Button>
 						</div>
 					</BentoCard>
 				</div>
 				<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3'>
 					<div>
 						<BentoCard
-							title='共享文库'
-							description='创建学习小组，分发精读资料'
+							title='每日资源'
+							description='每日更新的英语新闻和小说'
 						>
-							<div className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
-								<h2 className='font-bold opacity-50'>学习小组</h2>
-								<p className='opacity-60 font-bold'>新知</p>
-								<div className='absolute bottom-0 right-0 p-4'>
-									<PiUsersDuotone className='w-10 h-10 opacity-30' />
-								</div>
-							</div>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
+								<CardBody style={{ fontFamily: contentFontFamily }}>
+									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
+									<p className='opacity-60 font-bold'>24 March, 2025</p>
+									<div className='absolute bottom-0 right-0 p-4'>
+										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
+									</div>
+								</CardBody>
+							</Card>
 						</BentoCard>
 					</div>
 					<div>

@@ -149,13 +149,6 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                                 <span className="text-default-500 text-sm">可领取 10 个代币</span>
                             </div>
                         </div>
-                        <div className="flex items-start gap-2">
-                            <PiCheck className="text-success-500 w-4 h-4 mt-1" />
-                            <div className="flex flex-col">
-                                <span>学习小组功能</span>
-                                <span className="text-default-500 text-sm">创建学习小组并邀请任意用户加入</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div className='flex-1' />

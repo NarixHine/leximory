@@ -10,6 +10,7 @@ import { getTextContent } from '@/server/db/text'
 import { LibAndTextProps } from '@/lib/types'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isReaderModeAtom } from '@/app/atoms'
+import { authReadToText } from '@/server/auth/role'
 
 export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
@@ -20,6 +21,7 @@ export async function generateMetadata(props: LibAndTextProps) {
 }
 
 const getData = async (text: string) => {
+    await authReadToText(text)
     const { title, content, topics, ebook, lib } = await getTextContent({ id: text })
     return { title, content, topics, ebook, lib }
 }

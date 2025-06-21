@@ -2,6 +2,13 @@
 
 ![](./screenshot.png)
 
+> ### TODO
+>
+> - [x] Reimplement iOS Shortcuts auth
+> - [x] Implement avatar upload
+> - [ ] Sign in redirection error fix
+> - [x] Redesign auth
+
 ## Introduction
 
 > *Leximory* is a language learning platform designed to enhance foreign language proficiency, vocabulary in particular, by means of **intensive input**. 
@@ -18,7 +25,7 @@ Leximory integrates features like:
 
 There is also a feature built for exam setters: `Fix. Your. Paper.`.
 
-The platform is built with Next.js, Xata, Clerk, Upstash, Vercel AI SDK and Inngest.
+The platform is built with Next.js, Supabase, Upstash, Vercel AI SDK and Inngest.
 
 ## Running the Project
 
@@ -27,15 +34,9 @@ The platform is built with Next.js, Xata, Clerk, Upstash, Vercel AI SDK and Inng
 Create a `.env` file in the project root and fill it with the following variables:
 
 ```shell
-# Clerk authentication keys
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<your_clerk_publishable_key>
-CLERK_SECRET_KEY=<your_clerk_secret_key>
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-
-# Xata database configuration
-XATA_BRANCH=main
-XATA_API_KEY=<your_xata_api_key>
+# Supabase configuration
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # Upstash Redis configuration
 UPSTASH_REDIS_REST_URL=<your_upstash_redis_url>

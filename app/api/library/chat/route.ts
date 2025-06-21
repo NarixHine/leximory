@@ -1,19 +1,20 @@
 import { generateText, smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
-import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
+import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
-import { getBestArticleAnnotationModel, googleModels, Lang } from '@/lib/config'
+import { googleModels, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { authReadToLib, authReadToText, authWriteToLib, getAuthOrThrow, isListed } from '@/server/auth/role'
-import incrCommentaryQuota, { getPlan } from '@/server/auth/quota'
+import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
+import incrCommentaryQuota from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
-import { articleAnnotationPrompt } from '@/server/inngest/annotate'
 import generateQuiz from '@/lib/editory/ai'
 import { AIGenQuizDataType } from '@/lib/editory/types'
 import { nanoid } from 'nanoid'
-import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+import { getPlan, getUserOrThrow } from '@/server/auth/user'
+import { annotateParagraph } from '@/server/ai/annotate'
+import { getArticleFromUrl } from '@/lib/utils'
 
 const tools: ToolSet = {
     getLib: {
@@ -61,27 +62,19 @@ const tools: ToolSet = {
         description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
         parameters: toolSchemas.listLibs,
         execute: async () => {
-            return listLibsWithFullInfo({ filter: await isListed() })
+            return listLibsWithFullInfo({ or: await isListedFilter() })
         }
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
         parameters: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
-            const filter = await isListed()
+            const or = await isListedFilter()
             switch (period) {
                 case 'day':
-                    return Promise.all([
-                        getForgetCurve({ day: '今天记忆', filter }),
-                        getForgetCurve({ day: '一天前记忆', filter }),
-                    ])
+                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 1, or })
                 case 'week':
-                    return Promise.all([
-                        getForgetCurve({ day: '今天记忆', filter }),
-                        getForgetCurve({ day: '一天前记忆', filter }),
-                        getForgetCurve({ day: '四天前记忆', filter }),
-                        getForgetCurve({ day: '七天前记忆', filter }),
-                    ])
+                    return getWordsWithin({ fromDayAgo: 0, toDayAgo: 7, or })
             }
         }
     },
@@ -99,12 +92,8 @@ const tools: ToolSet = {
         description: 'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
         parameters: toolSchemas.annotateParagraph,
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
-            const { userId } = await getAuthOrThrow()
-            const { text } = await generateText({
-                model: getBestArticleAnnotationModel(lang),
-                ...(await articleAnnotationPrompt(lang, content, false, userId)),
-            })
-            return text
+            const { userId } = await getUserOrThrow()
+            return { annotation: await annotateParagraph({ content, lang, userId }), lang }
         }
     },
     generateQuiz: {
@@ -116,6 +105,30 @@ const tools: ToolSet = {
             }
             const result = await generateQuiz({ prompt: content, type })
             return { ...result, type, id: nanoid() }
+        }
+    },
+    extractArticleFromWebpage: {
+        description: 'Extract the article from the given webpage. The results will be available in Markdown format.',
+        parameters: toolSchemas.extractArticleFromWebpage,
+        execute: async ({ url }: { url: string }) => {
+            const { title, content } = await getArticleFromUrl(url)
+            
+            // Use AI to distill the main article content from the webpage
+            const { text: distilledContent } = await generateText({
+                model: googleModels['flash-2.5'],
+                system: `You are an expert at extracting the main article content from webpage text. Your task is to:
+1. Remove navigation elements, headers, footers, ads, and other non-article content
+2. Keep only the main article body content
+3. Preserve the article's structure and formatting, but remove the title and links
+4. Return clean, readable article content in Markdown format
+5. Remove any website-specific elements that are not part of the article itself`,
+                prompt: `Please extract the main article content from this webpage text. Remove any navigation, ads, headers, footers, or other non-article elements. Return only the clean article content in Markdown format:
+
+${content}`,
+                maxTokens: 15000
+            })
+            
+            return { title, content: distilledContent }
         }
     }
 }
@@ -146,7 +159,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 6. 不要拒绝用户的问题，而是尝试理解用户的问题，并根据用户的问题进行操作。
 
-7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。使用“你”称呼用户。
+7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。
 
 8. 直接执行工具，无需向用户请求许可。**持续执行**工具，直到完成任务。
 
@@ -184,7 +197,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 如果数量过多，超过三十个，分多次输出，每次询问是否继续。
 
-以词形变化的原形输出单词。
+**以词形变化的原形**输出单词或词组。
 
 ### 故事生成
 
@@ -198,20 +211,20 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 如果用户要求出翻译题，你应该默认遵循以下要求：
 
-用中文给出翻译题（中译外），在括号里给出必须使用的外语关键词（每道题可以有1～2个关键词），考察用户对单词用法的掌握。禁止在被翻译的原句中夹杂外语。禁止帮用户回顾单词用法。
+用中文给出翻译题（中译外），在括号里给出必须使用的外语关键词（每道题可以有1～2个关键词），考察用户对单词用法的掌握。原句全部使用中文，不要在被翻译的原句中夹杂外语。禁止帮用户回顾单词用法。
 
-例如：
+形式如：
 
 1. 虽然他尽心尽力，但计划还是出了差错。\`awry\`
 2. 这个古老的传统节日是早期文化的残留物，至今仍在一些偏远地区庆祝，但被一些人视为杂务。\`remote\` \`grunt work\` 
 
-然后，作为一个冷静、客观、极端严格的阅卷人，仔细对比原文与用户翻译，对用户翻译进行全面而详细的批改。以一段连贯的话输出，请重点评估译文的是否符合母语者表达习惯，是否存在语言运用不当，是否遗漏关键信息。
+然后，作为一个冷静、客观、极端严格的阅卷人，仔细对比原文与用户翻译，对用户翻译进行全面而详细的批改。结合用户的译文（用Markdown斜体引用），以一段连贯的话输出评析，请重点评估译文的是否符合母语者表达习惯，是否存在语言运用不当，是否遗漏关键信息。
 
 重点关注：
 
 - 语法错误
 - 用词不当
-- 原文漏译了一部分
+- 原文漏译一部分
 - 关键词使用
 
 如果用户翻译并非最佳，给出翻译的参考译文。
@@ -253,13 +266,6 @@ export async function POST(req: NextRequest) {
         ],
         maxSteps: 10,
         maxTokens: 30000,
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    includeThoughts: true,
-                }
-            } satisfies GoogleGenerativeAIProviderOptions
-        },
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
     })
 

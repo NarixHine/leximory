@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone } from 'react-icons/pi'
 import { useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,6 @@ import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
-import { useLogSnag } from '@logsnag/next'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -54,6 +53,14 @@ const initialPrompts = [{
     title: '造句巩固',
     prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
+},{
+    title: '导入网页',
+    prompt: '提取以下网页中的文章，并导入【词汇仓库】文库。',
+    icon: PiLinkSimpleDuotone
+}, {
+    title: '外刊出题',
+    prompt: '提炼以下网页中的文章，并出一篇小猫钓鱼题考考我。',
+    icon: PiFishDuotone
 }] as const
 
 type MessagePart = {
@@ -126,9 +133,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         lang={lib.lang}
                         isOwner={false}
                         access={lib.access}
-                        orgId={null}
                         shadow={false}
-                        orgs={[]}
                         price={0}
                         archived
                         isStarred={false}
@@ -159,30 +164,37 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'getTextContent':
-            const text = result as Awaited<ToolResult['getTextContent']>
+        case 'extractArticleFromWebpage':
+            const { title: articleTitle, content: articleContent } = result as Awaited<ToolResult['extractArticleFromWebpage']> | Awaited<ToolResult['getTextContent']>
             return (
                 <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
-                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{text.title}</div>
+                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{articleTitle}</div>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={text.content} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
+                            <Markdown md={articleContent} className='prose dark:prose-invert max-w-none' />
                         </div>
                     </CardBody>
                 </Card>
             )
+
         case 'annotateParagraph':
+            const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
                 <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown disableSave md={result as Awaited<ToolResult['annotateParagraph']>} className='prose dark:prose-invert max-w-none' fontFamily={contentFontFamily} />
+                            <ScopeProvider atoms={[langAtom]}>
+                                <HydrationBoundary hydrateAtoms={[[langAtom, lang]]}>
+                                    <Markdown md={annotation} className='prose dark:prose-invert max-w-none' />
+                                </HydrationBoundary>
+                            </ScopeProvider>
                         </div>
                     </CardBody>
                 </Card>
             )
 
         case 'annotateArticle':
-            const { id, title, updatedAt, createdAt, libId } = result as ToolResult['annotateArticle']
+            const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
                 <div className='mt-2 flex flex-col gap-2 mb-1'>
                     <span className='text-sm text-default-400'>注解完成后会显示在文本中</span>
@@ -194,7 +206,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                 topics={[]}
                                 hasEbook={false}
                                 createdAt={createdAt}
-                                updatedAt={updatedAt}
                                 disablePrefetch
                             />
                         </HydrationBoundary>
@@ -210,14 +221,10 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     {
                         words.length > 0
                             ? <ul className='flex flex-wrap gap-2'>
-                                {words.map(({ id, word, lang }) => (
-                                    <ScopeProvider key={id} atoms={[langAtom]}>
-                                        <HydrationBoundary hydrateAtoms={[[langAtom, lang]]}>
-                                            <li className=' flex gap-1 items-center'>
-                                                <Markdown disableSave deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
-                                            </li>
-                                        </HydrationBoundary>
-                                    </ScopeProvider>
+                                {words.map(({ id, word }) => (
+                                    <li className=' flex gap-1 items-center' key={id}>
+                                        <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                    </li>
                                 ))}
                             </ul>
                             : <span className='text-sm text-default-400 font-mono'><PiEmpty /></span>
@@ -251,7 +258,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                         : 'bg-primary-50/50 text-default-900'
                 )}>
                     {part.text ? <Markdown
-                        disableSave
                         md={part.text}
                         className='prose dark:prose-invert max-w-none'
                         hasWrapped={true}
@@ -261,9 +267,8 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'reasoning':
             return (
                 <Accordion className='mt-2' defaultExpandedKeys={['reasoning']}>
-                    <AccordionItem key={'reasoning'} title={'Thoughts'} className='font-mono'>
+                    <AccordionItem key={'reasoning'} title={part.text || ''}>
                         <Markdown
-                            disableSave
                             md={part.text || ''}
                             className='prose dark:prose-invert max-w-none'
                         />
@@ -300,7 +305,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 export function ChatMessages({ messages }: { messages: Message[] }) {
     return <>{
         messages.map(({ parts, role, experimental_attachments }, i) => (
-            <div style={{ fontFamily: contentFontFamily }} key={i} className={cn(
+            <div key={i} className={cn(
                 'mb-4 flex flex-col',
                 role === 'user' ? 'items-end' : 'items-start'
             )}>
@@ -367,8 +372,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         initialInput: initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined
     })
 
-    const { track } = useLogSnag()
-
     useEffect(() => {
         if (messages.length > 0) {
             setStoredMessages(messages)
@@ -378,13 +381,8 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     const startNewConversation = () => {
         setStoredMessages([])
         setMessages([])
+        setInput('')
         setData([])
-        track({
-            event: '开始新对话',
-            channel: 'agent',
-            description: `新建了一条与 AI 的对话`,
-            icon: '🆕',
-        })
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -401,13 +399,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             experimental_attachments: files
         })
         setInput('')
-
-        track({
-            event: '发送消息',
-            channel: 'agent',
-            description: `向 AI 发送了一条指令`,
-            icon: '💬',
-        })
     }
 
     const handleButtonClick = () => {
@@ -426,8 +417,8 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
 
     return (
         <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
-            <div className='flex justify-between items-center mb-4 sticky p-2 top-10 z-10 backdrop-blur bg-background/50'>
-                <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent'}>
+            <div className='flex justify-between items-center mb-4 sticky py-1 px-4 top-10 z-10 backdrop-blur-sm rounded-full'>
+                <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-2'>
@@ -495,7 +486,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder='输入你的问题...'
-                    disabled={status === 'streaming'}
                     maxRows={15}
                     autoComplete='off'
                     startContent={

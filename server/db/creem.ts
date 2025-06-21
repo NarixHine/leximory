@@ -1,38 +1,40 @@
 import 'server-only'
-import { getXataClient } from '../client/xata'
-import { Plan } from '@/server/auth/quota'
-import { clerkClient } from '@clerk/nextjs/server'
+import { supabase } from '../client/supabase'
+import { Plan } from '@/server/auth/quota'  
 import { redis } from '../client/redis'
-
-const xata = getXataClient()
+import { updatePlan } from '../auth/user'
 
 export async function getCustomerId(userId: string) {
-    const customer = await xata.db.users.filter({
-        id: userId,
-    }).getFirstOrThrow()
-    return customer.creem_id
+    const { data } = await supabase
+        .from('users')
+        .select('creem_id')
+        .eq('id', userId)
+        .single()
+        .throwOnError()
+
+    return data.creem_id
 }
 
 export async function fillCustomerId({ userId, customerId }: { userId: string, customerId: string }) {
-    await xata.db.users.updateOrThrow({
-        id: userId,
-        creem_id: customerId,
-    })
+    await supabase
+        .from('users')
+        .update({ creem_id: customerId })
+        .eq('id', userId)
+        .throwOnError()
 }
 
 export async function getUserIdByCustomerId(customerId: string) {
-    const customer = await xata.db.users.filter({
-        creem_id: customerId,
-    }).getFirstOrThrow()
-    return customer.id
+    const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('creem_id', customerId)
+        .single()
+        .throwOnError()
+    return data.id
 }
 
 export async function updateSubscription({ userId, plan }: { userId: string, plan: Plan }) {
-    await (await clerkClient()).users.updateUserMetadata(userId, {
-        publicMetadata: {
-            plan,
-        },
-    })
+    await updatePlan(userId, plan)
 }
 
 export async function createRequest(userId: string) {
@@ -51,8 +53,3 @@ export async function getRequestUserId(requestId: string) {
     return userId
 }
 
-export async function toggleOrgCreationAccess({ userId, enabled }: { userId: string, enabled: boolean }) {
-    await (await clerkClient()).users.updateUser(userId, {
-        createOrganizationEnabled: enabled,
-    })
-}

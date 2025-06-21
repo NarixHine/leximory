@@ -2,14 +2,14 @@
 
 import { createRequest } from '@/server/db/creem'
 import { redirect } from 'next/navigation'
-import { creemProductIdMap, PaidTier, prefixUrl } from '@/lib/config'
+import { creemProductIdMap, PaidTier, prefixUrl, SIGN_IN_URL } from '@/lib/config'
 import { creem } from '@/server/client/creem'
-import { auth } from '@clerk/nextjs/server'
+import { getUserOrThrow } from '@/server/auth/user'
 
 export async function upgrade({ plan }: { plan: PaidTier }) {
-    const { userId } = await auth()
+    const { userId } = await getUserOrThrow()
     if (!userId) {
-        redirect('/sign-in')
+        redirect(SIGN_IN_URL)
     }
     const session = await creem.createCheckoutSession({
         success_url: prefixUrl('/settings'),

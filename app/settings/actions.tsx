@@ -1,36 +1,40 @@
 'use server'
 
-import { getAuthOrThrow } from '@/server/auth/role'
-import { auth } from '@clerk/nextjs/server'
+import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import moment from 'moment-timezone'
 import { revalidatePath } from 'next/cache'
 import { dailyLexicoinClaimMap } from '@/lib/config'
-import { getPlan } from '@/server/auth/quota'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'
+import { supabase } from '@/server/client/supabase'
+import { getOrCreateToken, revokeToken } from '@/server/db/token'
 
-export default async function getToken() {
-	const { getToken } = await auth()
-	const token = await getToken({ template: 'shortcut' })
-	return token!
+export async function getUserToken() {
+	const { userId } = await getUserOrThrow()
+	return await getOrCreateToken(userId)
+}
+
+export async function revokeUserToken() {
+	const { userId } = await getUserOrThrow()
+	return await revokeToken(userId)
 }
 
 export async function setPreference(isBrE: boolean) {
-	const { userId } = await getAuthOrThrow()
+	const { userId } = await getUserOrThrow()
 	await setAccentPreference({ accent: isBrE ? 'BrE' : 'AmE', userId })
 }
 
 export async function getPreference() {
-	const { userId } = await getAuthOrThrow()
+	const { userId } = await getUserOrThrow()
 	const accent = await getAccentPreference({ userId })
 	return accent
 }
 
 export async function getDailyLexicoin() {
-	const { userId } = await getAuthOrThrow()
+	const { userId } = await getUserOrThrow()
 	const plan = await getPlan(userId)
 	const lastDailyClaim = await getLastDailyClaim(userId)
 	if (lastDailyClaim && moment.tz(lastDailyClaim, 'Asia/Shanghai').isSame(moment.tz('Asia/Shanghai'), 'day')) {
@@ -43,7 +47,7 @@ export async function getDailyLexicoin() {
 }
 
 export async function manageSubscription() {
-	const { userId } = await getAuthOrThrow()
+	const { userId } = await getUserOrThrow()
 	const customerId = await getCustomerId(userId)
 	if (!customerId) {
 		throw new Error('Customer ID not found')
@@ -52,4 +56,16 @@ export async function manageSubscription() {
 		customer_id: customerId,
 	})
 	redirect(session.customer_portal_link)
+}
+
+export async function uploadAvatar(file: File) {
+	if (!file) throw new Error('No file provided')
+	const user = await getUserOrThrow()
+	const { error } = await supabase.storage.from('avatars').upload(user.userId, file, {
+		upsert: true,
+		contentType: file.type
+	})
+	if (error) throw new Error(error.message)
+	const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(user.userId)
+	return publicUrl
 }

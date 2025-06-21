@@ -1,3 +1,4 @@
+import 'server-only'
 import { redis } from '../client/redis'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import { after } from 'next/server'

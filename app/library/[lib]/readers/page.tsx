@@ -9,8 +9,8 @@ import { LibProps } from '@/lib/types'
 
 async function getData(lib: string) {
     await authWriteToLib(lib)
-    const { name, starredBy } = await getLib({ id: lib })
-    return { readers: starredBy ?? [], name }
+    const { name, starred_by } = await getLib({ id: lib })
+    return { readers: starred_by ?? [], name }
 }
 
 export default async function Page(props: LibProps) {
