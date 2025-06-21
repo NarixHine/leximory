@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
+import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 
 const tools: ToolSet = {
     getLib: {
@@ -112,7 +113,7 @@ const tools: ToolSet = {
         parameters: toolSchemas.extractArticleFromWebpage,
         execute: async ({ url }: { url: string }) => {
             const { title, content } = await getArticleFromUrl(url)
-            
+
             // Use AI to distill the main article content from the webpage
             const { text: distilledContent } = await generateText({
                 model: googleModels['flash-2.5'],
@@ -127,7 +128,7 @@ const tools: ToolSet = {
 ${content}`,
                 maxTokens: 15000
             })
-            
+
             return { title, content: distilledContent }
         }
     }
@@ -159,7 +160,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 6. 不要拒绝用户的问题，而是尝试理解用户的问题，并根据用户的问题进行操作。
 
-7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。
+7. 请用中文回复，并使用Markdown格式。语气不要过度正式，以平等姿态对话，保持理性、客观、冷静、简洁。使用“你”称呼用户。
 
 8. 直接执行工具，无需向用户请求许可。**持续执行**工具，直到完成任务。
 
@@ -267,6 +268,13 @@ export async function POST(req: NextRequest) {
         maxSteps: 10,
         maxTokens: 30000,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
+        providerOptions: {
+            google: {
+                thinkingConfig: {
+                    includeThoughts: true,
+                }
+            } satisfies GoogleGenerativeAIProviderOptions
+        },
     })
 
     return result.toDataStreamResponse()
