@@ -125,8 +125,8 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
     const { data } = await supabase
         .from('lexicon')
         .select('word, id, lib:libraries!inner(id, lang)')
-        .gte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(fromDayAgo, 'day').toISOString())
-        .lt('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(toDayAgo, 'day').toISOString())
+        .lte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(fromDayAgo, 'day').toISOString())
+        .gte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(toDayAgo, 'day').toISOString())
         .or(filters, options)
         .throwOnError()
     return data

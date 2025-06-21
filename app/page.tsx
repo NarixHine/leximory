@@ -99,7 +99,7 @@ export default async function Home() {
 					<div>
 						<BentoCard
 							title='每日资源'
-							description='每日更新的小说和新闻'
+							description='每日更新的英语新闻和小说'
 						>
 							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
 								<CardBody style={{ fontFamily: contentFontFamily }}>

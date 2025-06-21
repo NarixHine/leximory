@@ -65,7 +65,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     useEffect(() => {
         setIsLoaded(!isOnDemand)
         setStatus('idle')
-    }, [])
+    }, [isOnDemand])
 
     useEffect(() => {
         setPortions(parsedParams)

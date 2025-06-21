@@ -2,7 +2,7 @@ import env, { isProd } from './env'
 import { google } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
-export const ADMIN_UID = 'b2b5b44e-5f3b-4af1-866a-5d162e51be8b' as const
+export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
@@ -48,7 +48,7 @@ export const exampleSharedLib = {
     id: '4c33b971',
     name: '📚 外刊泛读入门',
     lang: 'en',
-    owner: 'user_2frwUkCccvHgoC1axAzZN2KECxt',
+    owner: '3599113b-8407-46b7-85bc-4f9a1c425c59',
     price: 0,
     readers: 324
 } as const

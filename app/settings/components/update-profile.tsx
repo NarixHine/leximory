@@ -212,7 +212,7 @@ function LogoutSection() {
     const router = useRouter()
     const supabase = createClient()
     return (
-        <SectionCard title='退出登录'>
+        <SectionCard title='登出'>
             <Button onPress={async () => {
                 setIsLoading(true)
                 await supabase.auth.signOut()
@@ -249,10 +249,19 @@ export function UpdateProfileSkeleton({ className, ...props }: React.ComponentPr
             <SectionCard title='用户名'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
+            <SectionCard title='头像'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
             <SectionCard title='邮箱'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
             <SectionCard title='密码'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
+            <SectionCard title='登出'>
+                <Skeleton className='w-full h-10 rounded-full' />
+            </SectionCard>
+            <SectionCard title='分享链接'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
         </div>
