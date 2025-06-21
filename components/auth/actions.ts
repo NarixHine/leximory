@@ -16,8 +16,7 @@ export async function login(props: z.infer<typeof authSchema>) {
     const parseResult = authSchema.safeParse(props)
 
     if (!parseResult.success) {
-        console.error(parseResult.error)
-        throw new Error()
+        throw new Error(parseResult.error.message)
     }
 
     const { data } = parseResult
