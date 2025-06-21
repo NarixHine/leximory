@@ -24,14 +24,14 @@ async function UserAvatarServer({ uid, showInfo }: { uid: string, showInfo?: boo
     cacheLife('days')
     try {
         const { image, username, lastActiveAt } = await getUserById(uid)
-        return showInfo ? <User avatarProps={{ src: image ?? undefined }} description={`上次活跃：${moment(lastActiveAt).fromNow()}`} name={username ? `@${username}` : 'User'} /> : <Avatar src={image ?? undefined} />
+        return showInfo ? <User avatarProps={{ src: image ?? undefined }} description={`上次活跃：${moment(lastActiveAt).fromNow()}`} name={username ? username : 'User'} /> : <Avatar src={image ?? undefined} />
     } catch {
-        return showInfo ? <User description={'Error.'} name={'@user'} /> : <Avatar />
+        return showInfo ? <User description={'Error.'} name={'User'} /> : <Avatar />
     }
 }
 
 function UserAvatarFallback({ showInfo }: { showInfo?: boolean }) {
-    return showInfo ? <User description={'Loading ...'} name={'@user'} /> : <Avatar />
+    return showInfo ? <User description={'Loading ...'} name={'User'} /> : <Avatar />
 }
 
 export default function UserAvatar({ uid, showInfo }: { uid: string, showInfo?: boolean }) {

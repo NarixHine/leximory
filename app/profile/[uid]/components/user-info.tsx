@@ -16,7 +16,7 @@ export default async function UserInfo({ uid }: { uid: string }) {
     return (
         <>
             <Avatar src={image} isBordered color={'primary'} className='!size-16' />
-            {username && <H className='text-2xl !font-mono'>@{username}</H>}
+            {username && <H className='text-2xl !font-mono'>{username}</H>}
             <div className='flex justify-center gap-6 w-full mt-2'>
                 <div className='flex flex-col items-center gap-1'>
                     <span className='text-sm opacity-70 flex items-center gap-1'><PiCalendarBlankDuotone />加入时间</span>

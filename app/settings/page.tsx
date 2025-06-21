@@ -29,7 +29,7 @@ async function HeroSection() {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={image} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
         <div className='flex flex-col gap-1'>
-            <span className='text-3xl ml-1 font-mono'>{username ? `@${username}` : '👋Hi.'}</span>
+            <span className='text-3xl ml-1 font-mono'>{username ? username : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
             </div>

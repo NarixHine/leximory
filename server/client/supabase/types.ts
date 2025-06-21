@@ -34,42 +34,9 @@ export type Database = {
   }
   public: {
     Tables: {
-      audio: {
-        Row: {
-          created_at: string | null
-          gen: string | null
-          id: string
-          lib: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          gen?: string | null
-          id?: string
-          lib?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          gen?: string | null
-          id?: string
-          lib?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "audio_lib_fkey"
-            columns: ["lib"]
-            isOneToOne: false
-            referencedRelation: "libraries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lexicon: {
         Row: {
           created_at: string | null
-          day: string
           id: string
           lib: string | null
           updated_at: string | null
@@ -77,7 +44,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          day?: string
           id?: string
           lib?: string | null
           updated_at?: string | null
@@ -85,7 +51,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          day?: string
           id?: string
           lib?: string | null
           updated_at?: string | null
@@ -141,15 +106,7 @@ export type Database = {
           starred_by?: string[] | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "libraries_owner_fkey"
-            columns: ["owner"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       subs: {
         Row: {
@@ -182,7 +139,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
-          ebook: string | null
+          has_ebook: boolean
           id: string
           lib: string | null
           title: string
@@ -192,7 +149,7 @@ export type Database = {
         Insert: {
           content?: string
           created_at?: string | null
-          ebook?: string | null
+          has_ebook?: boolean
           id?: string
           lib?: string | null
           title?: string
@@ -202,7 +159,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
-          ebook?: string | null
+          has_ebook?: boolean
           id?: string
           lib?: string | null
           title?: string

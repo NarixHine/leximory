@@ -13,6 +13,7 @@ import { contentFontFamily, jpFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
+import { isEqual } from 'es-toolkit'
 
 export type MarkdownProps = {
     md: string,
@@ -50,6 +51,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(' <Comment', '&nbsp;<Comment')
         .replaceAll('<Comment', '‎<Comment')
         .replaceAll('&gt;', '>')
+
     return (<MarkdownToJSX
         options={{
             overrides: {
@@ -75,14 +77,5 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
 }
 
 export default memo(Markdown, (prev, next) => {
-    return prev.md === next.md &&
-        prev.deleteId === next.deleteId &&
-        prev.className === next.className &&
-        prev.asCard === next.asCard &&
-        prev.hasWrapped === next.hasWrapped &&
-        prev.disableSave === next.disableSave &&
-        prev.onlyComments === next.onlyComments &&
-        prev.print === next.print &&
-        prev.shadow === next.shadow &&
-        prev.fontFamily === next.fontFamily
+    return isEqual(prev, next)
 })

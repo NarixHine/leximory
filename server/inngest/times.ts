@@ -20,7 +20,7 @@ Before your novel, add a one-liner INTRO for readers, preceded by the Markdown q
 `.trim()
 
 const NEWS_PROMPT = `
-You're the journalist in charge of the Daily News section of the online publication *The Leximory Times*. Aggregate all news today into a single article. (Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine.)
+You're the journalist in charge of the Daily News section of the online publication *The Leximory Times*, published every evening. Aggregate all news today into a single article. (Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine.)
 
 Pick several topics, and 1~3 events thereof, but every piece chosen should be elaborated in SEVERAL coherent paragraphs. Divide all pieces into world/US/China/S&T/AI/business/environment/space/health, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
 
@@ -47,8 +47,7 @@ export const generateTimes = inngest.createFunction(
     { cron: 'TZ=Asia/Shanghai 0 8 * * *' }, // Run daily at eight p.m. in Shanghai
     async ({ step }) => {
         const date = await step.run('get-date', async () => {
-            return '2025-06-17'
-            // return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
         })
 
         // Step 1: Generate editor's guide

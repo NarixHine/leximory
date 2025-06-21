@@ -23,7 +23,7 @@ import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
-import { jpFontFamily } from "@/lib/fonts"
+import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
 
 interface CommentProps {
     params: string
@@ -66,6 +66,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         setIsLoaded(!isOnDemand)
         setStatus('idle')
     }, [])
+
+    useEffect(() => {
+        setPortions(parsedParams)
+    }, [params])
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
@@ -209,7 +213,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     return asCard
         ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
-            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : undefined }}>
+            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -311,7 +315,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: lang === 'ja' ? jpFontFamily : undefined }}>
+    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea

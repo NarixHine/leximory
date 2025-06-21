@@ -116,16 +116,10 @@ export async function deleteLib({ id }: { id: string }) {
         .select('id')
         .eq('lib', id)
 
-    const { data: audios } = await supabase
-        .from('audio')
-        .select('id')
-        .eq('lib', id)
-
     await Promise.all([
         supabase.from('libraries').delete().eq('id', id),
         ...(texts?.map(({ id }: { id: string }) => supabase.from('texts').delete().eq('id', id)) ?? []),
         ...(words?.map(({ id }: { id: string }) => supabase.from('lexicon').delete().eq('id', id)) ?? []),
-        ...(audios?.map(({ id }: { id: string }) => supabase.from('audio').delete().eq('id', id)) ?? [])
     ])
 
     revalidateTag('libraries')
@@ -253,7 +247,7 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             title,
             content,
             topics,
-            ebook,
+            has_ebook,
             created_at,
             lib:libraries (
                 name
@@ -262,12 +256,12 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
         .eq('lib', libId)
         .throwOnError()
 
-    return data.map(({ id, title, content, topics, ebook, created_at, lib }) => ({
+    return data.map(({ id, title, content, topics, has_ebook, created_at, lib }) => ({
         id,
         title,
         content,
         topics: topics ?? [],
-        hasEbook: ebook !== null,
+        hasEbook: has_ebook,
         createdAt: new Date(created_at!).toDateString(),
         libName: lib?.name ?? 'Unknown Library',
     })) ?? []

@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
 import { isReadOnlyAtom, langAtom, libAtom } from './library/[lib]/atoms'
 import { FlipWords } from '@/components/ui/flip'
-import { lexiconAtom } from './library/[lib]/[text]/atoms'
 import LexiconSelector from '@/components/lexicon'
 import { Spacer } from "@heroui/spacer"
 import { Button } from "@heroui/button"
@@ -83,11 +82,7 @@ export default async function Home() {
 				</div>
 				<div className='col-span-3'>
 					<BentoCard title='考纲词汇高亮'>
-						<ScopeProvider atoms={[lexiconAtom]}>
-							<HydrationBoundary hydrateAtoms={[[lexiconAtom, 'cet6']]}>
-								<LexiconSelector />
-							</HydrationBoundary>
-						</ScopeProvider>
+						<LexiconSelector />
 					</BentoCard>
 				</div>
 			</div>

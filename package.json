@@ -16,9 +16,6 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/react": "^1.2.12",
-    "@clerk/localizations": "^3.16.0",
-    "@clerk/nextjs": "^6.20.2",
-    "@clerk/themes": "^2.2.45",
     "@heroui/accordion": "2.2.16",
     "@heroui/alert": "2.2.17",
     "@heroui/avatar": "2.2.13",
@@ -71,7 +68,6 @@
     "@upstash/redis": "^1.31.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
-    "@xata.io/client": "^0.30.1",
     "ai": "^4.3.16",
     "clsx": "^2.1.1",
     "dom-serializer": "^2.0.0",

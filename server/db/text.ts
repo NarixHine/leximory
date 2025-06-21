@@ -58,13 +58,13 @@ export async function deleteText({ id }: { id: string }) {
         .from('texts')
         .delete()
         .eq('id', id)
-        .select('lib, ebook')
+        .select('lib, has_ebook')
         .single()
         .throwOnError()
-    if (rec.ebook) {
+    if (rec.has_ebook) {
         await supabase.storage
             .from('user-files')
-            .remove([rec.ebook])
+            .remove([`ebooks/${id}.epub`])
     }
 
     revalidateTag(`texts:${rec.lib}`)
@@ -80,7 +80,7 @@ export async function getTexts({ lib }: { lib: string }) {
             id,
             title,
             topics,
-            ebook,
+            has_ebook,
             created_at,
             lib:libraries (
                 name
@@ -89,11 +89,11 @@ export async function getTexts({ lib }: { lib: string }) {
         .eq('lib', lib)
         .throwOnError()
 
-    return texts.map(({ id, title, topics, ebook, created_at, lib }) => ({
+    return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
         id,
         title,
         topics,
-        hasEbook: !!ebook,
+        hasEbook: has_ebook,
         createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
         libName: lib?.name ?? 'Unknown Library'
     }))
@@ -106,7 +106,7 @@ export async function getTextContent({ id }: { id: string }) {
         .from('texts')
         .select(`
             content,
-            ebook,
+            has_ebook,
             title,
             topics,
             lib:libraries (
@@ -122,14 +122,14 @@ export async function getTextContent({ id }: { id: string }) {
         notFound()
     }
 
-    const { content, ebook, title, topics, lib } = text
+    const { content, has_ebook, title, topics, lib } = text
     if (!lib) {
         throw new Error('lib not found')
     }
-    if (ebook) {
+    if (has_ebook) {
         const { data, error } = await supabase.storage
             .from('user-files')
-            .createSignedUrl(ebook, 60 * 60 * 24 * 30)
+            .createSignedUrl(`ebooks/${id}.epub`, 60 * 60 * 24 * 30)
         if (error) throw error
         return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
     }
@@ -149,7 +149,7 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
 
     const { data: text, error: updateError } = await supabase
         .from('texts')
-        .update({ ebook: path })
+        .update({ has_ebook: true })
         .eq('id', id)
         .select('lib')
         .single()

@@ -1,13 +1,11 @@
 import { HydrationBoundary } from 'jotai-ssr'
 import Markdown from '../markdown'
 import { langAtom } from '@/app/library/[lib]/atoms'
-import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import ScopeProvider from '../jotai/scope-provider'
 
 export default function ShowcaseAnnotation() {
-    return <ScopeProvider atoms={[lexiconAtom, langAtom]}>
+    return <ScopeProvider atoms={[langAtom]}>
         <HydrationBoundary hydrateAtoms={[
-            [lexiconAtom, 'cet6'],
             [langAtom, 'en']
         ]}>
             <Markdown

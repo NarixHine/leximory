@@ -3,19 +3,15 @@ import { supabase } from '@/server/client/supabase'
 import { revalidateTag } from 'next/cache'
 
 export async function retrieveAudioUrl({ id }: { id: string }) {
-    const { data } = await supabase
-        .from('audio')
-        .select('gen')
-        .eq('id', id)
-        .single()
-
-    if (!data?.gen) return null
-
-    const { data: { signedUrl } } = await supabase.storage
+    const { data } = await supabase.storage
         .from('user-files')
-        .createSignedUrl(data.gen, 60 * 60 * 24 * 30) as { data: { signedUrl: string } }
+        .createSignedUrl(`audio/${id}.mp3`, 60 * 60 * 24 * 30)
 
-    return signedUrl
+    if (!data) {
+        return null
+    }
+
+    return data.signedUrl
 }
 
 export async function uploadAudio({ id, lib, audio }: { id: string, lib: string, audio: File }) {
@@ -29,14 +25,6 @@ export async function uploadAudio({ id, lib, audio }: { id: string, lib: string,
         })
 
     if (!uploadData?.path) throw new Error('Failed to upload audio')
-
-    await supabase
-        .from('audio')
-        .insert({
-            id,
-            lib,
-            gen: uploadData.path
-        })
 
     const url = await retrieveAudioUrl({ id })
 
