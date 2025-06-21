@@ -101,7 +101,7 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的英语新闻和小说'
 						>
-							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
 								<CardBody style={{ fontFamily: contentFontFamily }}>
 									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>
