@@ -79,12 +79,11 @@ export default function CopyToken() {
 export function CopyProfileLink({ userId }: { userId: string }) {
     return <Button
         variant='flat'
+        fullWidth
         startContent={<PiShareDuotone />}
-        size='lg'
         color='primary'
         radius='lg'
         className={cn('border-1')}
-        isIconOnly
         onPress={async () => {
             const data: ShareData = {
                 title: 'Leximory',
@@ -97,5 +96,7 @@ export function CopyProfileLink({ userId }: { userId: string }) {
                 toast.error('浏览器不支持分享功能')
             }
         }}
-    />
+    >
+        分享学习进度
+    </Button>
 }

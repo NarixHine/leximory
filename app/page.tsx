@@ -4,7 +4,7 @@ import { CHINESE_CALLIGRAPHY, contentFontFamily } from '@/lib/fonts'
 import Link from 'next/link'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
-import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiCursorClickDuotone, PiNewspaperDuotone } from 'react-icons/pi'
+import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiNewspaperDuotone } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -97,9 +97,6 @@ export default async function Home() {
 					<BentoCard title='AI 注解 + AI 朗读'>
 						<div className='px-8 sm:px-16 flex flex-col'>
 							<ShowcaseAnnotation />
-							<Button as={Link} endContent={<PiCursorClickDuotone />} size='lg' href='/read' variant='light'>
-								查看更多
-							</Button>
 						</div>
 					</BentoCard>
 				</div>
@@ -109,7 +106,7 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的小说和新闻'
 						>
-							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-3 relative rounded-lg'>
 								<CardBody style={{ fontFamily: contentFontFamily }}>
 									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>

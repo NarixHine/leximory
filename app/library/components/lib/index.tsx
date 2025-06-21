@@ -172,7 +172,14 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     <Topics topics={topics.concat([langMap[lang as Lang]])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button size={'md'} as={Link} href={`/library/${id}/corpus`} startContent={<PiBookBookmarkDuotone />} variant='flat'>语料本</Button>
+                <Button
+                    size={'md'}
+                    as={Link}
+                    href={`/library/${id}/corpus`}
+                    startContent={<PiBookBookmarkDuotone />}
+                    variant='flat'
+                    className='bg-default/20'
+                >语料本</Button>
                 <div className='flex-1'></div>
                 {recentAccessItem && <Button className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>

@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default function TimesPage() {
-    return <TheTimes />
+    return (
+        <main className='h-dvh w-full p-3'>
+            <TheTimes />
+        </main>
+    )
 }

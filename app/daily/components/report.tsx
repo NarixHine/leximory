@@ -22,10 +22,10 @@ export default async function Report({ day }: {
                 ))}
             </div>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                {words.map(({ word, id, lang, lib }) => (
+                {words.map(({ word, id, lang, lib }) => welcomeMap[lang] !== word && (
                     <ScopeProvider key={id} atoms={[langAtom]}>
                         <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                            <Markdown md={word} asCard deleteId={welcomeMap[lang] === word ? undefined : id}></Markdown>
+                            <Markdown md={word} asCard deleteId={id}></Markdown>
                         </HydrationBoundary>
                     </ScopeProvider>
                 ))}

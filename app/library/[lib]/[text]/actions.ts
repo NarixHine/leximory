@@ -3,7 +3,7 @@
 import { authReadToText, authWriteToText } from '@/server/auth/role'
 import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { createStreamableValue } from 'ai/rsc'
-import { authReadToLib, authWriteToLib } from '@/server/auth/role'
+import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
 import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE } from '@/lib/config'
@@ -130,9 +130,9 @@ export async function generate({ article, textId, onlyComments }: { article: str
     })
 }
 
-export async function generateSingleComment(prompt: string, lib: string) {
-    const stream = createStreamableValue()
+export async function generateSingleComment({prompt, lang}: {prompt: string, lang: Lang}) {
     const { userId } = await getUserOrThrow()
+    const stream = createStreamableValue()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
     const cache = await getAnnotationCache({ hash })
     if (cache) {
@@ -140,8 +140,6 @@ export async function generateSingleComment(prompt: string, lib: string) {
         stream.done()
         return { text: stream.value }
     }
-
-    const { lang } = await authReadToLib(lib)
 
     if (prompt.length > maxArticleLength(lang)) {
         throw new Error('Text too long')

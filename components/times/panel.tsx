@@ -217,9 +217,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
 
 export default function Panel({ recentData }: PanelProps) {
     return (
-        <div className={cn('h-dvh w-dvw', ENGLISH_MODERN.className)}>
+        <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_MODERN.className)}>
             {/* Main Paper Container */}
-            <div className='w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900 rounded-3xl'>
+            <div className='w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900'>
                 <TimesSidebar
                     data={recentData}
                 />

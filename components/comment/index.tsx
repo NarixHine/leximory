@@ -70,7 +70,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
     const commentWord = async (prompt: string) => {
-        const { text, error } = await generateSingleComment(prompt, lib)
+        const { text, error } = await generateSingleComment({ prompt, lang })
         if (error) {
             toast.error(error, {
                 duration: 10000,
@@ -252,7 +252,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
                                     !isReaderMode && 'relative after:absolute after:bottom-1.5 after:left-0 after:w-full after:h-1/4',
-                                    isOnDemand ? 'after:bg-default-200/40' : 'after:bg-primary-200/40'
+                                    isOnDemand ? 'after:bg-default-400/40' : 'after:bg-primary-200/40'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
@@ -265,7 +265,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             </button>
                     }
                 </PopoverTrigger>
-                <PopoverContent className={cn('max-w-80', !isLoaded && 'bg-background/50')}>
+                <PopoverContent className={cn('max-w-80')}>
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
@@ -324,7 +324,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                 : <div className={isCompact ? 'font-bold text-medium' : 'font-extrabold text-large'}>{portions[1]}</div>
         )}
         {portions[2] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>释义</div>}
+            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '意味' : '释义'}</div>}
             {isEditing
                 ? <Textarea
                     size='sm'
@@ -336,7 +336,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
             }
         </div>}
         {portions[3] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>语源</div>}
+            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '語源' : '语源'}</div>}
             {
                 isEditing
                     ? <Textarea

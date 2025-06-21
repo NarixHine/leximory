@@ -14,7 +14,7 @@ import { uploadAvatar } from '../actions'
 import { toast } from 'sonner'
 import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icons/pi'
 
-function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
+export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
         <Card className='rounded-2xl border border-default-100 bg-default-50/50 shadow-sm p-0 w-full h-full'>
             <CardHeader className='px-6 pt-6 pb-2'>
@@ -32,8 +32,8 @@ function UsernameSection({ username: currentUsername, onSuccess }: { username?: 
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='Update Username' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiUser size={20} />}>
-            {isLoading ? 'Updating...' : 'Update Username'}
+        <SectionCard title='用户名' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiUser size={20} />}>
+            {isLoading ? '更新中...' : '更新用户名'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
             setIsLoading(true)
@@ -51,8 +51,8 @@ function UsernameSection({ username: currentUsername, onSuccess }: { username?: 
         }
         }>
             <div className='space-y-2'>
-                <label htmlFor='username' className='text-sm font-medium leading-none'>Username</label>
-                <Input id='username' value={username} onChange={e => setUsername(e.target.value)} placeholder='Your username' className='h-10' />
+                <label htmlFor='username' className='text-sm font-medium leading-none'>用户名</label>
+                <Input id='username' value={username} onChange={e => setUsername(e.target.value)} placeholder='你的用户名' className='h-10' />
             </div>
         </SectionCard>
     )
@@ -93,7 +93,7 @@ export function AvatarSection({ image }: { image?: string }) {
     }
 
     return (
-        <SectionCard title='Update Avatar'>
+        <SectionCard title='头像'>
             <div className="flex flex-col items-center gap-4">
                 <div className='w-20 h-20 rounded-full overflow-hidden border border-default-200 bg-default-100 flex items-center justify-center'>
                     {preview ? (
@@ -118,7 +118,7 @@ export function AvatarSection({ image }: { image?: string }) {
                     isLoading={isLoading}
                     startContent={<PiImage size={20} />}
                 >
-                    Choose Image
+                    选择图片
                 </Button>
                 <Button
                     type='button'
@@ -128,7 +128,7 @@ export function AvatarSection({ image }: { image?: string }) {
                     isLoading={isLoading}
                     startContent={<PiImage size={20} />}
                 >
-                    {isLoading ? 'Uploading...' : 'Upload Avatar'}
+                    {isLoading ? '上传中...' : '上传头像'}
                 </Button>
             </div>
         </SectionCard>
@@ -140,8 +140,8 @@ function EmailSection({ onSuccess }: { onSuccess?: () => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='Update Email' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
-            {isLoading ? 'Updating...' : 'Update Email'}
+        <SectionCard title='邮箱' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
+            {isLoading ? '更新中...' : '更新邮箱'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
             setIsLoading(true)
@@ -158,8 +158,8 @@ function EmailSection({ onSuccess }: { onSuccess?: () => void }) {
             }
         }}>
             <div className='space-y-2'>
-                <label htmlFor='email' className='text-sm font-medium leading-none'>Email</label>
-                <Input id='email' type='email' value={email} onChange={e => setEmail(e.target.value)} placeholder='Email' className='h-10' />
+                <label htmlFor='email' className='text-sm font-medium leading-none'>电子邮箱地址</label>
+                <Input id='email' type='email' value={email} onChange={e => setEmail(e.target.value)} placeholder='yourname@example.com' className='h-10' />
             </div>
         </SectionCard>
     )
@@ -171,7 +171,7 @@ function PasswordSection({ onSuccess }: { onSuccess?: () => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='Update Password' onSubmit={async e => {
+        <SectionCard title='密码' onSubmit={async e => {
             e.preventDefault()
             setIsLoading(true)
             if (password !== confirmPassword) {
@@ -193,15 +193,15 @@ function PasswordSection({ onSuccess }: { onSuccess?: () => void }) {
             }
         }}>
             <div>
-                <label htmlFor='password' className='text-sm font-medium leading-none'>New Password</label>
-                <Input id='password' type='password' value={password} onChange={e => setPassword(e.target.value)} placeholder='New password' className='h-10' />
+                <label htmlFor='password' className='text-sm font-medium leading-none'>新密码</label>
+                <Input id='password' type='password' value={password} onChange={e => setPassword(e.target.value)} placeholder='新密码' className='h-10' />
             </div>
             <div className='my-4'>
-                <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>Confirm Password</label>
-                <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='Confirm password' className='h-10' />
+                <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>确认密码</label>
+                <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='确认密码' className='h-10' />
             </div>
             <Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiLock size={20} />}>
-                {isLoading ? 'Updating...' : 'Update Password'}
+                {isLoading ? '更新中...' : '更新密码'}
             </Button>
         </SectionCard>
     )
@@ -212,20 +212,22 @@ function LogoutSection() {
     const router = useRouter()
     const supabase = createClient()
     return (
-        <SectionCard title='Logout'>
+        <SectionCard title='退出登录'>
             <Button onPress={async () => {
                 setIsLoading(true)
                 await supabase.auth.signOut()
                 router.push(SIGN_IN_URL)
             }} className='w-full h-10' color='primary' variant='flat' isLoading={isLoading} startContent={<PiSignOut size={20} />}>
-                Logout
+                退出登录
             </Button>
         </SectionCard>
     )
 }
 
 function ProfileLink({ userId }: { userId: string }) {
-    return <CopyProfileLink userId={userId} />
+    return <SectionCard title='分享链接'>
+        <CopyProfileLink userId={userId} />
+    </SectionCard>
 }
 
 export default function UpdateProfile({ userId, username, image, className, ...props }: React.ComponentPropsWithoutRef<'div'> & { userId: string, username?: string, image?: string }) {
@@ -236,9 +238,7 @@ export default function UpdateProfile({ userId, username, image, className, ...p
             <EmailSection />
             <PasswordSection />
             <LogoutSection />
-            <div className='flex justify-center items-center'>
-                <ProfileLink userId={userId} />
-            </div>
+            <ProfileLink userId={userId} />
         </div>
     )
 }
@@ -246,16 +246,13 @@ export default function UpdateProfile({ userId, username, image, className, ...p
 export function UpdateProfileSkeleton({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
     return (
         <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[60vh] w-full items-center justify-center bg-background', className)} {...props}>
-            <SectionCard title='Update Username'>
+            <SectionCard title='用户名'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
-            <SectionCard title='Update Avatar'>
+            <SectionCard title='邮箱'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
-            <SectionCard title='Update Email'>
-                <Skeleton className='w-full h-10 rounded-full' />
-            </SectionCard>
-            <SectionCard title='Update Password'>
+            <SectionCard title='密码'>
                 <Skeleton className='w-full h-10 rounded-full' />
             </SectionCard>
         </div>

@@ -12,6 +12,7 @@ import { useAtomValue } from 'jotai'
 import { contentFontFamily, jpFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
+import { memo } from 'react'
 
 export type MarkdownProps = {
     md: string,
@@ -27,10 +28,9 @@ export type MarkdownProps = {
     fontFamily?: string
 }
 
-export default function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow, fontFamily }: MarkdownProps) {
+function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, shadow, fontFamily }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
-    console.log(lang)
 
     let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
         .replaceAll('||}}', '}}')
@@ -73,3 +73,16 @@ export default function Markdown({ md, deleteId, className, asCard, hasWrapped, 
         )}
     >{result}</MarkdownToJSX>)
 }
+
+export default memo(Markdown, (prev, next) => {
+    return prev.md === next.md &&
+        prev.deleteId === next.deleteId &&
+        prev.className === next.className &&
+        prev.asCard === next.asCard &&
+        prev.hasWrapped === next.hasWrapped &&
+        prev.disableSave === next.disableSave &&
+        prev.onlyComments === next.onlyComments &&
+        prev.print === next.print &&
+        prev.shadow === next.shadow &&
+        prev.fontFamily === next.fontFamily
+})

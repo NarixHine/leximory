@@ -1,4 +1,4 @@
-import { smoothStream, streamText, ToolSet } from 'ai'
+import { generateText, smoothStream, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
@@ -14,6 +14,7 @@ import { AIGenQuizDataType } from '@/lib/editory/types'
 import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
+import { getArticleFromUrl } from '@/lib/utils'
 
 const tools: ToolSet = {
     getLib: {
@@ -104,6 +105,30 @@ const tools: ToolSet = {
             }
             const result = await generateQuiz({ prompt: content, type })
             return { ...result, type, id: nanoid() }
+        }
+    },
+    extractArticleFromWebpage: {
+        description: 'Extract the article from the given webpage. The results will be available in Markdown format.',
+        parameters: toolSchemas.extractArticleFromWebpage,
+        execute: async ({ url }: { url: string }) => {
+            const { title, content } = await getArticleFromUrl(url)
+            
+            // Use AI to distill the main article content from the webpage
+            const { text: distilledContent } = await generateText({
+                model: googleModels['flash-2.5'],
+                system: `You are an expert at extracting the main article content from webpage text. Your task is to:
+1. Remove navigation elements, headers, footers, ads, and other non-article content
+2. Keep only the main article body content
+3. Preserve the article's structure and formatting, but remove the title and links
+4. Return clean, readable article content in Markdown format
+5. Remove any website-specific elements that are not part of the article itself`,
+                prompt: `Please extract the main article content from this webpage text. Remove any navigation, ads, headers, footers, or other non-article elements. Return only the clean article content in Markdown format:
+
+${content}`,
+                maxTokens: 15000
+            })
+            
+            return { title, content: distilledContent }
         }
     }
 }

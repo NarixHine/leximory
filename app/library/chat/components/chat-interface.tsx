@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone } from 'react-icons/pi'
 import { useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -53,6 +53,14 @@ const initialPrompts = [{
     title: '造句巩固',
     prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
+},{
+    title: '导入网页',
+    prompt: '提取以下网页中的文章，并导入【词汇仓库】文库。',
+    icon: PiLinkSimpleDuotone
+}, {
+    title: '外刊出题',
+    prompt: '提炼以下网页中的文章，并出一篇小猫钓鱼题考考我。',
+    icon: PiFishDuotone
 }] as const
 
 type MessagePart = {
@@ -156,17 +164,19 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'getTextContent':
-            const text = result as Awaited<ToolResult['getTextContent']>
+        case 'extractArticleFromWebpage':
+            const { title: articleTitle, content: articleContent } = result as Awaited<ToolResult['extractArticleFromWebpage']> | Awaited<ToolResult['getTextContent']>
             return (
                 <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
-                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{text.title}</div>
+                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{articleTitle}</div>
                         <div className='text-default-600 dark:text-default-400'>
-                            <Markdown md={text.content} className='prose dark:prose-invert max-w-none' />
+                            <Markdown md={articleContent} className='prose dark:prose-invert max-w-none' />
                         </div>
                     </CardBody>
                 </Card>
             )
+
         case 'annotateParagraph':
             const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
