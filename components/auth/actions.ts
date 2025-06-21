@@ -16,7 +16,7 @@ export async function login(props: z.infer<typeof authSchema>) {
     const parseResult = authSchema.safeParse(props)
 
     if (!parseResult.success) {
-        throw new Error(parseResult.error.message)
+        throw parseResult.error
     }
 
     const { data } = parseResult
@@ -24,7 +24,7 @@ export async function login(props: z.infer<typeof authSchema>) {
     const { error } = await supabase.auth.signInWithPassword(data)
 
     if (error) {
-        redirect('/error')
+        throw error
     }
 
     revalidatePath('/', 'layout')
@@ -37,7 +37,7 @@ export async function signup(props: z.infer<typeof authSchema>) {
     const parseResult = authSchema.safeParse(props)
 
     if (!parseResult.success) {
-        redirect('/error')
+        throw parseResult.error
     }
 
     const { data } = parseResult
@@ -45,7 +45,7 @@ export async function signup(props: z.infer<typeof authSchema>) {
     const { error } = await supabase.auth.signUp(data)
 
     if (error) {
-        redirect('/error')
+        throw error
     }
 
     revalidatePath('/', 'layout')
