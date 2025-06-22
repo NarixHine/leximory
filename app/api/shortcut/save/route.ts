@@ -6,7 +6,7 @@ import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
 import { generateText } from 'ai'
-import { googleModels, Lang, supportedLangs } from '@/lib/config'
+import { googleModels, Lang, noThinkingConfig, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { verifyToken } from '@/server/db/token'
@@ -46,6 +46,7 @@ async function getWordLang(word: string): Promise<Lang> {
         model: googleModels['flash-2.5'],
         prompt: `请判断下述词汇最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
+        ...noThinkingConfig
     })
     const lang = z.enum(supportedLangs).parse(text.trim())
     return lang

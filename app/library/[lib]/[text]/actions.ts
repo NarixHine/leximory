@@ -6,7 +6,7 @@ import { createStreamableValue } from 'ai/rsc'
 import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE } from '@/lib/config'
+import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE, noThinkingConfig } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -130,7 +130,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
     })
 }
 
-export async function generateSingleComment({prompt, lang}: {prompt: string, lang: Lang}) {
+export async function generateSingleComment({ prompt, lang }: { prompt: string, lang: Lang }) {
     const { userId } = await getUserOrThrow()
     const stream = createStreamableValue()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
@@ -160,14 +160,8 @@ export async function generateSingleComment({prompt, lang}: {prompt: string, lan
             onFinish: async ({ text }) => {
                 await setAnnotationCache({ hash, cache: text })
             },
-            providerOptions: {
-                google: {
-                    thinkingConfig: {
-                        thinkingBudget: 0,
-                    },
-                }
-            },
-            experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined)
+            experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
+            ...noThinkingConfig
         })
 
         for await (const delta of textStream) {
@@ -193,13 +187,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
         `,
         prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt(lang)}${await accentPreferencePrompt({ lang, userId })}\n你要注解的是：\n${prompt}`,
         maxTokens: 500,
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingBudget: 0,
-                },
-            }
-        }
+        ...noThinkingConfig
     })
 
     return text

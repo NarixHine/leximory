@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, prefixUrl, langMaxChunkSizeMap, getBestArticleAnnotationModel } from '@/lib/config'
+import { Lang, prefixUrl, langMaxChunkSizeMap, getBestArticleAnnotationModel, noThinkingConfig } from '@/lib/config'
 import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { instruction, accentPreferencePrompt } from '@/lib/prompt'
@@ -20,13 +20,7 @@ export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyCom
     
     ${input}`,
     maxTokens: 12000,
-    providerOptions: {
-        google: {
-            thinkingConfig: {
-                thinkingBudget: 0,
-            },
-        }
-    }
+    ...noThinkingConfig
 })
 
 const topicsPrompt = async (input: string) => ({
@@ -37,13 +31,7 @@ const topicsPrompt = async (input: string) => ({
     
     ${input}`,
     maxTokens: 100,
-    providerOptions: {
-        google: {
-            thinkingConfig: {
-                thinkingBudget: 0,
-            },
-        }
-    }
+    ...noThinkingConfig
 })
 
 const chunkText = (text: string, maxLength: number): string[] => {

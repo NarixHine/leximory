@@ -1,5 +1,5 @@
 import env, { isProd } from './env'
-import { google } from '@ai-sdk/google'
+import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
@@ -61,6 +61,15 @@ export const fixYourPaperBlogLink = 'https://hello.leximory.com/blog/fix-your-pa
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
+export const noThinkingConfig = {
+    providerOptions: {
+        google: {
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        } satisfies GoogleGenerativeAIProviderOptions
+    }
+}
 export const googleModels = {
     'image-gen': google('gemini-2.0-flash-preview-image-generation', {
         safetySettings: [{
