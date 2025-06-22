@@ -9,6 +9,7 @@
 Leximory integrates features like:
 
 - One-click **foreign publication importing**,
+- **Annotated novels and news** updated every day,
 - AI-driven targeted **annotations with etymologies**, 
 - **Combination of listening** with reading, 
 - **Easy reviewing** of saved words,
