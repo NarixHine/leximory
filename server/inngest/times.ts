@@ -55,7 +55,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['flash-2.5'],
             prompt: EDITOR_GUIDE_PROMPT,
             maxTokens: 5000,
-            temperature: 0.6
+            temperature: 0.7
         })
 
         // Step 2: Generate novel
@@ -64,7 +64,7 @@ export const generateTimes = inngest.createFunction(
             system: NOVEL_PROMPT,
             prompt: editorGuide,
             maxTokens: 10000,
-            temperature: 0.4
+            temperature: 0.5
         })
 
         const annotatedNovel = await step.run('annotate-novel', async () => {

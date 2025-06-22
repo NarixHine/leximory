@@ -220,7 +220,7 @@ export default function Panel({ recentData }: PanelProps) {
     return (
         <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_MODERN.className)}>
             {/* Main Paper Container */}
-            <div className='w-full h-full flex flex-col md:flex-row bg-white dark:bg-neutral-900'>
+            <div className='w-full h-full flex flex-col justify-center md:flex-row bg-white dark:bg-neutral-900'>
                 <TimesSidebar
                     data={recentData}
                 />
