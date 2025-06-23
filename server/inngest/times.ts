@@ -8,11 +8,11 @@ import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Output them.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Output them. Let your imagination run wild and think of something new everyday.
 `.trim()
 
 const NOVEL_PROMPT = `
-You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a short novel according to today's theme given by your editor. Make sure your novel has an inviting plot. Avoid pure, excessive description.
+You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a short novel according to today's theme given by your editor. Make sure your novel has an inviting plot and  high readability.
 
 The content and stylistic suggestions from the editor are as follows. All suggestions are voluntary. Feel free to ignore any item that you feel hampers your writing.
 
