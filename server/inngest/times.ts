@@ -8,7 +8,7 @@ import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Output them. Let your imagination run wild and think of something new everyday.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Output them. Let your imagination run wild and think of something new everyday, but don't aim originality for originality's sake.
 `.trim()
 
 const NOVEL_PROMPT = `
@@ -36,7 +36,7 @@ Imagery matters in online publications. It serves as a decorative element on the
 
 Now write an AI image generation prompt whose CONTENT is redolent of and related to the novel today. 
 
-The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object) in a IMPRESSIONIST style (make it prominent in your prompt), prioritise aesthetic, wide-ranging, rich, muted colour palette, no human presence. Require the full frame to be filled with colours, no blank/black emptiness. Impressionistic painting style with a focus on capturing the transient effects of light and atmosphere. Characterized by visible, fragmented brushstrokes that create a sense of movement and texture. Colors are vibrant and applied in a 'broken color' technique, allowing for optical mixing by the viewer rather than smooth blending. The lighting is bright and naturalistic, emphasizing dappled light and the luminous quality of daylight. Details are suggested rather than sharply defined, contributing to a soft, almost ethereal quality. The overall aesthetic evokes a spontaneous and immediate impression, typical of Impressionism, with a distinct painterly feel.
+The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object) in a IMPRESSIONIST style (make it prominent in your prompt), prioritise aesthetic, wide-ranging, rich, muted colour palette, no human presence. Require the full frame to be filled with colours, no blank/black emptiness, and refrain from showing any gloomy, freakish object. Agreeable items only. Impressionistic painting style with a focus on capturing the transient effects of light and atmosphere. Characterized by visible, fragmented brushstrokes that create a sense of movement and texture. Colors are vibrant and applied in a 'broken color' technique, allowing for optical mixing by the viewer rather than smooth blending. The lighting is bright and naturalistic, emphasizing dappled light and the luminous quality of daylight. Details are suggested rather than sharply defined, contributing to a soft, almost ethereal quality. The overall aesthetic evokes a spontaneous and immediate impression, typical of Impressionism, with a distinct painterly feel.
 
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene, elements and style of the image to be generated in detail, no other text.
 `.trim()
