@@ -343,6 +343,8 @@ const MemoizedMessage = memo(ChatMessage, (prevProps, nextProps) => {
     return isEqual(prevProps.message.parts, nextProps.message.parts)
 })
 
+export const ChatMessages = ({ messages }: { messages: Message[] }) => <>{messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}</>
+
 export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan, initialPromptIndex: number | null }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -474,7 +476,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     ))}
                 </div>
             )}
-            {messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}
+            <ChatMessages messages={messages} />
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}
