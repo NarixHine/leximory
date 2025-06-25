@@ -252,7 +252,7 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             has_ebook,
             created_at,
             lib:libraries (
-                name
+                name, id
             )
         `)
         .eq('lib', libId)

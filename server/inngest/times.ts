@@ -44,7 +44,7 @@ It will serve as the cover image of today's issue on the website. The novel toda
 
 export const generateTimes = inngest.createFunction(
     { id: 'generate-times' },
-    { cron: 'TZ=Asia/Shanghai 0 20 * * *' }, // Runs every day at 8 p.m.
+    { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
     async ({ step }) => {
         const { novel: yesterdayNovel, news: yesterdayNews } = await step.run('get-yesterday-data', async () => {
             const { data } = await supabase

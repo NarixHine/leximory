@@ -83,7 +83,7 @@ export async function getTexts({ lib }: { lib: string }) {
             has_ebook,
             created_at,
             lib:libraries (
-                name
+                name, id
             )
         `)
         .eq('lib', lib)

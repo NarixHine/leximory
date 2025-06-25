@@ -4,7 +4,7 @@ import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
 import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone } from 'react-icons/pi'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
@@ -28,6 +28,7 @@ import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
+import { isEqual } from 'es-toolkit'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -143,10 +144,11 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
 
         case 'getAllTextsInLib':
         case 'getTexts':
-            const res = result as Awaited<ToolResult['getAllTextsInLib']>
+            const res = result as Awaited<ToolResult['getTexts']>
+            const libName = res[0]?.libName
             return (
                 <ul className='mt-2 flex flex-col gap-1'>
-                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiPackage /> Library - {res[0].libName}</span>
+                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiPackage /> Library {libName ? ` - ${libName}` : ''}</span>
                     {res.map((text, index) => (
                         <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
                             {index + 1}. {text.title}
@@ -302,44 +304,44 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
     }
 }
 
-export function ChatMessages({ messages }: { messages: Message[] }) {
-    return <>{
-        messages.map(({ parts, role, experimental_attachments }, i) => (
-            <div key={i} className={cn(
-                'mb-4 flex flex-col',
-                role === 'user' ? 'items-end' : 'items-start'
-            )}>
-                {experimental_attachments && experimental_attachments.length > 0 && (
-                    <div className='flex flex-col gap-2'>
-                        {experimental_attachments.map((att, idx) => (
-                            <div
-                                key={idx}
-                                className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
-                            >
-                                <PiPaperclipFill className='text-primary-500' size={20} />
-                                <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
-                                    {att.name}
-                                </span>
-                                <a
-                                    href={att.url}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='text-primary-600 underline text-xs'
-                                    download={att.name}
-                                >
-                                    下载
-                                </a>
-                            </div>
-                        ))}
+export function ChatMessage({ message: { parts, role, experimental_attachments } }: { message: Message }) {
+    return <div className={cn(
+        'mb-4 flex flex-col',
+        role === 'user' ? 'items-end' : 'items-start'
+    )}>
+        {experimental_attachments && experimental_attachments.length > 0 && (
+            <div className='flex flex-col gap-2'>
+                {experimental_attachments.map((att, idx) => (
+                    <div
+                        key={idx}
+                        className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
+                    >
+                        <PiPaperclipFill className='text-primary-500' size={20} />
+                        <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
+                            {att.name}
+                        </span>
+                        <a
+                            href={att.url}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='text-primary-600 underline text-xs'
+                            download={att.name}
+                        >
+                            下载
+                        </a>
                     </div>
-                )}
-                {parts?.map((part, j) => (
-                    <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
                 ))}
             </div>
-        ))
-    }</>
+        )}
+        {parts?.map((part, j) => (
+            <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+        ))}
+    </div>
 }
+
+const MemoizedMessage = memo(ChatMessage, (prevProps, nextProps) => {
+    return isEqual(prevProps.message.parts, nextProps.message.parts)
+})
 
 export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan, initialPromptIndex: number | null }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
@@ -355,7 +357,6 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''
             }
-            console.log(messages)
         },
         onToolCall() {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -473,7 +474,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     ))}
                 </div>
             )}
-            <ChatMessages messages={messages} />
+            {messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}

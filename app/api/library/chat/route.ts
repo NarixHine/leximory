@@ -36,7 +36,7 @@ const tools: ToolSet = {
         }
     },
     getTexts: {
-        description: 'Get all texts in a library by library id.',
+        description: 'Get all texts in a library by library id. Use this over getAllTextsInLib wherever possible.',
         parameters: toolSchemas.getTexts,
         execute: async ({ lib }: { lib: string }) => {
             await authReadToLib(lib)
@@ -242,7 +242,7 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 如果用户要求生成试卷，请使用generateQuiz工具生成试卷。
 
 1. 试卷类型由用户提供，例如：cloze (fill in the blanks/完形填空), 4/6 (sentence choice), reading (reading comprehension)
-2. 你只需要调用工具，生成完成后无需输出试卷内容，而是会自动显示在聊天界面。
+2. 你只需要调用工具，生成完成后禁止输出试卷内容，因为它会自动出现。你只需要提示用户“试卷已显示于聊天界面“即可。
 3. 对于传递给generateQuiz工具的文本，将所有注解语法用原文形式替换回原文，例如{{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)}}用transpires替换。
 `
 
