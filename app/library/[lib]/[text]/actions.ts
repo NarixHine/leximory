@@ -6,7 +6,7 @@ import { createStreamableValue } from 'ai/rsc'
 import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { getBestCommentaryModel, googleModels, Lang, maxArticleLength, MAX_FILE_SIZE, noThinkingConfig } from '@/lib/config'
+import { Lang, maxArticleLength, MAX_FILE_SIZE } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction, exampleSentencePrompt, accentPreferencePrompt } from '@/lib/prompt'
@@ -15,6 +15,7 @@ import { z } from 'zod'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
 import { getUserOrThrow } from '@/server/auth/user'
+import { googleModels, noThinkingConfig, getBestCommentaryModel } from '@/server/ai/models'
 
 export async function extractWords(form: FormData) {
     const { userId } = await getUserOrThrow()

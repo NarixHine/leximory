@@ -6,10 +6,11 @@ import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
 import { generateText } from 'ai'
-import { googleModels, Lang, noThinkingConfig, supportedLangs } from '@/lib/config'
+import { Lang, supportedLangs } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { verifyToken } from '@/server/db/token'
+import { googleModels, noThinkingConfig } from '@/server/ai/models'
 
 const schema = z.object({
     word: z.string(),

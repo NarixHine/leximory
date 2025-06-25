@@ -14,6 +14,10 @@ const env = createEnv({
         CREEM_WEBHOOK_SECRET: z.string().min(1),
         SUPABASE_URL: z.string().min(1),
         SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+        GOOGLE_VERTEX_CLIENT_EMAIL: z.string().min(1),
+        GOOGLE_VERTEX_PRIVATE_KEY: z.string().min(1),
+        GOOGLE_VERTEX_PROJECT: z.string().min(1),
+        GOOGLE_VERTEX_LOCATION: z.string().min(1),
     },
 
     client: {
@@ -37,6 +41,10 @@ const env = createEnv({
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        GOOGLE_VERTEX_CLIENT_EMAIL: process.env.GOOGLE_VERTEX_CLIENT_EMAIL,
+        GOOGLE_VERTEX_PRIVATE_KEY: process.env.GOOGLE_VERTEX_PRIVATE_KEY,
+        GOOGLE_VERTEX_PROJECT: process.env.GOOGLE_VERTEX_PROJECT,
+        GOOGLE_VERTEX_LOCATION: process.env.GOOGLE_VERTEX_LOCATION,
     },
 })
 

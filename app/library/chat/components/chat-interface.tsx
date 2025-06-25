@@ -53,7 +53,7 @@ const initialPrompts = [{
     title: '造句巩固',
     prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
-},{
+}, {
     title: '导入网页',
     prompt: '提取以下网页中的文章，并导入【词汇仓库】文库。',
     icon: PiLinkSimpleDuotone
@@ -355,6 +355,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''
             }
+            console.log(messages)
         },
         onToolCall() {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -362,8 +363,12 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         onResponse: () => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
         },
-        onError: () => {
-            toast.error('发生错误')
+        onError: (error) => {
+            if (isProd) {
+                toast.error('发生错误')
+            } else {
+                throw error
+            }
             setFiles(undefined)
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''

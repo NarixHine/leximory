@@ -1,5 +1,4 @@
 import env, { isProd } from './env'
-import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { Plan } from '@/server/auth/quota'
 
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
@@ -61,108 +60,6 @@ export const fixYourPaperBlogLink = 'https://hello.leximory.com/blog/fix-your-pa
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
-export const noThinkingConfig = {
-    providerOptions: {
-        google: {
-            thinkingConfig: {
-                thinkingBudget: 0
-            }
-        } satisfies GoogleGenerativeAIProviderOptions
-    }
-}
-export const googleModels = {
-    'image-gen': google('gemini-2.0-flash-preview-image-generation', {
-        safetySettings: [{
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-            threshold: 'BLOCK_NONE',
-        }]
-    }),
-    'flash-2.5': google('gemini-2.5-flash', {
-        safetySettings: [{
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-            threshold: 'BLOCK_NONE',
-        }],
-    }),
-    'flash-2.5-search': google('gemini-2.5-flash', {
-        useSearchGrounding: true,
-        safetySettings: [{
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-            threshold: 'BLOCK_NONE',
-        }]
-    }),
-    'pro-2.5': google('gemini-2.5-pro', {
-        safetySettings: [{
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-        }, {
-            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-            threshold: 'BLOCK_NONE',
-        }],
-    }),
-}
-
-export const getBestArticleAnnotationModel = (lang: Lang) => {
-    switch (lang) {
-        case 'zh': return googleModels['flash-2.5']
-        case 'en': return googleModels['flash-2.5']
-        case 'nl': return googleModels['flash-2.5']
-        case 'ja': return googleModels['flash-2.5']
-    }
-}
-
-export const getBestCommentaryModel = (lang: Lang) => {
-    switch (lang) {
-        case 'zh': return googleModels['flash-2.5']
-        case 'en': return googleModels['flash-2.5']
-        case 'nl': return googleModels['flash-2.5']
-        case 'ja': return googleModels['flash-2.5']
-    }
-}
 export const langMap: Record<Lang, string> = {
     'zh': '文言文',
     'en': '英文',

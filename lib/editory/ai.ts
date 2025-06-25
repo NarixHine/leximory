@@ -2,8 +2,8 @@
 
 import { generateObject } from 'ai'
 import { Schema, z } from 'zod'
-import { googleModels } from '../config'
 import { QuizDataType } from './types'
+import { googleModels } from '@/server/ai/models'
 
 export default async function generate({ prompt, type }: { prompt: string, type: QuizDataType }) {
     const { system, schema } = getConfig(type)

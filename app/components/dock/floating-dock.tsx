@@ -14,53 +14,6 @@ import { ReactNode, useRef } from 'react'
 import { isReaderModeAtom } from '../../atoms'
 import { Spinner } from '@heroui/spinner'
 import { AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/lib/hooks'
-import { PiBooksFill, PiNewspaperFill, PiRewindFill, PiStorefrontFill, PiChatCircleDotsFill, PiUserCircleGearFill, PiLockKeyFill } from 'react-icons/pi'
-
-export default function Dock() {
-    const { user, isLoading } = useAuth()
-    return isLoading || user ? <AuthedDock /> : <UnauthedDock />
-}
-
-const AuthedDock = () => <FloatingDock items={[{
-    icon: <PiBooksFill />,
-    href: '/library'
-}, {
-    icon: <PiNewspaperFill />,
-    href: '/times'
-}, {
-    icon: <PiRewindFill />,
-    href: '/daily'
-}, {
-    icon: <PiStorefrontFill />,
-    href: '/marketplace/1'
-}, {
-    icon: <PiChatCircleDotsFill />,
-    href: '/library/chat'
-}, {
-    icon: <PiUserCircleGearFill />,
-    href: '/settings'
-}]} />
-
-const UnauthedDock = () => <FloatingDock items={[{
-    icon: <PiNewspaperFill />,
-    href: '/times'
-}, {
-    icon: <PiLockKeyFill />,
-    href: '/library'
-}, {
-    icon: <PiLockKeyFill />,
-    href: '/daily'
-}, {
-    icon: <PiLockKeyFill />,
-    href: '/marketplace/1'
-}, {
-    icon: <PiLockKeyFill />,
-    href: '/library/chat'
-}, {
-    icon: <PiLockKeyFill />,
-    href: '/settings'
-}]} />
 
 // Shared color classes for dock items
 const colorClasses = [
@@ -91,7 +44,7 @@ type IconContainerVerticalProps = IconContainerProps & {
     mouseY: MotionValue
 }
 
-const FloatingDock = ({
+export const FloatingDock = ({
     items,
     className,
 }: FloatingDockProps) => {

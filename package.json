@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
+    "@ai-sdk/google-vertex": "^2.2.24",
     "@ai-sdk/react": "^1.2.12",
     "@heroui/accordion": "2.2.16",
     "@heroui/alert": "2.2.17",

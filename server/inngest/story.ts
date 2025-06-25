@@ -1,10 +1,11 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, getBestCommentaryModel, langMap } from '@/lib/config'
+import { Lang, langMap } from '@/lib/config'
 import { accentPreferencePrompt } from '@/lib/prompt'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
 import { parseComment } from '@/lib/lang'
+import { getBestCommentaryModel } from '../ai/models'
 
 const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `

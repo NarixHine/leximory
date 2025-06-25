@@ -3,7 +3,8 @@ import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
-import { googleModels, Lang } from '@/lib/config'
+import { googleModels } from '@/server/ai/models'
+import { Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
@@ -52,7 +53,7 @@ const tools: ToolSet = {
         }
     },
     getAllTextsInLib: {
-        description: 'Get all texts with their full content in a library.',
+        description: 'Get all texts with their full content in a library. Use getTexts instead if you only need the list of texts.',
         parameters: toolSchemas.getAllTextsInLib,
         execute: async ({ libId }: { libId: string }) => {
             await authReadToLib(libId)
@@ -274,6 +275,7 @@ export async function POST(req: NextRequest) {
             google: {
                 thinkingConfig: {
                     includeThoughts: true,
+                    thinkingBudget: 2048,
                 }
             } satisfies GoogleGenerativeAIProviderOptions
         },

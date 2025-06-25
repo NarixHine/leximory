@@ -1,7 +1,7 @@
 'use server'
 
 import { type CoreMessage, generateText } from 'ai'
-import { googleModels } from '@/lib/config'
+import { googleModels } from '@/server/ai/models'
 import incrCommentaryQuota from '@/server/auth/quota'
 
 const model = googleModels['pro-2.5']
