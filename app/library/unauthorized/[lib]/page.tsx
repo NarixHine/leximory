@@ -1,15 +1,40 @@
-'use client'
-
-import { useAtomValue } from 'jotai'
-import { libAtom, priceAtom } from '../../[lib]/atoms'
 import Center from '@/components/ui/center'
 import Link from 'next/link'
 import { contentFontFamily } from '@/lib/fonts'
 import BuyLibrary from '@/components/buy-library'
+import { LibProps } from '@/lib/types'
+import { authReadToLibWithoutThrowing } from '@/server/auth/role'
+import { getLib } from '@/server/db/lib'
+import { redirect } from 'next/navigation'
+import UserAvatar from '@/components/avatar'
+import { libAccessStatusMap } from '@/lib/config'
 
-export default function UnauthorizedPage() {
-    const price = useAtomValue(priceAtom)
-    const lib = useAtomValue(libAtom)
+export async function generateMetadata(props: LibProps) {
+    const params = await props.params
+    const { name } = await getLib({ id: params.lib })
+    return {
+        title: {
+            default: `获取文库 | ${name} | Leximory`,
+            template: `获取文库 | ${name} | Leximory`
+        }
+    }
+}
+
+export default async function UnauthorizedPage(
+    props: {
+        params: Promise<{ lib: string }>
+    }
+) {
+    const params = await props.params
+
+    const { isOwner, isStarred, price, owner, access } = await authReadToLibWithoutThrowing(params.lib)
+
+    if (access !== libAccessStatusMap.public && !isOwner) {
+        throw new Error('Access denied to this library')
+    }
+    else if (isOwner || isStarred) {
+        redirect(`/library/${params.lib}`)
+    }
 
     return (
         <Center>
@@ -21,9 +46,10 @@ export default function UnauthorizedPage() {
 
                 <BuyLibrary
                     isStarred={false}
-                    id={lib}
+                    id={params.lib}
                     price={price}
                     navigateAfterPurchase={true}
+                    avatar={<UserAvatar uid={owner} />}
                 />
             </div>
         </Center>

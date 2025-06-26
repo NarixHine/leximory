@@ -50,8 +50,8 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                     isStarred={isStarred}
                     id={library.id}
                     price={library.price}
+                    avatar={avatar}
                 />
-                {avatar}
             </CardFooter>}
         </Card>
     )
