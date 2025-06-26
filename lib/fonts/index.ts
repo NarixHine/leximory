@@ -1,25 +1,6 @@
-import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mincho, Outfit } from 'next/font/google'
-import localFont from 'next/font/local'
+import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mincho, Outfit, Noto_Serif_SC } from 'next/font/google'
 
-export const CHINESE = localFont({
-    src: [{
-        path: './mincho-r.woff2',
-        weight: '400',
-    }, {
-        path: './mincho-b.woff2',
-        weight: '700',
-    }]
-})
-
-/* for accelerating spinning up local machine
-export const CHINESE_CALLIGRAPHY = CHINESE
-export const ENGLISH = CHINESE
-export const ENGLISH_SERIF = CHINESE
-export const ENGLISH_PLAYFAIR = CHINESE
-export const JAPANESE_MINCHO = CHINESE
-export const ENGLISH_MODERN = CHINESE
-*/
-
+export const CHINESE = Noto_Serif_SC({ subsets: ['latin'], weight: ['500', '700'], style: ['normal'] })
 export const CHINESE_CALLIGRAPHY = Ma_Shan_Zheng({ subsets: ['latin'], weight: ['400'] })
 export const ENGLISH = Montserrat({ subsets: ['latin'], weight: 'variable', style: ['italic', 'normal'] })
 export const ENGLISH_SERIF = Libre_Baskerville({ subsets: ['latin'], weight: ['400', '700'], style: ['italic', 'normal'] })

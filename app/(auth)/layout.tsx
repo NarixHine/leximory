@@ -11,6 +11,6 @@ export default async function Layout({ children }: { children: ReactNode }) {
         <div className='lg:basis-1/2'>
             {children}
         </div>
-        <img src='/imagery/home.webp' alt='Library illustration' className='hidden h-[calc(100dvh-80px)] w-auto rounded-2xl lg:block' />
+        <img src='/images/home.webp' alt='Library illustration' className='hidden h-[calc(100dvh-80px)] w-auto rounded-2xl lg:block pointer-events-none' />
     </Center>
 }

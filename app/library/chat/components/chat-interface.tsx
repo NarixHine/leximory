@@ -223,9 +223,13 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     {
                         words.length > 0
                             ? <ul className='flex flex-wrap gap-2'>
-                                {words.map(({ id, word }) => (
+                                {words.map(({ id, word, lang, lib }) => (
                                     <li className=' flex gap-1 items-center' key={id}>
-                                        <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                        <ScopeProvider atoms={[langAtom, libAtom]}>
+                                            <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
+                                                <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                            </HydrationBoundary>
+                                        </ScopeProvider>
                                     </li>
                                 ))}
                             </ul>
