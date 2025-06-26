@@ -9,11 +9,11 @@ import { nanoid } from '@/lib/utils'
 import { googleModels } from '../ai/models'
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and has an attractive plot. Output them, and avoid being repetitive with yesterday's novel in any way.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. Output them, and avoid being repetitive with yesterday's novel in any way.
 `.trim()
 
 const NOVEL_PROMPT = `
-You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a short novel according to today's theme given by your editor. Make sure your novel has an inviting plot and  high readability.
+You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a short novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and fairly HIGH READABILITY.
 
 The content and stylistic suggestions from the editor are as follows. All suggestions are voluntary. Feel free to ignore any item that you feel hampers your writing.
 
@@ -23,13 +23,13 @@ Before your novel, add a one-liner INTRO for readers, preceded by the Markdown q
 const NEWS_PROMPT = `
 You're the journalist in charge of the Daily News section of the online publication *The Leximory Times*, published every evening. Aggregate all news today into a single article. (Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine.)
 
-Pick several topics, and 1~3 events thereof, but every piece chosen should be elaborated in SEVERAL coherent paragraphs. Divide all pieces into world/US/China/S&T/AI/business/environment/space/health, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
+Pick several topics, and 1~3 events thereof, but every piece chosen should be elaborated in SEVERAL coherent paragraphs. Divide all pieces into world/US/China/S&T/AI/business/environment/space/wellbeing/narrative, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate more advanced vocabulary in your reporting, for the sake of English learning.
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*, and with the date; use Markdown quotation mark \`>\` to indicate the opening & closing remarks, both of them a single concise paragraph, but WITHOUT \`<\` symbol) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks.
 
-Write in a journalistic style, rather than with AI summary vibes.
+Write in a modern journalistic style (compelling to follow through, especially for newsworthy stories where non-fiction storytelling techniques can be employed), rather than with AI summary vibes, and fact-check carefully.
 `.trim()
 
 const IMAGE_PROMPT = `

@@ -1,17 +1,14 @@
 'use client'
 
 import { Lang, langMap } from '@/lib/config'
-import { PiCoinsDuotone } from 'react-icons/pi'
 import { Card, CardBody, CardFooter } from "@heroui/card"
-import { Button } from "@heroui/button"
 import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
-import { ReactNode, useTransition } from 'react'
+import { ReactNode } from 'react'
 import { Skeleton } from "@heroui/skeleton"
-import { star } from '@/app/library/[lib]/components/actions'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/spacer'
+import BuyLibrary from '@/components/buy-library'
 
 interface LibraryCardProps {
     library: {
@@ -29,7 +26,6 @@ interface LibraryCardProps {
 
 export default function LibraryCard({ library, isStarred, avatar, hideFooter }: LibraryCardProps) {
     const router = useRouter()
-    const [isTransitioning, startTransition] = useTransition()
 
     return (
         <Card
@@ -50,35 +46,11 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
             </CardBody>
 
             {!hideFooter && <CardFooter className='flex justify-end pb-4 pr-4'>
-                <Button
-                    as={'div'}
-                    size='sm'
-                    isDisabled={isStarred}
-                    isLoading={isTransitioning}
-                    startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
-                    color='primary'
-                    variant={'flat'}
-                    className={cn('-mr-5 pr-7')}
-                    onPress={() => {
-                        startTransition(async () => {
-                            const { success, message } = await star(library.id)
-                            if (success) {
-                                toast.success('钉选成功')
-                            }
-                            else {
-                                toast.error(message)
-                            }
-                        })
-                    }}
-                >
-                    {
-                        isStarred
-                            ? '已购买'
-                            : library.price === 0
-                                ? '免费'
-                                : `用 ${library.price} LexiCoin 购买`
-                    }
-                </Button>
+                <BuyLibrary
+                    isStarred={isStarred}
+                    id={library.id}
+                    price={library.price}
+                />
                 {avatar}
             </CardFooter>}
         </Card>

@@ -36,6 +36,16 @@ export default function About() {
                         size='sm'
                         variant='light'
                         radius='full'
+                        href='/blog'
+                        isIconOnly
+                        startContent={<PiPenNibDuotone />}
+                        as={Link}
+                        className='text-xl opacity-50'
+                    ></Button>
+                    <Button
+                        size='sm'
+                        variant='light'
+                        radius='full'
                         href='https://github.com/narixhine/leximory'
                         isIconOnly
                         startContent={<PiGithubLogoDuotone />}
@@ -49,16 +59,6 @@ export default function About() {
                         href='mailto:hi@leximory.com'
                         isIconOnly
                         startContent={<PiMailboxDuotone />}
-                        as={Link}
-                        className='text-xl opacity-50'
-                    ></Button>
-                    <Button
-                        size='sm'
-                        variant='light'
-                        radius='full'
-                        href='/blog'
-                        isIconOnly
-                        startContent={<PiPenNibDuotone />}
                         as={Link}
                         className='text-xl opacity-50'
                     ></Button>
