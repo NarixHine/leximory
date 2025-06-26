@@ -23,13 +23,13 @@ Before your novel, add a one-liner INTRO for readers, preceded by the Markdown q
 const NEWS_PROMPT = `
 You're the journalist in charge of the Daily News section of the online publication *The Leximory Times*, published every evening. Aggregate all news today into a single article. (Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine.)
 
-Pick several topics, and 1~3 events thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into world/US/China/S&T/AI/business/environment/space/wellbeing/narrative, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
+Pick several topics, and 1~3 events thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into world/US/China/S&T/AI/new research/business/culture/environment/space/wellbeing, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate more advanced vocabulary in your reporting, for the sake of English learning.
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*). Use Markdown quotation mark \`>\` to indicate the opening & closing remarks, both of them only ONE single concise paragraph, but WITHOUT \`<\` symbol) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks.
+Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section. Use Markdown quotation mark \`>\` to indicate the opening reamrks, both of them only ONE single concise paragraph, but WITHOUT \`<\` symbol) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks, in the same format as opening remarks.
 
-Write in a modern journalistic style (engaging and compelling to follow through). Particularly, if there are any **newsworthy stories** of interest that took place recently, make the stories the first section, employing non-fiction storytelling techniques for reader attention, like *The Great Read* by The New York Times. Avoid AI summary vibes and factual errors,
+Write in a modern journalistic style (engaging and compelling to follow through). Particularly, search if there are any **newsworthy stories** (of a person, etc.) that took place recently, make the story the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times. Avoid AI summary vibes and factual errors,
 `.trim()
 
 const IMAGE_PROMPT = `

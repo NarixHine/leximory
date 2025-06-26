@@ -74,7 +74,7 @@ const tools: ToolSet = {
             const or = await isListedFilter()
             switch (period) {
                 case 'day':
-                    return getWordsWithin({ fromDayAgo: 1, toDayAgo: 0, or })
+                    return getWordsWithin({ fromDayAgo: 2, toDayAgo: 0, or })
                 case 'week':
                     return getWordsWithin({ fromDayAgo: 7, toDayAgo: 0, or })
             }

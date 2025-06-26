@@ -18,7 +18,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
 
-    return <div className={'flex items-center justify-center'}>
+    return <div className={'flex items-center'}>
         <Button
             as={'div'}
             size='sm'

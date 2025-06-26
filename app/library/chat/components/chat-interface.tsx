@@ -43,7 +43,7 @@ const initialPrompts = [{
     prompt: '对于文库【文库名称】中的【所有】文章，提取出适合用在作文里的高分词汇和词组，量少而精。',
     icon: PiSparkleDuotone
 }, {
-    title: '本周复习',
+    title: '今日复习',
     prompt: '【本周】我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
     icon: PiClockClockwiseDuotone
 }, {
