@@ -50,6 +50,32 @@ export const authReadToLib = async (lib: string) => {
     }
 }
 
+export const authReadToLibWithoutThrowing = async (lib: string) => {
+    const { userId } = await getUserOrThrow()
+
+    const { data: rec } = await supabase
+        .from('libraries')
+        .select('owner, lang, name, starred_by, price, access')
+        .eq('id', lib)
+        .single()
+        .throwOnError()
+
+    const isReadOnly = rec.owner !== userId
+    const isOwner = rec.owner === userId
+    const { lang } = rec
+    return {
+        isReadOnly,
+        isOwner,
+        owner: rec.owner,
+        lang: lang as Lang,
+        name: rec.name,
+        starredBy: rec.starred_by,
+        price: rec.price,
+        access: rec.access,
+        isStarred: Boolean(rec.starred_by?.includes(userId))
+    }
+}
+
 // auth access to items related to libs
 
 export const authWriteToText = async (text: string) => {

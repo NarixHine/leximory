@@ -9,7 +9,7 @@ import { nanoid } from '@/lib/utils'
 import { googleModels } from '../ai/models'
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and your try something different every day. Output them.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and has an attractive plot. Output them, and avoid being repetitive with yesterday's novel in any way.
 `.trim()
 
 const NOVEL_PROMPT = `
@@ -17,7 +17,7 @@ You're the novelist who writes for the Daily Novel section of the online publica
 
 The content and stylistic suggestions from the editor are as follows. All suggestions are voluntary. Feel free to ignore any item that you feel hampers your writing.
 
-Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then Use \`###\` to indicate the TITLE of the novel. At last the NOVEL itself.
+Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then wrap the heading with Markdown \`***\` (italic + bold) to indicate the TITLE of the novel. At last the NOVEL itself.
 `.trim()
 
 const NEWS_PROMPT = `
@@ -27,7 +27,7 @@ Pick several topics, and 1~3 events thereof, but every piece chosen should be el
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate more advanced vocabulary in your reporting, for the sake of English learning.
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*, and with the date; use Markdown quotation mark \`>\` to indicate the opening & closing remarks but without any \`<\` symbol) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks.
+Skip the title or anything else, and do NOT output the 'Daily News' section title. Just start your reply with very concise opening remarks for the Daily News section (á la *The Headlines* from *The New York Times*, and with the date; use Markdown quotation mark \`>\` to indicate the opening & closing remarks, both of them a single concise paragraph, but WITHOUT \`<\` symbol) immediately followed by the body part (topic 1, events, topic 2, events, ...), and at last very concise closing remarks.
 
 Write in a journalistic style, rather than with AI summary vibes.
 `.trim()
@@ -37,9 +37,9 @@ Imagery matters in online publications. It serves as a decorative element on the
 
 Now write an AI image generation prompt whose CONTENT is redolent of and related to the novel today. 
 
-The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object) in an IMPRESSIONIST OIL PAINTING style (make it prominent in your prompt), prioritise aesthetic, wide-ranging, rich, muted colour palette, no human presence. Require the full frame to be filled with colours, no blank/black emptiness, and refrain from showing any gloomy, freakish object. Agreeable items only. Impressionistic painting style with a focus on capturing the transient effects of light and atmosphere. Characterized by visible, fragmented brushstrokes that create a sense of movement and texture. Colors are vibrant and applied in a 'broken color' technique, allowing for optical mixing by the viewer rather than smooth blending. The lighting is bright and naturalistic, emphasizing dappled light and the luminous quality of daylight. Details are suggested rather than sharply defined, contributing to a soft, almost ethereal quality. The overall aesthetic evokes a spontaneous and immediate impression, typical of Impressionism, with a distinct painterly feel.
+The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object and no need to be precise) in an CONVENTIONAL IMPRESSIONIST OIL PAINTING style (make it prominent in your prompt), prioritise aesthetics and beautiful, wide-ranging, muted colour palette, with no human presence. Require the full frame to be filled with colours, no blank/black emptiness, and refrain from showing any outlandish object. Show agreeable and conventional items only. Overall, stick to the classical, aesthetic oil painting approach in terms of content and style, and plan out the image accordingly. Impressionistic painting style with a soft focus on capturing the transient effects of light and atmosphere. Characterized by visible, fragmented brushstrokes that create a sense of movement and texture.
 
-It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene, elements and style of the image to be generated in detail, no other text. Be concise.
+It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene and style of the image to be generated in detail, which will be sent, without modification, to another AI model.
 `.trim()
 
 export const generateTimes = inngest.createFunction(
@@ -79,7 +79,7 @@ export const generateTimes = inngest.createFunction(
         })
 
         const annotatedNovel = await step.run('annotate-novel', async () => {
-            return await annotateParagraph({ content: novel, lang: 'en', userId: ADMIN_UID })
+            return await annotateParagraph({ content: novel, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 
         // Step 3: Generate daily news

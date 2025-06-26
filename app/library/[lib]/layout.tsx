@@ -1,12 +1,11 @@
-import { authReadToLib } from '@/server/auth/role'
-import Prompt from './components/prompt'
+import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
-import { Lang } from '@/lib/config'
+import { Lang, libAccessStatusMap } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
-import { getUserOrThrow } from '@/server/auth/user'
+import { redirect } from 'next/navigation'
 
 export async function generateMetadata(props: LibProps) {
     const params = await props.params
@@ -31,9 +30,16 @@ export default async function LibLayout(
         children
     } = props
 
-    const { starredBy, isReadOnly, isOwner, lang, price } = await authReadToLib(params.lib)
-    const { userId } = await getUserOrThrow()
-    const isStarred = Boolean(starredBy?.includes(userId))
+    const { isReadOnly, isOwner, lang, price, access, isStarred } = await authReadToLibWithoutThrowing(params.lib)
+
+    // Redirect to unauthorized page if user is not owner and hasn't starred the library
+    if (!isOwner && !isStarred) {
+        if (access === libAccessStatusMap.public)
+            redirect(`/library/unauthorized/${params.lib}`)
+        else
+            throw new Error('Access denied to this library')
+    }
+
     return (<HydrationBoundary options={{
         enableReHydrate: true
     }} hydrateAtoms={[
@@ -43,7 +49,6 @@ export default async function LibLayout(
         [isStarredAtom, isStarred],
         [priceAtom, price]
     ]}>
-        {!isOwner && !isStarred && <Prompt></Prompt>}
         {children}
     </HydrationBoundary>)
 }
