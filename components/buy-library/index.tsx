@@ -18,7 +18,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
 
-    return <>
+    return <div className={'flex items-center justify-center'}>
         <Button
             as={'div'}
             size='sm'
@@ -52,5 +52,5 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
             }
         </Button>
         {avatar}
-    </>
+    </div>
 }   
