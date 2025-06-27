@@ -16,7 +16,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, startTransition] = useTransition()
 
-  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose', className)} {...props}>
+  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1 text-3xl'>开始语言学习之旅</H>
     <form action={() => {
       startTransition(() => signup({ email, password }))

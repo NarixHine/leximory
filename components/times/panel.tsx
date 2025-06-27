@@ -41,7 +41,7 @@ function TimesContentSkeleton() {
             {/* Novel Skeleton */}
             <Accordion className='mt-4'>
                 <AccordionItem title='Daily Novel' classNames={{
-                    base: '-mb-2 -mt-10',
+                    base: '-mb-8 -mt-10',
                     title: 'text-xl',
                     heading: 'mb-0'
                 }}>
@@ -56,7 +56,7 @@ function TimesContentSkeleton() {
             </Accordion>
 
             {/* News Skeleton */}
-            <h2 className='mt-4 mb-6'>Daily News</h2>
+            <h2 className='mb-10'>Daily News</h2>
             <div className='space-y-3 mt-4'>
                 <Skeleton className='h-4 w-full rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
@@ -67,6 +67,8 @@ function TimesContentSkeleton() {
                 <Skeleton className='h-4 w-3/4 rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
             </div>
+
+            <Spacer y={10} />
         </article>
     )
 }
@@ -121,8 +123,7 @@ function TimesContent() {
             {quiz ? <>
                 <h2>Daily Quiz</h2>
                 {/* Quiz */}
-                <p className='italic'>This quiz is based on the news published three days ago. </p>
-                {['cloze', 'fishing'].includes(quiz.type) && <p className='italic'>Click on the blank to show options.</p>}
+                <i>This quiz is based on the news published three days ago. {['cloze', 'fishing'].includes(quiz.type) && <i>Click on the blank to show options.</i>}</i>
                 <Card shadow='none' className='bg-white' isBlurred>
                     <CardBody className='p-6'>
                         <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-default-50/50' />

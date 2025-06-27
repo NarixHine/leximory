@@ -30,7 +30,7 @@ const Blank = ({ number, spaceCount = 3, options, groupId }: { number: number, s
                     {ShownBlank}
                 </PopoverTrigger>
                 <PopoverContent>
-                    <div className="flex flex-col gap-y-2 p-2 font-mono">
+                    <div className='p-2 font-mono grid grid-cols-1 sm:grid-cols-2 gap-2'>
                         {options.map((option, index) => (
                             <Button
                                 key={index}

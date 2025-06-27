@@ -33,7 +33,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
   }
 
   return (
-    <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose', className)} {...props}>
+    <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose dark:prose-invert', className)} {...props}>
       <H className='mb-1 text-3xl'>找回密码</H>
       <form onSubmit={handleForgotPassword} className='space-y-4'>
         <div className='space-y-1'>

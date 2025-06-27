@@ -20,7 +20,7 @@ export default async function generateQuiz({ prompt, type }: { prompt: string, t
         ...object,
         id: nanoid(5),
         type,
-        text: object.text ? object.text.replaceAll('\n', '<br>') : prompt,
+        text: object.text ?? prompt,
     }
 }
 

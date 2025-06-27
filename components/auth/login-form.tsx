@@ -16,7 +16,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [password, setPassword] = useState('')
   const [isLoading, startTransition] = useTransition()
 
-  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose', className)} {...props}>
+  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1'>继续语言学习之旅</H>
     <Form action={() => {
       startTransition(async () => {
