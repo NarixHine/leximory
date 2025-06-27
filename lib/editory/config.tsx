@@ -18,7 +18,10 @@ export const NAME_MAP: Record<QuizDataType, string> = {
     'reading': 'Reading',
     '4/6': 'Sentence Choice',
     'custom': 'Custom Text'
-}
+} as const
+
+export const AI_GENERATABLE = ['cloze', 'fishing', 'reading'] as const
+export type AIGeneratableType = (typeof AI_GENERATABLE)[number]
 
 export const ICON_MAP: Record<QuizDataType, ReactNode> = {
     'listening': <PiHeadphonesDuotone />,

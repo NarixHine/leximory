@@ -2,9 +2,6 @@ type QuizData = FishingData | ClozeData | GrammarData | SentenceChoiceData | Rea
 
 export type QuizDataType = QuizData['type']
 
-export const AI_GEN_QUIZ_DATA_TYPE_LIST = ['fishing', 'cloze', '4/6', 'reading'] as const
-export type AIGenQuizDataType = (typeof AI_GEN_QUIZ_DATA_TYPE_LIST)[number]
-
 export type FishingData = {
     id: string
     text: string

@@ -10,13 +10,13 @@ import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@
 import incrCommentaryQuota from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
-import generateQuiz from '@/lib/editory/ai'
-import { AIGenQuizDataType } from '@/lib/editory/types'
+import generateQuiz from '@/server/ai/editory'
 import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
 import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+import { AIGeneratableType } from '@/lib/editory/config'
 
 const tools: ToolSet = {
     getLib: {
@@ -99,9 +99,9 @@ const tools: ToolSet = {
         }
     },
     generateQuiz: {
-        description: 'Generate a quiz from the given text content.',
+        description: 'Generate a quiz from the given text content. Available types: cloze (完形填空), reading (阅读理解), fishing (小猫钓鱼).',
         parameters: toolSchemas.generateQuiz,
-        execute: async ({ content, type }: { content: string, type: AIGenQuizDataType }) => {
+        execute: async ({ content, type }: { content: string, type: AIGeneratableType }) => {
             if (await incrCommentaryQuota(1)) {
                 throw new Error('You have reached the maximum number of commentary quota.')
             }

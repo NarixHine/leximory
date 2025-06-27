@@ -184,6 +184,8 @@ export type Database = {
           id: number
           news: string
           novel: string
+          quiz: Json | null
+          raw_news: string | null
         }
         Insert: {
           cover: string
@@ -192,6 +194,8 @@ export type Database = {
           id?: number
           news: string
           novel: string
+          quiz?: Json | null
+          raw_news?: string | null
         }
         Update: {
           cover?: string
@@ -200,6 +204,8 @@ export type Database = {
           id?: number
           news?: string
           novel?: string
+          quiz?: Json | null
+          raw_news?: string | null
         }
         Relationships: []
       }

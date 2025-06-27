@@ -17,6 +17,8 @@ import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
 import Define from '../define'
+import Paper from '../editory/paper'
+import { Spacer } from '@heroui/spacer'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -54,7 +56,7 @@ function TimesContentSkeleton() {
             </Accordion>
 
             {/* News Skeleton */}
-            <h3 className='mt-4 mb-6'>Daily News</h3>
+            <h2 className='mt-4 mb-6'>Daily News</h2>
             <div className='space-y-3 mt-4'>
                 <Skeleton className='h-4 w-full rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
@@ -80,17 +82,19 @@ function TimesContent() {
         return <TimesContentSkeleton />
     }
 
+    const { cover, news, novel, quiz } = data
+
     return (
         <article className='m-6 md:px-4 md:my-12 prose-lg prose dark:prose-invert'>
             {/* Header */}
             <div>
-                <h1 className='mb-2 font-semibold'>{moment(data.date).format('LL')}</h1>
+                <h1 className='mb-2 font-semibold'>{moment(date).format('LL')}</h1>
                 <span className='text-xl opacity-80'>Brought to you with AI by <span className='font-semibold'>The Leximory Times</span></span>
             </div>
 
             {/* Cover Image */}
             <div className='relative w-full aspect-video rounded-2xl overflow-hidden mb-5'>
-                <Image src={data.cover} alt='Daily cover' fill sizes='600px' className='object-cover object-center rounded-2xl' />
+                <Image src={cover} alt='Daily cover' fill sizes='600px' className='object-cover object-center rounded-2xl' />
             </div>
             <Accordion>
                 <AccordionItem title='Daily Novel' classNames={{
@@ -101,18 +105,29 @@ function TimesContent() {
                     <Markdown
                         className='prose-lg'
                         fontFamily={ENGLISH_MODERN.style.fontFamily}
-                        md={`${data.novel} ■`}
+                        md={`${novel} ■`}
                     />
                 </AccordionItem>
             </Accordion>
 
-            <h3>Daily News</h3>
+            <h2>Daily News</h2>
             {/* Content */}
             <Markdown
-                className='prose-lg pb-10'
+                className='prose-lg'
                 fontFamily={ENGLISH_MODERN.style.fontFamily}
-                md={data.news}
+                md={news}
             />
+
+            {quiz ? <>
+                <h2>Daily Quiz</h2>
+                {/* Quiz */}
+                <i>This quiz is based on the news published three days ago. Click on the blank to show options.</i>
+                <Card shadow='none' className='bg-white' isBlurred>
+                    <CardBody className='p-6'>
+                        <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-secondary-50/50' />
+                    </CardBody>
+                </Card>
+            </> : <Spacer y={10} />}
         </article>
     )
 }

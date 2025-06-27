@@ -2,7 +2,7 @@
 import 'server-only'
 import { supabase } from '@/server/client/supabase'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
-import { TimesSummaryData, TimesData } from '@/components/times/types'
+import { TimesSummaryData, TimesData, TimesDataWithRaw } from '@/components/times/types'
 import { TIMES_PAGE_SIZE } from '@/lib/config'
 
 export async function getRecentTimesData(page: number = 1, pageSize: number = TIMES_PAGE_SIZE) {
@@ -13,6 +13,7 @@ export async function getRecentTimesData(page: number = 1, pageSize: number = TI
         .select('date, cover', { count: 'exact' })
         .order('date', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1)
+
         .throwOnError()
 
     return {
@@ -21,12 +22,12 @@ export async function getRecentTimesData(page: number = 1, pageSize: number = TI
     }
 }
 
-export async function getTimesDataByDate(date: string) {
+export async function getTimesDataByDate(date: string, includeRaw: boolean = false) {
     cacheTag('times')
 
     const { data } = await supabase
         .from('times')
-        .select('date, cover, news, novel')
+        .select('date, cover, news, novel, quiz')
         .eq('date', date)
         .single()
         .throwOnError()
@@ -34,15 +35,35 @@ export async function getTimesDataByDate(date: string) {
     return data as TimesData
 }
 
+export async function getRawNewsByDate(date: string) {
+    cacheTag('times')
+
+    const { data } = await supabase
+        .from('times')
+        .select('raw_news')
+        .eq('date', date)
+        .single()
+        .throwOnError()
+
+    return data.raw_news
+}
+
+export async function publishTimes(data: TimesDataWithRaw) {
+    await supabase
+        .from('times')
+        .insert(data)
+        .throwOnError()
+}
+
 export async function getLatestTimesData() {
     cacheTag('times')
 
     const { data } = await supabase
         .from('times')
-        .select('date, cover, news, novel')
+        .select('date, cover, news, novel, quiz')
         .order('date', { ascending: false })
         .limit(1)
         .throwOnError()
 
-    return data[0]
+    return data[0] as TimesData
 }

@@ -38,7 +38,7 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
     }
   }
 
-  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6', className)} {...props}>
+  return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose', className)} {...props}>
     <H className='mb-1 text-3xl'>更新密码</H>
     <form onSubmit={handleUpdatePassword} className='space-y-4'>
       <div className='space-y-1'>
