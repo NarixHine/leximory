@@ -72,17 +72,17 @@ function TimesContentSkeleton() {
 }
 
 function TimesContent() {
-    const [date] = useQueryState('date')
+    const [dateInUrl] = useQueryState('date')
     const { data } = useQuery({
-        queryKey: ['times', date],
-        queryFn: () => date ? fetchIssue(date) : fetchLatestIssue(),
+        queryKey: ['times', dateInUrl],
+        queryFn: () => dateInUrl ? fetchIssue(dateInUrl) : fetchLatestIssue(),
     })
 
     if (!data) {
         return <TimesContentSkeleton />
     }
 
-    const { cover, news, novel, quiz } = data
+    const { cover, news, novel, quiz, date } = data
 
     return (
         <article className='m-6 md:px-4 md:my-12 prose-lg prose dark:prose-invert'>
@@ -124,7 +124,7 @@ function TimesContent() {
                 <i>This quiz is based on the news published three days ago. Click on the blank to show options.</i>
                 <Card shadow='none' className='bg-white' isBlurred>
                     <CardBody className='p-6'>
-                        <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-secondary-50/50' />
+                        <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-default-50/50' />
                     </CardBody>
                 </Card>
             </> : <Spacer y={10} />}

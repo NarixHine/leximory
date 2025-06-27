@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { getAllTextsInLib, getLib, listLibsWithFullInfo } from '@/server/db/lib'
-import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
+import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
@@ -30,7 +30,7 @@ export type ToolResult = {
     getTexts: ReturnType<typeof getTexts>
     getTextContent: ReturnType<typeof getTextContent>
     getAllTextsInLib: ReturnType<typeof getAllTextsInLib>
-    getForgetCurve: ReturnType<typeof getForgetCurve>
+    getForgetCurve: ReturnType<typeof getWordsWithin>
     annotateArticle: {
         id: string
         title: string

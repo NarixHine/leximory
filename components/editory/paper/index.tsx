@@ -25,7 +25,7 @@ export default function Paper({
         >
             {data && <QuizPaper quizData={data}></QuizPaper>}
         </div>
-        <Accordion className={cn('not-prose', accordianClassName)}>
+        <Accordion className={cn('not-prose w-full', accordianClassName)}>
             <AccordionItem title='Key' className={cn('font-mono shadow-none', accordianItemClassName)} subtitle='Click to reveal' variant='splitted'>
                 {data && <QuizKey quizData={data} />}
             </AccordionItem>

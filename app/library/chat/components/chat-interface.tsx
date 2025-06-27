@@ -216,7 +216,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'getForgetCurve':
-            const words = (result as Awaited<ToolResult['getForgetCurve']>).flat()
+            const words = result as Awaited<ToolResult['getForgetCurve']>
             return (
                 <div className={cn('mt-2 gap-2', words.length > 0 ? 'flex flex-col' : 'flex items-center')}>
                     <span className='text-sm text-default-600 font-mono flex items-center gap-3'><PiBookmark />Words to review</span>
@@ -430,7 +430,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     return (
         <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
             <div className='flex justify-between items-center mb-4 sticky py-1 px-4 top-10 z-10 backdrop-blur-sm rounded-full'>
-                <H usePlayfair className={'text-3xl bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+                <H usePlayfair className={'text-xl sm:text-3xl bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-2'>

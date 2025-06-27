@@ -4,6 +4,10 @@ import fastShuffle from 'fast-shuffle'
 import { NAME_MAP, ALPHABET_SET } from './config'
 import QuizData, { Config, FishingData, ClozeData, GrammarData, SentenceChoiceData, ReadingData, ListeningData, CustomData, QuizDataType } from './types'
 import { Popover, PopoverTrigger, PopoverContent } from '@heroui/popover'
+import { Button } from '@heroui/button'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { answerAtomFamily, setAnswerAtomFamily, getAnswerAtomFamily } from './atoms'
+import { cn } from '../utils'
 
 // ==================================================================================
 // 1. Helper Components & Utilities
@@ -13,9 +17,12 @@ const getSeed = (content: string | number): number => {
     return content.toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
 }
 
-const Blank = ({ number, spaceCount = 3, options }: { number: number, spaceCount?: number, options?: string[] }) => {
+const Blank = ({ number, spaceCount = 3, options, groupId }: { number: number, spaceCount?: number, options?: string[], groupId: string }) => {
+    const setAnswer = useSetAtom(setAnswerAtomFamily(groupId))
+    const getAnswer = useAtomValue(getAnswerAtomFamily(groupId))
     const spaces = '\u00A0'.repeat(spaceCount)
     const ShownBlank = <u>{`${spaces}${number}${spaces}`}</u>
+
     if (options && options.length > 0) {
         return (
             <Popover>
@@ -25,7 +32,15 @@ const Blank = ({ number, spaceCount = 3, options }: { number: number, spaceCount
                 <PopoverContent>
                     <div className="flex flex-col gap-y-2 p-2 font-mono">
                         {options.map((option, index) => (
-                            <span key={index} className="text-sm">{`${ALPHABET_SET[index]}. ${option}`}</span>
+                            <Button
+                                key={index}
+                                color={getAnswer(number) === option ? 'success' : 'default'}
+                                variant='flat'
+                                size='sm'
+                                onPress={() => setAnswer({ questionId: number, option })}
+                            >
+                                {`${ALPHABET_SET[index]}. ${option}`}
+                            </Button>
                         ))}
                     </div>
                 </PopoverContent>
@@ -77,9 +92,11 @@ const FishingQuestion = ({ data, config }: { data: FishingData, config: Config }
     const replacer = (node: DOMNode): JSX.Element | undefined => {
         if ('name' in node && node.name === 'code') {
             questionCounter.current++
-            return <Blank number={(config.start ?? 1) + questionCounter.current - 1} options={options} />
+            return <Blank number={(config.start ?? 1) + questionCounter.current - 1} options={options} groupId={data.id} />
         }
     }
+
+    const { answers } = useAtomValue(answerAtomFamily(data.id))
 
     const parsedContent = useMemo(() => parse(data.text, { replace: replacer }), [data.text, config.start])
 
@@ -100,9 +117,11 @@ const FishingQuestion = ({ data, config }: { data: FishingData, config: Config }
 
     const key = (
         <>
-            {correctAnswers.map((answer, index) => (
-                <td key={index} className="key-item px-2">{`${(config.start ?? 1) + index}. ${ALPHABET_SET[options.indexOf(answer)]}`}</td>
-            ))}
+            {correctAnswers.map((answer, index) => {
+                const number = (config.start ?? 1) + index
+                const userAnswer = answers[number]
+                return <td key={index} className={cn('key-item px-2', userAnswer && (answer === userAnswer ? 'text-success' : 'text-danger'))}>{`${number}. ${ALPHABET_SET[options.indexOf(answer)]}`}</td>
+            })}
         </>
     )
 
@@ -128,7 +147,7 @@ const ClozeQuestion = ({ data, config }: { data: ClozeData, config: Config }) =>
             questionCounter.current++
             const number = (config.start ?? 1) + questionCounter.current - 1
             if ('children' in node && 'data' in node.children[0])
-                return <Blank number={number} options={shuffledOptions[node.children[0].data]} />
+                return <Blank number={number} options={shuffledOptions[node.children[0].data]} groupId={data.id} />
         }
     }
 
@@ -140,12 +159,16 @@ const ClozeQuestion = ({ data, config }: { data: ClozeData, config: Config }) =>
         </QuestionSection>
     )
 
+    const { answers } = useAtomValue(answerAtomFamily(data.id))
+
     const key = (
         <>
             {data.questions.map((question, index) => {
                 const correctIndex = shuffledOptions[question.original].indexOf(question.original)
+                const number = (config.start ?? 1) + index
+                const userAnswer = answers[number]
                 return (
-                    <td key={index} className="key-item px-2">{`${(config.start ?? 1) + index}. ${ALPHABET_SET[correctIndex]}`}</td>
+                    <td key={index} className={cn('key-item px-2', userAnswer && (question.original === userAnswer ? 'text-success' : 'text-danger'))}>{`${number}. ${ALPHABET_SET[correctIndex]}`}</td>
                 )
             })}
         </>
@@ -173,14 +196,14 @@ const GrammarQuestion = ({ data, config }: { data: GrammarData, config: Config }
                     <span>
                         {words.map((_, i) => (
                             <React.Fragment key={i}>
-                                <Blank number={questionNumber} />
+                                <Blank number={questionNumber} groupId={data.id} />
                                 {i < words.length - 1 && ' '}
                             </React.Fragment>
                         ))}
                     </span>
                 )
             } else {
-                return <span className="paper-hint"><Blank number={questionNumber} />{` (${hint})`}</span>
+                return <span className="paper-hint"><Blank number={questionNumber} groupId={data.id} />{` (${hint})`}</span>
             }
         }
     }
@@ -212,7 +235,7 @@ const SentenceChoiceQuestion = ({ data, config }: { data: SentenceChoiceData, co
     const replacer = (node: DOMNode): JSX.Element | undefined => {
         if ('name' in node && node.name === 'code') {
             questionCounter.current++
-            return <Blank number={(config.start ?? 1) + questionCounter.current - 1} spaceCount={8} />
+            return <Blank groupId={data.id} number={(config.start ?? 1) + questionCounter.current - 1} spaceCount={8} />
         }
     }
 
@@ -352,7 +375,7 @@ export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
     let questionStart = 1
 
     const keyPerLineMap: { [key in QuizDataType]?: number } = {
-        fishing: 5, cloze: 5, grammar: 2, '4/6': 4, reading: 4, listening: 5, custom: 0
+        fishing: 5, cloze: 5, grammar: 2, '4/6': 4, reading: 5, listening: 5, custom: 0
     }
 
     const allKeyRows = quizData.flatMap((data, index) => {

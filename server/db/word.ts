@@ -115,7 +115,7 @@ export async function drawWords({ lib, start, end, size }: { lib: string, start:
 
 export async function getForgetCurve({ day, or: { filters, options } }: { day: ForgetCurvePoint, or: OrFilter }) {
     const data = await getWordsWithin({ fromDayAgo: forgetCurve[day][0], toDayAgo: forgetCurve[day][1], or: { filters, options } })
-    return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
+    return data
 }
 
 export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, options } }: { fromDayAgo: number, toDayAgo: number, or: OrFilter }) {
@@ -129,7 +129,7 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
         .lte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(toDayAgo, 'day').toISOString())
         .or(filters, options)
         .throwOnError()
-    return data
+    return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }
 
 export async function aggrWordHistogram({ libs, size }: { libs: string[], size: number }) {
