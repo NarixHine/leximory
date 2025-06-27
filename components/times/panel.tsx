@@ -121,15 +121,17 @@ function TimesContent() {
             />
 
             {quiz ? <>
-                <h2>Daily Quiz</h2>
+                <h2 className='mb-3'>Daily Quiz</h2>
                 {/* Quiz */}
                 <i>This quiz is based on the news published three days ago. {['cloze', 'fishing'].includes(quiz.type) && <i>Click on the blank to show options.</i>}</i>
-                <Card shadow='none' className='bg-white' isBlurred>
+                <Card shadow='none' className='bg-transparent -mt-6'>
                     <CardBody className='p-6'>
                         <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-default-50/50' />
                     </CardBody>
                 </Card>
             </> : <Spacer y={10} />}
+
+            <Spacer className='block md:hidden' y={16} />
         </article>
     )
 }
@@ -222,8 +224,8 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
                             ))
                         )}
                         {hasNextPage && (
-                            <div ref={ref} className='h-4 w-full flex items-center justify-center'>
-                                <Spinner variant='dots' />
+                            <div ref={ref} className='h-20 md:h-4 w-full flex items-center justify-center'>
+                                <Spinner variant='dots' color='default' />
                             </div>
                         )}
                     </div>

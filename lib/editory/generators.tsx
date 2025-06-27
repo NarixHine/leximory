@@ -321,7 +321,6 @@ const CustomQuestion = ({ data }: { data: CustomData, config: Config }) => {
 // 3. Main Components to Generate Paper and Key
 // ==================================================================================
 
-// HELPER: You may need to adjust this helper if your 'count' logic is more complex.
 // This function determines the number of questions in a data object without rendering.
 const getQuestionCount = (data: QuizData): number => {
     switch (data.type) {
@@ -339,14 +338,12 @@ const getQuestionCount = (data: QuizData): number => {
     }
 }
 
-
 // A map to retrieve the correct component for a given quiz data type.
 const questionComponentMap: { [T in QuizDataType]: (props: { data: Extract<QuizData, { type: T }>, config: Config, answers: string[] }) => {
     paper: JSX.Element,
     key: JSX.Element,
     count: number
 } } = {
-    // ... (Your existing map remains unchanged)
     'fishing': FishingQuestion,
     'cloze': ClozeQuestion,
     'grammar': GrammarQuestion,
@@ -356,9 +353,8 @@ const questionComponentMap: { [T in QuizDataType]: (props: { data: Extract<QuizD
     'custom': CustomQuestion,
 }
 
-// NEW: The component to render a single question block
+// The component to render a single question block
 const QuestionRenderer = ({ data, config }: { data: QuizData, config: Config }) => {
-    // Hook is called at the top level of a component, which is correct.
     const { answers } = useAtomValue(answerAtomFamily(data.id))
     const Component = questionComponentMap[data.type]
 
@@ -371,14 +367,13 @@ const QuestionRenderer = ({ data, config }: { data: QuizData, config: Config }) 
     return paper
 }
 
-
 /**
  * Renders the complete quiz paper by assembling the output of all question components.
  * @param {object} props - Component props.
  * @param {QuizData[]} props.quizData - An array of quiz data objects.
  */
 export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
-    // Pre-calculate the starting number for each question section. This is much cleaner.
+    // Pre-calculate the starting number for each question section.
     const questionStarts = useMemo(() => {
         const starts: number[] = []
         let questionStart = 1
@@ -402,6 +397,21 @@ export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
     )
 }
 
+const KeyRenderer = ({ data, config, perLine }: { data: QuizData, config: Config, perLine: number }) => {
+    const { answers } = useAtomValue(answerAtomFamily(data.id))
+    const Component = questionComponentMap[data.type]
+
+    if (!Component) return null
+
+    const result = Component({ data, config, answers } as any)
+
+    if (perLine === 0) {
+        return <React.Fragment>{result.key}</React.Fragment>
+    }
+
+    const cells = React.Children.toArray(result.key.props.children) as JSX.Element[]
+    return <>{toTableRows(cells, perLine || 5)}</>
+}
 
 /**
  * Renders the complete answer key by assembling and formatting keys from all components.
@@ -409,13 +419,12 @@ export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
  * @param {QuizData[]} props.quizData - An array of quiz data objects.
  */
 export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
-    // Pre-calculating here as well for consistency and good practice.
     const questionStarts = useMemo(() => {
         const starts: number[] = []
-        let questionStart = 1
+        let currentStart = 1
         for (const data of quizData) {
-            starts.push(questionStart)
-            questionStart += getQuestionCount(data)
+            starts.push(currentStart)
+            currentStart += getQuestionCount(data)
         }
         return starts
     }, [quizData])
@@ -424,27 +433,18 @@ export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
         fishing: 5, cloze: 5, grammar: 2, '4/6': 4, reading: 5, listening: 5, custom: 0
     }
 
-    const allKeyRows = quizData.flatMap((data, index) => {
-        // NOTE: No hook is called here, but the refactor makes the code cleaner
-        // and removes the `let questionStart` side effect.
-        const Component = questionComponentMap[data.type]
-        if (!Component) return []
-
-        // We can call the component with an empty `answers` array since the key doesn't use it.
-        const result = Component({ data, config: { start: questionStarts[index] }, answers: [] } as any)
-
-        const perLine = keyPerLineMap[data.type]
-        if (perLine === 0) {
-            return [<React.Fragment key={data.id || index}>{result.key}</React.Fragment>]
-        }
-
-        const cells = React.Children.toArray(result.key.props.children) as JSX.Element[]
-        return toTableRows(cells, perLine || 5)
-    })
-
     return (
         <table className="my-2">
-            <tbody>{allKeyRows}</tbody>
+            <tbody>
+                {quizData.map((data, index) => (
+                    <KeyRenderer
+                        key={data.id || index}
+                        data={data}
+                        config={{ start: questionStarts[index] }}
+                        perLine={keyPerLineMap[data.type] ?? 5}
+                    />
+                ))}
+            </tbody>
         </table>
     )
 }
