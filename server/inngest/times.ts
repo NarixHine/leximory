@@ -13,10 +13,10 @@ import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
 import showdown from 'showdown'
 
-const NOVEL_GENRES = ['fantasy', 'science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'magical realism', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural', 'school story', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
+const NOVEL_GENRES = ['fantasy', 'science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China)', 'magical realism', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural', 'school story', 'school story (set in modern-day China)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way.
 
 Output the guidance directly and cut out any unnecessary text from your reply.
 `.trim()
@@ -24,9 +24,9 @@ Output the guidance directly and cut out any unnecessary text from your reply.
 const NOVEL_PROMPT = `
 You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and fairly HIGH READABILITY (without incorporating too much advanced vocabulary).
 
-Your should write an immersive novel with fully developed, emotionally complex characters whose experiences drive the plot. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story. Use a vivid, concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—not exposition alone. Prioritise emotional realism and narrative momentum.
+Your should write an immersive novel with fully developed, emotionally complex characters, and the plot should be driven by their experiences instead of some bland third-party account. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
-The content and stylistic suggestions for today's novel from the editor are as follows. All instructions are voluntary.
+The content and stylistic suggestions for today's novel from the editor are as follows.
 
 Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then wrap the heading with Markdown \`###\` to indicate the TITLE of the novel. At last the NOVEL itself. Stay short and concise.
 `.trim()
@@ -74,7 +74,7 @@ export const generateTimes = inngest.createFunction(
             system: EDITOR_GUIDE_PROMPT,
             prompt: `Write today's editor's guide that is TOTALLY DIFFERENT from yesterday's novel and feels fresh. Name characters in an unclichéd way.
             
-            PICK one genre from below: ${shuffle(NOVEL_GENRES).slice(0, 10).join(', ')}. 
+            PICK one genre from below: ${shuffle(NOVEL_GENRES).slice(0, 5).join(', ')}. 
             
             Yesterday's novel: ${novelYesterday}.`,
             maxTokens: 4000,

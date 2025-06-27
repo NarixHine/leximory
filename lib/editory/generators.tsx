@@ -78,7 +78,7 @@ const QuestionSection = ({ title, children, showTitle = true }: { title?: string
 // ==================================================================================
 
 // --- Fishing Question ---
-const FishingQuestion = ({ data, config }: { data: FishingData, config: Config }) => {
+const FishingQuestion = ({ data, config, answers }: { data: FishingData, config: Config, answers: string[] }) => {
     const questionCounter = useRef(0)
 
     const { options, correctAnswers } = useMemo(() => {
@@ -95,8 +95,6 @@ const FishingQuestion = ({ data, config }: { data: FishingData, config: Config }
             return <Blank number={(config.start ?? 1) + questionCounter.current - 1} options={options} groupId={data.id} />
         }
     }
-
-    const { answers } = useAtomValue(answerAtomFamily(data.id))
 
     const parsedContent = useMemo(() => parse(data.text, { replace: replacer }), [data.text, config.start])
 
@@ -129,7 +127,7 @@ const FishingQuestion = ({ data, config }: { data: FishingData, config: Config }
 }
 
 // --- Cloze Question ---
-const ClozeQuestion = ({ data, config }: { data: ClozeData, config: Config }) => {
+const ClozeQuestion = ({ data, config, answers }: { data: ClozeData, config: Config, answers: string[] }) => {
     const questionCounter = useRef(0)
 
     const shuffledOptions = useMemo(() => {
@@ -158,8 +156,6 @@ const ClozeQuestion = ({ data, config }: { data: ClozeData, config: Config }) =>
             <section className="paper-content">{parsedContent}</section>
         </QuestionSection>
     )
-
-    const { answers } = useAtomValue(answerAtomFamily(data.id))
 
     const key = (
         <>
@@ -325,15 +321,32 @@ const CustomQuestion = ({ data }: { data: CustomData, config: Config }) => {
 // 3. Main Components to Generate Paper and Key
 // ==================================================================================
 
-// Type for the return value of each question component
-type QuestionComponentResult = {
-    paper: JSX.Element
-    key: JSX.Element
-    count: number
+// HELPER: You may need to adjust this helper if your 'count' logic is more complex.
+// This function determines the number of questions in a data object without rendering.
+const getQuestionCount = (data: QuizData): number => {
+    switch (data.type) {
+        case 'fishing':
+        case 'grammar':
+        case '4/6':
+            return (data.text.match(/<code>/g) || []).length
+        case 'cloze':
+        case 'reading':
+        case 'listening':
+            return data.questions.length
+        case 'custom':
+        default:
+            return 0
+    }
 }
 
+
 // A map to retrieve the correct component for a given quiz data type.
-const questionComponentMap: { [T in QuizDataType]: (props: { data: Extract<QuizData, { type: T }>, config: Config }) => QuestionComponentResult } = {
+const questionComponentMap: { [T in QuizDataType]: (props: { data: Extract<QuizData, { type: T }>, config: Config, answers: string[] }) => {
+    paper: JSX.Element,
+    key: JSX.Element,
+    count: number
+} } = {
+    // ... (Your existing map remains unchanged)
     'fishing': FishingQuestion,
     'cloze': ClozeQuestion,
     'grammar': GrammarQuestion,
@@ -343,28 +356,52 @@ const questionComponentMap: { [T in QuizDataType]: (props: { data: Extract<QuizD
     'custom': CustomQuestion,
 }
 
+// NEW: The component to render a single question block
+const QuestionRenderer = ({ data, config }: { data: QuizData, config: Config }) => {
+    // Hook is called at the top level of a component, which is correct.
+    const { answers } = useAtomValue(answerAtomFamily(data.id))
+    const Component = questionComponentMap[data.type]
+
+    if (!Component) {
+        return null
+    }
+
+    // Pass answers to the specific question component
+    const { paper } = Component({ data, config, answers } as any)
+    return paper
+}
+
+
 /**
  * Renders the complete quiz paper by assembling the output of all question components.
  * @param {object} props - Component props.
  * @param {QuizData[]} props.quizData - An array of quiz data objects.
  */
 export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
-    let questionStart = 1
+    // Pre-calculate the starting number for each question section. This is much cleaner.
+    const questionStarts = useMemo(() => {
+        const starts: number[] = []
+        let questionStart = 1
+        for (const data of quizData) {
+            starts.push(questionStart)
+            questionStart += getQuestionCount(data)
+        }
+        return starts
+    }, [quizData])
 
     return (
         <div>
-            {quizData.map((data, index) => {
-                const Component = questionComponentMap[data.type]
-                if (!Component) return null
-
-                const result = Component({ data, config: { start: questionStart } } as any)
-                questionStart += result.count
-
-                return <React.Fragment key={data.id || index}>{result.paper}</React.Fragment>
-            })}
+            {quizData.map((data, index) => (
+                <QuestionRenderer
+                    key={data.id || index}
+                    data={data}
+                    config={{ start: questionStarts[index] }}
+                />
+            ))}
         </div>
     )
 }
+
 
 /**
  * Renders the complete answer key by assembling and formatting keys from all components.
@@ -372,18 +409,29 @@ export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
  * @param {QuizData[]} props.quizData - An array of quiz data objects.
  */
 export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
-    let questionStart = 1
+    // Pre-calculating here as well for consistency and good practice.
+    const questionStarts = useMemo(() => {
+        const starts: number[] = []
+        let questionStart = 1
+        for (const data of quizData) {
+            starts.push(questionStart)
+            questionStart += getQuestionCount(data)
+        }
+        return starts
+    }, [quizData])
 
     const keyPerLineMap: { [key in QuizDataType]?: number } = {
         fishing: 5, cloze: 5, grammar: 2, '4/6': 4, reading: 5, listening: 5, custom: 0
     }
 
     const allKeyRows = quizData.flatMap((data, index) => {
+        // NOTE: No hook is called here, but the refactor makes the code cleaner
+        // and removes the `let questionStart` side effect.
         const Component = questionComponentMap[data.type]
         if (!Component) return []
 
-        const result = Component({ data, config: { start: questionStart } } as any)
-        questionStart += result.count
+        // We can call the component with an empty `answers` array since the key doesn't use it.
+        const result = Component({ data, config: { start: questionStarts[index] }, answers: [] } as any)
 
         const perLine = keyPerLineMap[data.type]
         if (perLine === 0) {
