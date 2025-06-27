@@ -13,7 +13,7 @@ import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
 import showdown from 'showdown'
 
-const NOVEL_GENRES = ['fantasy', 'science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'horror', 'thriller', 'adolescence fiction', 'magical realism', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural', 'school story', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'mythic fiction']
+const NOVEL_GENRES = ['fantasy', 'science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'magical realism', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural', 'school story', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
 
 const EDITOR_GUIDE_PROMPT = ` 
 You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way.
@@ -28,7 +28,7 @@ Your should write an immersive novel with fully developed, emotionally complex c
 
 The content and stylistic suggestions for today's novel from the editor are as follows. All instructions are voluntary.
 
-Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then wrap the heading with Markdown \`###\` to indicate the TITLE of the novel. At last the NOVEL itself.
+Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. Then wrap the heading with Markdown \`###\` to indicate the TITLE of the novel. At last the NOVEL itself. Stay short and concise.
 `.trim()
 
 const NEWS_PROMPT = `
@@ -86,7 +86,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['flash-2.5'],
             system: NOVEL_PROMPT,
             prompt: editorGuide,
-            maxTokens: 9000,
+            maxTokens: 8000,
             temperature: 0.5
         })
 

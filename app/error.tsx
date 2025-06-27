@@ -23,7 +23,7 @@ export default function Error({
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-6 pt-0'>
                     <p className='text-center text-lg text-muted-foreground/80'>
-                        An unexpected error occurred. <br />
+                        An error occurred. <br />
                         If the problem persists, please contact support.
                     </p>
                     <div className='flex gap-4'>

@@ -23,7 +23,10 @@ export async function login(props: z.infer<typeof authSchema>) {
 
     const { error } = await supabase.auth.signInWithPassword(data)
 
-    if (error) {
+    if (error?.code === 'invalid_credentials') {
+        return { error: '用户名或密码错误' }
+    }
+    else if (error) {
         throw error
     }
 

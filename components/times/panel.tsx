@@ -121,7 +121,8 @@ function TimesContent() {
             {quiz ? <>
                 <h2>Daily Quiz</h2>
                 {/* Quiz */}
-                <i>This quiz is based on the news published three days ago. Click on the blank to show options.</i>
+                <p className='italic'>This quiz is based on the news published three days ago. </p>
+                {['cloze', 'fishing'].includes(quiz.type) && <p className='italic'>Click on the blank to show options.</p>}
                 <Card shadow='none' className='bg-white' isBlurred>
                     <CardBody className='p-6'>
                         <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-default-50/50' />

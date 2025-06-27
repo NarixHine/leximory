@@ -9,6 +9,7 @@ import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { login } from './actions'
 import { Form } from '@heroui/form'
+import { toast } from 'sonner'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -18,7 +19,14 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose', className)} {...props}>
     <H className='mb-1'>继续语言学习之旅</H>
     <Form action={() => {
-      startTransition(() => login({ email, password }))
+      startTransition(async () => {
+        const { error } = await login({ email, password })
+        if (error) {
+          toast.error(error)
+        } else {
+          toast.success('登录成功')
+        }
+      })
     }} className='space-y-4 max-w-sm'>
       <div className='space-y-1 w-full'>
         <label
