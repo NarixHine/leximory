@@ -4,9 +4,10 @@ import { getAllWordsInLib, getForgetCurve } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
-import QuizData, { AI_GEN_QUIZ_DATA_TYPE_LIST } from '@/lib/editory/types'
+import QuizData from '@/lib/editory/types'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
+import { AI_GENERATABLE } from '@/lib/editory/config'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',
@@ -63,7 +64,7 @@ export const toolSchemas = {
     }),
     generateQuiz: z.object({
         content: z.string().describe('The text content to generate quiz from'),
-        type: z.enum(AI_GEN_QUIZ_DATA_TYPE_LIST).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十/小猫钓鱼), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
+        type: z.enum(AI_GENERATABLE).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十/小猫钓鱼), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
     }),
     extractArticleFromWebpage: z.object({
         url: z.string().describe('The URL of the webpage to extract the article from')
