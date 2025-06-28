@@ -13,7 +13,7 @@ import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
 import showdown from 'showdown'
 
-const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural', 'school story', 'school story (set in modern-day China)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
+const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
 
 const EDITOR_GUIDE_PROMPT = ` 
 You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way.
@@ -66,15 +66,43 @@ She might have dismissed it, but her hands had started to shake. For the first t
 `.trim()
 
 const NEWS_PROMPT = `
-You're the journalist in charge of the Daily News section of the online publication *The Leximory Times*, published every evening. Aggregate all news today into a single article. (Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine.)
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news today, adapt the content, and aggregate them into a single article. 
 
-Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into world/US/China/S&T/AI/new research/business/culture/environment/space/wellbeing, etc. (Feel free to explore more categories or omit environment/space/health in absence of noteworthy news.)
+Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine. Also make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory.
 
-Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate more advanced vocabulary in your reporting, for the sake of English learning.
+Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Marsian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...).
+Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate advanced vocabulary in your reporting, for the sake of English learning.
 
-Write in a modern journalistic style (engaging and compelling to follow through). Particularly, search if there are any **newsworthy stories** (of a person, etc.) that took place recently, make the story the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times. Avoid AI summary vibes and factual errors,
+Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). Precede every event under every topic with a clearly fictitious city name in Leximory.
+
+Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
+
+### An Exemplary Excerpt from The Great Read
+
+NEW YORK — On a June afternoon in 2018, a man named Mickey Barreto checked into the New Yorker Hotel. He was assigned Room 2565, a double-bed accommodation with a view of midtown Manhattan almost entirely obscured by an exterior wall. For a one-night stay, he paid $200.57.
+
+But he did not check out the next morning. Instead, he made the once-grand hotel his full-time residence for the next five years, without ever paying another cent.
+
+In a city where every inch of real estate is picked over and priced out, and where affordable apartments are among the rarest commodities, Barreto had perhaps the best housing deal in New York City history.
+
+Now, that deal could land him in prison.
+
+The story of how Barreto, a California transplant with a taste for wild conspiracy theories and a sometimes tenuous grip on reality, gained and lost the rights to Room 2565 might sound implausible — another tale from a man who claims without evidence to be a first cousin, 11 times removed, of Christopher Columbus’ oldest son.
+
+But it’s true. Whatever his far-fetched beliefs, Barreto, now 49, was right about one thing: an obscure New York City rent law that provided him with many a New Yorker’s dream.
+
+On that summer day nearly six years ago, Barreto walked through the hotel’s revolving door on Eighth Avenue and entered a lobby centered by a 20-foot art deco chandelier, a nod to the hotel’s geometric architecture.
+
+...
+
+A week later, police officers showed up before sunrise at the apartment on the Upper West Side where Barreto had been staying with Hannan.
+
+Barreto was arrested and arraigned later that morning in a Manhattan court on 24 counts — including 14 felony fraud counts — in what prosecutors said was a criminal scheme to claim ownership of the hotel. Hannan, who Barreto said was not involved beyond staying with him at the hotel for much of five years, was not charged or accused of any crime.
+
+Barreto is now awaiting trial in state Supreme Court in Manhattan and facing several years in prison if convicted. In jail before he was released on his own recognizance, Barreto said he used his one phone call to dial the White House, leaving a message about his whereabouts.
+
+There was no reason to believe the White House had any interest in the case or any idea who Mickey Barreto was. But you could never quite tell with Mickey — he had been right once before.
 `.trim()
 
 const IMAGE_PROMPT = `
@@ -103,7 +131,7 @@ export const generateTimes = inngest.createFunction(
         // Step 2: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
             const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
-            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
+            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 2).join(', ')
             return { date, randomGenres }
         })
 

@@ -50,7 +50,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	return (
 		<ViewTransitions>
 			<html lang='zh-CN' className='antialiased'>
-				<body style={{ fontFamily: defaultFontFamily }}>
+				<body>
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
