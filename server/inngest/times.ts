@@ -16,7 +16,7 @@ import showdown from 'showdown'
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the characters (with realistic names) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Instead, try to be heartfelt and resonant by being unique and human.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the characters (give them realistic names instead of placeholders like Elara) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
 
 Base your blueprint on the following principles: The novelist is to write an immersive novel with fully developed, emotionally complex characters, and the plot should be driven by their experiences instead of some bland third-party account. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
@@ -127,20 +127,20 @@ export const generateTimes = inngest.createFunction(
     { id: 'generate-times' },
     { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
     async ({ step }) => {
-        // Step 1: Get yesterday's data
-        const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
-            const threeDaysAgo = moment().tz('Asia/Shanghai').subtract(3, 'days').format('YYYY-MM-DD')
-            const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
-            const latestTimesData = await getLatestTimesData()
-
-            return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
-        })
-
-        // Step 2: Get today's date
+        // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
             const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
+        })
+
+        // Step 2: Get yesterday's data
+        const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
+            const threeDaysAgo = moment(date).tz('Asia/Shanghai').subtract(3, 'days').format('YYYY-MM-DD')
+            const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
+            const latestTimesData = await getLatestTimesData()
+
+            return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
         })
 
         // Step 3: Generate editor's guide
