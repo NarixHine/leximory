@@ -26,7 +26,7 @@ Output the guidance directly and cut out any unnecessary text from your reply.
 const NOVEL_PROMPT = `
 ### Core Directives
 
-You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and VERY SMOOTH, VERY HIGH READABILITY (incorporating a moderate amount of advanced vocabulary).
+You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and VERY SMOOTH, VERY HIGH READABILITY (incorporating only a small amount of advanced vocabulary).
 
 You should write an immersive novel with fully developed, emotionally complex characters, and **the plot should be driven by their experiences** instead of some bland third-party account so that you are writing a STORY like a master novelist rather than a parable. 
 
@@ -92,17 +92,19 @@ export const generateTimes = inngest.createFunction(
     { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
     async ({ step }) => {
         // Step 1: Get yesterday's data
-        const { novelYesterday, newsYesterday, newsThreeDaysAgo, randomGenres } = await step.run('get-yesterday-data', async () => {
+        const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
             const threeDaysAgo = moment().tz('Asia/Shanghai').subtract(3, 'days').format('YYYY-MM-DD')
             const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
             const latestTimesData = await getLatestTimesData()
-            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 2).join(', ')
-            return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo, randomGenres }
+
+            return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
         })
 
         // Step 2: Get today's date
-        const date = await step.run('get-date', async () => {
-            return moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+        const { date, randomGenres } = await step.run('get-config-today', async () => {
+            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
+            return { date, randomGenres }
         })
 
         // Step 3: Generate editor's guide
@@ -127,7 +129,7 @@ export const generateTimes = inngest.createFunction(
             temperature: 0.5
         })
 
-         const annotatedNovel = await step.run('annotate-novel', async () => {
+        const annotatedNovel = await step.run('annotate-novel', async () => {
             return await annotateParagraph({ content: novel, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 

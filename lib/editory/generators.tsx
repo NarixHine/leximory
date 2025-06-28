@@ -8,6 +8,7 @@ import { Button } from '@heroui/button'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answerAtomFamily, setAnswerAtomFamily, getAnswerAtomFamily } from './atoms'
 import { cn } from '../utils'
+import { PiCursorClick, PiCursorClickFill } from 'react-icons/pi'
 
 // ==================================================================================
 // 1. Helper Components & Utilities
@@ -17,11 +18,12 @@ const getSeed = (content: string | number): number => {
     return content.toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
 }
 
-const Blank = ({ number, spaceCount = 3, options, groupId }: { number: number, spaceCount?: number, options?: string[], groupId: string }) => {
+const Blank = ({ number, options, groupId }: { number: number, spaceCount?: number, options?: string[], groupId: string }) => {
     const setAnswer = useSetAtom(setAnswerAtomFamily(groupId))
     const getAnswer = useAtomValue(getAnswerAtomFamily(groupId))
-    const spaces = '\u00A0'.repeat(spaceCount)
-    const ShownBlank = <u>{`${spaces}${number}${spaces}`}</u>
+    const answer = getAnswer(number)
+    const spaces = '\u00A0'
+    const ShownBlank = <u className='whitespace-nowrap'>{answer ? <PiCursorClickFill className='inline ml-2 -mr-6 mb-1' /> : <PiCursorClick className='inline ml-2 -mr-6 mb-1' />}{`${spaces.repeat(6)}${number}${spaces.repeat(3)}`}</u>
 
     if (options && options.length > 0) {
         return (
@@ -34,7 +36,7 @@ const Blank = ({ number, spaceCount = 3, options, groupId }: { number: number, s
                         {options.map((option, index) => (
                             <Button
                                 key={index}
-                                color={getAnswer(number) === option ? 'success' : 'default'}
+                                color={answer === option ? 'success' : 'default'}
                                 variant='flat'
                                 size='sm'
                                 onPress={() => setAnswer({ questionId: number, option })}
