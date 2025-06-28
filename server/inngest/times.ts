@@ -13,10 +13,10 @@ import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
 import showdown from 'showdown'
 
-const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
+const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction']
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the characters (with realistic names) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Instead, try to be heartfelt and resonant by being unique and human.
 
 Base your blueprint on the following principles: The novelist is to write an immersive novel with fully developed, emotionally complex characters, and the plot should be driven by their experiences instead of some bland third-party account. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
@@ -68,19 +68,21 @@ She might have dismissed it, but her hands had started to shake. For the first t
 const NEWS_PROMPT = `
 You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news today, adapt the content, and aggregate them into a single article. 
 
-Make sure you avoid sensitive topics for China mainlanders, where the majority of our readership resides, but moderate ones are fine. Also make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory.
+Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. Name your characters realistically.
 
 Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Marsian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
 
-Use Markdown H3 to indicate the category, and H4 the main idea of the news. Feel free to incorporate advanced vocabulary in your reporting, for the sake of English learning.
+Use Markdown H3 to indicate the category, and H4 the main idea of the news. Incorporate a moderate amount of advanced vocabulary in your reporting, for the sake of English learning.
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). Precede every event under every topic with a clearly fictitious city name in Leximory.
+Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in bold) in Leximory.
 
 Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
 
-### An Exemplary Excerpt from The Great Read
+### Examples
 
-NEW YORK — On a June afternoon in 2018, a man named Mickey Barreto checked into the New Yorker Hotel. He was assigned Room 2565, a double-bed accommodation with a view of midtown Manhattan almost entirely obscured by an exterior wall. For a one-night stay, he paid $200.57.
+***An Exemplary Excerpt from The Great Read***：
+
+**New York** — On a June afternoon in 2018, a man named Mickey Barreto checked into the New Yorker Hotel. He was assigned Room 2565, a double-bed accommodation with a view of midtown Manhattan almost entirely obscured by an exterior wall. For a one-night stay, he paid $200.57.
 
 But he did not check out the next morning. Instead, he made the once-grand hotel his full-time residence for the next five years, without ever paying another cent.
 
@@ -103,6 +105,12 @@ Barreto was arrested and arraigned later that morning in a Manhattan court on 24
 Barreto is now awaiting trial in state Supreme Court in Manhattan and facing several years in prison if convicted. In jail before he was released on his own recognizance, Barreto said he used his one phone call to dial the White House, leaving a message about his whereabouts.
 
 There was no reason to believe the White House had any interest in the case or any idea who Mickey Barreto was. But you could never quite tell with Mickey — he had been right once before.
+
+***Regular News Example***：
+
+**Leximory Bay** — The Bay Parliament convened an emergency session yesterday, debating a controversial new "Tidal Tax" proposed by the ruling Coral Party. The tax, which would impose a levy on all goods transported by tidal currents, has been met with fierce resistance from the opposition Manta Ray Alliance.
+
+"This is a tax on the very pulse of our economy," declared Representative Kaelen, his voice echoing through the grand hall. "It will cripple small businesses and inflate the cost of kelp bread for every family."
 `.trim()
 
 const IMAGE_PROMPT = `
@@ -131,7 +139,7 @@ export const generateTimes = inngest.createFunction(
         // Step 2: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
             const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
-            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 2).join(', ')
+            const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })
 
