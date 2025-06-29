@@ -66,7 +66,7 @@ She might have dismissed it, but her hands had started to shake. For the first t
 `.trim()
 
 const NEWS_PROMPT = `
-You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news today (use Google Search Grounding), adapt the content, and aggregate them into a single article. 
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news TODAY (use Google Search Grounding), adapt the content, and aggregate them into a single article. 
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. Name your characters realistically.
 
@@ -76,11 +76,11 @@ Use Markdown H3 to indicate the category, and H4 the main idea of the news. Inco
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in bold) in Leximory.
 
-Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
+Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.; make it engaging, not moralising) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
 
 ### Background settings of Leximory
 
-ONLY use the following settings to maintain coherence in the world of Leximory. AVOID mentioning any of the following settings if they are irrelevant to today's news. Still make real-world events you find via Google Search Grounding your major source of inspiration. If you decide to write a follow-up of yesterday's news (not required), incorporate relevant context and fabricate its further development in an engaging way while maintaining coherence.
+ONLY use the following settings to maintain coherence in the world of Leximory. AVOID mentioning any of the following settings if they are irrelevant to today's news. Still make TODAY's real-world events you find via Google Search Grounding your major source of inspiration. If you decide to write a follow-up of yesterday's news (not required), incorporate relevant context and fabricate its further development in an engaging way while maintaining coherence.
 
 **Geopolitical Circumstances:**
 
@@ -149,7 +149,7 @@ export const generateTimes = inngest.createFunction(
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
-            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            const date = moment().add(1, 'day').tz('Asia/Shanghai').format('YYYY-MM-DD')
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })
