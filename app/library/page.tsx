@@ -17,6 +17,7 @@ import { Button } from '@heroui/button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { getUserOrThrow } from '@/server/auth/user'
+import AdminDashboardLink from './components/dashboard-link'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -128,10 +129,13 @@ export default function Page() {
 
         <Spacer y={4} />
 
-        <footer className='flex justify-center'>
+        <footer className='flex justify-center gap-2'>
             <Button as={Link} href='/about' variant='light' startContent={<PiVideo />}>
                 使用教程
             </Button>
+            <Suspense>
+                <AdminDashboardLink />
+            </Suspense>
         </footer>
     </Main>
 }

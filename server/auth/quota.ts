@@ -3,8 +3,6 @@ import { getPlan, getUserOrThrow } from './user'
 import { incrementQuota, getQuota } from '../db/quota'
 import { isProd } from '@/lib/env'
 
-export type Plan = 'beginner' | 'bilingual' | 'polyglot' | 'leximory'
-
 export const maxCommentaryQuota = async (userId?: string) => {
     const plan = await getPlan(userId)
     switch (plan) {

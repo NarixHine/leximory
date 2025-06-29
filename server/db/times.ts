@@ -49,10 +49,9 @@ export async function getRawNewsByDate(date: string) {
 }
 
 export async function publishTimes(data: TimesDataWithRaw) {
-    await supabase
+    return await supabase
         .from('times')
         .insert(data)
-        .throwOnError()
 }
 
 export async function getLatestTimesData() {
@@ -66,4 +65,12 @@ export async function getLatestTimesData() {
         .throwOnError()
 
     return data[0] as TimesData
+}
+
+export async function removeIssue(date: string) {
+    await supabase
+        .from('times')
+        .delete()
+        .eq('date', date)
+        .throwOnError()
 }

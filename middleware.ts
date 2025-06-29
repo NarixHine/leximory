@@ -1,8 +1,20 @@
 import { type NextRequest } from 'next/server'
 import { updateSession } from '@/server/client/supabase/middleware'
 
+const PROTECTED_ROUTE_PREFIXES = [
+    '/library',
+    '/settings',
+    '/marketplace',
+    '/daily',
+    '/fix-your-paper',
+    '/admin'
+]
+const isProtectedRouteChecker = (path: string) => {
+    return PROTECTED_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix))
+}
+
 export async function middleware(request: NextRequest) {
-    return await updateSession(request)
+    return await updateSession(request, isProtectedRouteChecker)
 }
 
 export const config = {

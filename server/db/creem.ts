@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
-import { Plan } from '@/server/auth/quota'  
+import { Plan } from '@/lib/config'
 import { redis } from '../client/redis'
 import { updatePlan } from '../auth/user'
 

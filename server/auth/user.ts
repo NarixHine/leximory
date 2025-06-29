@@ -1,5 +1,6 @@
+import 'server-only'
 import { createClient } from '@/server/client/supabase/server'
-import { Plan } from './quota'
+import { Plan } from '@/lib/config'
 import { redirect } from 'next/navigation'
 import { supabase } from '../client/supabase'
 import { SIGN_IN_URL } from '@/lib/config'

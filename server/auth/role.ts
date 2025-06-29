@@ -1,6 +1,15 @@
+import 'server-only'
 import { getUserOrThrow } from './user'
-import { Lang, libAccessStatusMap } from '../../lib/config'
+import { ADMIN_UID, Lang, libAccessStatusMap } from '../../lib/config'
 import { supabase } from '@/server/client/supabase'
+
+// auth admin access
+export async function requireAdmin() {
+    const user = await getUserOrThrow()
+    if (user.userId !== ADMIN_UID) {
+        throw new Error('Unauthorized')
+    }
+}
 
 // auth access to libs
 

@@ -1,5 +1,7 @@
 import env, { isProd } from './env'
-import { Plan } from '@/server/auth/quota'
+
+export const PLANS = ['beginner', 'bilingual', 'polyglot', 'leximory'] as const
+export type Plan = (typeof PLANS)[number]
 
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
