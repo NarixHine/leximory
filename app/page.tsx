@@ -159,11 +159,11 @@ export default function Home() {
 
 		<div className='flex justify-center items-center gap-4 lg:flex-row flex-col'>
 			<div className='w-full'>
-				<H className='text-3xl mb-2'>核心功能</H>
+				<H className='text-3xl mb-2 font-bold'>核心功能</H>
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 			<div className='w-full'>
-				<H className='text-3xl mb-2' usePlayfair>AI Agent</H>
+				<H className='text-3xl mb-2 font-bold' usePlayfair>AI Agent</H>
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114606102153816&bvid=BV1g873z5EPJ&cid=30261575913&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 		</div>

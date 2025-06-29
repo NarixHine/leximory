@@ -66,7 +66,7 @@ She might have dismissed it, but her hands had started to shake. For the first t
 `.trim()
 
 const NEWS_PROMPT = `
-You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news TODAY (use Google Search Grounding), adapt the content, and aggregate them into a single article. 
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news TODAY (use Google Search Grounding), adapt the content, and aggregate them into a single article. But be totally different across every part from yesterday's news. 
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. Name your characters realistically.
 
@@ -138,7 +138,7 @@ Imagery matters in online publications. It serves as a decorative element on the
 
 Now write an AI image generation prompt whose CONTENT is redolent of and related to the novel today. 
 
-The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object and no need to be precise) in an CONVENTIONAL IMPRESSIONIST OIL PAINTING style (make it prominent in your prompt), prioritise short, thick strokes of paint and natural, luminous colour palette, with no human presence. It should be in an Impressionistic painting style with a soft focus on capturing the transient effects of light and atmosphere. Require the full frame to be filled with colours, and AVOID involving any freakish or outlandish object in your planning. Show agreeable items only. Overall, stick to the classical, aesthetic oil painting approach, and plan out the image accordingly as does an 19th-century Impressionist painting.
+The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any specific object and no need to be precise) in an CONVENTIONAL IMPRESSIONIST OIL PAINTING style (make it prominent in your prompt), prioritise short, thick strokes of paint and natural, luminous colour palette, with no human presence. It should be in an Impressionistic painting style with a soft focus on capturing the transient effects of light and atmosphere. The brushes should be quick and thick, creating an impression rather than details, like Monet's Woman with a Parasol. Require the full frame to be filled with colours, and AVOID involving any freakish or outlandish object in your planning. Show agreeable items only. Overall, stick to the classical, aesthetic oil painting approach, and plan out the image accordingly as does an 19th-century Impressionist painting.
 
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene and style of the image to be generated in a coherent, organised and detailed way, which will be sent without modification to another AI model.
 `.trim()
@@ -149,7 +149,7 @@ export const generateTimes = inngest.createFunction(
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
-            const date = moment().add(1, 'day').tz('Asia/Shanghai').format('YYYY-MM-DD')
+            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })
