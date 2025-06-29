@@ -18,7 +18,6 @@ import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
 import { Accordion, AccordionItem } from '@heroui/react'
 import UpgradeMessage from './upgrade-message'
-import type { Plan } from '@/server/auth/quota'
 import { isProd } from '@/lib/env'
 import H from '@/components/ui/h'
 import { useCopyToClipboard } from 'usehooks-ts'
@@ -29,6 +28,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory/paper'
 import { toolDescriptions } from '../types'
 import { isEqual } from 'es-toolkit'
+import type { Plan } from '@/lib/config'
 
 const initialPrompts = [{
     title: '注解段落',

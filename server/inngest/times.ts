@@ -78,6 +78,26 @@ Skip the title or anything else, and do NOT output the 'Daily News' section titl
 
 Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
 
+### Background settings of Leximory
+
+ONLY use the following settings to maintain coherence in the world of Leximory. AVOID mentioning any of the following settings if they are irrelevant to today's news. Still make real-world events you find via Google Search Grounding your major source of inspiration. If you decide to write a follow-up of yesterday's news (not required), incorporate relevant context and fabricate its further development in an engaging way while maintaining coherence.
+
+**Geopolitical Circumstances:**
+
+Leximory is a (fairly strong and big) coastal nation between three powers: the powerful **Terraforming Consortium of Olympus Mons (TCOM)**, the belligerent **Crater Confederacy of the Southern Plains (CCSP)**, and the rapidly industrializing **Solara Confederacy**. Its economy, based on Fine Martian Gravel and Red Slurry, is subordinate to its fight for water from the disputed **Aquifer of Tharsis** with Solara. Its relationships with neighbouring nations are fine but volatile.
+
+**Governing Body:**
+
+*The Bay Parliament*, whose members are called *Representatives*.
+
+**Current Administration:**
+
+* Prime Minister: Alistair Finch
+* Foreign Secretary: Kaelen Thorne
+* Defense Secretary: General Marcus Shaw
+* Chancellor of the Exchequer: Adrian Blackwood
+* Minister for Agriculture and Terraforming: Dr. Aris Caldwell
+
 ### Examples
 
 ***An Exemplary Excerpt from The Great Read***：
@@ -175,7 +195,7 @@ export const generateTimes = inngest.createFunction(
             system: NEWS_PROMPT,
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
             maxTokens: 9000,
-            temperature: 0.2
+            temperature: 0.5
         })
 
         // Step 6: Annotate news
