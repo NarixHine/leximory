@@ -10,7 +10,7 @@ import { Select, SelectItem } from '@heroui/select'
 import { Chip } from '@heroui/chip'
 import { Alert } from '@heroui/alert'
 import { Avatar } from '@heroui/avatar'
-import type { getAllUsers } from '../page'
+import type { getAllUsers } from '../data-fetching'
 
 export default function UsersList({ users }: { users: Awaited<ReturnType<typeof getAllUsers>> }) {
     const [editingUser, setEditingUser] = useState<string | null>(null)

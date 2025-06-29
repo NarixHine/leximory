@@ -114,7 +114,7 @@ function TimesContent() {
 
             <h2>Daily News</h2>
             {/* Content */}
-            <p>These are the headlines today in Leximory, <b>a small coastal country on Mars.</b> So that&apos;s a bit different from Earth life.</p>
+            <p>These are the headlines today in Leximory, <b>a small coastal country on Mars.</b> <small>So that&apos;s a bit different from Earth life!</small></p>
             <Markdown
                 className='prose-lg'
                 fontFamily={ENGLISH_MODERN.style.fontFamily}

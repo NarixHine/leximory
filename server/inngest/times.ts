@@ -66,11 +66,11 @@ She might have dismissed it, but her hands had started to shake. For the first t
 `.trim()
 
 const NEWS_PROMPT = `
-You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news today, adapt the content, and aggregate them into a single article. 
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news today (use Google Search Grounding), adapt the content, and aggregate them into a single article. 
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. Name your characters realistically.
 
-Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Marsian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
+Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news. Incorporate a moderate amount of advanced vocabulary in your reporting, for the sake of English learning.
 
