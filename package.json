@@ -122,6 +122,8 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@next/eslint-plugin-next": "^15.3.4",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/eslint-plugin-query": "^5.78.0",
@@ -137,6 +139,7 @@
     "concurrently": "^9.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.1.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "postcss": "^8.4.41",
     "serwist": "^9.0.13",
     "tailwindcss": "^3.4.10",

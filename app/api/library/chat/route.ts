@@ -16,7 +16,7 @@ import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
 import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
-import { AIGeneratableType } from '@/lib/editory/config'
+import { AIGeneratableType } from '@/components/editory/generators/config'
 
 const tools: ToolSet = {
     getLib: {
