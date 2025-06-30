@@ -9,7 +9,7 @@ import { nanoid } from '@/lib/utils'
 import { googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
-import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
+import { getLatestTimesData, getRawNewsByDate, publishTimes, removeIssue } from '../db/times'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
 
@@ -66,7 +66,7 @@ She might have dismissed it, but her hands had started to shake. For the first t
 `.trim()
 
 const NEWS_PROMPT = `
-You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on real-world news TODAY (use Google Search Grounding), adapt the content, and aggregate them into a single article. But be totally different across every part from yesterday's news. 
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on REAL-WORLD news TODAY (use Google Search Grounding), adapt the content, and aggregate them into a single article. Proritise relevance to real current events, but remember to be totally different across every part from yesterday's news you wrote (which will be provided later).
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. Name your characters realistically.
 
@@ -76,7 +76,7 @@ Use Markdown H3 to indicate the category, and H4 the main idea of the news. Inco
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in bold) in Leximory.
 
-Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a trend, etc.; make it engaging, not moralising) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
+Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
 
 ### Background settings of Leximory
 
@@ -158,9 +158,39 @@ The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any sp
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene and style of the image to be generated in a coherent, organised and detailed way, which will be sent without modification to another AI model.
 `.trim()
 
+export const triggerGenerateTimes = inngest.createFunction(
+    { id: 'trigger-generate-times' },
+    { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
+    async ({ step }) => {
+        const hasGeneratedToday = await step.run('check-if-generated-today', async () => {
+            const latestTimesData = await getLatestTimesData()
+            return latestTimesData.date === moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+        })
+        if (hasGeneratedToday) {
+            return
+        }
+        await step.sendEvent('send-generate-times-event', {
+            name: 'times/regeneration.requested'
+        })
+    }
+)
+
+export const triggerRegenerateTimes = inngest.createFunction(
+    { id: 'trigger-regenerate-times' },
+    { event: 'times/regeneration.requested' },
+    async ({ step }) => {
+        await step.run('remove-issue', async () => {
+            removeIssue(moment().tz('Asia/Shanghai').format('YYYY-MM-DD'))
+        })
+        await step.sendEvent('send-generate-times-event', {
+            name: 'times/generation.requested'
+        })
+    }
+)
+
 export const generateTimes = inngest.createFunction(
     { id: 'generate-times' },
-    { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
+    { event: 'times/generation.requested' },
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
@@ -226,7 +256,7 @@ export const generateTimes = inngest.createFunction(
             const converter = new showdown.Converter()
             const quiz = await generateQuiz({
                 prompt: converter.makeHtml(newsThreeDaysAgo),
-                type: sample(AI_GENERATABLE)
+                type: sample(AI_GENERATABLE),
             })
             return JSON.stringify(quiz)
         })

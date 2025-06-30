@@ -34,6 +34,7 @@ type Events = {
     'app/notify': NotifyUser
     'app/article.imported': ArticleImported
     'app/story.requested': StoryRequested
+    'times/generation.requested': object
     'times/regeneration.requested': object
 }
 

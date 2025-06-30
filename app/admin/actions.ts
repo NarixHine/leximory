@@ -5,9 +5,7 @@ import { updatePlan } from '@/server/auth/user'
 import { inngest } from '@/server/inngest/client'
 import { Plan } from '@/lib/config'
 import { revalidatePath } from 'next/cache'
-import moment from 'moment'
 import { requireAdmin } from '@/server/auth/role'
-import { removeIssue } from '@/server/db/times'
 
 export async function changeUserEmail(userId: string, newEmail: string) {
     await requireAdmin()
@@ -49,14 +47,9 @@ export async function deleteUser(userId: string) {
 export async function regenerateDailyTimes() {
     await requireAdmin()
 
-    try {
-        removeIssue(moment().format('YYYY-MM-DD'))
-        inngest.send({
-            name: 'times/regeneration.requested'
-        })
+    await inngest.send({
+        name: 'times/regeneration.requested'
+    })
 
-        return { success: true, message: 'Daily times regeneration request submitted (will be processed by the system)' }
-    } catch (error) {
-        throw new Error(`Failed to trigger times regeneration: ${error}`)
-    }
+    return { success: true, message: 'Daily times regeneration request submitted (will be processed by the system)' }
 }

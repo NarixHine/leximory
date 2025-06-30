@@ -12,7 +12,7 @@ import Pricing from '@/components/pricing'
 export default function Upgrade({ isOnFreeTier }: { isOnFreeTier: boolean }) {
     const { isOpen, onOpen, onClose } = useDisclosure()
     return <>
-        <Button onPress={() => isOnFreeTier ? onOpen() : manageSubscription()} variant='solid' startContent={<PiRocketLaunchDuotone />} size='lg' color='primary' radius='full'>{isOnFreeTier ? '升级' : '管理订阅'}</Button>
+        <Button onPress={() => isOnFreeTier ? onOpen() : manageSubscription()} variant='solid' startContent={<PiRocketLaunchDuotone />} size='lg' color='primary' radius='full' className='font-semibold'>{isOnFreeTier ? '升级' : '管理订阅'}</Button>
         <Drawer isOpen={isOpen} onOpenChange={onOpen} onClose={onClose} placement='bottom'>
             <DrawerContent className='bg-background max-h-[90vh] sm:max-h-[80vh] md:max-h-[75vh] overflow-y-auto'>
                 {() => (
