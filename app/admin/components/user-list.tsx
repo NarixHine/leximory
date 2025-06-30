@@ -24,7 +24,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
         if (!searchQuery.trim()) return users
 
         const query = searchQuery.toLowerCase()
-        return users.filter(user => 
+        return users.filter(user =>
             user.username.toLowerCase().includes(query) ||
             (user.email && user.email.toLowerCase().includes(query)) ||
             user.plan.toLowerCase().includes(query)
@@ -90,7 +90,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
     }
 
     return (
-        <div className='space-y-4'>
+        <div className='flex flex-col gap-4 w-full items-center'>
             {message && (
                 <div className='px-6'>
                     <Alert
@@ -102,7 +102,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
             )}
 
             {/* Search Filter */}
-            <div className='px-6'>
+            <div className='px-6 mx-auto min-w-80'>
                 <Input
                     placeholder='Search users by name, email, or plan...'
                     value={searchQuery}
@@ -205,8 +205,8 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                 <Select
                                     size='sm'
                                     selectedKeys={[user.plan]}
-                                    onSelectionChange={(keys) => {
-                                        const selectedPlan = Array.from(keys)[0] as Plan
+                                    onChange={(e) => {
+                                        const selectedPlan = e.target.value as Plan
                                         if (selectedPlan !== user.plan) {
                                             handlePlanChange(user.id, selectedPlan)
                                         }

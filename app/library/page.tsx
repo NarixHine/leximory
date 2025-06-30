@@ -87,7 +87,7 @@ export default function Page() {
         <Nav />
 
         <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
-            <H className='text-5xl font-bold text-primary-400'><PiBooksDuotone />文库</H>
+            <H className='text-5xl font-bold text-primary-400 dark:text-default-500'><PiBooksDuotone />文库</H>
             <Spacer y={8} />
             <div className='flex flex-col gap-4'>
                 <div className='grid grid-cols-2 justify-center gap-4'>

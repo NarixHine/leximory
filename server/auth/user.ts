@@ -43,8 +43,7 @@ export async function getPlan(userId?: string) {
 }
 
 export async function updatePlan(userId: string, plan: Plan) {
-    const supabase = await createClient()
-    await supabase.from('users').update({ plan }).eq('id', userId)
+    return await supabase.from('users').update({ plan }).eq('id', userId).throwOnError()
 }
 
 export async function getUserById(userId: string) {

@@ -54,7 +54,7 @@ export async function getAllUsers() {
     return users.map(user => ({
         id: user.id,
         email: user.email,
-        username: user.user_metadata?.username || 'N/A',
+        username: user.user_metadata?.usernamen ?? user.id,
         plan: userPlans[user.id] || 'beginner',
         createdAt: user.created_at,
         lastSignInAt: user.last_sign_in_at,
