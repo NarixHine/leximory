@@ -14,7 +14,7 @@ export async function retrieveAudioUrl({ id }: { id: string }) {
     return data.signedUrl
 }
 
-export async function uploadAudio({ id, lib, audio }: { id: string, lib: string, audio: File }) {
+export async function uploadAudio({ id, audio }: { id: string, audio: File }) {
     const path = `audio/${id}.mp3`
 
     const { data: uploadData } = await supabase.storage

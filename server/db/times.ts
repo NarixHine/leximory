@@ -22,7 +22,7 @@ export async function getRecentTimesData(page: number = 1, pageSize: number = TI
     }
 }
 
-export async function getTimesDataByDate(date: string, includeRaw: boolean = false) {
+export async function getTimesDataByDate(date: string) {
     cacheTag('times')
 
     const { data } = await supabase

@@ -2,7 +2,7 @@ import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mi
 
 export const CHINESE = Noto_Serif_SC({
     subsets: ['latin'],
-    weight: ['500', '700', '800'],
+    weight: ['500', '600', '700'],
     style: ['normal'],
 })
 

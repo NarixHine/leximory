@@ -1,5 +1,4 @@
 // Tremor AreaChart [v0.3.1]
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client"
 

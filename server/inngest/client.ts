@@ -34,7 +34,7 @@ type Events = {
     'app/notify': NotifyUser
     'app/article.imported': ArticleImported
     'app/story.requested': StoryRequested
-    'times/regeneration.requested': {}
+    'times/regeneration.requested': object
 }
 
 export const inngest = new Inngest({

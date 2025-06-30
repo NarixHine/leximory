@@ -38,7 +38,7 @@ export async function generate(id: string, lib: string, text: string) {
         prompt,
     })
 
-    return uploadAudio({ id, lib, audio })
+    return uploadAudio({ id, audio })
 }
 
 async function japaneseToKana(text: string) {
