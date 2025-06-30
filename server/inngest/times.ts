@@ -1,12 +1,12 @@
 import { inngest } from './client'
 import { experimental_generateImage as generateImage, generateText } from 'ai'
 import { supabase } from '../client/supabase'
-import { ADMIN_UID, elevenLabsVoiceConfig } from '@/lib/config'
+import { ADMIN_UID } from '@/lib/config'
 import moment from 'moment-timezone'
 import { annotateParagraph } from '../ai/annotate'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
-import { googleModels } from '../ai/models'
+import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue } from '../db/times'
@@ -87,7 +87,7 @@ ONLY use the following settings to maintain coherence in the world of Leximory. 
 
 **Geopolitical Circumstances:**
 
-Leximory is a (fairly strong and big) coastal nation between three powers: the powerful **Terraforming Consortium of Olympus Mons (TCOM)**, the belligerent **Crater Confederacy of the Southern Plains (CCSP)**, and the rapidly industrializing **Solara Confederacy**. Its economy, based on Fine Martian Gravel and Red Slurry, is subordinate to its fight for water from the disputed **Aquifer of Tharsis** with Solara. Its relationships with neighbouring nations are fine but volatile.
+Leximory is a (fairly strong and big) coastal nation between three powers: the powerful **Terraforming Consortium of Olympus Mons**, the belligerent **Crater Confederacy of the Southern Plains**, and the rapidly industrializing **Solara Confederacy**.
 
 **Governing Body:**
 

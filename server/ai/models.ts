@@ -13,6 +13,7 @@ const vertex = createVertex({
         },
     },
 })
+
 export const noThinkingConfig = {
     providerOptions: {
         google: {
@@ -22,6 +23,7 @@ export const noThinkingConfig = {
         } satisfies GoogleGenerativeAIProviderOptions
     }
 }
+
 export const googleModels = {
     'image-gen': vertex.image('imagen-4.0-generate-preview-06-06', { maxImagesPerCall: 1 }),
     'flash-2.5': vertex('gemini-2.5-flash', {
@@ -81,7 +83,6 @@ export const googleModels = {
     }),
 }
 
-
 export const getBestArticleAnnotationModel = (lang: Lang) => {
     switch (lang) {
         case 'zh': return googleModels['flash-2.5']
@@ -99,3 +100,49 @@ export const getBestCommentaryModel = (lang: Lang) => {
         case 'ja': return googleModels['flash-2.5']
     }
 }
+
+export const elevenLabsVoiceConfig = {
+    'BrE': {
+        voice: 'KA3yMJop9i539YKcyb0m',
+        options: {
+            voice_settings: {
+                stability: 0.45,
+                similarity_boost: 0.75,
+                speed: 1.1,
+            }
+        }
+    },
+    'AmE': {
+        voice: 'Z3R5wn05IrDiVCyEkUrK',
+        options: {
+            voice_settings: {
+                stability: 0.3,
+                similarity_boost: 0.4,
+                speed: 1.07,
+            }
+        }
+    },
+    'ja': {
+        voice: 'GxxMAMfQkDlnqjpzjLHH',
+        options: {
+        }
+    },
+    'zh': {
+        voice: 'FjfxJryh105iTLL4ktHB',
+        options: {
+        }
+    },
+    'nl': {
+        voice: '0sGQQaD2G2X1s87kHM5b',
+        options: {
+        }
+    },
+} as const satisfies Record<string, {
+    voice: string, options: Partial<{
+        voice_settings: Partial<{
+            stability: number,
+            similarity_boost: number,
+            speed: number
+        }>
+    }>
+}>

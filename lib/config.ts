@@ -5,58 +5,12 @@ export type Plan = (typeof PLANS)[number]
 
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
+export const MAX_TTS_LENGTH = 10000
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
 export const SIGN_IN_URL = '/login' as const
 
 export const TIMES_PAGE_SIZE = 7 as const
-
-export const MAX_TTS_LENGTH = 10000
-export const elevenLabsVoiceConfig = {
-    'BrE': {
-        voice: '0sGQQaD2G2X1s87kHM5b',
-        options: {
-            voice_settings: {
-                stability: 0.45,
-                similarity_boost: 0.75,
-                speed: 1.1,
-            }
-        }
-    },
-    'AmE': {
-        voice: '5l5f8iK3YPeGga21rQIX',
-        options: {
-            voice_settings: {
-                stability: 0.3,
-                similarity_boost: 0.4,
-                speed: 1.07,
-            }
-        }
-    },
-    'ja': {
-        voice: 'GxxMAMfQkDlnqjpzjLHH',
-        options: {
-        }
-    },
-    'zh': {
-        voice: 'FjfxJryh105iTLL4ktHB',
-        options: {
-        }
-    },
-    'nl': {
-        voice: '0sGQQaD2G2X1s87kHM5b',
-        options: {
-        }
-    },
-} as const satisfies Record<string, {
-    voice: string, options: Partial<{
-        voice_settings: Partial<{
-            stability: number,
-            similarity_boost: number,
-            speed: number
-        }>
-    }>
-}>
 
 export const exampleSharedLib = {
     id: '4c33b971',
