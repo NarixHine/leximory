@@ -22,8 +22,13 @@ import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
+import { isAtRead } from '@/lib/subapp'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
+export default async function Home() {
+	if (await isAtRead()) {
+		redirect('/times')
+	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
 		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
 			<span className='[text-shadow:_5px_5px_5px_rgb(238_214_211_/_80%)] dark:[text-shadow:none]'>Leximory</span>

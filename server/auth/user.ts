@@ -1,9 +1,10 @@
 import 'server-only'
 import { createClient } from '@/server/client/supabase/server'
-import { Plan } from '@/lib/config'
+import { Plan, prefixUrl } from '@/lib/config'
 import { redirect } from 'next/navigation'
 import { supabase } from '../client/supabase'
 import { SIGN_IN_URL } from '@/lib/config'
+import { isAtRead } from '@/lib/subapp'
 
 export async function getSession() {
     const supabase = await createClient()
@@ -16,7 +17,11 @@ export async function getUserOrThrow() {
     const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) {
-        redirect(SIGN_IN_URL)
+        if (await isAtRead()) {
+            redirect(prefixUrl(SIGN_IN_URL))
+        } else {
+            redirect(SIGN_IN_URL)
+        }
     }
     const { id, email, user_metadata: { username, avatar_url }, last_sign_in_at, created_at } = user
     return {

@@ -8,6 +8,7 @@ import env from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { defaultFontFamily } from '@/lib/fonts'
+import { isAtRead } from '@/lib/subapp'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -42,8 +43,12 @@ export const metadata: Metadata = {
 	},
 }
 
-export const viewport: Viewport = {
-	themeColor: '#FFFCF0',
+export async function generateViewport(): Promise<Viewport> {
+	return await isAtRead() ? {
+		themeColor: '#FFFFFF',
+	} : {
+		themeColor: '#FFFCF0',
+	}
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -56,7 +61,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 						<div className='relative flex flex-col print:bg-white'>
 							{children}
-							<Dock />
+							{!await isAtRead() && <Dock />}
 						</div>
 					</Providers>
 				</body>
