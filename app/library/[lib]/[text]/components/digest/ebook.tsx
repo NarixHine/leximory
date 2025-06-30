@@ -7,7 +7,7 @@ import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
-import { cn, getBracketedSelection } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from '../../atoms'
@@ -20,6 +20,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { memo } from 'react'
 import { save } from "../../actions"
+import { getBracketedSelection } from '@/components/define/utils'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
