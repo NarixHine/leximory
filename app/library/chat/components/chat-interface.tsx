@@ -3,8 +3,8 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone } from 'react-icons/pi'
-import { memo, useEffect, useRef, useState } from 'react'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiNewspaperFill, PiHeadphonesDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiFlyingSaucerDuotone, PiNewspaper } from 'react-icons/pi'
+import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
@@ -29,6 +29,7 @@ import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
 import { isEqual } from 'es-toolkit'
 import type { Plan } from '@/lib/config'
+import moment from 'moment'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -39,11 +40,11 @@ const initialPrompts = [{
     prompt: '注解下文并存入【词汇仓库】文库。\n',
     icon: PiNewspaperDuotone
 }, {
-    title: '高分语块',
-    prompt: '对于文库【文库名称】中的【所有】文章，提取出适合用在作文里的高分词汇和词组，量少而精。',
+    title: '金句提取',
+    prompt: '对于文库【文库名称】中的【所有】文章，提取一些可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
-    title: '今日复习',
+    title: '本周复习',
     prompt: '【本周】我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
     icon: PiClockClockwiseDuotone
 }, {
@@ -62,6 +63,14 @@ const initialPrompts = [{
     title: '外刊出题',
     prompt: '提炼以下网页中的文章，并出一篇小猫钓鱼题考考我。',
     icon: PiFishDuotone
+}, {
+    title: '今日小说',
+    prompt: '今天的 The Leximory Times 小说大概讲了什么？不要剧透，告诉我题材。',
+    icon: PiFlyingSaucerDuotone
+}, {
+    title: '高分词汇',
+    prompt: '获取今天的 The Leximory Times 内容，然后提取 News 里于日常写作中实用的高分语块，量少而精。',
+    icon: PiBookmarksDuotone
 }] as const
 
 type MessagePart = {
@@ -84,13 +93,24 @@ type MessagePart = {
 function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
     if (state === 'call') {
         return (
-            <div className='flex items-center gap-2 text-sm text-default-400 font-mono mt-2'>
+            <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
                 <Spinner size='sm' color='default' variant='spinner' />
                 <span>{toolDescriptions[toolName]}</span>
             </div>
         )
     }
     return <></>
+}
+
+function ToolAccordian({ title, children, icon }: { title: string, children: ReactNode, icon: ReactNode }) {
+    return <Accordion className='mt-2 px-0'>
+        <AccordionItem key='content' title={title} startContent={icon} classNames={{
+            titleWrapper: 'flex-none',
+            trigger: 'text-sm'
+        }}>
+            {children}
+        </AccordionItem>
+    </Accordion>
 }
 
 function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
@@ -106,28 +126,29 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
     switch (toolName) {
         case 'listLibs':
             return (
-                <ul className='mt-2 flex flex-col gap-1'>
-                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiBooks /> All Libraries</span>
-                    {(result as Awaited<ToolResult['listLibs']>).map(({ lib }) => (
-                        <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={lib.id}>
-                            {lib.name} — {lib.lang}
-                            <Button
-                                variant='light'
-                                size='sm'
-                                className='text-default-700 size-5'
-                                isIconOnly
-                                startContent={copiedId === lib.id ? <PiCheck /> : <PiCopy />}
-                                onPress={() => handleCopy(lib.name, lib.id)}
-                            />
-                        </li>
-                    ))}
-                </ul>
+                <ToolAccordian title='All Libraries' icon={<PiBooks />}>
+                    <ul className='flex flex-col gap-1'>
+                        {(result as Awaited<ToolResult['listLibs']>).map(({ lib }) => (
+                            <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={lib.id}>
+                                {lib.name} — {lib.lang}
+                                <Button
+                                    variant='light'
+                                    size='sm'
+                                    className='text-default-700 size-5'
+                                    isIconOnly
+                                    startContent={copiedId === lib.id ? <PiCheck /> : <PiCopy />}
+                                    onPress={() => handleCopy(lib.name, lib.id)}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                </ToolAccordian>
             )
 
         case 'getLib':
             const lib = result as Awaited<ToolResult['getLib']>
             return (
-                <div className='mt-2'>
+                <ToolAccordian title={`Library — ${lib.name}`} icon={<PiBooks />}>
                     <LibraryComponent
                         id={lib.id}
                         name={lib.name}
@@ -139,7 +160,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         archived
                         isStarred={false}
                     />
-                </div>
+                </ToolAccordian>
             )
 
         case 'getAllTextsInLib':
@@ -147,42 +168,44 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             const res = result as Awaited<ToolResult['getTexts']>
             const libName = res[0]?.libName
             return (
-                <ul className='mt-2 flex flex-col gap-1'>
-                    <span className='text-sm text-default-700 font-mono flex gap-3 items-center'><PiPackage /> Library {libName ? ` - ${libName}` : ''}</span>
-                    {res.map((text, index) => (
-                        <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
-                            {index + 1}. {text.title}
-                            <Button
-                                variant='light'
-                                size='sm'
-                                className='text-default-700 size-5'
-                                isIconOnly
-                                startContent={copiedId === text.id ? <PiCheck /> : <PiCopy />}
-                                onPress={() => handleCopy(text.title, text.id)}
-                            />
-                        </li>
-                    ))}
-                </ul>
+                <ToolAccordian key='content' title={`Texts${libName ? ` In ${libName}` : ''}`} icon={<PiPackage />}>
+                    <ul className='flex flex-col gap-1'>
+                        {res.map((text, index) => (
+                            <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
+                                {index + 1}. {text.title}
+                                <Button
+                                    variant='light'
+                                    size='sm'
+                                    className='text-default-700 size-5'
+                                    isIconOnly
+                                    startContent={copiedId === text.id ? <PiCheck /> : <PiCopy />}
+                                    onPress={() => handleCopy(text.title, text.id)}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                </ToolAccordian>
             )
 
         case 'getTextContent':
         case 'extractArticleFromWebpage':
             const { title: articleTitle, content: articleContent } = result as Awaited<ToolResult['extractArticleFromWebpage']> | Awaited<ToolResult['getTextContent']>
             return (
-                <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
-                    <CardBody className='p-6'>
-                        <div className='text-2xl mb-2' style={{ fontFamily: contentFontFamily }}>{articleTitle}</div>
-                        <div className='text-default-600 dark:text-default-400'>
-                            <Markdown md={articleContent} className='prose dark:prose-invert max-w-none' />
-                        </div>
-                    </CardBody>
-                </Card>
+                <ToolAccordian title={articleTitle} icon={<PiNewspaperDuotone />}>
+                    <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                        <CardBody className='p-6'>
+                            <div className='text-default-600 dark:text-default-400'>
+                                <Markdown md={articleContent} className='prose dark:prose-invert max-w-none' />
+                            </div>
+                        </CardBody>
+                    </Card>
+                </ToolAccordian>
             )
 
         case 'annotateParagraph':
             const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
-                <Card className='mt-2 bg-primary-50/20' shadow='none' isBlurred>
+                <Card className='bg-primary-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
                             <ScopeProvider atoms={[langAtom]}>
@@ -198,54 +221,136 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateArticle':
             const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
-                <div className='mt-2 flex flex-col gap-2 mb-1'>
-                    <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
-                    <ScopeProvider atoms={[libAtom]}>
-                        <HydrationBoundary hydrateAtoms={[[libAtom, libId]]}>
-                            <Text
-                                id={id}
-                                title={title}
-                                topics={[]}
-                                hasEbook={false}
-                                createdAt={createdAt}
-                                disablePrefetch
-                            />
-                        </HydrationBoundary>
-                    </ScopeProvider>
-                </div>
+                <ToolAccordian title={`Article Created`} icon={<PiNewspaperDuotone />}>
+                    <div className='flex flex-col gap-2 mb-1'>
+                        <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
+                        <ScopeProvider atoms={[libAtom]}>
+                            <HydrationBoundary hydrateAtoms={[[libAtom, libId]]}>
+                                <Text
+                                    id={id}
+                                    title={title}
+                                    topics={[]}
+                                    hasEbook={false}
+                                    createdAt={createdAt}
+                                    disablePrefetch
+                                />
+                            </HydrationBoundary>
+                        </ScopeProvider>
+                    </div>
+                </ToolAccordian>
             )
 
         case 'getForgetCurve':
             const words = result as Awaited<ToolResult['getForgetCurve']>
             return (
-                <div className={cn('mt-2 gap-2', words.length > 0 ? 'flex flex-col' : 'flex items-center')}>
-                    <span className='text-sm text-default-600 font-mono flex items-center gap-3'><PiBookmark />Words to review</span>
-                    {
-                        words.length > 0
-                            ? <ul className='flex flex-wrap gap-2'>
-                                {words.map(({ id, word, lang, lib }) => (
-                                    <li className=' flex gap-1 items-center' key={id}>
-                                        <ScopeProvider atoms={[langAtom, libAtom]}>
-                                            <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                                                <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
-                                            </HydrationBoundary>
-                                        </ScopeProvider>
-                                    </li>
-                                ))}
-                            </ul>
-                            : <span className='text-sm text-default-400 font-mono'><PiEmpty /></span>
-                    }
-                </div>
+                <ToolAccordian title='Words to Review' icon={<PiBookmark />}>
+                    <div className={cn('gap-2', words.length > 0 ? 'flex flex-col' : 'flex items-center')}>
+                        {
+                            words.length > 0
+                                ? <ul className='flex flex-wrap gap-2'>
+                                    {words.map(({ id, word, lang, lib }) => (
+                                        <li className=' flex gap-1 items-center' key={id}>
+                                            <ScopeProvider atoms={[langAtom, libAtom]}>
+                                                <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
+                                                    <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                                </HydrationBoundary>
+                                            </ScopeProvider>
+                                        </li>
+                                    ))}
+                                </ul>
+                                : <span className='text-sm text-default-400 font-mono'><PiEmpty /></span>
+                        }
+                    </div>
+                </ToolAccordian>
             )
 
         case 'generateQuiz':
             const quiz = result as ToolResult['generateQuiz']
             return (
-                <Card className='mt-2 bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <Paper data={[quiz]} />
                     </CardBody>
                 </Card>
+            )
+
+        case 'getTodaysTimes':
+        case 'getTimesIssue':
+            const timesData = result as ToolResult['getTodaysTimes']
+            return (
+                <ToolAccordian title={`The Leximory Times — ${moment(timesData.date).tz('Asia/Shanghai').format('LL')}`} icon={<PiNewspaper />}>
+                    <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                        <CardBody className='p-6'>
+                            <div className='space-y-4'>
+                                {/* Cover Image */}
+                                <div className='w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center overflow-hidden'>
+                                    {timesData.cover ? (
+                                        <img
+                                            src={timesData.cover}
+                                            alt='Times Cover'
+                                            className='w-full h-full object-cover'
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement
+                                                target.style.display = 'none'
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className='flex items-center justify-center text-primary-600'>
+                                            <PiNewspaperFill size={48} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* News Section */}
+                                <div className='border-t pt-4'>
+                                    <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                                        <PiNewspaperDuotone className='text-primary' size={20} />
+                                        新闻
+                                    </h4>
+                                    <div className='text-default-700 prose prose-sm max-w-none'>
+                                        <Markdown md={timesData.news} />
+                                    </div>
+                                </div>
+
+                                {/* Novel Section */}
+                                <div className='border-t pt-4'>
+                                    <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                                        <PiBooks className='text-primary' size={20} />
+                                        小说
+                                    </h4>
+                                    <div className='text-default-700 prose prose-sm max-w-none'>
+                                        <Markdown md={timesData.novel} />
+                                    </div>
+                                </div>
+
+                                {/* Audio Section */}
+                                {timesData.audio && (
+                                    <div className='border-t pt-4'>
+                                        <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                                            <PiHeadphonesDuotone className='text-primary' size={20} />
+                                            音频
+                                        </h4>
+                                        <audio controls className='w-full'>
+                                            <source src={timesData.audio} type='audio/mpeg' />
+                                            您的浏览器不支持音频播放。
+                                        </audio>
+                                    </div>
+                                )}
+
+                                {/* Quiz Section */}
+                                {timesData.quiz && (
+                                    <div className='border-t pt-4'>
+                                        <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
+                                            <PiGameControllerDuotone className='text-primary' size={20} />
+                                            测验
+                                        </h4>
+                                        <Paper data={[timesData.quiz]} />
+                                    </div>
+                                )}
+                            </div>
+                        </CardBody>
+                    </Card>
+                </ToolAccordian>
             )
 
         default:
@@ -536,4 +641,4 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             </footer>
         </Main>
     )
-} 
+}

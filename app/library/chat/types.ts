@@ -8,6 +8,7 @@ import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
+import { TimesData } from '@/components/times/types'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',
@@ -20,7 +21,9 @@ export const toolDescriptions = {
     getForgetCurve: 'Looking for words to review ...',
     annotateParagraph: 'Adding annotations ...',
     generateQuiz: 'Generating quiz questions ...',
-    extractArticleFromWebpage: 'Extracting article from webpage ...'
+    extractArticleFromWebpage: 'Extracting article from webpage ...',
+    getTodaysTimes: 'Loading today\'s Times issue ...',
+    getTimesIssue: 'Fetching Times issue ...'
 } as const
 
 export type ToolResult = {
@@ -43,6 +46,8 @@ export type ToolResult = {
     }
     extractArticleFromWebpage: Awaited<ReturnType<typeof getArticleFromUrl>>
     generateQuiz: QuizData
+    getTodaysTimes: TimesData
+    getTimesIssue: TimesData
 }
 
 export const toolSchemas = {
@@ -68,7 +73,11 @@ export const toolSchemas = {
     }),
     extractArticleFromWebpage: z.object({
         url: z.string().describe('The URL of the webpage to extract the article from')
+    }),
+    getTodaysTimes: z.object({}),
+    getTimesIssue: z.object({
+        date: z.string().describe('The date of the Times issue in YYYY-MM-DD format')
     })
 } as const
 
-export type ToolName = keyof ToolResult 
+export type ToolName = keyof ToolResult

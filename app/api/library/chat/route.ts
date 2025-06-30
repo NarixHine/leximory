@@ -17,6 +17,7 @@ import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
 import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { AIGeneratableType } from '@/components/editory/generators/config'
+import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
 
 const tools: ToolSet = {
     getLib: {
@@ -131,6 +132,20 @@ ${content}`,
             })
 
             return { title, content: distilledContent }
+        }
+    },
+    getTodaysTimes: {
+        description: 'Get today\'s issue of The Leximory Times newspaper.',
+        parameters: toolSchemas.getTodaysTimes,
+        execute: async () => {
+            return getLatestTimesData()
+        }
+    },
+    getTimesIssue: {
+        description: 'Get a specific issue of The Leximory Times newspaper by date.',
+        parameters: toolSchemas.getTimesIssue,
+        execute: async ({ date }: { date: string }) => {
+            return getTimesDataByDate(date)
         }
     }
 }
