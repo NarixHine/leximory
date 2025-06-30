@@ -197,7 +197,7 @@ export const generateTimes = inngest.createFunction(
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
-            const date = '2025-06-25'
+            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })

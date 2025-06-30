@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { defaultFontFamily } from '@/lib/fonts'
 import { isAtRead } from '@/lib/subapp'
+import dynamic from 'next/dynamic'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -51,7 +52,10 @@ export async function generateViewport(): Promise<Viewport> {
 	}
 }
 
+const PWAPrompt = dynamic(() => import('react-ios-pwa-prompt'), { ssr: false })
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
+	const hideIrrelevantElements = await isAtRead()
 	return (
 		<ViewTransitions>
 			<html lang='zh-CN' className='antialiased'>
@@ -61,7 +65,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 						<div className='relative flex flex-col print:bg-white'>
 							{children}
-							{!await isAtRead() && <Dock />}
+							{!hideIrrelevantElements && <PWAPrompt copyTitle='将 Leximory 添加到主屏幕' copyDescription='在主屏幕上快速访问 Leximory PWA' copySubtitle='https://leximory.com/' copyShareStep='点击右上角分享按钮' copyAddToHomeScreenStep='点击"添加到主屏幕"' appIconPath='/apple-touch-icon.png' />}
+							{!hideIrrelevantElements && <Dock />}
 						</div>
 					</Providers>
 				</body>
