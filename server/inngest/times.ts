@@ -8,10 +8,10 @@ import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
 import { googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
-import { AI_GENERATABLE } from '@/lib/editory/config'
 import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, publishTimes } from '../db/times'
 import showdown from 'showdown'
+import { AI_GENERATABLE } from '@/components/editory/generators/config'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
 
@@ -100,7 +100,7 @@ Leximory is a (fairly strong and big) coastal nation between three powers: the p
 
 ### Examples
 
-***An Exemplary Excerpt from The Great Read***：
+***An Excerpt from The Great Read (example for the first section)***：
 
 **New York** — On a June afternoon in 2018, a man named Mickey Barreto checked into the New Yorker Hotel. He was assigned Room 2565, a double-bed accommodation with a view of midtown Manhattan almost entirely obscured by an exterior wall. For a one-night stay, he paid $200.57.
 
@@ -126,7 +126,22 @@ Barreto is now awaiting trial in state Supreme Court in Manhattan and facing sev
 
 There was no reason to believe the White House had any interest in the case or any idea who Mickey Barreto was. But you could never quite tell with Mickey — he had been right once before.
 
-***Regular News Example***：
+***Regular News Stylistic Example (from NYTimes)***：
+
+By Monday, hedge fund billionaires — many of whom had been loud and proud boosters of Mr. Trump’s second term — were going public with their cries.
+
+“The global economy is being taken down because of bad math,” the hedge fund manager William A. Ackman posted Monday morning on X. He added, “The President’s advisors need to acknowledge their error before April 9th and make a course correction before the President makes a big mistake.”
+Others chimed in.
+
+Andrew Hall, a billionaire oil trader who has been critical of Mr. Trump in the past, saluted Mr. Ackman on Instagram for being a Trump supporter who was speaking out about tariffs. “At least he is willing to reverse himself and call out this stupidity,” Mr. Hall said of Mr. Ackman. “Where are the other ‘financial titans’? Why aren’t they speaking up?”
+
+A few are doing so, though more diplomatically and in dribbles.
+
+Mr. Dimon, the JPMorgan chief, waded into the fray on Monday morning with an investor letter saying the tariffs could dampen consumer and investor sentiment and hamper economic growth.
+
+Mr. Dimon, who was complimentary to a degree of tariffs in the days after Mr. Trump’s election, stopped short of warning of a severe downturn but said the turmoil was “causing many to consider a greater probability of a recession.”
+
+***Regular News Stylistic Example (in Leximory style, for other sections)***：
 
 **Leximory Bay** — The Bay Parliament convened an emergency session yesterday, debating a controversial new "Tidal Tax" proposed by the ruling Coral Party. The tax, which would impose a levy on all goods transported by tidal currents, has been met with fierce resistance from the opposition Manta Ray Alliance.
 

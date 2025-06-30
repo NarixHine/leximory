@@ -4,10 +4,10 @@ import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, langMap } from '@/lib/config'
-import QuizData from '@/lib/editory/types'
+import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
-import { AI_GENERATABLE } from '@/lib/editory/config'
+import { AI_GENERATABLE } from '@/components/editory/generators/config'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',

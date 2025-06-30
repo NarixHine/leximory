@@ -17,8 +17,9 @@ import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
 import Define from '../define'
-import Paper from '../editory/paper'
+import Paper from '../editory'
 import { Spacer } from '@heroui/spacer'
+import Link from 'next/link'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -91,7 +92,7 @@ function TimesContent() {
             {/* Header */}
             <div>
                 <h1 className='mb-2 font-semibold'>{moment(date).format('LL')}</h1>
-                <span className='text-xl opacity-80'>Brought to you with AI by <span className='font-semibold'>The Leximory Times</span></span>
+                <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='underline-offset-4 text-inherit'>The Leximory Times</Link></span>
             </div>
 
             {/* Cover Image */}
@@ -127,7 +128,7 @@ function TimesContent() {
                 <i>This quiz is based on the news published three days ago. {['cloze', 'fishing'].includes(quiz.type) && <i>Click on the blanks to show options.</i>}</i>
                 <Card shadow='none' className='bg-transparent -mt-6'>
                     <CardBody className='p-6'>
-                        <Paper data={[quiz]} accordianClassName='-mt-4' accordianItemClassName='bg-default-50/50' />
+                        <Paper data={[quiz]} accordianItemClassName='bg-default-50/50' />
                     </CardBody>
                 </Card>
             </> : <Spacer y={10} />}

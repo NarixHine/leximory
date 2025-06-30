@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone } from 'react-icons/pi'
 import { memo, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ import Text from '@/app/library/[lib]/components/text'
 import { ScopeProvider } from 'jotai-scope'
 import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
-import Paper from '@/components/editory/paper'
+import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
 import { isEqual } from 'es-toolkit'
 import type { Plan } from '@/lib/config'
@@ -199,7 +199,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
                 <div className='mt-2 flex flex-col gap-2 mb-1'>
-                    <span className='text-sm text-default-400'>注解完成后会显示在文本中</span>
+                    <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
                     <ScopeProvider atoms={[libAtom]}>
                         <HydrationBoundary hydrateAtoms={[[libAtom, libId]]}>
                             <Text
@@ -528,6 +528,12 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     startContent={status === 'streaming' ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
                 ></Button>
             </form>
+            <footer className='mt-auto pt-4 text-sm text-default-500 flex justify-center w-full'>
+                <span className='flex items-center gap-2 font-mono'>
+                    <PiLockSimpleDuotone />
+                    <span>Conversations are stored locally.</span>
+                </span>
+            </footer>
         </Main>
     )
 } 

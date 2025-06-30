@@ -1,4 +1,4 @@
-import { AvailableChartColorsKeys } from '@/lib/chart-utils'
+import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
 import { formatChartData } from '.'
 import { AreaChart } from '../ui/area-chart'
 

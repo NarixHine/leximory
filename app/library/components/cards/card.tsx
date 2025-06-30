@@ -25,8 +25,9 @@ const GradientCard = ({ text, className, title, children }: {
             }
             <div className='absolute bottom-0 right-0 p-3'>
                 {children ?? <CircularProgress
+                    value={0}
                     size='lg'
-                    color='primary'
+                    color='default'
                     classNames={{
                         track: 'stroke-white/50',
                     }}

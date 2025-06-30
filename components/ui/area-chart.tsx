@@ -27,7 +27,7 @@ import {
   getColorClassName,
   getYAxisDomain,
   hasOnlyOneValueForKey,
-} from "@/lib/chart-utils"
+} from "@/components/stats/chart-utils"
 import { useOnWindowResize } from "@/lib/hooks"
 import { cn as cx } from "@/lib/utils"
 

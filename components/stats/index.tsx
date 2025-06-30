@@ -4,7 +4,7 @@ import VocabularyCalendar from './calendar'
 import { getUserOrThrow } from '@/server/auth/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
-import { AvailableChartColorsKeys } from '@/lib/chart-utils'
+import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
 
 const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'

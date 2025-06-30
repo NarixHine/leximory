@@ -1,3 +1,30 @@
+import { JSX } from 'react'
+
+/**
+ * Defines the props that are passed to a strategy's render functions.
+ * It includes all the necessary data calculated by the main component.
+ */
+export interface StrategyRenderProps<T extends QuizData = QuizData> {
+    data: T
+    config: Config
+    answers: { [key: number]: string | null }
+    options?: any
+    correctAnswers: string[]
+}
+
+/**
+ * Defines the structure of a question strategy object.
+ * Each strategy provides the unique logic for a specific question type.
+ */
+export interface QuestionStrategy<T extends QuizData = QuizData> {
+    getQuestionCount: (data: T) => number
+    getOptions?: (data: T) => any
+    getCorrectAnswers: (data: T, options?: any) => string[]
+    renderPaper: (props: StrategyRenderProps<T>) => JSX.Element | null
+    renderKey: (props: StrategyRenderProps<T>) => JSX.Element | null
+    keyPerLine: number
+}
+
 type QuizData = FishingData | ClozeData | GrammarData | SentenceChoiceData | ReadingData | ListeningData | CustomData
 
 export type QuizDataType = QuizData['type']

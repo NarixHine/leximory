@@ -48,7 +48,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                 }}
                 size='lg'
                 radius='full'
-                color='primary'
+                color='warning'
                 startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
             >
                 {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}

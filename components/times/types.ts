@@ -1,4 +1,4 @@
-import QuizData from '@/lib/editory/types'
+import QuizData from '@/components/editory/generators/types'
 
 export interface TimesSummaryData {
     date: string

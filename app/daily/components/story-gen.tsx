@@ -20,7 +20,8 @@ export default function StoryGen({ comments, lang }: {
         size='sm'
         variant='light'
         startContent={isGenerating ? null : <PiMagicWandDuotone className='text-xl' />}
-        color='primary'
+        color='secondary'
+        className='font-semibold'
         radius='full'
         isLoading={isGenerating}
         onPress={() => {

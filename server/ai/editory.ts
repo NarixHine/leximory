@@ -2,10 +2,10 @@
 
 import { generateObject } from 'ai'
 import { Schema, z } from 'zod'
-import QuizData, { QuizDataType } from '../../lib/editory/types'
+import QuizData, { QuizDataType } from '../../components/editory/generators/types'
 import { googleModels } from '@/server/ai/models'
 import { nanoid } from '@/lib/utils'
-import { AIGeneratableType } from '@/lib/editory/config'
+import { AIGeneratableType } from '@/components/editory/generators/config'
 
 export default async function generateQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }): Promise<QuizData> {
     const { system, schema } = getConfig(type)
@@ -47,7 +47,7 @@ const getConfig = (type: QuizDataType): { system: string, schema: Schema } => {
             }
         case 'reading':
             return {
-                system: `把prompt出成英语高考阅读理解题，高考难度。\n在questions输出题目数组。每个题目以q为问题，a为四个选项，correct为正确选项下标。\n一共出五题，考察内容均匀：你可以出事实信息题、内容推断题（What can you infer）、标题推测题（What is the best title）、态度判断题（What is the author's attitude）等。必须保留其余原有的HTML格式、换行（用换行作为分段）、标签。`,
+                system: `把prompt出成英语高考阅读理解题，高考难度。\n在questions输出题目数组。每个题目以q为问题，a为四个选项，correct为正确选项下标。\n一共出五题，考察内容均匀。供参考的出题方向：事实信息题、内容推断题（What can you infer）、标题推测题（What is the best title，仅当标题未给定时出）、句子作用题、生僻单词/生僻词组语义推测题、态度判断题（What is the author's attitude）……必须保留其余原有的HTML格式、换行（用换行作为分段）、标签。`,
                 schema: z.object({
                     questions: z.array(z.object({
                         q: z.string().describe('题目'),

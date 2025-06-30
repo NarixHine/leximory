@@ -3,12 +3,13 @@
 import { Drawer } from 'vaul'
 import Comment from '@/components/comment'
 import { useRef, useState } from 'react'
-import { cn, getBracketedSelection, resetSelection } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
 import { useIsMobileIos } from '@/lib/hooks'
 import { ENGLISH } from '@/lib/fonts'
+import { resetSelection, getBracketedSelection } from './utils'
 
 export default function Define() {
     const ref = useRef(globalThis.document)

@@ -2,7 +2,7 @@
 
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
-import { ALPHABET_SET } from './config'
+import { ALPHABET_SET } from './generators/config'
 
 interface AnswerState {
     answers: Record<number, typeof ALPHABET_SET[number] | null>

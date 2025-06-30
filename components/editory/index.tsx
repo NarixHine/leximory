@@ -1,5 +1,5 @@
-import { QuizKey, QuizPaper } from '@/lib/editory/generators'
-import QuizData from '@/lib/editory/types'
+import { QuizKey, QuizPaper } from '@/components/editory/generators'
+import QuizData from '@/components/editory/generators/types'
 import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Accordion, AccordionItem } from '@heroui/react'
@@ -25,7 +25,7 @@ export default function Paper({
         >
             {data && <QuizPaper quizData={data}></QuizPaper>}
         </div>
-        <Accordion className={cn('not-prose w-full', accordianClassName)}>
+        <Accordion className={cn('not-prose w-full mt-4', accordianClassName)}>
             <AccordionItem title='Key' className={cn('font-mono shadow-none', accordianItemClassName)} subtitle='Click to reveal' variant='splitted'>
                 {data && <QuizKey quizData={data} />}
             </AccordionItem>

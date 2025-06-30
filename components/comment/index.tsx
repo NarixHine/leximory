@@ -9,7 +9,7 @@ import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
-import { cn, getClickedChunk, nanoid } from '@/lib/utils'
+import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
@@ -24,6 +24,7 @@ import { parseCommentParams } from '@/lib/lang'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
+import { getClickedChunk } from './utils'
 
 interface CommentProps {
     params: string
