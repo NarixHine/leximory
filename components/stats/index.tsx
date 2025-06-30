@@ -4,6 +4,7 @@ import VocabularyCalendar from './calendar'
 import { getUserOrThrow } from '@/server/auth/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
+import { AvailableChartColorsKeys } from '@/lib/chart-utils'
 
 const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'
@@ -17,15 +18,15 @@ const getCountMap = async ({ uid }: { uid: string }) => {
     )
 }
 
-export async function WordStats({ uid }: { uid: string }) {
+export async function WordStats({ uid, color }: { uid: string, color?: AvailableChartColorsKeys }) {
     'use cache'
     const countMap = await getCountMap({ uid })
-    return <WordChart data={formatChartData(countMap, 30)} />
+    return <WordChart data={formatChartData(countMap, 30)} color={color} />
 }
 
-export async function UserWordStats() {
+export async function UserWordStats({ color = 'warning' }: { color?: AvailableChartColorsKeys }) {
     const { userId } = await getUserOrThrow()
-    return <WordStats uid={userId} />
+    return <WordStats uid={userId} color={color} />
 }
 
 export async function WordHeatmap({ uid }: { uid: string }) {

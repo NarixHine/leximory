@@ -5,7 +5,6 @@ import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
 import { isListedFilter, OrFilter } from '@/server/auth/role'
-import { Skeleton } from "@heroui/skeleton"
 import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -88,21 +87,22 @@ export default function Page() {
         <Nav />
 
         <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
-            <H className='text-5xl'><PiBooksDuotone />文库</H>
+            <H className='text-5xl font-bold text-primary-400'><PiBooksDuotone />文库</H>
             <Spacer y={8} />
             <div className='flex flex-col gap-4'>
                 <div className='grid grid-cols-2 justify-center gap-4'>
                     <Suspense fallback={
-                        <GradientCard title='本月 AI 注解额度'>
-                            <Skeleton className='w-full h-8' />
-                        </GradientCard>
+                        <GradientCard
+                            title='本月 AI 注解额度'
+                            className={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
+                        />
                     }>
                         <CommentaryQuotaCard />
                     </Suspense>
                     <Suspense fallback={
-                        <GradientCard title='本月 AI 音频额度'>
-                            <Skeleton className='w-full h-8' />
-                        </GradientCard>
+                        <GradientCard
+                            title='本月 AI 音频额度'
+                        />
                     }>
                         <AudioQuotaCard />
                     </Suspense>

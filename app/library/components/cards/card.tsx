@@ -2,6 +2,7 @@ import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 import H from '@/components/ui/h'
+import { CircularProgress } from '@heroui/progress'
 
 const GradientCard = ({ text, className, title, children }: {
     title?: string | ReactNode,
@@ -23,7 +24,13 @@ const GradientCard = ({ text, className, title, children }: {
                     : <Skeleton className='h-2 w-2/3 max-w-30 my-3 rounded-lg opacity-50' />
             }
             <div className='absolute bottom-0 right-0 p-3'>
-                {children}
+                {children ?? <CircularProgress
+                    size='lg'
+                    color='primary'
+                    classNames={{
+                        track: 'stroke-white/50',
+                    }}
+                />}
             </div>
         </div>
     )

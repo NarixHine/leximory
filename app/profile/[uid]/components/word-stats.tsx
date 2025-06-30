@@ -17,7 +17,7 @@ export default async function WordStatsSection({ uid }: { uid: string }) {
             </div>
             <div className='h-80'>
                 <Suspense fallback={<WordChartSkeleton />}>
-                    <WordStats uid={uid} />
+                    <WordStats uid={uid} color='primary' />
                 </Suspense>
             </div>
         </div>

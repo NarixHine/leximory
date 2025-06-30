@@ -47,7 +47,7 @@ export default async function MarketplacePage({ params }: {
 
     return (
         <Main className='max-w-screen-lg'>
-            <H className='text-5xl'><PiStorefrontDuotone />文库集市</H>
+            <H className='text-5xl font-bold dark:text-amber-500 text-amber-600'><PiStorefrontDuotone />文库集市</H>
             <Spacer y={10} />
             <Alert description='共享文库由用户发布' color='primary' variant='bordered' classNames={{ title: cn('text-md'), description: 'text-xs', base: 'mb-5' }} title='共享文库'></Alert>
             <Suspense fallback={<SuspenseLibraryList />}>

@@ -109,7 +109,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
         transition={{ duration: 1 }}
     >
-        {!compact && isOwner && <Button isIconOnly color='warning' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
+        {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
         <Card fullWidth shadow='sm' as={'div'} isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
@@ -134,7 +134,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 as={'span'}
                                 isLoading={isTogglingArchive}
                                 startContent={!isTogglingArchive && <PiArchiveFill />}
-                                color='warning'
+                                color='primary'
                                 variant='flat'
                                 isIconOnly
                                 onPress={() => {
@@ -189,7 +189,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     isLoading={isTogglingArchive}
                     startContent={!isTogglingArchive && <PiArchiveDuotone />}
                     variant='flat'
-                    color='warning'
+                    color='primary'
                     isIconOnly
                     onPress={() => {
                         startTogglingArchive(async () => {
@@ -228,7 +228,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
                 <Input className='col-span-2' label='文库名' {...register('name')} />
-                <Checkbox color='secondary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
+                <Checkbox color='primary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>
                 <NumberInput size='sm' placeholder='0~100' minValue={0} maxValue={100} variant='underlined' label='上架价格' {...register('price')} onChange={(e) => {

@@ -15,6 +15,12 @@ export const chartColors = {
         fill: 'fill-secondary',
         text: 'text-secondary',
     },
+    warning: {
+        bg: 'bg-warning',
+        stroke: 'stroke-warning',
+        fill: 'fill-warning',
+        text: 'text-warning',
+    },
     default: {
         bg: 'bg-default',
         stroke: 'stroke-default',
