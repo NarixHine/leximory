@@ -34,7 +34,7 @@ export async function generate(id: string, lib: string, text: string) {
     const prompt = lang === 'ja' ? await japaneseToKana(text) : text
 
     const audio = await speak({
-        model: new ElevenLabs().tts('eleven_turbo_v2_5', voice, options),
+        model: new ElevenLabs().tts('eleven_flash_v2_5', voice, options),
         prompt,
     })
 

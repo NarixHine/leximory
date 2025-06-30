@@ -1,7 +1,7 @@
 import { inngest } from './client'
 import { experimental_generateImage as generateImage, generateText } from 'ai'
 import { supabase } from '../client/supabase'
-import { ADMIN_UID } from '@/lib/config'
+import { ADMIN_UID, elevenLabsVoiceConfig } from '@/lib/config'
 import moment from 'moment-timezone'
 import { annotateParagraph } from '../ai/annotate'
 import { revalidateTag } from 'next/cache'
@@ -9,14 +9,17 @@ import { nanoid } from '@/lib/utils'
 import { googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
-import { getLatestTimesData, getRawNewsByDate, publishTimes, removeIssue } from '../db/times'
+import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue } from '../db/times'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
+import { speak } from 'orate'
+import { ElevenLabs } from 'orate/elevenlabs'
+import removeMd from 'remove-markdown'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the characters (give them realistic names instead of placeholders like Elara) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the title (be very creative and write it without cliched AI vibes; for example, AVOID titles, and content as well, like "quiet hum ...", "the unseen ...", "the echoes ...", "the chamber of ...", "the aether ..."), the characters (give them realistic names instead of placeholders like Elara) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
 
 Base your blueprint on the following principles: The novelist is to write an immersive novel with fully developed, emotionally complex characters, and the plot should be driven by their experiences instead of some bland third-party account. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
@@ -28,11 +31,11 @@ const NOVEL_PROMPT = `
 
 You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and VERY SMOOTH, VERY HIGH READABILITY (incorporating only a small amount of advanced vocabulary).
 
-You should write an immersive novel with fully developed, emotionally complex characters, and **the plot should be driven by their experiences** instead of some bland third-party account so that you are writing a STORY like a master novelist rather than a parable. 
+You should write an immersive novel with fully developed, emotionally complex characters, and **the plot should be driven by their experiences** instead of some bland third-party account so that you are writing a STORY rather than a parable like a master novelist. 
 
 Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
-Let the theme emerge naturally from the characters' experiences and the plot, rather than being forced or didactic. Avoid at any degree moralising or overtly preachy messages. Instead, let the story's themes resonate through the characters' journeys and the situations they face.
+Let the theme emerge naturally from the characters' experiences and the plot, rather than being forced or didactic. Avoid at any degree and in any part moralising or preachy messages. Instead, let the story's themes resonate through the characters' journeys and the situations they face.
 
 The content and stylistic suggestions for today's novel from the editor are as follows.
 
@@ -72,11 +75,11 @@ Make your fabrications very clear in a way that won't mislead unknowing people t
 
 Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
 
-Use Markdown H3 to indicate the category, and H4 the main idea of the news. Incorporate a moderate amount of advanced vocabulary in your reporting, for the sake of English learning.
+Use Markdown H3 to indicate the category, and H4 the main idea of the news. Incorporate only a moderate amount of advanced vocabulary in your reporting, and use fewer advanced words in the first section, for the sake of English learning.
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in bold) in Leximory.
 
-Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** (of a person, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes.
+Write in a modern journalistic style (engaging and compelling to follow through). Particularly, Fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising) for the first section, employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. Avoid AI summary vibes. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians.
 
 ### Background settings of Leximory
 
@@ -126,7 +129,7 @@ Barreto is now awaiting trial in state Supreme Court in Manhattan and facing sev
 
 There was no reason to believe the White House had any interest in the case or any idea who Mickey Barreto was. But you could never quite tell with Mickey — he had been right once before.
 
-***Regular News Stylistic Example (from NYTimes)***：
+***Regular News Style Example (from NYTimes, strongly recommended)***：
 
 By Monday, hedge fund billionaires — many of whom had been loud and proud boosters of Mr. Trump’s second term — were going public with their cries.
 
@@ -141,7 +144,7 @@ Mr. Dimon, the JPMorgan chief, waded into the fray on Monday morning with an inv
 
 Mr. Dimon, who was complimentary to a degree of tariffs in the days after Mr. Trump’s election, stopped short of warning of a severe downturn but said the turmoil was “causing many to consider a greater probability of a recession.”
 
-***Regular News Stylistic Example (in Leximory style, for other sections)***：
+***Regular News Style Example (in Leximory style, for other sections)***：
 
 **Leximory Bay** — The Bay Parliament convened an emergency session yesterday, debating a controversial new "Tidal Tax" proposed by the ruling Coral Party. The tax, which would impose a levy on all goods transported by tidal currents, has been met with fierce resistance from the opposition Manta Ray Alliance.
 
@@ -194,7 +197,7 @@ export const generateTimes = inngest.createFunction(
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
-            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            const date = '2025-06-25'
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })
@@ -202,10 +205,19 @@ export const generateTimes = inngest.createFunction(
         // Step 2: Get yesterday's data
         const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
             const threeDaysAgo = moment(date).tz('Asia/Shanghai').subtract(3, 'days').format('YYYY-MM-DD')
-            const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
-            const latestTimesData = await getLatestTimesData()
 
-            return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
+            try {
+                const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
+                const latestTimesData = await getTimesDataByDate(moment(date).tz('Asia/Shanghai').subtract(1, 'days').format('YYYY-MM-DD'))
+                return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
+            } catch (error) {
+                console.error(error)
+                return {
+                    novelYesterday: 'No novel yesterday.',
+                    newsThreeDaysAgo: 'No news three days ago.',
+                    newsYesterday: 'No news yesterday.'
+                }
+            }
         })
 
         // Step 3: Generate editor's guide
@@ -230,11 +242,12 @@ export const generateTimes = inngest.createFunction(
             temperature: 0.5
         })
 
+        // Step 5: Annotate novel
         const annotatedNovel = await step.run('annotate-novel', async () => {
             return await annotateParagraph({ content: novel, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 
-        // Step 5: Generate daily news
+        // Step 6: Generate daily news
         const { text: news } = await step.ai.wrap('generate-news', generateText, {
             model: googleModels['flash-2.5-search'],
             system: NEWS_PROMPT,
@@ -248,10 +261,36 @@ export const generateTimes = inngest.createFunction(
             return await annotateParagraph({ content: news, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 
-        // Step 7: Generate quiz based on news from three days ago
+        // Step 7: Generate audio for news and upload to Supabase
+        const audio = await step.run('generate-audio-for-news', async () => {
+            const { voice, options } = elevenLabsVoiceConfig['BrE']
+
+            try {
+                const audio = await speak({
+                    model: new ElevenLabs().tts('eleven_flash_v2_5', voice, options),
+                    prompt: removeMd(news),
+                })
+                const { data } = await supabase.storage.from('app-assets').upload(`times/${date}.mp3`, audio, {
+                    upsert: true,
+                    contentType: audio.type
+                })
+                if (!data) {
+                    throw new Error('Failed to upload audio')
+                }
+
+                const { data: { publicUrl: audioUrl } } = supabase.storage.from('app-assets').getPublicUrl(data.path)
+                return audioUrl
+            }
+            catch (error) {
+                console.error(error)
+                return null
+            }
+        })
+
+        // Step 8: Generate quiz based on news from three days ago
         const quiz = await step.run('generate-quiz-from-three-days-ago', async () => {
             if (!newsThreeDaysAgo) {
-                throw new Error('No news available from three days ago to generate quiz.')
+                return null
             }
             const converter = new showdown.Converter()
             const quiz = await generateQuiz({
@@ -261,7 +300,7 @@ export const generateTimes = inngest.createFunction(
             return JSON.stringify(quiz)
         })
 
-        // Step 8: Generate image prompt
+        // Step 9: Generate image prompt
         const { text: imagePrompt } = await step.ai.wrap('generate-image-prompt', generateText, {
             model: googleModels['flash-2.5'],
             system: IMAGE_PROMPT,
@@ -274,7 +313,7 @@ export const generateTimes = inngest.createFunction(
             temperature: 0.5
         })
 
-        // Step 9: Generate and upload image
+        // Step 10: Generate and upload image
         const imageUrl = await step.run('generate-and-upload-image', async () => {
             const { image } = await generateImage({
                 model: googleModels['image-gen'],
@@ -293,15 +332,16 @@ export const generateTimes = inngest.createFunction(
             return publicUrl
         })
 
-        // Step 10: Save to Supabase
+        // Step 11: Save to Supabase
         await step.run('save-to-supabase', async () => {
             const res = await publishTimes({
                 novel: annotatedNovel,
                 news: annotatedNews,
                 cover: `${imageUrl}?${nanoid(3)}`,
-                quiz: JSON.parse(quiz),
+                quiz: quiz ? JSON.parse(quiz) : null,
                 date,
                 raw_news: news,
+                audio
             })
             revalidateTag('times')
             return res

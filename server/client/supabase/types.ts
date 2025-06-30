@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       lexicon: {
@@ -178,6 +153,7 @@ export type Database = {
       }
       times: {
         Row: {
+          audio: string | null
           cover: string
           created_at: string
           date: string
@@ -188,6 +164,7 @@ export type Database = {
           raw_news: string | null
         }
         Insert: {
+          audio?: string | null
           cover: string
           created_at?: string
           date: string
@@ -198,6 +175,7 @@ export type Database = {
           raw_news?: string | null
         }
         Update: {
+          audio?: string | null
           cover?: string
           created_at?: string
           date?: string
@@ -370,9 +348,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

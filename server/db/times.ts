@@ -27,7 +27,7 @@ export async function getTimesDataByDate(date: string) {
 
     const { data } = await supabase
         .from('times')
-        .select('date, cover, news, novel, quiz')
+        .select('date, cover, news, novel, quiz, audio')
         .eq('date', date)
         .single()
         .throwOnError()
@@ -59,7 +59,7 @@ export async function getLatestTimesData() {
 
     const { data } = await supabase
         .from('times')
-        .select('date, cover, news, novel, quiz')
+        .select('date, cover, news, novel, quiz, audio')
         .order('date', { ascending: false })
         .limit(1)
         .throwOnError()

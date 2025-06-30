@@ -8,6 +8,7 @@ export interface TimesSummaryData {
 export interface TimesData extends TimesSummaryData {
     novel: string
     news: string
+    audio: string | null
     quiz: QuizData | null
 }
 

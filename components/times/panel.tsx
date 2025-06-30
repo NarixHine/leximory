@@ -57,8 +57,8 @@ function TimesContentSkeleton() {
             </Accordion>
 
             {/* News Skeleton */}
-            <h2 className='mb-10'>Daily News</h2>
-            <div className='space-y-3 mt-4'>
+            <h2 className='mb-6'>Daily News</h2>
+            <div className='space-y-3'>
                 <Skeleton className='h-4 w-full rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
                 <Skeleton className='h-4 w-4/6 rounded-lg' />
@@ -85,7 +85,7 @@ function TimesContent() {
         return <TimesContentSkeleton />
     }
 
-    const { cover, news, novel, quiz, date } = data
+    const { cover, news, novel, quiz, date, audio } = data
 
     return (
         <article className='m-6 md:px-4 md:my-12 prose-lg prose dark:prose-invert'>
@@ -115,6 +115,13 @@ function TimesContent() {
 
             <h2>Daily News</h2>
             {/* Content */}
+            {audio && <div className='-my-4'><audio
+                controls
+                src={audio}
+                className='w-full'
+                preload='none'
+                onContextMenu={(e) => e.preventDefault()}
+            /></div>}
             <p>These are the headlines today in Leximory, <b>a small coastal country on Mars.</b> <small>So that&apos;s a bit different from Earth life!</small></p>
             <Markdown
                 className='prose-lg'

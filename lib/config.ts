@@ -16,13 +16,18 @@ export const elevenLabsVoiceConfig = {
     'BrE': {
         voice: '0sGQQaD2G2X1s87kHM5b',
         options: {
+            voice_settings: {
+                stability: 0.45,
+                similarity_boost: 0.75,
+                speed: 1.1,
+            }
         }
     },
     'AmE': {
-        voice: 'Z3R5wn05IrDiVCyEkUrK',
+        voice: '5l5f8iK3YPeGga21rQIX',
         options: {
             voice_settings: {
-                stability: 0.4,
+                stability: 0.3,
                 similarity_boost: 0.4,
                 speed: 1.07,
             }
@@ -43,7 +48,15 @@ export const elevenLabsVoiceConfig = {
         options: {
         }
     },
-} as const
+} as const satisfies Record<string, {
+    voice: string, options: Partial<{
+        voice_settings: Partial<{
+            stability: number,
+            similarity_boost: number,
+            speed: number
+        }>
+    }>
+}>
 
 export const exampleSharedLib = {
     id: '4c33b971',
