@@ -5,6 +5,7 @@ import Blank from '../blank'
 import { createQuestionStrategy, extractCodeContent, getSeed, toTableRows } from './utils'
 import { ALPHABET_SET } from './config'
 import QuizData, { GrammarData, ReadingData, ListeningData, ClozeData, FishingData, SentenceChoiceData, CustomData, QuestionStrategy } from './types'
+import Choice from '../choice'
 
 const listeningStrategy = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -145,17 +146,21 @@ const readingStrategy = createQuestionStrategy<ReadingData>({
             <section>{'text' in data ? parse(data.text) : null}</section>
             <section className='my-2 flex flex-col gap-y-2'>
                 {data.questions.map((q, index) => (
-                    <div key={index}>
+                    <div key={index} className='flex gap-2 flex-col'>
                         <p>{`${(config.start ?? 1) + index}. ${q.q}`}</p>
-                        <table className='not-prose'><tbody>{toTableRows((q.a || []).map((option, i) => <td key={i}>{`${ALPHABET_SET[i]}. ${option}`}</td>), 1)}</tbody></table>
+                        <Choice number={(config.start ?? 1) + index} options={q.a} groupId={data.id} />
                     </div>
                 ))}
             </section>
         </>
     ),
-    renderKey: ({ data, config }) => (
+    renderKey: ({ data, config, answers }) => (
         <>
-            {data.questions.map((q, index) => <td key={index} className='px-2'>{`${(config.start ?? 1) + index}. ${ALPHABET_SET[q.correct]}`}</td>)}
+            {data.questions.map((q, index) => {
+                const number = (config.start ?? 1) + index
+                const userAnswer = answers[number]
+                return <td key={index} className={cn('px-2', userAnswer && (q.correct === ALPHABET_SET.indexOf(userAnswer) ? 'text-success' : 'text-danger'))}>{`${number}. ${ALPHABET_SET[q.correct]}`}</td>
+            })}
         </>
     ),
 })

@@ -39,27 +39,27 @@ const initialPrompts = [{
     icon: PiNewspaperClippingDuotone
 }, {
     title: '注解文章',
-    prompt: '注解下文并存入【词汇仓库】文库。\n',
+    prompt: '注解下文并存入［词汇仓库］文库。\n',
     icon: PiNewspaperDuotone
 }, {
     title: '金句提取',
-    prompt: '对于文库【文库名称】中的【所有】文章，提取一些可借鉴于作文中的高分金句。',
+    prompt: '对于文库［文库名称］中的［所有］文章，提取一些可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
     title: '今日词汇',
-    prompt: '获取今天的 The Leximory Times 内容，然后提取 News 里于日常写作中实用的高分语块，量少而精。',
+    prompt: '获取［今天］的 The Leximory Times 并提取 News 里实用于日常写作的高分语块，量少而精。',
     icon: PiBookmarksDuotone
 }, {
     title: '本周复习',
-    prompt: '【本周】我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
+    prompt: '［本周］我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
     icon: PiClockClockwiseDuotone
 }, {
     title: '造句巩固',
-    prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
+    prompt: '针对［今天］学习的［英语］单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
 }, {
     title: '导入网页',
-    prompt: '提取以下网页中的文章，并导入【词汇仓库】文库。',
+    prompt: '提取以下网页中的文章，并导入［词汇仓库］文库。',
     icon: PiLinkSimpleDuotone
 }, {
     title: '外刊出题',

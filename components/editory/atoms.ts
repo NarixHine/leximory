@@ -2,14 +2,9 @@
 
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
-import { ALPHABET_SET } from './generators/config'
 
-interface AnswerState {
-    answers: Record<number, typeof ALPHABET_SET[number] | null>
-}
-
-interface AnswerState {
-    answers: Record<number, typeof ALPHABET_SET[number] | null>
+export interface AnswerState {
+    answers: Record<number, string | null>
 }
 
 export const answerAtomFamily = atomFamily(() =>

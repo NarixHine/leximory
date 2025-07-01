@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/server/client/supabase/client'
 import { User } from '@supabase/supabase-js'
+import { useMediaQuery } from 'usehooks-ts'
+
+export const useIsMobile = () => useMediaQuery('(max-width: 768px)')
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null)

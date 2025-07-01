@@ -1,6 +1,4 @@
 import TheTimes from '@/components/times'
-import { isAtRead } from '@/lib/subapp'
-import { cn } from '@/lib/utils'
 import { Metadata } from 'next'
 import { momentSH } from '@/lib/moment'
 
@@ -25,10 +23,6 @@ export async function generateMetadata({ searchParams }: TimesPageProps): Promis
     }
 }
 
-export default async function TimesPage() {
-    return (
-        <main className={cn('h-dvh w-full', await isAtRead() ? 'p-0' : 'p-4')}>
-            <TheTimes />
-        </main>
-    )
+export default function TimesPage() {
+    return <TheTimes />
 }

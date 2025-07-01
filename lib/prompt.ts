@@ -57,7 +57,7 @@ export const instruction: {
   
   禁止把屈折变化的后缀放入语源：**不要在动词的语源中附带-ed、-ing、-en、-e，但是不要删除副词词尾的-ly。**
 
-  注释语法严格**遵循示例输出**。除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective。
+  注释语法严格**遵循示例输出**。除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective，还例如完整注解vault oneself ahead of、bridge the gap、take a toll on等常见搭配。
   
   示例文本一：
   Birds, nowadays, all live in imperilled mansions. I <must>studied up</must> on birds that are famously difficult to identify so that when I first saw them in the field, I had an inkling of what they were without having to check a field guide. I used the many tools now available to novices: EBird shows where other birders go and reveals how different species navigate space and time; Merlin is best known as an identification app but is secretly an incredible encyclopedia; Birding Quiz lets you practice identifying species based on fleeting glances at bad angles.

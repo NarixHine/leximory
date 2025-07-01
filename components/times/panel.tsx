@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { ENGLISH_MODERN } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import Markdown from '../markdown'
-import { Accordion, AccordionItem, Skeleton } from '@heroui/react'
+import { Accordion, AccordionItem, ScrollShadow, Skeleton } from '@heroui/react'
 import { momentSH } from '@/lib/moment'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { TimesSummaryData } from './types'
@@ -21,6 +21,9 @@ import Paper from '../editory'
 import { Spacer } from '@heroui/spacer'
 import Link from 'next/link'
 import { Divider } from '@heroui/divider'
+import { useIsMobile } from '@/lib/hooks'
+import { useAtomValue } from 'jotai'
+import { isFullScreenAtom } from './atoms'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -76,6 +79,7 @@ function TimesContentSkeleton() {
 }
 
 function TimesContent() {
+    const isFullScreen = useAtomValue(isFullScreenAtom)
     const [dateInUrl] = useQueryState('date')
     const { data } = useQuery({
         queryKey: ['times', dateInUrl],
@@ -148,7 +152,7 @@ function TimesContent() {
                 <Divider className='flex-1' />
             </div>
 
-            <footer className='text-sm text-default-700 text-center pb-6'>
+            <footer className={cn('text-sm text-default-700 text-center', isFullScreen ? 'pb-6' : 'pb-20 md:pb-6')}>
                 <i>An Experimental Publication by <Link href={prefixUrl('/')} className='underline-offset-4 text-inherit'>Leximory</Link></i>
             </footer>
         </article>
@@ -230,8 +234,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
         }
     }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage])
 
+    const isMobile = useIsMobile()
     return (
-        <div className='flex md:h-full md:min-w-64 md:flex-col md:overflow-y-auto overflow-x-auto'>
+        <ScrollShadow hideScrollBar orientation={isMobile ? 'horizontal' : 'vertical'} size={15} className='flex md:h-full md:min-w-64 md:flex-col md:overflow-y-auto overflow-x-auto'>
             <div className='flex flex-row md:flex-col md:static inset-y-0 left-0 z-40'>
                 <div className='p-6 md:ml-6'>
                     <div className='flex flex-row md:flex-col space-x-4 md:space-x-0 md:space-y-3'>
@@ -250,11 +255,12 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
                     </div>
                 </div>
             </div>
-        </div>
+        </ScrollShadow>
     )
 }
 
 export default function Panel({ recentData }: PanelProps) {
+    const isMobile = useIsMobile()
     return (
         <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_MODERN.className)}>
             {/* Main Paper Container */}
@@ -263,12 +269,12 @@ export default function Panel({ recentData }: PanelProps) {
                     data={recentData}
                 />
 
-                <div className='flex h-full overflow-y-auto overflow-x-hidden'>
+                <ScrollShadow size={20} isEnabled={isMobile} className='flex h-full overflow-y-auto overflow-x-hidden'>
                     {/* Main Content */}
                     <Suspense fallback={<TimesContentSkeleton />}>
                         <TimesContent />
                     </Suspense>
-                </div>
+                </ScrollShadow>
             </div>
 
             <Define />

@@ -24,7 +24,7 @@ const Blank = ({ number, options, groupId }: { number: number, spaceCount?: numb
                         {options.map((option, index) => (
                             <Button
                                 key={index}
-                                color={answer === option ? 'success' : 'default'}
+                                color={answer === option ? 'secondary' : 'default'}
                                 variant='flat'
                                 size='sm'
                                 onPress={() => setAnswer({ questionId: number, option })}
