@@ -16,10 +16,10 @@ import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
 
-const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
+const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao clichés)', 'adolescence/school fiction (with Japanese vibes but without stereotypes/cliches)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
 
 const EDITOR_GUIDE_PROMPT = ` 
-You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the title (be very creative and write it without cliched AI vibes; for example, AVOID titles, and content as well, like "quiet hum ...", "the unseen ...", "the echoes ...", "the chamber of ...", "the aether ..."), the characters (give them realistic names instead of placeholders like Elara) and the language style. Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
+You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the title (be very creative and write it without cliched AI vibes; for example, AVOID titles, and content as well, like "quiet hum ...", "the unseen ...", "the echoes ...", "the chamber of ...", "the aether ..."), the characters (give them realistic names instead of placeholders like Elara) and the language style (including whether Novelist is allowed to use dividers to indicate small chapters or must narrate the story in a single cohesive article). Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
 
 Base your blueprint on the following principles: The novelist is to write an immersive novel with fully developed, emotionally complex characters, and the plot should be driven by their experiences instead of some bland third-party account. Give each character clear motivations, flaws, and personal stakes that evolve throughout the story, and tell the story in a way that offers vivid insights into their feelings, thoughts and dispositions. Use a concrete narrative style—avoid vague abstractions and overly ornate language. Build tension and reader engagement through well-paced conflict, mystery, and emotional turning points. Balance dialogue, inner thought, and physical action to create immersive scenes. Ground speculative or fantastical elements in believable detail. Show character development through interactions, dilemmas, and small moments—and minimise exposition. Prioritise emotional realism and narrative momentum.
 
@@ -74,6 +74,48 @@ Grey stayed grey. The Cascade was merely a faster heartbeat, a storm in static. 
 One day, she was sitting alone on the balcony when she suddenly began to notice a rhythm. Beneath the flickering light, behind every aura that surged or twisted, there pulsed a faint, repeating signal. Not a colour, not a feeling—just a beat, regular and alive, like a distant drum in the fog.
 
 She might have dismissed it, but her hands had started to shake. For the first time in years, she felt something.
+
+**Another Good, Ultra-Realistic Writing Example to Reference:**
+
+(You don't have to describe every scene and development. Because the length is limited, narrate important parts and do it with ultra-realistic detail instead of abstract accounts and don't hold back. Be specific and concrete with every scene and transition you write, and infuse all of them with first-person plausibility even if the novel is third-person.)
+
+At six o'clock, on our return from the islands, Cyril would pull the boat onto the sand. We would go up to the house through the pine wood in single file, pretending we wore Indians, or run handicap races to warm ourselves up. He always caught me before we reached the house and would spring on me with a shout of victory, rolling mo on the pine needles, pinning my arms down and kissing me. I can still remember those light, breathless kisses, and Cyril's heart beating against mine in rhythm with the soft thud of the waves on the sand. Four heart-beats and four waves, and then gradually he would regain his breath and his kisses would become more urgent, the sound of the tea would grow dim and give way to the pulse in my ears.
+ 	
+One evening we were surprised by Anne's voice. Cyril was lying close to me in the red glow of the sunset. I can understand that Anne might have been misled by the sight of us there in our scanty bathing things. She called me sharply.
+ 	
+Cyril bounded to his feet, naturally somewhat ashamed. Keeping my eyes on Anne, I slowly got up in my turn. She faced Cyril, and looking right through him spoke in a quiet voice: "I don't wish to see you again."
+ 	
+He made no reply, but bent over and kissed my shoulder before departing. I felt surprised and touched, as if his gesture had been a sort of pledge. Anne was staring at me with the same grave and detached look, as though she were thinking of something else. Her manner infuriated me. If she was so deep in thought, why speak at all? I went up to her, feigning embarrassment for the sake of politeness. At last she seemed to notice me and mechanically removed a pine needle from my neck. I saw her face assume its beautiful mask of disdain, that expression of weariness and disapproval which became her so well, and which always frightened me a little.
+ 	
+"You should know that such diversions usually end up in a nursing home."
+
+**Another Good Writing Example to Reference that Involves Concentrated Plot Development:**
+
+Magnus Pym arrived at the boarding house of Miss Dubber in a south Devon coastal town with a borrowed bag, a borrowed car and a borrowed life. He was very attentive to Miss Dubber. He told her nothing about his work except that he was in Whitehall and travelled a lot. He had taken leave, he said, for heavy writing, but no heavy writing ever seemed to occur. He was still very attentive to Miss Dubber. He was called Mr. Canterbury. He had written ahead and paid her a month’s rent in cash, and he was taking it very easy.
+
+Meanwhile in Vienna, at the diplomatic residence which was rather grander than the boarding house, Mary Pym was awaiting the return of her husband, Magnus. Or, failing that, the arrival of Jack Brotherhood, her husband’s case officer. It was already seven o’clock. The curtains were drawn, but still the sun pushed orange fire into the room. All the telephone lines were open to her but they remained silent. Every five minutes, she told herself: five minutes more. She was holding a large Scotch and soda in one hand. With the other she was stroking the large white cat that was sitting on her knee. The cat was purring very loudly. The cat was called Marigold. Mary was having trouble with her heart. A black cloud had settled over it after a certain holiday on the island of Lesbos. She could not speak about the black cloud but it was often there.
+
+She thought that it was a special kind of heart trouble that was related to her husband. Every five minutes, she was telling herself: just five minutes more. Then the telephone rang.
+
+“Brotherhood,” a voice said, very close.
+
+“Jack, thank God!” Mary cried, and she was so relieved she could scarcely hear him for the tears. “Where are you?”
+
+“Downstairs. Open the door.”
+
+“Downstairs where? Jack, for God’s sake—”
+
+But he had hung up. She stood still, listening, the glass in her hand, the huge purring cat on her knee. She heard a car door slam. She heard the rattle of the old lift. She heard heavy footsteps in the hall. She heard voices and the shuffle of more feet. The house had seemed so quiet until then. It was as if a whole regiment had taken up residence in the drawing-room below.
+
+“I’m terribly sorry—I phoned Jack to say where the hell’s my husband?”
+
+“Forget it, Mary. I just want to warn you about something.”
+
+“Warn me about what?”
+
+“Mary, I’m downstairs, with your security men. We’re coming up now. And there may be one or two others. It’s for your own good, darling, I promise.”
+
+Mary was thinking, Oh, Magnus: what now? And then she went to the window and saw the things, and the black cloud that had been inside her heart now covered the entire Viennese night sky. Lights had come on, ambulances were racing to the spot without apparently knowing where the spot was, police and plainclothesmen were falling over each other and the fools on the roof were shouting at the fools in the square and England was being saved from things it didn’t know were threatening it. But Jack Brotherhood was standing to attention like a dead centurion at his post, and everyone was watching a dignified little lady in a dressing-gown coming down the steps of her house.
 `.trim()
 
 const NEWS_PROMPT = `
@@ -236,7 +278,7 @@ export const generateTimes = inngest.createFunction(
 
         // Step 3: Generate editor's guide
         const { text: editorGuide } = await step.ai.wrap('generate-editor-guide', generateText, {
-            model: googleModels['flash-2.5'],
+            model: googleModels['pro-2.5'],
             system: EDITOR_GUIDE_PROMPT,
             prompt: `Write today's editor's guide that is TOTALLY DIFFERENT from yesterday's novel and feels fresh. Name characters in an unclichéd way.
             
@@ -244,16 +286,16 @@ export const generateTimes = inngest.createFunction(
             
             Yesterday's novel: ${novelYesterday}.`,
             maxTokens: 4000,
-            temperature: 0.6
+            temperature: 0.65
         })
 
         // Step 4: Generate novel
         const { text: novel } = await step.ai.wrap('generate-novel', generateText, {
-            model: googleModels['flash-2.5'],
+            model: googleModels['pro-2.5'],
             system: NOVEL_PROMPT,
             prompt: editorGuide,
             maxTokens: 8000,
-            temperature: 0.5
+            temperature: 0.55
         })
 
         // Step 5: Annotate novel
