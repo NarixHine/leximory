@@ -111,7 +111,7 @@ function TimesContent() {
                     heading: 'mb-0'
                 }}>
                     <Markdown
-                        className='prose-lg first-letter:[initial-letter:2] first-letter:pr-2'
+                        className='prose-lg'
                         fontFamily={ENGLISH_MODERN.style.fontFamily}
                         md={`${novel} ■`}
                     />

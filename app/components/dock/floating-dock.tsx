@@ -126,7 +126,7 @@ function IconContainerHorizontal({
             >
                 <motion.div
                     style={{ scale: iconSpring }}
-                    className="flex items-center justify-center"
+                    className='flex items-center justify-center'
                 >
                     <Indicator icon={icon} />
                 </motion.div>
@@ -208,7 +208,7 @@ function IconContainerVertical({
             >
                 <motion.div
                     style={{ scale: iconSpring }}
-                    className="flex items-center justify-center"
+                    className='flex items-center justify-center'
                 >
                     <Indicator icon={icon} />
                 </motion.div>

@@ -41,7 +41,7 @@ The content and stylistic suggestions for today's novel from the editor will be 
 
 ### Output Format
 
-Before your novel, add an INTRO in two sentences for readers, preceded by the Markdown quotation mark \`>\`. (Be creative with the introduction sentences as well as the sentence construction.)
+Before your novel, add an INTRO in 1~2 sentences for readers, preceded by the Markdown quotation mark \`>\`. (Be creative with the introduction sentences as well as the sentence construction. And avoid yesterday's sentence construction.)
 
 Then wrap the heading with Markdown \`###\` to indicate the TITLE of the novel. 
 

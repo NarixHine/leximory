@@ -369,136 +369,132 @@ export function StoryDemo() {
                                 "period": "week"
                             },
                             "result": [
-                                [
-                                    {
-                                        "word": "{{project||project||**v. 预计** `prəˈdʒɛkt` estimate or forecast (something on the basis of present trends)||语源“向前投掷”: ***pro-*** (forward) + ***ject*** (throw)||***pro-*** (forward) → **pro**gress (进步), **pro**pose (提议); ***ject*** (throw) → e**ject** (喷出), re**ject** (拒绝)}}",
-                                        "id": "rec_d0tdtku2ssvo58clr9jg",
-                                        "lang": "en",
-                                        "lib": "rec_cv5dkf4ddc7scqp8envg"
-                                    },
-                                    {
-                                        "word": "{{viral||viral||**adj. 病毒式传播的** `ˈvaɪrəl` relating to or involving a virus; (of an image, video, or piece of information) circulated rapidly and widely from one internet user to another||语源“病毒的”: ***vir*** (poison) + ***-al*** (forming adj.)||***vir*** (poison) → **vir**us (病毒)}}",
-                                        "id": "rec_d0tdtllmukjh43brk9ig",
-                                        "lang": "en",
-                                        "lib": "rec_cv5dkf4ddc7scqp8envg"
-                                    },
-                                    {
-                                        "word": "{{resonate||resonate||**v. 引起共鸣** `ˈrɛzəneɪt` *(resonate with)* evoke or suggest images, memories, and emotions||语源“回响”: ***re-*** (again) + ***son*** (sound) + ***-ate*** (forming v.)||***re-*** (again) → **re**peat (重复), **re**turn (返回); ***son*** (sound) → **son**ic (声波的), **son**net (十四行诗)}}",
-                                        "id": "rec_d0tdtqe2ssvo58clr9k0",
-                                        "lang": "en",
-                                        "lib": "rec_cv5dkf4ddc7scqp8envg"
-                                    },
-                                    {
-                                        "word": "{{intoxicating||intoxicating||**adj. 令人陶醉的** `ɪnˈtɒksɪkeɪtɪŋ` (of alcoholic drink or a drug) liable to cause intoxication; exhilarating or exciting||语源“使中毒”: ***in-*** (in) + ***toxic*** (poison) + ***-ate*** (forming v.) + ***-ing*** (forming adj.)||***in-*** (in) → **in**vade (入侵), **in**clude (包含); ***toxic*** (poison) → **toxic** (有毒的), **toxic**ity (毒性)}}",
-                                        "id": "rec_d0tdtr5mukjh43brk9j0",
-                                        "lang": "en",
-                                        "lib": "rec_cv5dkf4ddc7scqp8envg"
-                                    },
-                                    {
-                                        "word": "{{reminiscent||reminiscent||**adj. 令人想起的** `ˌrɛmɪˈnɪsənt` *(reminiscent of)* tending to remind one of something||语源“回想”: ***re-*** (again) + ***min*** (mind) + ***-iscent*** (forming adj.)||***re-*** (again) → **re**peat (重复), **re**turn (返回); ***min*** (mind) → **min**d (头脑), **min**dful (留心的)}}",
-                                        "id": "rec_d0tdts62ssvo58clr9kg",
-                                        "lang": "en",
-                                        "lib": "rec_cv5dkf4ddc7scqp8envg"
-                                    }
-                                ],
-                                [
-                                    {
-                                        "word": "{{drudgery||drudgery||**n. 苦工** `ˈdrʌdʒəri` hard, menial, or dull work||可能源自“dredge（疏浚）”，指繁重乏味的工作}}",
-                                        "id": "rec_d0on24ooqolumqva82jg",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{accrete||accrete||**v. 逐渐增长** `əˈkriːt` grow by gradual accumulation||语源“增长”: ***ac-*** (to, towards) + ***crete*** (grow)||***crete*** (grow) → de**cre**ase (减少)}}",
-                                        "id": "rec_d0on2gooqolumqva82kg",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{turnover||turnover||**n. 人员流动率** `ˈtɜːnˌəʊvə` the rate at which employees leave a company and are replaced by other people: *The company has a high turnover of staff.*||意即“翻转”: ***turn*** (turn) + ***over*** (over)||***turn*** (turn) → re**turn** (返回)}}",
-                                        "id": "rec_d0on37e2ssvo58cldh9g",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{invariably||invariably||**adv. 总是** `ɪnˈveəriəbli` in every case or on every occasion; always||语源“不变地”: ***in-*** (not) + ***vari*** (change) + ***-ably*** (forming adv.)||***vari*** (change) → **vari**able (可变的)}}",
-                                        "id": "rec_d0on3gooqolumqva82m0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{ramble on||ramble on||**phr. 喋喋不休** talk at length in an unfocused or inconsequential way}}",
-                                        "id": "rec_d0on3ngoqolumqva82n0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{have a stale whiff about it||have a stale whiff about it||**phr. 带有陈腐气息** have a quality that is no longer fresh or interesting: *For a time, the industry had a stale whiff about it.*}}",
-                                        "id": "rec_d0ooej0oqolumqva83r0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{bemoan||bemoan||**v. 哀叹** `bɪˈməʊn` express discontent or sorrow over (something)||语源“哀叹”: ***be-*** (intensifier) + ***moan*** (moan)}}",
-                                        "id": "rec_d0ooet0oqolumqva83rg",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{bland||bland||**adj. 平淡的** `blænd` lacking strong features or characteristics and therefore uninteresting||语源“温和的”: ***bland*** (mild)}}",
-                                        "id": "rec_d0ooeugoqolumqva83s0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{artisanal||artisanal||**adj. 手工的** `ˌɑːtɪˈzænəl` relating to or characteristic of an artisan||语源“工匠的”: ***art*** (skill) + ***-isan*** (forming n.) + ***-al*** (forming adj.)||***art*** (skill) → **art**ist (艺术家), **art**ificial (人工的)}}",
-                                        "id": "rec_d0oof08oqolumqva83sg",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{fealty||fealty||**n. 忠诚** `ˈfiːəlti` a feudal tenant's or vassal's sworn loyalty to a lord||语源“忠诚”: ***fid*** (trust)||***fid*** (trust) → con**fid**ence (信心), **fid**elity (忠实)}}",
-                                        "id": "rec_d0oof6goqolumqva83t0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{creaky||creaky||**adj. 老旧的** `ˈkriːki` (of an object, typically a wooden one) making a scraping or squeaking sound, typically when moved; old-fashioned, dilapidated, or in a bad condition||语源“吱吱作响”: ***creak*** (creak) + ***-y*** (forming adj.)}}",
-                                        "id": "rec_d0oofngoqolumqva83u0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{mimic||mimic||**v. 模仿** `ˈmɪmɪk` imitate (someone or their actions or words), especially in order to entertain or ridicule||语源“模仿者”: ***mim*** (imitate) + ***-ic*** (forming adj.)||***mim*** (imitate) → **mim**e (哑剧), **mim**etic (模仿的)}}",
-                                        "id": "rec_d0oqn462ssvo58cldi2g",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{soak up||soak up||**phr. 吸收** absorb (a liquid) by capillary action or osmosis}}",
-                                        "id": "rec_d0oqn962ssvo58cldi30",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{ungovernable||ungovernable||**adj. 无法控制的** `ʌnˈɡʌvənəbl` impossible to control or govern||语源“无法统治的”: ***un-*** (not) + ***govern*** (govern) + ***-able*** (forming adj.)||***un-*** (not) → **un**kind (不友善的); ***govern*** (govern) → **govern**ment (政府)}}",
-                                        "id": "rec_d0oqpj8oqolumqvaa8o0",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{disburse||disburse||**v. 支付** `dɪsˈbɜːs` pay out (money from a fund)||语源“从钱包中取出”: ***dis-*** (apart) + ***burse*** (purse)||***dis-*** (apart) → **dis**card (丢弃); ***burse*** (purse) → re**imburse** (报销)}}",
-                                        "id": "rec_d0oqpuooqolumqvaa8og",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    },
-                                    {
-                                        "word": "{{earmark||earmark||**v. 拨出** `ˈɪəmɑːk` designate (something, typically funds or resources) for a particular purpose||语源“在耳朵上做标记”: ***ear*** (ear) + ***mark*** (mark)}}",
-                                        "id": "rec_d0oqq7m2ssvo58clet50",
-                                        "lang": "en",
-                                        "lib": "A4vYdYyh7omn"
-                                    }
-                                ]
+                                {
+                                    "word": "{{project||project||**v. 预计** `prəˈdʒɛkt` estimate or forecast (something on the basis of present trends)||语源“向前投掷”: ***pro-*** (forward) + ***ject*** (throw)||***pro-*** (forward) → **pro**gress (进步), **pro**pose (提议); ***ject*** (throw) → e**ject** (喷出), re**ject** (拒绝)}}",
+                                    "id": "rec_d0tdtku2ssvo58clr9jg",
+                                    "lang": "en",
+                                    "lib": "rec_cv5dkf4ddc7scqp8envg"
+                                },
+                                {
+                                    "word": "{{viral||viral||**adj. 病毒式传播的** `ˈvaɪrəl` relating to or involving a virus; (of an image, video, or piece of information) circulated rapidly and widely from one internet user to another||语源“病毒的”: ***vir*** (poison) + ***-al*** (forming adj.)||***vir*** (poison) → **vir**us (病毒)}}",
+                                    "id": "rec_d0tdtllmukjh43brk9ig",
+                                    "lang": "en",
+                                    "lib": "rec_cv5dkf4ddc7scqp8envg"
+                                },
+                                {
+                                    "word": "{{resonate||resonate||**v. 引起共鸣** `ˈrɛzəneɪt` *(resonate with)* evoke or suggest images, memories, and emotions||语源“回响”: ***re-*** (again) + ***son*** (sound) + ***-ate*** (forming v.)||***re-*** (again) → **re**peat (重复), **re**turn (返回); ***son*** (sound) → **son**ic (声波的), **son**net (十四行诗)}}",
+                                    "id": "rec_d0tdtqe2ssvo58clr9k0",
+                                    "lang": "en",
+                                    "lib": "rec_cv5dkf4ddc7scqp8envg"
+                                },
+                                {
+                                    "word": "{{intoxicating||intoxicating||**adj. 令人陶醉的** `ɪnˈtɒksɪkeɪtɪŋ` (of alcoholic drink or a drug) liable to cause intoxication; exhilarating or exciting||语源“使中毒”: ***in-*** (in) + ***toxic*** (poison) + ***-ate*** (forming v.) + ***-ing*** (forming adj.)||***in-*** (in) → **in**vade (入侵), **in**clude (包含); ***toxic*** (poison) → **toxic** (有毒的), **toxic**ity (毒性)}}",
+                                    "id": "rec_d0tdtr5mukjh43brk9j0",
+                                    "lang": "en",
+                                    "lib": "rec_cv5dkf4ddc7scqp8envg"
+                                },
+                                {
+                                    "word": "{{reminiscent||reminiscent||**adj. 令人想起的** `ˌrɛmɪˈnɪsənt` *(reminiscent of)* tending to remind one of something||语源“回想”: ***re-*** (again) + ***min*** (mind) + ***-iscent*** (forming adj.)||***re-*** (again) → **re**peat (重复), **re**turn (返回); ***min*** (mind) → **min**d (头脑), **min**dful (留心的)}}",
+                                    "id": "rec_d0tdts62ssvo58clr9kg",
+                                    "lang": "en",
+                                    "lib": "rec_cv5dkf4ddc7scqp8envg"
+                                },
+                                {
+                                    "word": "{{drudgery||drudgery||**n. 苦工** `ˈdrʌdʒəri` hard, menial, or dull work||可能源自“dredge（疏浚）”，指繁重乏味的工作}}",
+                                    "id": "rec_d0on24ooqolumqva82jg",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{accrete||accrete||**v. 逐渐增长** `əˈkriːt` grow by gradual accumulation||语源“增长”: ***ac-*** (to, towards) + ***crete*** (grow)||***crete*** (grow) → de**cre**ase (减少)}}",
+                                    "id": "rec_d0on2gooqolumqva82kg",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{turnover||turnover||**n. 人员流动率** `ˈtɜːnˌəʊvə` the rate at which employees leave a company and are replaced by other people: *The company has a high turnover of staff.*||意即“翻转”: ***turn*** (turn) + ***over*** (over)||***turn*** (turn) → re**turn** (返回)}}",
+                                    "id": "rec_d0on37e2ssvo58cldh9g",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{invariably||invariably||**adv. 总是** `ɪnˈveəriəbli` in every case or on every occasion; always||语源“不变地”: ***in-*** (not) + ***vari*** (change) + ***-ably*** (forming adv.)||***vari*** (change) → **vari**able (可变的)}}",
+                                    "id": "rec_d0on3gooqolumqva82m0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{ramble on||ramble on||**phr. 喋喋不休** talk at length in an unfocused or inconsequential way}}",
+                                    "id": "rec_d0on3ngoqolumqva82n0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{have a stale whiff about it||have a stale whiff about it||**phr. 带有陈腐气息** have a quality that is no longer fresh or interesting: *For a time, the industry had a stale whiff about it.*}}",
+                                    "id": "rec_d0ooej0oqolumqva83r0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{bemoan||bemoan||**v. 哀叹** `bɪˈməʊn` express discontent or sorrow over (something)||语源“哀叹”: ***be-*** (intensifier) + ***moan*** (moan)}}",
+                                    "id": "rec_d0ooet0oqolumqva83rg",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{bland||bland||**adj. 平淡的** `blænd` lacking strong features or characteristics and therefore uninteresting||语源“温和的”: ***bland*** (mild)}}",
+                                    "id": "rec_d0ooeugoqolumqva83s0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{artisanal||artisanal||**adj. 手工的** `ˌɑːtɪˈzænəl` relating to or characteristic of an artisan||语源“工匠的”: ***art*** (skill) + ***-isan*** (forming n.) + ***-al*** (forming adj.)||***art*** (skill) → **art**ist (艺术家), **art**ificial (人工的)}}",
+                                    "id": "rec_d0oof08oqolumqva83sg",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{fealty||fealty||**n. 忠诚** `ˈfiːəlti` a feudal tenant's or vassal's sworn loyalty to a lord||语源“忠诚”: ***fid*** (trust)||***fid*** (trust) → con**fid**ence (信心), **fid**elity (忠实)}}",
+                                    "id": "rec_d0oof6goqolumqva83t0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{creaky||creaky||**adj. 老旧的** `ˈkriːki` (of an object, typically a wooden one) making a scraping or squeaking sound, typically when moved; old-fashioned, dilapidated, or in a bad condition||语源“吱吱作响”: ***creak*** (creak) + ***-y*** (forming adj.)}}",
+                                    "id": "rec_d0oofngoqolumqva83u0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{mimic||mimic||**v. 模仿** `ˈmɪmɪk` imitate (someone or their actions or words), especially in order to entertain or ridicule||语源“模仿者”: ***mim*** (imitate) + ***-ic*** (forming adj.)||***mim*** (imitate) → **mim**e (哑剧), **mim**etic (模仿的)}}",
+                                    "id": "rec_d0oqn462ssvo58cldi2g",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{soak up||soak up||**phr. 吸收** absorb (a liquid) by capillary action or osmosis}}",
+                                    "id": "rec_d0oqn962ssvo58cldi30",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{ungovernable||ungovernable||**adj. 无法控制的** `ʌnˈɡʌvənəbl` impossible to control or govern||语源“无法统治的”: ***un-*** (not) + ***govern*** (govern) + ***-able*** (forming adj.)||***un-*** (not) → **un**kind (不友善的); ***govern*** (govern) → **govern**ment (政府)}}",
+                                    "id": "rec_d0oqpj8oqolumqvaa8o0",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{disburse||disburse||**v. 支付** `dɪsˈbɜːs` pay out (money from a fund)||语源“从钱包中取出”: ***dis-*** (apart) + ***burse*** (purse)||***dis-*** (apart) → **dis**card (丢弃); ***burse*** (purse) → re**imburse** (报销)}}",
+                                    "id": "rec_d0oqpuooqolumqvaa8og",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                },
+                                {
+                                    "word": "{{earmark||earmark||**v. 拨出** `ˈɪəmɑːk` designate (something, typically funds or resources) for a particular purpose||语源“在耳朵上做标记”: ***ear*** (ear) + ***mark*** (mark)}}",
+                                    "id": "rec_d0oqq7m2ssvo58clet50",
+                                    "lang": "en",
+                                    "lib": "A4vYdYyh7omn"
+                                }
                             ]
                         }
                     },
