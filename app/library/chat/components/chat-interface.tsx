@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiExamDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiNewspaperFill, PiHeadphonesDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiFlyingSaucerDuotone, PiNewspaper } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
 import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -30,6 +30,8 @@ import { toolDescriptions } from '../types'
 import { isEqual } from 'es-toolkit'
 import type { Plan } from '@/lib/config'
 import moment from 'moment'
+import { Image } from '@heroui/image'
+import { Divider } from '@heroui/divider'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -44,13 +46,13 @@ const initialPrompts = [{
     prompt: '对于文库【文库名称】中的【所有】文章，提取一些可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
+    title: '今日词汇',
+    prompt: '获取今天的 The Leximory Times 内容，然后提取 News 里于日常写作中实用的高分语块，量少而精。',
+    icon: PiBookmarksDuotone
+}, {
     title: '本周复习',
     prompt: '【本周】我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
     icon: PiClockClockwiseDuotone
-}, {
-    title: '实战训练',
-    prompt: '对于以下作文，尽可能多地使用文库【文库名称】里文章中的语块，给出范文。',
-    icon: PiExamDuotone
 }, {
     title: '造句巩固',
     prompt: '针对【今天】学习的【英语】单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
@@ -63,14 +65,6 @@ const initialPrompts = [{
     title: '外刊出题',
     prompt: '提炼以下网页中的文章，并出一篇小猫钓鱼题考考我。',
     icon: PiFishDuotone
-}, {
-    title: '今日小说',
-    prompt: '今天的 The Leximory Times 小说大概讲了什么？不要剧透，告诉我题材。',
-    icon: PiFlyingSaucerDuotone
-}, {
-    title: '高分词汇',
-    prompt: '获取今天的 The Leximory Times 内容，然后提取 News 里于日常写作中实用的高分语块，量少而精。',
-    icon: PiBookmarksDuotone
 }] as const
 
 type MessagePart = {
@@ -265,88 +259,71 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             )
 
         case 'generateQuiz':
-            const quiz = result as ToolResult['generateQuiz']
+            const generatedQuiz = result as ToolResult['generateQuiz']
             return (
                 <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
-                        <Paper data={[quiz]} />
+                        <Paper data={[generatedQuiz]} />
                     </CardBody>
                 </Card>
             )
 
         case 'getTodaysTimes':
         case 'getTimesIssue':
-            const timesData = result as ToolResult['getTodaysTimes']
+            const { cover, audio, date, news, novel, quiz } = result as ToolResult['getTodaysTimes']
             return (
-                <ToolAccordian title={`The Leximory Times — ${moment(timesData.date).tz('Asia/Shanghai').format('LL')}`} icon={<PiNewspaper />}>
+                <ToolAccordian title={`The Leximory Times — ${moment(date).tz('Asia/Shanghai').format('LL')}`} icon={<PiNewspaper />}>
                     <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                         <CardBody className='p-6'>
                             <div className='space-y-4'>
                                 {/* Cover Image */}
-                                <div className='w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center overflow-hidden'>
-                                    {timesData.cover ? (
-                                        <img
-                                            src={timesData.cover}
-                                            alt='Times Cover'
-                                            className='w-full h-full object-cover'
-                                            onError={(e) => {
-                                                const target = e.target as HTMLImageElement
-                                                target.style.display = 'none'
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className='flex items-center justify-center text-primary-600'>
-                                            <PiNewspaperFill size={48} />
-                                        </div>
-                                    )}
+                                <div className='w-full aspect-video bg-gradient-to-br from-primary-50/80 to-secondary-50/80 rounded-lg flex items-center justify-center overflow-hidden'>
+                                    <Image
+                                        src={cover}
+                                        alt='Times Cover'
+                                        className='w-full h-full object-cover'
+                                    />
                                 </div>
 
                                 {/* News Section */}
-                                <div className='border-t pt-4'>
+                                <Divider />
+                                <div className='pt-4'>
                                     <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
                                         <PiNewspaperDuotone className='text-primary' size={20} />
-                                        新闻
+                                        <span>Daily News</span>
+                                        {audio && <audio controls className='flex-1'>
+                                            <source src={audio} />
+                                            您的浏览器不支持音频播放。
+                                        </audio>}
                                     </h4>
                                     <div className='text-default-700 prose prose-sm max-w-none'>
-                                        <Markdown md={timesData.news} />
+                                        <Markdown md={news} />
                                     </div>
                                 </div>
 
                                 {/* Novel Section */}
-                                <div className='border-t pt-4'>
+                                <Divider />
+                                <div className='pt-4'>
                                     <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
                                         <PiBooks className='text-primary' size={20} />
-                                        小说
+                                        Daily Novel
                                     </h4>
                                     <div className='text-default-700 prose prose-sm max-w-none'>
-                                        <Markdown md={timesData.novel} />
+                                        <Markdown md={novel} />
                                     </div>
                                 </div>
 
-                                {/* Audio Section */}
-                                {timesData.audio && (
-                                    <div className='border-t pt-4'>
-                                        <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                                            <PiHeadphonesDuotone className='text-primary' size={20} />
-                                            音频
-                                        </h4>
-                                        <audio controls className='w-full'>
-                                            <source src={timesData.audio} type='audio/mpeg' />
-                                            您的浏览器不支持音频播放。
-                                        </audio>
-                                    </div>
-                                )}
-
                                 {/* Quiz Section */}
-                                {timesData.quiz && (
-                                    <div className='border-t pt-4'>
+                                {quiz && (<>
+                                    <Divider />
+                                    <div className='pt-4'>
                                         <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
                                             <PiGameControllerDuotone className='text-primary' size={20} />
-                                            测验
+                                            Daily Quiz
                                         </h4>
-                                        <Paper data={[timesData.quiz]} />
+                                        <Paper data={[quiz]} />
                                     </div>
-                                )}
+                                </>)}
                             </div>
                         </CardBody>
                     </Card>

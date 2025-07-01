@@ -19,9 +19,9 @@ import { getArticleFromUrl } from '@/lib/utils'
 import { useState } from 'react'
 import { isLoadingAtom } from '../../[text]/atoms'
 import isUrl from 'is-url'
-import moment from 'moment-timezone'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
+import { momentSH } from '@/lib/moment'
 
 function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch }: {
     id: string,
@@ -47,7 +47,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
                 )}
             </CardBody>
             <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
-                <time className='text-sm text-default-400 font-mono'>Created: {moment(createdAt).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm')}</time>
+                <time className='text-sm text-default-400 font-mono'>Created: {momentSH(createdAt).format('YYYY-MM-DD HH:mm')}</time>
             </CardFooter>
         </Card>
     </div>)

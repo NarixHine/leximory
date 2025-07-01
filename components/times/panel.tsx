@@ -5,14 +5,14 @@ import { ENGLISH_MODERN } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import Markdown from '../markdown'
 import { Accordion, AccordionItem, Skeleton } from '@heroui/react'
-import moment from 'moment-timezone'
+import { momentSH } from '@/lib/moment'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { TimesSummaryData } from './types'
 import { fetchIssue, fetchLatestIssue, fetchMoreIssues } from './actions'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { getRecentTimesData } from '@/server/db/times'
 import { Suspense, useEffect } from 'react'
-import { TIMES_PAGE_SIZE } from '@/lib/config'
+import { prefixUrl, TIMES_PAGE_SIZE } from '@/lib/config'
 import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
@@ -20,6 +20,7 @@ import Define from '../define'
 import Paper from '../editory'
 import { Spacer } from '@heroui/spacer'
 import Link from 'next/link'
+import { Divider } from '@heroui/divider'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -91,7 +92,7 @@ function TimesContent() {
         <article className='m-6 md:px-4 md:my-12 prose-lg prose dark:prose-invert'>
             {/* Header */}
             <div>
-                <h1 className='mb-2 font-semibold'>{moment(date).format('LL')}</h1>
+                <h1 className='mb-2 font-semibold'>{momentSH(date).format('LL')}</h1>
                 <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='underline-offset-4 text-inherit'>The Leximory Times</Link></span>
             </div>
 
@@ -106,7 +107,7 @@ function TimesContent() {
                     heading: 'mb-0'
                 }}>
                     <Markdown
-                        className='prose-lg'
+                        className='prose-lg first-letter:[initial-letter:2] first-letter:pr-2'
                         fontFamily={ENGLISH_MODERN.style.fontFamily}
                         md={`${novel} ■`}
                     />
@@ -129,7 +130,7 @@ function TimesContent() {
                 md={news}
             />
 
-            {quiz ? <>
+            {quiz && <>
                 <h2 className='mb-3'>Daily Quiz</h2>
                 {/* Quiz */}
                 <i>This quiz is based on the news published three days ago. {['cloze', 'fishing'].includes(quiz.type) && <i>Click on the blanks to show options.</i>}</i>
@@ -138,9 +139,18 @@ function TimesContent() {
                         <Paper data={[quiz]} accordianItemClassName='bg-default-50/50' />
                     </CardBody>
                 </Card>
-            </> : <Spacer y={10} />}
+            </>}
 
-            <Spacer className='block md:hidden' y={16} />
+            {/* Divider & Footer */}
+            <div className='flex gap-3 justify-center items-center -my-8'>
+                <Divider className='flex-1' />
+                <div className='text-default-400 italic'>The End</div>
+                <Divider className='flex-1' />
+            </div>
+
+            <footer className='text-sm text-default-700 text-center pb-6'>
+                <i>An Experimental Publication by <Link href={prefixUrl('/')} className='underline-offset-4 text-inherit'>Leximory</Link></i>
+            </footer>
         </article>
     )
 }
@@ -168,8 +178,8 @@ function TimesDateCard({ date, cover }: { date: string, cover: string }) {
                 />
                 <div className='absolute inset-0 bg-black/20' />
                 <div className='absolute inset-0 flex flex-col items-center justify-center text-white'>
-                    <div className='text-3xl md:text-5xl'>{moment(date).format('DD')}</div>
-                    <div className='opacity-90'>{moment(date).format('YYYY MMM')}</div>
+                    <div className='text-3xl md:text-5xl'>{momentSH(date).format('DD')}</div>
+                    <div className='opacity-90'>{momentSH(date).format('YYYY MMM')}</div>
                 </div>
             </CardBody>
         </Card>

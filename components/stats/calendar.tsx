@@ -1,10 +1,10 @@
 'use client'
 
-import moment from 'moment-timezone'
 import { PiBookBookmark } from 'react-icons/pi'
 import { Card, CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { momentSH } from '@/lib/moment'
 
 interface VocabularyCalendarProps {
     wordCountData: Map<string, number>
@@ -54,7 +54,7 @@ function getTextColor(count: number): string {
 }
 
 export default function VocabularyCalendar({ wordCountData, isLoading }: VocabularyCalendarProps) {
-    const [today] = useState(moment().tz('Asia/Shanghai'))
+    const [today] = useState(momentSH())
     const currentMonth = today.month() // 0-indexed
     const currentYear = today.year()
 
@@ -95,10 +95,10 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
 
                     {/* Day cells */}
                     {days.map((day) => {
-                        const dayMoment = moment({ year: currentYear, month: currentMonth, day })
+                        const dayMoment = momentSH({ year: currentYear, month: currentMonth, day })
                         const dateString = dayMoment.format('YYYY-MM-DD')
                         const wordCount = wordCountData.get(dateString) || 0
-                        const isToday = moment().isSame(dayMoment, 'day')
+                        const isToday = momentSH().isSame(dayMoment, 'day')
                         const bgColor = getCellColor(wordCount)
                         const textColor = getTextColor(wordCount)
 

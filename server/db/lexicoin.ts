@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
-import moment from 'moment-timezone'
+import { momentSH } from '@/lib/moment'
 
 export async function getLexicoinBalance(uid: string) {
     'use cache'
@@ -47,7 +47,7 @@ export async function setLastClaimDate(uid: string) {
     revalidateTag('lexicoin')
     await supabase
         .from('users')
-        .update({ last_daily_claim: moment.tz('Asia/Shanghai').toISOString() })
+        .update({ last_daily_claim: momentSH().toISOString() })
         .eq('id', uid)
         .throwOnError()
 }

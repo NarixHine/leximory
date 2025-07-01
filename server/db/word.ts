@@ -1,12 +1,13 @@
 import 'server-only'
 import { forgetCurve, ForgetCurvePoint, Lang } from '@/lib/config'
 import { supabase } from '@/server/client/supabase'
-import moment from 'moment-timezone'
 import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/lang'
 import { after } from 'next/server'
 import { OrFilter } from '../auth/role'
+import { momentSH } from '@/lib/moment'
+import moment from 'moment'
 
 const sanitized = (word: string): string => word.replaceAll('\n', '').replace('||}}', '}}')
 
@@ -125,8 +126,8 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
     const { data } = await supabase
         .from('lexicon')
         .select('word, id, lib:libraries!inner(id, lang)')
-        .gte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(fromDayAgo, 'day').toISOString())
-        .lte('created_at', moment().tz('Asia/Shanghai').startOf('day').subtract(toDayAgo, 'day').toISOString())
+        .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
+        .lte('created_at', momentSH().startOf('day').subtract(toDayAgo, 'day').toISOString())
         .or(filters, options)
         .throwOnError()
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))

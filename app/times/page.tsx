@@ -2,10 +2,27 @@ import TheTimes from '@/components/times'
 import { isAtRead } from '@/lib/subapp'
 import { cn } from '@/lib/utils'
 import { Metadata } from 'next'
+import { momentSH } from '@/lib/moment'
 
-export const metadata: Metadata = {
-    title: 'The Leximory Times',
-    description: '为英语学习者打造的每日新闻和小说，附带词汇注解和一键保存',
+interface TimesPageProps {
+    searchParams: Promise<{ date?: string }>
+}
+
+export async function generateMetadata({ searchParams }: TimesPageProps): Promise<Metadata> {
+    const { date } = await searchParams
+
+    if (date) {
+        const formattedDate = momentSH(date).format('LL')
+        return {
+            title: `The Leximory Times: ${formattedDate}`,
+            description: `Issue ${formattedDate}. An experimental AI-driven publication for English learners.`,
+        }
+    }
+
+    return {
+        title: 'The Leximory Times: Daily Novel, News & Quiz',
+        description: 'An experimental AI-driven publication for English learners.',
+    }
 }
 
 export default async function TimesPage() {

@@ -4,7 +4,7 @@ import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
 import env from '@/lib/env'
 import { getHourlySubs } from '@/server/db/subs'
-import moment from 'moment-timezone'
+import { momentSH } from '@/lib/moment'
 
 type Events = GetEvents<typeof inngest>
 
@@ -19,7 +19,7 @@ export const fanNotification = inngest.createFunction(
     { cron: 'TZ=Asia/Shanghai 0 * * * *' },
     async ({ step }) => {
         const users = await step.run('fetch-users', async () => {
-            const hour = moment().tz('Asia/Shanghai').hour()
+            const hour = momentSH().hour()
             const subs = await getHourlySubs(hour)
             return subs.map(({ uid, subscription }) => ({ uid, subscription }))
         })

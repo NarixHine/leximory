@@ -2,7 +2,6 @@ import { inngest } from './client'
 import { experimental_generateImage as generateImage, generateText } from 'ai'
 import { supabase } from '../client/supabase'
 import { ADMIN_UID } from '@/lib/config'
-import moment from 'moment-timezone'
 import { annotateParagraph } from '../ai/annotate'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
@@ -15,6 +14,7 @@ import { AI_GENERATABLE } from '@/components/editory/generators/config'
 import { speak } from 'orate'
 import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
+import { momentSH } from '@/lib/moment'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
 
@@ -41,7 +41,7 @@ The content and stylistic suggestions for today's novel from the editor will be 
 
 ### Output Format
 
-Before your novel, add a one-liner INTRO for readers, preceded by the Markdown quotation mark \`>\`. 
+Before your novel, add an INTRO in two sentences for readers, preceded by the Markdown quotation mark \`>\`. 
 
 Then wrap the heading with Markdown \`###\` to indicate the TITLE of the novel. 
 
@@ -181,7 +181,7 @@ export const triggerGenerateTimes = inngest.createFunction(
     async ({ step }) => {
         const hasGeneratedToday = await step.run('check-if-generated-today', async () => {
             const latestTimesData = await getLatestTimesData()
-            return latestTimesData.date === moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            return latestTimesData.date === momentSH().format('YYYY-MM-DD')
         })
         if (hasGeneratedToday) {
             return
@@ -197,7 +197,7 @@ export const triggerRegenerateTimes = inngest.createFunction(
     { event: 'times/regeneration.requested' },
     async ({ step }) => {
         await step.run('remove-issue', async () => {
-            removeIssue(moment().tz('Asia/Shanghai').format('YYYY-MM-DD'))
+            removeIssue(momentSH().format('YYYY-MM-DD'))
         })
         await step.sendEvent('send-generate-times-event', {
             name: 'times/generation.requested'
@@ -211,18 +211,18 @@ export const generateTimes = inngest.createFunction(
     async ({ step }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
-            const date = moment().tz('Asia/Shanghai').format('YYYY-MM-DD')
+            const date = momentSH().format('YYYY-MM-DD')
             const randomGenres = shuffle(NOVEL_GENRES).slice(0, 3).join(', ')
             return { date, randomGenres }
         })
 
         // Step 2: Get yesterday's data
         const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
-            const threeDaysAgo = moment(date).tz('Asia/Shanghai').subtract(3, 'days').format('YYYY-MM-DD')
+            const threeDaysAgo = momentSH().subtract(3, 'days').format('YYYY-MM-DD')
 
             try {
                 const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
-                const latestTimesData = await getTimesDataByDate(moment(date).tz('Asia/Shanghai').subtract(1, 'days').format('YYYY-MM-DD'))
+                const latestTimesData = await getTimesDataByDate(momentSH().subtract(1, 'days').format('YYYY-MM-DD'))
                 return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
             } catch (error) {
                 console.error(error)

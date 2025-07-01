@@ -3,7 +3,6 @@ import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
 import { Chip } from '@heroui/chip'
 import { PiCalendarBlankDuotone, PiCoinsDuotone, PiPlanetDuotone } from 'react-icons/pi'
-import moment from 'moment-timezone'
 import { Suspense } from 'react'
 import Main from '@/components/ui/main'
 import Preference from './components/preference'
@@ -17,10 +16,10 @@ import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
-import 'moment/locale/en-gb'
 import 'moment/locale/zh-cn'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
+import { momentSH } from '@/lib/moment'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -31,7 +30,7 @@ async function HeroSection() {
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>{username ? username : '👋Hi.'}</span>
             <div className='flex gap-3 w-full mt-2'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{moment(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{momentSH(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
             </div>
         </div>
     </section>
@@ -60,7 +59,7 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    const month = moment().locale('en-gb').format('MMMM')
+    const month = momentSH().format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<HeroSectionSkeleton />}>
             <HeroSection />
@@ -137,5 +136,5 @@ async function Plan() {
 async function ClaimDailyLexicoinServer() {
     const { userId } = await getUserOrThrow()
     const lastClaimDate = await getLastDailyClaim(userId)
-    return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? moment.tz(lastClaimDate, 'Asia/Shanghai').isSame(moment.tz('Asia/Shanghai'), 'day') : false} />
+    return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? momentSH(lastClaimDate).isSame(momentSH(), 'day') : false} />
 }
