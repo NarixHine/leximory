@@ -129,13 +129,13 @@ Use Markdown H3 to indicate the category, and H4 the main idea of the news.
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in **bold**) in Leximory.
 
-Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. 
+Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. Write Martian news as if Martian is Earth, which means refraining from Martian-specific topics like terraforming.
 
-For the first section, fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising), employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians. Use simple vocabulary as far as possible, and only incorporate a few advanced words where necessary.
+For the first section, fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising), employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians. Use SIMPLE vocabulary as far as possible. Incorporate scarcely any advanced words except where absolutely necessary.
 
 For the second section, write a **regular news article**, imitating The New York Times style, but in Leximory. It should span lots of relatively short paragraphs (see the example), keeping each one concise and focused. Use simple vocabulary mainly, and incorporate slightly more advanced words than the first section.
 
-For the third section, write a **regular news essay**, imitating The Economist style, still engaging and compelling. It should include no more than three paragraphs, with no strict length requirement for each one. Feel free to incorporate a moderate amount of more advanced vocabulary here.
+For the third section, write a **regular news essay**, imitating the argumentative, analytical The Economist style, still engaging and compelling. It should include no more than three paragraphs, with no strict length requirement for each one. Feel free to incorporate a moderate amount of more advanced vocabulary here.
 
 ### Background settings of Leximory
 
