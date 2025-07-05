@@ -145,7 +145,7 @@ function TimesContent() {
                 preload='none'
                 onContextMenu={(e) => e.preventDefault()}
             /></div>}
-            <p className='-mt-1'>
+            <p>
                 <i>These are the headlines today in <b>Leximory</b>, a small coastal country <b>on Mars</b>.</i>
             </p>
             <Markdown

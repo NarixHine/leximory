@@ -212,7 +212,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                         }
                                     }}
                                     isDisabled={isPending}
-                                    className='max-w-32'
+                                    className='w-[134px]'
                                     renderValue={() => (
                                         <Chip
                                             size='sm'
@@ -225,7 +225,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                     )}
                                 >
                                     {PLANS.map((plan) => (
-                                        <SelectItem key={plan}>
+                                        <SelectItem key={plan} className='capitalize'>
                                             {plan}
                                         </SelectItem>
                                     ))}
