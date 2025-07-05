@@ -210,11 +210,11 @@ const SYSTEM_PROMPT = `你是一个帮助用户整理文库的智能助手。每
 
 ### 高分词汇词组
 
-只选取可运用于作文的高分词汇词组，不要选取过于简单或过于复杂的词汇词组。选取高级语块，质量要高，数量要少。
+只选取可运用于作文的高级词汇和**同一意群内成块的词组（语块）**，不要选取过于简单或过于复杂的词汇词组。少选取单词，重点选取高分**语块**，质量要高，数量要少。语块的中心词用Markdown粗体表示。
 
 如果数量过多，超过三十个，分多次输出，每次询问是否继续。
 
-**以词形变化的原形**输出单词或词组。
+**以词形变化的原形（辞书形）**输出单词或词组。例如，动词输出为去除时态、三单之变化的基本形态（但可以含有被动语态，被动语态的语块必须前加be动词），名词不得含有复数形式（除非单复数形式意义不同），形容词不得含有比较级或最高级。形容词词组必须含有be动词，例如输出be **fraught** with而非fraught with。
 
 ### 故事生成
 
@@ -285,12 +285,13 @@ export async function POST(req: NextRequest) {
         ],
         maxSteps: 10,
         maxTokens: 30000,
+        temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
         providerOptions: {
             google: {
                 thinkingConfig: {
                     includeThoughts: true,
-                    thinkingBudget: 2048,
+                    thinkingBudget: 1024,
                 }
             } satisfies GoogleGenerativeAIProviderOptions
         },

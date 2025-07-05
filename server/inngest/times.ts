@@ -318,7 +318,7 @@ export const generateTimes = inngest.createFunction(
         })
 
         // Step 7: Generate audio for news and upload to Supabase
-        const audio = await step.run('generate-audio-for-news', async () => {
+        const { audio } = await step.run('generate-audio-for-news', async () => {
             const { voice, options } = elevenLabsVoiceConfig['BrE']
 
             try {
@@ -335,11 +335,10 @@ export const generateTimes = inngest.createFunction(
                 }
 
                 const { data: { publicUrl: audioUrl } } = supabase.storage.from('app-assets').getPublicUrl(data.path)
-                return audioUrl
+                return { audio: audioUrl }
             }
             catch (error) {
-                console.error(error)
-                return null
+                return { audio: null, error }
             }
         })
 

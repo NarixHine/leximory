@@ -55,7 +55,7 @@ const initialPrompts = [{
     icon: PiClockClockwiseDuotone
 }, {
     title: '造句巩固',
-    prompt: '针对［今天］学习的［英语］单词，选出几个单词，对每个单词用中文出一道翻译题，考察我的掌握。',
+    prompt: '针对［今天］学习的［英语］单词，选出几个语块，对每个语块用中文出一道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
 }, {
     title: '导入网页',
@@ -566,7 +566,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}
-                className='flex items-center gap-2'
+                className='flex items-center gap-2 mt-auto'
             >
                 <input
                     type='file'
@@ -579,6 +579,16 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     className='flex-1'
                     value={input}
                     onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            if (!input.trim() || status === 'streaming') return
+                            handleSubmit(e as any, {
+                                experimental_attachments: files
+                            })
+                            setInput('')
+                        }
+                    }}
                     placeholder='输入你的问题...'
                     maxRows={15}
                     autoComplete='off'
@@ -610,7 +620,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     startContent={status === 'streaming' ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
                 ></Button>
             </form>
-            <footer className='mt-auto pt-4 text-sm text-default-500 flex justify-center w-full'>
+            <footer className='pt-4 text-sm text-default-500 flex justify-center w-full'>
                 <span className='flex items-center gap-2 font-mono'>
                     <PiLockSimpleDuotone />
                     <span>Conversations are stored locally.</span>

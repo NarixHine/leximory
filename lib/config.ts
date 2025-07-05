@@ -51,7 +51,7 @@ export const dailyLexicoinClaimMap: Record<Plan, number> = {
 } as const
 
 export const langMaxChunkSizeMap: Record<Lang, number> = {
-    'zh': 500,
+    'zh': 700,
     'en': 5000,
     'ja': 1000,
     'nl': 2000
@@ -73,9 +73,9 @@ export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'htt
 
 export const maxArticleLength = (lang: Lang): number => {
     switch (lang) {
-        case 'en': return 20000
-        case 'ja': return 6000
-        case 'zh': return 4000
+        case 'en': return 30000
+        case 'ja': return 10000
+        case 'zh': return 5000
         default: return 10000
     }
 }
