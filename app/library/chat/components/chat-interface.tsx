@@ -277,7 +277,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         <CardBody className='p-6'>
                             <div className='space-y-4'>
                                 {/* Cover Image */}
-                                <div className='w-full aspect-video bg-gradient-to-br from-primary-50/80 to-secondary-50/80 rounded-lg flex items-center justify-center overflow-hidden'>
+                                <div className='w-full aspect-video rounded-lg flex items-center justify-center overflow-hidden'>
                                     <Image
                                         src={cover}
                                         alt='Times Cover'

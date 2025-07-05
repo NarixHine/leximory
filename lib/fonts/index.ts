@@ -1,4 +1,4 @@
-import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mincho, Outfit, Noto_Serif_SC } from 'next/font/google'
+import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mincho, Noto_Serif_SC } from 'next/font/google'
 
 export const CHINESE = Noto_Serif_SC({
     subsets: ['latin'],
@@ -31,11 +31,6 @@ export const ENGLISH_PLAYFAIR = Playfair_Display({
 export const JAPANESE_MINCHO = Hina_Mincho({
     subsets: ['latin'],
     weight: ['400'],
-})
-
-export const ENGLISH_MODERN = Outfit({
-    subsets: ['latin'],
-    weight: 'variable',
 })
 
 export const defaultFontFamily = [ENGLISH.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')

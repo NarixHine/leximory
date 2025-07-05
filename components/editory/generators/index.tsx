@@ -80,7 +80,7 @@ const useQuestionStarts = (quizData: QuizData[]) => {
 export const QuizPaper = ({ quizData }: { quizData: QuizData[] }) => {
     const questionStarts = useQuestionStarts(quizData)
     return (
-        <div>
+        <div className='w-full'>
             {quizData.map((data, index) => (
                 <QuestionProcessor key={data.id || index} data={data} config={{ start: questionStarts[index] }} variant='paper' />
             ))}

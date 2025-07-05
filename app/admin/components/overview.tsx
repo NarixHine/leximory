@@ -22,11 +22,11 @@ export default function AdminOverview({ overview }: AdminOverviewProps) {
                 {/* Main Stats Grid */}
                 <div className='grid grid-cols-2 gap-8'>
                     <div className='text-center space-y-2'>
-                        <div className='text-4xl font-extrabold text-primary'>{totalUsers}</div>
+                        <div className='text-4xl font-bold text-primary'>{totalUsers}</div>
                         <div className='text-small opacity-60 font-medium'>Total Users</div>
                     </div>
                     <div className='text-center space-y-2'>
-                        <div className='text-4xl font-extrabold text-secondary'>{activeUsers}</div>
+                        <div className='text-4xl font-bold text-secondary'>{activeUsers}</div>
                         <div className='text-small opacity-60 font-medium'>Active Users (30d)</div>
                     </div>
                 </div>

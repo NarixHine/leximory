@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { ENGLISH_MODERN } from '@/lib/fonts'
+import { ENGLISH, ENGLISH_SERIF } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import Markdown from '../markdown'
 import { Accordion, AccordionItem, ScrollShadow, Skeleton } from '@heroui/react'
@@ -31,7 +31,7 @@ interface PanelProps {
 
 function TimesContentSkeleton() {
     return (
-        <article className='m-6 md:px-4 md:my-12 w-screen max-w-screen-md prose-lg prose dark:prose-invert'>
+        <article className='m-6 md:px-4 md:my-12 w-screen prose-lg prose dark:prose-invert'>
             {/* Header Skeleton */}
             <div className='flex flex-col gap-4 w-full'>
                 <Skeleton className='h-8 w-full rounded-lg' />
@@ -56,21 +56,39 @@ function TimesContentSkeleton() {
                         <Skeleton className='h-4 w-4/6 rounded-lg' />
                         <Skeleton className='h-4 w-3/4 rounded-lg' />
                         <Skeleton className='h-4 w-5/6 rounded-lg' />
+                        <Skeleton className='h-4 w-4/6 rounded-lg' />
+                        <Skeleton className='h-4 w-3/4 rounded-lg' />
+                        <Skeleton className='h-4 w-5/6 rounded-lg' />
+                        <Skeleton className='h-4 w-4/6 rounded-lg' />
+                        <Skeleton className='h-4 w-3/4 rounded-lg' />
+                        <Skeleton className='h-4 w-5/6 rounded-lg' />
+                        <Skeleton className='h-4 w-4/6 rounded-lg' />
+                        <Skeleton className='h-4 w-3/4 rounded-lg' />
+                        <Skeleton className='h-4 w-5/6 rounded-lg' />
+                        <Skeleton className='h-4 w-4/6 rounded-lg' />
+                        <Skeleton className='h-4 w-3/4 rounded-lg' />
                     </div>
                 </AccordionItem>
             </Accordion>
 
             {/* News Skeleton */}
-            <h2 className='mb-6'>Daily News</h2>
+            <h2 className='mb-8'>Daily News</h2>
             <div className='space-y-3'>
                 <Skeleton className='h-4 w-full rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
                 <Skeleton className='h-4 w-4/6 rounded-lg' />
                 <Skeleton className='h-4 w-3/4 rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
-                <Skeleton className='h-4 w-4/6 rounded-lg' />
+                <Skeleton className='h-4 w-full rounded-lg' />
                 <Skeleton className='h-4 w-3/4 rounded-lg' />
                 <Skeleton className='h-4 w-5/6 rounded-lg' />
+                <Skeleton className='h-4 w-3/4 rounded-lg' />
+                <Skeleton className='h-4 w-5/6 rounded-lg' />
+                <Skeleton className='h-4 w-full rounded-lg' />
+                <Skeleton className='h-4 w-3/4 rounded-lg' />
+                <Skeleton className='h-4 w-5/6 rounded-lg' />
+                <Skeleton className='h-4 w-4/6 rounded-lg' />
+                <Skeleton className='h-4 w-3/4 rounded-lg' />
             </div>
 
             <Spacer y={10} />
@@ -97,7 +115,7 @@ function TimesContent() {
             {/* Header */}
             <div>
                 <h1 className='mb-2 font-semibold'>{momentSH(date).format('LL')}</h1>
-                <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='underline-offset-4 text-inherit'>The Leximory Times</Link></span>
+                <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='underline-offset-[5px] text-inherit decoration-1'>The Leximory Times</Link></span>
             </div>
 
             {/* Cover Image */}
@@ -112,7 +130,7 @@ function TimesContent() {
                 }}>
                     <Markdown
                         className='prose-lg'
-                        fontFamily={ENGLISH_MODERN.style.fontFamily}
+                        fontFamily={ENGLISH_SERIF.style.fontFamily}
                         md={`${novel} ■`}
                     />
                 </AccordionItem>
@@ -127,10 +145,12 @@ function TimesContent() {
                 preload='none'
                 onContextMenu={(e) => e.preventDefault()}
             /></div>}
-            <p>These are the headlines today in Leximory, <b>a small coastal country on Mars.</b> <small>So that&apos;s a bit different from Earth life!</small></p>
+            <p className='-mt-1'>
+                <i>These are the headlines today in <b>Leximory</b>, a small coastal country <b>on Mars</b>.</i>
+            </p>
             <Markdown
                 className='prose-lg'
-                fontFamily={ENGLISH_MODERN.style.fontFamily}
+                fontFamily={ENGLISH_SERIF.style.fontFamily}
                 md={news}
             />
 
@@ -140,7 +160,7 @@ function TimesContent() {
                 <i>This quiz is based on the news published three days ago. {['cloze', 'fishing'].includes(quiz.type) && <i>Click on the blanks to show options.</i>}</i>
                 <Card shadow='none' className='bg-transparent -mt-6'>
                     <CardBody className='p-6'>
-                        <Paper data={[quiz]} accordianItemClassName='bg-default-50/50' />
+                        <Paper data={[quiz]} className='border-l-1.5 border-foreground -ml-4 pl-4' accordianItemClassName='bg-default-50/50' />
                     </CardBody>
                 </Card>
             </>}
@@ -148,11 +168,11 @@ function TimesContent() {
             {/* Divider & Footer */}
             <div className='flex gap-3 justify-center items-center -my-8'>
                 <Divider className='flex-1' />
-                <div className='text-default-400 italic'>The End</div>
+                <div className='text-default-500 italic'>The End</div>
                 <Divider className='flex-1' />
             </div>
 
-            <footer className={cn('text-sm text-default-700 text-center', isFullScreen ? 'pb-6' : 'pb-20 md:pb-6')}>
+            <footer className={cn('text-sm text-default-600 text-center', isFullScreen ? 'pb-6' : 'pb-20 md:pb-6')}>
                 <i>An Experimental Publication by <Link href={prefixUrl('/')} className='underline-offset-4 text-inherit'>Leximory</Link></i>
             </footer>
         </article>
@@ -165,7 +185,8 @@ function TimesDateCard({ date, cover }: { date: string, cover: string }) {
     return (
         <Card
             className={cn(
-                'relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group'
+                'relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group',
+                ENGLISH.className
             )}
             isPressable
             onPress={() => setDateQuery(date)}
@@ -262,7 +283,7 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
 export default function Panel({ recentData }: PanelProps) {
     const isMobile = useIsMobile()
     return (
-        <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_MODERN.className)}>
+        <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_SERIF.className)}>
             {/* Main Paper Container */}
             <div className='w-full h-full flex flex-col justify-center md:flex-row bg-white dark:bg-neutral-900'>
                 <TimesSidebar

@@ -64,13 +64,14 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
                 p: (props) => (<div {...props} className='mb-5 last:mb-0' />),
                 a: (props) => (<Link {...props} className='underline underline-offset-4' />),
+                hr: () => (<div className='text-center text-2xl mt-5 mb-4'>﹡﹡﹡</div>),
             },
         }}
         style={{
             fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),
         }}
         className={cn(
-            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"]',
+            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-hr:my-8',
             className
         )}
     >{result}</MarkdownToJSX>)
