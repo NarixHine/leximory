@@ -6,7 +6,7 @@ import { Divider } from '@heroui/divider'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import H from '../ui/h'
-import { PiEnvelopeSimple, PiLockKey, PiGithubLogoDuotone } from 'react-icons/pi'
+import { PiEnvelopeSimple, PiLockKey, PiGithubLogoFill } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { login } from './actions'
 import { Form } from '@heroui/form'
@@ -118,7 +118,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       variant='flat'
       color='primary'
       fullWidth
-      startContent={<PiGithubLogoDuotone className='text-xl' />}
+      startContent={<PiGithubLogoFill className='text-xl' />}
       isLoading={isLoading}
       onPress={() => startTransition(handleGithubLogin)}
     >
