@@ -37,8 +37,6 @@ next-env.d.ts
 
 .env
 .vscode
-.xata
-.github/*
 
 certificates
 .inngest/main.db

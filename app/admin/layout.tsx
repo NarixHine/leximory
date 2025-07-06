@@ -6,6 +6,10 @@ import AdminBreadcrumbs from './components/breadcrumbs'
 import AdminQueryProvider from './components/query-provider'
 import { cn } from '@/lib/utils'
 
+export const metadata = {
+    title: 'Admin Area',
+}
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
     const { userId } = await getUserOrThrow()
 

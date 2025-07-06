@@ -82,3 +82,15 @@ export async function removeIssue(date: string) {
         .eq('date', date)
         .throwOnError()
 }
+
+export async function getAllTimesData() {
+    cacheTag('times')
+
+    const { data } = await supabase
+        .from('times')
+        .select('date, cover')
+        .order('date', { ascending: false })
+        .throwOnError()
+
+    return data as TimesSummaryData[]
+}

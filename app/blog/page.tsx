@@ -4,6 +4,7 @@ import { Spacer } from "@heroui/spacer"
 import { Link } from 'next-view-transitions'
 import Center from '@/components/ui/center'
 import type { Metadata } from 'next'
+import { postsData } from './posts'
 
 export const metadata: Metadata = {
     title: 'The Leximory Blog',
@@ -11,15 +12,6 @@ export const metadata: Metadata = {
 }
 
 export default function BlogHome() {
-    const posts = [
-        { title: '“边听边阅览”功能导引', date: '2024-07-18', slug: 'reading-while-listening' },
-        { title: '从记忆到心会', date: '2024-07-15', slug: 'from-memorisation-to-acquisition' },
-        { title: '利用 iOS Shortcuts 快捷保存词汇', date: '2024-11-23', slug: 'ios-shortcuts' },
-        { title: '安装 PWA 应用', date: '2025-02-01', slug: 'install-pwa' },
-        { title: 'iOS 词汇统计小组件', date: '2025-02-02', slug: 'ios-widget' },
-        { title: 'Introducing: Talk to Your Library', date: '2025-05-31', slug: 'ai-agent' },
-        { title: 'Introducing: The Leximory Times', date: '2025-06-21', slug: 'the-times' },
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     return <Center>
         <div className='flex flex-col items-center justify-center sm:flex-row my-3'>
             <div className='border-l-2 border-l-primary-800/50 px-3 py-1'>
@@ -32,7 +24,7 @@ export default function BlogHome() {
             </div>
             <Spacer y={5}></Spacer>
             <div className='space-y-3 flex flex-wrap justify-center'>
-                {posts.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block' style={{
+                {postsData.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block' style={{
                     fontFamily: hFontFamily,
                 }}>
                     <Link href={`/blog/${post.slug}`}>
