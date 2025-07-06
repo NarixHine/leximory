@@ -9,6 +9,7 @@ import { SIGN_IN_URL } from '@/lib/config'
 import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
 import H from '../ui/h'
 import { signup } from './actions'
+import { toast } from 'sonner'
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -19,7 +20,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1 text-3xl'>开始语言学习之旅</H>
     <form action={() => {
-      startTransition(() => signup({ email, password }))
+      startTransition(async () => {
+        const { error } = await signup({ email, password })
+        if (error) {
+          toast.error(error)
+        }
+      })
     }} className='space-y-4'>
       <div className='space-y-1'>
         <label htmlFor='email' className='text-sm font-medium leading-none'>邮箱</label>
@@ -59,7 +65,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         />
       </div>
       <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>
-        {isLoading ? '注册中…' : '注册'}
+        {isLoading ? '注册中…' : '发送验证邮件'}
       </Button>
       <div className='text-center text-sm'>
         已有账号？{' '}

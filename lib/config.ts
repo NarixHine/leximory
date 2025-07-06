@@ -10,7 +10,7 @@ export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
 
 export const SIGN_IN_URL = '/login' as const
 
-export const TIMES_PAGE_SIZE = 7 as const
+export const TIMES_PAGE_SIZE = 9 as const
 
 export const exampleSharedLib = {
     id: '4c33b971',

@@ -10,6 +10,7 @@ import { prefixUrl, SIGN_IN_URL } from '@/lib/config'
 import { PiEnvelopeSimple } from 'react-icons/pi'
 import H from '../ui/h'
 import { toast } from 'sonner'
+import { getAuthErrorMessage } from './error-messages'
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -19,17 +20,15 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
     e.preventDefault()
     setIsLoading(true)
     const supabase = createClient()
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: prefixUrl('/update-password'),
-      })
-      if (error) throw error
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: prefixUrl('/update-password'),
+    })
+    if (error) {
+      toast.error(getAuthErrorMessage(error))
+    } else {
       toast.success('重置密码邮件已发送！')
-    } catch {
-      toast.error('发生错误')
-    } finally {
-      setIsLoading(false)
     }
+    setIsLoading(false)
   }
 
   return (

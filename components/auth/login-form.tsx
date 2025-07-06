@@ -73,7 +73,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           </label>
           <Link
             href='/forgot-password'
-            className='text-sm text-primary hover:underline'
+            className='text-sm text-primary no-underline hover:underline'
           >
             忘记密码？
           </Link>
@@ -100,7 +100,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         没有账号？{' '}
         <Link
           href='/sign-up'
-          className='text-primary hover:underline'
+          className='text-primary font-bold no-underline hover:underline'
         >
           注册
         </Link>

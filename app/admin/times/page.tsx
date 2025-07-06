@@ -122,8 +122,8 @@ export default function AdminTimesPage() {
 
             {/* Infinite scroll trigger */}
             {hasNextPage && (
-                <div ref={ref} className='flex justify-center py-8'>
-                    <Spinner size='lg' />
+                <div className='flex justify-center py-8'>
+                    <Spinner ref={ref} size='lg' />
                 </div>
             )}
 

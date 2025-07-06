@@ -19,7 +19,7 @@ export async function generateMetadata({ searchParams }: TimesPageProps): Promis
 
     return {
         title: 'The Leximory Times: Daily Novel, News & Quiz',
-        description: 'An experimental AI-driven publication for English learners.',
+        description: '火星日报是一份搭载 AI 的实验性英语学习日刊。',
     }
 }
 

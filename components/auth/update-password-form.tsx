@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { SIGN_IN_URL } from '@/lib/config'
 import { PiLockKey } from 'react-icons/pi'
 import H from '../ui/h'
+import { getAuthErrorMessage } from './error-messages'
 import { toast } from 'sonner'
 
 export function UpdatePasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -26,16 +27,13 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
       return
     }
     const supabase = createClient()
-    try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) throw error
-      toast.success('密码已更新！')
-      setTimeout(() => router.push(SIGN_IN_URL), 2000)
-    } catch {
-      toast.error('发生错误')
-    } finally {
-      setIsLoading(false)
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) {
+      toast.error(getAuthErrorMessage(error))
     }
+    toast.success('密码已更新！')
+    setTimeout(() => router.push(SIGN_IN_URL), 1000)
+    setIsLoading(false)
   }
 
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-6 prose dark:prose-invert', className)} {...props}>

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/server/client/supabase/server'
 import { z } from 'zod'
+import { getAuthErrorMessage } from './error-messages'
 
 const authSchema = z.object({
     email: z.string().email(),
@@ -16,18 +17,15 @@ export async function login(props: z.infer<typeof authSchema>) {
     const parseResult = authSchema.safeParse(props)
 
     if (!parseResult.success) {
-        throw parseResult.error
+        return { error: '输入格式错误' }
     }
 
     const { data } = parseResult
 
     const { error } = await supabase.auth.signInWithPassword(data)
 
-    if (error?.code === 'invalid_credentials') {
-        return { error: '用户名或密码错误' }
-    }
-    else if (error) {
-        throw error
+    if (error) {
+        return { error: getAuthErrorMessage(error) }
     }
 
     revalidatePath('/', 'layout')
@@ -40,7 +38,7 @@ export async function signup(props: z.infer<typeof authSchema>) {
     const parseResult = authSchema.safeParse(props)
 
     if (!parseResult.success) {
-        throw parseResult.error
+        return { error: '输入格式错误' }
     }
 
     const { data } = parseResult
@@ -48,7 +46,7 @@ export async function signup(props: z.infer<typeof authSchema>) {
     const { error } = await supabase.auth.signUp(data)
 
     if (error) {
-        throw error
+        return { error: getAuthErrorMessage(error) }
     }
 
     revalidatePath('/', 'layout')
