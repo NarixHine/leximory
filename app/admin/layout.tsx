@@ -2,10 +2,12 @@ import { getUserOrThrow } from '@/server/auth/user'
 import { ADMIN_UID } from '@/lib/config'
 import { ReactNode } from 'react'
 import Main from '@/components/ui/main'
+import AdminBreadcrumbs from './components/breadcrumbs'
+import AdminQueryProvider from './components/query-provider'
 import { cn } from '@/lib/utils'
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-    const { userId, username } = await getUserOrThrow()
+    const { userId } = await getUserOrThrow()
 
     if (userId !== ADMIN_UID) {
         throw new Error('Unauthorized access to admin area')
@@ -13,10 +15,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
     return (
         <Main className={cn('max-w-screen-lg flex flex-col gap-10')}>
-            <header>
-                <h2 className={'text-4xl font-medium text-center'}>Welcome back, {username}</h2>
-            </header>
-            {children}
+            <AdminQueryProvider>
+                <AdminBreadcrumbs />
+                {children}
+            </AdminQueryProvider>
         </Main>
     )
 }

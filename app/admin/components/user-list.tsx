@@ -102,7 +102,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
             )}
 
             {/* Search Filter */}
-            <div className='px-6 mx-auto min-w-80'>
+            <div className='px-6 mx-auto min-w-96'>
                 <Input
                     placeholder='Search users by name, email, or plan...'
                     value={searchQuery}

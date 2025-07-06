@@ -54,6 +54,14 @@ export async function publishTimes(data: TimesDataWithRaw) {
         .insert(data)
 }
 
+export async function updateTimes(date: string, data: Partial<TimesDataWithRaw>) {
+    return await supabase
+        .from('times')
+        .update(data)
+        .eq('date', date)
+        .throwOnError()
+}
+
 export async function getLatestTimesData() {
     cacheTag('times')
 
