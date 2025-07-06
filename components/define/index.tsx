@@ -8,7 +8,7 @@ import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
 import { useIsMobileIos } from '@/lib/hooks'
-import { ENGLISH } from '@/lib/fonts'
+import { ENGLISH_SERIF } from '@/lib/fonts'
 import { resetSelection, getBracketedSelection } from './utils'
 
 export default function Define() {
@@ -42,7 +42,7 @@ export default function Define() {
                 animate={isMobileIos ? undefined : { opacity: 1 }}
                 exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
                 transition={isMobileIos ? undefined : { duration: 0.2 }}
-                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', ENGLISH.className)}
+                className={cn('absolute -translate-x-1/2 z-20 flex h-10 flex-shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', ENGLISH_SERIF.className)}
             >
                 <PiMagnifyingGlass />
                 Define
@@ -50,7 +50,7 @@ export default function Define() {
         </AnimatePresence>
         <Drawer.Portal>
             <Drawer.Overlay className='fixed inset-0 z-50 bg-black/30' />
-            <Drawer.Content className='h-fit fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
+            <Drawer.Content className='h-fit px-2 fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
                 <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
                 <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='["", "🔄 加载中"]'></Comment>
             </Drawer.Content>

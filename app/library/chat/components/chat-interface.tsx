@@ -63,7 +63,7 @@ const initialPrompts = [{
     icon: PiLinkSimpleDuotone
 }, {
     title: '外刊出题',
-    prompt: '提炼以下网页中的文章，并出一篇小猫钓鱼题考考我。',
+    prompt: '提取以下网页中的文章，并出一篇小猫钓鱼题考考我。',
     icon: PiFishDuotone
 }] as const
 

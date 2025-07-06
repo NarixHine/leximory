@@ -5,6 +5,7 @@ import { PiPiggyBankDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { getDailyLexicoin } from '../actions'
 import { useTransition } from 'react'
+import { contentFontFamily } from '@/lib/fonts'
 
 export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
     const [isPending, startTransition] = useTransition()
@@ -21,6 +22,7 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
         color='primary'
         radius='full'
         size='lg'
+        style={{ fontFamily: contentFontFamily }}
         className={'text-lg flex-1 font-semibold'}
         isDisabled={hasClaimed}
     >
