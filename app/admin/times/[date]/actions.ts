@@ -19,7 +19,6 @@ const timesUpdateSchema = z.object({
             throw new Error('Quiz data must be valid JSON format')
         }
     }),
-    raw_news: z.string().optional().default('')
 })
 
 export async function getTimesForEdit(date: string) {

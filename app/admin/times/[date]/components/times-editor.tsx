@@ -27,8 +27,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
         news: initialData.news,
         novel: initialData.novel,
         audio: initialData.audio || '',
-        quiz: initialData.quiz ? JSON.stringify(initialData.quiz, null, 2) : '',
-        raw_news: ''
+        quiz: initialData.quiz ? JSON.stringify(initialData.quiz, null, 2) : ''
     })
     
     const [isUpdating, startUpdating] = useTransition()
