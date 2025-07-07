@@ -16,7 +16,7 @@ import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
 
-const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao clichés; be imaginative, genuine & heartfelt)', 'adolescence/school fiction (with Japanese vibes but without stereotypes/cliches)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao clichés; be imaginative)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel']
+const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'teen romance story (no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel', 'legend', 'memoir', 'travelogue']
 
 const EDITOR_GUIDE_PROMPT = ` 
 You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the title (be very creative and write it without cliched AI vibes; for example, AVOID titles, and content as well, like "quiet hum ...", "the unseen ...", "the echoes ...", "the chamber of ...", "the aether ..."), the characters (give them realistic names instead of placeholders like Elara) and the language style (including whether Novelist is allowed to use dividers to indicate small chapters or must narrate the story in a single cohesive article). Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
@@ -129,7 +129,7 @@ Use Markdown H3 to indicate the category, and H4 the main idea of the news.
 
 Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in **bold**) in Leximory.
 
-Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. Write Martian news as if Martian is Earth, which means refraining from Martian-specific topics like terraforming.
+Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. Write Martian news as if Martian is Earth, which means refraining from Martian-specific topics like terraforming and settlement.
 
 For the first section, fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising), employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians. Use SIMPLE vocabulary as far as possible. Incorporate scarcely any advanced words. Keep advanced vocabulary to a minimum.
 
@@ -288,7 +288,7 @@ export const generateTimes = inngest.createFunction(
             
             Yesterday's novel: ${novelYesterday}.`,
             maxTokens: 4000,
-            temperature: 0.65
+            temperature: 1.2
         })
 
         // Step 4: Generate novel
@@ -297,7 +297,7 @@ export const generateTimes = inngest.createFunction(
             system: NOVEL_PROMPT,
             prompt: editorGuide,
             maxTokens: 8000,
-            temperature: 0.55
+            temperature: 1
         })
 
         // Step 5: Annotate novel
@@ -311,7 +311,7 @@ export const generateTimes = inngest.createFunction(
             system: NEWS_PROMPT,
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
             maxTokens: 9000,
-            temperature: 0.5
+            temperature: 0.8
         })
 
         // Step 6: Annotate news
