@@ -81,6 +81,25 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
+    'pro-2.5-search': vertex('gemini-2.5-pro', {
+        useSearchGrounding: true,
+        safetySettings: [{
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+        }, {
+            category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+            threshold: 'BLOCK_NONE',
+        }]
+    }),
 }
 
 export const getBestArticleAnnotationModel = (lang: Lang) => {

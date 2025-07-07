@@ -16,7 +16,7 @@ import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
 
-const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao clichés)', 'adolescence/school fiction (with Japanese vibes but without stereotypes/cliches)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao clichés)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (散文)', 'space travel']
+const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao clichés; be imaginative, genuine & heartfelt)', 'adolescence/school fiction (with Japanese vibes but without stereotypes/cliches)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao clichés; be imaginative)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel']
 
 const EDITOR_GUIDE_PROMPT = ` 
 You're an editor of the Daily Novel section of the online publication *The Leximory Times*. Before assigning the writer to the task, you need to think of a few keywords and settings for today's story and pin down the narrative perspective (first/third person), the plot, the title (be very creative and write it without cliched AI vibes; for example, AVOID titles, and content as well, like "quiet hum ...", "the unseen ...", "the echoes ...", "the chamber of ...", "the aether ..."), the characters (give them realistic names instead of placeholders like Elara) and the language style (including whether Novelist is allowed to use dividers to indicate small chapters or must narrate the story in a single cohesive article). Make sure the story is engaging and interesting, and has a CLEAR, COMPELLING, DEVELOPING PLOT. The novel should have fully developed, emotionally complex characters, and it's their experiences that drive the plot. Output them, and avoid being repetitive with yesterday's novel in any way. Also avoid any cliché or overused tropes. Be unique and human.
@@ -29,7 +29,7 @@ Output the guidance directly and cut out any unnecessary text from your reply.
 const NOVEL_PROMPT = `
 ### Core Directives
 
-You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and VERY SMOOTH, VERY HIGH READABILITY (incorporating only a very small amount of advanced vocabulary).
+You're the novelist who writes for the Daily Novel section of the online publication *The Leximory Times*. You need to write a SHORT novel according to today's theme given by your editor. Make sure your novel has a CLEAR, COMPELLING, DEVELOPING PLOT and VERY SMOOTH, VERY HIGH READABILITY (incorporating only an extremely small amount of advanced vocabulary).
 
 You should write an immersive novel with fully developed, emotionally complex characters, and **the plot should be driven by their experiences** instead of some bland third-party account so that you are writing a STORY, rather than a parable, like a master novelist. 
 
@@ -123,7 +123,7 @@ You're a fictional journalist in charge of the Daily News section of the fiction
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. However, name your characters realistically (no Vance/Elara placeholders).
 
-Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing, etc. (Feel free to explore more categories.)
+Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing / education / travel, etc. Feel free to explore more topics, but avoid political and geopolitical issues that are sensitive or controversial.
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news.
 
@@ -131,7 +131,7 @@ Skip the title or anything else, and do NOT output the 'Daily News' section titl
 
 Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. Write Martian news as if Martian is Earth, which means refraining from Martian-specific topics like terraforming.
 
-For the first section, fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising), employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians. Use SIMPLE vocabulary as far as possible. Incorporate scarcely any advanced words except where absolutely necessary.
+For the first section, fabricate a **newsworthy story (i.e. extraordinary event, but give it a more realistic section title)** of a special person, a unique experience with profound meaning, a societal trend, a real-world issue of concern, etc.; make it engaging, not moralising), employing non-fiction storytelling techniques for reader engagement, like *The Great Read* by The New York Times, but be way shorter and more concise. You can take inspiration from the *The Great Read* section of The New York Times or the *Longreads* magazine via Search Grounding, and play it out mainly with your own imagination, creativity and a Martian perspective of the Leximorians. Use SIMPLE vocabulary as far as possible. Incorporate scarcely any advanced words. Keep advanced vocabulary to a minimum.
 
 For the second section, write a **regular news article**, imitating The New York Times style, but in Leximory. It should span lots of relatively short paragraphs (see the example), keeping each one concise and focused. Use simple vocabulary mainly, and incorporate slightly more advanced words than the first section.
 
@@ -261,11 +261,13 @@ export const generateTimes = inngest.createFunction(
         // Step 2: Get yesterday's data
         const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
             const threeDaysAgo = momentSH().subtract(3, 'days').format('YYYY-MM-DD')
+            const yesterday = momentSH().subtract(1, 'days').format('YYYY-MM-DD')
 
             try {
                 const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
-                const latestTimesData = await getTimesDataByDate(momentSH().subtract(1, 'days').format('YYYY-MM-DD'))
-                return { novelYesterday: latestTimesData.novel, newsYesterday: latestTimesData.news, newsThreeDaysAgo }
+                const newsYesterday = await getRawNewsByDate(yesterday)
+                const { novel: novelYesterday } = await getTimesDataByDate(yesterday)
+                return { novelYesterday, newsYesterday, newsThreeDaysAgo }
             } catch (error) {
                 console.error(error)
                 return {
@@ -305,7 +307,7 @@ export const generateTimes = inngest.createFunction(
 
         // Step 6: Generate daily news
         const { text: news } = await step.ai.wrap('generate-news', generateText, {
-            model: googleModels['flash-2.5-search'],
+            model: googleModels['pro-2.5-search'],
             system: NEWS_PROMPT,
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
             maxTokens: 9000,
