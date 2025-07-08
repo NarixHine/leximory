@@ -10,7 +10,7 @@ export const ENGLISH_PROMPT = `
 - 注解语法无法嵌套
 - 除了注解以外，**完整保留文本其他部分的Markdown语法**。直接输出注解后的文章
 - 完整保留注解以外的句子剩余部分
-- 保留原有紧跟的标点，但禁止加入原来没有的标点
+- 完整保留注解之后紧跟的标点，但禁止加入原来没有的标点
 - 除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective，还例如完整注解vault oneself ahead of、bridge the gap、take a toll on等常见搭配
 
 # 注解格式
@@ -27,7 +27,9 @@ export const ENGLISH_PROMPT = `
 
 “原形栏”写入屈折变化的原形（而非构词的原形），例如deployments的原形是deployment而非deploy。
 
-将“原形栏”所填的形式作为以下“释义栏”和“语源栏”注解的对象，故以下所有注解可以含构词性词尾，但不可含语法性词尾。
+将“原形栏”所填的形式作为以下“释义栏”和“语源栏”注解的对象。
+
+例如如果你接下来按照“adj. 螺旋式上升的”来注解原文中的spiralling（形容词），就应将spiralling作为原形；如果你接下来按照“v. 螺旋式上升”来注解原文中的spiralling（现在分词），就应将spiral作为原形。
 
 ## 释义栏
 
@@ -35,7 +37,7 @@ export const ENGLISH_PROMPT = `
 
 紧扣语境和句子注解，且原文为抽象、引申或比喻义时必须指出，突出词汇在语境中特有的含义。注解中的中文释义应当在放回原文时通顺，贴合中文语言习惯，对于中文读者而言易于理解。
 
-词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形，例如若原形为obsessed，则释义为形容词，音标为\`əbˈsɛst\`；若原形为obsess，则释义为动词，音标为\`əbˈsɛs\`；若原形栏名词不是复数，音标中应按照原形注单数音。原文中存在固定搭配时在释义中附带用法，如对inferior附带*(be inferior to)*，对devote（献身意时）附带*(devote oneself to something)*，对appeal附带*(appeal to someone)*。但原文中没有用法时无需注解，并将固定搭配放入例句。如果原文为implications，注解原形为implication，则应按照implication而非imply进行注解，词性为名词；例如如果原文为dazzling，原形为dazzling，则应按照dazzling而非dazzle进行注解，词性为形容词；例如如果原文为forgiven，原形为forgive，则应按照forgive而非forgiven进行注解，词性为动词。
+词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形，例如若文中obsessed是形容词，则原形为obsessed，释义为形容词，音标为\`əbˈsɛst\`；若文中obsessed是过去分词，则原形为obsess，释义为动词，音标为\`əbˈsɛs\`；若原形栏名词不是复数，音标中应按照原形注单数音。原文中存在固定搭配时在释义中附带用法，如对inferior附带*(be inferior to)*，对devote（献身意时）附带*(devote oneself to something)*，对appeal附带*(appeal to someone)*。但原文中没有用法时无需注解，并将固定搭配放入例句。如果原文为implications，注解原形为implication，则应按照implication而非imply进行注解，词性为名词；例如如果原文为dazzling，原形为dazzling，则应按照dazzling而非dazzle进行注解，词性为形容词；例如如果原文为forgiven，原形为forgive，则应按照forgive而非forgiven进行注解，词性为动词。
 
 例如以下句子：“A single one generates enough electricity to power the lives of 2 million average Europeans, even after accounting for downtime and maintenance.”句中account for应注解为“考虑在内“而非“占比”或”解释“，因为必须根据原文语境注解且使中文读者易于理解。再如“the West’s chronic inability to deliver large pieces of infrastructure”中的“chronic”应注解为“长期的”而非“慢性的”，因为原文语境中指的是长期存在的无法解决的问题，而非医学上的慢性病。
 

@@ -250,7 +250,7 @@ export const triggerRegenerateTimes = inngest.createFunction(
 export const generateTimes = inngest.createFunction(
     { id: 'generate-times' },
     { event: 'times/generation.requested' },
-    async ({ step }) => {
+    async ({ step, logger }) => {
         // Step 1: Get today's date
         const { date, randomGenres } = await step.run('get-config-today', async () => {
             const date = momentSH().format('YYYY-MM-DD')
@@ -260,8 +260,8 @@ export const generateTimes = inngest.createFunction(
 
         // Step 2: Get yesterday's data
         const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
-            const threeDaysAgo = momentSH().subtract(3, 'days').format('YYYY-MM-DD')
-            const yesterday = momentSH().subtract(1, 'days').format('YYYY-MM-DD')
+            const threeDaysAgo = momentSH(date).subtract(3, 'days').format('YYYY-MM-DD')
+            const yesterday = momentSH(date).subtract(1, 'days').format('YYYY-MM-DD')
 
             try {
                 const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
@@ -269,7 +269,7 @@ export const generateTimes = inngest.createFunction(
                 const { novel: novelYesterday } = await getTimesDataByDate(yesterday)
                 return { novelYesterday, newsYesterday, newsThreeDaysAgo }
             } catch (error) {
-                console.error(error)
+                logger.error(error)
                 return {
                     novelYesterday: 'No novel yesterday.',
                     newsThreeDaysAgo: 'No news three days ago.',
@@ -340,6 +340,7 @@ export const generateTimes = inngest.createFunction(
                 return { audio: audioUrl }
             }
             catch (error) {
+                logger.error('Failed to generate or upload audio:', error)
                 return { audio: null, error }
             }
         })
