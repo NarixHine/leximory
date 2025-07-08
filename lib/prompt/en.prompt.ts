@@ -9,8 +9,8 @@ export const ENGLISH_PROMPT = `
 - 禁止注解初级词汇
 - 注解语法无法嵌套
 - 除了注解以外，**完整保留文本其他部分的Markdown语法**。直接输出注解后的文章
-- 完整保留注解以外的句子剩余部分
-- 完整保留注解之后紧跟的标点，但禁止加入原来没有的标点
+- 完整保留被注解语块以外的句子剩余部分
+- 完整保留被注解语块之后紧跟的标点（尤其是句号和逗号）
 - 除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective，还例如完整注解vault oneself ahead of、bridge the gap、take a toll on等常见搭配
 
 # 注解格式

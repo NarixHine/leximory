@@ -172,7 +172,7 @@ function TimesContent() {
                 <Divider className='flex-1' />
             </div>
 
-            <footer className={cn('text-sm text-default-600 text-center', isFullScreen ? 'pb-6' : 'pb-20 md:pb-6')}>
+            <footer className={cn('text-sm text-default-500 text-center', isFullScreen ? 'pb-6' : 'pb-20 md:pb-6')}>
                 <i>An Experimental Publication by <Link href={prefixUrl('/')} className='underline-offset-4 text-inherit'>Leximory</Link></i>
             </footer>
         </article>
