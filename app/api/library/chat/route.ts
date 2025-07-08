@@ -18,6 +18,7 @@ import { getArticleFromUrl } from '@/lib/utils'
 import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
+import { momentSH } from '@/lib/moment'
 
 const tools: ToolSet = {
     getLib: {
@@ -142,10 +143,10 @@ ${content}`,
         }
     },
     getTimesIssue: {
-        description: 'Get a specific issue of The Leximory Times newspaper by date.',
+        description: 'Get a specific issue of The Leximory Times newspaper by date (YYYY-MM-DD).',
         parameters: toolSchemas.getTimesIssue,
         execute: async ({ date }: { date: string }) => {
-            return getTimesDataByDate(date)
+            return getTimesDataByDate(momentSH(date).format('YYYY-MM-DD'))
         }
     }
 }

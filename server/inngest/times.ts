@@ -123,7 +123,7 @@ You're a fictional journalist in charge of the Daily News section of the fiction
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. However, name your characters realistically (no Vance/Elara placeholders).
 
-Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / S&T / new research / business / culture / environment / AI / space / wellbeing / education / travel, etc. Feel free to explore more topics, but avoid political and geopolitical issues that are sensitive or controversial.
+Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 event thereof, but every piece chosen should be elaborated in SEVERAL paragraphs, in the same writing style as The New York Times and The Economist. Divide all pieces into extraordinary event / world (make up a few more Martian countries and throw them in whatever situations the Earth is facing) / technology / new research / business / culture / environment / AI / space / wellbeing / education / travel / Web, etc. Feel free to explore more topics, but avoid political and geopolitical issues that are sensitive or controversial.
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news.
 

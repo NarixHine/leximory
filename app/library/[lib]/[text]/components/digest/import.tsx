@@ -120,7 +120,7 @@ export default function ImportModal() {
                                         rows={15}
                                         onValueChange={setInput}
                                         disableAutosize />
-                                    <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='warning'>
+                                    <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
                                         仅生成词摘
                                     </Switch>
                                     <Button

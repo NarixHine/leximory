@@ -345,7 +345,7 @@ export default function Digest() {
   }, [lib, text, title])
 
   return (
-    <>
+    <div className='min-h-[calc(100dvh-240px)] md:min-h-[calc(100dvh-160px)] flex flex-col'>
       <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
@@ -355,25 +355,23 @@ export default function Digest() {
         )}
       </div>
 
-      {isLoading ? (
-        <GeneratingView />
-      ) : isEditing ? (
-        <EditingView />
-      ) : (
-        <>
-          {ebook && <Ebook />}
-          <ReadingView />
-        </>
-      )}
-
-      <div className={isReaderMode ? '' : 'max-w-[650px] mx-auto'}>
-        {!isReaderMode && (
+      <div className='flex-1'>
+        {isLoading ? (
+          <GeneratingView />
+        ) : isEditing ? (
+          <EditingView />
+        ) : (
           <>
-            <Spacer y={6} />
-            <ImportModal />
+            {ebook && <Ebook />}
+            <ReadingView />
           </>
         )}
       </div>
-    </>
+
+      {!isReaderMode && <div className={'max-w-[650px] mx-auto'}>
+        <Spacer y={6} />
+        <ImportModal />
+      </div>}
+    </div>
   )
 }

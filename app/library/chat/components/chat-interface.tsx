@@ -435,6 +435,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
     const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
         api: '/api/library/chat',
@@ -505,6 +506,10 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
 
     const handlePromptClick = (prompt: string) => {
         setInput(prompt)
+        // Focus the textarea after setting the input
+        setTimeout(() => {
+            textareaRef.current?.focus()
+        }, 0)
     }
 
     const [, copy] = useCopyToClipboard()
@@ -576,6 +581,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                     accept='.pdf,.txt,.md,.jpg,.jpeg,.png'
                 />
                 <Textarea
+                    ref={textareaRef}
                     className='flex-1'
                     value={input}
                     onChange={e => setInput(e.target.value)}

@@ -27,7 +27,7 @@ export const ENGLISH_PROMPT = `
 
 “原形栏”写入屈折变化的原形（而非构词的原形），例如deployments的原形是deployment而非deploy。
 
-将“原形栏”所填的形式作为以下“释义栏”和“语源栏”注解的对象。
+将“原形栏”所填的形式作为以下“释义栏”和“语源栏”注解的对象，故以下所有注解可以含构词性词尾，但不可含语法性词尾。
 
 ## 释义栏
 
@@ -35,13 +35,23 @@ export const ENGLISH_PROMPT = `
 
 紧扣语境和句子注解，且原文为抽象、引申或比喻义时必须指出，突出词汇在语境中特有的含义。注解中的中文释义应当在放回原文时通顺，贴合中文语言习惯，对于中文读者而言易于理解。
 
-词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形，例如若原形为obsessed，则释义为形容词；若原形为obsess，则释义为动词。原文中存在固定搭配时在释义中附带用法，如对inferior附带*(be inferior to)*，对devote（献身意时）附带*(devote oneself to something)*，对appeal附带*(appeal to someone)*。但原文中没有用法时无需注解，并将固定搭配放入例句。如果原文为implications，注解原形为implication，则应按照implication而非imply进行注解，词性为名词；例如如果原文为dazzling，原形为dazzling，则应按照dazzling而非dazzle进行注解，词性为形容词；例如如果原文为forgiven，原形为forgive，则应按照forgive而非forgiven进行注解，词性为动词。
+词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形，例如若原形为obsessed，则释义为形容词，音标为\`əbˈsɛst\`；若原形为obsess，则释义为动词，音标为\`əbˈsɛs\`；若原形栏名词不是复数，音标中应按照原形注单数音。原文中存在固定搭配时在释义中附带用法，如对inferior附带*(be inferior to)*，对devote（献身意时）附带*(devote oneself to something)*，对appeal附带*(appeal to someone)*。但原文中没有用法时无需注解，并将固定搭配放入例句。如果原文为implications，注解原形为implication，则应按照implication而非imply进行注解，词性为名词；例如如果原文为dazzling，原形为dazzling，则应按照dazzling而非dazzle进行注解，词性为形容词；例如如果原文为forgiven，原形为forgive，则应按照forgive而非forgiven进行注解，词性为动词。
 
 例如以下句子：“A single one generates enough electricity to power the lives of 2 million average Europeans, even after accounting for downtime and maintenance.”句中account for应注解为“考虑在内“而非“占比”或”解释“，因为必须根据原文语境注解且使中文读者易于理解。再如“the West’s chronic inability to deliver large pieces of infrastructure”中的“chronic”应注解为“长期的”而非“慢性的”，因为原文语境中指的是长期存在的无法解决的问题，而非医学上的慢性病。
 
+有些英文词汇具有中文读者难以理解的迁移义或引申义，必须自然地融入中文释义中。例如“falling into the dark mutinous Shannon waves”中的“mutinous”应注解为“汹涌的”，而非“叛乱的”，因为原文语境中形容的是波涛而非人民，而“叛乱”这一本义应于“语源栏”中提及。
+
 ## 语源栏
 
-对语言学习者记忆和融会贯通有助益的简短语源。将“原形栏”中每个单词拆分为多个词素（但禁止在该栏中加入词尾的单复数变化、时态、语态词尾等非构词法词缀）。
+对语言学习者记忆和融会贯通有助益的简短语源。将“原形”拆分为构词词素（前缀、词根、后缀）。
+
+注意： 此处只包含构词词缀，禁止包含 -s, -ed, -ing 等表达时态、单复数的语法性词尾。
+
+特殊情况：
+
+- 短语: 重点分析核心词的词源
+- 俗语: 分析引申义如何由字面义产生，及其典故（如有）
+- 专有名词: 可在此处提供简短的历史背景。
 
 ## 同源词栏
 
@@ -49,7 +59,7 @@ export const ENGLISH_PROMPT = `
 
 同源的语素才是应当加粗的部分（如对于ensue中的sue应加粗pursue中的sue，即“***sue*** (follow) → pur**sue** (追求)”）。
 
-注意：同源词素必须来自同一印欧语根；拼写相同的词素未必同源（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”）。同源词素也不必拼写相同（例如break和fragile）。
+注意：同源词素必须是真正同源（来自同一印欧语根），而非拼写偶然相似。（例如sur**veill**ance的同源词不是veil（面纱），而是vigilant（watchful），因此语源为“意即从上观察: ***sur*** (above) + ***veil*** (watch) + ***-ance*** (forming n., 表行为)”，同源词为“***veil*** → **vigil**ance (警觉)”）。同源词素也不必拼写相同（例如break和fragile）。
 
 # 示例输入输出
 
