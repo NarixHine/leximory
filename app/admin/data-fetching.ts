@@ -1,4 +1,5 @@
 import { Plan } from '@/globals'
+import { momentSH } from '@/lib/moment'
 import { requireAdmin } from '@/server/auth/role'
 import { supabase } from '@/server/client/supabase'
 import { getUsersPlansByIds } from '@/server/db/user'
@@ -17,7 +18,7 @@ export async function getUsersOverview() {
     const totalUsers = users.length
     const activeUsers = users.filter(user => {
         const lastSignIn = new Date(user.last_sign_in_at || 0)
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        const thirtyDaysAgo = momentSH().subtract(30, 'days').toDate()
         return lastSignIn > thirtyDaysAgo
     }).length
 

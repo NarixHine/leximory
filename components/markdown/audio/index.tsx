@@ -1,9 +1,10 @@
 'use client'
 
 import Markdown, { MarkdownProps } from '@/components/markdown'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from "@heroui/button"
 import { Card, CardBody } from "@heroui/card"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PiPlayCircleDuotone } from 'react-icons/pi'
 import { generate, retrieve } from './actions'
 import { toast } from 'sonner'
@@ -14,54 +15,59 @@ import { langAtom } from '@/app/library/[lib]/atoms'
 import { MAX_TTS_LENGTH } from '@/lib/config'
 import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
+import { ms } from 'itty-time'
 
 export default function AudioPlayer({ id, md, ...props }: {
     id: string,
 } & MarkdownProps) {
     const lib = useAtomValue(libAtom)
-
     const ref = useRef<HTMLDivElement>(null)
-    const [status, setStatus] = useState<'loading' | 'ungenerated' | 'generating' | 'ready' | 'lengthy'>('loading')
-    const [url, setUrl] = useState<string | null>(null)
     const lang = useAtomValue(langAtom)
-
     const isReaderMode = useAtomValue(isReaderModeAtom)
+    const queryClient = useQueryClient()
+    const [isLengthy, setIsLengthy] = useState(false)
+
+    const audioQuery = useQuery({
+        queryKey: ['audio', id],
+        queryFn: () => retrieve(id),
+        staleTime: ms('20 minutes'),
+    })
+
+    const generateMutation = useMutation({
+        mutationFn: (innerText: string) => generate(id, lib, innerText),
+        onSuccess: (res) => {
+            if (typeof res === 'string') {
+                queryClient.invalidateQueries({ queryKey: ['audio', id] })
+            } else if (res.error) {
+                toast.error(res.error)
+            }
+        },
+        onError: () => {
+            toast.error('生成失败')
+        }
+    })
 
     function action() {
         const { current } = ref
         if (current) {
-            if (status === 'ungenerated') {
-                const { innerText } = current
-                if (innerText.length > MAX_TTS_LENGTH) {
-                    setStatus('lengthy')
-                    return
-                }
-                setStatus('generating')
-                generate(id, lib, innerText).then((res) => {
-                    if (typeof res === 'string') {
-                        setUrl(res)
-                        setStatus('ready')
-                    }
-                    else if (res.error) {
-                        setStatus('ungenerated')
-                        toast.error(res.error)
-                    }
-                })
+            const { innerText } = current
+            if (innerText.length > MAX_TTS_LENGTH) {
+                setIsLengthy(true)
+                return
             }
+            generateMutation.mutate(innerText)
         }
     }
 
-    useEffect(() => {
-        retrieve(id).then((url) => {
-            if (url) {
-                setUrl(url)
-                setStatus('ready')
-            }
-            else {
-                setStatus('ungenerated')
-            }
-        })
-    }, [id])
+    const url = audioQuery.data
+    const status = (() => {
+        if (audioQuery.isLoading) return 'loading'
+        if (generateMutation.isPending) return 'generating'
+        if (isLengthy) return 'lengthy'
+        if (audioQuery.isSuccess && !url) return 'ungenerated'
+        if (audioQuery.isSuccess && !!url) return 'ready'
+        return 'ungenerated'
+    })()
 
     const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? contentFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
@@ -72,7 +78,7 @@ export default function AudioPlayer({ id, md, ...props }: {
                     controls
                     className='w-full'
                     src={url}
-                /> : <Button isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={() => action()}>
+                /> : <Button isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={action}>
                     {
                         status === 'lengthy' ? `录音文本不多于 ${MAX_TTS_LENGTH} 字` :
                             status === 'loading' ? '加载中' :

@@ -3,7 +3,6 @@ import { ADMIN_UID } from '@/lib/config'
 import { ReactNode } from 'react'
 import Main from '@/components/ui/main'
 import AdminBreadcrumbs from './components/breadcrumbs'
-import AdminQueryProvider from './components/query-provider'
 import { cn } from '@/lib/utils'
 
 export const metadata = {
@@ -19,10 +18,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
     return (
         <Main className={cn('max-w-screen-lg flex flex-col gap-10')}>
-            <AdminQueryProvider>
-                <AdminBreadcrumbs />
-                {children}
-            </AdminQueryProvider>
+            <AdminBreadcrumbs />
+            {children}
         </Main>
     )
 }

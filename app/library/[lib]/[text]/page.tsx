@@ -29,7 +29,7 @@ const getData = async (text: string) => {
 export default async function Page(props: LibAndTextProps) {
     const { text } = await props.params
     const { title, content, topics, ebook, lib, annotating } = await getData(text)
-    
+
 
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom]}>
         <HydrationBoundary hydrateAtoms={[
@@ -39,7 +39,7 @@ export default async function Page(props: LibAndTextProps) {
             [textAtom, text],
             [titleAtom, title],
             [inputAtom, ''],
-            [isLoadingAtom, annotating !== 'completed']
+            [isLoadingAtom, annotating === 'annotating' || annotating === 'saving']
         ]}>
             <Main className='max-w-screen-xl [counter-reset:sidenote-counter] md:pb-4'>
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>

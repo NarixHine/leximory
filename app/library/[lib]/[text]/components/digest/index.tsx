@@ -28,6 +28,7 @@ import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
+import { ms } from 'itty-time'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -324,7 +325,7 @@ export default function Digest() {
       const newVisitedTexts = { ...visitedTexts }
       newVisitedTexts[text] = true
       setVisitedTexts(newVisitedTexts)
-    }, 60 * 1000)
+    }, ms('2 minutes'))
     return () => clearTimeout(timer)
   }, [lib, text, title])
 

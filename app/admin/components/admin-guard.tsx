@@ -22,7 +22,6 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
         queryKey: ['admin-check'],
         queryFn: checkAdminAccess,
         retry: false,
-        staleTime: 5 * 60 * 1000, // 5 minutes
     })
 
     if (isLoading) {

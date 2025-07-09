@@ -4,11 +4,13 @@ import { HeroUIProvider } from "@heroui/system"
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
 import { ReactNode } from 'react'
+import { ms } from 'itty-time'
 import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import { CHINESE } from "@/lib/fonts"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 export interface ProvidersProps {
 	children: ReactNode
@@ -26,8 +28,27 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 						toast: cn('!bg-white dark:!bg-default-50 dark:!border-0 !text-default-900 !dark:text-default-100', CHINESE.className),
 					}
 				}}></Toaster>
-				{children}
+				<QueryProvider>
+					{children}
+				</QueryProvider>
 			</JotaiProvider>
 		</ThemeProvider>
 	</HeroUIProvider>)
+}
+
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: ms('5 minutes'),
+			gcTime: ms('10 minutes'),
+		},
+	},
+})
+
+function QueryProvider({ children }: { children: ReactNode }) {
+	return (
+		<QueryClientProvider client={queryClient}>
+			{children}
+		</QueryClientProvider>
+	)
 }

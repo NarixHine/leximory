@@ -206,6 +206,9 @@ importers:
       is-url:
         specifier: ^1.2.4
         version: 1.2.4
+      itty-time:
+        specifier: ^2.0.1
+        version: 2.0.1
       jotai:
         specifier: ^2.11.3
         version: 2.11.3(@types/react@19.1.1)(react@19.1.0)
@@ -4915,6 +4918,9 @@ packages:
   iterator.prototype@1.1.5:
     resolution: {integrity: sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g==}
     engines: {node: '>= 0.4'}
+
+  itty-time@2.0.1:
+    resolution: {integrity: sha512-p612bgdK5YKgsg0nm8Wx4nYipHphdR+LD5yfDbIJOEEtkdrQyUcVDHlAkGmazCU4GaGx/6RhGrvucfOXifwxog==}
 
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
@@ -13049,6 +13055,8 @@ snapshots:
       get-proto: 1.0.1
       has-symbols: 1.1.0
       set-function-name: 2.0.2
+
+  itty-time@2.0.1: {}
 
   jackspeak@3.4.3:
     dependencies:
