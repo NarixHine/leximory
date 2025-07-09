@@ -39,15 +39,13 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(' {{', '&nbsp;{{')
         .replaceAll('{{', '‎{{')
         .replaceAll('&gt;', '>')
+        .replaceAll(/([*-]) \{\{/g, '$1  {{') // double space after list markers
         // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
-        // avoid line breaks in comments
-        .replaceAll('}} ,', '}}&#x2060;,')
-        .replaceAll('}} .', '}}&#x2060;.')
-        .replaceAll('}} !', '}}&#x2060;!')
-        .replaceAll('}} ?', '}}&#x2060;?')
+        // prevent line breaks after comments by using word joiner (U+2060) before punctuation
+        .replaceAll(/\}\}\s+([,.!?])/g, '}}&#x2060;$1')
         // replace all instances of {{...}} with the Comment component
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
@@ -57,8 +55,6 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
-
-    console.log('Markdown content:', result)
 
     return (<MarkdownToJSX
         options={{
