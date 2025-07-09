@@ -11,19 +11,19 @@ import Link from 'next/link'
 import { libAccessStatusMap } from '@/lib/config'
 
 async function getData(lib: string) {
-    const { name, isReadOnly, lang, isOwner, access } = await authReadToLib(lib)
+    const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)
     const texts = await getTexts({ lib })
-    return { texts, name, isReadOnly, lang, isOwner, access }
+    return { texts, name, isReadOnly, isOwner, access }
 }
 
 export default async function Page(props: LibProps) {
     const params = await props.params
     const { lib } = params
-    const { texts, name, isReadOnly, lang, isOwner, access } = await getData(lib)
+    const { texts, name, isReadOnly, isOwner, access } = await getData(lib)
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
-        <H usePlayfair={lang === 'zh' || lang === 'en'} className='mb-4 text-5xl font-semibold'>{name}</H>
+        <H usePlayfair className='mb-4 text-5xl font-semibold'>{name}</H>
         <div className='flex justify-center mb-5 gap-2'>
             <Button variant='light' startContent={<PiBookOpen />} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印所有文章

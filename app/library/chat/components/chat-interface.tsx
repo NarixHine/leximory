@@ -457,7 +457,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             if (isProd) {
                 toast.error('发生错误')
             } else {
-                throw error
+                toast.error(`发生错误: ${error.message}`)
             }
             setFiles(undefined)
             if (fileInputRef.current) {
@@ -509,7 +509,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         // Focus the textarea after setting the input
         setTimeout(() => {
             textareaRef.current?.focus()
-        }, 0)
+        }, 100)
     }
 
     const [, copy] = useCopyToClipboard()

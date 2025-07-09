@@ -14,6 +14,7 @@ import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
 import { isEqual } from 'es-toolkit'
+import sanitize from 'sanitize-html'
 
 export type MarkdownProps = {
     md: string,
@@ -33,16 +34,16 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
-    let result = (hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
+    let result = sanitize(hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
-        .replaceAll('}} ,', '}},')
-        .replaceAll('}} .', '}}.')
+        .replaceAll('}} ,', '}}&#x2060;,')
+        .replaceAll('}} .', '}}&#x2060;.')
 
     result = result
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
-            const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('"', '\\"')))
+            const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
         .replaceAll(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {

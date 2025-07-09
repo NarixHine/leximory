@@ -1,7 +1,6 @@
 import Main from '@/components/ui/main'
 import Digest from './components/digest'
 import EditableH from './components/editable-h'
-import sanitizeHtml from 'sanitize-html'
 import Nav from '@/components/nav'
 import Topics from './components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -32,7 +31,7 @@ export default async function Page(props: LibAndTextProps) {
 
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom]}>
         <HydrationBoundary hydrateAtoms={[
-            [contentAtom, sanitizeHtml(content).replaceAll('&gt;', '>')],
+            [contentAtom, content.replaceAll('&gt;', '>')],
             [topicsAtom, topics ?? []],
             [ebookAtom, ebook],
             [textAtom, text],

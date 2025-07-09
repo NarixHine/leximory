@@ -29,7 +29,7 @@ export default async function Page(props: LibProps) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
-        <H>
+        <H usePlayfair className='text-5xl font-semibold'>
             {name}
         </H>
         <Spacer y={5}></Spacer>

@@ -14,7 +14,7 @@ import { Snippet } from "@heroui/snippet"
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
+import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -24,7 +24,6 @@ import { cn } from '@/lib/utils'
 import { contentFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
-import { toast } from 'sonner'
 import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval } from 'usehooks-ts'
@@ -112,24 +111,9 @@ function EditingView() {
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)
-    const timer = setTimeout(async () => {
-      await remove({ id: text })
-      router.push(`/library/${lib}`)
-      setIsDeleting(false)
-    }, 3000)
-    toast('删除中...', {
-      cancel: '取消',
-      duration: 3000,
-      icon: <PiHourglassMediumDuotone />,
-      action: {
-        label: '取消',
-        onClick: () => {
-          clearTimeout(timer)
-          setIsDeleting(false)
-          toast.dismiss()
-        }
-      }
-    })
+    await remove({ id: text })
+    router.push(`/library/${lib}`)
+    setIsDeleting(false)
   }, [text, lib])
 
   return (
