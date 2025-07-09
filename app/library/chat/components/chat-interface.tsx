@@ -509,7 +509,8 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
         // Focus the textarea after setting the input
         setTimeout(() => {
             textareaRef.current?.focus()
-        }, 100)
+            textareaRef.current?.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length)
+        }, 0)
     }
 
     const [, copy] = useCopyToClipboard()
