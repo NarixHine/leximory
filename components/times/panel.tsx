@@ -31,7 +31,7 @@ interface PanelProps {
 
 function TimesContentSkeleton() {
     return (
-        <article className='m-6 md:px-4 md:my-12 w-screen max-w-screen-md prose-lg prose dark:prose-invert'>
+        <article className='m-6 md:px-4 md:my-12 w-screen max-w-[680px] prose-lg prose dark:prose-invert'>
             {/* Header Skeleton */}
             <div className='flex flex-col gap-4 w-full'>
                 <Skeleton className='h-8 w-full rounded-lg' />
@@ -111,7 +111,7 @@ function TimesContent() {
     const { cover, news, novel, quiz, date, audio } = data
 
     return (
-        <article className='m-6 md:px-4 md:my-12 max-w-screen-md prose-lg prose dark:prose-invert'>
+        <article className='m-6 md:px-4 md:my-12 max-w-[680px] prose-lg prose dark:prose-invert'>
             {/* Header */}
             <div>
                 <h1 className='mb-2 font-semibold'>{momentSH(date).format('LL')}</h1>

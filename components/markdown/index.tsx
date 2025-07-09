@@ -45,7 +45,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
         // prevent line breaks after comments by using word joiner (U+2060) before punctuation
-        .replaceAll(/\}\}\s+([,.!?])/g, '}}&#x2060;$1')
+        .replace(/}}( ?)([,.?!"”])/g, '}}⁠$2')
         // replace all instances of {{...}} with the Comment component
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
