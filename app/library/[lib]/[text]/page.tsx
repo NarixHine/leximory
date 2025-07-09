@@ -4,8 +4,8 @@ import EditableH from './components/editable-h'
 import Nav from '@/components/nav'
 import Topics from './components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom, isLoadingAtom } from './atoms'
-import { getTextContent } from '@/server/db/text'
+import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom } from './atoms'
+import { getTextContent, getTextAnnotationProgress } from '@/server/db/text'
 import { LibAndTextProps } from '@/lib/types'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isReaderModeAtom } from '@/app/atoms'
@@ -22,21 +22,24 @@ export async function generateMetadata(props: LibAndTextProps) {
 const getData = async (text: string) => {
     await authReadToText(text)
     const { title, content, topics, ebook, lib } = await getTextContent({ id: text })
-    return { title, content, topics, ebook, lib }
+    const annotating = await getTextAnnotationProgress({ id: text })
+    return { title, content, topics, ebook, lib, annotating }
 }
 
 export default async function Page(props: LibAndTextProps) {
     const { text } = await props.params
-    const { title, content, topics, ebook, lib } = await getData(text)
+    const { title, content, topics, ebook, lib, annotating } = await getData(text)
+    
 
-    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom]}>
+    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('&gt;', '>')],
             [topicsAtom, topics ?? []],
             [ebookAtom, ebook],
             [textAtom, text],
             [titleAtom, title],
-            [inputAtom, '']
+            [inputAtom, ''],
+            [isLoadingAtom, annotating !== 'completed']
         ]}>
             <Main className='max-w-screen-xl [counter-reset:sidenote-counter] md:pb-4'>
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
