@@ -35,6 +35,10 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     const lang = useAtomValue(langAtom)
 
     const result = hasWrapped ? md.trim() : sanitize(wrap(md.trim(), lexicon))
+        // space handling
+        .replaceAll(' {{', '&nbsp;{{')
+        .replaceAll('{{', '‎{{')
+        .replaceAll('&gt;', '>')
         // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
@@ -53,12 +57,8 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
-        // other handling
-        .replaceAll(' <Comment', '&nbsp;rtttt<Comment')
-        .replaceAll('<Comment', '‎<Comment')
-        .replaceAll('&gt;', '>')
 
-        console.log('Markdown content:', result)
+    console.log('Markdown content:', result)
 
     return (<MarkdownToJSX
         options={{

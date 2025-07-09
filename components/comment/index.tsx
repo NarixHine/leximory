@@ -256,7 +256,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             : <button
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
-                                    !isReaderMode && 'relative after:absolute after:bottom-1.5 after:rounded-sm after:left-0 after:w-full after:h-1/4',
+                                    !isReaderMode && 'relative after:absolute after:bottom-1.5 after:left-0 after:w-full after:h-1/4',
                                     isOnDemand ? 'after:bg-default-400/40' : 'after:bg-primary-200/40',
                                     'text-inherit'
                                 )}

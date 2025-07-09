@@ -22,7 +22,7 @@ export default function Error({
                     </div>
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-6 pt-0'>
-                    <p className='text-center text-lg text-muted-foreground/80'>
+                    <p className='text-center text-lg/80'>
                         An error occurred. <br />
                         If the problem persists, please contact support.
                     </p>

@@ -6,7 +6,7 @@ import { Divider } from '@heroui/divider'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import H from '../ui/h'
-import { PiEnvelopeSimple, PiLockKey, PiGithubLogoFill, PiFingerprintFill } from 'react-icons/pi'
+import { PiEnvelopeSimple, PiGithubLogoFill, PiFingerprintFill, PiPassword } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { login } from './actions'
 import { Form } from '@heroui/form'
@@ -60,7 +60,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className='h-10'
-          startContent={<PiEnvelopeSimple className='text-xl text-muted-foreground' />}
+          startContent={<PiEnvelopeSimple className='text-xl' />}
         />
       </div>
       <div className='space-y-1 w-full'>
@@ -85,7 +85,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className='h-10'
-          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+          startContent={<PiPassword className='text-xl' />}
         />
       </div>
       <Button
@@ -93,7 +93,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         className='w-full h-10 mt-1'
         isLoading={isLoading}
         color='primary'
-        startContent={<PiFingerprintFill />}
+        startContent={<PiFingerprintFill className='text-xl' />}
       >
         {isLoading ? '登录中…' : '登录'}
       </Button>
@@ -110,7 +110,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
     <div className='relative'>
       <Divider className='my-6' />
-      <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-sm text-muted-foreground'>
+      <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-sm'>
         或
       </div>
     </div>

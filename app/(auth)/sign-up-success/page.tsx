@@ -15,7 +15,7 @@ import {
                 <p>Check your email to confirm</p>
               </CardHeader>
               <CardBody>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm">
                   You&apos;ve successfully signed up. Please check your email to confirm your account
                   before signing in.
                 </p>

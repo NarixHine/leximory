@@ -45,7 +45,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className='h-10'
-            startContent={<PiEnvelopeSimple className='text-xl text-muted-foreground' />}
+            startContent={<PiEnvelopeSimple className='text-xl' />}
           />
         </div>
         <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>

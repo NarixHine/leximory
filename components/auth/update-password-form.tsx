@@ -7,7 +7,7 @@ import { Input } from '@heroui/input'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SIGN_IN_URL } from '@/lib/config'
-import { PiLockKey } from 'react-icons/pi'
+import { PiPassword } from 'react-icons/pi'
 import H from '../ui/h'
 import { getAuthErrorMessage } from './error-messages'
 import { toast } from 'sonner'
@@ -48,7 +48,7 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className='h-10'
-          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+          startContent={<PiPassword className='text-xl' />}
         />
       </div>
       <div className='space-y-1'>
@@ -60,7 +60,7 @@ export function UpdatePasswordForm({ className, ...props }: React.ComponentProps
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className='h-10'
-          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+          startContent={<PiPassword className='text-xl' />}
         />
       </div>
       <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>

@@ -6,7 +6,7 @@ import { Input } from '@heroui/input'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { SIGN_IN_URL } from '@/lib/config'
-import { PiEnvelopeSimple, PiLockKey } from 'react-icons/pi'
+import { PiEnvelopeSimple, PiPaperPlaneRightFill, PiPassword } from 'react-icons/pi'
 import H from '../ui/h'
 import { signup } from './actions'
 import { toast } from 'sonner'
@@ -37,7 +37,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className='h-10'
-          startContent={<PiEnvelopeSimple className='text-xl text-muted-foreground' />}
+          startContent={<PiEnvelopeSimple className='text-xl' />}
         />
       </div>
       <div className='space-y-1'>
@@ -49,7 +49,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className='h-10'
-          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+          startContent={<PiPassword className='text-xl' />}
         />
       </div>
       <div className='space-y-1'>
@@ -61,10 +61,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className='h-10'
-          startContent={<PiLockKey className='text-xl text-muted-foreground' />}
+          startContent={<PiPassword className='text-xl' />}
         />
       </div>
-      <Button type='submit' className='w-full h-10' isLoading={isLoading} color='primary'>
+      <Button type='submit' className='w-full h-10' isLoading={isLoading} endContent={<PiPaperPlaneRightFill />} color='primary'>
         {isLoading ? '注册中…' : '发送验证邮件'}
       </Button>
       <div className='text-center text-sm'>
