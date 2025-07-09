@@ -6,7 +6,7 @@ import { Divider } from '@heroui/divider'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import H from '../ui/h'
-import { PiEnvelopeSimple, PiLockKey, PiGithubLogoFill } from 'react-icons/pi'
+import { PiEnvelopeSimple, PiLockKey, PiGithubLogoFill, PiFingerprintFill } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { login } from './actions'
 import { Form } from '@heroui/form'
@@ -93,6 +93,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         className='w-full h-10 mt-1'
         isLoading={isLoading}
         color='primary'
+        startContent={<PiFingerprintFill />}
       >
         {isLoading ? '登录中…' : '登录'}
       </Button>

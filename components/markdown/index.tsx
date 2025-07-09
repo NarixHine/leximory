@@ -34,24 +34,31 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
-    let result = sanitize(hasWrapped ? md.trim() : wrap(md.trim(), lexicon))
+    const result = hasWrapped ? md.trim() : sanitize(wrap(md.trim(), lexicon))
+        // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
+        // avoid line breaks in comments
         .replaceAll('}} ,', '}}&#x2060;,')
         .replaceAll('}} .', '}}&#x2060;.')
-
-    result = result
+        .replaceAll('}} !', '}}&#x2060;!')
+        .replaceAll('}} ?', '}}&#x2060;?')
+        // replace all instances of {{...}} with the Comment component
         .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
+        // replace all instances of :::...::: with the Audio component
         .replaceAll(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
-        .replaceAll(' <Comment', '&nbsp;<Comment')
+        // other handling
+        .replaceAll(' <Comment', '&nbsp;rtttt<Comment')
         .replaceAll('<Comment', '‎<Comment')
         .replaceAll('&gt;', '>')
+
+        console.log('Markdown content:', result)
 
     return (<MarkdownToJSX
         options={{

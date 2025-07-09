@@ -457,7 +457,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
             if (isProd) {
                 toast.error('发生错误')
             } else {
-                toast.error(`发生错误: ${error.message}`)
+                throw error
             }
             setFiles(undefined)
             if (fileInputRef.current) {
