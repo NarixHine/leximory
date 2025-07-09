@@ -27,18 +27,18 @@ The platform is built with Next.js, Supabase, Upstash, and Inngest. AI providers
 graph TD
     subgraph "Frontend (Next.js)"
         direction LR
-        subgraph "UI Components (`components/`)"
+        subgraph "UI Components (components/)"
             AuthUI["Auth Forms"]
             EditoryUI["Editory (Interactive Exercises)"]
             MarkdownUI["Markdown Renderer"]
             TimesUI["The Times Reader"]
         end
-        subgraph "App Structure (`app/`)"
+        subgraph "App Structure (app/)"
             Layout["Root Layout"]
             Pages["Routes & Pages"]
             Providers["Providers (Theme, Jotai)"]
         end
-        subgraph "Shared Logic (`lib/`)"
+        subgraph "Shared Logic (lib/)"
             Config["Config & Env"]
             Utils["Utilities & Hooks"]
             Prompts["AI Prompts"]
@@ -48,13 +48,13 @@ graph TD
 
     subgraph "Backend (Serverless)"
         direction LR
-        subgraph "API Endpoints (`app/api/`)"
-            ApiRoutes["API Routes"]
+        subgraph "app/api/ or actions.ts"
+            ApiRoutes["API Routes/Server Actions"]
         end
-        subgraph "Core Logic (`server/`)"
-            AI["AI Module (`annotate`, `editory`)"]
-            Auth["Auth Module (`role`, `quota`)"]
-            DB["Data Access (`db/`)"]
+        subgraph "Server-side Logic (server/)"
+            AI["AI Module (annotate, editory)"]
+            Auth["Auth Module (role, quota)"]
+            DB["Data Access (db/)"]
         end
     end
 
@@ -63,7 +63,7 @@ graph TD
         Supabase["Supabase (Postgres & Auth)"]
         Redis["Redis (Cache)"]
         Inngest["Inngest (Background Jobs)"]
-        Creem["Creem Service"]
+        Creem["Creem Billing"]
     end
 
     Pages -- "Uses" --> AuthUI
