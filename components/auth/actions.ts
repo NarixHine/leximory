@@ -50,5 +50,5 @@ export async function signup(props: z.infer<typeof authSchema>) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/library')
+    redirect('/sign-up-success')
 }

@@ -1,28 +1,30 @@
-import {
-    Card,
-    CardHeader,
-    CardBody,
-  } from '@heroui/card'
-  
-  export default function SignUpSuccessPage() {
+import { PiPaperPlaneTilt, PiSignIn } from 'react-icons/pi'
+import Link from 'next/link'
+import { Button } from '@heroui/button'
+
+export default function SignUpSuccessPage() {
     return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-sm">
-          <div className="flex flex-col gap-6">
-            <Card>
-              <CardHeader>
-                <h1 className="text-2xl">Thank you for signing up!</h1>
-                <p>Check your email to confirm</p>
-              </CardHeader>
-              <CardBody>
-                <p className="text-sm">
-                  You&apos;ve successfully signed up. Please check your email to confirm your account
-                  before signing in.
-                </p>
-              </CardBody>
-            </Card>
-          </div>
+        <div className='flex w-full items-center justify-center p-4'>
+            <div className='w-full max-w-md space-y-8 text-center'>
+                <div className='flex flex-col items-center gap-4'>
+                    <PiPaperPlaneTilt className='h-16 w-16 text-default-400' />
+                    <h1 className='text-4xl font-bold tracking-tight'>就差一步了！</h1>
+                    <p className='max-w-md text-lg text-default-600'>
+                        我们已发送了一封确认邮件，请点击链接以完成注册。
+                    </p>
+                </div>
+
+                <div>
+                    <Button
+                        variant='flat'
+                        as={Link}
+                        href='/login'
+                        startContent={<PiSignIn />}
+                    >
+                        返回登录
+                    </Button>
+                </div>
+            </div>
         </div>
-      </div>
     )
-  }
+}
