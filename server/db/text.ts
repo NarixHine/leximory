@@ -82,11 +82,13 @@ export async function getTexts({ lib }: { lib: string }) {
             topics,
             has_ebook,
             created_at,
+            no,
             lib:libraries (
                 name, id
             )
         `)
         .eq('lib', lib)
+        .order('no')
         .throwOnError()
 
     return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
@@ -95,7 +97,7 @@ export async function getTexts({ lib }: { lib: string }) {
         topics,
         hasEbook: has_ebook,
         createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
-        libName: lib?.name ?? 'Unknown Library'
+        libName: lib?.name ?? 'Unknown Library',
     }))
 }
 
@@ -189,4 +191,31 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
         .throwOnError()
 
     return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
+}
+
+export async function updateTextOrder({ lib, ids }: { lib: string, ids: string[] }) {
+    const { count, error } = await supabase
+        .from('texts')
+        .select('id', { count: 'exact', head: true })
+        .in('id', ids)
+        .eq('lib', lib)
+
+    if (error) {
+        throw new Error('Failed to verify texts ownership.')
+    }
+
+    if (count !== ids.length) {
+        throw new Error('Access denied. Not all texts belong to the specified library.')
+    }
+
+    const updates = ids.map((id, index) =>
+        supabase
+            .from('texts')
+            .update({ no: index })
+            .eq('id', id)
+    )
+
+    await Promise.all(updates)
+
+    revalidateTag(`texts:${lib}`)
 }

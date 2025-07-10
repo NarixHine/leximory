@@ -13,3 +13,4 @@
     -   Minimize the use of `useEffect` and `useState`.
     -   Use `useTransition` for async operations to avoid hard loading states.
 -   **Time in Milliseconds**: use `itty-time` to make it readable
+-   **Language**: code in English but use Chinese for everything end-user facing

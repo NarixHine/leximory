@@ -3,6 +3,7 @@
 -   **Framework**: Next.js 15+
 -   **Language**: TypeScript
 -   **Styling**: Tailwind CSS
+-   **Package Manager**: pnpm
 -   **UI Components**: HeroUI (`@heroui/...`)
 -   **Icons**: React Icons (`react-icons/pi`)
 -   **Database/Auth**: Supabase
