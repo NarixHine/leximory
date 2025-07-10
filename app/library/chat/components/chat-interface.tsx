@@ -27,7 +27,6 @@ import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
-import { isEqual } from 'es-toolkit'
 import type { Plan } from '@/lib/config'
 import moment from 'moment'
 import { Image } from '@heroui/image'
@@ -390,6 +389,8 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
     }
 }
 
+const MemoizedMessagePart = memo(MessagePart)
+
 export function ChatMessage({ message: { parts, role, experimental_attachments } }: { message: Message }) {
     return <div className={cn(
         'mb-4 flex flex-col',
@@ -420,14 +421,12 @@ export function ChatMessage({ message: { parts, role, experimental_attachments }
             </div>
         )}
         {parts?.map((part, j) => (
-            <MessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+            <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
         ))}
     </div>
 }
 
-const MemoizedMessage = memo(ChatMessage, (prevProps, nextProps) => {
-    return isEqual(prevProps.message.parts, nextProps.message.parts)
-})
+const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({ messages }: { messages: Message[] }) => <>{messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}</>
 

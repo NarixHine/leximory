@@ -1,5 +1,5 @@
 import 'server-only'
-import { forgetCurve, ForgetCurvePoint, Lang } from '@/lib/config'
+import { forgetCurve, ForgetCurvePoint, Lang, welcomeMap } from '@/lib/config'
 import { supabase } from '@/server/client/supabase'
 import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
@@ -128,6 +128,7 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
         .select('word, id, lib:libraries!inner(id, lang)')
         .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
         .lte('created_at', momentSH().startOf('day').subtract(toDayAgo, 'day').toISOString())
+        .not('word', 'in', `(${Object.values(welcomeMap).join(',')})`) // exclude welcome words
         .or(filters, options)
         .throwOnError()
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))

@@ -13,7 +13,6 @@ import { contentFontFamily, jpFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
-import { isEqual } from 'es-toolkit'
 import sanitize from 'sanitize-html'
 
 export type MarkdownProps = {
@@ -81,6 +80,4 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     >{result}</MarkdownToJSX>)
 }
 
-export default memo(Markdown, (prev, next) => {
-    return isEqual(prev, next)
-})
+export default memo(Markdown)
