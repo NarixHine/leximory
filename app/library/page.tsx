@@ -27,6 +27,64 @@ async function getData(orFilter: OrFilter, userId: string) {
     return data
 }
 
+export default function Page() {
+    return <Main className='flex flex-col max-w-screen-md'>
+        <Nav />
+
+        <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
+            <H className='text-5xl font-bold text-primary-400 dark:text-default-500'><PiBooksDuotone />文库</H>
+            <Spacer y={8} />
+            <div className='flex flex-col gap-4'>
+                <div className='grid grid-cols-1 min-[480px]:grid-cols-2 justify-center gap-4'>
+                    <Suspense fallback={
+                        <GradientCard
+                            title='本月 AI 注解额度'
+                            className={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
+                        />
+                    }>
+                        <CommentaryQuotaCard />
+                    </Suspense>
+                    <Suspense fallback={
+                        <GradientCard
+                            title='本月 AI 音频额度'
+                        />
+                    }>
+                        <AudioQuotaCard />
+                    </Suspense>
+                </div>
+            </div>
+        </div>
+
+        <Spacer y={4} />
+
+        <Suspense fallback={
+            <div className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
+                <LibrarySkeleton />
+                <LibrarySkeleton />
+            </div>
+        }>
+            <UserLibraryList />
+        </Suspense>
+
+        <Spacer y={4} />
+
+        <div className='mx-auto'>
+            <LibraryAddButton />
+        </div>
+
+        <Spacer y={4} />
+
+        <footer className='flex justify-center gap-2'>
+            <Button as={Link} href='/about' variant='light' startContent={<PiVideo />}>
+                使用教程
+            </Button>
+            <Suspense>
+                <AdminDashboardLink />
+            </Suspense>
+        </footer>
+    </Main>
+}
+
 async function UserLibraryList() {
     const { userId } = await getUserOrThrow()
     return <LibraryList userId={userId} orFilter={await isListedFilter()} />
@@ -80,62 +138,4 @@ async function LibraryList({ userId, orFilter }: {
             </section>}
         </div>
     )
-}
-
-export default function Page() {
-    return <Main className='flex flex-col max-w-screen-md'>
-        <Nav />
-
-        <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
-            <H className='text-5xl font-bold text-primary-400 dark:text-default-500'><PiBooksDuotone />文库</H>
-            <Spacer y={8} />
-            <div className='flex flex-col gap-4'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 justify-center gap-4'>
-                    <Suspense fallback={
-                        <GradientCard
-                            title='本月 AI 注解额度'
-                            className={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
-                        />
-                    }>
-                        <CommentaryQuotaCard />
-                    </Suspense>
-                    <Suspense fallback={
-                        <GradientCard
-                            title='本月 AI 音频额度'
-                        />
-                    }>
-                        <AudioQuotaCard />
-                    </Suspense>
-                </div>
-            </div>
-        </div>
-
-        <Spacer y={4} />
-
-        <Suspense fallback={
-            <div className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
-                <LibrarySkeleton />
-                <LibrarySkeleton />
-            </div>
-        }>
-            <UserLibraryList />
-        </Suspense>
-
-        <Spacer y={4} />
-
-        <div className='mx-auto'>
-            <LibraryAddButton />
-        </div>
-
-        <Spacer y={4} />
-
-        <footer className='flex justify-center gap-2'>
-            <Button as={Link} href='/about' variant='light' startContent={<PiVideo />}>
-                使用教程
-            </Button>
-            <Suspense>
-                <AdminDashboardLink />
-            </Suspense>
-        </footer>
-    </Main>
 }

@@ -56,7 +56,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	const hideIrrelevantElements = await isAtRead()
 	return (
 		<ViewTransitions>
-			<html lang='zh-CN' className='antialiased'>
+			<html lang='zh-CN' className='subpixel-antialiased'>
 				<body style={{ fontFamily: defaultFontFamily }}>
 					<SpeedInsights />
 					<Analytics />

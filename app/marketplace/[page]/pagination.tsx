@@ -14,10 +14,9 @@ export default function Pagination({ page }: { page: number }) {
     }
 
     return (
-        <div className='flex justify-center'>
+        <div className='flex justify-center mt-auto'>
             <HeroUIPagination
-                variant='bordered'
-                color='primary'
+                variant='flat'
                 total={totalPages}
                 page={page}
                 onChange={handlePageChange}
