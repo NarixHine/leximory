@@ -4,7 +4,7 @@ import { Card, CardBody, CardFooter } from "@heroui/card"
 import { contentFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
-import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone } from 'react-icons/pi'
+import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone, PiCheckSquare, PiSquare } from 'react-icons/pi'
 import { useTransitionRouter } from 'next-view-transitions'
 import { useTransition } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
@@ -12,7 +12,6 @@ import { libAtom, visitedTextsAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
-import { cn } from '@/lib/utils'
 import { Input } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { getArticleFromUrl } from '@/lib/utils'
@@ -33,13 +32,13 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
     createdAt: string,
 }) {
     const lib = useAtomValue(libAtom)
-    const visited = useAtomValue(visitedTextsAtom)
+    const visited = useAtomValue(visitedTextsAtom)[id]
     const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
 
     const CardInnerContent = () => (
         <>
             <CardBody className='flex flex-col gap-1 p-7'>
-                <h2 className={cn('text-2xl text-balance', visited[id] && 'text-default-700')} style={{
+                <h2 className={'text-2xl text-balance'} style={{
                     fontFamily: contentFontFamily
                 }}>{title}</h2>
                 {topics.length > 0 && (
@@ -48,8 +47,12 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
                     </div>
                 )}
             </CardBody>
-            <CardFooter className='pr-5 pb-4 pt-0 flex flex-col gap-1 items-end'>
-                <time className='text-sm text-default-400 font-mono'>Created: {momentSH(createdAt).format('ll')}</time>
+            <CardFooter className='px-7 pb-4 pt-0 flex flex-col gap-1 items-end'>
+                <div className='flex items-center w-full gap-2 text-default-500'>
+                    {visited ? <PiCheckSquare className='text-lg' /> : <PiSquare className='text-lg' />}
+                    <div className='flex-1' />
+                    <time className='text-sm font-mono'>Created: {momentSH(createdAt).format('ll')}</time>
+                </div>
             </CardFooter>
         </>
     )

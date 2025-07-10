@@ -2,7 +2,7 @@
 
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs"
 import { Button } from "@heroui/button"
-import { PiBookBookmarkDuotone, PiFileTextDuotone, PiBooksDuotone, PiUserCircleDuotone, PiSkipBackCircleDuotone } from 'react-icons/pi'
+import { PiBookBookmark, PiFileText, PiBooks, PiUserCircle, PiSkipBackCircle } from 'react-icons/pi'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { NavProps } from '.'
@@ -42,7 +42,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             <BreadcrumbItem className='max-w-full'>
                 <Link href={`/library`} prefetch={false} className="flex items-center gap-1">
                     <LoadingIndicatorWrapper>
-                        <PiUserCircleDuotone className={iconClassName} />
+                        <PiUserCircle className={iconClassName} />
                     </LoadingIndicatorWrapper>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-primary-900 dark:text-default-500'>
                         {tenant}
@@ -55,7 +55,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                 <BreadcrumbItem className='max-w-full'>
                     <Link href={`/library/${lib.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
                         <LoadingIndicatorWrapper>
-                            <PiBooksDuotone className={iconClassName} />
+                            <PiBooks className={iconClassName} />
                         </LoadingIndicatorWrapper>
                         <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-primary-900 dark:text-default-500'>
                             {lib.name}
@@ -68,7 +68,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             {isAtCorpus && (
                 <BreadcrumbItem
                     className='max-w-full text-primary-900 dark:text-default-500'
-                    startContent={<PiBookBookmarkDuotone className={iconClassName} />}
+                    startContent={<PiBookBookmark className={iconClassName} />}
                 >
                     语料本
                 </BreadcrumbItem>
@@ -79,7 +79,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                 <BreadcrumbItem className='max-w-full'>
                     <Link href={`/library/${lib.id}/${text.id}`} prefetch={false} className="flex items-center gap-1"> {/* Wrap content in Link */}
                         <LoadingIndicatorWrapper>
-                            <PiFileTextDuotone className={iconClassName} />
+                            <PiFileText className={iconClassName} />
                         </LoadingIndicatorWrapper>
                         <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[30vw] lg:max-w-[40vw] align-middle text-primary-900 dark:text-default-500'>
                             {text.name}
@@ -100,7 +100,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     radius='lg'
                     isIconOnly
                     className='bg-primary-50/50 dark:bg-default-50/50 backdrop-blur-sm ml-2'
-                    startContent={<PiSkipBackCircleDuotone className='text-primary-900 dark:text-default-500 text-lg' />}
+                    startContent={<PiSkipBackCircle className='text-primary-900 dark:text-default-500 text-lg' />}
                 />
                 : <Button
                     size='sm'
@@ -112,7 +112,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     className='bg-primary-50/50 dark:bg-default-50/50 backdrop-blur-sm ml-2'
                 >
                     <LoadingIndicatorWrapper>
-                        <PiBookBookmarkDuotone className='text-primary-900 dark:text-default-500 text-medium' />
+                        <PiBookBookmark className='text-primary-900 dark:text-default-500 text-medium' />
                     </LoadingIndicatorWrapper>
                 </Button>
         )
