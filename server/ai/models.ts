@@ -122,12 +122,12 @@ export const getBestCommentaryModel = (lang: Lang) => {
 
 export const elevenLabsVoiceConfig = {
     'BrE': {
-        voice: 'KA3yMJop9i539YKcyb0m',
+        voice: 'k9kxNvqF1UqyrwvqNxtp',
         options: {
             voice_settings: {
                 stability: 0.45,
                 similarity_boost: 0.75,
-                speed: 1.08,
+                speed: 1.05,
             }
         }
     },
