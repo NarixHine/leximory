@@ -53,3 +53,16 @@ export async function regenerateDailyTimes() {
 
     return { success: true, message: 'Daily times regeneration request submitted (will be processed by the system)' }
 }
+
+export async function regenerateTimesQuiz(date: string) {
+    await requireAdmin()
+
+    await inngest.send({
+        name: 'times/quiz.requested',
+        data: {
+            date
+        }
+    })
+
+    return { success: true, message: 'Times quiz regeneration request submitted (will be processed by the system)' }
+}

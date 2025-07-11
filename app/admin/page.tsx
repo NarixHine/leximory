@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import AdminOverview from './components/overview'
 import UsersList from './components/user-list'
 import RegenerateTimesButton from './components/regenerate-times'
+import RegenerateTimesQuizButton from './components/regenerate-times-quiz'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
 import { Button } from '@heroui/button'
@@ -36,6 +37,7 @@ export default async function AdminPage() {
                         <CardBody className='pt-0'>
                             <div className='space-y-2'>
                                 <RegenerateTimesButton />
+                                <RegenerateTimesQuizButton />
                                 <Button
                                     as={Link}
                                     href='/admin/times'

@@ -8,7 +8,7 @@ import { nanoid } from '@/lib/utils'
 import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
-import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue } from '../db/times'
+import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
 import { speak } from 'orate'
@@ -403,6 +403,43 @@ export const generateTimes = inngest.createFunction(
             })
             revalidateTag('times')
             return res
+        })
+    }
+)
+
+export const regenerateTimesQuiz = inngest.createFunction(
+    { id: 'regenerate-times-quiz' },
+    { event: 'times/quiz.requested' },
+    async ({ event, step }) => {
+        const { date } = event.data as { date: string }
+
+        const newsThreeDaysAgo = await step.run('get-news-three-days-ago', async () => {
+            const threeDaysAgo = momentSH(date).subtract(3, 'days').format('YYYY-MM-DD')
+            try {
+                return await getRawNewsByDate(threeDaysAgo)
+            }
+            catch {
+                return null
+            }
+        })
+
+        const quiz = await step.run('generate-quiz', async () => {
+            if (!newsThreeDaysAgo) {
+                return null
+            }
+            const converter = new showdown.Converter()
+            const quiz = await generateQuiz({
+                prompt: converter.makeHtml(newsThreeDaysAgo),
+                type: sample(AI_GENERATABLE),
+            })
+            return JSON.stringify(quiz)
+        })
+
+        await step.run('update-quiz-in-supabase', async () => {
+            await updateTimes(date, {
+                quiz: quiz ? JSON.parse(quiz) : null
+            })
+            revalidateTag('times')
         })
     }
 )

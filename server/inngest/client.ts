@@ -35,7 +35,8 @@ type Events = {
     'app/article.imported': ArticleImported
     'app/story.requested': StoryRequested
     'times/generation.requested': object
-    'times/regeneration.requested': object
+    'times/regeneration.requested': object,
+    'times/quiz.requested': { data: { date: string } }
 }
 
 export const inngest = new Inngest({
