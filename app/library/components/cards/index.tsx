@@ -8,7 +8,7 @@ export const CommentaryQuotaCard = async () => {
         <CircularProgress
             size='lg'
             value={percentage}
-            color='secondary'
+            color='primary'
             showValueLabel={true}
             classNames={{
                 track: 'stroke-white/50',
@@ -23,7 +23,7 @@ export const AudioQuotaCard = async () => {
         <CircularProgress
             size='lg'
             value={percentage}
-            color='primary'
+            color='secondary'
             showValueLabel={true}
             classNames={{
                 track: 'stroke-white/50',
