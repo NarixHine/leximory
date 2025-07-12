@@ -1,6 +1,5 @@
 import { inngest } from './client'
 import { experimental_generateImage as generateImage, generateText } from 'ai'
-import { supabase } from '../client/supabase'
 import { ADMIN_UID } from '@/lib/config'
 import { annotateParagraph } from '../ai/annotate'
 import { revalidateTag } from 'next/cache'
@@ -9,6 +8,7 @@ import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
+import { uploadTimesAudio, uploadTimesImage } from '../db/storage'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
 import { speak } from 'orate'
@@ -320,23 +320,17 @@ export const generateTimes = inngest.createFunction(
         })
 
         // Step 7: Generate audio for news and upload to Supabase
-        const { audio } = await step.run('generate-audio-for-news', async () => {
+        const audioResult = await step.run('generate-audio-for-news', async () => {
             const { voice, options } = elevenLabsVoiceConfig['BrE']
 
             try {
+                // Add a period at the end of every Markdown heading for better TTS pause
+                const ttsReadyNews = news.replace(/^(#+)(.*)$/gm, '$1$2.')
                 const audio = await speak({
                     model: new ElevenLabs().tts('eleven_flash_v2_5', voice, options),
-                    prompt: removeMd(news),
+                    prompt: removeMd(ttsReadyNews),
                 })
-                const { data } = await supabase.storage.from('app-assets').upload(`times/${date}.mp3`, audio, {
-                    upsert: true,
-                    contentType: audio.type
-                })
-                if (!data) {
-                    throw new Error('Failed to upload audio')
-                }
-
-                const { data: { publicUrl: audioUrl } } = supabase.storage.from('app-assets').getPublicUrl(data.path)
+                const audioUrl = await uploadTimesAudio(date, audio)
                 return { audio: audioUrl }
             }
             catch (error) {
@@ -378,16 +372,7 @@ export const generateTimes = inngest.createFunction(
                 prompt: imagePrompt,
                 aspectRatio: '16:9',
             })
-
-            const { data, error } = await supabase.storage.from('app-assets').upload(`times/${date}.png`, image.uint8Array, {
-                upsert: true,
-                contentType: image.mimeType
-            })
-            if (error) {
-                throw new Error(`Failed to upload image: ${error.message}`)
-            }
-            const { data: { publicUrl } } = supabase.storage.from('app-assets').getPublicUrl(data.path)
-            return publicUrl
+            return await uploadTimesImage(date, image)
         })
 
         // Step 11: Save to Supabase
@@ -395,11 +380,11 @@ export const generateTimes = inngest.createFunction(
             const res = await publishTimes({
                 novel: annotatedNovel,
                 news: annotatedNews,
-                cover: `${imageUrl}?${nanoid(3)}`,
+                cover: `${imageUrl}?${nanoid(2)}`,
                 quiz: quiz ? JSON.parse(quiz) : null,
                 date,
                 raw_news: news,
-                audio
+                audio: audioResult.audio
             })
             revalidateTag('times')
             return res

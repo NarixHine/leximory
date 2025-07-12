@@ -2,6 +2,9 @@ import createMDX from '@next/mdx'
 import withSerwistInit from '@serwist/next'
 import { NextConfig } from 'next'
 import { fixYourPaperBlogLink } from './lib/config'
+import env from '@/lib/env'
+
+const r2Url = new URL(env.R2_PUBLIC_URL)
 
 const nextConfig: NextConfig = {
     experimental: {
@@ -18,6 +21,10 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'pcsjszvydprmevipvpva.supabase.co',
             },
+            {
+                protocol: r2Url.protocol.slice(0, -1) as 'http' | 'https',
+                hostname: r2Url.hostname
+            }
         ],
     },
     turbopack: {},
