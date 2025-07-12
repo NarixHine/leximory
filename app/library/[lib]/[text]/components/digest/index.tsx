@@ -26,9 +26,8 @@ import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
 import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
-import { useInterval } from 'usehooks-ts'
+import { useInterval, useIntersectionObserver } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
-import { ms } from 'itty-time'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -314,20 +313,22 @@ export default function Digest() {
   const isLoading = useAtomValue(isLoadingAtom)
   const lib = useAtomValue(libAtom)
   const text = useAtomValue(textAtom)
-  const [recentAccess, setRecentAccess] = useAtom(recentAccessAtom)
+  const setRecentAccess = useSetAtom(recentAccessAtom)
   const title = useAtomValue(titleAtom)
-  const [visitedTexts, setVisitedTexts] = useAtom(visitedTextsAtom)
+  const setVisitedTexts = useSetAtom(visitedTextsAtom)
+  const { ref: bottomRef, entry } = useIntersectionObserver({
+    freezeOnceVisible: true
+  })
+
   useEffect(() => {
-    const newRecentAccess = { ...recentAccess }
-    newRecentAccess[lib] = { id: text, title }
-    setRecentAccess(newRecentAccess)
-    const timer = setTimeout(() => {
-      const newVisitedTexts = { ...visitedTexts }
-      newVisitedTexts[text] = true
-      setVisitedTexts(newVisitedTexts)
-    }, ms('1 minutes'))
-    return () => clearTimeout(timer)
+    setRecentAccess(prev => ({ ...prev, [lib]: { id: text, title } }))
   }, [lib, text, title])
+
+  useEffect(() => {
+    if (entry?.isIntersecting) {
+      setVisitedTexts(prev => ({ ...prev, [text]: true }))
+    }
+  }, [entry?.isIntersecting, text])
 
   return (
     <div className='min-h-[calc(100dvh-240px)] md:min-h-[calc(100dvh-160px)] flex flex-col'>
@@ -353,7 +354,7 @@ export default function Digest() {
         )}
       </div>
 
-      {!isReaderMode && <div className={'max-w-[650px] mx-auto'}>
+      {!isReaderMode && <div ref={bottomRef} className={'max-w-[650px] mx-auto'}>
         <Spacer y={6} />
         <ImportModal />
       </div>}

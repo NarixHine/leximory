@@ -20,7 +20,7 @@ import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { parseCommentParams } from '@/lib/lang'
+import { parseCommentParams } from '@/lib/comment'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { contentFontFamily, jpFontFamily } from "@/lib/fonts"

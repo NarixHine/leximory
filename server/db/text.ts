@@ -113,7 +113,8 @@ export async function getTextContent({ id }: { id: string }) {
             topics,
             lib:libraries (
                 id,
-                name
+                name,
+                lang
             )
         `)
         .eq('id', id)
@@ -133,9 +134,9 @@ export async function getTextContent({ id }: { id: string }) {
             .from('user-files')
             .createSignedUrl(`ebooks/${id}.epub`, 60 * 60 * 24 * 30)
         if (error) throw error
-        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name']) }
+        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang } }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name']) }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang } }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {

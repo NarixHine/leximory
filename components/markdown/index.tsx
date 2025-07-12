@@ -1,7 +1,7 @@
 'use client'
 
 import Comment from '@/components/comment'
-import wrap from '@/lib/lang'
+import wrap from '@/lib/comment'
 import MarkdownToJSX from 'markdown-to-jsx'
 import MdImg from '../ui/mdimg'
 import AudioPlayer from './audio'

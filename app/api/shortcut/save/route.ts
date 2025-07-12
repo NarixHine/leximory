@@ -1,5 +1,5 @@
 import { generateSingleCommentFromShortcut } from '@/app/library/[lib]/[text]/actions'
-import { originals, parseComment, removeRubyFurigana } from '@/lib/lang'
+import { originals, parseComment, removeRubyFurigana } from '@/lib/comment'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { after, NextResponse } from 'next/server'

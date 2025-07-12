@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib, authWriteToText } from '@/server/auth/role'
-import { extractSaveForm } from '@/lib/lang'
+import { extractSaveForm } from '@/lib/comment'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'

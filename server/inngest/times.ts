@@ -119,7 +119,7 @@ Mary was thinking, Oh, Magnus: what now? And then she went to the window and saw
 `.trim()
 
 const NEWS_PROMPT = `
-You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on REAL-WORLD news TODAY (use Search Grounding, and especially search for news in the China/US/EU/UK/Japan), adapt the content, and aggregate them into a single article. Proritise relevance to real current events, but remember to be totally different across every part/topic from yesterday's news you wrote (which will be provided later). Diversify your covered topics.
+You're a fictional journalist in charge of the Daily News section of the fictional online publication *The Leximory Times* (Leximory is a small coastal country on Mars), published every evening. Base all topics of your reporting on REAL-WORLD news TODAY (use Search Grounding, and especially search for news in the China/US/EU/UK/Japan), adapt the content, and aggregate them into a single article. Proritise relevance to real current events, but remember to be totally different across every part/topic from yesterday's news you wrote (which will be provided later). Diversify your covered topics. For example, if yesterday's news was about AI, DON'T write about AI today, and if there is one section about AI today, NO MORE AI in other sections.
 
 Make your fabrications very clear in a way that won't mislead unknowing people to think it's real, without stating explicitly. One way to do this is to precede them with a clearly fictitious city name in Leximory. However, name your characters realistically (no Vance/Elara placeholders).
 
