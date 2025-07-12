@@ -46,12 +46,12 @@ export default async function Page(props: LibAndTextProps) {
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
                 <EditableH></EditableH>
                 <div className='flex flex-wrap gap-2 justify-center items-center'>
-                    <Topics topics={topics} className='justify-center'></Topics>
                     {languageStrategies[lib.lang]?.FormattedReadingTime && (
                         <div className='text-sm text-center mt-1'>
                             {languageStrategies[lib.lang].FormattedReadingTime(content)}
                         </div>
                     )}
+                    <Topics topics={topics} className='justify-center'></Topics>
                 </div>
                 <Digest></Digest>
             </Main>
