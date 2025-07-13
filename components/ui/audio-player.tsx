@@ -36,7 +36,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
     }
 
     const handleSliderChange = (value: number | number[]) => {
-        const newTime = Array.isArray(value) ? value[0] : value
+        const newTime = (Array.isArray(value) ? value[0] : value) / 100
         if (audioRef.current) {
             audioRef.current.currentTime = newTime
             setCurrentTime(newTime)
@@ -57,7 +57,6 @@ function AudioPlayer({ src }: AudioPlayerProps) {
     useEffect(() => {
         const animate = () => {
             if (audioRef.current) {
-                console.log('Animating audio player', audioRef.current.currentTime, 'of', audioRef.current.duration)
                 setCurrentTime(audioRef.current.currentTime)
                 animationFrameRef.current = requestAnimationFrame(animate)
             }

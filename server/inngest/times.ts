@@ -127,7 +127,7 @@ Pick randomly 3 topics (if possible, pick differently from yesterday), and 1 eve
 
 Use Markdown H3 to indicate the category, and H4 the main idea of the news.
 
-Skip the title or anything else, and do NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in **bold**) in Leximory.
+Skip the title or anything else, and DO NOT output the 'Daily News' section title. Directly output the body part (topic 1, events, topic 2, events, ...). PRECEDE EVERY EVENT in every section with a clearly fictitious city name (in **bold**) in Leximory. DIRECTLY START your response with the title of the first section.
 
 Always write in a modern journalistic style (engaging and compelling to follow through). Avoid AI summary vibes. Write Martian news as if Martian is Earth, which means refraining from Martian-specific topics like terraforming and settlement.
 
@@ -331,7 +331,7 @@ export const generateTimes = inngest.createFunction(
                     prompt: removeMd(ttsReadyNews),
                 })
                 const audioUrl = await uploadTimesAudio(date, audio)
-                return { audio: audioUrl }
+                return { audio: audioUrl, script: ttsReadyNews }
             }
             catch (error) {
                 logger.error('Failed to generate or upload audio:', error)
