@@ -31,7 +31,7 @@ const getData = async (text: string) => {
 
 export default async function Page(props: LibAndTextProps) {
     const { text } = await props.params
-    const { title, content, topics, ebook, lib, annotating, } = await getData(text)
+    const { title, content, topics, ebook, lib, annotating } = await getData(text)
 
     const { FormattedReadingTime } = getLanguageStrategy(lib.lang)
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom]}>

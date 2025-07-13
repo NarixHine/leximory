@@ -18,6 +18,12 @@ import { getUserOrThrow } from '@/server/auth/user'
 import { googleModels, noThinkingConfig, getBestCommentaryModel } from '@/server/ai/models'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
+import { revalidatePath } from 'next/cache'
+
+export async function revalidate(libId: string, textId: string) {
+    await authReadToText(textId)
+    revalidatePath(`/library/${libId}/${textId}`)
+}
 
 export async function extractWords(form: FormData) {
     const { userId } = await getUserOrThrow()

@@ -23,7 +23,7 @@ import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { contentFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgress, getNewText, remove, save } from '../../actions'
+import { getAnnotationProgress, getNewText, remove, revalidate, save } from '../../actions'
 import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -244,6 +244,7 @@ function GeneratingView() {
   const setContent = useSetAtom(contentAtom)
   const setTopics = useSetAtom(topicsAtom)
   const text = useAtomValue(textAtom)
+  const lib = useAtomValue(libAtom)
   const [currentProgress, setCurrentProgress] = useState(0)
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
@@ -280,6 +281,7 @@ function GeneratingView() {
             setContent(content)
             setTopics(topics ?? [])
             setIsLoading(false)
+            revalidate(lib, text)
           })
         }
         setAnnotationProgress(newProgress)
@@ -294,7 +296,7 @@ function GeneratingView() {
   }
 
   return (
-    <div className='flex flex-col justify-center items-center h-[calc(100dvh-350px)] gap-4'>
+    <div className='flex flex-col justify-center items-center h-[calc(100dvh-400px)] gap-4'>
       <Progress
         classNames={{ label: cn('text-md') }}
         color='primary'
@@ -336,7 +338,7 @@ export default function Digest() {
   }, [entry?.isIntersecting, text])
 
   return (
-    <div className='min-h-[calc(100dvh-240px)] md:min-h-[calc(100dvh-160px)] flex flex-col'>
+    <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
       <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
@@ -346,7 +348,7 @@ export default function Digest() {
         )}
       </div>
 
-      <div className='flex-1'>
+      <div>
         {isLoading ? (
           <GeneratingView />
         ) : isEditing ? (
@@ -359,7 +361,7 @@ export default function Digest() {
         )}
       </div>
 
-      {!isReaderMode && <div ref={bottomRef} className={'max-w-[650px] mx-auto'}>
+      {!isReaderMode && <div ref={bottomRef} className={'max-w-[650px] mx-auto mt-auto'}>
         <Spacer y={6} />
         <ImportModal />
       </div>}

@@ -327,7 +327,7 @@ export const generateTimes = inngest.createFunction(
                 // Add a period at the end of every Markdown heading for better TTS pause
                 const ttsReadyNews = news.replace(/^(#+)(.*)$/gm, '$1$2.')
                 const audio = await speak({
-                    model: new ElevenLabs().tts('eleven_flash_v2_5', voice, options),
+                    model: new ElevenLabs().tts('eleven_turbo_v2_5', voice, options),
                     prompt: removeMd(ttsReadyNews),
                 })
                 const audioUrl = await uploadTimesAudio(date, audio)
