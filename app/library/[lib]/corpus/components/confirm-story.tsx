@@ -10,7 +10,7 @@ import { PiTornadoDuotone } from 'react-icons/pi'
 type Response = boolean
 
 export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ call, comments }) => (
-    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-6'>
+    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 p-6'>
         <CardHeader>
             <H usePlayfair className='text-2xl'>生成小故事</H>
         </CardHeader>
@@ -23,7 +23,7 @@ export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ c
                 点击继续则会根据在该日期内记忆的单词生成一个故事（消耗2次AI注释生成额度）：
 
             </p>
-            <ul className='max-h-[300px] overflow-y-auto'>
+            <ul className='max-h-60 overflow-y-auto'>
                 {comments.map((comment) => (
                     <li key={comment}>
                         <Markdown disableSave md={comment}></Markdown>

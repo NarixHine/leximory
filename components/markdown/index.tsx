@@ -38,18 +38,19 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(' {{', '&nbsp;{{')
         .replaceAll('{{', '‎{{')
         .replaceAll('&gt;', '>')
-        .replace(/([*-]) \{\{/g, '$1  {{') // double space after list markers
+        // double space after list markers
+        .replace(/([*-]) \{\{/g, '$1  {{')
         // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
-        // prevent line breaks after comments by using word joiner (U+2060) before punctuation
-        .replace(/}}( ?)([,.?!"”])/g, '}}⁠$2')
         // replace all instances of {{...}} with the Comment component
         .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
+        // prevent line break after comments
+        .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?:"。，！？：”])/g, '<Nobr>$1<span>$3</span></Nobr>')
         // replace all instances of :::...::: with the Audio component
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
@@ -63,6 +64,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 },
                 Audio: {
                     component: Audio
+                },
+                Nobr: {
+                    component: ({ children }) => <span className='whitespace-nowrap'>{children}</span>,
                 },
                 img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
                 p: (props) => (<div {...props} className='mb-5 last:mb-0' />),

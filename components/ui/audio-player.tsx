@@ -117,7 +117,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                         onChange={handleSliderChange}
                         className={cn('w-full')}
                         endContent={
-                            <span className='ml-2 text-tiny text-foreground-400'>
+                            <span className='ml-2 text-tiny text-foreground-400 pb-0.5'>
                                 {formatTime(duration)}
                             </span>
                         }

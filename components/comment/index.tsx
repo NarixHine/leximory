@@ -256,14 +256,20 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             : <button
                                 className={cn(
                                     status === 'deleted' && 'opacity-30',
-                                    !isReaderMode && 'relative after:absolute after:bottom-1.5 after:left-0 after:w-full after:h-1/4',
-                                    isOnDemand ? 'after:bg-default-400/40' : 'after:bg-primary-200/40',
                                     'text-inherit'
                                 )}
                                 style={{ fontStyle: 'inherit' }}
                                 ref={wordElement}
                             >
-                                {portions[0]}
+                                <span className={cn(
+                                    !isReaderMode && [
+                                        'box-decoration-clone',
+                                        '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
+                                        isOnDemand ? 'shadow-default-400/40' : 'shadow-primary-200/40'
+                                    ]
+                                )}>
+                                    {portions[0]}
+                                </span>
                                 {isReaderMode && portions[2] && <>
                                     <label htmlFor={uid} className={styles['sidenote-number']}></label>
                                     <input type='checkbox' id={uid} className={styles['margin-toggle']} />
