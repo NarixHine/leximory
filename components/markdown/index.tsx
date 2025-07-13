@@ -1,7 +1,7 @@
 'use client'
 
 import Comment from '@/components/comment'
-import wrap from '@/lib/comment'
+import wrap, { commentSyntaxRegex } from '@/lib/comment'
 import MarkdownToJSX from 'markdown-to-jsx'
 import MdImg from '../ui/mdimg'
 import AudioPlayer from './audio'
@@ -38,7 +38,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(' {{', '&nbsp;{{')
         .replaceAll('{{', '‎{{')
         .replaceAll('&gt;', '>')
-        .replaceAll(/([*-]) \{\{/g, '$1  {{') // double space after list markers
+        .replace(/([*-]) \{\{/g, '$1  {{') // double space after list markers
         // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
@@ -46,12 +46,12 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         // prevent line breaks after comments by using word joiner (U+2060) before punctuation
         .replace(/}}( ?)([,.?!"”])/g, '}}⁠$2')
         // replace all instances of {{...}} with the Comment component
-        .replace(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g, (_, p1, p2, p3, p4, p5) => {
+        .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
         // replace all instances of :::...::: with the Audio component
-        .replaceAll(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
+        .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
 

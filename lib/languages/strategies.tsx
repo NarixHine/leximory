@@ -6,7 +6,7 @@ export const englishStrategy = createLanguageStrategy({
     name: '英语',
     FormattedReadingTime: (text: string) => {
         const wordCount = text.split(/\s+/).length
-        return <span className={ENGLISH_SERIF.className}>{wordCount} words&nbsp;&nbsp;·&nbsp;&nbsp;{Math.ceil(wordCount / 170)}-minute read</span>
+        return <span className={ENGLISH_SERIF.className}>{wordCount} words&nbsp;&nbsp;·&nbsp;&nbsp;{Math.ceil(wordCount / 120)}-min read</span>
     }
 })
 

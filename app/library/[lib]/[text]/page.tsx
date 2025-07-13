@@ -2,6 +2,7 @@ import Main from '@/components/ui/main'
 import Digest from './components/digest'
 import EditableH from './components/editable-h'
 import Nav from '@/components/nav'
+import ShareButton from './components/share-button'
 import Topics from './components/topics'
 import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, ebookAtom, textAtom, topicsAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom } from './atoms'
@@ -11,6 +12,7 @@ import ScopeProvider from '@/components/jotai/scope-provider'
 import { isReaderModeAtom } from '@/app/atoms'
 import { authReadToText } from '@/server/auth/role'
 import { languageStrategies } from '@/lib/languages'
+import { commentSyntaxRegex } from '@/lib/comment'
 
 export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
@@ -44,11 +46,15 @@ export default async function Page(props: LibAndTextProps) {
         ]}>
             <Main className='max-w-screen-xl [counter-reset:sidenote-counter] md:pb-4'>
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
-                <EditableH></EditableH>
+                <div className='group flex items-center justify-center gap-2'>
+                    <ShareButton className='invisible' />
+                    <EditableH />
+                    <ShareButton className='opacity-0 group-hover:opacity-100 transition-opacity' />
+                </div>
                 <div className='flex flex-wrap gap-2 justify-center items-center'>
                     {languageStrategies[lib.lang]?.FormattedReadingTime && (
                         <div className='text-sm text-center mt-1'>
-                            {languageStrategies[lib.lang].FormattedReadingTime(content)}
+                            {languageStrategies[lib.lang].FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
                         </div>
                     )}
                     <Topics topics={topics} className='justify-center'></Topics>

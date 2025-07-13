@@ -5,6 +5,7 @@
 -   **Indentation**: 4 spaces.
 -   **Line Length**: Maximum 100 characters.
 -   **Commas**: No trailing commas.
+-   **Class Names**: use `cn` utility for concatenation
 -   **Components**:
     -   Use function declarations (`function MyComponent() {}`).
     -   Use default exports (`export default MyComponent`).
@@ -14,3 +15,4 @@
     -   Use `useTransition` for async operations to avoid hard loading states.
 -   **Time in Milliseconds**: use `itty-time` to make it readable
 -   **Language**: code in English but use Chinese for everything end-user facing
+-   **HeroUI Components**: put icons in `startContent` and optionally enable `isIconOnly`; use `onPress` for button event handlers

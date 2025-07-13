@@ -3,6 +3,8 @@ import { CustomLexicon } from './types'
 const lemmatize = require('wink-lemmatizer')
 import { drop } from 'es-toolkit'
 
+export const commentSyntaxRegex = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
+
 export function extractSaveForm(portions: string[]) {
     const comment = drop(portions, 1)
     return [comment[0]].concat(comment)
