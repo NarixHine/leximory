@@ -20,7 +20,7 @@ export const chineseStrategy = createLanguageStrategy({
     welcome: '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
     maxChunkSize: 700,
     maxArticleLength: 5000,
-    exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的同义项古汉语/古诗词例句。形如词语||词语||释义：「例文」'
+    exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的同义项古汉语/古诗词例句。形如词语||词语||释义「例文」'
 })
 
 export const japaneseStrategy = createLanguageStrategy({
@@ -29,7 +29,7 @@ export const japaneseStrategy = createLanguageStrategy({
     welcome: '{{ようこそ！||ようこそ||新しい日本語ライブラリへようこそ！}}',
     maxChunkSize: 1000,
     maxArticleLength: 10000,
-    exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的例句。形如単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である：「彼女は可哀想に見えた。」||**かわい**（可悲）＋**そう**（……的样子）'
+    exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的例句。形如単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である。「彼女は可哀想に見えた。」||**かわい**（可悲）＋**そう**（……的样子）'
 })
 
 export const notListedStrategy = createLanguageStrategy({

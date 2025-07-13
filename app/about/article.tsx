@@ -200,7 +200,7 @@ export function Article() {
                 <TableRow key='fix-your-paper'>
                     <TableCell><Link href='/fix-your-paper' className='underline underline-offset-2'>Fix. Your. Paper.</Link></TableCell>
                     <TableCell>5</TableCell>
-                    <TableCell>（面向出题人）审阅高考规格英语试卷</TableCell>
+                    <TableCell>审阅英语试卷（有需要请联系我们）</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

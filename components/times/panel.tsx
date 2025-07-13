@@ -24,6 +24,7 @@ import { Divider } from '@heroui/divider'
 import { useIsMobile } from '@/lib/hooks'
 import { useAtomValue } from 'jotai'
 import { isFullScreenAtom } from './atoms'
+import AudioPlayer from '../ui/audio-player'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -138,13 +139,9 @@ function TimesContent() {
 
             <h2>Daily News</h2>
             {/* Content */}
-            {audio && <div className='-my-4'><audio
-                controls
+            {audio && <AudioPlayer
                 src={audio}
-                className='w-full'
-                preload='none'
-                onContextMenu={(e) => e.preventDefault()}
-            /></div>}
+            />}
             <p>
                 <i>These are the headlines today in <b>Leximory</b>, a small coastal country <b>on Mars</b>.</i>
             </p>

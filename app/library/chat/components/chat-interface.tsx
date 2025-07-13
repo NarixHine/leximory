@@ -31,6 +31,7 @@ import type { Plan } from '@/lib/config'
 import moment from 'moment'
 import { Image } from '@heroui/image'
 import { Divider } from '@heroui/divider'
+import AudioPlayer from '@/components/ui/audio-player'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -290,10 +291,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                     <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
                                         <PiNewspaperDuotone className='text-primary' size={20} />
                                         <span>Daily News</span>
-                                        {audio && <audio controls className='flex-1'>
-                                            <source src={audio} />
-                                            您的浏览器不支持音频播放。
-                                        </audio>}
+                                        {audio && <AudioPlayer src={audio} />}
                                     </h4>
                                     <div className='text-default-700 prose prose-sm max-w-none'>
                                         <Markdown md={news} />

@@ -28,6 +28,7 @@ import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
+import { toast } from 'sonner'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -96,10 +97,14 @@ function EditingView() {
 
   const handleSaveChanges = useCallback(async () => {
     startUpdating(async () => {
-      await save({ id: text, content: modifiedMd, topics: modifiedTopics, title: title })
-      setIsEditing(false)
-      setContent(modifiedMd)
-      setTopics(modifiedTopics)
+      try {
+        await save({ id: text, content: modifiedMd, topics: modifiedTopics, title: title })
+        setIsEditing(false)
+        setContent(modifiedMd)
+        setTopics(modifiedTopics)
+      } catch {
+        toast.error('保存失败，请重试')
+      }
     })
   }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title])
 

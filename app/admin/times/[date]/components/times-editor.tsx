@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { PiTrashDuotone, PiFloppyDiskDuotone } from 'react-icons/pi'
 import Image from 'next/image'
 import Markdown from '@/components/markdown'
+import AudioPlayer from '@/components/ui/audio-player'
 
 interface TimesEditorProps {
     initialData: TimesData
@@ -29,7 +30,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
         audio: initialData.audio || '',
         quiz: initialData.quiz ? JSON.stringify(initialData.quiz, null, 2) : ''
     })
-    
+
     const [isUpdating, startUpdating] = useTransition()
     const [isDeleting, startDeleting] = useTransition()
     const [activeTab, setActiveTab] = useState('editor')
@@ -49,17 +50,17 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
             toast.error('Cover image URL is required')
             return
         }
-        
+
         if (!formData.novel.trim()) {
             toast.error('Novel content is required')
             return
         }
-        
+
         if (!formData.news.trim()) {
             toast.error('News content is required')
             return
         }
-        
+
         // Validate cover image URL format
         try {
             new URL(formData.cover)
@@ -67,7 +68,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
             toast.error('Please enter a valid cover image URL')
             return
         }
-        
+
         // Validate audio URL format if provided
         if (formData.audio.trim()) {
             try {
@@ -77,7 +78,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                 return
             }
         }
-        
+
         // Validate quiz JSON format if provided
         if (formData.quiz.trim()) {
             try {
@@ -87,12 +88,12 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                 return
             }
         }
-        
+
         startUpdating(async () => {
             const result = await updateTimesIssue(date, {
                 ...formData,
             })
-            
+
             if (result.success) {
                 toast.success(result.message)
             } else {
@@ -104,7 +105,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
     const handleDelete = () => {
         startDeleting(async () => {
             const result = await deleteTimesIssue(date)
-            
+
             if (result.success) {
                 toast.success(result.message)
                 router.push('/admin')
@@ -139,7 +140,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                 </div>
             </div>
 
-            <Tabs 
+            <Tabs
                 selectedKey={activeTab}
                 onSelectionChange={(key) => setActiveTab(key as string)}
                 className='w-full'
@@ -213,12 +214,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                                     onChange={(e) => handleInputChange('audio', e.target.value)}
                                     placeholder='https://example.com/audio.mp3'
                                 />
-                                {formData.audio && (
-                                    <audio controls className='w-full mt-2'>
-                                        <source src={formData.audio} type='audio/mpeg' />
-                                        Your browser does not support the audio element.
-                                    </audio>
-                                )}
+                                {formData.audio && <AudioPlayer src={formData.audio} />}
                             </CardBody>
                         </Card>
 
@@ -294,8 +290,8 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                         <h3 className='text-lg font-semibold'>Delete Times Issue</h3>
                     </ModalHeader>
                     <ModalBody>
-                        <Alert 
-                            color='danger' 
+                        <Alert
+                            color='danger'
                             title='Are you sure you want to delete this issue?'
                             description='This action cannot be undone. The Times issue will be permanently deleted.'
                         />
@@ -304,8 +300,8 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                         <Button variant='light' onPress={onClose}>
                             Cancel
                         </Button>
-                        <Button 
-                            color='danger' 
+                        <Button
+                            color='danger'
                             onPress={handleDelete}
                             isLoading={isDeleting}
                         >

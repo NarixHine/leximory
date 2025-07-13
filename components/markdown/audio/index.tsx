@@ -2,8 +2,7 @@
 
 import Markdown, { MarkdownProps } from '@/components/markdown'
 import { useRef, useState } from 'react'
-import { Button } from "@heroui/button"
-import { Card, CardBody } from "@heroui/card"
+import { Button } from '@heroui/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PiPlayCircleDuotone } from 'react-icons/pi'
 import { generate, retrieve } from './actions'
@@ -16,8 +15,9 @@ import { MAX_TTS_LENGTH } from '@/lib/config'
 import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { ms } from 'itty-time'
+import AudioPlayer from '@/components/ui/audio-player'
 
-export default function AudioPlayer({ id, md, ...props }: {
+export default function Audio({ id, md, ...props }: {
     id: string,
 } & MarkdownProps) {
     const lib = useAtomValue(libAtom)
@@ -30,7 +30,7 @@ export default function AudioPlayer({ id, md, ...props }: {
     const audioQuery = useQuery({
         queryKey: ['audio', id],
         queryFn: () => retrieve(id),
-        staleTime: ms('20 minutes'),
+        staleTime: ms('2 hours'),
     })
 
     const generateMutation = useMutation({
@@ -71,14 +71,21 @@ export default function AudioPlayer({ id, md, ...props }: {
 
     const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? contentFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
-    return isReaderMode ? MarkdownComponent : <Card className='sm:-mx-10 px-5 mt-3 mb-6 bg-transparent' isBlurred>
-        <CardBody>
-            <div className='mt-2'>
-                {url ? <audio
-                    controls
-                    className='w-full'
-                    src={url}
-                /> : <Button isLoading={status === 'loading' || status === 'generating'} isDisabled={status === 'lengthy'} variant='flat' radius='full' color='primary' startContent={<PiPlayCircleDuotone />} size='sm' onPress={action}>
+    return isReaderMode ? MarkdownComponent : <div className={'relative before:absolute before:-left-5 before:top-0 before:bottom-0 before:w-px before:bg-foreground'}>
+        <div className='mt-2'>
+            {url || !audioQuery.isSuccess ? <AudioPlayer
+                src={url}
+            /> : <div className='flex items-center h-14 mt-1'>
+                <Button
+                    isLoading={status === 'loading' || status === 'generating'}
+                    isDisabled={status === 'lengthy'}
+                    variant='flat'
+                    radius='full'
+                    color='primary'
+                    size='lg'
+                    startContent={<PiPlayCircleDuotone />}
+                    onPress={action}
+                >
                     {
                         status === 'lengthy' ? `录音文本不多于 ${MAX_TTS_LENGTH} 字` :
                             status === 'loading' ? '加载中' :
@@ -86,11 +93,11 @@ export default function AudioPlayer({ id, md, ...props }: {
                                     status === 'generating' ? '生成中' :
                                         status === 'ready' ? 'Ready!' : '未知'
                     }
-                </Button>}
-            </div>
-            <div ref={ref} className='mt-5 mb-3'>
-                {MarkdownComponent}
-            </div>
-        </CardBody>
-    </Card>
+                </Button>
+            </div>}
+        </div>
+        <div ref={ref} className='mt-5 mb-3'>
+            {MarkdownComponent}
+        </div>
+    </div>
 }

@@ -4,7 +4,7 @@ import Comment from '@/components/comment'
 import wrap, { commentSyntaxRegex } from '@/lib/comment'
 import MarkdownToJSX from 'markdown-to-jsx'
 import MdImg from '../ui/mdimg'
-import AudioPlayer from './audio'
+import Audio from './audio'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
@@ -62,7 +62,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                     component: Comment,
                 },
                 Audio: {
-                    component: AudioPlayer
+                    component: Audio
                 },
                 img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
                 p: (props) => (<div {...props} className='mb-5 last:mb-0' />),

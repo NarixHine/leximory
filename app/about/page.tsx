@@ -3,7 +3,7 @@ import { ENGLISH_PLAYFAIR } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Button } from "@heroui/button"
 import Link from 'next/link'
-import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone } from 'react-icons/pi'
+import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone, PiHouseDuotone } from 'react-icons/pi'
 import { Metadata } from 'next'
 import { TypedTitle, Article } from './article'
 import { bilibiliLink } from '@/lib/config'
@@ -31,6 +31,16 @@ export default function About() {
                         startContent={<PiTelevisionDuotone />}
                         as={Link}
                         className='text-xl text-pink-400'
+                    ></Button>
+                    <Button
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='/home'
+                        isIconOnly
+                        startContent={<PiHouseDuotone />}
+                        as={Link}
+                        className='text-xl opacity-50'
                     ></Button>
                     <Button
                         size='sm'
