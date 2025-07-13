@@ -37,7 +37,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
 
     const CardInnerContent = () => (
         <>
-            <CardBody className='flex flex-col gap-1 p-7'>
+            <CardBody className='flex flex-col gap-1 px-7 py-6'>
                 <h2 className={'text-2xl text-balance'} style={{
                     fontFamily: contentFontFamily
                 }}>{title}</h2>
@@ -47,7 +47,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
                     </div>
                 )}
             </CardBody>
-            <CardFooter className='px-7 pb-4 pt-0 flex flex-col gap-1 items-end'>
+            <CardFooter className='px-7 pb-4 pt-2 flex flex-col gap-1 items-end'>
                 <div className='flex items-center w-full gap-2 text-default-500'>
                     {visited ? <PiCheckSquare className='text-lg' /> : <PiSquare className='text-lg' />}
                     <div className='flex-1' />

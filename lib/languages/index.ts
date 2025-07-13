@@ -1,8 +1,14 @@
-import { englishStrategy, chineseStrategy, japaneseStrategy, notListedStrategy } from './strategies'
+import { Lang } from '../config'
+import { chineseStrategy, englishStrategy, japaneseStrategy, notListedStrategy } from './strategies'
+import { LanguageStrategy } from './types'
 
-export const languageStrategies = {
-    en: englishStrategy,
-    zh: chineseStrategy,
-    ja: japaneseStrategy,
-    nl: notListedStrategy,
-}   
+export const languageStrategies = [
+    englishStrategy,
+    chineseStrategy,
+    japaneseStrategy,
+    notListedStrategy
+]
+
+export function getLanguageStrategy(lang: Lang): LanguageStrategy {
+    return languageStrategies.find(strategy => strategy.type === lang) ?? notListedStrategy
+}

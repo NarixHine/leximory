@@ -1,15 +1,16 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang, langMap } from '@/lib/config'
-import { accentPreferencePrompt } from '@/lib/prompt'
+import { Lang } from '@/lib/config'
+import { getLanguageStrategy } from '@/lib/languages'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
 import { parseComment } from '@/lib/comment'
 import { getBestCommentaryModel } from '../ai/models'
+import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 
 const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
-        你是一位专业的${langMap[lang]}教师，擅长为语言学习者创作包含指定词汇的短篇故事，帮助他们记忆单词。
+        你是一位专业的${getLanguageStrategy(lang).name}教师，擅长为语言学习者创作包含指定词汇的短篇故事，帮助他们记忆单词。
         
         规则：
         1. 必须使用所有给定的词汇
@@ -22,8 +23,8 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         8. 故事必须按照以下风格与内容创作：${storyStyle}
     `,
     prompt: `
-        ${lang === 'en' ? await accentPreferencePrompt({ lang, userId }) : ''}
-        请使用以下关键词创作一个短故事，全文使用${langMap[lang]}。关键词在文中用<must></must>包裹来表示。
+        ${await getLanguageServerStrategy(lang).getAccentPrompt(userId)}
+        请使用以下关键词创作一个短故事，全文使用${getLanguageStrategy(lang).name}。关键词在文中用<must></must>包裹来表示。
         关键词：
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,

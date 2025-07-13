@@ -1,6 +1,7 @@
 'use client'
 
-import { Lang, langMap } from '@/lib/config'
+import { Lang } from '@/lib/config'
+import { getLanguageStrategy } from '@/lib/languages'
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
@@ -40,7 +41,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                 <div className='flex flex-col'>
                     <H disableCenter className='text-2xl'>{library.name}</H>
                     <Spacer y={1} />
-                    <span className={cn('text-sm opacity-60')}>语言：{langMap[library.lang]}</span>
+                    <span className={cn('text-sm opacity-60')}>语言：{getLanguageStrategy(library.lang).name}</span>
                     <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
                 </div>
             </CardBody>

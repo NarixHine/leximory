@@ -7,7 +7,7 @@ import { Switch } from "@heroui/switch"
 import { Textarea } from "@heroui/input"
 import { useState, useTransition } from 'react'
 import isUrl from 'is-url'
-import { MAX_FILE_SIZE, maxArticleLength } from '@/lib/config'
+import { MAX_FILE_SIZE } from '@/lib/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
@@ -19,6 +19,7 @@ import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getArticleFromUrl } from '@/lib/utils'
+import { getLanguageStrategy } from '@/lib/languages'
 
 export default function ImportModal() {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
@@ -39,7 +40,8 @@ export default function ImportModal() {
         save({ id: text, title })
         setTitle(title)
     }
-    const exceeded = hideText ? false : input.length > maxArticleLength(lang)
+    const { maxArticleLength } = getLanguageStrategy(lang)
+    const exceeded = hideText ? false : input.length > maxArticleLength
 
     const [isGenerating, startGenerating] = useTransition()
 
@@ -112,7 +114,7 @@ export default function ImportModal() {
                                         <Button isLoading={isPopulating} color='primary' radius='full' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
-                                        errorMessage={exceeded ? `文本长度超过 ${maxArticleLength(lang)} 字符` : undefined}
+                                        errorMessage={exceeded ? `文本长度超过 ${maxArticleLength} 字符` : undefined}
                                         isInvalid={exceeded}
                                         value={input}
                                         label='文本'

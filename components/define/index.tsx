@@ -52,7 +52,7 @@ export default function Define() {
             <Drawer.Overlay className='fixed inset-0 z-50 bg-black/30' />
             <Drawer.Content className='h-fit px-2 fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-50 flex flex-col justify-center items-center mx-auto max-w-lg'>
                 <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='["", "🔄 加载中"]'></Comment>
+                <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='["", "↺ Loading ..."]'></Comment>
             </Drawer.Content>
         </Drawer.Portal>
     </Drawer.Root>

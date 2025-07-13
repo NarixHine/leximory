@@ -1,7 +1,7 @@
 'use client'
 
 import Markdown from '@/components/markdown'
-import { welcomeMap } from '@/lib/config'
+import { languageStrategies } from '@/lib/languages'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import { Button } from "@heroui/button"
 import { DateRangePicker } from "@heroui/date-picker"
@@ -56,7 +56,7 @@ export default function Test({ latestTime }: {
         <div className='flex space-x-2'>
             <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
                 {words.map(({ word, id }) => (
-                    !Object.values(welcomeMap).includes(word) &&
+                    !languageStrategies.map(s => s.welcome).includes(word) &&
                     <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave></Markdown>
                 ))}
             </div>

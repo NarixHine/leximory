@@ -1,6 +1,7 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { prefixUrl, langMaxChunkSizeMap } from '@/lib/config'
+import { prefixUrl } from '@/lib/config'
+import { getLanguageStrategy } from '@/lib/languages'
 import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
 import { noThinkingConfig } from '../ai/models'
@@ -94,7 +95,7 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
         })
 
-        const chunks = chunkText(article, langMaxChunkSizeMap[lang])
+        const chunks = chunkText(article, getLanguageStrategy(lang).maxChunkSize)
 
         const { topicsConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
             const topicsConfig = await topicsPrompt(article)

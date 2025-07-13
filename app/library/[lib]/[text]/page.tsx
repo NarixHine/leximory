@@ -11,7 +11,7 @@ import { LibAndTextProps } from '@/lib/types'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isReaderModeAtom } from '@/app/atoms'
 import { authReadToText } from '@/server/auth/role'
-import { languageStrategies } from '@/lib/languages'
+import { getLanguageStrategy } from '@/lib/languages'
 import { commentSyntaxRegex } from '@/lib/comment'
 
 export async function generateMetadata(props: LibAndTextProps) {
@@ -33,7 +33,7 @@ export default async function Page(props: LibAndTextProps) {
     const { text } = await props.params
     const { title, content, topics, ebook, lib, annotating, } = await getData(text)
 
-
+    const { FormattedReadingTime } = getLanguageStrategy(lib.lang)
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('&gt;', '>')],
@@ -52,9 +52,9 @@ export default async function Page(props: LibAndTextProps) {
                     <ShareButton className='opacity-0 group-hover:opacity-100 transition-opacity' />
                 </div>
                 <div className='flex flex-wrap gap-2 justify-center items-center'>
-                    {languageStrategies[lib.lang]?.FormattedReadingTime && (
+                    {FormattedReadingTime && (
                         <div className='text-sm text-center mt-1'>
-                            {languageStrategies[lib.lang].FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
+                            {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
                         </div>
                     )}
                     <Topics topics={topics} className='justify-center'></Topics>

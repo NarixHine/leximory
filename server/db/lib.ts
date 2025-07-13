@@ -1,5 +1,6 @@
 import 'server-only'
-import { Lang, langMap, libAccessStatusMap, welcomeMap } from '@/lib/config'
+import { Lang, libAccessStatusMap } from '@/lib/config'
+import { getLanguageStrategy } from '@/lib/languages'
 import { nanoid } from '@/lib/utils'
 import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
@@ -26,7 +27,7 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
         .insert({
             owner,
             shadow: true,
-            name: `🗃️ ${langMap[lang]}词汇仓库`,
+            name: `🗃️ ${getLanguageStrategy(lang).name}词汇仓库`,
             lang,
         })
         .select()
@@ -98,7 +99,7 @@ export async function createLib({ name, lang, owner }: { name: string, lang: Lan
 
     await supabase.from('lexicon').insert({
         lib: id,
-        word: welcomeMap[lang],
+        word: getLanguageStrategy(lang).welcome,
     })
 
     revalidateTag('libraries')

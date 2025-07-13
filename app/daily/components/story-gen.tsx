@@ -2,7 +2,8 @@
 
 import { Button } from '@heroui/button'
 import { toast } from 'sonner'
-import { Lang, langMap } from '@/lib/config'
+import { Lang } from '@/lib/config'
+import { getLanguageStrategy } from '@/lib/languages'
 import { genStoryInShadowLib } from '../actions'
 import { subscribe } from './bell'
 import { hasSubsAtom } from '../atoms'
@@ -45,6 +46,6 @@ export default function StoryGen({ comments, lang }: {
             })
         }}
     >
-        将{langMap[lang]}单词连成文
+        将{getLanguageStrategy(lang).name}单词连成文
     </Button>
 }

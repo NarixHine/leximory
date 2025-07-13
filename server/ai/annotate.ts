@@ -2,7 +2,8 @@ import 'server-only'
 import { Lang } from '@/lib/config'
 import { generateText } from 'ai'
 import { getBestArticleAnnotationModel, noThinkingConfig } from './models'
-import { instruction, accentPreferencePrompt } from '@/lib/prompt'
+import { instruction } from '@/lib/prompt'
+import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 
 export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string, autoTrim: boolean = true) => ({
     system: `
@@ -15,7 +16,7 @@ export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyCom
     prompt: `
     ${lang !== 'en' ? '' : '你要为英语学习者注解一切高阶或罕见词汇，必须添加语源。'}注解必须均匀地遍布下文。
     ${onlyComments ? '注意：禁止输出原文。请多注解有益于语言学习的语块而非术语，尽可能详尽丰富，不得少于二十个。多注解成块词组、短语（例如on the horns of a dilemma）、俗语（catch off guard），尤其是动词短语，越多越好。' : ''}
-    ${await accentPreferencePrompt({ lang, userId })}
+    ${await getLanguageServerStrategy(lang).getAccentPrompt(userId)}
     
     ${input}`,
     maxTokens: 12000,

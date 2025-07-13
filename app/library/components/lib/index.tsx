@@ -4,7 +4,8 @@ import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
-import { langMap, libAccessStatusMap, Lang } from '@/lib/config'
+import { libAccessStatusMap, Lang } from '@/lib/config'
+import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import Link from 'next/link'
 import { contentFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
@@ -169,7 +170,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     <a className='text-4xl' style={{
                         fontFamily: contentFontFamily
                     }}>{name}</a>
-                    <Topics topics={topics.concat([langMap[lang as Lang]])}></Topics>
+                    <Topics topics={topics.concat([getLanguageStrategy(lang as Lang).name])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
                 <Button
@@ -275,7 +276,7 @@ export function LibraryAddButton() {
                     if (!value) return '请选择语言'
                     return true
                 }}>
-                    {Object.entries(langMap).map(([key, value]) => <SelectItem key={key}>{value}</SelectItem>)}
+                    {languageStrategies.map(({ type, name }) => <SelectItem key={type}>{name}</SelectItem>)}
                 </Select>
             </div>
         </Form>

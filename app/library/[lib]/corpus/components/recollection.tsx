@@ -1,7 +1,7 @@
 'use client'
 
 import Markdown from '@/components/markdown'
-import { welcomeMap } from '@/lib/config'
+import { languageStrategies } from '@/lib/languages'
 import moment from 'moment'
 import { Fragment, useActionState } from 'react'
 import { PiArrowsHorizontalDuotone } from 'react-icons/pi'
@@ -19,6 +19,8 @@ export default function Recollection({ words, cursor, more }: {
     const lib = useAtomValue(libAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
 
+    const welcomes = languageStrategies.map(s => s.welcome)
+
     const [recol, loadRecol, isLoading] = useActionState(async (recol: { words: typeof words, cursor: string, more: boolean }) => {
         const { words, cursor, more } = await load(lib, recol.cursor)
         return { words: recol.words.concat(words), cursor, more }
@@ -29,7 +31,7 @@ export default function Recollection({ words, cursor, more }: {
             const anotherDay = array[index + 1] && !moment(date).isSame(array[index + 1].date, 'day')
             return <Fragment key={id}>
                 <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
-                    <Markdown md={word} disableSave={Object.values(welcomeMap).includes(word)} deleteId={isReadOnly || Object.values(welcomeMap).includes(word) ? undefined : id}></Markdown>
+                    <Markdown md={word} disableSave={welcomes.includes(word)} deleteId={isReadOnly || welcomes.includes(word) ? undefined : id}></Markdown>
                 </div>
                 {anotherDay && <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
                     <Chip size='lg' variant='flat' color='secondary'>

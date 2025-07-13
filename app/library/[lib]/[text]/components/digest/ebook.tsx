@@ -74,7 +74,7 @@ const MemoizedPopover = memo(function MemoizedPopover({
                 />
             </PopoverTrigger>
             <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                {prompt && <Comment asCard prompt={prompt} params='["", "↺加载中"]'></Comment>}
+                {prompt && <Comment asCard prompt={prompt} params='["", "↺ Loading ..."]'></Comment>}
             </PopoverContent>
         </Popover>
     )

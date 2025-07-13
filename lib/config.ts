@@ -29,12 +29,6 @@ export const fixYourPaperBlogLink = 'https://hello.leximory.com/blog/fix-your-pa
 export const supportedLangs = ['zh', 'en', 'ja', 'nl'] as const
 export type Lang = typeof supportedLangs[number]
 
-export const langMap: Record<Lang, string> = {
-    'zh': '文言文',
-    'en': '英文',
-    'ja': '日文',
-    'nl': '其他'
-} as const
 
 export const planMap: Record<Plan, string> = {
     'beginner': 'Beginner—初学者',
@@ -50,19 +44,7 @@ export const dailyLexicoinClaimMap: Record<Plan, number> = {
     'leximory': 100
 } as const
 
-export const langMaxChunkSizeMap: Record<Lang, number> = {
-    'zh': 700,
-    'en': 5000,
-    'ja': 1000,
-    'nl': 2000
-} as const
 
-export const welcomeMap: Record<Lang, string> = {
-    'zh': '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
-    'en': '{{Welcome!||welcome||Welcome to your new English library!}}',
-    'ja': '{{ようこそ！||ようこそ||新しい日本語ライブラリへようこそ！}}',
-    'nl': '{{Welcome!||welcome||Welcome to your new library!}}'
-} as const
 
 export const libAccessStatusMap = {
     private: 0,
