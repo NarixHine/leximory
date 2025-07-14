@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCopyToClipboard } from 'usehooks-ts'
-import { PiCopy, PiCheck } from 'react-icons/pi'
+import { PiCheck, PiShareNetworkDuotone } from 'react-icons/pi'
 import { Button, type ButtonProps } from '@heroui/button'
 
 export default function ShareButton(props: ButtonProps) {
@@ -32,7 +32,7 @@ export default function ShareButton(props: ButtonProps) {
             startContent={isCopied ? (
                 <PiCheck />
             ) : (
-                <PiCopy />
+                <PiShareNetworkDuotone />
             )}
             isIconOnly
             {...props}

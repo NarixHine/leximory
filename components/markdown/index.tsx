@@ -2,7 +2,7 @@
 
 import Comment from '@/components/comment'
 import wrap, { commentSyntaxRegex } from '@/lib/comment'
-import MarkdownToJSX from 'markdown-to-jsx'
+import MarkdownToJSX, { RuleType } from 'markdown-to-jsx'
 import MdImg from '../ui/mdimg'
 import Audio from './audio'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
 import sanitize from 'sanitize-html'
+import Equation from './equation'
 
 export type MarkdownProps = {
     md: string,
@@ -34,12 +35,12 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     const lang = useAtomValue(langAtom)
 
     const result = hasWrapped ? md.trim() : sanitize(wrap(md.trim(), lexicon))
+        // double space after list markers
+        .replace(/([*-]) \{\{/g, '$1  {{')
         // space handling
         .replaceAll(' {{', '&nbsp;{{')
         .replaceAll('{{', '‎{{')
         .replaceAll('&gt;', '>')
-        // double space after list markers
-        .replace(/([*-]) \{\{/g, '$1  {{')
         // fix erroneous wrapping
         .replaceAll('||}}', '}}')
         .replaceAll('|||', '||')
@@ -50,7 +51,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} shadow={' + (shadow ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments
-        .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?:"。，！？：”])/g, '<Nobr>$1<span>$3</span></Nobr>')
+        .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?:"。，！？：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')
         // replace all instances of :::...::: with the Audio component
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
@@ -73,6 +74,12 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 a: (props) => (<Link {...props} className='underline underline-offset-4' />),
                 hr: () => (<div className='text-center text-2xl mt-5 mb-4'>﹡﹡﹡</div>),
             },
+            renderRule(next, node, _, state) {
+                if (node.type === RuleType.codeBlock && node.lang === 'latex') {
+                    return <Equation text={node.text} key={state.key} />
+                }
+                return next()
+            }
         }}
         style={{
             fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),

@@ -12,7 +12,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import { Skeleton } from "@heroui/skeleton"
 import Form from '../../../../components/form'
-import { Input } from "@heroui/input"
+import { Input, Textarea } from "@heroui/input"
 import { Checkbox } from "@heroui/checkbox"
 import { Select, SelectItem } from "@heroui/select"
 import { create, remove, save, archive, unarchive, unstar } from './actions'
@@ -66,7 +66,7 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred }: {
+function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred, prompt }: {
     id: string,
     name: string,
     access: number,
@@ -76,6 +76,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     shadow: boolean,
     price: number,
     archived: boolean,
+    prompt?: string,
 }) {
     const compact = shadow || archived
 
@@ -91,12 +92,14 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         name: string,
         access: boolean,
         price: number,
+        prompt?: string,
     }>({
         defaultValues: {
             id,
             name,
             access: access === libAccessStatusMap.public,
             price,
+            prompt,
         }
     })
 
@@ -236,7 +239,8 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     register('price').onChange({ target: { value: e } })
                 }} />
             </div>
-            <p className='text-xs opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
+            <p className='text-xs text-center opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
+            <Textarea label='Talk to Your Library 默认提示词' placeholder='在文本界面唤起 AI 对话时的初始提示词。'  {...register('prompt')} />
         </Form>
     </motion.div>)
 }

@@ -9,11 +9,11 @@ export const metadata: Metadata = {
     description: '与 AI 聊天，自动化操作文库',
 }
 
-export default async function ChatPage({ searchParams }: { searchParams: Promise<{ prompt: string }> }) {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ prompt: string | undefined }> }) {
     const plan = await getPlan()
     const { prompt } = await searchParams
 
     return <HydrationBoundary hydrateAtoms={[[isReadOnlyAtom, true]]}>
-        <ChatInterface plan={plan} initialPromptIndex={prompt ? parseInt(prompt) : null} />
+        <ChatInterface plan={plan} initialPromptIndex={prompt ? parseInt(prompt) : null} shouldOpenNew={!!prompt} />
     </HydrationBoundary>
 } 

@@ -71,7 +71,7 @@ export async function unstarLib({ lib, userId }: { lib: string, userId: string }
         .eq('id', lib)
 }
 
-export async function updateLib({ id, access, name, org, price }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number }) {
+export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number, prompt?: string }) {
     await supabase
         .from('libraries')
         .update({
@@ -79,6 +79,7 @@ export async function updateLib({ id, access, name, org, price }: { id: string, 
             name,
             access,
             price,
+            prompt,
         })
         .eq('id', id)
 
@@ -198,12 +199,12 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
 
     const { data } = await supabase
         .from('libraries')
-        .select('id, name, lang, owner, price, shadow, access, org, starred_by')
+        .select('id, name, lang, owner, price, shadow, access, org, starred_by, prompt')
         .or(filters)
         .throwOnError()
 
     return data.map(lib => ({
-        lib: pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org']),
+        lib: pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt']),
         isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
     }))
 }

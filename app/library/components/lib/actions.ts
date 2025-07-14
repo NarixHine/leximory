@@ -14,12 +14,13 @@ const saveValidator = z.object({
     access: z.boolean(),
     org: z.string().optional(),
     price: z.coerce.number().nonnegative().max(100),
+    prompt: z.string().optional(),
 })
 
 export async function save(data: z.infer<typeof saveValidator>) {
-    const { id, name, access, org, price } = saveValidator.parse(data)
+    const { id, name, access, org, price, prompt } = saveValidator.parse(data)
     await authWriteToLib(id)
-    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null, price })
+    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null, price, prompt })
     return {
         name,
         access,

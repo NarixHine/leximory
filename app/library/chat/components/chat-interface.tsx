@@ -428,7 +428,7 @@ const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({ messages }: { messages: Message[] }) => <>{messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}</>
 
-export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan, initialPromptIndex: number | null }) {
+export default function ChatInterface({ plan, initialPromptIndex, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -461,20 +461,27 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                 fileInputRef.current.value = ''
             }
         },
-        initialInput: initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined
+        initialInput: initialInput ?? (initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined)
     })
+    const [isFirstConversation, setIsFirstConversation] = useState(true)
 
     useEffect(() => {
         if (messages.length > 0) {
             setStoredMessages(messages)
         }
     }, [messages])
+    useEffect(() => {
+        if (shouldOpenNew) {
+            startNewConversation(initialInput)
+        }
+    }, [shouldOpenNew])
 
-    const startNewConversation = () => {
+    const startNewConversation = (initialInput?: string) => {
         setStoredMessages([])
         setMessages([])
-        setInput('')
+        setInput(isFirstConversation ? initialInput ?? '' : '')
         setData([])
+        setIsFirstConversation(false)
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -533,7 +540,7 @@ export default function ChatInterface({ plan, initialPromptIndex }: { plan: Plan
                         color='primary'
                         variant='light'
                         startContent={<PiPlusCircleDuotone />}
-                        onPress={startNewConversation}
+                        onPress={() => startNewConversation()}
                     >
                         开始新对话
                     </Button>

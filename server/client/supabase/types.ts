@@ -81,6 +81,7 @@ export type Database = {
           org: string | null
           owner: string
           price: number
+          prompt: string | null
           shadow: boolean
           starred_by: string[] | null
           updated_at: string | null
@@ -94,6 +95,7 @@ export type Database = {
           org?: string | null
           owner: string
           price?: number
+          prompt?: string | null
           shadow?: boolean
           starred_by?: string[] | null
           updated_at?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           org?: string | null
           owner?: string
           price?: number
+          prompt?: string | null
           shadow?: boolean
           starred_by?: string[] | null
           updated_at?: string | null

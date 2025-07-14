@@ -7,8 +7,8 @@ import { motion } from 'framer-motion'
 import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone, PiCheckSquare, PiSquare } from 'react-icons/pi'
 import { useTransitionRouter } from 'next-view-transitions'
 import { useTransition } from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
-import { libAtom, visitedTextsAtom } from '../../atoms'
+import { useAtomValue } from 'jotai'
+import { langAtom, libAtom, visitedTextsAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
@@ -16,11 +16,12 @@ import { Input } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { getArticleFromUrl } from '@/lib/utils'
 import { useState } from 'react'
-import { isLoadingAtom } from '../../[text]/atoms'
 import isUrl from 'is-url'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
 import { momentSH } from '@/lib/moment'
+import { getLanguageStrategy } from '@/lib/languages'
+import { toast } from 'sonner'
 
 function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation }: {
     id: string,
@@ -72,7 +73,7 @@ export function AddTextButton() {
     const [isImporting, startImporting] = useTransition()
     const [url, setUrl] = useState('')
     const [title, setTitle] = useState('')
-    const setIsLoading = useSetAtom(isLoadingAtom)
+    const lang = useAtomValue(langAtom)
 
     return <>
         <Card className='w-full opacity-60 bg-transparent' isPressable shadow='sm' onPress={onOpen}>
@@ -106,7 +107,10 @@ export function AddTextButton() {
                             <Button variant='solid' isDisabled={!isUrl(url)} startContent={!isImporting && <PiAirplaneInFlightDuotone className='text-xl' />} color='primary' isLoading={isImporting} onPress={() => {
                                 startImporting(async () => {
                                     const { title, content } = await getArticleFromUrl(url)
-                                    setIsLoading(true)
+                                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
+                                        toast.error('文章内容过长或解析失败，请手动录入')
+                                        return
+                                    }
                                     const id = await addAndGenerate({ title, content, lib })
                                     router.push(`/library/${lib}/${id}`)
                                 })

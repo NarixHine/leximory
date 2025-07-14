@@ -104,7 +104,7 @@ export async function getTexts({ lib }: { lib: string }) {
 export async function getTextContent({ id }: { id: string }) {
     'use cache'
     cacheTag(`texts:${id}`)
-    const { data: text } = await supabase
+    const { data: text, error } = await supabase
         .from('texts')
         .select(`
             content,
@@ -114,18 +114,21 @@ export async function getTextContent({ id }: { id: string }) {
             lib:libraries (
                 id,
                 name,
-                lang
+                lang,
+                prompt
             )
         `)
         .eq('id', id)
-        .single()
-        .throwOnError()
+        .limit(1)
 
-    if (!text) {
+    if (error) throw error
+
+    if (!text || text.length === 0) {
         notFound()
     }
 
-    const { content, has_ebook, title, topics, lib } = text
+    const { content, has_ebook, title, topics, lib } = text[0]
+    const prompt = lib?.prompt ?? ''
     if (!lib) {
         throw new Error('lib not found')
     }
@@ -134,9 +137,9 @@ export async function getTextContent({ id }: { id: string }) {
             .from('user-files')
             .createSignedUrl(`ebooks/${id}.epub`, 60 * 60 * 24 * 30)
         if (error) throw error
-        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang } }
+        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang } }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {

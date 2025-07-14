@@ -87,12 +87,12 @@ export const annotateFullArticle = inngest.createFunction(
     async ({ step, event }) => {
         const { article, textId, onlyComments, userId } = event.data
 
-        const { libId, lang } = await step.run('get-lib-id', async () => {
-            return await getLibIdAndLangOfText({ id: textId })
-        })
-
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
+        })
+
+        const { libId, lang } = await step.run('get-lib-id', async () => {
+            return await getLibIdAndLangOfText({ id: textId })
         })
 
         const chunks = chunkText(article, getLanguageStrategy(lang).maxChunkSize)
@@ -140,6 +140,5 @@ export const annotateFullArticle = inngest.createFunction(
                 user: { uid: userId }
             })
         }
-
     }
 )
