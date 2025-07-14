@@ -71,7 +71,7 @@ export async function unstarLib({ lib, userId }: { lib: string, userId: string }
         .eq('id', lib)
 }
 
-export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number, prompt?: string }) {
+export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number, prompt?: string | null }) {
     await supabase
         .from('libraries')
         .update({

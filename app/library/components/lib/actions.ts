@@ -14,7 +14,7 @@ const saveValidator = z.object({
     access: z.boolean(),
     org: z.string().optional(),
     price: z.coerce.number().nonnegative().max(100),
-    prompt: z.string().optional(),
+    prompt: z.string().optional().nullable(),
 })
 
 export async function save(data: z.infer<typeof saveValidator>) {

@@ -76,7 +76,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     shadow: boolean,
     price: number,
     archived: boolean,
-    prompt?: string,
+    prompt?: string | null,
 }) {
     const compact = shadow || archived
 
@@ -92,7 +92,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         name: string,
         access: boolean,
         price: number,
-        prompt?: string,
+        prompt?: string | null,
     }>({
         defaultValues: {
             id,
