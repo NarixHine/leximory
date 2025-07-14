@@ -8,6 +8,8 @@ export default async function TheTimes() {
     const [recentData, isFullScreen] = await Promise.all([await getRecentTimesData(), await isAtRead()])
 
     return <main className={cn('h-dvh w-full', isFullScreen ? 'p-0' : 'p-4')}>
-        <Provider isFullScreen={isFullScreen}><Panel recentData={recentData} /></Provider>
+        <Provider isFullScreen={isFullScreen}>
+            <Panel recentData={recentData} />
+        </Provider>
     </main>
 }

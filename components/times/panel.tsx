@@ -109,7 +109,7 @@ function TimesContent() {
         return <TimesContentSkeleton />
     }
 
-    const { cover, news, novel, quiz, date, audio } = data
+    const { cover, news, novel, quiz, date, audio, is_sequel } = data
 
     return (
         <article className='m-6 md:px-4 md:my-12 max-w-[680px] prose-lg prose dark:prose-invert'>
@@ -124,7 +124,7 @@ function TimesContent() {
                 <Image src={cover} alt='Daily cover' fill sizes='600px' className='object-cover object-center rounded-2xl' />
             </div>
             <Accordion>
-                <AccordionItem title='Daily Novel' classNames={{
+                <AccordionItem title={`Daily Novel${is_sequel ? ' (Sequel)' : ''}`} classNames={{
                     base: '-mb-8 -mt-10',
                     title: 'text-xl',
                     heading: 'mb-0'
@@ -132,7 +132,7 @@ function TimesContent() {
                     <Markdown
                         className='prose-lg'
                         fontFamily={ENGLISH_SERIF.style.fontFamily}
-                        md={`${novel} ■`}
+                        md={`${is_sequel ? `*The Daily Novel today is a sequel to the one published [yesterday](/times?date=${momentSH(date).subtract(1, 'day').format('YYYY-MM-DD')}). (There is a 10% chance for every Daily Novel to be a sequel to the one before it.)*\n\n` : ''}${novel} ■`}
                     />
                 </AccordionItem>
             </Accordion>

@@ -10,6 +10,7 @@ export interface TimesData extends TimesSummaryData {
     news: string
     audio: string | null
     quiz: QuizData | null
+    is_sequel: boolean
 }
 
 export interface TimesDataWithRaw extends TimesData {

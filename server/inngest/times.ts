@@ -259,39 +259,61 @@ export const generateTimes = inngest.createFunction(
         })
 
         // Step 2: Get yesterday's data
-        const { novelYesterday, newsYesterday, newsThreeDaysAgo } = await step.run('get-previous-gen', async () => {
+        const { novelYesterday, newsYesterday, newsThreeDaysAgo, yesterdayWasSequel } = await step.run('get-previous-gen', async () => {
             const threeDaysAgo = momentSH(date).subtract(3, 'days').format('YYYY-MM-DD')
             const yesterday = momentSH(date).subtract(1, 'days').format('YYYY-MM-DD')
 
             try {
                 const newsThreeDaysAgo = await getRawNewsByDate(threeDaysAgo)
                 const newsYesterday = await getRawNewsByDate(yesterday)
-                const { novel: novelYesterday } = await getTimesDataByDate(yesterday)
-                return { novelYesterday, newsYesterday, newsThreeDaysAgo }
+                const { novel: novelYesterday, is_sequel } = await getTimesDataByDate(yesterday)
+                return { novelYesterday, newsYesterday, newsThreeDaysAgo, yesterdayWasSequel: is_sequel }
             } catch (error) {
                 logger.error(error)
                 return {
                     novelYesterday: 'No novel yesterday.',
                     newsThreeDaysAgo: 'No news three days ago.',
-                    newsYesterday: 'No news yesterday.'
+                    newsYesterday: 'No news yesterday.',
+                    yesterdayWasSequel: false
                 }
             }
         })
 
-        // Step 3: Generate editor's guide
+        // Step 3: Decide if today's novel is a sequel
+        const { isSequel, editorPromptExtension } = await step.run('decide-if-sequel', async () => {
+            const shouldBeSequel = !yesterdayWasSequel && Math.random() < 0.1 // 10% chance to be a sequel and no consecutive sequels
+            if (shouldBeSequel) {
+                return {
+                    isSequel: true,
+                    editorPromptExtension: `
+                    It MUST be a sequel to yesterday's novel, which is provided below for your reference.
+
+                    Continue the plot, characters, and themes from where it left off. Make sure the story flows naturally as a continuation, but it should also introduce fresh developments.
+                    `.trim()
+                }
+            }
+            return {
+                isSequel: false,
+                editorPromptExtension: `
+                Write today's editor's guide that is TOTALLY DIFFERENT from yesterday's novel and feels fresh. Name characters in an unclichéd way. 
+                
+                You MUST PICK one genre from below for today's novel: ${randomGenres}.
+                `.trim()
+            }
+        })
+
+        // Step 4: Generate editor's guide
         const { text: editorGuide } = await step.ai.wrap('generate-editor-guide', generateText, {
             model: googleModels['pro-2.5'],
             system: EDITOR_GUIDE_PROMPT,
-            prompt: `Write today's editor's guide that is TOTALLY DIFFERENT from yesterday's novel and feels fresh. Name characters in an unclichéd way.
-            
-            You MUST PICK one genre from below for today's novel: ${randomGenres}. 
+            prompt: `${editorPromptExtension}
             
             Yesterday's novel: ${novelYesterday}.`,
             maxTokens: 4000,
             temperature: 1.2
         })
 
-        // Step 4: Generate novel
+        // Step 5: Generate novel
         const { text: novel } = await step.ai.wrap('generate-novel', generateText, {
             model: googleModels['pro-2.5'],
             system: NOVEL_PROMPT,
@@ -300,12 +322,12 @@ export const generateTimes = inngest.createFunction(
             temperature: 1
         })
 
-        // Step 5: Annotate novel
+        // Step 6: Annotate novel
         const annotatedNovel = await step.run('annotate-novel', async () => {
             return await annotateParagraph({ content: novel, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 
-        // Step 6: Generate daily news
+        // Step 7: Generate daily news
         const { text: news } = await step.ai.wrap('generate-news', generateText, {
             model: googleModels['pro-2.5-search'],
             system: NEWS_PROMPT,
@@ -314,12 +336,12 @@ export const generateTimes = inngest.createFunction(
             temperature: 0.8
         })
 
-        // Step 6: Annotate news
+        // Step 8: Annotate news
         const annotatedNews = await step.run('annotate-news', async () => {
             return await annotateParagraph({ content: news, lang: 'en', userId: ADMIN_UID, autoTrim: false })
         })
 
-        // Step 7: Generate audio for news and upload to Supabase
+        // Step 9: Generate audio for news and upload to Supabase
         const audioResult = await step.run('generate-audio-for-news', async () => {
             const { voice, options } = elevenLabsVoiceConfig['BrE']
 
@@ -339,7 +361,7 @@ export const generateTimes = inngest.createFunction(
             }
         })
 
-        // Step 8: Generate quiz based on news from three days ago
+        // Step 10: Generate quiz based on news from three days ago
         const quiz = await step.run('generate-quiz-from-three-days-ago', async () => {
             if (!newsThreeDaysAgo) {
                 return null
@@ -352,7 +374,7 @@ export const generateTimes = inngest.createFunction(
             return JSON.stringify(quiz)
         })
 
-        // Step 9: Generate image prompt
+        // Step 11: Generate image prompt
         const { text: imagePrompt } = await step.ai.wrap('generate-image-prompt', generateText, {
             model: googleModels['flash-2.5'],
             system: IMAGE_PROMPT,
@@ -365,7 +387,7 @@ export const generateTimes = inngest.createFunction(
             temperature: 0.5
         })
 
-        // Step 10: Generate and upload image
+        // Step 12: Generate and upload image
         const imageUrl = await step.run('generate-and-upload-image', async () => {
             const { image } = await generateImage({
                 model: googleModels['image-gen'],
@@ -375,7 +397,7 @@ export const generateTimes = inngest.createFunction(
             return await uploadTimesImage(date, image)
         })
 
-        // Step 11: Save to Supabase
+        // Step 13: Save to Supabase
         await step.run('save-to-supabase', async () => {
             const res = await publishTimes({
                 novel: annotatedNovel,
@@ -384,7 +406,8 @@ export const generateTimes = inngest.createFunction(
                 quiz: quiz ? JSON.parse(quiz) : null,
                 date,
                 raw_news: news,
-                audio: audioResult.audio
+                audio: audioResult.audio,
+                is_sequel: isSequel
             })
             revalidateTag('times')
             return res

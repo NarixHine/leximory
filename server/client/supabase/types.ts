@@ -194,6 +194,7 @@ export type Database = {
           created_at: string
           date: string
           id: number
+          is_sequel: boolean
           news: string
           novel: string
           quiz: Json | null
@@ -205,6 +206,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: number
+          is_sequel?: boolean
           news: string
           novel: string
           quiz?: Json | null
@@ -216,6 +218,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: number
+          is_sequel?: boolean
           news?: string
           novel?: string
           quiz?: Json | null
