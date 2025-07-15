@@ -57,7 +57,7 @@ export default function RegenerateTimesQuizButton() {
                         <div className='space-y-4'>
                             <DatePicker
                                 label='Select Date'
-                                value={date}
+                                value={date as DateValue}
                                 onChange={setDate}
                             />
                             {message && (
