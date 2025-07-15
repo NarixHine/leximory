@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardBody, CardFooter } from "@heroui/card"
+import { CardBody, CardFooter } from "@heroui/card"
 import { contentFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
