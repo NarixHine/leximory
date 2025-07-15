@@ -1,6 +1,7 @@
 'use client'
 
-import { Button, Card, Slider } from '@heroui/react'
+import { Button, Slider } from '@heroui/react'
+import FlatCard from '@/components/ui/flat-card'
 import { useEffect, useRef, useState } from 'react'
 import { PiPause, PiPlay, PiSpeakerHigh, PiSpeakerSlash } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
@@ -84,7 +85,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
     }
 
     return (
-        <Card shadow='none' className={cn('w-full bg-transparent p-2 border border-foreground')}>
+        <FlatCard className={cn('w-full')}>
             {src && <audio
                 ref={audioRef}
                 src={src}
@@ -137,7 +138,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                     }
                 />
             </div>
-        </Card>
+        </FlatCard>
     )
 }
 
