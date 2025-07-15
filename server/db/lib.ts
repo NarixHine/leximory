@@ -163,7 +163,7 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
 export async function getLib({ id }: { id: string }) {
     const { data } = await supabase
         .from('libraries')
-        .select('id, name, lang, org, access, owner, starred_by')
+        .select('id, name, lang, org, access, owner, starred_by, shadow')
         .eq('id', id)
         .single()
         .throwOnError()

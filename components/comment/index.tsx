@@ -36,6 +36,7 @@ interface CommentProps {
     onlyComments?: boolean
     print?: boolean
     shadow?: boolean
+    className?: string
 }
 
 interface CommentState {
@@ -44,7 +45,7 @@ interface CommentState {
     savedId: string | null
 }
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, shadow }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className }: CommentProps) {
     const router = useRouter()
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
@@ -213,7 +214,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <Card shadow={shadow ? 'sm' : 'none'} fullWidth radius='sm'>
+        ? <Card fullWidth radius='sm' shadow='none' className={className}>
             <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>

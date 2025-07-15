@@ -149,7 +149,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         lang={lib.lang}
                         isOwner={false}
                         access={lib.access}
-                        shadow={false}
+                        shadow={lib.shadow}
                         price={0}
                         archived
                         isStarred={false}
