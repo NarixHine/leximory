@@ -62,6 +62,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
     return (<div className='w-full h-full relative'>
         {disableNavigation
             ? <FlatCard background='solid' fullWidth className={'h-full'}><CardInnerContent /></FlatCard>
+            // @ts-expect-error: href is a valid prop for Link
             : <FlatCard background='solid' fullWidth className={'h-full'} as={Link} href={`/library/${lib}/${id}`} isPressable prefetch={!disablePrefetch}><CardInnerContent /></FlatCard>
         }
     </div>)
