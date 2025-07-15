@@ -32,7 +32,11 @@ const nextConfig: NextConfig = {
     async redirects() {
         return [{
             source: '/try',
-            destination: '/read',
+            destination: '/times',
+            permanent: true,
+        }, {
+            source: '/read',
+            destination: '/times',
             permanent: true,
         }, {
             source: '/fix',
