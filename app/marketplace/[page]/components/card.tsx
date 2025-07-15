@@ -10,6 +10,7 @@ import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/spacer'
 import BuyLibrary from '@/components/buy-library'
+import FlatCard from '@/components/ui/flat-card'
 
 interface LibraryCardProps {
     library: {
@@ -29,8 +30,8 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
     const router = useRouter()
 
     return (
-        <Card
-            shadow='sm'
+        <FlatCard
+            background='solid'
             radius='sm'
             onPress={() => {
                 router.push(`/library/${library.id}`)
@@ -54,7 +55,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                     avatar={avatar}
                 />
             </CardFooter>}
-        </Card>
+        </FlatCard>
     )
 }
 

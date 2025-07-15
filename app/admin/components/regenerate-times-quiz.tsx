@@ -15,11 +15,11 @@ import {
     useDisclosure
 } from '@heroui/modal'
 import { DatePicker } from '@heroui/date-picker'
-import { parseDate, CalendarDate } from '@internationalized/date'
+import { parseDate, DateValue } from '@internationalized/date'
 
 export default function RegenerateTimesQuizButton() {
     const [message, setMessage] = useState('')
-    const [date, setDate] = useState<CalendarDate | null>(parseDate(momentSH().format('YYYY-MM-DD')))
+    const [date, setDate] = useState<DateValue | null>(parseDate(momentSH().format('YYYY-MM-DD')))
     const [isPending, startTransition] = useTransition()
     const { isOpen, onOpenChange, onOpen, onClose } = useDisclosure()
 

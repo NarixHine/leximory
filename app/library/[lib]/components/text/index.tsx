@@ -22,6 +22,7 @@ import Link from "next/link"
 import { momentSH } from '@/lib/moment'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
+import FlatCard from '@/components/ui/flat-card'
 
 function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation }: {
     id: string,
@@ -38,7 +39,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
 
     const CardInnerContent = () => (
         <>
-            <CardBody className='flex flex-col gap-1 px-7 py-6'>
+            <CardBody className='flex flex-col gap-1 px-5 py-4'>
                 <h2 className={'text-2xl text-balance'} style={{
                     fontFamily: contentFontFamily
                 }}>{title}</h2>
@@ -60,8 +61,8 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
 
     return (<div className='w-full h-full relative'>
         {disableNavigation
-            ? <Card shadow='sm' fullWidth className={'h-full'}><CardInnerContent /></Card>
-            : <Card shadow='sm' fullWidth className={'h-full'} as={Link} href={`/library/${lib}/${id}`} isPressable prefetch={!disablePrefetch}><CardInnerContent /></Card>
+            ? <FlatCard background='solid' fullWidth className={'h-full'}><CardInnerContent /></FlatCard>
+            : <FlatCard background='solid' fullWidth className={'h-full'} as={Link} href={`/library/${lib}/${id}`} isPressable prefetch={!disablePrefetch}><CardInnerContent /></FlatCard>
         }
     </div>)
 }
@@ -76,7 +77,7 @@ export function AddTextButton() {
     const lang = useAtomValue(langAtom)
 
     return <>
-        <Card className='w-full opacity-60 bg-transparent' isPressable shadow='sm' onPress={onOpen}>
+        <FlatCard className='w-full opacity-60 bg-transparent border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
             <CardBody className='px-6 pt-5 flex items-center justify-center overflow-hidden'>
                 <motion.div
                     initial={{ scale: 0.8 }}
@@ -87,7 +88,7 @@ export function AddTextButton() {
                     <PiFilePlusDuotone />
                 </motion.div>
             </CardBody>
-        </Card>
+        </FlatCard>
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
             <DrawerContent>
                 <DrawerHeader className='flex flex-col gap-1'>创建文章</DrawerHeader>

@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
 import Topics from '../../[lib]/[text]/components/topics'
+import FlatCard from '@/components/ui/flat-card'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -114,11 +115,11 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         transition={{ duration: 1 }}
     >
         {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
-        <Card fullWidth shadow='sm' as={'div'} isPressable onPress={() => {
+        <FlatCard fullWidth background='solid' as={'div'} isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
             {compact
-                ? <CardBody className='px-5 py-4 flex flex-row items-center gap-3'>
+                ? <CardBody className='px-3 py-2 flex flex-row items-center gap-3'>
                     <div className='text-2xl' style={{
                         fontFamily: contentFontFamily
                     }}>{name}</div>
@@ -202,7 +203,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     }}
                 ></Button>
             </CardFooter>}
-        </Card>
+        </FlatCard>
 
         <Form
             actionButton={<Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} onPress={() => {
@@ -257,7 +258,7 @@ export function LibraryAddButton() {
     })
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     return <>
-        <Card className='w-full opacity-60 bg-transparent' isPressable shadow='sm' onPress={onOpen}>
+        <FlatCard className='w-full opacity-60 bg-transparent border-none' isPressable onPress={onOpen}>
             <CardBody className='px-6 pt-5 overflow-hidden'>
                 <motion.div
                     initial={{ scale: 0.8 }}
@@ -266,7 +267,7 @@ export function LibraryAddButton() {
                     whileHover={{ scale: 1.1, rotate: 10 }}
                     className='text-7xl h-20 text-slate-700 dark:text-slate-200 flex items-center justify-center rounded-lg'><PiFolderPlusDuotone /></motion.div>
             </CardBody>
-        </Card>
+        </FlatCard>
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}
