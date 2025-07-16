@@ -17,6 +17,10 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { getUserOrThrow } from '@/server/auth/user'
 import AdminDashboardLink from './components/dashboard-link'
+import UserAvatar from '@/components/avatar'
+import { exampleSharedLib } from '@/lib/config'
+import LibraryCard from '../marketplace/[page]/components/card'
+import { contentFontFamily } from '@/lib/fonts'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -105,7 +109,7 @@ async function LibraryList({ userId, orFilter }: {
         <div className='flex flex-col gap-4 w-full'>
             <ConfirmUnstarRoot />
             <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
-                {normalLibs.map(({ lib, isStarred }) => lib && (
+                {normalLibs.length > 0 ? normalLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={false}
@@ -119,7 +123,24 @@ async function LibraryList({ userId, orFilter }: {
                         archived={false}
                         prompt={lib.prompt}
                     />
-                ))}
+                )) : <div className='flex flex-col min-[540px]:flex-row items-center gap-4 h-full justify-center'>
+                    <div>
+                        <LibraryCard
+                            isOwner={false}
+                            avatar={<UserAvatar uid={exampleSharedLib.owner} />}
+                            library={{
+                                ...exampleSharedLib,
+                                readers: undefined,
+                            }}
+                            isStarred={false}
+                        />
+                    </div>
+                    <p
+                        style={{ fontFamily: contentFontFamily }}
+                        className='text-center text-2xl font-bold max-w-60 text-balance text-default-500'>
+                        暂无文库，不妨先看看 Leximory 精选外刊
+                    </p>
+                </div>}
             </section>
             {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-300 rounded-lg md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm')}>
                 {compactLibs.map(({ lib, isStarred }) => lib && (

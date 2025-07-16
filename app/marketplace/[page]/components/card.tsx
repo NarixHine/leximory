@@ -19,7 +19,7 @@ interface LibraryCardProps {
         name: string
         lang: Lang
         price: number
-        readers: number
+        readers?: number
     }
     isStarred: boolean
     avatar: ReactNode
@@ -43,7 +43,9 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter, is
                     <H disableCenter className='text-2xl'>{library.name}</H>
                     <Spacer y={1} />
                     <span className={cn('text-sm opacity-60')}>语言：{getLanguageStrategy(library.lang).name}</span>
-                    <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
+                    {library.readers && (
+                        <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
+                    )}
                 </div>
             </CardBody>
 
