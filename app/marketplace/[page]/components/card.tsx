@@ -43,7 +43,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter, is
                     <H disableCenter className='text-2xl'>{library.name}</H>
                     <Spacer y={1} />
                     <span className={cn('text-sm opacity-60')}>语言：{getLanguageStrategy(library.lang).name}</span>
-                    {library.readers && (
+                    {typeof library.readers === 'number' && (
                         <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
                     )}
                 </div>
