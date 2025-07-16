@@ -39,6 +39,7 @@ export default async function PublicLibraries({ uid }: { uid: string }) {
                     price: lib.price,
                     readers: lib.starredBy?.length ?? 0
                 }}
+                isOwner={lib.owner === userId}
                 isStarred={lib.isStarred}
                 avatar={<UserAvatar uid={lib.owner} />}
             />
