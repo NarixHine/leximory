@@ -151,6 +151,7 @@ export default async function Home() {
 				<div className='col-span-1'>
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
+							isOwner={false}
 							avatar={<UserAvatar uid={exampleSharedLib.owner} />}
 							library={exampleSharedLib}
 							isStarred={false}
