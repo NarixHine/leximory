@@ -8,12 +8,13 @@ import { PiCoinsDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, avatar }: {
+export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, avatar, isOwner }: {
     price: number
     id: string
     isStarred: boolean,
     navigateAfterPurchase?: boolean
-    avatar: ReactNode
+    avatar: ReactNode,
+    isOwner?: boolean
 }) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
@@ -22,7 +23,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
         <Button
             as={'div'}
             size='sm'
-            isDisabled={isStarred}
+            isDisabled={isStarred || isOwner}
             isLoading={isTransitioning}
             startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
             color='primary'

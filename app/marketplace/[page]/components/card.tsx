@@ -2,7 +2,7 @@
 
 import { Lang } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
-import { Card, CardBody, CardFooter } from "@heroui/card"
+import { CardBody, CardFooter } from "@heroui/card"
 import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
 import { ReactNode } from 'react'
@@ -24,15 +24,15 @@ interface LibraryCardProps {
     isStarred: boolean
     avatar: ReactNode
     hideFooter?: boolean
+    isOwner: boolean
 }
 
-export default function LibraryCard({ library, isStarred, avatar, hideFooter }: LibraryCardProps) {
+export default function LibraryCard({ library, isStarred, avatar, hideFooter, isOwner }: LibraryCardProps) {
     const router = useRouter()
 
     return (
         <FlatCard
             background='solid'
-            radius='sm'
             onPress={() => {
                 router.push(`/library/${library.id}`)
             }}
@@ -53,6 +53,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
                     id={library.id}
                     price={library.price}
                     avatar={avatar}
+                    isOwner={isOwner}
                 />
             </CardFooter>}
         </FlatCard>
@@ -61,21 +62,21 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter }: 
 
 export function LibraryCardSkeleton() {
     return (
-        <Card
-            shadow='sm'
-            radius='sm'
+        <FlatCard
+            background='solid'
         >
             <CardBody className='p-5'>
-                <div className='space-y-2'>
+                <div className='space-y-4'>
                     <Skeleton className='rounded-lg h-8 w-3/4' />
-                    <Skeleton className='rounded-lg h-6 w-1/3' />
+                    <Skeleton className='rounded-lg h-4 w-1/3' />
+                    <Skeleton className='rounded-lg h-4 w-1/3' />
                 </div>
             </CardBody>
 
-            <CardFooter className='flex justify-end gap-2 pb-4 pr-4'>
-                <Skeleton className='rounded-full size-7' />
-                <Skeleton className='rounded-lg h-6 w-16' />
+            <CardFooter className='flex justify-end pb-4 pr-4'>
+                <Skeleton className='rounded-lg h-6 w-20 -mr-2' />
+                <Skeleton className='rounded-full size-10' />
             </CardFooter>
-        </Card>
+        </FlatCard>
     )
 }

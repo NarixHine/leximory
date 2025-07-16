@@ -4,7 +4,6 @@ import { HeroUIProvider } from "@heroui/system"
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
 import { ReactNode } from 'react'
-import { ms } from 'itty-time'
 import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -25,7 +24,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 			<JotaiProvider>
 				<Toaster toastOptions={{
 					classNames: {
-						toast: cn('!text-default-900 !bg-stone-50 !dark:!bg-stone-800 !dark:text-default-100 !border !border-stone-300 !dark:!border-stone-600 !shadow-none', CHINESE.className),
+						toast: cn('!text-default-900 !bg-stone-50 !dark:!bg-stone-800 !dark:!text-default-100 !border !border-stone-300 !dark:!border-stone-600 !shadow-none', CHINESE.className),
 					},
 				}}></Toaster>
 				<QueryProvider>
@@ -36,14 +35,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 	</HeroUIProvider>)
 }
 
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: ms('5 minutes'),
-			gcTime: ms('10 minutes'),
-		},
-	},
-})
+const queryClient = new QueryClient()
 
 function QueryProvider({ children }: { children: ReactNode }) {
 	return (

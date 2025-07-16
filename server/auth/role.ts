@@ -3,7 +3,24 @@ import { getUserOrThrow } from './user'
 import { ADMIN_UID, Lang, libAccessStatusMap } from '../../lib/config'
 import { supabase } from '@/server/client/supabase'
 
-// auth admin access
+/**
+ * Role-based access control utilities for Leximory application.
+ * Provides authentication and authorization functions for admin access,
+ * library operations, and text content management.
+ */
+
+// =============================================================================
+// Admin Access Control
+// =============================================================================
+
+/**
+ * Ensures the current user has admin privileges.
+ * @throws {Error} If user is not authenticated or not an admin
+ * @example
+ * ```typescript
+ * await requireAdmin(); // Throws if not admin
+ * ```
+ */
 export async function requireAdmin() {
     const user = await getUserOrThrow()
     if (user.userId !== ADMIN_UID) {
@@ -11,8 +28,23 @@ export async function requireAdmin() {
     }
 }
 
-// auth access to libs
+// =============================================================================
+// Library Access Control
+// =============================================================================
 
+/**
+ * Authorizes write access to a library and returns library metadata.
+ * Only the library owner can perform write operations.
+ * 
+ * @param lib - The library ID to check access for
+ * @param explicitUserId - Optional user ID to check (defaults to current user)
+ * @returns Promise resolving to library language configuration
+ * @throws {Error} If library not found or user lacks write access
+ * @example
+ * ```typescript
+ * const { lang } = await authWriteToLib('lib-123');
+ * ```
+ */
 export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
     const { userId } = explicitUserId ? { userId: explicitUserId } : await getUserOrThrow()
 
@@ -30,6 +62,20 @@ export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
     return { lang: rec.lang as Lang }
 }
 
+/**
+ * Authorizes read access to a library and returns comprehensive metadata.
+ * Access is granted to:
+ * - Library owner (full access)
+ * - Users who have starred public libraries (read-only)
+ * 
+ * @param lib - The library ID to check access for
+ * @returns Promise resolving to library metadata with access information
+ * @throws {Error} If library not found or user lacks read access
+ * @example
+ * ```typescript
+ * const { isReadOnly, lang, name } = await authReadToLib('lib-123');
+ * ```
+ */
 export const authReadToLib = async (lib: string) => {
     const { userId } = await getUserOrThrow()
 
@@ -59,6 +105,19 @@ export const authReadToLib = async (lib: string) => {
     }
 }
 
+/**
+ * Retrieves library metadata without throwing on access denial.
+ * This is a non-throwing variant that returns data even if user lacks access.
+ * Useful for displaying library information in UI contexts.
+ * 
+ * @param lib - The library ID to retrieve data for
+ * @returns Promise resolving to library metadata with star status
+ * @throws {Error} Only on database errors, not access issues
+ * @example
+ * ```typescript
+ * const { isStarred, name } = await authReadToLibWithoutThrowing('lib-123');
+ * ```
+ */
 export const authReadToLibWithoutThrowing = async (lib: string) => {
     const { userId } = await getUserOrThrow()
 
@@ -85,8 +144,22 @@ export const authReadToLibWithoutThrowing = async (lib: string) => {
     }
 }
 
-// auth access to items related to libs
+// =============================================================================
+// Text Access Control
+// =============================================================================
 
+/**
+ * Authorizes write access to a text item and returns full text data.
+ * Only the owner of the parent library can modify text content.
+ * 
+ * @param text - The text ID to check access for
+ * @returns Promise resolving to text record with library information
+ * @throws {Error} If text not found or user lacks write access
+ * @example
+ * ```typescript
+ * const textData = await authWriteToText('text-456');
+ * ```
+ */
 export const authWriteToText = async (text: string) => {
     const { userId } = await getUserOrThrow()
 
@@ -111,6 +184,20 @@ export const authWriteToText = async (text: string) => {
     return rec
 }
 
+/**
+ * Authorizes read access to a text item and returns full text data.
+ * Access is granted to:
+ * - Library owner (full access)
+ * - Any user if the parent library is public
+ * 
+ * @param text - The text ID to check access for
+ * @returns Promise resolving to text record with library information
+ * @throws {Error} If text not found or user lacks read access
+ * @example
+ * ```typescript
+ * const textData = await authReadToText('text-456');
+ * ```
+ */
 export const authReadToText = async (text: string) => {
     const { userId } = await getUserOrThrow()
 
@@ -135,10 +222,29 @@ export const authReadToText = async (text: string) => {
     return rec
 }
 
-// Filter helpers for building queries
+// =============================================================================
+// Query Filter Helpers
+// =============================================================================
 
+/**
+ * Type representing an OR filter configuration for database queries.
+ * Used to build complex access control queries.
+ */
 export type OrFilter = Awaited<ReturnType<typeof isListedFilter>>
 
+/**
+ * Generates filter configuration for listing libraries accessible to current user.
+ * Returns filters that match:
+ * - Libraries owned by the user
+ * - Public libraries that the user has starred
+ * 
+ * @returns Promise resolving to filter configuration object
+ * @example
+ * ```typescript
+ * const { filters, options } = await isListedFilter();
+ * // Use in supabase query: .or(filters, options)
+ * ```
+ */
 export const isListedFilter = async () => {
     const { userId } = await getUserOrThrow()
     return {
