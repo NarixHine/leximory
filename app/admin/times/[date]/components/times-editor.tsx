@@ -207,7 +207,7 @@ export default function TimesEditor({ initialData, date }: TimesEditorProps) {
                             <CardHeader className='pb-4'>
                                 <h3 className='text-lg font-semibold'>Audio</h3>
                             </CardHeader>
-                            <CardBody className='pt-0'>
+                            <CardBody className='pt-0 space-y-3'>
                                 <Input
                                     label='Audio URL (optional)'
                                     value={formData.audio}
