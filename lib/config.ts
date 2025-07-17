@@ -18,7 +18,6 @@ export const exampleSharedLib = {
     lang: 'en',
     owner: '3599113b-8407-46b7-85bc-4f9a1c425c59',
     price: 0,
-    readers: 324
 } as const
 
 export const exampleEbookLink = '/library/1309fe3b/2dd46083' as const
