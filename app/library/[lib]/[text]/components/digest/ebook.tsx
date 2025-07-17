@@ -63,7 +63,6 @@ const MemoizedPopover = memo(function MemoizedPopover({
         <Popover placement='right' isDismissable portalContainer={containerRef.current}>
             <PopoverTrigger>
                 <Button
-                    className='bg-background'
                     color='primary'
                     variant='light'
                     size='lg'
@@ -133,7 +132,7 @@ export default function Ebook() {
                     <Button
                         isIconOnly
                         startContent={<PiFrameCornersDuotone className='text-lg' />}
-                        className='bg-background z-10'
+                        className='z-10'
                         color='primary'
                         variant='light'
                         size='lg'
@@ -150,7 +149,7 @@ export default function Ebook() {
                         startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
                         isLoading={savingBookmark}
                         isDisabled={!bookmark || isReadOnly}
-                        className='bg-background z-10'
+                        className='z-10'
                         color='primary'
                         variant='light'
                         size='lg'

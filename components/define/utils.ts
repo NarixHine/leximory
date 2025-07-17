@@ -37,7 +37,7 @@ export function getBracketedSelection(selection: Selection): string {
         while (node) {
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
-                ((node as Element).tagName === 'DIV' || (node as Element).tagName === 'P')
+                (['DIV', 'P', 'BLOCKQUOTE', 'LI'].includes((node as Element).tagName))
             ) {
                 return node as HTMLParagraphElement
             }
