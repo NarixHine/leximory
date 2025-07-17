@@ -19,7 +19,7 @@ import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
 import { momentSH } from '@/lib/moment'
-import { SYSTEM_PROMPT } from '@/lib/prompt/chat.prompt'
+import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 
 const tools: ToolSet = {
     getLib: {
@@ -130,7 +130,7 @@ const tools: ToolSet = {
                 prompt: `Please extract the main article content from this webpage text. Remove any navigation, ads, headers, footers, or other non-article elements. Return only the clean article content in Markdown format:
 
 ${content}`,
-                maxTokens: 15000
+                maxTokens: 10000,
             })
 
             return { title, content: distilledContent }
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
         messages: [
             {
                 role: 'system',
-                content: SYSTEM_PROMPT
+                content: CHAT_SYSTEM_PROMPT
             },
             ...messages
         ],

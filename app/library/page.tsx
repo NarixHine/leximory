@@ -109,7 +109,7 @@ async function LibraryList({ userId, orFilter }: {
         <div className='flex flex-col gap-4 w-full'>
             <ConfirmUnstarRoot />
             <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
-                {normalLibs.length > 0 ? normalLibs.map(({ lib, isStarred }) => lib && (
+                {normalLibs.concat(compactLibs).length > 0 ? normalLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}
                         shadow={false}

@@ -180,10 +180,10 @@ export default async function Home() {
 			<Methodology />
 		</div>
 
-		<Spacer y={10}></Spacer>
+		<Spacer y={5}></Spacer>
 
-		 <Card isBlurred shadow='none' isPressable prefetch as={Link} href={SIGN_IN_URL}>
-            <CardBody className='flex flex-col items-center justify-center pb-0'>
+		 <Card shadow='none' isBlurred isPressable prefetch as={Link} href={SIGN_IN_URL}>
+            <CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
                 <TextHoverEffect text={'从记忆'} />
                 <TextHoverEffect text={'到心会'} />
             </CardBody>
