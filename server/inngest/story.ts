@@ -7,6 +7,7 @@ import moment from 'moment'
 import { parseComment } from '@/lib/comment'
 import { getBestCommentaryModel } from '../ai/models'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
+import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 
 const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
@@ -28,7 +29,12 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         关键词：
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
-    maxTokens: 2500
+    maxTokens: 6000,
+    providerOptions: {
+        thinkingConfig: {
+            thinkingBudget: 3000
+        }
+    } satisfies GoogleGenerativeAIProviderOptions
 })
 
 export const generateStory = inngest.createFunction(
@@ -58,7 +64,7 @@ export const generateStory = inngest.createFunction(
 
         const story = await step.ai.wrap('generate-story', generateText, {
             model: getBestCommentaryModel(lang),
-            ...storyConfig
+            ...storyConfig,
         })
 
         // Trigger annotation process
