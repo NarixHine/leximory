@@ -170,7 +170,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         </>
                     }
                 </CardBody>
-                : <CardBody className='px-6 pt-6 flex flex-col justify-start'>
+                : <CardBody className='px-6 pt-5 flex flex-col justify-start'>
                     <a className='text-4xl' style={{
                         fontFamily: contentFontFamily
                     }}>{name}</a>

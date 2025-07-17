@@ -17,13 +17,13 @@ import { Input } from "@heroui/input"
 import { Card, CardBody } from "@heroui/card"
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
-import { ToXinhui } from './components/to-xinhui'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isAtRead } from '@/lib/subapp'
 import { redirect } from 'next/navigation'
+import { TextHoverEffect } from '@/components/ui/text-hover-effect'
 
 export default async function Home() {
 	if (await isAtRead()) {
@@ -182,7 +182,12 @@ export default async function Home() {
 
 		<Spacer y={10}></Spacer>
 
-		<ToXinhui />
+		 <Card isBlurred shadow='none' isPressable prefetch as={Link} href={SIGN_IN_URL}>
+            <CardBody className='flex flex-col items-center justify-center pb-0'>
+                <TextHoverEffect text={'从记忆'} />
+                <TextHoverEffect text={'到心会'} />
+            </CardBody>
+        </Card>
 	</Main >
 }
 

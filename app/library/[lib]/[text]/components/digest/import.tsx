@@ -1,10 +1,10 @@
 'use client'
 
-import { Button } from "@heroui/button"
-import { Divider } from "@heroui/divider"
-import { Input } from "@heroui/input"
-import { Switch } from "@heroui/switch"
-import { Textarea } from "@heroui/input"
+import { Button } from '@heroui/button'
+import { Divider } from '@heroui/divider'
+import { Input } from '@heroui/input'
+import { Switch } from '@heroui/switch'
+import { Textarea } from '@heroui/input'
 import { useState, useTransition } from 'react'
 import isUrl from 'is-url'
 import { MAX_FILE_SIZE } from '@/lib/config'

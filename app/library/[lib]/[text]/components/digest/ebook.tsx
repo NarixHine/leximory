@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from "@heroui/button"
-import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
-import { CircularProgress } from "@heroui/progress"
+import { Button } from '@heroui/button'
+import { Popover, PopoverTrigger, PopoverContent } from '@heroui/popover'
+import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
@@ -19,7 +19,7 @@ import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { memo } from 'react'
-import { save } from "../../actions"
+import { save } from '../../actions'
 import { getBracketedSelection } from '@/components/define/utils'
 
 function transformEbookUrl(url: string) {
@@ -159,10 +159,14 @@ export default function Ebook() {
                         onPress={() => {
                             if (bookmark) {
                                 startSavingBookmark(async () => {
-                                    const newContent = content.concat(bookmark)
-                                    await save({ id: text, content: newContent })
-                                    setContent(newContent)
-                                    toast.success('文摘已保存')
+                                    try {
+                                        const newContent = content.concat(bookmark)
+                                        await save({ id: text, content: newContent })
+                                        setContent(newContent)
+                                        toast.success('文摘已保存')
+                                    } catch {
+                                        toast.error('文摘保存失败，请重试')
+                                    }
                                 })
                             }
                         }}>
