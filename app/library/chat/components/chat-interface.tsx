@@ -55,7 +55,7 @@ const initialPrompts = [{
     icon: PiClockClockwiseDuotone
 }, {
     title: '造句巩固',
-    prompt: '针对［今天］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察我的掌握。',
+    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察我的掌握。',
     icon: PiPencilCircleDuotone
 }, {
     title: '导入网页',
