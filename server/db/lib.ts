@@ -91,7 +91,6 @@ export async function updateLib({ id, access, name, org, price, prompt }: { id: 
 export async function createLib({ name, lang, owner }: { name: string, lang: Lang, owner: string }) {
     const id = nanoid()
 
-    await getLexicoinBalance(owner)
     await supabase.from('libraries').insert({
         id,
         owner,

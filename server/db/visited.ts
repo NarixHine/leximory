@@ -22,8 +22,6 @@ export async function visitText({ textId, userId }: { textId: string, userId: st
         .single()
         .throwOnError()
 
-        console.log('Visited text:', newVisit)
-
     revalidateTag(`reads:${newVisit.texts.lib}`)
 }
 
