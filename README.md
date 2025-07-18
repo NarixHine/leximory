@@ -141,7 +141,7 @@ CREATE TABLE "libraries" (
     "org" text,
     "price" integer DEFAULT 0 NOT NULL,
     "prompt" text,
-    CONSTRAINT "libraries_owner_fkey" FOREIGN KEY ("owner") REFERENCES "users" ("id")
+    CONSTRAINT "libraries_owner_fkey" FOREIGN KEY ("owner") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "lexicon" (

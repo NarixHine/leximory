@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { supabase } from '../client/supabase'
 import { SIGN_IN_URL } from '@/lib/config'
 import { isAtRead } from '@/lib/subapp'
+import { getLexicoinBalance } from '../db/lexicoin'
 
 export async function getSession() {
     const supabase = await createClient()
@@ -38,6 +39,7 @@ export async function getPlan(userId?: string) {
     if (!userId) {
         return await getPlan((await getUserOrThrow()).userId)
     }
+    await getLexicoinBalance(userId)
     const { data: { plan } } = await supabase.from('users').select('plan').eq('id', userId).single().throwOnError()
     return (plan ?? 'beginner') as Plan
 }

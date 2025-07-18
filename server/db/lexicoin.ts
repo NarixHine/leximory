@@ -3,9 +3,12 @@ import { supabase } from '../client/supabase'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import { momentSH } from '@/lib/moment'
 
+// Function to get the LexiCoin balance for a user
+// Or to ensure the user exists and create them with a default balance if they don't
 export async function getLexicoinBalance(uid: string) {
     'use cache'
     cacheTag('lexicoin')
+    
     const { data, error } = await supabase
         .from('users')
         .select('lexicoin')

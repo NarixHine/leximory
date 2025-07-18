@@ -8,7 +8,7 @@ import { Button } from '@heroui/button'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { CopyProfileLink } from './copy'
-import { SIGN_IN_URL } from '@/lib/config'
+import { MAX_FILE_SIZE, SIGN_IN_URL } from '@/lib/config'
 import { Skeleton } from '@heroui/skeleton'
 import { uploadAvatar } from '../actions'
 import { toast } from 'sonner'
@@ -75,6 +75,10 @@ export function AvatarSection({ image }: { image?: string }) {
     const handleUpload = async () => {
         if (!selectedFile) {
             toast.error('Please select an image')
+            return
+        }
+        if (selectedFile.size > MAX_FILE_SIZE) {
+            toast.error(`请上传小于 ${MAX_FILE_SIZE / 1024 / 1024}MB 的图片`)
             return
         }
         setIsLoading(true)
