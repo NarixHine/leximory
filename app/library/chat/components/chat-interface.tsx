@@ -226,6 +226,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                     topics={[]}
                                     hasEbook={false}
                                     createdAt={createdAt}
+                                    visitStatus={'not-visited'}
                                     disablePrefetch
                                 />
                             </HydrationBoundary>

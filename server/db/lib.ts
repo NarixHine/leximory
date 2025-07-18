@@ -22,6 +22,7 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
         return rec
     }
 
+    await getLexicoinBalance(owner)
     const { data: lib } = await supabase
         .from('libraries')
         .insert({
@@ -90,6 +91,7 @@ export async function updateLib({ id, access, name, org, price, prompt }: { id: 
 export async function createLib({ name, lang, owner }: { name: string, lang: Lang, owner: string }) {
     const id = nanoid()
 
+    await getLexicoinBalance(owner)
     await supabase.from('libraries').insert({
         id,
         owner,
@@ -108,24 +110,8 @@ export async function createLib({ name, lang, owner }: { name: string, lang: Lan
 }
 
 export async function deleteLib({ id }: { id: string }) {
-    const { data: texts } = await supabase
-        .from('texts')
-        .select('id')
-        .eq('lib', id)
-        .throwOnError()
-
-    const { data: words } = await supabase
-        .from('lexicon')
-        .select('id')
-        .eq('lib', id)
-        .throwOnError()
-
-    await Promise.all([
-        supabase.from('libraries').delete().eq('id', id),
-        supabase.from('texts').delete().in('id', texts.map(({ id }) => id)),
-        supabase.from('lexicon').delete().in('id', words.map(({ id }) => id))
-    ])
-
+    await supabase.from('libraries').delete().eq('id', id)
+    // will automatically delete cascaded texts and lexicon entries
     revalidateTag('libraries')
 }
 

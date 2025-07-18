@@ -1,7 +1,7 @@
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import Text, { AddTextButton } from './components/text'
+import TextList from './components/text-list'
 import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
@@ -35,18 +35,6 @@ export default async function Page(props: LibProps) {
                 文本排序
             </Button>}
         </div>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-            {texts.map(({ title, id, topics, hasEbook, createdAt }) => (
-                <Text
-                    id={id}
-                    key={id}
-                    title={title}
-                    topics={topics ?? []}
-                    hasEbook={hasEbook}
-                    createdAt={createdAt}
-                ></Text>
-            ))}
-            {!isReadOnly && <AddTextButton />}
-        </div>
+        <TextList texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))} isReadOnly={isReadOnly} />
     </Main>
 }

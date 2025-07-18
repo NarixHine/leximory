@@ -8,10 +8,10 @@ import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlig
 import { useTransitionRouter } from 'next-view-transitions'
 import { useTransition } from 'react'
 import { useAtomValue } from 'jotai'
-import { langAtom, libAtom, visitedTextsAtom } from '../../atoms'
+import { langAtom, libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
-import { useDisclosure } from '@heroui/react'
+import { Spinner, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { getArticleFromUrl } from '@/lib/utils'
@@ -24,7 +24,7 @@ import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import FlatCard from '@/components/ui/flat-card'
 
-function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation }: {
+function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation, visitStatus }: {
     id: string,
     title: string,
     topics: string[],
@@ -32,10 +32,15 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
     disableNavigation?: boolean,
     hasEbook: boolean,
     createdAt: string,
+    visitStatus?: 'loading' | 'visited' | 'not-visited',
 }) {
     const lib = useAtomValue(libAtom)
-    const visited = useAtomValue(visitedTextsAtom)[id]
     const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
+    const visitElement = {
+        loading: <Spinner size='sm' color='default' variant='wave' />,
+        'visited': <PiCheckSquare className='text-lg' />,
+        'not-visited': <PiSquare className='text-lg' />
+    }
 
     const CardInnerContent = () => (
         <>
@@ -51,7 +56,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
             </CardBody>
             <CardFooter className='px-7 pb-4 pt-2 flex flex-col gap-1 items-end'>
                 <div className='flex items-center w-full gap-2 text-default-500'>
-                    {visited ? <PiCheckSquare className='text-lg' /> : <PiSquare className='text-lg' />}
+                    {typeof visitStatus !== 'undefined' && (visitElement[visitStatus])}
                     <div className='flex-1' />
                     <time className='text-sm font-mono'>Created: {momentSH(createdAt).format('ll')}</time>
                 </div>

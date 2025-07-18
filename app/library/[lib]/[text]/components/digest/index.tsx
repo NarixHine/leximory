@@ -2,7 +2,7 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom } from '../../atoms'
-import { langAtom, libAtom, visitedTextsAtom } from '../../../atoms'
+import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
 import { Button } from "@heroui/button"
@@ -23,7 +23,7 @@ import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { contentFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgress, getNewText, remove, revalidate, save } from '../../actions'
+import { getAnnotationProgress, getNewText, remove, revalidate, save, markAsVisited } from '../../actions'
 import { useTransitionRouter } from 'next-view-transitions'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -193,7 +193,16 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
+  const text = useAtomValue(textAtom)
   const lang = useAtomValue(langAtom)
+  const { ref: bottomRef, entry } = useIntersectionObserver({
+    freezeOnceVisible: true
+  })
+  useEffect(() => {
+    if (entry?.isIntersecting) {
+      markAsVisited(text)
+    }
+  }, [entry?.isIntersecting, text])
 
   if (hideText && content) {
     const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
@@ -234,6 +243,7 @@ function ReadingView() {
         md={`<article>\n${content}\n</article>`}
       />
       <Define />
+      <div ref={bottomRef} className='w-full h-1'></div>
     </>
   )
 }
@@ -322,20 +332,11 @@ export default function Digest() {
   const text = useAtomValue(textAtom)
   const setRecentAccess = useSetAtom(recentAccessAtom)
   const title = useAtomValue(titleAtom)
-  const setVisitedTexts = useSetAtom(visitedTextsAtom)
-  const { ref: bottomRef, entry } = useIntersectionObserver({
-    freezeOnceVisible: true
-  })
 
   useEffect(() => {
     setRecentAccess(prev => ({ ...prev, [lib]: { id: text, title } }))
   }, [lib, text, title])
 
-  useEffect(() => {
-    if (entry?.isIntersecting) {
-      setVisitedTexts(prev => ({ ...prev, [text]: true }))
-    }
-  }, [entry?.isIntersecting, text])
 
   return (
     <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
@@ -361,7 +362,7 @@ export default function Digest() {
         )}
       </div>
 
-      {!isReaderMode && <div ref={bottomRef} className={'max-w-[650px] mx-auto mt-auto'}>
+      {!isReaderMode && <div className={'max-w-[650px] mx-auto mt-auto'}>
         <Spacer y={6} />
         <ImportModal />
       </div>}

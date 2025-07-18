@@ -114,7 +114,51 @@ export type Database = {
           starred_by?: string[] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "libraries_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reads: {
+        Row: {
+          created_at: string
+          id: number
+          text: string
+          uid: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          text: string
+          uid?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          text?: string
+          uid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reads_text_fkey"
+            columns: ["text"]
+            isOneToOne: false
+            referencedRelation: "texts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reads_uid_fkey"
+            columns: ["uid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subs: {
         Row: {
@@ -141,7 +185,15 @@ export type Database = {
           uid?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subs_uid_fkey"
+            columns: ["uid"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       texts: {
         Row: {
