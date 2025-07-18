@@ -31,7 +31,11 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     topics={topics ?? []}
                     hasEbook={hasEbook}
                     createdAt={createdAt}
-                    visitStatus={visited ? (visited.includes(id) ? 'visited' : 'not-visited') : 'loading'}
+                    visitStatus={
+                        hasEbook
+                            ? undefined
+                            : visited ? (visited.includes(id) ? 'visited' : 'not-visited') : 'loading'
+                    }
                 />
             ))}
             {!isReadOnly && <AddTextButton />}

@@ -24,7 +24,12 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 			<JotaiProvider>
 				<Toaster toastOptions={{
 					classNames: {
-						toast: cn('!text-default-900 !bg-stone-50 dark:!bg-stone-800 !border !border-stone-200 dark:!border-stone-700 !shadow-none', CHINESE.className)
+						toast: cn(
+							'!text-default-900 !bg-slate-50/40 dark:!bg-stone-800/20',
+							'!border !border-slate-300/50 dark:!border-slate-600/30 !shadow-none',
+							'!backdrop-blur-xl !backdrop-saturate-150',
+							CHINESE.className
+						)
 					},
 				}}></Toaster>
 				<QueryProvider>
