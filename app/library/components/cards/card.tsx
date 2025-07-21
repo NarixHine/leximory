@@ -15,7 +15,7 @@ const GradientCard = ({ text, className, title, children }: {
         <div className={cn('h-24', className ?? 'bg-gradient-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700', 'p-3 relative rounded-lg')}>
             {
                 title
-                    ? <H className={'font-xl opacity-80'} usePlayfair disableCenter>{title}</H>
+                    ? <H className={'font-xl opacity-80'} fancy disableCenter>{title}</H>
                     : <Skeleton className='h-3 w-1/3 max-w-10 my-1 rounded-lg opacity-50' />
             }
             {

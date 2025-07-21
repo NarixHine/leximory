@@ -21,7 +21,7 @@ export default async function PrintPage({ params }: LibProps) {
     return (
         <div className='p-8 print:p-0'>
             <div>
-                <H usePlayfair>语料汇总</H>
+                <H>语料汇总</H>
                 <div className='flex items-center gap-2 print:hidden pt-1'>
                     <ReaderToggle />
                     <p className='opacity-60'>按 Ctrl + P 打印词卡</p>

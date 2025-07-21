@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiCopyDuotone, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
 import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -518,32 +518,26 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
         }, 0)
     }
 
-    const [, copy] = useCopyToClipboard()
-
     return (
         <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
-            <div className='flex justify-between items-center mb-4 sticky py-1 px-4 top-10 z-10 backdrop-blur-sm rounded-full'>
-                <H usePlayfair className={'text-xl sm:text-3xl bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+            <div className={cn(
+                'flex justify-between items-center mb-4 sticky py-2 pl-5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
+                'bg-stone-50/40 dark:bg-stone-800/20',
+                'border border-slate-300/50 dark:border-stone-600/30',
+                'backdrop-blur-xl backdrop-saturate-150',
+            )}>
+                <H fancy className={'text-2xl sm:text-3xl italic bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
-                <div className='flex items-center gap-2'>
-                    {!isProd && (<Button
-                        color='primary'
-                        variant='light'
-                        startContent={<PiCopyDuotone />}
-                        onPress={() => {
-                            copy(JSON.stringify(messages))
-                            toast.success('已复制到剪贴板')
-                        }}
-                        isIconOnly
-                    ></Button>)}
+                <div className='flex items-center gap-0.5'>
                     <Button
+                        radius='full'
                         color='primary'
                         variant='light'
                         startContent={<PiPlusCircleDuotone />}
                         onPress={() => startNewConversation()}
                     >
-                        开始新对话
+                        新建对话
                     </Button>
                 </div>
             </div>

@@ -15,7 +15,7 @@ export default function BlogHome() {
     return <Center>
         <div className='flex flex-col items-center justify-center sm:flex-row my-3'>
             <div className='border-l-2 border-l-primary-800/50 px-3 py-1'>
-                <H disableCenter className={'text-primary-800 text-4xl pb-2 font-semibold'} usePlayfair>
+                <H disableCenter className={'text-primary-800 text-4xl pb-2 font-semibold'} fancy>
                     <span className='opacity-30'>The</span> <span className='mx-1'>Leximory</span> <span className='opacity-30'>Blog</span>
                 </H>
                 <H disableCenter className={'text-primary-800/80 text-lg leading-tight'}>

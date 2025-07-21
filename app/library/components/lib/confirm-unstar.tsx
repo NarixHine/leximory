@@ -10,7 +10,7 @@ import H from '@/components/ui/h'
 export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
     <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-6'>
         <CardHeader>
-            <H usePlayfair className='text-2xl'>移除收藏</H>
+            <H className='text-2xl'>移除收藏</H>
         </CardHeader>
 
         <CardBody className='prose dark:prose-invert prose-p:my-2 prose-ul:my-2'>

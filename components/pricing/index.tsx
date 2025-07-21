@@ -15,7 +15,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
             <Card className="p-4">
                 <CardBody className="gap-4">
                     <div className="flex flex-col gap-2">
-                        <H usePlayfair disableCenter className="text-2xl">Beginner 初学者</H>
+                        <H fancy disableCenter className="text-2xl">Beginner 初学者</H>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-semibold">US$0.00</span>
                             <span className="text-default-500 text-sm">/月</span>
@@ -53,7 +53,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
             <Card className="p-4">
                 <CardBody className="gap-4 flex flex-col">
                     <div className="flex flex-col gap-2">
-                        <H usePlayfair disableCenter className="text-2xl">Bilingual 双语者</H>
+                        <H fancy disableCenter className="text-2xl">Bilingual 双语者</H>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-semibold">US$4.49</span>
                             <span className="text-default-500 text-sm">/月（≈32元）</span>
@@ -110,7 +110,7 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                 <CardBody className="gap-4 flex flex-col">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 justify-between">
-                            <H usePlayfair disableCenter className="text-2xl">Polyglot 语言学人</H>
+                            <H fancy disableCenter className="text-2xl">Polyglot 语言学人</H>
                             <span className={cn("text-primary-500 text-xs bg-primary-50 px-2 py-1 rounded-full")}>推荐</span>
                         </div>
                         <div className="flex items-baseline gap-1">

@@ -30,7 +30,7 @@ export default async function Home() {
 		redirect('/times')
 	}
 	return <Main className={'w-11/12 max-w-screen-lg'}>
-		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl'} usePlayfair>
+		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl italic'} fancy>
 			<span className='[text-shadow:_5px_5px_5px_rgb(238_214_211_/_80%)] dark:[text-shadow:none]'>Leximory</span>
 		</H>
 
@@ -169,7 +169,7 @@ export default async function Home() {
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 			<div className='w-full'>
-				<H className='text-3xl mb-2 font-bold' usePlayfair>AI Agent</H>
+				<H className='text-3xl mb-2 font-bold' fancy>AI Agent</H>
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114606102153816&bvid=BV1g873z5EPJ&cid=30261575913&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 		</div>
@@ -182,12 +182,12 @@ export default async function Home() {
 
 		<Spacer y={5}></Spacer>
 
-		 <Card shadow='none' isBlurred isPressable prefetch as={Link} href={SIGN_IN_URL}>
-            <CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
-                <TextHoverEffect text={'从记忆'} />
-                <TextHoverEffect text={'到心会'} />
-            </CardBody>
-        </Card>
+		<Card shadow='none' isBlurred isPressable prefetch as={Link} href={SIGN_IN_URL}>
+			<CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
+				<TextHoverEffect text={'从记忆'} />
+				<TextHoverEffect text={'到心会'} />
+			</CardBody>
+		</Card>
 	</Main >
 }
 

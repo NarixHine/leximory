@@ -23,7 +23,7 @@ export default async function Page(props: LibProps) {
 
     return <Main>
         <Nav lib={{ id: lib, name }}></Nav>
-        <H usePlayfair className='mb-4 text-5xl font-semibold'>{name}</H>
+        <H fancy className='mb-4 text-5xl font-semibold'>{name}</H>
         <div className='flex justify-center mb-5 gap-1 flex-wrap'>
             <Button variant='light' startContent={<PiPrinter />} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印文库

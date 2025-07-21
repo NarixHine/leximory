@@ -1,4 +1,4 @@
-import { Ma_Shan_Zheng, Playfair_Display, Montserrat, Libre_Baskerville, Hina_Mincho, Noto_Serif_SC } from 'next/font/google'
+import { Ma_Shan_Zheng, Montserrat, Libre_Baskerville, Hina_Mincho, Noto_Serif_SC, Instrument_Serif } from 'next/font/google'
 
 export const CHINESE = Noto_Serif_SC({
     subsets: ['latin'],
@@ -23,9 +23,10 @@ export const ENGLISH_SERIF = Libre_Baskerville({
     style: ['italic', 'normal'],
 })
 
-export const ENGLISH_PLAYFAIR = Playfair_Display({
+export const ENGLISH_FANCY = Instrument_Serif({
     subsets: ['latin'],
-    weight: ['400', '700'],
+    style: ['normal', 'italic'],
+    weight: ['400'],
 })
 
 export const JAPANESE_MINCHO = Hina_Mincho({
@@ -35,5 +36,5 @@ export const JAPANESE_MINCHO = Hina_Mincho({
 
 export const defaultFontFamily = [ENGLISH.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
 export const contentFontFamily = [ENGLISH_SERIF.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
-export const hFontFamily = [ENGLISH_PLAYFAIR.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
+export const hFontFamily = [ENGLISH_FANCY.style.fontFamily, CHINESE.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, 'serif'].join(',')
 export const jpFontFamily = [ENGLISH_SERIF.style.fontFamily, JAPANESE_MINCHO.style.fontFamily, CHINESE.style.fontFamily, 'serif'].join(',')

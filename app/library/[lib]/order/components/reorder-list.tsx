@@ -21,6 +21,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { reorderTexts } from '../actions'
 import Text from '../../components/text'
 import { PiArrowsOutCardinalBold } from 'react-icons/pi'
+import { toast } from 'sonner'
 
 type TextItem = Awaited<ReturnType<typeof import('@/server/db/text').getTexts>>[number]
 
@@ -80,10 +81,9 @@ export default function ReorderList({ texts, lib }: { texts: TextItem[], lib: st
             startTransition(async () => {
                 try {
                     await reorderTexts({ lib, ids: newItems.map(i => i.id) })
-                } catch (error) {
+                } catch {
                     setItems(previousItems)
-                    // Optional: Add a toast notification to inform the user of the failure.
-                    console.error('Failed to reorder texts:', error)
+                    toast.error('排序失败')
                 }
             })
         }

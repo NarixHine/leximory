@@ -43,7 +43,7 @@ export default function Results() {
                 <AccordionItem
                     key='ai-answer'
                     startContent={isLoading && !paperAnalysis ? <Spinner variant='gradient' color='default' /> : <PiFlask className='text-2xl ml-2' />}
-                    title={<H usePlayfair disableCenter className='text-lg'>初步作答</H>}
+                    title={<H disableCenter className='text-lg'>初步作答</H>}
                     subtitle='For reference only. No need to acknowledge everything AI says.'
                 >
                     <Markdown fontFamily={contentFontFamily} md={paperAnalysis === '' ? '<article>\n> 未生成\n</article>' : paperAnalysis} />
@@ -52,7 +52,7 @@ export default function Results() {
                 <AccordionItem
                     key='review-report'
                     startContent={isLoading && !result ? <Spinner variant='gradient' color='default' /> : <PiChatTeardropDots className='text-2xl ml-2' />}
-                    title={<H usePlayfair disableCenter className='text-lg'>审题报告</H>}
+                    title={<H disableCenter className='text-lg'>审题报告</H>}
                     subtitle='A third-party opinion. Just pick what&apos;s reasonable in it.'
                 >
                     <div className='max-w-none'>
@@ -63,7 +63,7 @@ export default function Results() {
                 <AccordionItem
                     startContent={<PiQuestion />}
                     key='ai-role'
-                    title={<H usePlayfair disableCenter className='text-medium'>为什么 AI 是你的最佳审题人？</H>}
+                    title={<H disableCenter className='text-medium'>为什么 AI 是你的最佳审题人？</H>}
                     subtitle='Independent. Impartial. Instant. Incomparable in language proficiency.'
                 >
                     <div style={{ fontFamily: contentFontFamily }} className='prose prose-sm dark:prose-invert max-w-none'>

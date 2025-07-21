@@ -1,5 +1,5 @@
 import Main from '@/components/ui/main'
-import { ENGLISH_PLAYFAIR } from '@/lib/fonts'
+import { ENGLISH_FANCY } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { Button } from "@heroui/button"
 import Link from 'next/link'
@@ -18,7 +18,7 @@ export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
             <section className='max-w-screen-sm mx-auto'>
-                <h1 className={cn('text-4xl', ENGLISH_PLAYFAIR.className)}>
+                <h1 className={cn('text-4xl', ENGLISH_FANCY.className)}>
                     <TypedTitle />
                 </h1 >
                 <div className='flex w-fit mt-1 mb-6'>
@@ -76,7 +76,7 @@ export default function About() {
                 <Article />
             </section>
             <section className='max-w-7xl mx-auto mt-5'>
-                <H usePlayfair disableCenter className='text-2xl pl-4'>订价</H>
+                <H disableCenter className='text-2xl pl-4'>订价</H>
                 <Pricing hideUpgradeButton />
             </section>
         </Main >

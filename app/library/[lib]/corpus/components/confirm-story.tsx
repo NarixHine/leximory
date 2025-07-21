@@ -12,7 +12,7 @@ type Response = boolean
 export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ call, comments }) => (
     <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 p-6'>
         <CardHeader>
-            <H usePlayfair className='text-2xl'>生成小故事</H>
+            <H className='text-2xl'>生成小故事</H>
         </CardHeader>
         
         <CardBody className='prose dark:prose-invert prose-p:my-2 prose-ul:my-2'>

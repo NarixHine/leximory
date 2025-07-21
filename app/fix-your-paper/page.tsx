@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function FixPaperPage() {
     return (<Main className='max-w-3xl flex flex-col items-center'>
-        <H usePlayfair>Fix. Your. Paper.</H>
+        <H fancy>Fix. Your. Paper.</H>
 
         <Spacer y={3} />
 
