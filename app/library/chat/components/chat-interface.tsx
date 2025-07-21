@@ -521,7 +521,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
     return (
         <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
             <div className={cn(
-                'flex justify-between items-center mb-4 sticky py-2 pl-5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
+                'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-1.5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
                 'bg-stone-50/40 dark:bg-stone-800/20',
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
