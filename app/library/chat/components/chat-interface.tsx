@@ -199,7 +199,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateParagraph':
             const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
-                <Card className='bg-primary-50/20' shadow='none' isBlurred>
+                <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
                             <ScopeProvider atoms={[langAtom]}>
@@ -522,7 +522,6 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
         <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
             <div className={cn(
                 'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-1.5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
-                'bg-stone-50/40 dark:bg-stone-800/20',
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
