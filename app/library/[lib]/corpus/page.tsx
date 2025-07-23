@@ -29,7 +29,7 @@ export default async function Page(props: LibProps) {
 
     return (<Main className='max-w-screen-lg'>
         <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
-        <H fancy className='text-5xl font-semibold'>
+        <H fancy className='text-5xl'>
             {name}
         </H>
         <Spacer y={5}></Spacer>
