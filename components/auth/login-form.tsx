@@ -18,7 +18,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, startTransition] = useTransition()
-
+ 
   const handleGithubLogin = async () => {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
@@ -27,12 +27,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         redirectTo: prefixUrl('/callback')
       }
     })
-
+ 
     if (error) {
       toast.error('GitHub 登录失败')
     }
   }
-
+ 
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-3 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1'>继续语言学习之旅</H>
     <Form action={() => {

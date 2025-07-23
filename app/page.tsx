@@ -101,7 +101,7 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的英语新闻和小说'
 						>
-							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-stone-100 to-stone-300 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-zinc-50 to-neutral-100 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
 								<CardBody style={{ fontFamily: contentFontFamily }}>
 									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>
@@ -169,7 +169,7 @@ export default async function Home() {
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 			<div className='w-full'>
-				<H className='text-3xl mb-2 font-bold' fancy>AI Agent</H>
+				<H className='text-3xl mb-2 font-semibold' fancy>AI Agent</H>
 				<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114606102153816&bvid=BV1g873z5EPJ&cid=30261575913&p=1&muted=true' allowFullScreen></iframe>
 			</div>
 		</div>

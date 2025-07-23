@@ -46,7 +46,9 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
     ) {
         const url = request.nextUrl.clone()
         url.pathname = SIGN_IN_URL
-        return NextResponse.redirect(url)
+        const response = NextResponse.redirect(url)
+        response.cookies.set('next', pathname)
+        return response
     }
 
     return supabaseResponse
