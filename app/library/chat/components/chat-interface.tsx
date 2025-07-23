@@ -186,7 +186,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             const { title: articleTitle, content: articleContent } = result as Awaited<ToolResult['extractArticleFromWebpage']> | Awaited<ToolResult['getTextContent']>
             return (
                 <ToolAccordian title={articleTitle} icon={<PiNewspaperDuotone />}>
-                    <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                    <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
                         <CardBody className='p-6'>
                             <div className='text-default-600 dark:text-default-400'>
                                 <Markdown md={articleContent} className='prose dark:prose-invert max-w-none' />
@@ -199,7 +199,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateParagraph':
             const { annotation, lang } = result as ToolResult['annotateParagraph']
             return (
-                <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <div className='text-default-600 dark:text-default-400'>
                             <ScopeProvider atoms={[langAtom]}>
@@ -262,7 +262,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'generateQuiz':
             const generatedQuiz = result as ToolResult['generateQuiz']
             return (
-                <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
                     <CardBody className='p-6'>
                         <Paper data={[generatedQuiz]} />
                     </CardBody>
@@ -274,7 +274,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             const { cover, audio, date, news, novel, quiz } = result as ToolResult['getTodaysTimes']
             return (
                 <ToolAccordian title={`The Leximory Times — ${moment(date).tz('Asia/Shanghai').format('LL')}`} icon={<PiNewspaper />}>
-                    <Card className='bg-primary-50/20 dark:bg-default-50/20' shadow='none' isBlurred>
+                    <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
                         <CardBody className='p-6'>
                             <div className='space-y-4'>
                                 {/* Cover Image */}
@@ -340,8 +340,8 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 <div className={cn(
                     'px-4 py-3 mt-4 rounded-2xl max-w-[80%] text-base whitespace-pre-wrap',
                     isUser
-                        ? 'bg-secondary-50/50 text-default-900'
-                        : 'bg-primary-50/50 text-default-900'
+                        ? 'bg-secondary-50/50 text-default-900 dark:bg-stone-900'
+                        : 'bg-primary-50/50 text-default-900 dark:bg-neutral-900',
                 )}>
                     {part.text ? <Markdown
                         md={part.text}

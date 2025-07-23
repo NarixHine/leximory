@@ -66,7 +66,7 @@ const FloatingDockHorizontal = ({
             onMouseMove={(e) => mouseX.set(e.clientX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-default-50/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
+                'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-zinc-900/80 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
                 className
             )}
         >
@@ -149,7 +149,7 @@ const FloatingDockVertical = ({
             onMouseMove={(e) => mouseY.set(e.clientY)}
             onMouseLeave={() => mouseY.set(Infinity)}
             className={cn(
-                'hidden z-50 md:flex fixed right-3 bottom-3 w-16 flex-col gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-default-50/90 backdrop-blur-md backdrop-saturate-150 px-3 py-4 print:hidden',
+                'hidden z-50 md:flex fixed right-3 bottom-3 w-16 flex-col gap-4 items-end rounded-2xl backdrop:blur-sm bg-slate-100/60 dark:bg-zinc-900/80 backdrop-blur-md backdrop-saturate-150 px-3 py-4 print:hidden',
                 className
             )}
         >
