@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib } from '@/server/auth/role'
-import { createText } from '@/server/db/text'
+import { createText, setTextAnnotationProgress } from '@/server/db/text'
 import { generate } from '../../[text]/actions'
 import { getUserOrThrow } from '@/server/auth/user'
 import { getVisitedTextIds } from '@/server/db/visited'
@@ -16,6 +16,7 @@ export async function addAndGenerate({ title, content, lib }: { title: string, c
     await authWriteToLib(lib)
     const id = await createText({ lib, title, content })
     await generate({ article: content, textId: id, onlyComments: false })
+    await setTextAnnotationProgress({ id, progress: 'annotating' })
     return id
 }
 
