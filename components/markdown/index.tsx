@@ -42,7 +42,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll('{{', '‎{{')
         .replaceAll('&gt;', '>')
         // fix erroneous wrapping
-        .replaceAll('||}}', '}}')
+        .replaceAll(/\|+}}/g, '}}') // remove trailing pipes
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
         // replace all instances of {{...}} with the Comment component
