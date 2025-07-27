@@ -114,7 +114,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
         transition={{ duration: 1 }}
     >
-        {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-10' onPress={onOpen}></Button>}
+        {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-[1]' onPress={onOpen}></Button>}
         <FlatCard fullWidth background='solid' as={'div'} isPressable onPress={() => {
             router.push(`/library/${id}`)
         }}>
