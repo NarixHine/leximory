@@ -13,7 +13,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
         <div className='flex flex-col md:flex-row gap-12 w-full'>
             <WordStatsSection uid={uid} />
             <div className='basis-full md:basis-3/5'>
-                <H className='text-xl mb-4'>公开文库</H>
+                <H className='text-2xl font-semibold mb-4'>公开文库</H>
                 <Suspense fallback={
                     <div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
                         {[...Array(2)].map((_, i) => (

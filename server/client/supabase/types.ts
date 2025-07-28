@@ -124,6 +124,41 @@ export type Database = {
           },
         ]
       }
+      memories: {
+        Row: {
+          content: string
+          created_at: string
+          creator: string
+          id: number
+          public: boolean
+          streak: boolean
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          creator: string
+          id?: number
+          public: boolean
+          streak: boolean
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          creator?: string
+          id?: number
+          public?: boolean
+          streak?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_creator_fkey"
+            columns: ["creator"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reads: {
         Row: {
           created_at: string

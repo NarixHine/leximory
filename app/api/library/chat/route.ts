@@ -149,6 +149,21 @@ ${content}`,
         execute: async ({ date }: { date: string }) => {
             return getTimesDataByDate(momentSH(date).format('YYYY-MM-DD'))
         }
+    },
+    requestPublishStreakMemory: {
+        description: "Presents the user's summary of what they learned today as a draft that they can publish.",
+        parameters: toolSchemas.requestPublishStreakMemory,
+        execute: async ({ content }: { content: string }) => {
+            const { userId, username, image } = await getUserOrThrow()
+            return {
+                content,
+                user: {
+                    id: userId,
+                    username: username,
+                    avatar_url: image
+                }
+            }
+        }
     }
 }
 

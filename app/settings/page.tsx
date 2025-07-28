@@ -20,6 +20,7 @@ import 'moment/locale/zh-cn'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
 import { momentSH } from '@/lib/moment'
+import { Streak, StreakSkeleton } from './components/streak'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -83,6 +84,11 @@ export default async function Settings() {
             </div>
         </section>
         <section className='grid grid-cols-2 gap-4'>
+            <div className='col-span-2'>
+                <Suspense fallback={<StreakSkeleton />}>
+                    <Streak />
+                </Suspense>
+            </div>
             <div className='col-span-2 flex flex-col gap-2'>
                 <Suspense fallback={<UpdateProfileSkeleton />}>
                     <UserSection />

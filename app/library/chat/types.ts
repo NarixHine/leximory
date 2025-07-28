@@ -23,7 +23,8 @@ export const toolDescriptions = {
     generateQuiz: 'Generating quiz questions ...',
     extractArticleFromWebpage: 'Extracting article from webpage ...',
     getTodaysTimes: 'Loading today\'s Times issue ...',
-    getTimesIssue: 'Fetching Times issue ...'
+    getTimesIssue: 'Fetching Times issue ...',
+    requestPublishStreakMemory: 'Drafting streak memory ...'
 } as const
 
 export type ToolResult = {
@@ -48,6 +49,14 @@ export type ToolResult = {
     generateQuiz: QuizData
     getTodaysTimes: TimesData
     getTimesIssue: TimesData
+    requestPublishStreakMemory: {
+        content: string
+        user: {
+            id: string
+            username: string | undefined
+            avatar_url: string | undefined
+        }
+    }
 }
 
 export const toolSchemas = {
@@ -77,6 +86,9 @@ export const toolSchemas = {
     getTodaysTimes: z.object({}),
     getTimesIssue: z.object({
         date: z.string().describe('The date of the Times issue in YYYY-MM-DD format')
+    }),
+    requestPublishStreakMemory: z.object({
+        content: z.string().describe("The user's summary of what they learned today.")
     })
 } as const
 

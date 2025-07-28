@@ -32,6 +32,7 @@ import moment from 'moment'
 import { Image } from '@heroui/image'
 import { Divider } from '@heroui/divider'
 import AudioPlayer from '@/components/ui/audio-player'
+import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
     title: '注解段落',
@@ -328,6 +329,10 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                 </ToolAccordian>
             )
 
+        case 'requestPublishStreakMemory':
+            const { content, user } = result as ToolResult['requestPublishStreakMemory']
+            return <StreakMemoryDraft content={content} user={user} />
+
         default:
             return null
     }
@@ -390,11 +395,11 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 
 const MemoizedMessagePart = memo(MessagePart)
 
-export function ChatMessage({ message: { parts, role, experimental_attachments } }: { message: Message }) {
+export function ChatMessage({ message: { id, parts, role, experimental_attachments } }: { message: Message }) {
     return <div className={cn(
         'mb-4 flex flex-col',
         role === 'user' ? 'items-end' : 'items-start'
-    )}>
+    )} data-message-id={id}>
         {experimental_attachments && experimental_attachments.length > 0 && (
             <div className='flex flex-col gap-2'>
                 {experimental_attachments.map((att, idx) => (
