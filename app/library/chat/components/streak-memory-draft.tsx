@@ -26,9 +26,7 @@ export function StreakMemoryDraft({ content, user }: StreakMemoryDraftProps) {
 
     function handlePublish(data: { content: string; isPublic: boolean; isStreak: boolean }) {
         startPublishing(async () => {
-            await createMemoryAction({
-                ...data,
-            })
+            await createMemoryAction(data)
             toast.success('Memory 已发布！', {
                 action: {
                     onClick() {
@@ -56,6 +54,8 @@ export function StreakMemoryDraft({ content, user }: StreakMemoryDraftProps) {
                 <MemoryEditor
                     initialContent={content}
                     onSave={handlePublish}
+                    initialIsPublic={false}
+                    initialIsStreak={true}
                     isSaving={isPublishing}
                 />
             </div>
