@@ -35,7 +35,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
                         <p className={cn('text-sm text-orange-500 dark:text-orange-300', ENGLISH_FANCY.className)}>Day Streak</p>
                     </div>
                 </div>
-                <div className='flex justify-center gap-3 mt-4'>
+                <div className='grid grid-cols-4 max-w-md mx-auto sm:max-w-full sm:grid-cols-8 gap-3 mt-4'>
                     {streakData.history.map(({ date, active }, i) => (
                         <motion.div
                             key={date}

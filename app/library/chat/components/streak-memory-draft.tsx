@@ -8,6 +8,7 @@ import { MemoryEditor } from '@/app/memories/components/memory-editor'
 import { User } from '@heroui/react'
 import { momentSH } from '@/lib/moment'
 import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 
 type StreakMemoryDraftProps = {
     content: string
@@ -21,13 +22,21 @@ type StreakMemoryDraftProps = {
 export function StreakMemoryDraft({ content, user }: StreakMemoryDraftProps) {
     const [isPublishing, startPublishing] = useTransition()
     const queryClient = useQueryClient()
+    const router = useRouter()
 
     function handlePublish(data: { content: string; isPublic: boolean; isStreak: boolean }) {
         startPublishing(async () => {
             await createMemoryAction({
                 ...data,
             })
-            toast.success('Memory 已发布！')
+            toast.success('Memory 已发布！', {
+                action: {
+                    onClick() {
+                        router.push('/memories')
+                    },
+                    label: '查看'
+                }
+            })
             queryClient.invalidateQueries({ queryKey: ['personal-memories'] })
             queryClient.invalidateQueries({ queryKey: ['federated-memories'] })
         })

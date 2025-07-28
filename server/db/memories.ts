@@ -135,7 +135,7 @@ export async function calculateStreak(userId: string) {
         currentStreak = 0
     }
 
-    const history = Array.from({ length: 7 }).map((_, i) => {
+    const history = Array.from({ length: 8 }).map((_, i) => {
         const date = momentSH().subtract(i, 'days').startOf('day')
         return {
             date: date.format('YYYY-MM-DD'),
