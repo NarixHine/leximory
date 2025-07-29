@@ -1,10 +1,9 @@
 'use client'
 
 import { Card, CardBody } from '@heroui/react'
-import { PiFireFill, PiCheckBold } from 'react-icons/pi'
+import { PiFireFill, PiCheckBold, PiCursorClickDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { ENGLISH_FANCY } from '@/lib/fonts'
 import { useRouter } from 'next/navigation'
 
 type StreakData = {
@@ -21,7 +20,8 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
         <Card shadow='none' fullWidth isPressable onPress={() => {
             router.push('/memories')
         }} className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
-            <CardBody className='p-8'>
+            <CardBody className='p-8 relative'>
+                <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-[1]' />
                 <div className='flex items-center justify-center gap-4'>
                     <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}
@@ -32,7 +32,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
                     </motion.div>
                     <div>
                         <p className='text-5xl font-bold text-orange-600 dark:text-orange-400'>{streakData.total}</p>
-                        <p className={cn('text-sm text-orange-500 dark:text-orange-300', ENGLISH_FANCY.className)}>Day Streak</p>
+                        <p className={'text-sm text-orange-500 dark:text-orange-300 text-semibold font-mono'}>Day Streak</p>
                     </div>
                 </div>
                 {streakData.history.length > 0 && <div className='grid grid-cols-4 max-w-md mx-auto sm:max-w-full sm:grid-cols-8 gap-3 mt-4'>
@@ -52,7 +52,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
                             >
                                 {active && <PiCheckBold className='text-white' />}
                             </div>
-                            <p className={cn('text-xs text-orange-500/80 dark:text-orange-300/80')}>{new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                            <p className={cn('text-xs font-mono text-orange-500/80 dark:text-orange-300/80')}>{new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
                         </motion.div>
                     ))}
                 </div>}

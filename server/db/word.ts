@@ -128,7 +128,7 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
         .from('lexicon')
         .select('word, id, lib:libraries!inner(id, lang)')
         .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
-        .lte('created_at', momentSH().startOf('day').subtract(toDayAgo, 'day').toISOString())
+        .lte('created_at', momentSH().endOf('day').subtract(toDayAgo, 'day').toISOString())
         .not('word', 'in', `(${languageStrategies.map(s => s.welcome).join(',')})`) // exclude welcome words
         .or(filters, options)
         .throwOnError()

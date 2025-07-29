@@ -28,9 +28,9 @@ async function HeroSection() {
     const { username, image, createdAt } = await getUserOrThrow()
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar src={image} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
-        <div className='flex flex-col gap-1'>
+        <div className='flex flex-col gap-2'>
             <span className='text-3xl ml-1 font-mono'>{username ? username : '👋Hi.'}</span>
-            <div className='flex gap-3 w-full mt-2'>
+            <div className='flex gap-3 w-full'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{momentSH(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
             </div>
         </div>

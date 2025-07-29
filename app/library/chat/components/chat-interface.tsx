@@ -3,7 +3,7 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiClockClockwiseDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiFishDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
 import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -35,6 +35,14 @@ import AudioPlayer from '@/components/ui/audio-player'
 import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
+    title: '造句巩固',
+    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察我的掌握。',
+    icon: PiPencilCircleDuotone
+}, {
+    title: '今日词汇',
+    prompt: '获取［今天］的 The Leximory Times 并提取 News 里实用于日常写作的高分语块，量少而精。',
+    icon: PiBookmarksDuotone
+}, {
     title: '注解段落',
     prompt: '注解以下段落，无需保存。\n',
     icon: PiNewspaperClippingDuotone
@@ -47,25 +55,9 @@ const initialPrompts = [{
     prompt: '对于文库［文库名称］中的［所有］文章，提取一些可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
-    title: '今日词汇',
-    prompt: '获取［今天］的 The Leximory Times 并提取 News 里实用于日常写作的高分语块，量少而精。',
-    icon: PiBookmarksDuotone
-}, {
-    title: '本周复习',
-    prompt: '［本周］我学习了哪些新单词？找出这些单词，用相应的语言生成一个小故事供我加深印象。',
-    icon: PiClockClockwiseDuotone
-}, {
-    title: '造句巩固',
-    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察我的掌握。',
-    icon: PiPencilCircleDuotone
-}, {
     title: '导入网页',
     prompt: '提取以下网页中的文章，并导入［词汇仓库］文库。',
     icon: PiLinkSimpleDuotone
-}, {
-    title: '外刊出题',
-    prompt: '提取以下网页中的文章，并出一篇小猫钓鱼题考考我。',
-    icon: PiFishDuotone
 }] as const
 
 type MessagePart = {
