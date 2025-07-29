@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { createMemory, deleteMemory, getPersonalMemories, getFederatedMemories } from '@/server/db/memories'
+import { createMemory, deleteMemory, getPersonalMemories, getFederatedMemories, getPublicMemories } from '@/server/db/memories'
 import { getUserOrThrow } from '@/server/auth/user'
 
 const createMemorySchema = z.object({
@@ -35,6 +35,17 @@ export async function getPersonalMemoriesAction(input: z.infer<typeof getMemorie
 export async function getFederatedMemoriesAction(input: z.infer<typeof getMemoriesSchema>) {
     const { page, size } = getMemoriesSchema.parse(input)
     return getFederatedMemories({ page, size })
+}
+
+const getPublicMemoriesSchema = z.object({
+    userId: z.string(),
+    page: z.number(),
+    size: z.number(),
+})
+
+export async function getPublicMemoriesAction(input: z.infer<typeof getPublicMemoriesSchema>) {
+    const { userId, page, size } = getPublicMemoriesSchema.parse(input)
+    return getPublicMemories({ userId, page, size })
 }
 
 const deleteMemorySchema = z.object({

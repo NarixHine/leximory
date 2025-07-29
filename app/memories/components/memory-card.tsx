@@ -9,6 +9,7 @@ import { momentSH } from '@/lib/moment'
 import FlatCard from '@/components/ui/flat-card'
 import Markdown from '@/components/markdown'
 import Link from 'next/link'
+import { useAuth } from '@/lib/hooks'
 
 type Memory = {
     id: number
@@ -25,6 +26,7 @@ type Memory = {
 
 export function MemoryCard({ memory }: { memory: Memory }) {
     const [isPending, startTransition] = useTransition()
+    const { user } = useAuth()
     const queryClient = useQueryClient()
 
     function handleDelete() {
@@ -36,7 +38,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
     }
 
     return (
-        <FlatCard background='solid' className='p-4'>
+        <FlatCard background='solid' className='p-4 bg-stone-400/10 dark:bg-stone-700/30 border-none'>
             <CardBody>
                 <div className='flex flex-col gap-4'>
                     <div className='flex items-center justify-between'>
@@ -53,7 +55,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
                                 }}
                             />}
                         ></Button>
-                        <Button
+                        {user?.id === memory.creator.id && <Button
                             isIconOnly
                             size='sm'
                             variant='light'
@@ -61,7 +63,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
                             isLoading={isPending}
                         >
                             <PiTrash />
-                        </Button>
+                        </Button>}
                     </div>
                     <Markdown md={memory.content} />
                 </div>

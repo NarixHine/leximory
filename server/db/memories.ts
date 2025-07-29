@@ -31,18 +31,15 @@ export async function deleteMemory({ id, creator }: { id: number, creator: strin
     revalidateTag('memories:federated')
 }
 
-export async function getPersonalMemories({ userId, page, size }: { userId: string, page: number, size: number }) {
-    const { data: memories } = await supabase
-        .from('memories')
-        .select('id, content, created_at, public, streak, creator')
-        .eq('creator', userId)
+async function getMemories(queryBuilder: any, page: number, size: number) {
+    const { data: memories } = await queryBuilder
         .order('created_at', { ascending: false })
         .range((page - 1) * size, page * size - 1)
         .throwOnError()
 
     if (!memories) return []
 
-    const memoriesWithAvatars = await Promise.all(memories.map(async (memory) => {
+    const memoriesWithAvatars = await Promise.all(memories.map(async (memory: any) => {
         const { data: { user } } = await supabase.auth.admin.getUserById(memory.creator)
         return {
             ...memory,
@@ -57,30 +54,29 @@ export async function getPersonalMemories({ userId, page, size }: { userId: stri
     return memoriesWithAvatars
 }
 
-export async function getFederatedMemories({ page, size }: { page: number, size: number }) {
-    const { data: memories } = await supabase
+export function getPersonalMemories({ userId, page, size }: { userId: string, page: number, size: number }) {
+    const query = supabase
+        .from('memories')
+        .select('id, content, created_at, public, streak, creator')
+        .eq('creator', userId)
+    return getMemories(query, page, size)
+}
+
+export function getFederatedMemories({ page, size }: { page: number, size: number }) {
+    const query = supabase
         .from('memories')
         .select('id, content, created_at, public, streak, creator')
         .eq('public', true)
-        .order('created_at', { ascending: false })
-        .range((page - 1) * size, page * size - 1)
-        .throwOnError()
+    return getMemories(query, page, size)
+}
 
-    if (!memories) return []
-
-    const memoriesWithAvatars = await Promise.all(memories.map(async (memory) => {
-        const { data: { user } } = await supabase.auth.admin.getUserById(memory.creator)
-        return {
-            ...memory,
-            creator: {
-                id: user?.id ?? '',
-                username: user?.user_metadata.username ?? '',
-                avatar_url: user?.user_metadata.avatar_url ?? ''
-            }
-        }
-    }))
-
-    return memoriesWithAvatars
+export function getPublicMemories({ userId, page, size }: { userId: string, page: number, size: number }) {
+    const query = supabase
+        .from('memories')
+        .select('id, content, created_at, public, streak, creator')
+        .eq('creator', userId)
+        .eq('public', true)
+    return getMemories(query, page, size)
 }
 
 export async function calculateStreak(userId: string) {

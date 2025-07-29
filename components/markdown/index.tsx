@@ -85,7 +85,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),
         }}
         className={cn(
-            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-hr:my-8',
+            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-code:!font-medium prose-hr:my-8',
             className
         )}
     >{result}</MarkdownToJSX>)

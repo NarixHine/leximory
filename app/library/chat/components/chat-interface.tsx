@@ -343,7 +343,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'px-4 py-3 mt-4 rounded-2xl max-w-[80%] text-base whitespace-pre-wrap',
+                    'px-4 py-3 mt-4 rounded-2xl max-w-[80%] text-base whitespace-pre-wrap overflow-x-hidden',
                     isUser
                         ? 'bg-secondary-50/50 text-default-900 dark:bg-stone-900'
                         : 'bg-primary-50/50 text-default-900 dark:bg-neutral-900',
