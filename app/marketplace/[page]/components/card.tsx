@@ -6,11 +6,11 @@ import { CardBody, CardFooter } from "@heroui/card"
 import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
 import { ReactNode } from 'react'
-import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
 import { Spacer } from '@heroui/spacer'
 import BuyLibrary from '@/components/buy-library'
 import FlatCard from '@/components/ui/flat-card'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 interface LibraryCardProps {
     library: {
@@ -69,15 +69,15 @@ export function LibraryCardSkeleton() {
         >
             <CardBody className='p-5'>
                 <div className='space-y-4'>
-                    <Skeleton className='rounded-lg h-8 w-3/4' />
-                    <Skeleton className='rounded-lg h-4 w-1/3' />
-                    <Skeleton className='rounded-lg h-4 w-1/3' />
+                    <StoneSkeleton className='rounded-lg h-8 w-3/4' />
+                    <StoneSkeleton className='rounded-lg h-4 w-1/3' />
+                    <StoneSkeleton className='rounded-lg h-4 w-1/3' />
                 </div>
             </CardBody>
 
             <CardFooter className='flex justify-end pb-4 pr-4'>
-                <Skeleton className='rounded-lg h-6 w-20 -mr-2' />
-                <Skeleton className='rounded-full size-10' />
+                <StoneSkeleton className='rounded-lg h-6 w-20 -mr-2' />
+                <StoneSkeleton className='rounded-full size-10' />
             </CardFooter>
         </FlatCard>
     )

@@ -9,7 +9,7 @@ import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
-import { Textarea } from '@heroui/input'
+import { Input } from '@heroui/input'
 import { contentFontFamily } from '@/lib/fonts'
 import type { ToolResult, ToolName } from '../types'
 import Main from '@/components/ui/main'
@@ -430,7 +430,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
     const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
         api: '/api/library/chat',
@@ -510,8 +510,8 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
         setInput(prompt)
         // Focus the textarea after setting the input
         setTimeout(() => {
-            textareaRef.current?.focus()
-            textareaRef.current?.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length)
+            inputRef.current?.focus()
+            inputRef.current?.setSelectionRange(inputRef.current.value.length, inputRef.current.value.length)
         }, 0)
     }
 
@@ -576,29 +576,14 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
                     className='hidden'
                     accept='.pdf,.txt,.md,.jpg,.jpeg,.png'
                 />
-                <Textarea
-                    ref={textareaRef}
+                <Input
+                    ref={inputRef}
                     className='flex-1'
                     value={input}
+                    variant='flat'
                     onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            if (!input.trim() || status === 'streaming') return
-                            handleSubmit(e as any, {
-                                experimental_attachments: files
-                            })
-                            setInput('')
-                        }
-                    }}
-                    placeholder='输入你的问题...'
-                    maxRows={15}
                     autoComplete='off'
-                    startContent={
-                        <div className='flex items-center gap-2'>
-                            <PiChatCircleDotsDuotone className='text-default-500 mt-0.5' />
-                        </div>
-                    }
+                    startContent={<PiChatCircleDotsDuotone className='text-default-500' />}
                 />
                 <Button
                     type='button'

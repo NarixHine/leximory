@@ -2,7 +2,6 @@
 
 import { Button } from "@heroui/button"
 import { Spacer } from "@heroui/spacer"
-import { Skeleton } from "@heroui/skeleton"
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
 import { Card, CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
@@ -25,6 +24,7 @@ import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
 import { getClickedChunk } from './utils'
+import StoneSkeleton from '../ui/stone-skeleton'
 
 interface CommentProps {
     params: string
@@ -288,10 +288,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     <Save />
                                 </div>
                                 : <div className='space-y-3 w-40'>
-                                    <Skeleton className='w-3/5 rounded-lg h-3'></Skeleton>
-                                    <Skeleton className='w-4/5 rounded-lg h-3'></Skeleton>
-                                    <Skeleton className='w-2/5 rounded-lg h-3'></Skeleton>
-                                    <Skeleton className='w-full rounded-lg h-3'></Skeleton>
+                                    <StoneSkeleton className='w-3/5 rounded-lg h-3'></StoneSkeleton>
+                                    <StoneSkeleton className='w-4/5 rounded-lg h-3'></StoneSkeleton>
+                                    <StoneSkeleton className='w-2/5 rounded-lg h-3'></StoneSkeleton>
+                                    <StoneSkeleton className='w-full rounded-lg h-3'></StoneSkeleton>
                                 </div>
                         }
                     </div>

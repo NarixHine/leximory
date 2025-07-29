@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 import Report from './components/report'
 import Bell from './components/bell'
 import { Spacer } from "@heroui/spacer"
-import { Skeleton } from "@heroui/skeleton"
 import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { UserWordStats } from '@/components/stats'
@@ -13,6 +12,7 @@ import { getSubsStatus } from '@/server/db/subs'
 import { HydrationBoundary } from 'jotai-ssr'
 import { hasSubsAtom } from './atoms'
 import { getUserOrThrow } from '@/server/auth/user'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export const metadata: Metadata = {
     title: '每日汇总',
@@ -53,10 +53,10 @@ export default async function Daily() {
 }
 
 const Loading = () => (<div className='my-8 overflow-hidden'>
-    <Skeleton className='w-20 rounded-lg h-7'></Skeleton>
+    <StoneSkeleton className='w-20 rounded-lg h-7' />
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 my-5'>
-        <Skeleton className='w-full h-32 rounded-lg'></Skeleton>
-        <Skeleton className='w-full h-32 rounded-lg hidden sm:block'></Skeleton>
-        <Skeleton className='w-full h-32 rounded-lg hidden md:block'></Skeleton>
+        <StoneSkeleton className='w-full h-32 rounded-lg'></StoneSkeleton>
+        <StoneSkeleton className='w-full h-32 rounded-lg hidden sm:block'></StoneSkeleton>
+        <StoneSkeleton className='w-full h-32 rounded-lg hidden md:block'></StoneSkeleton>
     </div>
 </div>)

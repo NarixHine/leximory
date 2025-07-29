@@ -43,7 +43,10 @@ export function FeedBase<T>({ queryKey, fetchMemories, showTitle }: FeedBaseProp
     }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     if (isLoading) {
-        return <FeedSkeleton />
+        return <div className='space-y-4'>
+            {showTitle && <H fancy className='text-3xl font-semibold'>Memories</H>}
+            <FeedSkeleton />
+        </div>
     }
 
     const memories = data?.pages.flatMap(page => page) ?? []

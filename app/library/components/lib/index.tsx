@@ -10,7 +10,6 @@ import Link from 'next/link'
 import { contentFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
-import { Skeleton } from "@heroui/skeleton"
 import Form from '../../../../components/form'
 import { Input, Textarea } from "@heroui/input"
 import { Checkbox } from "@heroui/checkbox"
@@ -27,6 +26,7 @@ import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
 import Topics from '../../[lib]/[text]/components/topics'
 import FlatCard from '@/components/ui/flat-card'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -36,18 +36,18 @@ export function LibrarySkeleton() {
     return (
         <Card className='w-full opacity-60' shadow='sm'>
             <CardBody className='px-6 pt-5'>
-                <Skeleton className='w-48 h-10 rounded-lg' />
+                <StoneSkeleton className='w-48 h-10 rounded-lg' />
                 <Spacer y={8} />
                 <div className='flex space-x-2'>
-                    <Skeleton className='w-16 h-6 rounded-lg' />
-                    <Skeleton className='w-16 h-6 rounded-lg' />
+                    <StoneSkeleton className='w-16 h-6 rounded-lg' />
+                    <StoneSkeleton className='w-16 h-6 rounded-lg' />
                 </div>
             </CardBody>
             <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Skeleton className='w-24 h-9 rounded-lg' />
+                <StoneSkeleton className='w-24 h-9 rounded-lg' />
                 <div className='flex flex-col gap-1'>
-                    <Skeleton className='w-16 h-3 rounded-lg' />
-                    <Skeleton className='w-12 h-5 rounded-lg' />
+                    <StoneSkeleton className='w-16 h-3 rounded-lg' />
+                    <StoneSkeleton className='w-12 h-5 rounded-lg' />
                 </div>
             </CardFooter>
         </Card>

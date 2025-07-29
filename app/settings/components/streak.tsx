@@ -1,7 +1,7 @@
 import { calculateStreak } from '@/server/db/memories'
 import { getUserOrThrow } from '@/server/auth/user'
 import { StreakDisplay } from './streak-display'
-import { Skeleton } from '@heroui/react'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export async function Streak() {
     const { userId } = await getUserOrThrow()
@@ -11,5 +11,5 @@ export async function Streak() {
 }
 
 export function StreakSkeleton() {
-    return <Skeleton className='h-[232px] w-full rounded-lg' />
+    return <StoneSkeleton className='h-[232px] w-full rounded-lg' />
 }
