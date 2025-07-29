@@ -6,6 +6,7 @@ import { LibraryCardSkeleton } from '@/app/marketplace/[page]/components/card'
 import UserInfo from './components/user-info'
 import WordStatsSection from './components/word-stats'
 import { UserPublicFeed } from '@/app/memories/components/user-public-feed'
+import { Spacer } from '@heroui/spacer'
 
 export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
     const uid = (await params).uid
@@ -24,7 +25,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
                 }>
                     <PublicLibraries uid={uid} />
                 </Suspense>
-                <H fancy className='text-3xl font-semibold mt-8 mb-4'>Memories</H>
+                <Spacer y={10} />
                 <UserPublicFeed userId={uid} />
             </div>
         </div>

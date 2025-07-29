@@ -6,15 +6,17 @@ import { useEffect } from 'react'
 import { FeedSkeleton } from './feed-skeleton'
 import { MemoryCard } from './memory-card'
 import { Spinner } from '@heroui/spinner'
+import H from '@/components/ui/h'
 
 type FetchMemoriesFn<T> = ({ pageParam }: { pageParam: number }) => Promise<T[]>
 
 interface FeedBaseProps<T> {
     queryKey: QueryKey
     fetchMemories: FetchMemoriesFn<T & { id: number, creator: any }>
+    showTitle?: boolean
 }
 
-export function FeedBase<T>({ queryKey, fetchMemories }: FeedBaseProps<T>) {
+export function FeedBase<T>({ queryKey, fetchMemories, showTitle }: FeedBaseProps<T>) {
     const {
         data,
         fetchNextPage,
@@ -48,6 +50,7 @@ export function FeedBase<T>({ queryKey, fetchMemories }: FeedBaseProps<T>) {
 
     return (
         <div className='space-y-4'>
+            {showTitle && memories.length > 0 && <H fancy className='text-3xl font-semibold'>Memories</H>}
             {memories.map(memory => (
                 <MemoryCard key={memory.id} memory={memory as any} />
             ))}

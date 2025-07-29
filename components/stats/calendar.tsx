@@ -1,10 +1,11 @@
 'use client'
 
 import { PiBookBookmark } from 'react-icons/pi'
-import { Card, CardBody } from '@heroui/card'
+import { CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { momentSH } from '@/lib/moment'
+import FlatCard from '../ui/flat-card'
 
 interface VocabularyCalendarProps {
     wordCountData: Map<string, number>
@@ -13,7 +14,7 @@ interface VocabularyCalendarProps {
 
 // Color palette for heatmap cells
 const colorPalette = {
-    0: 'bg-default-50/80',
+    0: 'bg-default-100/60',
     1: 'bg-primary-50',
     5: 'bg-primary-100',
     10: 'bg-primary-200',
@@ -72,18 +73,18 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
     const emptyCells = Array.from({ length: startingDayOfWeek }, (_, i) => i)
 
     // Day names (adjust if your week starts on Monday)
-    const dayNames = ['日', '一', '二', '三', '四', '五', '六']
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
     return (
-        <Card className={cn(
-            'backdrop-blur-md bg-white/80 dark:bg-default-50/80 border-0 shadow-lg rounded-3xl overflow-hidden',
+        <FlatCard background='solid' className={cn(
+            'border-none bg-primary-100/20 dark:bg-stone-800',
             isLoading && 'animate-pulse'
         )}>
-            <CardBody className='p-6'>
+            <CardBody className='p-6 pt-4'>
                 <div className='grid grid-cols-7 gap-2'>
                     {/* Day headers */}
                     {dayNames.map((day, index) => (
-                        <div key={index} className={cn('text-center text-xs font-medium py-1',)}>
+                        <div key={index} className={cn('text-center text-xs font-medium text-default-500 font-mono py-1',)}>
                             {day}
                         </div>
                     ))}
@@ -127,7 +128,7 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
                     })}
                 </div>
             </CardBody>
-        </Card>
+        </FlatCard>
     )
 }
 

@@ -36,7 +36,7 @@ import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
     title: '造句巩固',
-    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察我的掌握。',
+    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察并巩固我的掌握。',
     icon: PiPencilCircleDuotone
 }, {
     title: '今日词汇',
@@ -52,7 +52,7 @@ const initialPrompts = [{
     icon: PiNewspaperDuotone
 }, {
     title: '金句提取',
-    prompt: '对于文库［文库名称］中的［所有］文章，提取一些可借鉴于作文中的高分金句。',
+    prompt: '对于［文库名称］中的［所有］文章，提取可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
     title: '导入网页',

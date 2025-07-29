@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Memories' }
 
 export default function MemoriesPage() {
     return (
-        <Main className='max-w-screen-lg mx-auto flex flex-col bg-[radial-gradient(#e7e5e4_1px,transparent_1px)] dark:bg-[radial-gradient(#292524_1px,transparent_1px)] [background-size:20px_20px]'>
+        <Main className='max-w-screen-lg mx-auto flex flex-col'>
             <H fancy className='text-5xl md:hidden'>Memories</H>
             <div className={cn('italic text-center text-xl md:hidden mb-4 text-default-700', ENGLISH_FANCY.className)}>Record your learnings</div>
             <div className='flex flex-col md:flex-row-reverse gap-8'>

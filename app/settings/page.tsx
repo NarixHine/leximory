@@ -60,7 +60,6 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    const month = momentSH().format('MMMM')
     return <Main className='flex flex-col gap-4 max-w-screen-sm'>
         <Suspense fallback={<HeroSectionSkeleton />}>
             <HeroSection />
@@ -89,6 +88,11 @@ export default async function Settings() {
                     <Streak />
                 </Suspense>
             </div>
+            <div className='col-span-2'>
+                <Suspense fallback={<HeatmapSkeleton />}>
+                    <UserWordHeatmap />
+                </Suspense>
+            </div>
             <div className='col-span-2 flex flex-col gap-2'>
                 <Suspense fallback={<UpdateProfileSkeleton />}>
                     <UserSection />
@@ -105,12 +109,6 @@ export default async function Settings() {
                 <CopyToken />
             </div>
         </section>
-        <div className='w-full pr-6 pl-0 py-3 flex flex-col gap-4'>
-            <H fancy className='items-end text-5xl text-primary-300 text-balance'>What you learned in {month}</H>
-            <Suspense fallback={<HeatmapSkeleton />}>
-                <UserWordHeatmap />
-            </Suspense>
-        </div>
     </Main>
 }
 
