@@ -8,7 +8,7 @@ const StoneSkeleton = extendVariants(Skeleton, {
             stone: {
                 base: [
                     'bg-default-50/50 dark:bg-stone-800',
-                    'before:via-default-200/70 dark:before:via-stone-700/60'
+                    'before:via-default-200/60 dark:before:via-stone-700/60'
                 ],
             }
         }

@@ -76,8 +76,15 @@ export function LibraryCardSkeleton() {
             </CardBody>
 
             <CardFooter className='flex justify-end pb-4 pr-4'>
-                <StoneSkeleton className='rounded-lg h-6 w-20 -mr-2' />
-                <StoneSkeleton className='rounded-full size-10' />
+                <StoneSkeleton className='rounded-lg'>
+                    <BuyLibrary
+                        isStarred={true}
+                        id={''}
+                        price={0}
+                        avatar={''}
+                        isOwner={true}
+                    />
+                </StoneSkeleton>
             </CardFooter>
         </FlatCard>
     )

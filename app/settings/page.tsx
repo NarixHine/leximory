@@ -7,7 +7,6 @@ import { Suspense } from 'react'
 import Main from '@/components/ui/main'
 import Preference from './components/preference'
 import CopyToken from './components/copy'
-import { Skeleton } from '@heroui/skeleton'
 import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
 import { planMap } from '@/lib/config'
@@ -21,6 +20,7 @@ import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
 import { momentSH } from '@/lib/moment'
 import { Streak, StreakSkeleton } from './components/streak'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -48,7 +48,7 @@ function HeroSectionSkeleton() {
         <div className='flex flex-col gap-1'>
             <span className='text-3xl ml-1 font-mono'>@loading...</span>
             <div className='flex gap-3 w-full mt-2'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><Skeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
+                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><StoneSkeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
             </div>
         </div>
     </section>
@@ -66,10 +66,10 @@ export default async function Settings() {
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
             <div className='flex gap-4 w-full'>
-                <Suspense fallback={<Skeleton className='w-[109px] h-12 rounded-full' />}>
+                <Suspense fallback={<StoneSkeleton className='w-[109px] h-12 rounded-full' />}>
                     <UpgradeServer />
                 </Suspense>
-                <Suspense fallback={<Skeleton className='flex-1 h-12 rounded-full' />}>
+                <Suspense fallback={<StoneSkeleton className='flex-1 h-12 rounded-full' />}>
                     <ClaimDailyLexicoinServer />
                 </Suspense>
             </div>
@@ -100,7 +100,7 @@ export default async function Settings() {
             </div>
             <div className='border border-dashed border-secondary-200 rounded-lg p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>英语偏好</H>
-                <Suspense fallback={<Skeleton className='w-full h-8 rounded-full' />}>
+                <Suspense fallback={<StoneSkeleton className='w-full h-8 rounded-full' />}>
                     <Preference />
                 </Suspense>
             </div>
