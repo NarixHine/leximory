@@ -49,7 +49,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
                             variant='light'
                             startContent={<User
                                 name={memory.creator.username ?? 'User'}
-                                description={momentSH(memory.created_at).calendar()}
+                                description={momentSH(memory.created_at).format('lll')}
                                 avatarProps={{
                                     src: memory.creator.avatar_url ?? ''
                                 }}

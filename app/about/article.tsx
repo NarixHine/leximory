@@ -2,7 +2,7 @@
 
 import { Card, CardBody } from "@heroui/card"
 import { motion } from 'framer-motion'
-import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiDeviceMobileDuotone } from 'react-icons/pi'
+import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiPlanetDuotone, PiHeadphonesDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
@@ -60,16 +60,24 @@ export function Article() {
             >复习提醒</span>等。
         </motion.p>
 
-        <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className='mt-8 mb-4'
-        >
-            一些隐藏功能：
-        </motion.p>
-
-        <div className='grid grid-cols-5 gap-4 mb-10'>
+        <div className='grid grid-cols-5 gap-4 my-6'>
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className='col-span-5'
+            >
+                <GradientCard
+                    title='Leximory 漫游指南'
+                    text='文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
+                    className='bg-[linear-gradient(120deg,_#10172a_0%,_#283e51_40%,_#485563_70%,_#232526_100%)] text-white'
+                    textClassName='mb-8 text-white opacity-80'
+                    titleClassName='text-2xl mb-1'
+                    to={'/blog/leximory-guide'}
+                >
+                    <PiPlanetDuotone className='text-5xl opacity-60 mt-3 ml-3' />
+                </GradientCard>
+            </motion.div>
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -113,7 +121,7 @@ export function Article() {
                     text='语言认知的另一个维度'
                     className='bg-gradient-to-tr from-warning-50/50 to-danger-100/50'
                 >
-                    <PiDeviceMobileDuotone className='text-2xl opacity-60' />
+                    <PiHeadphonesDuotone className='text-2xl opacity-60' />
                 </GradientCard>
             </motion.div>
             <motion.div
@@ -207,21 +215,23 @@ export function Article() {
     </article>
 }
 
-const GradientCard = ({ text, className, title, children, to }: {
+const GradientCard = ({ text, className, title, children, to, textClassName, titleClassName }: {
     title: string,
     text: string,
     className: string,
     children?: React.ReactNode
-    to: string
+    to: string,
+    textClassName?: string,
+    titleClassName?: string
 }) => {
     const router = useRouter()
     return (
         <Card isPressable onPress={() => {
             router.push(to)
-        }} shadow='none' className={cn(className, 'p-3 min-h-36 h-full w-full relative rounded-lg')}>
+        }} shadow='none' className={cn('p-3 min-h-36 h-full w-full relative rounded-lg', className)}>
             <CardBody className='overflow-hidden'>
-                <h2 className='text-xl'>{title}</h2>
-                <p className='opacity-60 text-lg'>{text}</p>
+                <h2 className={cn('text-xl', titleClassName)}>{title}</h2>
+                <p className={cn('opacity-60 text-lg text-balance', textClassName)}>{text}</p>
                 <div className='absolute -bottom-3 -right-3 p-3'>
                     {children}
                 </div>

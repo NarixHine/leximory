@@ -5,6 +5,7 @@ import H from '@/components/ui/h'
 import { unstable_cacheLife as cacheLife } from 'next/cache'
 import { getUserById } from '@/server/auth/user'
 import { momentSH } from '@/lib/moment'
+import 'moment/locale/zh-cn'
 
 export default async function UserInfo({ uid }: { uid: string }) {
     'use cache'
@@ -22,7 +23,7 @@ export default async function UserInfo({ uid }: { uid: string }) {
                 </div>
                 <div className='flex flex-col items-center gap-1'>
                     <span className='text-sm opacity-70 flex items-center gap-1'><PiNotebookDuotone />上次登录</span>
-                    <Chip color={'secondary'} variant='flat'>{momentSH(lastActiveAt).fromNow()}</Chip>
+                    <Chip color={'secondary'} variant='flat'>{momentSH(lastActiveAt).locale('zh-cn').fromNow()}</Chip>
                 </div>
             </div>
         </>

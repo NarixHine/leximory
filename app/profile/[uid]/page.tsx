@@ -12,7 +12,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ uid: s
     const uid = (await params).uid
     return <Center className='flex-col max-w-screen-xl gap-4'>
         <UserInfo uid={uid} />
-        <div className='flex flex-col md:flex-row gap-12 w-full'>
+        <div className='flex flex-col md:flex-row gap-12 w-full mt-3'>
             <WordStatsSection uid={uid} />
             <div className='basis-full md:basis-3/5'>
                 <H className='text-2xl font-semibold mb-4'>公开文库</H>
