@@ -7,7 +7,8 @@ const PROTECTED_ROUTE_PREFIXES = [
     '/marketplace',
     '/daily',
     '/fix-your-paper',
-    '/admin'
+    '/admin',
+    '/memories'
 ]
 const isProtectedRouteChecker = (path: string) => {
     return PROTECTED_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix))

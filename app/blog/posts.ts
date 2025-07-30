@@ -6,4 +6,5 @@ export const postsData = [
     { title: 'iOS 词汇统计小组件', date: '2025-02-02', slug: 'ios-widget' },
     { title: 'Introducing: Talk to Your Library', date: '2025-05-31', slug: 'ai-agent' },
     { title: 'Introducing: The Leximory Times', date: '2025-06-21', slug: 'the-times' },
+    { title: 'Leximory 漫游指南', date: '2025-07-30', slug: 'leximory-guide' },
 ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

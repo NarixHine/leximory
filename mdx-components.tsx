@@ -6,7 +6,7 @@ import { contentFontFamily } from './lib/fonts'
 export function useMDXComponents(components: MDXComponents): MDXComponents {
     return {
         p: ({ children, className, ...props }) => <div style={{ fontFamily: contentFontFamily }} className={cn(className, 'my-2')} {...props}>{children}</div>,
-        img: ({ src, alt, title }) => <MdImg src={src!} alt={alt} title={title}></MdImg>,
+        img: ({ src, alt, title }) => <MdImg src={src!} alt={alt} title={title} disableSpecialStyles></MdImg>,
         ...components,
     }
 }
