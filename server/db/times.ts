@@ -5,20 +5,20 @@ import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { TimesSummaryData, TimesData, TimesDataWithRaw } from '@/components/times/types'
 import { TIMES_PAGE_SIZE } from '@/lib/config'
 
-export async function getRecentTimesData(page: number = 1, pageSize: number = TIMES_PAGE_SIZE) {
+export async function getRecentTimesData(page: number = 1) {
     cacheTag('times')
 
     const { data, count } = await supabase
         .from('times')
         .select('date, cover', { count: 'exact' })
         .order('date', { ascending: false })
-        .range((page - 1) * pageSize, page * pageSize - 1)
+        .range((page - 1) * TIMES_PAGE_SIZE, page * TIMES_PAGE_SIZE - 1)
 
         .throwOnError()
 
     return {
         data: data as TimesSummaryData[],
-        hasMore: count ? count > page * pageSize : false,
+        hasMore: count ? count > page * TIMES_PAGE_SIZE : false,
     }
 }
 

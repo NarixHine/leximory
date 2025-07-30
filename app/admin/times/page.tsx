@@ -28,8 +28,8 @@ export default function AdminTimesPage() {
     } = useInfiniteQuery({
         queryKey: ['admin-times'],
         queryFn: ({ pageParam = 1 }) => fetchMoreIssues(pageParam),
-        getNextPageParam: (lastPage) =>
-            lastPage.hasMore ? lastPage.data.length / TIMES_PAGE_SIZE + 1 : undefined,
+        getNextPageParam: (lastPage, allPages) =>
+            lastPage.hasMore ? allPages.flatMap(page => page.data).length / TIMES_PAGE_SIZE + 1 : undefined,
         initialPageParam: 1,
     })
 
