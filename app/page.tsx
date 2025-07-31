@@ -29,9 +29,9 @@ export default async function Home() {
 	if (await isAtRead()) {
 		redirect('/times')
 	}
-	return <Main className={'w-11/12 max-w-screen-lg'}>
+	return <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
 		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl italic'} fancy>
-			<span className='[text-shadow:_5px_5px_5px_rgb(238_214_211_/_80%)] dark:[text-shadow:none]'>Leximory</span>
+			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:[text-shadow:none]'>Leximory</span>
 		</H>
 
 		<Spacer y={5}></Spacer>
@@ -101,7 +101,7 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的英语新闻和小说'
 						>
-							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-gradient-to-br from-zinc-50 to-neutral-100 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
+							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-linear-to-br from-zinc-50 to-neutral-100 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
 								<CardBody style={{ fontFamily: contentFontFamily }}>
 									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>

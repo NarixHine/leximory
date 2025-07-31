@@ -70,7 +70,7 @@ export function Article() {
                 <GradientCard
                     title='Leximory 漫游指南'
                     text='文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
-                    className='bg-[linear-gradient(120deg,_#10172a_0%,_#283e51_40%,_#485563_70%,_#232526_100%)] text-white'
+                    className='bg-[linear-gradient(120deg,#10172a_0%,#283e51_40%,#485563_70%,#232526_100%)] text-white'
                     textClassName='mb-8 text-white opacity-80'
                     titleClassName='text-2xl mb-1'
                     to={'/blog/leximory-guide'}
@@ -87,7 +87,7 @@ export function Article() {
                 <GradientCard
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
-                    className='bg-gradient-to-br from-primary-50/50 to-secondary-100/50'
+                    className='bg-linear-to-br from-primary-50/50 to-secondary-100/50'
                     to={exampleEbookLink}
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
@@ -103,7 +103,7 @@ export function Article() {
                     title='iOS Shortcuts'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
-                    className='bg-gradient-to-bl from-warning-50/50 to-secondary-100/50'
+                    className='bg-linear-to-bl from-warning-50/50 to-secondary-100/50'
                 >
                     <PiAppleLogoDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -119,7 +119,7 @@ export function Article() {
                     to='/blog/reading-while-listening'
                     title='边听边读'
                     text='语言认知的另一个维度'
-                    className='bg-gradient-to-tr from-warning-50/50 to-danger-100/50'
+                    className='bg-linear-to-tr from-warning-50/50 to-danger-100/50'
                 >
                     <PiHeadphonesDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -134,7 +134,7 @@ export function Article() {
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
                     to='/blog/install-pwa'
-                    className='bg-gradient-to-tl from-primary-50/50 to-warning-100/50'
+                    className='bg-linear-to-tl from-primary-50/50 to-warning-100/50'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>

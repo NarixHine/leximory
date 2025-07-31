@@ -10,6 +10,7 @@ import FlatCard from '@/components/ui/flat-card'
 import Markdown from '@/components/markdown'
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks'
+import 'moment/locale/zh-cn'
 
 type Memory = {
     id: number
@@ -49,7 +50,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
                             variant='light'
                             startContent={<User
                                 name={memory.creator.username ?? 'User'}
-                                description={momentSH(memory.created_at).format('lll')}
+                                description={momentSH(memory.created_at).locale('zh-cn').format('lll')}
                                 avatarProps={{
                                     src: memory.creator.avatar_url ?? ''
                                 }}

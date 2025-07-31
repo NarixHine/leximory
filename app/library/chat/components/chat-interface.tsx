@@ -240,7 +240,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                                         <li className=' flex gap-1 items-center' key={id}>
                                             <ScopeProvider atoms={[langAtom, libAtom]}>
                                                 <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                                                    <Markdown deleteId={id} md={word} className='!font-mono prose-sm leading-none opacity-60' />
+                                                    <Markdown deleteId={id} md={word} className='font-mono! prose-sm leading-none opacity-60' />
                                                 </HydrationBoundary>
                                             </ScopeProvider>
                                         </li>
@@ -522,7 +522,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <H fancy className={'text-2xl sm:text-3xl italic bg-gradient-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-0.5'>

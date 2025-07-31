@@ -33,7 +33,7 @@ export default function CopyToken() {
     }, [])
     return <Drawer.Root>
         <Drawer.Trigger
-            className={cn('relative flex h-8 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
+            className={cn('relative flex h-8 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             onClick={() => {
                 setToken(null)
                 startLoading(handleFetchToken)
@@ -44,7 +44,7 @@ export default function CopyToken() {
         </Drawer.Trigger>
         <Drawer.Portal>
             <Drawer.Overlay className='fixed inset-0 bg-black/40 dark:bg-white/5' />
-            <Drawer.Content className='h-fit z-[999] fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-background flex flex-col justify-center items-center'>
+            <Drawer.Content className='h-fit z-999 fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-background flex flex-col justify-center items-center'>
                 <Drawer.Title className='sr-only'>通行密钥</Drawer.Title>
                 <div className='p-4 pb-20 md:pb-6 prose prose-sm w-full relative'>
                     {isLoading && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}

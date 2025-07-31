@@ -45,7 +45,7 @@ export default async function MarketplacePage({ params }: {
     const page = parseInt((await params).page)
 
     return (
-        <Main className='max-w-screen-lg flex flex-col mx-auto'>
+        <Main className='max-w-(--breakpoint-lg) flex flex-col mx-auto'>
             <H className='text-5xl font-bold dark:text-amber-500 text-amber-600'><PiStorefrontDuotone />文库集市</H>
             <Spacer y={10} />
             <Suspense fallback={<SuspenseLibraryList />}>

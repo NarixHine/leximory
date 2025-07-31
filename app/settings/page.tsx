@@ -27,9 +27,9 @@ export const metadata: Metadata = { title: '设置' }
 async function HeroSection() {
     const { username, image, createdAt } = await getUserOrThrow()
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar src={image} isBordered color={'primary'} className='!size-16 ml-2 sm:ml-0' />
+        <Avatar src={image} isBordered color={'primary'} className='size-16! ml-2 sm:ml-0' />
         <div className='flex flex-col gap-2'>
-            <span className='text-3xl ml-1 font-mono'>{username ? username : '👋Hi.'}</span>
+            <span className='text-3xl ml-1'>{username ? username : '👋Hi.'}</span>
             <div className='flex gap-3 w-full'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{momentSH(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
             </div>
@@ -44,9 +44,9 @@ async function UserSection() {
 
 function HeroSectionSkeleton() {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar isBordered color={'primary'} className='!size-16' />
+        <Avatar isBordered color={'primary'} className='size-16!' />
         <div className='flex flex-col gap-1'>
-            <span className='text-3xl ml-1 font-mono'>@loading...</span>
+            <span className='text-3xl ml-1'>@loading...</span>
             <div className='flex gap-3 w-full mt-2'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><StoneSkeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
             </div>
@@ -60,7 +60,7 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    return <Main className='flex flex-col gap-4 max-w-screen-sm'>
+    return <Main className='flex flex-col gap-4 max-w-(--breakpoint-sm)'>
         <Suspense fallback={<HeroSectionSkeleton />}>
             <HeroSection />
         </Suspense>
@@ -115,7 +115,7 @@ export default async function Settings() {
 
 
 function LexicoinBalanceCard({ balance }: { balance?: number }) {
-    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-gradient-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
+    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-linear-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiCoinsDuotone className='size-7' />
     </GradientCard>
 }
@@ -127,7 +127,7 @@ async function LexicoinBalance() {
 }
 
 function PlanCard({ text }: { text?: string }) {
-    return <GradientCard title='订阅计划' text={text} className='bg-gradient-to-tl from-rose-100/80 to-teal-100/80 dark:from-gray-900 dark:to-gray-600'>
+    return <GradientCard title='订阅计划' text={text} className='bg-linear-to-tl from-rose-100/80 to-teal-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiPlanetDuotone className='size-7' />
     </GradientCard>
 }

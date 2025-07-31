@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default function UpgradeMessage() {
     return (
-        <Card className='mb-8 bg-gradient-to-r from-primary-50/20 to-secondary-50/20' shadow='none' isBlurred>
+        <Card className='mb-8 bg-linear-to-r from-primary-50/20 to-secondary-50/20' shadow='none' isBlurred>
             <CardBody className='p-6'>
                 <div className='flex items-start gap-4'>
                     <div className='p-2 rounded-full bg-primary-100/50'>

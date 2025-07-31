@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     }
 
     return (
-        <Main className={cn('max-w-screen-lg flex flex-col gap-10')}>
+        <Main className={cn('max-w-(--breakpoint-lg) flex flex-col gap-10')}>
             <AdminBreadcrumbs />
             {children}
         </Main>

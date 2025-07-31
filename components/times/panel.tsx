@@ -182,14 +182,14 @@ function TimesDateCard({ date, cover }: { date: string, cover: string }) {
     return (
         <Card
             className={cn(
-                'relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group',
+                'relative shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group',
                 ENGLISH.className
             )}
             isPressable
             onPress={() => setDateQuery(date)}
         >
             <CardBody
-                className='relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer hover:scale-105 transition-transform duration-200 rounded-2xl overflow-hidden group'
+                className='relative shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer hover:scale-105 transition-transform duration-200 rounded-2xl overflow-hidden group'
             >
                 <Image
                     src={cover}
@@ -212,11 +212,11 @@ function TimesDateCardSkeleton() {
     return (
         <Card
             className={cn(
-                'relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group'
+                'relative shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer transition-transform duration-200 rounded-2xl overflow-hidden group'
             )}
         >
             <CardBody
-                className='relative flex-shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer hover:scale-105 transition-transform duration-200 rounded-2xl overflow-hidden group'
+                className='relative shrink-0 w-40 md:w-full h-20 md:h-auto aspect-square cursor-pointer hover:scale-105 transition-transform duration-200 rounded-2xl overflow-hidden group'
             >
                 <Skeleton className='absolute inset-0' />
             </CardBody>

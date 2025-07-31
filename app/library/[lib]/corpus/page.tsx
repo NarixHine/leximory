@@ -27,7 +27,7 @@ export default async function Page(props: LibProps) {
     const { lib } = params
     const { words, cursor, more, name } = await getData(lib)
 
-    return (<Main className='max-w-screen-lg'>
+    return (<Main className='max-w-(--breakpoint-lg)'>
         <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
         <H fancy className='text-5xl'>
             {name}

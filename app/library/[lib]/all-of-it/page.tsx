@@ -25,7 +25,7 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
     ])
 
     return (
-        <Main className='max-w-screen-xl'>
+        <Main className='max-w-(--breakpoint-xl)'>
             <Nav lib={{ id: lib.id, name: lib.name }}></Nav>
             {texts.map((text, index) => (
                 <div key={text.id} className='space-y-4 print:break-inside-avoid [counter-reset:sidenote-counter]'>

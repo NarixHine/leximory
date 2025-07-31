@@ -107,7 +107,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                         )
                     }
                 /> : <Spinner className='ml-2 pb-1.5' variant='dots' color='default' />}
-                <div className={cn('flex-grow')}>
+                <div className={cn('grow')}>
                     <Slider
                         aria-label='Audio progress'
                         size='sm'

@@ -46,7 +46,7 @@ export default async function Page(props: LibAndTextProps) {
             [isLoadingAtom, annotating === 'annotating' || annotating === 'saving'],
             [promptAtom, prompt]
         ]}>
-            <Main className='max-w-screen-lg [counter-reset:sidenote-counter] md:pb-4'>
+            <Main className='max-w-(--breakpoint-lg) [counter-reset:sidenote-counter] md:pb-4'>
                 <Nav lib={{ id: lib.id, name: lib.name }} text={{ id: text, name: title }}></Nav>
                 <div className='group flex items-center justify-center gap-3'>
                     <QuoteInAgent />

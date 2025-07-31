@@ -98,7 +98,7 @@ export function AddTextButton() {
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
             <DrawerContent>
                 <DrawerHeader className='flex flex-col gap-1'>创建文章</DrawerHeader>
-                <DrawerBody className='max-w-screen-sm mx-auto pb-10'>
+                <DrawerBody className='max-w-(--breakpoint-sm) mx-auto pb-10'>
                     <Tabs aria-label='方式'>
                         <Tab
                             key='text'

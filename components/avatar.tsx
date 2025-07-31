@@ -14,7 +14,7 @@ moment.locale('zh-cn')
 // Example: Avatar for current user
 export async function CurrentUserAvatar() {
     const user = await getUserOrThrow()
-    return <Avatar src={user.image ?? undefined} isBordered color='primary' className='!size-16' />
+    return <Avatar src={user.image ?? undefined} isBordered color='primary' className='size-16!' />
 }
 
 // If you need to fetch arbitrary users by id, implement a getUserById abstraction using Supabase.

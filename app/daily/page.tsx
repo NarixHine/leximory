@@ -26,7 +26,7 @@ export default async function Daily() {
         <HydrationBoundary hydrateAtoms={[
             [hasSubsAtom, hasSubs]
         ]}>
-            <Main className='max-w-screen-lg pt-12'>
+            <Main className='max-w-(--breakpoint-lg) pt-12'>
                 <H className='text-5xl font-bold text-warning-300'><PiRewindDuotone />每日汇总</H>
                 <div className='mt-4 mb-12 h-80'>
                     <Suspense fallback={<WordChartSkeleton />}>

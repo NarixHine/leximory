@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
-            <section className='max-w-screen-sm mx-auto'>
+            <section className='max-w-(--breakpoint-sm) mx-auto'>
                 <h1 className={cn('text-4xl', ENGLISH_FANCY.className)}>
                     <TypedTitle />
                 </h1 >

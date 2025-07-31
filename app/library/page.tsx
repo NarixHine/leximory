@@ -32,10 +32,10 @@ async function getData(orFilter: OrFilter, userId: string) {
 }
 
 export default function Page() {
-    return <Main className='flex flex-col max-w-screen-md'>
+    return <Main className='flex flex-col max-w-(--breakpoint-md)'>
         <Nav />
 
-        <div className='flex flex-col max-w-screen-sm w-full mx-auto'>
+        <div className='flex flex-col max-w-(--breakpoint-sm) w-full mx-auto'>
             <H className='text-5xl font-bold text-primary-400 dark:text-default-500'><PiBooksDuotone />文库</H>
             <Spacer y={8} />
             <div className='flex flex-col gap-4'>
@@ -43,7 +43,7 @@ export default function Page() {
                     <Suspense fallback={
                         <GradientCard
                             title='本月 AI 注解额度'
-                            className={'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
+                            className={'bg-linear-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
                         />
                     }>
                         <CommentaryQuotaCard />
@@ -62,7 +62,7 @@ export default function Page() {
         <Spacer y={4} />
 
         <Suspense fallback={
-            <div className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
+            <div className='flex flex-col gap-4 max-w-(--breakpoint-sm) w-full mx-auto'>
                 <LibrarySkeleton />
                 <LibrarySkeleton />
             </div>
@@ -108,7 +108,7 @@ async function LibraryList({ userId, orFilter }: {
     return (
         <div className='flex flex-col gap-4 w-full'>
             <ConfirmUnstarRoot />
-            <section className='flex flex-col gap-4 max-w-screen-sm w-full mx-auto'>
+            <section className='flex flex-col gap-4 max-w-(--breakpoint-sm) w-full mx-auto'>
                 {normalLibs.concat(compactLibs).length > 0 ? normalLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}

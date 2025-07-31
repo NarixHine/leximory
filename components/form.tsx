@@ -14,7 +14,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
                 <HeroUIForm onSubmit={async (props) => {
                     await onSubmit?.(props)
                     onClose()
-                }} className={cn('max-w-screen-sm mx-auto py-3', className)} {...props}>
+                }} className={cn('max-w-(--breakpoint-sm) mx-auto py-3', className)} {...props}>
                     <DrawerHeader className='flex flex-col gap-1'>{title}</DrawerHeader>
                     <DrawerBody>
                         {children}

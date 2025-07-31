@@ -1,11 +1,2 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-input {
-    outline: none !important;
-}
-
-textarea {
-    outline: none !important;
-}
+@import 'tailwindcss';
+@config '../tailwind.config.ts';

@@ -54,7 +54,7 @@ export default function Test({ latestTime }: {
             ></DateRangePicker>
         </I18nProvider>
         <div className='flex space-x-2'>
-            <div className='flex flex-col items-center justify-center flex-1 border-x-1 text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
+            <div className='flex flex-col items-center justify-center flex-1 border-x text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
                 {words.map(({ word, id }) => (
                     !languageStrategies.map(s => s.welcome).includes(word) &&
                     <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave></Markdown>

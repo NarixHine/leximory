@@ -10,7 +10,7 @@ import { Spacer } from '@heroui/spacer'
 
 export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
     const uid = (await params).uid
-    return <Center className='flex-col max-w-screen-xl gap-4'>
+    return <Center className='flex-col max-w-(--breakpoint-xl) gap-4'>
         <UserInfo uid={uid} />
         <div className='flex flex-col md:flex-row gap-12 w-full mt-3'>
             <WordStatsSection uid={uid} />

@@ -99,7 +99,7 @@ export default function ImportModal() {
                 {(onClose) => (
                     <form className='w-full'>
                         <DrawerHeader className='flex flex-col gap-1'>导入</DrawerHeader>
-                        <DrawerBody className='max-w-screen-sm mx-auto'>
+                        <DrawerBody className='max-w-(--breakpoint-sm) mx-auto'>
                             <Tabs aria-label='导入方式'>
                                 {!ebook && <Tab key='text' title='导入文章' className='flex flex-col gap-2'>
                                     <div className='flex mb-2 gap-0.5 items-end'>
@@ -198,7 +198,7 @@ function StoryModal() {
                 {(onClose) => (
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
-                        <DrawerBody className='flex flex-col gap-4 max-w-screen-sm mx-auto'>
+                        <DrawerBody className='flex flex-col gap-4 max-w-(--breakpoint-sm) mx-auto'>
                             <div className='prose dark:prose-invert'><blockquote className='not-italic border-l-secondary-300'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
                             <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
                             <FileUpload onChange={async ([file]) => {

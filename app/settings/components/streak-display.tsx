@@ -21,7 +21,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
             router.push('/memories')
         }} className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
             <CardBody className='p-8 relative'>
-                <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-[1]' />
+                <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>
                     <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}

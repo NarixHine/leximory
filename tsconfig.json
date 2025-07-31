@@ -41,7 +41,7 @@
     ".next/types/**/*.ts",
     "components/markdown/index.tsx",
     "next.config.ts"
-  ],
+, "postcss.config.mjs"  ],
   "exclude": [
     "node_modules"
   ]
