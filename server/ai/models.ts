@@ -1,7 +1,17 @@
 import { createVertex } from '@ai-sdk/google-vertex'
-import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { Lang } from '@/lib/config'
 import env from '@/lib/env'
+
+export const noThinkingConfig = {
+    providerOptions: {
+        google: {
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        } satisfies GoogleGenerativeAIProviderOptions
+    }
+}
 
 const vertex = createVertex({
     project: env.GOOGLE_VERTEX_PROJECT,
@@ -14,19 +24,9 @@ const vertex = createVertex({
     },
 })
 
-export const noThinkingConfig = {
-    providerOptions: {
-        google: {
-            thinkingConfig: {
-                thinkingBudget: 0
-            }
-        } satisfies GoogleGenerativeAIProviderOptions
-    }
-}
-
 export const googleModels = {
-    'image-gen': vertex.image('imagen-4.0-generate-preview-06-06', { maxImagesPerCall: 1 }),
-    'flash-2.5': vertex('gemini-2.5-flash', {
+     'image-gen': vertex.image('imagen-4.0-generate-preview-06-06', { maxImagesPerCall: 1 }),
+    'flash-2.5': google('gemini-2.5-flash', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -44,7 +44,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
-    'flash-2.5-search': vertex('gemini-2.5-flash', {
+    'flash-2.5-search': google('gemini-2.5-flash', {
         useSearchGrounding: true,
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
@@ -63,7 +63,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }]
     }),
-    'pro-2.5': vertex('gemini-2.5-pro', {
+    'pro-2.5': google('gemini-2.5-pro', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',
             threshold: 'BLOCK_NONE',
@@ -81,7 +81,7 @@ export const googleModels = {
             threshold: 'BLOCK_NONE',
         }],
     }),
-    'pro-2.5-search': vertex('gemini-2.5-pro', {
+    'pro-2.5-search': google('gemini-2.5-pro', {
         useSearchGrounding: true,
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',

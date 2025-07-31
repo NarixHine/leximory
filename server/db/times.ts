@@ -80,7 +80,6 @@ export async function removeIssue(date: string) {
         .from('times')
         .delete()
         .eq('date', date)
-        .throwOnError()
 }
 
 export async function getAllTimesData() {

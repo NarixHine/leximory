@@ -7,7 +7,7 @@ import { nanoid } from '@/lib/utils'
 import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
-import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
+import { getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
 import { uploadTimesAudio, uploadTimesImage } from '../db/storage'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
@@ -217,6 +217,7 @@ The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any sp
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene and style of the image to be generated in a coherent, organised and detailed way, which will be sent without modification to another AI model.
 `.trim()
 
+/*
 export const triggerGenerateTimes = inngest.createFunction(
     { id: 'trigger-generate-times' },
     { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
@@ -233,6 +234,7 @@ export const triggerGenerateTimes = inngest.createFunction(
         })
     }
 )
+*/
 
 export const triggerRegenerateTimes = inngest.createFunction(
     { id: 'trigger-regenerate-times' },
