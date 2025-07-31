@@ -6,7 +6,6 @@ import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as ca
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/comment'
 import { after } from 'next/server'
-import { OrFilter } from '../auth/role'
 import { momentSH } from '@/lib/moment'
 import moment from 'moment'
 
@@ -115,12 +114,12 @@ export async function drawWords({ lib, start, end, size }: { lib: string, start:
     return data
 }
 
-export async function getForgetCurve({ day, or: { filters, options } }: { day: ForgetCurvePoint, or: OrFilter }) {
-    const data = await getWordsWithin({ fromDayAgo: forgetCurve[day][0], toDayAgo: forgetCurve[day][1], or: { filters, options } })
+export async function getForgetCurve({ day, userId }: { day: ForgetCurvePoint, userId: string }) {
+    const data = await getWordsWithin({ fromDayAgo: forgetCurve[day][0], toDayAgo: forgetCurve[day][1], userId })
     return data
 }
 
-export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, options } }: { fromDayAgo: number, toDayAgo: number, or: OrFilter }) {
+export async function getWordsWithin({ fromDayAgo, toDayAgo, userId }: { fromDayAgo: number, toDayAgo: number, userId: string }) {
     'use cache'
     cacheTag('words')
     cacheLife('hours')
@@ -130,7 +129,7 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, or: { filters, opti
         .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
         .lte('created_at', momentSH().endOf('day').subtract(toDayAgo, 'day').toISOString())
         .not('word', 'in', `(${languageStrategies.map(s => s.welcome).join(',')})`) // exclude welcome words
-        .or(filters, options)
+        .eq('lib.owner', userId)
         .throwOnError()
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }

@@ -74,12 +74,12 @@ const tools: ToolSet = {
         description: 'Get words that the user learned during a certain period of time.',
         parameters: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
-            const or = await isListedFilter()
+            const { userId } = await getUserOrThrow()
             switch (period) {
                 case 'day':
-                    return getWordsWithin({ fromDayAgo: 1, toDayAgo: 0, or })
+                    return getWordsWithin({ fromDayAgo: 1, toDayAgo: 0, userId })
                 case 'week':
-                    return getWordsWithin({ fromDayAgo: 7, toDayAgo: 0, or })
+                    return getWordsWithin({ fromDayAgo: 7, toDayAgo: 0, userId })
             }
         }
     },

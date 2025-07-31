@@ -1,4 +1,3 @@
-import { isListedFilter } from '@/server/auth/role'
 import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
@@ -7,12 +6,14 @@ import { ForgetCurvePoint, supportedLangs } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
+import { getUserOrThrow } from '@/server/auth/user'
 
 
 export default async function Report({ day }: {
     day: ForgetCurvePoint
 }) {
-    const words = await getForgetCurve({ day, or: await isListedFilter() })
+    const { userId } = await getUserOrThrow()
+    const words = await getForgetCurve({ day, userId })
     return words.length > 0 ? (
         <div className='my-8'>
             <div className='flex gap-3 items-start'>
