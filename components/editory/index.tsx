@@ -2,7 +2,7 @@ import { QuizKey, QuizPaper } from '@/components/editory/generators'
 import QuizData from '@/components/editory/generators/types'
 import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
-import { Accordion, AccordionItem } from '@heroui/react'
+import { Accordion, AccordionItem } from '@heroui/accordion'
 
 export default function Paper({
     data,

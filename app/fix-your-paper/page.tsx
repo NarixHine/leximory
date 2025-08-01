@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { cn } from '@/lib/utils'
-import { Spacer } from '@heroui/react'
+import { Spacer } from '@heroui/spacer'
 import H from '@/components/ui/h'
 import { ENGLISH_SERIF } from '@/lib/fonts'
 import Main from '@/components/ui/main'

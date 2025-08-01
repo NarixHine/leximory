@@ -1,3 +1,5 @@
+'use client'
+
 import { Card, extendVariants } from '@heroui/react'
 
 const FlatCard = extendVariants(Card, {
