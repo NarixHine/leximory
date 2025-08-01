@@ -12,7 +12,7 @@ const FlatCard = extendVariants(Card, {
         },
         background: {
             transparent: {
-                base: 'bg-transparent border border-foreground',
+                base: 'bg-transparent border border-foreground/80',
                 hover: 'bg-transparent border-foreground/80',
                 active: 'bg-transparent',
             },

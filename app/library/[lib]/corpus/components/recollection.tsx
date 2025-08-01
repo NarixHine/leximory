@@ -29,7 +29,6 @@ export default function Recollection({ words, cursor, more }: {
     return (<div className='grid lg:grid-cols-4 md:grid-cols-3 grid-cols-2 gap-3 w-full'>
         {recol.words.map(({ word, id, date }, index, array) => {
             const anotherDay = array[index + 1] && !moment(date).isSame(array[index + 1].date, 'day')
-            console.log(word)
             return <Fragment key={id}>
                 <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
                     <Markdown md={word} disableSave={welcomes.includes(word)} deleteId={isReadOnly || welcomes.includes(word) ? undefined : id}></Markdown>

@@ -108,8 +108,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       </div>
     </Form>
 
-    <div className='relative'>
-      <Divider className='my-6' />
+    <div className='relative not-prose'>
+      <Divider className='my-5' />
       <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-sm'>
         或
       </div>
