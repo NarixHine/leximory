@@ -45,9 +45,9 @@ async function UserSection() {
 function HeroSectionSkeleton() {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar isBordered color={'primary'} className='size-16!' />
-        <div className='flex flex-col gap-1'>
+        <div className='flex flex-col gap-2'>
             <span className='text-3xl ml-1'>@loading...</span>
-            <div className='flex gap-3 w-full mt-2'>
+            <div className='flex gap-3 w-full'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><StoneSkeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
             </div>
         </div>
@@ -66,10 +66,10 @@ export default async function Settings() {
         </Suspense>
         <section className='flex flex-col gap-4 w-full justify-center items-center'>
             <div className='flex gap-4 w-full'>
-                <Suspense fallback={<StoneSkeleton className='w-[109px] h-12 rounded-full' />}>
+                <Suspense fallback={<StoneSkeleton className='h-12 rounded-full'><Upgrade isOnFreeTier /></StoneSkeleton>}>
                     <UpgradeServer />
                 </Suspense>
-                <Suspense fallback={<StoneSkeleton className='flex-1 h-12 rounded-full' />}>
+                <Suspense fallback={<StoneSkeleton className='flex-1 h-12 rounded-full'><ClaimDailyLexicoin hasClaimed /></StoneSkeleton>}>
                     <ClaimDailyLexicoinServer />
                 </Suspense>
             </div>

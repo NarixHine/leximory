@@ -1,7 +1,7 @@
 'use server'
 
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
-import { loadWords, drawWords } from '@/server/db/word'
+import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
 import { getUserOrThrow } from '@/server/auth/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { inngest } from '@/server/inngest/client'
@@ -12,12 +12,12 @@ export default async function load(lib: string, cursor?: string) {
 }
 
 export async function draw({ lib, start, end }: { lib: string, start: Date, end: Date }) {
-    const words = await drawWords({ lib, start, end, size: 5 })
+    const words = await retrieveWordsWithRange({ lib, start, end })
     return words.map(({ word, id }) => ({ word, id }))
 }
 
 export async function getWithin({ lib, start, end }: { lib: string, start: Date, end: Date }) {
-    const words = await drawWords({ lib, start, end, size: 50 })
+    const words = await retrieveWordsWithRange({ lib, start, end, size: 50 })
     return words.map(({ word }) => (word))
 }
 

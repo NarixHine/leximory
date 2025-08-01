@@ -15,14 +15,14 @@ export default function Error({
 }) {
     return (
         <Center>
-            <Card className={cn('max-w-lg', ENGLISH_SERIF.className)} isBlurred shadow='none'>
+            <Card className={cn('max-w-lg not-prose', ENGLISH_SERIF.className)} isBlurred shadow='none'>
                 <CardHeader className='flex flex-col items-center'>
                     <div className='flex items-center justify-center rounded-full'>
                         <PiWarningCircleDuotone className='text-5xl text-danger' />
                     </div>
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-6 pt-0'>
-                    <p className='text-center text-lg/80'>
+                    <p className='text-center text-lg'>
                         An error occurred. <br />
                         If the problem persists, please contact support.
                     </p>

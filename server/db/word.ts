@@ -102,7 +102,7 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
     }
 }
 
-export async function drawWords({ lib, start, end, size }: { lib: string, start: Date, end: Date, size: number }) {
+export async function retrieveWordsWithRange({ lib, start, end, size = 200 }: { lib: string, start: Date, end: Date, size?: number }) {
     const { data } = await supabase
         .from('lexicon')
         .select('word, id')

@@ -30,7 +30,7 @@ export type MarkdownProps = {
     commentClassName?: string
 }
 
-function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, fontFamily, commentClassName }: MarkdownProps) {
+function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, fontFamily }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
@@ -48,7 +48,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         // replace all instances of {{...}} with the Comment component
         .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
-            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} className={' + (commentClassName ?? '""') + '}></Comment>'
+            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments
         .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?:"。，！？：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')
@@ -85,7 +85,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),
         }}
         className={cn(
-            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 before:prose-code:content-["["] after:prose-code:content-["]"] prose-code:!font-medium prose-hr:my-8',
+            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 prose-hr:my-8',
             className
         )}
     >{result}</MarkdownToJSX>)

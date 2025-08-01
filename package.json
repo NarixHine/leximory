@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"npx inngest-cli@latest dev\"",
+    "dev": "concurrently \"next dev --turbo\" \"npx inngest-cli@latest dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

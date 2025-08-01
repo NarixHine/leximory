@@ -26,7 +26,7 @@ export default async function Report({ day }: {
                 {words.map(({ word, id, lang, lib }) => (
                     <ScopeProvider key={id} atoms={[langAtom]}>
                         <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                                <Markdown md={word} asCard deleteId={id} commentClassName='border border-default-100'></Markdown>
+                                <Markdown md={word} asCard deleteId={id}></Markdown>
                         </HydrationBoundary>
                     </ScopeProvider>
                 ))}

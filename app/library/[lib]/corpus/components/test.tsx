@@ -8,7 +8,7 @@ import { DateRangePicker } from "@heroui/date-picker"
 import { useActionState, useState, useTransition } from 'react'
 import { draw, generateStory, getWithin } from '../actions'
 import moment from 'moment'
-import { PiMagicWandDuotone, PiShuffleAngularDuotone } from 'react-icons/pi'
+import { PiListMagnifyingGlassDuotone, PiMagicWandDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom, libAtom } from '../../atoms'
 import { I18nProvider } from '@react-aria/i18n'
@@ -54,7 +54,7 @@ export default function Test({ latestTime }: {
             ></DateRangePicker>
         </I18nProvider>
         <div className='flex space-x-2'>
-            <div className='flex flex-col items-center justify-center flex-1 border-x text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
+            <div className='flex flex-col items-center justify-center flex-1 border-x border-x-default text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
                 {words.map(({ word, id }) => (
                     !languageStrategies.map(s => s.welcome).includes(word) &&
                     <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave></Markdown>
@@ -65,11 +65,11 @@ export default function Test({ latestTime }: {
                     size='sm'
                     variant='flat'
                     isLoading={isDrawing}
-                    startContent={!isDrawing && <PiShuffleAngularDuotone className='text-xl' />}
+                    startContent={!isDrawing && <PiListMagnifyingGlassDuotone className='text-xl' />}
                     color='primary'
                     type='submit'
                 >
-                    抽取
+                    所有
                 </Button>
                 {!isReadOnly && <Button
                     size='sm'

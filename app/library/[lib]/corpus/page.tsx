@@ -35,7 +35,6 @@ export default async function Page(props: LibProps) {
         <Spacer y={5}></Spacer>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <div className='sm:col-span-1'>
-                <h2 className='text-xl font-semibold opacity-70'>自我检测</h2>
                 <Button
                     as={Link}
                     variant='flat'

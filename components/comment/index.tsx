@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { Spacer } from "@heroui/spacer"
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
-import { Card, CardBody } from "@heroui/card"
+import { CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
@@ -25,6 +25,7 @@ import styles from '@/styles/sidenote.module.css'
 import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
 import { getClickedChunk } from './utils'
 import StoneSkeleton from '../ui/stone-skeleton'
+import FlatCard from '../ui/flat-card'
 
 interface CommentProps {
     params: string
@@ -214,8 +215,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <Card fullWidth radius='sm' shadow='none' className={className}>
-            <CardBody className='p-6 py-4 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
+        ? <FlatCard fullWidth background='solid' radius='sm' shadow='none' className={className}>
+            <CardBody className='px-3 pb-2.5 pt-1.5 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -247,7 +248,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     </motion.div>
                 </div>}
             </CardBody>
-        </Card>
+        </FlatCard>
         : <>
             <Popover placement='right' onOpenChange={init}>
                 <PopoverTrigger>
@@ -345,7 +346,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                     onValueChange={(value) => handleEdit(2, value)}
                     placeholder='释义'
                 />
-                : <Markdown className='prose-em:font-light before:prose-code:content-["["] after:prose-code:content-["]"]'>{portions[2]}</Markdown>
+                : <Markdown className='prose-em:font-light prose-code:before:content-["["] prose-code:after:content-["]"]'>{portions[2]}</Markdown>
             }
         </div>}
         {portions[3] && <div className={margin}>

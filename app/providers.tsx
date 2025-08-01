@@ -25,7 +25,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 				<Toaster toastOptions={{
 					classNames: {
 						toast: cn(
-							'!text-default-900 bg-slate-50/40! dark:bg-stone-800/20!',
+							'text-default-900! bg-slate-50/40! dark:bg-stone-800/20!',
 							'border! border-slate-300/50! dark:border-slate-600/30! shadow-none!',
 							'backdrop-blur-lg! backdrop-saturate-150!',
 							CHINESE.className
