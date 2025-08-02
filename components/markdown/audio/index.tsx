@@ -10,9 +10,7 @@ import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
 import { isReaderModeAtom } from '@/app/atoms'
-import { langAtom } from '@/app/library/[lib]/atoms'
 import { MAX_TTS_LENGTH } from '@/lib/config'
-import { contentFontFamily } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { ms } from 'itty-time'
 import AudioPlayer from '@/components/ui/audio-player'
@@ -22,7 +20,6 @@ export default function Audio({ id, md, ...props }: {
 } & MarkdownProps) {
     const lib = useAtomValue(libAtom)
     const ref = useRef<HTMLDivElement>(null)
-    const lang = useAtomValue(langAtom)
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const queryClient = useQueryClient()
     const [isLengthy, setIsLengthy] = useState(false)
@@ -69,7 +66,7 @@ export default function Audio({ id, md, ...props }: {
         return 'ungenerated'
     })()
 
-    const MarkdownComponent = <Markdown hasWrapped fontFamily={lang === 'en' ? contentFontFamily : undefined} md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
+    const MarkdownComponent = <Markdown hasWrapped md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
     return isReaderMode ? MarkdownComponent : <div className={'relative before:absolute before:-left-5 before:top-0 before:bottom-0 before:w-px before:bg-foreground'}>
         <div className='mt-2'>

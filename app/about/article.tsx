@@ -10,7 +10,6 @@ import { Spacer } from "@heroui/spacer"
 import { exampleEbookLink } from '@/lib/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import Link from 'next/link'
-import { contentFontFamily } from "@/lib/fonts"
 
 export function LeximoryGuide() {
     return <GradientCard
@@ -40,7 +39,7 @@ export function TypedTitle() {
 }
 
 export function Article() {
-    return <article style={{ fontFamily: contentFontFamily }} className='text-xl'>
+    return <article className='text-xl font-formal'>
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

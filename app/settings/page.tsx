@@ -46,7 +46,7 @@ function HeroSectionSkeleton() {
     return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
         <Avatar isBordered color={'primary'} className='size-16!' />
         <div className='flex flex-col gap-2'>
-            <span className='text-3xl ml-1'>@loading...</span>
+            <span className='text-3xl ml-1'>Loading...</span>
             <div className='flex gap-3 w-full'>
                 <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><StoneSkeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
             </div>

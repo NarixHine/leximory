@@ -131,7 +131,6 @@ function TimesContent() {
                 }}>
                     <Markdown
                         className='prose-lg'
-                        fontFamily={ENGLISH_SERIF.style.fontFamily}
                         md={`${is_sequel ? `*The Daily Novel today is a sequel to the one published [yesterday](/times?date=${momentSH(date).subtract(1, 'day').format('YYYY-MM-DD')}). (There is a 10% chance for every Daily Novel to be a sequel to the one before it.)*\n\n` : ''}${novel} ■`}
                     />
                 </AccordionItem>
@@ -147,7 +146,6 @@ function TimesContent() {
             </p>
             <Markdown
                 className='prose-lg'
-                fontFamily={ENGLISH_SERIF.style.fontFamily}
                 md={news}
             />
 

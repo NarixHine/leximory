@@ -3,14 +3,13 @@
 import { Message, useChat } from '@ai-sdk/react'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper, PiArrowCounterClockwiseDuotone } from 'react-icons/pi'
 import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
-import { contentFontFamily } from '@/lib/fonts'
 import type { ToolResult, ToolName } from '../types'
 import Main from '@/components/ui/main'
 import LibraryComponent from '@/app/library/components/lib'
@@ -43,21 +42,21 @@ const initialPrompts = [{
     prompt: '获取［今天］的 The Leximory Times 并提取 News 里实用于日常写作的高分语块，量少而精。',
     icon: PiBookmarksDuotone
 }, {
-    title: '注解段落',
-    prompt: '注解以下段落，无需保存。\n',
-    icon: PiNewspaperClippingDuotone
-}, {
-    title: '注解文章',
-    prompt: '注解下文并存入［词汇仓库］文库。\n',
-    icon: PiNewspaperDuotone
-}, {
     title: '金句提取',
-    prompt: '对于［文库名称］中的［所有］文章，提取可借鉴于作文中的高分金句。',
+    prompt: '提取［文库名称］中的［所有］文章里可借鉴于作文中的高分金句。',
     icon: PiSparkleDuotone
 }, {
     title: '导入网页',
     prompt: '提取以下网页中的文章，并导入［词汇仓库］文库。',
     icon: PiLinkSimpleDuotone
+}, {
+    title: '注解段落',
+    prompt: '注解以下段落，无需保存。',
+    icon: PiNewspaperClippingDuotone
+}, {
+    title: '注解文章',
+    prompt: '注解下文并存入［词汇仓库］文库。',
+    icon: PiNewspaperDuotone
 }] as const
 
 type MessagePart = {
@@ -387,7 +386,27 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
 
 const MemoizedMessagePart = memo(MessagePart)
 
-export function ChatMessage({ message: { id, parts, role, experimental_attachments } }: { message: Message }) {
+export function ChatMessage({
+    message,
+    reload,
+    isLast
+}: {
+    message: Message,
+    reload: () => void,
+    isLast?: boolean,
+}) {
+    const { id, parts, role, experimental_attachments } = message
+
+    const handleRetry = () => {
+        reload()
+    }
+
+    const Parts = () => <>
+        {parts?.map((part, j) => (
+            <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+        ))}
+    </>
+
     return <div className={cn(
         'mb-4 flex flex-col',
         role === 'user' ? 'items-end' : 'items-start'
@@ -416,15 +435,37 @@ export function ChatMessage({ message: { id, parts, role, experimental_attachmen
                 ))}
             </div>
         )}
-        {parts?.map((part, j) => (
-            <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
-        ))}
+        {
+            isLast ? (
+                <div className='flex gap-1 justify-end items-end w-full'>
+                    <Button
+                        isIconOnly
+                        variant='light'
+                        size='sm'
+                        radius='lg'
+                        color='secondary'
+                        className='text-default-500 shrink-0'
+                        onPress={handleRetry}
+                    >
+                        <PiArrowCounterClockwiseDuotone className='text-secondary-300' size={16} />
+                    </Button>
+                    <Parts />
+                </div>
+            ) : <Parts />
+        }
     </div>
 }
 
 const MemoizedMessage = memo(ChatMessage)
 
-export const ChatMessages = ({ messages }: { messages: Message[] }) => <>{messages.map((message) => <MemoizedMessage key={message.id} message={message} />)}</>
+export const ChatMessages = ({
+    reload,
+    messages
+}: {
+    reload: () => void,
+    isLast?: boolean
+    messages: Message[]
+}) => <>{messages.map((message, index) => <MemoizedMessage key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
 
 export default function ChatInterface({ plan, initialPromptIndex, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
@@ -432,7 +473,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
-    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages } = useChat({
+    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages, reload } = useChat({
         api: '/api/library/chat',
         initialMessages: storedMessages,
         onFinish: () => {
@@ -475,6 +516,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
     }, [shouldOpenNew])
 
     const startNewConversation = (initialInput?: string) => {
+        stop()
         setStoredMessages([])
         setMessages([])
         setInput(isFirstConversation ? initialInput ?? '' : '')
@@ -516,7 +558,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
     }
 
     return (
-        <Main style={{ fontFamily: contentFontFamily }} className='flex flex-col max-w-2xl'>
+        <Main className='flex flex-col max-w-2xl font-formal'>
             <div className={cn(
                 'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-1.5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
                 'border border-slate-300/50 dark:border-stone-600/30',
@@ -563,7 +605,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
                     ))}
                 </div>
             )}
-            <ChatMessages messages={messages} />
+            <ChatMessages messages={messages} reload={reload} />
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}

@@ -9,7 +9,6 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
-import { contentFontFamily, jpFontFamily } from '@/lib/fonts'
 import { CustomLexicon } from '@/lib/types'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
@@ -26,11 +25,10 @@ export type MarkdownProps = {
     hasWrapped?: boolean
     onlyComments?: boolean
     print?: boolean
-    fontFamily?: string
     commentClassName?: string
 }
 
-function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, fontFamily }: MarkdownProps) {
+function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
@@ -81,11 +79,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 return next()
             }
         }}
-        style={{
-            fontFamily: fontFamily ?? (lang === 'ja' ? jpFontFamily : contentFontFamily),
-        }}
         className={cn(
-            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 prose-hr:my-8',
+            'prose dark:prose-invert prose-blockquote:not-italic prose-blockquote:border-default prose-blockquote:border-l-1.5 prose-hr:my-8 prose-em:font-light prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
+            lang === 'ja' ? 'font-ja' : 'font-formal',
             className
         )}
     >{result}</MarkdownToJSX>)

@@ -1,6 +1,6 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
-import { CHINESE_CALLIGRAPHY, contentFontFamily } from '@/lib/fonts'
+import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
 import Link from 'next/link'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
@@ -102,7 +102,7 @@ export default async function Home() {
 							description='每日更新的英语新闻和小说'
 						>
 							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-linear-to-br from-zinc-50 to-neutral-100 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
-								<CardBody style={{ fontFamily: contentFontFamily }}>
+								<CardBody>
 									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>
 									<div className='absolute bottom-0 right-0 p-4'>

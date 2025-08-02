@@ -7,7 +7,7 @@ import Dock from './components/dock'
 import env from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
-import { defaultFontFamily } from '@/lib/fonts'
+import { CHINESE, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF, JAPANESE_MINCHO } from '@/lib/fonts'
 import { isAtRead } from '@/lib/subapp'
 import InstallLeximory from './install-leximory'
 
@@ -54,10 +54,19 @@ export async function generateViewport(): Promise<Viewport> {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	const hideIrrelevantElements = await isAtRead()
+	const fontVariables = [
+		ENGLISH.variable,
+		CHINESE.variable,
+		JAPANESE_MINCHO.variable,
+		ENGLISH_MONO.variable,
+		ENGLISH_SERIF.variable,
+		ENGLISH_FANCY.variable,
+	].join(' ')
+
 	return (
 		<ViewTransitions>
-			<html lang='zh-CN' className='subpixel-antialiased'>
-				<body style={{ fontFamily: defaultFontFamily }}>
+			<html lang='zh-CN' className={`${fontVariables} subpixel-antialiased`}>
+				<body className='font-ui'>
 					<SpeedInsights />
 					<Analytics />
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>

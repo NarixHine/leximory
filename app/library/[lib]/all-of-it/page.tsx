@@ -10,7 +10,6 @@ import EditableH from '../[text]/components/editable-h'
 import { titleAtom, contentAtom, topicsAtom, textAtom } from '../[text]/atoms'
 import { cn } from '@/lib/utils'
 import Markdown from '@/components/markdown'
-import { contentFontFamily } from '@/lib/fonts'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -47,7 +46,6 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
                                     '!prose-lg text-pretty',
                                     'print:first-letter:[initial-letter:2] print:first-letter:pr-2'
                                 )}
-                                fontFamily={lib.lang === 'en' ? contentFontFamily : undefined}
                                 md={`<article>${text.content}</article>`}
                             />
                         </HydrationBoundary>

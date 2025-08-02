@@ -1,4 +1,3 @@
-import { hFontFamily } from '@/lib/fonts'
 import H from '@/components/ui/h'
 import { Spacer } from "@heroui/spacer"
 import { Link } from 'next-view-transitions'
@@ -24,9 +23,7 @@ export default function BlogHome() {
             </div>
             <Spacer y={5}></Spacer>
             <div className='space-y-3 flex flex-wrap justify-center'>
-                {postsData.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block' style={{
-                    fontFamily: hFontFamily,
-                }}>
+                {postsData.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block font-fancy'>
                     <Link href={`/blog/${post.slug}`}>
                         <H disableCenter className={'text-xl'}>
                             {post.title}

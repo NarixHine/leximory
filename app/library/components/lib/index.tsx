@@ -7,7 +7,6 @@ import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone,
 import { libAccessStatusMap, Lang } from '@/lib/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import Link from 'next/link'
-import { contentFontFamily } from '@/lib/fonts'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import Form from '../../../../components/form'
@@ -120,9 +119,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         }}>
             {compact
                 ? <CardBody className='px-3 py-2 flex flex-row items-center gap-3'>
-                    <div className='text-2xl' style={{
-                        fontFamily: contentFontFamily
-                    }}>{name}</div>
+                    <div className='text-2xl font-formal'>{name}</div>
                     {
                         shadow
                             ? <Button
@@ -171,9 +168,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     }
                 </CardBody>
                 : <CardBody className='px-6 pt-5 flex flex-col justify-start'>
-                    <a className='text-4xl' style={{
-                        fontFamily: contentFontFamily
-                    }}>{name}</a>
+                    <a className='text-4xl font-formal'>{name}</a>
                     <Topics topics={topics.concat([getLanguageStrategy(lang as Lang).name])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>

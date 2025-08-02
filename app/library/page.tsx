@@ -20,7 +20,6 @@ import AdminDashboardLink from './components/dashboard-link'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
 import LibraryCard from '../marketplace/[page]/components/card'
-import { contentFontFamily } from '@/lib/fonts'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -136,8 +135,7 @@ async function LibraryList({ userId, orFilter }: {
                         />
                     </div>
                     <p
-                        style={{ fontFamily: contentFontFamily }}
-                        className='text-center text-2xl font-bold max-w-60 text-balance text-default-500'>
+                        className='text-center text-2xl font-bold max-w-60 text-balance text-default-500 font-formal'>
                         暂无文库，不妨先看看 Leximory 精选外刊
                     </p>
                 </div>}

@@ -14,7 +14,6 @@ import {
     paperAnalysisAtom
 } from '../atoms'
 import { PiSealCheckDuotone, PiUpload } from 'react-icons/pi'
-import { contentFontFamily } from '@/lib/fonts'
 import { MAX_FILE_SIZE } from '@/lib/config'
 
 export default function FixPaper() {
@@ -87,7 +86,7 @@ export default function FixPaper() {
                     >
                         <div className='flex flex-col items-center justify-center text-center'>
                             <PiUpload className='text-2xl mb-2 text-neutral-400 group-hover:text-primary transition-colors' />
-                            <span style={{ fontFamily: contentFontFamily }} className='text-sm font-medium'>
+                            <span className='text-sm font-medium font-formal'>
                                 {paperFile.length > 0 ? paperFile[0].name : '上传试卷'}
                             </span>
                         </div>
@@ -108,7 +107,7 @@ export default function FixPaper() {
                     >
                         <div className='flex flex-col items-center justify-center text-center'>
                             <PiUpload className='text-2xl mb-2 text-neutral-400 group-hover:text-primary transition-colors' />
-                            <span style={{ fontFamily: contentFontFamily }} className='text-sm font-medium'>
+                            <span className='text-sm font-medium font-formal'>
                                 {answerFile.length > 0 ? answerFile[0].name : '上传答案'}
                             </span>
                         </div>

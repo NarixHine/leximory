@@ -21,7 +21,6 @@ import Markdown from '@/components/markdown'
 import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
-import { contentFontFamily } from '@/lib/fonts'
 import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, revalidate, save, markAsVisited } from '../../actions'
 import { useTransitionRouter } from 'next-view-transitions'
@@ -194,7 +193,6 @@ function ReadingView() {
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
   const text = useAtomValue(textAtom)
-  const lang = useAtomValue(langAtom)
   const { ref: bottomRef, entry } = useIntersectionObserver({
     freezeOnceVisible: true
   })
@@ -239,7 +237,6 @@ function ReadingView() {
           isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
           '!prose-lg text-pretty'
         )}
-        fontFamily={lang === 'en' ? contentFontFamily : undefined}
         md={`<article>\n${content}\n</article>`}
       />
       <Define />

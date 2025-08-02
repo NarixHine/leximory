@@ -1,7 +1,6 @@
 'use client'
 
 import { CardBody, CardFooter } from "@heroui/card"
-import { contentFontFamily } from '@/lib/fonts'
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
 import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone, PiCheckSquare, PiSquare } from 'react-icons/pi'
@@ -45,9 +44,7 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
     const CardInnerContent = () => (
         <>
             <CardBody className='flex flex-col gap-1 px-5 py-4'>
-                <h2 className={'text-2xl text-balance'} style={{
-                    fontFamily: contentFontFamily
-                }}>{title}</h2>
+                <h2 className={'text-2xl text-balance font-formal'}>{title}</h2>
                 {topics.length > 0 && (
                     <div className='gap-0.5 flex flex-wrap align-middle items-center'>
                         <Topics topics={topics}></Topics>

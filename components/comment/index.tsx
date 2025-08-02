@@ -22,7 +22,6 @@ import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/comment'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
-import { contentFontFamily, jpFontFamily } from "@/lib/fonts"
 import { getClickedChunk } from './utils'
 import StoneSkeleton from '../ui/stone-skeleton'
 import FlatCard from '../ui/flat-card'
@@ -216,7 +215,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     return asCard
         ? <FlatCard fullWidth background='solid' radius='sm' shadow='none' className={className}>
-            <CardBody className='px-3 pb-2.5 pt-1.5 leading-snug' style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
+            <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 {portions.length > 1 && <div className='relative'>
                     {!isVisible && (
@@ -233,9 +232,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     )}
                     <motion.div
                         transition={{ duration: 0.5 }}
-                        style={{
-                            overflow: 'hidden'
-                        }}
+                        className='overflow-hidden'
                     >
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -325,7 +322,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={isCompact ? 'leading-tight' : ''} style={{ fontFamily: lang === 'ja' ? jpFontFamily : contentFontFamily }}>
+    return (<div className={cn(isCompact ? 'leading-tight' : '', lang === 'ja' ? 'font-ja' : 'font-formal')}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea
@@ -346,7 +343,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                     onValueChange={(value) => handleEdit(2, value)}
                     placeholder='释义'
                 />
-                : <Markdown className='prose-em:font-light prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium!'>{portions[2]}</Markdown>
+                : <Markdown className='prose-em:font-light prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium'>{portions[2]}</Markdown>
             }
         </div>}
         {portions[3] && <div className={margin}>

@@ -1,2 +1,10 @@
 @import 'tailwindcss';
 @config '../tailwind.config.ts';
+
+@theme {
+    --font-ui: var(--font-english), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-mono: var(--font-english-mono), monospace;
+    --font-formal: var(--font-english-serif), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-fancy: var(--font-english-fancy), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-ja: var(--font-english-serif), var(--font-japanese-mincho), var(--font-chinese), serif;
+}
