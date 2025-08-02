@@ -80,7 +80,7 @@ function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
     if (state === 'call') {
         return (
             <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
-                <Spinner size='sm' color='default' variant='spinner' />
+                <Spinner size='sm' color='default' variant='gradient' />
                 <span>{toolDescriptions[toolName]}</span>
             </div>
         )
@@ -458,8 +458,7 @@ export const ChatMessages = ({
     reload,
     messages
 }: {
-    reload: () => void,
-    isLast?: boolean
+    reload?: () => void,
     messages: Message[]
 }) => <>{messages.map((message, index) => <MemoizedMessage key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
 
