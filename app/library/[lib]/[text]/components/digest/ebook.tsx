@@ -7,8 +7,9 @@ import type { Contents, Rendition } from 'epubjs'
 import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import Comment from '@/components/comment'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
@@ -87,6 +88,7 @@ export default function Ebook() {
     const src = useAtomValue(ebookAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
+    const strategy = useMemo(() => getLanguageStrategy(lang), [lang])
 
     const [prompt, setPrompt] = useState<string | null>(null)
     const [bookmark, setBookmark] = useState<string | null>(null)
@@ -181,14 +183,14 @@ export default function Ebook() {
                     loadingView={
                         <CircularProgress color='primary' size='lg' className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' />
                     }
-                    isRTL={lang === 'ja'}
+                    isRTL={strategy.isRTL}
                     readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
                         if (themeRendition.current) {
                             const { displayed } = themeRendition.current.location.start
-                            setPage(lang === 'ja' ? `${displayed.page}/${displayed.total} ページ目` : `At ${displayed.page}/${displayed.total} in Chapter`)
+                            setPage(strategy.pageFormat?.(displayed.page, displayed.total) ?? '')
                         }
                     }}
                     getRendition={rendition => {
@@ -199,13 +201,13 @@ export default function Ebook() {
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
                                 'font-family': '"Athelas", Georgia, serif !important',
-                                'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
+                                'line-height': strategy.lineHeight,
                                 'text-rendering': 'optimizeLegibility',
                             },
                             'div': {
                                 'font-size': '24px !important',
                                 'font-family': '"Athelas", Georgia, serif !important',
-                                'line-height': lang === 'ja' ? '1.7 !important' : '1.6 !important',
+                                'line-height': strategy.lineHeight,
                                 'text-rendering': 'optimizeLegibility',
                             },
                             'h1': {

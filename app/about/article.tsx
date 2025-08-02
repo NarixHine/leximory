@@ -16,10 +16,11 @@ export function LeximoryGuide() {
     return <GradientCard
         title='Leximory 漫游指南'
         text='文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
-        className='bg-[linear-gradient(120deg,#10172a_0%,#283e51_40%,#485563_70%,#232526_100%)] text-white'
+        className='bg-[linear-gradient(120deg,#10172a_0%,#283e51_40%,#485563_70%,#232526_100%)]'
         textClassName='mb-8 text-white opacity-80'
-        titleClassName='text-2xl mb-1'
+        titleClassName='text-2xl mb-1 text-white/90'
         to={'/blog/leximory-guide'}
+        iconClassName='text-white'
     >
         <PiPlanetDuotone className='text-5xl opacity-60 mt-3 ml-3' />
     </GradientCard>
@@ -152,7 +153,7 @@ export function Article() {
                 className='col-span-5'
             >
                 <GradientCard
-                    title={<span>Exam Char Key <span className='font-mono text-2xl'>*</span></span>}
+                    title={<span><img src='/images/eck.ico' className='size-8 inline-block mr-2 align-top' alt='Exam Char Key' />Exam Char Key <span className='font-mono text-2xl'>*</span></span>}
                     text='［友链］专注于文言文词语释义，集成 AI 助手的文言文学习辅助平台'
                     to='https://eck.cup11.top/'
                     className='border-amber-300 dark:border-default text-amber-600 dark:text-default-600 border-3 border-dashed bg-transparent min-h-32'
