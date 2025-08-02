@@ -115,7 +115,7 @@ export default async function Settings() {
 
 
 function LexicoinBalanceCard({ balance }: { balance?: number }) {
-    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-linear-to-tl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
+    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-linear-to-bl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiCoinsDuotone className='size-7' />
     </GradientCard>
 }
@@ -127,7 +127,7 @@ async function LexicoinBalance() {
 }
 
 function PlanCard({ text }: { text?: string }) {
-    return <GradientCard title='订阅计划' text={text} className='bg-linear-to-tl from-rose-100/80 to-teal-100/80 dark:from-gray-900 dark:to-gray-600'>
+    return <GradientCard title='订阅计划' text={text} className='bg-linear-to-br to-rose-100/80 from-teal-100/80 dark:from-gray-900 dark:to-gray-600'>
         <PiPlanetDuotone className='size-7' />
     </GradientCard>
 }

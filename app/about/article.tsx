@@ -2,7 +2,7 @@
 
 import { Card, CardBody } from "@heroui/card"
 import { motion } from 'framer-motion'
-import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiPlanetDuotone, PiHeadphonesDuotone } from 'react-icons/pi'
+import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiPlanetDuotone, PiHeadphonesDuotone, PiArrowSquareOutDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,7 @@ import { Spacer } from "@heroui/spacer"
 import { exampleEbookLink } from '@/lib/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import Link from 'next/link'
+import { ReactNode } from 'react'
 
 export function LeximoryGuide() {
     return <GradientCard
@@ -27,9 +28,11 @@ export function LeximoryGuide() {
 export function TypedTitle() {
     return <TypeAnimation
         sequence={[
-            'About Us',
+            'About Leximory',
             2000,
-            'How to Use Leximory',
+            'About Leximory, Our Mission',
+            2000,
+            'About Leximory, Our Mission, and More'
         ]}
         speed={50}
         cursor={true}
@@ -142,6 +145,21 @@ export function Article() {
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>
             </motion.div>
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+                className='col-span-5'
+            >
+                <GradientCard
+                    title={<span>Exam Char Key <span className='font-mono text-2xl'>*</span></span>}
+                    text='［友链］专注于文言文词语释义，集成 AI 助手的文言文学习辅助平台'
+                    to='https://eck.cup11.top/'
+                    className='border-amber-300 dark:border-default text-amber-600 dark:text-default-600 border-3 border-dashed bg-transparent min-h-32'
+                >
+                    <PiArrowSquareOutDuotone className='text-2xl opacity-60' />
+                </GradientCard>
+            </motion.div>
         </div>
 
         <motion.p
@@ -218,14 +236,15 @@ export function Article() {
     </article>
 }
 
-const GradientCard = ({ text, className, title, children, to, textClassName, titleClassName }: {
-    title: string,
+const GradientCard = ({ text, className, title, children, to, textClassName, titleClassName, iconClassName }: {
+    title: string | ReactNode,
     text: string,
     className: string,
     children?: React.ReactNode
     to: string,
     textClassName?: string,
-    titleClassName?: string
+    titleClassName?: string,
+    iconClassName?: string
 }) => {
     const router = useRouter()
     return (
@@ -235,7 +254,7 @@ const GradientCard = ({ text, className, title, children, to, textClassName, tit
             <CardBody className='overflow-hidden'>
                 <h2 className={cn('text-xl', titleClassName)}>{title}</h2>
                 <p className={cn('opacity-60 text-lg text-balance', textClassName)}>{text}</p>
-                <div className='absolute -bottom-3 -right-3 p-3'>
+                <div className={cn('absolute -bottom-3 -right-3 p-3', iconClassName)}>
                     {children}
                 </div>
             </CardBody>
