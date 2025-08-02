@@ -5,39 +5,34 @@ import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
 import { Button } from "@heroui/button"
 import { prefixUrl } from '@/lib/config'
-import { useState, useTransition, useCallback } from 'react'
 import { Drawer } from 'vaul'
 import { Snippet } from "@heroui/snippet"
 import { Progress } from "@heroui/progress"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function CopyToken() {
-    const [isLoading, startLoading] = useTransition()
-    const [token, setToken] = useState<string | null>(null)
-    const [isRevoking, startRevoking] = useTransition()
-    const handleFetchToken = useCallback(async () => {
-        const token = await getUserToken()
-        setToken(token)
-    }, [])
-    const handleRevokeToken = useCallback(async () => {
-        try {
-            await revokeUserToken()
-            setToken(null)
+    const queryClient = useQueryClient()
+    const { data: token, isLoading, refetch } = useQuery({
+        queryKey: ['user-token'],
+        queryFn: getUserToken,
+        enabled: false,
+    })
+    const { mutate: revoke, isPending: isRevoking } = useMutation({
+        mutationFn: revokeUserToken,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['user-token'] })
             toast.success('密钥已撤销')
-        } catch {
+        },
+        onError: () => {
             toast.error('撤销失败')
-        } finally {
-            startLoading(handleFetchToken)
         }
-    }, [])
+    })
     return <Drawer.Root>
         <Drawer.Trigger
             className={cn('relative flex h-8 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
-            onClick={() => {
-                setToken(null)
-                startLoading(handleFetchToken)
-            }}
+            onClick={() => refetch()}
         >
             <PiKeyDuotone />
             拷贝
@@ -49,7 +44,7 @@ export default function CopyToken() {
                 <div className='p-4 pb-20 md:pb-6 prose prose-sm w-full relative'>
                     {isLoading && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}
                     <Snippet symbol={<PiKeyDuotone className='inline-block mr-3' />} classNames={{
-                        base: 'w-full',
+                        base: 'w-full not-prose',
                         pre: 'my-0',
                     }}>{token ? token : 'Loading ...'}</Snippet>
                     <div className='flex gap-2 mt-4'>
@@ -58,9 +53,7 @@ export default function CopyToken() {
                             variant='flat'
                             startContent={!isRevoking && <PiTrashDuotone className='size-5' />}
                             isLoading={isRevoking}
-                            onPress={async () => {
-                                startRevoking(handleRevokeToken)
-                            }}
+                            onPress={() => revoke()}
                         >
                             撤销密钥
                         </Button>

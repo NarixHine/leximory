@@ -16,7 +16,7 @@ import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icon
 
 export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
-        <Card className='rounded-2xl border border-default-100 bg-default-50/50 shadow-sm p-0 w-full h-full'>
+        <Card shadow='none' className='rounded-2xl bg-default-50/50 p-0 w-full h-full'>
             <CardHeader className='px-6 pt-6 pb-2'>
                 <h2 className='text-lg tracking-tight'>{title}</h2>
             </CardHeader>

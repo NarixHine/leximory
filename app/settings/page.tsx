@@ -93,20 +93,20 @@ export default async function Settings() {
                     <UserWordHeatmap />
                 </Suspense>
             </div>
-            <div className='col-span-2 flex flex-col gap-2'>
-                <Suspense fallback={<UpdateProfileSkeleton />}>
-                    <UserSection />
-                </Suspense>
-            </div>
-            <div className='border border-dashed border-secondary-200 rounded-lg p-4 flex flex-col gap-2'>
+            <div className='bg-default-50 rounded-2xl p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>英语偏好</H>
                 <Suspense fallback={<StoneSkeleton className='w-full h-8 rounded-full' />}>
                     <Preference />
                 </Suspense>
             </div>
-            <div className='border border-dashed border-default-200 rounded-lg p-4 flex flex-col gap-2'>
+            <div className='bg-default-50 rounded-2xl p-4 flex flex-col gap-2'>
                 <H disableCenter className=''>通行密钥</H>
                 <CopyToken />
+            </div>
+            <div className='col-span-2 flex flex-col gap-2'>
+                <Suspense fallback={<UpdateProfileSkeleton />}>
+                    <UserSection />
+                </Suspense>
             </div>
         </section>
     </Main>

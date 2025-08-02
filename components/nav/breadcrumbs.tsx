@@ -40,7 +40,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             list: cn(
                 'flex-nowrap',
                 'bg-stone-50/40 dark:bg-stone-800/20',
-                'border border-stone-300/60 dark:border-stone-600/30',
+                'border border-default-200/60',
                 'backdrop-blur-lg backdrop-saturate-150',
             ),
         }}>
@@ -107,7 +107,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     isIconOnly
                     className={cn(
                         'bg-stone-50/40 dark:bg-stone-800/20',
-                        'border border-stone-300/60 dark:border-stone-600/30',
+                        'border border-default-200/60',
                         'backdrop-blur-lg backdrop-saturate-150',
                     )}
                     startContent={<PiSkipBackCircle className={iconClassName} />}
@@ -121,7 +121,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     isIconOnly
                     className={cn(
                         'bg-stone-50/40 dark:bg-stone-800/20',
-                        'border border-stone-300/60 dark:border-stone-600/30',
+                        'border border-default-200/60',
                         'backdrop-blur-lg backdrop-saturate-150',
                     )}
                     startContent={<LoadingIndicatorWrapper>

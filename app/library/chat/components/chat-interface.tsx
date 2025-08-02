@@ -392,14 +392,10 @@ export function ChatMessage({
     isLast
 }: {
     message: Message,
-    reload: () => void,
+    reload?: () => void,
     isLast?: boolean,
 }) {
     const { id, parts, role, experimental_attachments } = message
-
-    const handleRetry = () => {
-        reload()
-    }
 
     const Parts = () => <>
         {parts?.map((part, j) => (
@@ -436,7 +432,7 @@ export function ChatMessage({
             </div>
         )}
         {
-            isLast ? (
+            isLast && reload ? (
                 <div className='flex gap-1 justify-end items-end w-full'>
                     <Button
                         isIconOnly
@@ -445,7 +441,7 @@ export function ChatMessage({
                         radius='lg'
                         color='secondary'
                         className='text-default-500 shrink-0'
-                        onPress={handleRetry}
+                        onPress={() => reload()}
                     >
                         <PiArrowCounterClockwiseDuotone className='text-secondary-300' size={16} />
                     </Button>

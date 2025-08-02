@@ -101,11 +101,11 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的英语新闻和小说'
 						>
-							<Card isPressable as={Link} href='/times' shadow='sm' className='h-28 w-full bg-linear-to-br from-zinc-50 to-neutral-100 dark:from-stone-900 dark:to-stone-700 p-2 md:p-3 relative rounded-lg'>
+							<Card isPressable as={Link} href='/times' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
 								<CardBody>
-									<h2 className='font-bold opacity-50'>The Leximory Times</h2>
+									<h2 className='font-bold opacity-50 text-xs'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>
-									<div className='absolute bottom-0 right-0 p-4'>
+									<div className='absolute bottom-0 right-0 p-2'>
 										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
 									</div>
 								</CardBody>
