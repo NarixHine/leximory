@@ -12,6 +12,7 @@ export interface LanguageStrategy {
     exampleSentencePrompt: string
     // for UI
     FormattedReadingTime?: (text: string) => ReactNode
+    proseClassName?: string
     // for ebook
     isRTL: boolean
     lineHeight: string

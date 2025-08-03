@@ -8,6 +8,7 @@ export function createLanguageStrategy<T extends LanguageStrategy>(
     isRTL: false,
     lineHeight: '1.6 !important',
     pageFormat: (page: number, total: number) => `At ${page}/${total} in Chapter`,
+    proseClassName: 'prose-lg',
   }
 
   return { ...defaults, ...config } as T

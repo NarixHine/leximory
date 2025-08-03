@@ -28,6 +28,7 @@ import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
 import { toast } from 'sonner'
+import { getLanguageStrategy } from '@/lib/languages'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -193,6 +194,7 @@ function ReadingView() {
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
   const text = useAtomValue(textAtom)
+  const lang = useAtomValue(langAtom)
   const { ref: bottomRef, entry } = useIntersectionObserver({
     freezeOnceVisible: true
   })
@@ -235,7 +237,8 @@ function ReadingView() {
       <Markdown
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
-          '!prose-lg text-pretty'
+          'text-pretty',
+          getLanguageStrategy(lang).proseClassName,
         )}
         md={`<article>\n${content}\n</article>`}
       />

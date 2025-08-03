@@ -22,6 +22,7 @@ export const chineseStrategy = createLanguageStrategy({
     maxChunkSize: 700,
     maxArticleLength: 5000,
     exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的同义项古汉语/古诗词例句。形如词语||词语||释义「例文」',
+    proseClassName: 'prose-xl',
 })
 
 export const japaneseStrategy = createLanguageStrategy({
