@@ -153,8 +153,8 @@ export function Article() {
                 className='col-span-5'
             >
                 <GradientCard
-                    title={<span><img src='/images/eck.ico' className='size-8 inline-block mr-2 align-top' alt='Exam Char Key' />Exam Char Key <span className='font-mono text-2xl'>*</span></span>}
-                    text='［友链］专注于文言文词语释义，集成 AI 助手的文言文学习辅助平台'
+                    title={<span className='font-mono'><img src='/images/eck.ico' className='size-8 inline-block mr-2 align-top' alt='Exam Char Key' />Exam Char Key <span className='text-xl'>*</span></span>}
+                    text='专注于文言文词语释义，集成 AI 助手的文言文学习辅助平台（友链）'
                     to='https://eck.cup11.top/'
                     className='border-amber-300 dark:border-default text-amber-600 dark:text-default-600 border-3 border-dashed bg-transparent min-h-32'
                 >

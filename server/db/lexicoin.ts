@@ -2,37 +2,23 @@ import 'server-only'
 import { supabase } from '../client/supabase'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import { momentSH } from '@/lib/moment'
+import { ensureUserExists } from './user'
 
 // Function to get the LexiCoin balance for a user
 // Or to ensure the user exists and create them with a default balance if they don't
 export async function getLexicoinBalance(uid: string) {
     'use cache'
     cacheTag('lexicoin')
-    
-    const { data, error } = await supabase
+
+    await ensureUserExists(uid)
+    const { data: { lexicoin } } = await supabase
         .from('users')
         .select('lexicoin')
         .eq('id', uid)
         .single()
+        .throwOnError()
 
-    if (error || !data) {
-        const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({ id: uid, lexicoin: 20 })
-            .select('lexicoin')
-            .single()
-
-        if (createError) {
-            const { data: existingUser } = await supabase
-                .from('users')
-                .select('lexicoin')
-                .eq('id', uid)
-                .single()
-            return existingUser?.lexicoin ?? 0
-        }
-        return newUser.lexicoin
-    }
-    return data.lexicoin
+    return lexicoin
 }
 
 export async function addLexicoinBalance(uid: string, amount: number) {

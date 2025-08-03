@@ -1,12 +1,11 @@
 import 'server-only'
-import { getLexicoinBalance } from './lexicoin'
 import { nanoid } from 'nanoid'
 import { supabase } from '../client/supabase'
+import { ensureUserExists } from './user'
 
 // Get or create a token for the current user
 export async function getOrCreateToken(userId: string) {
-    // Ensure Lexicoin balance record is initialized
-    await getLexicoinBalance(userId)
+    await ensureUserExists(userId)
     // Check if token exists
     const { data: { token } } = await supabase.from('users').select('token').eq('id', userId).single().throwOnError()
     if (token) {

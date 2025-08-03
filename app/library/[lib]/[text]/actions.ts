@@ -20,13 +20,13 @@ import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { revalidatePath } from 'next/cache'
 import { visitText } from '@/server/db/visited'
- 
+
 export async function markAsVisited(textId: string) {
     const { userId } = await getUserOrThrow()
     await authReadToText(textId)
     await visitText({ textId, userId })
 }
- 
+
 export async function revalidate(libId: string, textId: string) {
     await authReadToText(textId)
     revalidatePath(`/library/${libId}/${textId}`)

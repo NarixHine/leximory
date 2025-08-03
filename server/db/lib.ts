@@ -7,7 +7,7 @@ import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
 import { supabase } from '@/server/client/supabase'
 import { OrFilter } from '../auth/role'
-import { getLexicoinBalance } from './lexicoin'
+import { ensureUserExists } from './user'
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const { data: rec } = await supabase
@@ -22,7 +22,7 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
         return rec
     }
 
-    await getLexicoinBalance(owner)
+    await ensureUserExists(owner)
     const { data: lib } = await supabase
         .from('libraries')
         .insert({
@@ -197,7 +197,7 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
 export async function getArchivedLibs({ userId }: { userId: string }) {
     'use cache'
     cacheTag('libraries')
-    await getLexicoinBalance(userId)
+    await ensureUserExists(userId)
     const { data } = await supabase
         .from('users')
         .select('archived_libs')

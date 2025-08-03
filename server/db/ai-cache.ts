@@ -1,5 +1,6 @@
 import 'server-only'
 import { redis } from "../client/redis"
+import { seconds } from 'itty-time'
 
 export const getAnnotationCache = async ({ hash }: { hash: string }) => {
     const cache = await redis.get(`annotation:${hash}`) as string | null
@@ -8,5 +9,5 @@ export const getAnnotationCache = async ({ hash }: { hash: string }) => {
 
 export const setAnnotationCache = async ({ hash, cache }: { hash: string, cache: string }) => {
     await redis.set(`annotation:${hash}`, cache)
-    await redis.expire(`annotation:${hash}`, 60 * 5)
+    await redis.expire(`annotation:${hash}`, seconds('1 day'))
 }
