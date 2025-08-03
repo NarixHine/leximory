@@ -14,7 +14,7 @@ import Link from 'next/link'
 
 export default function CopyToken() {
     const queryClient = useQueryClient()
-    const { data: token, isLoading, refetch } = useQuery({
+    const { data: token, isFetching, refetch } = useQuery({
         queryKey: ['user-token'],
         queryFn: getUserToken,
         enabled: false,
@@ -23,6 +23,7 @@ export default function CopyToken() {
         mutationFn: revokeUserToken,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user-token'] })
+            refetch()
             toast.success('密钥已撤销')
         },
         onError: () => {
@@ -42,7 +43,7 @@ export default function CopyToken() {
             <Drawer.Content className='h-fit z-999 fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-background flex flex-col justify-center items-center'>
                 <Drawer.Title className='sr-only'>通行密钥</Drawer.Title>
                 <div className='p-4 pb-20 md:pb-6 prose prose-sm w-full relative'>
-                    {isLoading && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}
+                    {isFetching && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}
                     <Snippet symbol={<PiKeyDuotone className='inline-block mr-3' />} classNames={{
                         base: 'w-full not-prose',
                         pre: 'my-0',
