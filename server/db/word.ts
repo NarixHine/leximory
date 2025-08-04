@@ -111,7 +111,7 @@ export async function retrieveWordsWithRange({ lib, start, end, size = 200 }: { 
         .lt('created_at', end.toISOString())
         .limit(size)
         .throwOnError()
-    return data
+    return data.filter(({ word }) => !languageStrategies.map(s => s.welcome).includes(word)) // exclude welcome words
 }
 
 export async function getForgetCurve({ day, userId }: { day: ForgetCurvePoint, userId: string }) {
