@@ -15,7 +15,7 @@ import Main from '@/components/ui/main'
 import LibraryComponent from '@/app/library/components/lib'
 import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
-import { Accordion, AccordionItem } from '@heroui/react'
+import { Accordion, AccordionItem, AccordionProps } from '@heroui/react'
 import UpgradeMessage from './upgrade-message'
 import { isProd } from '@/lib/env'
 import H from '@/components/ui/h'
@@ -88,8 +88,8 @@ function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
     return <></>
 }
 
-function ToolAccordian({ title, children, icon }: { title: string, children: ReactNode, icon: ReactNode }) {
-    return <Accordion className='mt-2 px-0'>
+function ToolAccordian({ title, children, icon, ...props }: { title: string, children: ReactNode, icon: ReactNode } & AccordionProps) {
+    return <Accordion className='mt-2 px-0' {...props}>
         <AccordionItem key='content' title={title} startContent={icon} classNames={{
             titleWrapper: 'flex-none',
             trigger: 'text-sm'
@@ -207,7 +207,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateArticle':
             const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
-                <ToolAccordian title={`Article Created`} icon={<PiNewspaperDuotone />}>
+                <ToolAccordian defaultExpandedKeys={['content']} title={`Article Created`} icon={<PiNewspaperDuotone />}>
                     <div className='flex flex-col gap-2 mb-1'>
                         <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
                         <ScopeProvider atoms={[libAtom]}>
