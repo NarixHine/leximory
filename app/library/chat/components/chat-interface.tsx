@@ -462,7 +462,7 @@ export const ChatMessages = ({
     messages: Message[]
 }) => <>{messages.map((message, index) => <MemoizedMessage key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
 
-export default function ChatInterface({ plan, initialPromptIndex, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
+export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -495,7 +495,7 @@ export default function ChatInterface({ plan, initialPromptIndex, initialInput, 
                 fileInputRef.current.value = ''
             }
         },
-        initialInput: initialInput ?? (initialPromptIndex ? initialPrompts[initialPromptIndex].prompt : undefined)
+        initialInput
     })
     const [isFirstConversation, setIsFirstConversation] = useState(true)
 

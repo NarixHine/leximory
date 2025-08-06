@@ -35,7 +35,7 @@ export function MemoryEditor({
     return (
         <form onSubmit={handleSubmit} className='flex flex-col gap-4 w-full'>
             <Textarea
-                label='What have you memoried today?!'
+                label={'What\'s your memory today?!'}
                 value={content}
                 onValueChange={setContent}
                 required
@@ -43,10 +43,10 @@ export function MemoryEditor({
             />
             <div className='flex gap-4'>
                 <Switch thumbIcon={<PiGlobeHemisphereEast />} isSelected={isPublic} onValueChange={setIsPublic}>
-                    公开
+                    Public
                 </Switch>
                 <Switch thumbIcon={<PiFire />} isSelected={isStreak} onValueChange={setIsStreak}>
-                    打卡
+                    Streak
                 </Switch>
             </div>
             <div className='flex justify-end gap-2'>
