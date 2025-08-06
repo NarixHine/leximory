@@ -12,6 +12,7 @@ export function AdminMemoryFeed() {
 export function Streak() {
     return <StreakDisplay streakData={{
         total: 100,
+        highest: 324,
         history: [
             { date: '2025-07-01', active: true },
             { date: '2025-07-02', active: true },
