@@ -212,7 +212,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                         }
                                     }}
                                     isDisabled={isPending}
-                                    className='w-[134px]'
+                                    className='w-33.5'
                                     renderValue={() => (
                                         <Chip
                                             size='sm'

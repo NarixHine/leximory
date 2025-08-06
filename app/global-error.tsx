@@ -31,7 +31,7 @@ export default function GlobalError({
                   color='primary'
                   variant='flat'
                   onPress={reset}
-                  className='min-w-[120px]'
+                  className='min-w-30'
                 >
                   Try Again
                 </Button>
@@ -40,7 +40,7 @@ export default function GlobalError({
                   href='/'
                   color='secondary'
                   variant='flat'
-                  className='min-w-[120px]'
+                  className='min-w-30'
                 >
                   Return to Library
                 </Button>

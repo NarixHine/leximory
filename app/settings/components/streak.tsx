@@ -11,5 +11,5 @@ export async function Streak() {
 }
 
 export function StreakSkeleton() {
-    return <StoneSkeleton className='h-[292px] sm:h-[216px] w-full rounded-lg' />
+    return <StoneSkeleton className='h-77 sm:h-58 w-full rounded-lg' />
 }

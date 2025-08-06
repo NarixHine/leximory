@@ -62,7 +62,7 @@ const LegendItem = ({
     >
       <span
         className={cx(
-          "h-[3px] w-3.5 shrink-0 rounded-full",
+          "h-0.75 w-3.5 shrink-0 rounded-full",
           getColorClassName(color, "bg"),
           activeLegend && activeLegend !== name ? "opacity-40" : "opacity-100",
         )}
@@ -421,7 +421,7 @@ const ChartTooltip = ({
                 <span
                   aria-hidden="true"
                   className={cx(
-                    "h-[3px] w-3.5 shrink-0 rounded-full",
+                    "h-0.75 w-3.5 shrink-0 rounded-full",
                     getColorClassName(color, "bg"),
                   )}
                 />

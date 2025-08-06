@@ -334,7 +334,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'px-4 py-3 mt-4 rounded-2xl max-w-[80%] text-base whitespace-pre-wrap overflow-x-hidden',
+                    'px-4 py-3 mt-4 rounded-2xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
                     isUser
                         ? 'bg-secondary-50/50 text-default-900 dark:bg-stone-900'
                         : 'bg-primary-50/50 text-default-900 dark:bg-neutral-900',
@@ -415,7 +415,7 @@ export function ChatMessage({
                         className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
                     >
                         <PiPaperclipFill className='text-primary-500' size={20} />
-                        <span className='text-sm text-default-700 truncate max-w-[180px] sm:max-w-[240px] md:max-w-[400px]' title={att.name}>
+                        <span className='text-sm text-default-700 truncate max-w-45 sm:max-w-60 md:max-w-100' title={att.name}>
                             {att.name}
                         </span>
                         <a

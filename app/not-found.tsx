@@ -25,7 +25,7 @@ export default function NotFound() {
                             href='/'
                             color='primary'
                             variant='flat'
-                            className='min-w-[120px]'
+                            className='min-w-30'
                         >
                             Return to Library
                         </Button>

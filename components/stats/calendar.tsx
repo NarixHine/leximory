@@ -1,6 +1,6 @@
 'use client'
 
-import { PiBookBookmark } from 'react-icons/pi'
+import { PiBookBookmarkDuotone } from 'react-icons/pi'
 import { CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -48,10 +48,13 @@ function getCellColor(count: number): string {
 function getTextColor(count: number): string {
     // For darker backgrounds, use light text
     if (count >= 20) {
-        return 'text-default-100'
+        return 'text-primary-100'
     }
     // For lighter backgrounds, use dark text
-    return 'text-default-800'
+    if (count >= 15) {
+        return 'text-primary-900'
+    }
+    return 'text-primary-800'
 }
 
 export default function VocabularyCalendar({ wordCountData, isLoading }: VocabularyCalendarProps) {
@@ -117,7 +120,7 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
                             >
                                 {wordCount > 0 ? (
                                     <div className='flex items-center gap-0.5'>
-                                        <PiBookBookmark />
+                                        <PiBookBookmarkDuotone />
                                         {wordCount}
                                     </div>
                                 ) : (

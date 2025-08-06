@@ -94,53 +94,13 @@ export async function calculateStreak(userId: string) {
         return {
             total: 0,
             history: [],
+            highest: 0,
         }
     }
 
-    console.log(`[Streak Debug] User: ${userId} - Raw data count: ${data.length}`)
     const dates = data.map(m => momentSH(m.created_at).startOf('day'))
-    const uniqueDates = [...new Set(dates.map(d => d.format('YYYY-MM-DD')))].map(d => momentSH(d))
-    console.log(`[Streak Debug] Unique dates:`, uniqueDates.map(d => d.format()))
-
-    if (uniqueDates.length === 0) {
-        console.log('[Streak Debug] No unique dates, returning 0.')
-        return {
-            total: 0,
-            history: [],
-        }
-    }
-
-    let currentStreak = 0
-    let lastDate = momentSH().startOf('day').add(1, 'day') // Start from tomorrow
-    console.log(`[Streak Debug] Initial lastDate: ${lastDate.format()}`)
-
-    for (const date of uniqueDates) {
-        const diff = lastDate.diff(date, 'days')
-        console.log(`[Streak Debug] Comparing ${lastDate.format()} to ${date.format()}. Diff: ${diff} days. Current streak: ${currentStreak}`)
-        if (diff === 1) {
-            currentStreak++
-        } else {
-            // The first date starts the streak
-            if (currentStreak === 0) {
-                currentStreak = 1
-            } else {
-                // A gap was found, so the streak ends
-                console.log('[Streak Debug] Gap found, breaking loop.')
-                break
-            }
-        }
-        lastDate = date
-    }
-    
-    console.log(`[Streak Debug] Streak after loop: ${currentStreak}`)
-    // Check if the streak is active today or yesterday
-    const today = momentSH().startOf('day')
-    const mostRecentDate = uniqueDates[0]
-    console.log(`[Streak Debug] Final check. Today: ${today.format()}. Most recent memory: ${mostRecentDate.format()}`)
-    if (today.diff(mostRecentDate, 'days') > 1) {
-        console.log(`[Streak Debug] Streak broken. Diff is > 1 day. Resetting to 0.`)
-        currentStreak = 0
-    }
+    const uniqueDates = [...new Set(dates.map(d => d.format('YYYY-MM-DD')))]
+        .map(d => momentSH(d).startOf('day'))
 
     const history = Array.from({ length: 8 }).map((_, i) => {
         const date = momentSH().subtract(i, 'days').startOf('day')
@@ -150,9 +110,53 @@ export async function calculateStreak(userId: string) {
         }
     }).reverse()
 
-    console.log(`[Streak Debug] Final streak for user ${userId}: ${currentStreak}`)
+    if (uniqueDates.length === 0) {
+        return { total: 0, history, highest: 0 }
+    }
+
+    // Calculate highest streak ever
+    let highestStreak = 0
+    let tempStreak = 0
+    if (uniqueDates.length > 0) {
+        highestStreak = 1
+        tempStreak = 1
+        let lastStreakDate = uniqueDates[0]
+        for (let i = 1; i < uniqueDates.length; i++) {
+            const currentStreakDate = uniqueDates[i]
+            if (lastStreakDate.diff(currentStreakDate, 'days') === 1) {
+                tempStreak++
+            } else {
+                tempStreak = 1
+            }
+            if (tempStreak > highestStreak) {
+                highestStreak = tempStreak
+            }
+            lastStreakDate = currentStreakDate
+        }
+    }
+
+    // Calculate current streak
+    const today = momentSH().startOf('day')
+    const mostRecentDate = uniqueDates[0]
+    if (today.diff(mostRecentDate, 'days') > 1) {
+        return { total: 0, history, highest: highestStreak }
+    }
+
+    let currentStreak = 1
+    let lastDate = mostRecentDate
+    for (let i = 1; i < uniqueDates.length; i++) {
+        const currentDate = uniqueDates[i]
+        if (lastDate.diff(currentDate, 'days') === 1) {
+            currentStreak++
+            lastDate = currentDate
+        } else {
+            break
+        }
+    }
+
     return {
         total: currentStreak,
         history,
+        highest: highestStreak,
     }
 }

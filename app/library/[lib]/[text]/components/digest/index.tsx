@@ -144,7 +144,7 @@ function EditingView() {
         </Button>
       </div>
       <Spacer y={2} />
-      <div className='sm:hidden h-[500px]'>
+      <div className='sm:hidden h-125'>
         <Editor
           value={modifiedMd}
           className='h-full'
@@ -153,7 +153,7 @@ function EditingView() {
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
-      <div className='hidden sm:block h-[500px]'>
+      <div className='hidden sm:block h-125'>
         <Editor
           value={modifiedMd}
           className='h-full'
@@ -221,7 +221,7 @@ function ReadingView() {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-[650px] mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>
             <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
             <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
@@ -236,7 +236,7 @@ function ReadingView() {
     <>
       <Markdown
         className={cn(
-          isReaderMode ? 'w-3/5 block' : 'max-w-[650px] mx-auto block px-4 sm:px-0',
+          isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
           'text-pretty',
           getLanguageStrategy(lang).proseClassName,
         )}
@@ -362,7 +362,7 @@ export default function Digest() {
         )}
       </div>
 
-      {!isReaderMode && <div className={'max-w-[650px] mx-auto mt-auto'}>
+      {!isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
         <Spacer y={6} />
         <ImportModal />
       </div>}

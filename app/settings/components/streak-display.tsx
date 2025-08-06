@@ -12,6 +12,7 @@ type StreakData = {
         date: string
         active: boolean
     }[]
+    highest: number
 }
 
 export function StreakDisplay({ streakData }: { streakData: StreakData }) {
@@ -20,7 +21,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
         <Card shadow='none' fullWidth isPressable onPress={() => {
             router.push('/memories')
         }} className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
-            <CardBody className='p-8 relative'>
+            <CardBody className='p-8 pb-4 relative'>
                 <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>
                     <motion.div
@@ -56,6 +57,7 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
                         </motion.div>
                     ))}
                 </div>}
+                <p className={'text-xs text-orange-500/80 dark:text-orange-300/80 font-mono text-center mt-4'}>Historic high: {streakData.highest}</p>
             </CardBody>
         </Card>
     )
