@@ -132,7 +132,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
     if (length > maxArticleLength) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(Math.ceil(length / 8000))) {
+    if (await incrCommentaryQuota(1)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
