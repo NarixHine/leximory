@@ -11,6 +11,7 @@ export async function incrementQuota(userId: string, type: 'commentary' | 'audio
         await redis.expire(quotaKey, 60 * 60 * 24 * 30) // 30 days
     }
 
+    console.log(`Quota for ${userId} (${type}) incremented by ${incrBy}. New value: ${quota}`)
     after(() => revalidateTag(`quota:${userId}:${type}`))
 
     return quota
