@@ -389,11 +389,13 @@ const MemoizedMessagePart = memo(MessagePart)
 export function ChatMessage({
     message,
     reload,
-    isLast
+    isLast,
+    isLoading
 }: {
     message: Message,
     reload?: () => void,
     isLast?: boolean,
+    isLoading?: boolean
 }) {
     const { id, parts, role, experimental_attachments } = message
 
@@ -440,6 +442,7 @@ export function ChatMessage({
                         size='sm'
                         radius='lg'
                         color='secondary'
+                        isDisabled={isLoading}
                         className='text-default-500 shrink-0'
                         onPress={() => reload()}
                     >
@@ -456,11 +459,13 @@ const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({
     reload,
-    messages
+    messages,
+    isLoading
 }: {
     reload?: () => void,
     messages: Message[]
-}) => <>{messages.map((message, index) => <MemoizedMessage key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
+    isLoading?: boolean
+}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
 
 export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
@@ -497,6 +502,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
         },
         initialInput
     })
+    const isLoading = status === 'submitted' || status === 'streaming'
     const [isFirstConversation, setIsFirstConversation] = useState(true)
 
     useEffect(() => {
@@ -527,7 +533,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!input.trim() || status === 'streaming') return
+        if (!input.trim() || isLoading) return
 
         handleSubmit(e, {
             experimental_attachments: files
@@ -536,7 +542,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
     }
 
     const handleButtonClick = () => {
-        if (status === 'streaming') {
+        if (isLoading) {
             stop()
         } else {
             handleFormSubmit(new Event('submit') as any)
@@ -600,7 +606,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     ))}
                 </div>
             )}
-            <ChatMessages messages={messages} reload={reload} />
+            <ChatMessages isLoading={isLoading} messages={messages} reload={reload} />
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}
@@ -638,10 +644,10 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     color='primary'
                     isIconOnly
                     className='self-start'
-                    isDisabled={(plan === 'beginner' && isProd) || (status !== 'streaming' && !input.trim())}
-                    aria-label={status === 'streaming' ? '停止' : '发送'}
+                    isDisabled={(plan === 'beginner' && isProd) || (status === 'ready' && !input.trim())}
+                    aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
-                    startContent={status === 'streaming' ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
+                    startContent={isLoading ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
                 ></Button>
             </form>
             <footer className='pt-4 text-sm text-default-500 flex justify-center w-full'>

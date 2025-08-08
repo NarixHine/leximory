@@ -19,7 +19,7 @@ export default function MemoriesPage() {
                 <section className='md:basis-1/3 items-center flex flex-col'>
                     <H fancy className='text-5xl lg:text-6xl hidden md:block'>Memories</H>
                     <div className={cn('italic hidden md:block text-xl lg:text-2xl mb-4 text-default-700', ENGLISH_FANCY.className)}>Record your learnings</div>
-                    <div className='flex flex-col items-center gap-4 w-full max-w-md md:sticky md:top-10'>
+                    <div className='flex flex-col items-center gap-4 w-full max-w-md md:sticky md:top-4'>
                         <CreateMemoryForm />
                         <div className='text-sm text-default-600 text-balance text-center max-w-52'>
                            <p>Memories 是一个日记本功能。</p>
