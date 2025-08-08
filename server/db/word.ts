@@ -109,9 +109,10 @@ export async function retrieveWordsWithRange({ lib, start, end, size = 200 }: { 
         .eq('lib', lib)
         .gte('created_at', start.toISOString())
         .lt('created_at', end.toISOString())
+        .not('word', 'in', `(${languageStrategies.map(s => s.welcome).join(',')})`) // exclude welcome words
         .limit(size)
         .throwOnError()
-    return data.filter(({ word }) => !languageStrategies.map(s => s.welcome).includes(word)) // exclude welcome words
+    return data
 }
 
 export async function getForgetCurve({ day, userId }: { day: ForgetCurvePoint, userId: string }) {
@@ -127,7 +128,7 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, userId }: { fromDay
         .from('lexicon')
         .select('word, id, lib:libraries!inner(id, lang)')
         .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
-        .lte('created_at', momentSH().endOf('day').subtract(toDayAgo, 'day').toISOString())
+        .lte('created_at', momentSH().startOf('day').subtract(toDayAgo, 'day').toISOString())
         .not('word', 'in', `(${languageStrategies.map(s => s.welcome).join(',')})`) // exclude welcome words
         .eq('lib.owner', userId)
         .throwOnError()

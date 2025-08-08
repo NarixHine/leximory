@@ -77,9 +77,9 @@ const tools: ToolSet = {
             const { userId } = await getUserOrThrow()
             switch (period) {
                 case 'day':
-                    return getWordsWithin({ fromDayAgo: 1, toDayAgo: 0, userId })
+                    return getWordsWithin({ fromDayAgo: 1, toDayAgo: -1, userId })
                 case 'week':
-                    return getWordsWithin({ fromDayAgo: 7, toDayAgo: 0, userId })
+                    return getWordsWithin({ fromDayAgo: 7, toDayAgo: -1, userId })
             }
         }
     },
