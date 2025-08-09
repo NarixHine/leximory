@@ -1,5 +1,4 @@
 import { CommentaryQuotaUI, AudioQuotaUI } from '@/app/library/components/cards'
-import GradientCard from '@/app/library/components/cards/card'
 import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
