@@ -1,33 +1,47 @@
 import { getAudioQuota, getCommentaryQuota } from '@/server/auth/quota'
 import GradientCard from './card'
 import { CircularProgress } from "@heroui/progress"
+import moment from 'moment'
+import 'moment/locale/zh-cn'
 
-export const CommentaryQuotaCard = async () => {
-    const { quota, max, percentage } = await getCommentaryQuota()
-    return <GradientCard title={'本月 AI 注解额度'} text={`${quota} / ${max}`} className={'bg-linear-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}>
-        <CircularProgress
-            size='lg'
-            value={percentage}
-            color='primary'
-            showValueLabel={true}
-            classNames={{
-                track: 'stroke-white/50',
-            }}
-        />
-    </GradientCard>
+function createQuotaUI({
+    getQuota,
+    className,
+    name,
+}: {
+    getQuota: () => Promise<{ quota: number, max: number, percentage: number, ttl: number }>
+    className?: string
+    name: string
+}) {
+    const Card = async () => {
+        const { quota, max, percentage, ttl } = await getQuota()
+        const ttlText = ttl > 0 ? `（${moment.duration(ttl, 'seconds').locale('zh-cn').humanize()}后重置）` : ''
+        return <GradientCard title={name} caption={ttlText} text={`${quota} / ${max}`} className={className}>
+            <CircularProgress
+                size='lg'
+                value={percentage}
+                color='primary'
+                showValueLabel={true}
+                classNames={{
+                    track: 'stroke-white/50',
+                }}
+            />
+        </GradientCard>
+    }
+    const Skeleton = () => <GradientCard
+        title={name}
+        className={className}
+    />
+    return { Card, Skeleton }
 }
 
-export const AudioQuotaCard = async () => {
-    const { quota, max, percentage } = await getAudioQuota()
-    return <GradientCard title={'本月 AI 音频额度'} text={`${quota} / ${max}`}>
-        <CircularProgress
-            size='lg'
-            value={percentage}
-            color='secondary'
-            showValueLabel={true}
-            classNames={{
-                track: 'stroke-white/50',
-            }}
-        />
-    </GradientCard>
-}
+export const CommentaryQuotaUI = createQuotaUI({
+    name: 'AI 注解额度',
+    getQuota: getCommentaryQuota,
+    className: 'bg-linear-to-br from-primary-50 to-secondary-50 dark:bg-linear-to-bl dark:from-stone-900 dark:to-default-200'
+})
+
+export const AudioQuotaUI = createQuotaUI({
+    name: 'AI 朗读额度',
+    getQuota: getAudioQuota,
+})

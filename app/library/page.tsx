@@ -1,4 +1,4 @@
-import { CommentaryQuotaCard, AudioQuotaCard } from '@/app/library/components/cards'
+import { CommentaryQuotaUI, AudioQuotaUI } from '@/app/library/components/cards'
 import GradientCard from '@/app/library/components/cards/card'
 import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
 import Main from '@/components/ui/main'
@@ -39,20 +39,11 @@ export default function Page() {
             <Spacer y={8} />
             <div className='flex flex-col gap-4'>
                 <div className='grid grid-cols-1 min-[460px]:grid-cols-2 justify-center gap-4'>
-                    <Suspense fallback={
-                        <GradientCard
-                            title='本月 AI 注解额度'
-                            className={'bg-linear-to-br from-primary-50 to-secondary-50 dark:from-default-100 dark:to-default-200'}
-                        />
-                    }>
-                        <CommentaryQuotaCard />
+                    <Suspense fallback={<CommentaryQuotaUI.Skeleton />}>
+                        <CommentaryQuotaUI.Card />
                     </Suspense>
-                    <Suspense fallback={
-                        <GradientCard
-                            title='本月 AI 音频额度'
-                        />
-                    }>
-                        <AudioQuotaCard />
+                    <Suspense fallback={<AudioQuotaUI.Skeleton />}>
+                        <AudioQuotaUI.Card />
                     </Suspense>
                 </div>
             </div>

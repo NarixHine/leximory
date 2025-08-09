@@ -1,15 +1,15 @@
 import { Skeleton } from "@heroui/skeleton"
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
-import H from '@/components/ui/h'
 import { CircularProgress } from '@heroui/progress'
 
-const GradientCard = ({ text, className, title, children }: {
+const GradientCard = ({ text, className, title, children, caption }: {
     title?: string | ReactNode,
     text?: string | ReactNode,
     className?: string,
     children?: ReactNode,
     isLoading?: boolean
+    caption?: string | ReactNode
 }) => {
     return (
         <div className={cn(
@@ -19,7 +19,7 @@ const GradientCard = ({ text, className, title, children }: {
         )}>
             {
                 title
-                    ? <H className={'font-xl opacity-80'} fancy disableCenter>{title}</H>
+                    ? <h1 className={'font-fancy opacity-80'}>{title}<span className='text-sm align-baseline'>{caption}</span></h1>
                     : <Skeleton className='h-3 w-1/3 max-w-10 my-1 rounded-lg opacity-50' />
             }
             {

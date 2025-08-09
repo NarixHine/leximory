@@ -2,16 +2,16 @@ import 'server-only'
 import { redis } from '../client/redis'
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 import { after } from 'next/server'
+import { seconds } from 'itty-time'
 
 export async function incrementQuota(userId: string, type: 'commentary' | 'audio', incrBy: number = 1) {
     const quotaKey = `user:${userId}:${type}_quota`
     const quota = await redis.incrbyfloat(quotaKey, incrBy)
 
     if (quota === incrBy) {
-        await redis.expire(quotaKey, 60 * 60 * 24 * 30) // 30 days
+        await redis.expire(quotaKey, seconds('30 days'))
     }
 
-    console.log(`Quota for ${userId} (${type}) incremented by ${incrBy}. New value: ${quota}`)
     after(() => revalidateTag(`quota:${userId}:${type}`))
 
     return quota
@@ -23,4 +23,12 @@ export async function getQuota(userId: string, type: 'commentary' | 'audio'): Pr
 
     const quotaKey = `user:${userId}:${type}_quota`
     return (await redis.get(quotaKey)) ?? 0
+}
+
+export async function getQuotaTTL(userId: string, type: 'commentary' | 'audio') {
+    'use cache'
+    cacheTag(`quota:${userId}:${type}`)
+
+    const quotaKey = `user:${userId}:${type}_quota`
+    return await redis.ttl(quotaKey)
 }
