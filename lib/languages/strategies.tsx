@@ -5,6 +5,7 @@ import { createLanguageStrategy } from './utils'
 export const englishStrategy = createLanguageStrategy({
     type: 'en',
     name: '英文',
+    emoji: '🇬🇧',
     welcome: '{{Welcome!||welcome||Welcome to your new English library!}}',
     maxChunkSize: 5000,
     maxArticleLength: 30000,
@@ -18,6 +19,7 @@ export const englishStrategy = createLanguageStrategy({
 export const chineseStrategy = createLanguageStrategy({
     type: 'zh',
     name: '文言文',
+    emoji: '🇨🇳',
     welcome: '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
     maxChunkSize: 700,
     maxArticleLength: 5000,
@@ -28,6 +30,7 @@ export const chineseStrategy = createLanguageStrategy({
 export const japaneseStrategy = createLanguageStrategy({
     type: 'ja',
     name: '日文',
+    emoji: '🇯🇵',
     welcome: '{{ようこそ！||ようこそ||新しい日本語ライブラリへようこそ！}}',
     maxChunkSize: 1000,
     maxArticleLength: 10000,
@@ -40,6 +43,7 @@ export const japaneseStrategy = createLanguageStrategy({
 export const notListedStrategy = createLanguageStrategy({
     type: 'nl',
     name: '其他',
+    emoji: '🌐',
     welcome: '{{Welcome!||welcome||Welcome to your new library!}}',
     maxChunkSize: 2000,
     maxArticleLength: 10000,

@@ -49,7 +49,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                     ? '已购买'
                     : price === 0
                         ? '免费'
-                        : `用 ${price} LexiCoin 购买`
+                        : `${price} LexiCoin`
             }
         </Button>
         {avatar}

@@ -7,10 +7,10 @@ import H from '@/components/ui/h'
 import { useRouter } from 'next/navigation'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { Spacer } from '@heroui/spacer'
 import BuyLibrary from '@/components/buy-library'
 import FlatCard from '@/components/ui/flat-card'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
+import { Chip } from '@heroui/chip'
 
 interface LibraryCardProps {
     library: {
@@ -38,18 +38,18 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter, is
             }}
             isPressable
         >
-            <CardBody className={cn('p-5', !hideFooter && 'pb-0')}>
+            <CardBody className={cn('p-5 pt-4', !hideFooter && 'pb-0')}>
                 <div className='flex flex-col'>
                     <H disableCenter className='text-2xl'>{library.name}</H>
-                    <Spacer y={1} />
-                    <span className={cn('text-sm opacity-60')}>语言：{getLanguageStrategy(library.lang).name}</span>
-                    {typeof library.readers === 'number' && (
-                        <span className={cn('text-sm opacity-60')}>读者：{library.readers} 人</span>
-                    )}
+                    {typeof library.readers === 'number' && (<div className='text-default-600'>
+                        <span className={cn('text-lg')}>{library.readers}</span> <span className={cn('text-xs')}>个读者</span>
+                    </div>)}
                 </div>
             </CardBody>
 
-            {!hideFooter && <CardFooter className='flex justify-end pb-4 pr-4'>
+            {!hideFooter && <CardFooter className='flex pb-3 pr-4'>
+                <Chip variant='dot' color='primary' size='sm' className={cn('border-0 text-medium')}>{getLanguageStrategy(library.lang).emoji}</Chip>
+                <div className='flex-1'></div>
                 <BuyLibrary
                     isStarred={isStarred}
                     id={library.id}

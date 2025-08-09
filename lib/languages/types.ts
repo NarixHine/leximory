@@ -4,6 +4,7 @@ import { Lang } from '../config'
 export interface LanguageStrategy {
     type: Lang
     name: string
+    emoji: string
     // for corpus
     welcome: string
     // for annotation

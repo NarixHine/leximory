@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardFooter } from "@heroui/card"
 import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiArchiveDuotone, PiArchiveFill, PiStackMinusDuotone } from 'react-icons/pi'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone } from 'react-icons/pi'
 import { libAccessStatusMap, Lang } from '@/lib/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import Link from 'next/link'
@@ -118,26 +118,26 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             router.push(`/library/${id}`)
         }}>
             {compact
-                ? <CardBody className='px-3 py-2 flex flex-row items-center gap-3'>
-                    <div className='text-2xl font-formal'>{name}</div>
+                ? <CardBody className='px-3 py-2 flex flex-row items-center gap-2'>
+                    <div className='text-2xl font-formal mr-2'>{name}</div>
                     {
                         shadow
                             ? <Button
                                 as={Link}
                                 href={`/library/${id}/corpus`}
                                 size='sm'
-                                startContent={<PiBookBookmarkDuotone />}
+                                startContent={<PiBookBookmarkDuotone className='text-lg' />}
                                 color='primary'
-                                variant='flat'
+                                variant='light'
                                 isIconOnly
                             />
                             : <Button
                                 size={'sm'}
                                 as={'span'}
                                 isLoading={isTogglingArchive}
-                                startContent={!isTogglingArchive && <PiArchiveFill />}
+                                startContent={!isTogglingArchive && <PiBoxArrowUpDuotone className='text-lg' />}
                                 color='primary'
-                                variant='flat'
+                                variant='light'
                                 isIconOnly
                                 onPress={() => {
                                     startTogglingArchive(async () => {
@@ -152,10 +152,10 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 size={'sm'}
                                 as={'span'}
                                 isLoading={isUnstarring}
-                                startContent={!isUnstarring && <PiStackMinusDuotone />}
+                                startContent={!isUnstarring && <PiStackMinusDuotone className='text-lg' />}
                                 color='danger'
                                 isIconOnly
-                                variant='flat'
+                                variant='light'
                                 onPress={async () => {
                                     if (await ConfirmUnstar.call()) {
                                         startUnstarring(async () => {
@@ -187,7 +187,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 <Button
                     as={'span'}
                     isLoading={isTogglingArchive}
-                    startContent={!isTogglingArchive && <PiArchiveDuotone />}
+                    startContent={!isTogglingArchive && <PiBoxArrowDownDuotone />}
                     variant='flat'
                     color='primary'
                     isIconOnly
