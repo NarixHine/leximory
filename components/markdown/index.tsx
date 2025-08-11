@@ -81,7 +81,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         }}
         className={cn(
             'prose dark:prose-invert',
-            'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-1.5! prose-hr:my-8 prose-em:font-light',
+            'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
+            'prose-hr:my-8',
+            'prose-em:font-light',
             'prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
             lang === 'ja' ? 'font-ja' : 'font-formal',
             className
