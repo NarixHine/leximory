@@ -8,6 +8,7 @@ import { Lang } from '@/lib/config'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
+import { seconds } from 'itty-time'
 
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const id = nanoid()
@@ -135,7 +136,7 @@ export async function getTextContent({ id }: { id: string }) {
     if (has_ebook) {
         const { data, error } = await supabase.storage
             .from('user-files')
-            .createSignedUrl(`ebooks/${id}.epub`, 60 * 60 * 24 * 30)
+            .createSignedUrl(`ebooks/${id}.epub`, seconds('7 days'))
         if (error) throw error
         return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
     }

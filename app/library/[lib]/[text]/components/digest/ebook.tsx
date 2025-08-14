@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { memo } from 'react'
 import { save } from '../../actions'
 import { getBracketedSelection } from '@/components/define/utils'
+import { getChapterName } from '@/lib/epub'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
@@ -188,9 +189,11 @@ export default function Ebook() {
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
-                        if (themeRendition.current) {
-                            const { displayed } = themeRendition.current.location.start
-                            setPage(strategy.pageFormat?.(displayed.page, displayed.total) ?? '')
+                        const { current: rendition } = themeRendition
+                        if (rendition) {
+                            const { displayed } = rendition.location.start
+                            setPage(strategy.pageFormat(displayed.page, displayed.total, getChapterName(rendition.book, rendition.location)))
+                            console.log(page)
                         }
                     }}
                     getRendition={rendition => {
@@ -224,7 +227,8 @@ export default function Ebook() {
                         rendition.on('selected', (_: string, contents: Contents) => {
                             const selection = contents.window.getSelection()
                             setPrompt(selection ? getBracketedSelection(selection) : null)
-                            setBookmark(selection ? `\n\n> ${selection.toString().replaceAll('\n', '\n>\n> ')}` : null)
+                            const chapter = getChapterName(rendition.book, rendition.location)
+                            setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
                         })
                     }}
                     epubOptions={{

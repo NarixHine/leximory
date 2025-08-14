@@ -8,13 +8,16 @@ import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEventListener } from 'usehooks-ts'
 import { useIsMobileIos } from '@/lib/hooks'
-import { ENGLISH_SERIF } from '@/lib/fonts'
 import { resetSelection, getBracketedSelection } from './utils'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
+import { useAtomValue } from 'jotai'
+import { langAtom } from '@/app/library/[lib]/atoms'
 
 export default function Define() {
     const ref = useRef(globalThis.document)
     const [rect, setRect] = useState<DOMRect | null>(null)
     const [selection, setSelection] = useState<Selection | null>(null)
+    const lang = useAtomValue(langAtom)
 
     useEventListener('selectionchange', () => {
         const newSelection = getSelection()
@@ -31,6 +34,8 @@ export default function Define() {
     const MotionTrigger = motion.create(Drawer.Trigger)
     const isMobileIos = useIsMobileIos()
 
+    const { defineClassName, defineLabel } = getLanguageStrategy(lang)
+
     return <Drawer.Root>
         <AnimatePresence>
             {selection && selection.anchorNode?.textContent && selection.toString() && rect && <MotionTrigger
@@ -42,10 +47,10 @@ export default function Define() {
                 animate={isMobileIos ? undefined : { opacity: 1 }}
                 exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
                 transition={isMobileIos ? undefined : { duration: 0.2 }}
-                className={cn('absolute -translate-x-1/2 z-20 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', ENGLISH_SERIF.className)}
+                className={cn('absolute -translate-x-1/2 z-20 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white', defineClassName)}
             >
                 <PiMagnifyingGlass />
-                Define
+                {defineLabel}
             </MotionTrigger>}
         </AnimatePresence>
         <Drawer.Portal>

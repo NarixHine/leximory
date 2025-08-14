@@ -14,10 +14,12 @@ export interface LanguageStrategy {
     // for UI
     FormattedReadingTime?: (text: string) => ReactNode
     proseClassName?: string
+    defineLabel: string
+    defineClassName: string
     // for ebook
     isRTL: boolean
     lineHeight: string
-    pageFormat: (page: number, total: number) => string
+    pageFormat: (page: number, total: number, chapter?: string | null) => string
 }
 
 export interface LanguageServerStrategy {

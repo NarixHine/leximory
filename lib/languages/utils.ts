@@ -7,8 +7,10 @@ export function createLanguageStrategy<T extends LanguageStrategy>(
   const defaults = {
     isRTL: false,
     lineHeight: '1.6 !important',
-    pageFormat: (page: number, total: number) => `At ${page}/${total} in Chapter`,
+    pageFormat: (page: number, total: number, chapter?: string) => `At ${page}/${total} in ${chapter ?? 'Chapter'}`,
     proseClassName: 'prose-lg',
+    defineLabel: 'Define',
+    defineClassName: 'font-formal',
   }
 
   return { ...defaults, ...config } as T
