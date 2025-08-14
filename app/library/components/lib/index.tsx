@@ -107,19 +107,24 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 
     const [isTogglingArchive, startTogglingArchive] = useTransition()
     const [isUnstarring, startUnstarring] = useTransition()
+    const MotionCard = motion.create(FlatCard)
 
-    return (<motion.div
-        className={cn('relative', compact ? 'px-2 py-2' : 'w-full')}
-        animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
-        transition={{ duration: 1 }}
-    >
-        {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-1' onPress={onOpen}></Button>}
-        <FlatCard fullWidth background='solid' as={'div'} isPressable onPress={() => {
-            router.push(`/library/${id}`)
-        }}>
+    return (<>
+        <MotionCard
+            className={cn('relative', compact && 'w-fit rounded-3xl tracking-tighter')}
+            animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
+            transition={{ duration: 1 }}
+            fullWidth
+            background='solid'
+            as={'div'}
+            isPressable
+            onPress={() => {
+                router.push(`/library/${id}`)
+            }}>
+            {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-1' onPress={onOpen}></Button>}
             {compact
-                ? <CardBody className='px-3 py-2 flex flex-row items-center gap-2'>
-                    <div className='text-2xl font-formal mr-2'>{name}</div>
+                ? <CardBody className='pr-2 pl-3 py-2 flex flex-row items-center gap-2 relative'>
+                    <div className='text-2xl font-formal'>{name}</div>
                     {
                         shadow
                             ? <Button
@@ -129,6 +134,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 startContent={<PiBookBookmarkDuotone className='text-lg' />}
                                 color='primary'
                                 variant='light'
+                                radius='md'
                                 isIconOnly
                             />
                             : <Button
@@ -139,9 +145,11 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 color='primary'
                                 variant='light'
                                 isIconOnly
+                                radius='md'
                                 onPress={() => {
                                     startTogglingArchive(async () => {
                                         await unarchive({ id })
+                                        toast.success('已取消归档')
                                     })
                                 }}
                             />
@@ -156,6 +164,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 color='danger'
                                 isIconOnly
                                 variant='light'
+                                radius='md'
                                 onPress={async () => {
                                     if (await ConfirmUnstar.call()) {
                                         startUnstarring(async () => {
@@ -194,11 +203,12 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     onPress={() => {
                         startTogglingArchive(async () => {
                             await archive({ id })
+                            toast.success('已归档文库')
                         })
                     }}
                 ></Button>
             </CardFooter>}
-        </FlatCard>
+        </MotionCard>
 
         <Form
             actionButton={<Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} onPress={() => {
@@ -238,7 +248,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             <p className='text-xs text-center opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
             <Textarea label='Talk to Your Library 默认提示词' placeholder='在文本界面唤起 AI 对话时的初始提示词。'  {...register('prompt')} />
         </Form>
-    </motion.div>)
+    </>)
 }
 
 export function LibraryAddButton() {

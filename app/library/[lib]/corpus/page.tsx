@@ -11,6 +11,7 @@ import { LibProps } from '@/lib/types'
 import Link from 'next/link'
 import { Button } from '@heroui/button'
 import { PiPrinterDuotone } from 'react-icons/pi'
+import { momentSH } from '@/lib/moment'
 
 export const metadata: Metadata = {
     title: '语料库'
@@ -48,7 +49,7 @@ export default async function Page(props: LibProps) {
                 >
                     打印词卡
                 </Button>
-                <Test latestTime={words[0].date}></Test>
+                <Test latestTime={words[0] ? words[0].date : momentSH().format('YYYY-MM-DD')}></Test>
             </div>
             <div className='sm:col-span-2'>
                 <Recollection words={words} cursor={cursor} more={more}></Recollection>

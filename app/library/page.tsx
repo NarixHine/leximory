@@ -59,13 +59,13 @@ export default function Page() {
             <UserLibraryList />
         </Suspense>
 
-        <Spacer y={4} />
+        <Spacer y={2} />
 
-        <div className='mx-auto'>
+        <div className='mx-auto mt-auto'>
             <LibraryAddButton />
         </div>
 
-        <Spacer y={4} />
+        <Spacer y={2} />
 
         <footer className='flex justify-center gap-2'>
             <Button as={Link} href='/about' variant='light' startContent={<PiVideo />}>
@@ -130,7 +130,7 @@ async function LibraryList({ userId, orFilter }: {
                     </p>
                 </div>}
             </section>
-            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center mb-1 mt-3 md:mt-1 px-2 py-2 border border-dashed border-default-300 rounded-lg md:before:content-["归档↝"] before:content-["归档↴"] before:absolute before:md:top-2 before:md:-left-2 before:md:-translate-x-full before:md:text-medium before:-top-5 before:left-2 before:text-default-400 before:text-sm')}>
+            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center gap-2 px-2 pt-3 rounded-lg')}>
                 {compactLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}

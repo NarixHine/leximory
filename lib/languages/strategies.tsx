@@ -25,7 +25,7 @@ export const chineseStrategy = createLanguageStrategy({
     maxArticleLength: 5000,
     exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词简短例句（例句中的义项必须与语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
     proseClassName: 'prose-xl',
-    defineLabel: '查询',
+    defineLabel: '注解',
     defineClassName: 'font-formal font-semibold'
 })
 

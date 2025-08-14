@@ -10,6 +10,7 @@ import { libAtom, isReadOnlyAtom } from '../../atoms'
 import { Button } from "@heroui/button"
 import { Chip } from "@heroui/chip"
 import load from '../actions'
+import { momentSH } from '@/lib/moment'
 
 export default function Recollection({ words, cursor, more }: {
     words: { word: string, id: string, date: string }[]
@@ -34,8 +35,8 @@ export default function Recollection({ words, cursor, more }: {
                     <Markdown md={word} disableSave={welcomes.includes(word)} deleteId={isReadOnly || welcomes.includes(word) ? undefined : id}></Markdown>
                 </div>
                 {anotherDay && <div className='w-full min-h-20 h-full flex flex-col justify-center items-center'>
-                    <Chip size='lg' variant='flat' color='secondary'>
-                        {moment(array[index + 1].date).startOf('day').format('ll')}
+                    <Chip size='lg' variant='bordered' color='primary' className='border-1'>
+                        {momentSH(array[index + 1].date).startOf('day').format('ll')}
                     </Chip>
                 </div>}
             </Fragment>

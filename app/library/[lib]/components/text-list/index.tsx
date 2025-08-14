@@ -22,7 +22,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
     })
 
     return (
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {texts.map(({ title, id, topics, hasEbook, createdAt }) => (
                 <Text
                     id={id}
