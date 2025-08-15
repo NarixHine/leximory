@@ -3,7 +3,7 @@ import { getUserOrThrow } from '@/server/auth/user'
 import { StreakDisplay } from './streak-display'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
 
-export async function Streak() {
+export async function StreakServer() {
     const { userId } = await getUserOrThrow()
     const streakData = await calculateStreak(userId)
 

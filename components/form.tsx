@@ -19,7 +19,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
                     <DrawerBody>
                         {children}
                     </DrawerBody>
-                    <DrawerFooter className='flex gap-2 w-full'>
+                    <DrawerFooter className='flex gap-2 w-full pt-0'>
                         <div className='flex-1'></div>
                         <Button type='submit' color='primary' variant='flat' startContent={isLoading ? null : <PiFloppyDiskDuotone />} isLoading={isLoading}>确认</Button>
                         {actionButton}

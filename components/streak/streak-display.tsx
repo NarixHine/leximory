@@ -26,8 +26,16 @@ export function StreakDisplay({ streakData }: { streakData: StreakData }) {
                 <div className='flex items-center justify-center gap-4'>
                     <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                        animate={{
+                            scale: 1,
+                            opacity: 1,
+                            rotate: [0, -5, 5, -5, 0],
+                            scaleX: [1, 1.05, 0.95, 1.05, 1]
+                        }}
+                        transition={{
+                            duration: 0.7,
+                            ease: 'easeInOut',
+                        }}
                     >
                         <PiFireFill className='text-7xl text-orange-500' />
                     </motion.div>

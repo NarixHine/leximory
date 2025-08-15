@@ -1,7 +1,7 @@
 import { UserPublicFeed } from '@/app/memories/components/user-public-feed'
 import { ADMIN_UID } from '@/lib/config'
 import { ShowcaseWrapper } from '../ai-agent/showcases'
-import { StreakDisplay } from '@/app/settings/components/streak-display'
+import { StreakDisplay } from '@/components/streak/streak-display'
 
 export function AdminMemoryFeed() {
     return (<ShowcaseWrapper title='我的 Memories'>

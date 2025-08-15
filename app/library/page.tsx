@@ -19,6 +19,7 @@ import AdminDashboardLink from './components/dashboard-link'
 import UserAvatar from '@/components/avatar'
 import { exampleSharedLib } from '@/lib/config'
 import LibraryCard from '../marketplace/[page]/components/card'
+import Streak from '@/components/streak'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -45,6 +46,7 @@ export default function Page() {
                         <AudioQuotaUI.Card />
                     </Suspense>
                 </div>
+                <Streak />
             </div>
         </div>
 

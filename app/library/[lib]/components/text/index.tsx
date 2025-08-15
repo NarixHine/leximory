@@ -3,19 +3,15 @@
 import { CardBody, CardFooter } from "@heroui/card"
 import { add, addAndGenerate } from './actions'
 import { motion } from 'framer-motion'
-import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiAirplaneInFlightDuotone, PiCheckSquare, PiSquare } from 'react-icons/pi'
-import { useTransitionRouter } from 'next-view-transitions'
-import { useTransition } from 'react'
+import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiCheckSquare, PiSquare } from 'react-icons/pi'
+import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
 import { langAtom, libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { Spinner, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
-import { Button } from '@heroui/button'
 import { getArticleFromUrl } from '@/lib/utils'
-import { useState } from 'react'
-import isUrl from 'is-url'
+import Form from '@/components/form'
 import Topics from '../../[text]/components/topics'
 import Link from "next/link"
 import { momentSH } from '@/lib/moment'
@@ -72,11 +68,13 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
 
 export function AddTextButton() {
     const lib = useAtomValue(libAtom)
-    const router = useTransitionRouter()
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
-    const [isImporting, startImporting] = useTransition()
-    const [url, setUrl] = useState('')
-    const [title, setTitle] = useState('')
+    const { register, handleSubmit, setValue, formState } = useForm<{ url: string, title: string }>({
+        defaultValues: {
+            url: '',
+            title: ''
+        }
+    })
     const lang = useAtomValue(langAtom)
 
     return <>
@@ -92,54 +90,52 @@ export function AddTextButton() {
                 </motion.div>
             </CardBody>
         </FlatCard>
-        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
-            <DrawerContent>
-                <DrawerHeader className='flex flex-col gap-1'>创建文章</DrawerHeader>
-                <DrawerBody className='max-w-(--breakpoint-sm) mx-auto pb-10'>
-                    <Tabs aria-label='方式'>
-                        <Tab
-                            key='text'
-                            title={
-                                <div className='flex items-center space-x-2'>
-                                    <PiLinkSimpleHorizontal />
-                                    <span>网址导入外刊</span>
-                                </div>
-                            }
-                            className='flex gap-2'
-                        >
-                            <Input placeholder='https://www.nytimes.com/' className='w-80' variant='bordered' color='primary' value={url} onChange={(e) => setUrl(e.target.value)} />
-                            <Button variant='solid' isDisabled={!isUrl(url)} startContent={!isImporting && <PiAirplaneInFlightDuotone className='text-xl' />} color='primary' isLoading={isImporting} onPress={() => {
-                                startImporting(async () => {
-                                    const { title, content } = await getArticleFromUrl(url)
-                                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                                        toast.error('文章内容过长或解析失败，请手动录入')
-                                        return
-                                    }
-                                    const id = await addAndGenerate({ title, content, lib })
-                                    router.push(`/library/${lib}/${id}`)
-                                })
-                            }}>导入</Button>
-                        </Tab>
-                        <Tab key='ebook'
-                            title={
-                                <div className='flex items-center space-x-2'>
-                                    <PiKeyboard />
-                                    <span>手动输入标题</span>
-                                </div>
-                            }
-                            className='flex gap-2'>
-                            <Input placeholder='标题' variant='bordered' className='w-80' color='primary' value={title} onChange={(e) => setTitle(e.target.value)} />
-                            <Button variant='solid' startContent={!isImporting && <PiAirplaneInFlightDuotone className='text-xl' />} color='primary' isLoading={isImporting} onPress={() => {
-                                startImporting(async () => {
-                                    const id = await add({ title, lib })
-                                    router.push(`/library/${lib}/${id}`)
-                                })
-                            }}>创建</Button>
-                        </Tab>
-                    </Tabs>
-                </DrawerBody>
-            </DrawerContent>
-        </Drawer>
+        <Form
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            title='创建文章'
+            isLoading={formState.isSubmitting}
+            onSubmit={handleSubmit(async (data) => {
+                if (data.url) {
+                    const { title, content } = await getArticleFromUrl(data.url)
+                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
+                        toast.error('文章内容过长或解析失败，请手动录入')
+                        return
+                    }
+                    await addAndGenerate({ title, content, lib })
+                } else if (data.title) {
+                    await add({ title: data.title, lib })
+                }
+            })}
+        >
+            <Tabs aria-label='方式'>
+                <Tab
+                    key='text'
+                    title={
+                        <div className='flex items-center space-x-2'>
+                            <PiLinkSimpleHorizontal />
+                            <span>网址导入外刊</span>
+                        </div>
+                    }
+                >
+                    <Input placeholder='https://www.nytimes.com/' variant='bordered' color='primary' {...register('url', {
+                        onChange: () => setValue('title', '')
+                    })} />
+                </Tab>
+                <Tab key='ebook'
+                    title={
+                        <div className='flex items-center space-x-2'>
+                            <PiKeyboard />
+                            <span>手动输入标题</span>
+                        </div>
+                    }
+                >
+                    <Input placeholder='标题' variant='bordered' color='primary' {...register('title', {
+                        onChange: () => setValue('url', '')
+                    })} />
+                </Tab>
+            </Tabs>
+        </Form>
     </>
 }
 

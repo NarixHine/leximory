@@ -193,7 +193,6 @@ export default function Ebook() {
                         if (rendition) {
                             const { displayed } = rendition.location.start
                             setPage(strategy.pageFormat(displayed.page, displayed.total, getChapterName(rendition.book, rendition.location)))
-                            console.log(page)
                         }
                     }}
                     getRendition={rendition => {
