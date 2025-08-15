@@ -18,6 +18,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
+import { useScrollLock } from 'usehooks-ts'
 import { toast } from 'sonner'
 import { memo } from 'react'
 import { save } from '../../actions'
@@ -108,6 +109,16 @@ export default function Ebook() {
     const [isFullViewport, setIsFullViewport] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null!)
 
+    const { lock, unlock } = useScrollLock({ autoLock: false })
+    useEffect(() => {
+        if (isFullViewport) {
+            lock()
+        } else {
+            unlock()
+        }
+        return unlock
+    }, [isFullViewport, lock, unlock])
+
     return src && (
         <motion.div
             className='bg-background'
@@ -141,11 +152,9 @@ export default function Ebook() {
                         size='lg'
                         radius='lg'
                         onPress={async () => {
-                            try {
-                                await handleFullScreen.enter()
-                            } catch {
-                                setIsFullViewport(!isFullViewport)
-                            }
+
+                            setIsFullViewport(!isFullViewport)
+
                         }}
                     />
                     <Button
