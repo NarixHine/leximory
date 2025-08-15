@@ -7,6 +7,7 @@ import H from '@/components/ui/h'
 import { cn } from '@/lib/utils'
 import { ENGLISH_FANCY } from '@/lib/fonts'
 import { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = { title: 'Memories' }
 
@@ -22,9 +23,9 @@ export default function MemoriesPage() {
                     <div className='flex flex-col items-center gap-4 w-full max-w-md md:sticky md:top-4'>
                         <CreateMemoryForm />
                         <div className='text-sm text-default-600 text-balance text-center max-w-52 space-y-1.5'>
-                           <p>Memories 是一个日记本功能。</p>
-                           <p>打卡 Memory 会在主界面显示连续打卡天数（Streak）。</p>
-                           <p>在 Talk to Your Library 界面使用“造句巩固”可自动生成打卡。</p>
+                            <p>Memories 是一个日记本功能。</p>
+                            <p>打卡 Memory 会在主界面显示连续打卡天数（Streak）。</p>
+                            <p>在 <Link href='/library/chat' className='underline'>Talk to Your Library</Link> 界面使用“造句巩固”可自动生成打卡。</p>
                         </div>
                     </div>
                 </section>

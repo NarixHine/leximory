@@ -1,10 +1,11 @@
 'use client'
 
-import { Card, CardBody } from '@heroui/react'
-import { PiFireFill, PiCheckBold, PiCursorClickDuotone } from 'react-icons/pi'
+import { Card, CardBody } from '@heroui/card'
+import { PiFireFill, PiCheckBold, PiCursorClickDuotone, PiCircle, PiCheckCircle } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import moment from 'moment'
 
 type StreakData = {
     total: number
@@ -15,12 +16,35 @@ type StreakData = {
     highest: number
 }
 
-export function StreakDisplay({ streakData }: { streakData: StreakData }) {
-    const router = useRouter()
+export function StreakDisplay({ streakData, compact = false }: { streakData: StreakData, compact?: boolean }) {
+    const todayEntry = streakData.history.find(entry => moment(entry.date).isSame(moment(), 'day'))
+    const isTodayActive = todayEntry?.active || false
+
+    if (compact) {
+        return (
+            <Card
+                shadow='none'
+                fullWidth
+                isPressable
+                as={Link}
+                href='/memories'
+                className='bg-orange-100/50 dark:bg-orange-900/20 border-none'
+            >
+                <CardBody className='p-4'>
+                    <div className='flex items-center justify-center gap-4'>
+                        <p className='text-xl font-bold text-orange-600 dark:text-orange-400 flex items-center gap-2'><PiFireFill className='text-2xl text-orange-500' /> {streakData.total}</p>
+                        <div className='flex items-center gap-1 text-red-400'>
+                            <span className='text-sm font-mono'>Today:</span>
+                            <span className='text-lg'>{isTodayActive ? <PiCheckCircle /> : <PiCircle />}</span>
+                        </div>
+                    </div>
+                </CardBody>
+            </Card>
+        )
+    }
+
     return (
-        <Card shadow='none' fullWidth isPressable onPress={() => {
-            router.push('/memories')
-        }} className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
+        <Card shadow='none' fullWidth isPressable as={Link} href='/memories' className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
             <CardBody className='p-8 pb-4 relative'>
                 <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>

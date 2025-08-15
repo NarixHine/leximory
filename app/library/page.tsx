@@ -31,7 +31,7 @@ async function getData(orFilter: OrFilter, userId: string) {
 }
 
 export default function Page() {
-    return <Main className='flex flex-col max-w-(--breakpoint-md)'>
+    return <Main className='flex flex-col max-w-(--breakpoint-lg) md:pb-5'>
         <Nav />
 
         <div className='flex flex-col max-w-(--breakpoint-sm) w-full mx-auto'>
@@ -46,7 +46,7 @@ export default function Page() {
                         <AudioQuotaUI.Card />
                     </Suspense>
                 </div>
-                <Streak />
+                <Streak compact />
             </div>
         </div>
 
@@ -97,7 +97,7 @@ async function LibraryList({ userId, orFilter }: {
     const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
     const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
     return (
-        <div className='flex flex-col gap-4 w-full'>
+        <div className='flex flex-col gap-5 w-full'>
             <ConfirmUnstarRoot />
             <section className='flex flex-col gap-4 max-w-(--breakpoint-sm) w-full mx-auto'>
                 {normalLibs.concat(compactLibs).length > 0 ? normalLibs.map(({ lib, isStarred }) => lib && (
@@ -132,7 +132,7 @@ async function LibraryList({ userId, orFilter }: {
                     </p>
                 </div>}
             </section>
-            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center gap-2 px-2 pt-3 rounded-lg')}>
+            {compactLibs.length > 0 && <section className={cn('w-full flex relative flex-wrap justify-center gap-3 px-2 pt-3 rounded-lg')}>
                 {compactLibs.map(({ lib, isStarred }) => lib && (
                     <Library
                         price={lib.price}
