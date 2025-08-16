@@ -29,16 +29,16 @@ export function getChapter(book: Book, location: Location) {
 
     const parent = match?.parent ? chapters.find(chapter => chapter.id === match.parent) : null
 
-    return { match, parent }
+    return { current: match, parent }
 }
 
 export function getChapterName(book: Book, location: Location) {
-    const { match, parent } = getChapter(book, location)
-    
-    if (parent && match) {
-        return `${parent.label}, ${match.label}`
-    } else if (match) {
-        return match.label
+    const { current, parent } = getChapter(book, location)
+
+    if (parent && current) {
+        return `${parent.label.trim()}, ${current.label.trim()}`
+    } else if (current) {
+        return current.label.trim()
     } else {
         return null
     }
