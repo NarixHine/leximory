@@ -152,9 +152,11 @@ export default function Ebook() {
                         size='lg'
                         radius='lg'
                         onPress={async () => {
-
-                            setIsFullViewport(!isFullViewport)
-
+                            try {
+                                await handleFullScreen.enter()
+                            } catch {
+                                setIsFullViewport(!isFullViewport)
+                            }
                         }}
                     />
                     <Button
