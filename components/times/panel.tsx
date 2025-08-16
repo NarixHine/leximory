@@ -278,7 +278,7 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
 export default function Panel({ recentData }: PanelProps) {
     const isMobile = useIsMobile()
     return (
-        <div className={cn('w-full h-full shadow-sm rounded-2xl overflow-hidden', ENGLISH_SERIF.className)}>
+        <div className={cn('w-full h-full rounded-2xl overflow-hidden', ENGLISH_SERIF.className)}>
             {/* Main Paper Container */}
             <div className='w-full h-full flex flex-col justify-center md:flex-row bg-white dark:bg-neutral-900'>
                 <TimesSidebar

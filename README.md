@@ -126,7 +126,8 @@ CREATE TABLE "users" (
     "last_daily_claim" timestamp with time zone,
     "accent" text DEFAULT 'BrE'::text NOT NULL,
     "token" text,
-    "archived_libs" text[]
+    "archived_libs" text[],
+    "created_at" timestamp with time zone
 );
 
 CREATE TABLE "libraries" (
@@ -141,6 +142,7 @@ CREATE TABLE "libraries" (
     "org" text,
     "price" integer DEFAULT 0 NOT NULL,
     "prompt" text,
+    "created_at" timestamp with time zone,
     CONSTRAINT "libraries_owner_fkey" FOREIGN KEY ("owner") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
@@ -157,7 +159,7 @@ CREATE TABLE "texts" (
     "id" text PRIMARY KEY NOT NULL,
     "updated_at" timestamp with time zone,
     "title" text NOT NULL,
-    "content" text,
+    "content" text NOT NULL,
     "lib" text,
     "has_ebook" boolean DEFAULT false NOT NULL,
     "topics" text[],
@@ -170,8 +172,8 @@ CREATE TABLE "subs" (
     "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     "updated_at" timestamp with time zone,
     "uid" uuid,
-    "subscription" jsonb,
-    "hour" smallint,
+    "subscription" jsonb NOT NULL,
+    "hour" smallint NOT NULL,
     "created_at" timestamp with time zone,
     CONSTRAINT "subs_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
 );
@@ -189,6 +191,25 @@ CREATE TABLE "times" (
     "raw_news" text
 );
 
+CREATE TABLE "memories" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone NOT NULL,
+    "creator" uuid NOT NULL,
+    "content" text NOT NULL,
+    "public" boolean NOT NULL,
+    "streak" boolean NOT NULL,
+    CONSTRAINT "memories_creator_fkey" FOREIGN KEY ("creator") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "reads" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone NOT NULL,
+    "uid" uuid NOT NULL,
+    "text" text NOT NULL,
+    CONSTRAINT "reads_text_fkey" FOREIGN KEY ("text") REFERENCES "texts" ("id") ON DELETE CASCADE,
+    CONSTRAINT "reads_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
 -- Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.libraries ENABLE ROW LEVEL SECURITY;
@@ -196,6 +217,8 @@ ALTER TABLE public.lexicon ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.texts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.times ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
 ```
 
 #### 5. Set Up Environment Variables

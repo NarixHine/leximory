@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from "@heroui/button"
-import { Card, CardBody, CardFooter } from "@heroui/card"
+import { CardBody, CardFooter } from "@heroui/card"
 import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone } from 'react-icons/pi'
 import { libAccessStatusMap, Lang } from '@/lib/config'
@@ -33,7 +33,7 @@ export function ConfirmUnstarRoot() {
 
 export function LibrarySkeleton() {
     return (
-        <Card className='w-full opacity-60' shadow='sm'>
+        <FlatCard className='w-full opacity-60' background='solid'>
             <CardBody className='px-6 pt-5'>
                 <StoneSkeleton className='w-48 h-10 rounded-lg' />
                 <Spacer y={8} />
@@ -49,7 +49,7 @@ export function LibrarySkeleton() {
                     <StoneSkeleton className='w-12 h-5 rounded-lg' />
                 </div>
             </CardFooter>
-        </Card>
+        </FlatCard>
     )
 }
 

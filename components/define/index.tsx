@@ -36,7 +36,7 @@ export default function Define() {
 
     const { defineClassName, defineLabel } = getLanguageStrategy(lang)
 
-    return <Drawer.Root>
+    return <Drawer.Root repositionInputs={false}>
         <AnimatePresence>
             {selection && selection.anchorNode?.textContent && selection.toString() && rect && <MotionTrigger
                 style={{

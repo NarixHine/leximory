@@ -64,7 +64,7 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
                         <PiFireFill className='text-7xl text-orange-500' />
                     </motion.div>
                     <div>
-                        <p className='text-5xl font-bold text-orange-600 dark:text-orange-400'>{streakData.total}</p>
+                        <p className='text-5xl font-bold text-orange-600 dark:text-orange-400 font-ui'>{streakData.total}</p>
                         <p className={'text-sm text-orange-500 dark:text-orange-300 text-semibold font-mono'}>Day Streak</p>
                     </div>
                 </div>

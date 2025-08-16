@@ -78,14 +78,14 @@ export function AddTextButton() {
     const lang = useAtomValue(langAtom)
 
     return <>
-        <FlatCard className='w-full opacity-60 bg-transparent border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
+        <FlatCard className='w-full bg-stone-50/20 dark:bg-stone-800/20 border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
             <CardBody className='px-6 pt-5 flex items-center justify-center overflow-hidden'>
                 <motion.div
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.3 }}
                     whileHover={{ scale: 1.1, rotate: 10 }}
-                    className='text-7xl h-20 text-slate-700 dark:text-slate-200 rounded-lg flex items-center justify-center'>
+                    className='text-7xl h-20 text-stone-700/60 dark:text-stone-200/60 rounded-lg flex items-center justify-center'>
                     <PiFilePlusDuotone />
                 </motion.div>
             </CardBody>
