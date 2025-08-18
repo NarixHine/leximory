@@ -16,6 +16,7 @@ export interface LanguageStrategy {
     proseClassName?: string
     defineLabel: string
     defineClassName: string
+    dictionaryLink?: (word: string) => string
     // for ebook
     isRTL: boolean
     lineHeight: string

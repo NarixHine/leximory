@@ -20,6 +20,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/comment'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { getClickedChunk } from './utils'
@@ -206,7 +207,15 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 }}
             ></Button>}
         </>}
-        {(lang === 'en' || lang === 'zh') && <Button as={Link} href={lang === 'en' ? `https://www.etymonline.com/word/${portions[1]}` : `https://www.zdic.net/hans/${portions[1]}`} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly></Button>}
+        {
+            (() => {
+                const strategy = getLanguageStrategy(lang)
+                if (strategy.dictionaryLink) {
+                    return <Button as={Link} href={strategy.dictionaryLink(portions[1])} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly />
+                }
+                return null
+            })()
+        }
     </div>
 
     if (print) {

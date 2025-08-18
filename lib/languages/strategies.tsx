@@ -14,6 +14,7 @@ export const englishStrategy = createLanguageStrategy({
         return <span className={ENGLISH_SERIF.className}>{wordCount} words&nbsp;&nbsp;·&nbsp;&nbsp;{Math.ceil(wordCount / 120)}-min read</span>
     },
     exampleSentencePrompt: '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽“升腾”: ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
+    dictionaryLink: (word: string) => `https://www.etymonline.com/word/${word}`
 })
 
 export const chineseStrategy = createLanguageStrategy({
@@ -26,7 +27,8 @@ export const chineseStrategy = createLanguageStrategy({
     exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词简短例句（例句中的义项必须与语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
     proseClassName: 'prose-xl',
     defineLabel: '注解',
-    defineClassName: 'font-formal font-semibold'
+    defineClassName: 'font-formal font-semibold',
+    dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`
 })
 
 export const japaneseStrategy = createLanguageStrategy({
@@ -41,7 +43,8 @@ export const japaneseStrategy = createLanguageStrategy({
     lineHeight: '1.7 !important',
     pageFormat: (page, total, chapter) => `${chapter ? chapter.concat(' ') : ''}${page}/${total} ページ目`,
     defineLabel: '調べる',
-    defineClassName: 'font-ja'
+    defineClassName: 'font-ja',
+    dictionaryLink: (word: string) => `https://jisho.org/search/${encodeURIComponent(word)}`
 })
 
 export const notListedStrategy = createLanguageStrategy({

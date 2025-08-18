@@ -1,9 +1,9 @@
 import { Lang } from '../config'
 import type { LanguageServerStrategy, LanguageStrategy } from './types'
 
-export function createLanguageStrategy<T extends LanguageStrategy>(
-  config: Partial<T> & { type: Lang; name: string }
-): T {
+export function createLanguageStrategy(
+  config: Partial<LanguageStrategy> & { type: Lang; name: string }
+): LanguageStrategy {
   const defaults = {
     isRTL: false,
     lineHeight: '1.6 !important',
@@ -13,15 +13,15 @@ export function createLanguageStrategy<T extends LanguageStrategy>(
     defineClassName: 'font-formal',
   }
 
-  return { ...defaults, ...config } as T
+  return { ...defaults, ...config } as LanguageStrategy
 }
 
-export function createLanguageServerStrategy<T extends LanguageServerStrategy>(
-  config: Partial<T> & { type: Lang }
-): T {
+export function createLanguageServerStrategy(
+  config: Partial<LanguageServerStrategy> & { type: Lang }
+): LanguageServerStrategy {
   const defaults = {
     getAccentPrompt: async () => '',
   }
 
-  return { ...defaults, ...config } as unknown as T
+  return { ...defaults, ...config } as LanguageServerStrategy
 }

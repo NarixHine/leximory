@@ -142,7 +142,7 @@ export default function Ebook() {
             layout='preserve-aspect'
         >
             <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1'>
+                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-3'>
                     <Button
                         isIconOnly
                         startContent={<PiFrameCornersDuotone className='text-lg' />}
@@ -209,7 +209,7 @@ export default function Ebook() {
                     getRendition={rendition => {
                         updateTheme(rendition, theme)
                         rendition.themes.default({
-                            'p': {
+                            p: {
                                 'margin-top': '0.6em',
                                 'margin-bottom': '0.6em',
                                 'font-size': '24px !important',
@@ -217,20 +217,35 @@ export default function Ebook() {
                                 'line-height': strategy.lineHeight,
                                 'text-rendering': 'optimizeLegibility',
                             },
-                            'div': {
+                            div: {
                                 'font-size': '24px !important',
                                 'font-family': '"Athelas", Georgia, serif !important',
                                 'line-height': strategy.lineHeight,
                                 'text-rendering': 'optimizeLegibility',
                             },
-                            'h1': {
+                            h1: {
                                 'font-family': '"Baskerville", Georgia, serif !important',
                             },
-                            'h2': {
+                            h2: {
                                 'font-family': '"Baskerville", Georgia, serif !important',
                             },
-                            'h3': {
+                            h3: {
                                 'font-family': '"Baskerville", Georgia, serif !important',
+                            },
+                            '.codeline': {
+                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                'font-size': '1rem !important',
+                                'line-height': '1.5 !important',
+                            },
+                            'code': {
+                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                'font-size': '0.9em !important',
+                            },
+                            'pre': {
+                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                'font-size': '0.9em !important',
+                                'overflow-x': 'auto !important',
+                                'line-height': '1.5 !important',
                             },
                         })
                         themeRendition.current = rendition
@@ -263,6 +278,16 @@ const lightReaderTheme: IReactReaderStyle = {
         ...ReactReaderStyle.tocArea,
         background: '#FFFCF0',
     },
+    titleArea: {
+        ...ReactReaderStyle.titleArea,
+        color: 'hsl(var(--heroui-default-400) / 1)',
+        textWrap: 'nowrap',
+        maxWidth: '60%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        margin: '0 auto',
+    }
 }
 
 const darkReaderTheme: IReactReaderStyle = {
@@ -283,7 +308,13 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     titleArea: {
         ...ReactReaderStyle.titleArea,
-        color: '#ccc',
+        color: 'hsl(var(--heroui-default-700) / 1)',
+        textWrap: 'nowrap',
+        maxWidth: '60%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        margin: '0 auto'
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
