@@ -7,6 +7,7 @@ import { Divider } from '@heroui/divider'
 import { Button } from '@heroui/button'
 import { cn } from '@/lib/utils'
 import { upgrade } from './actions'
+import { audioQuotaMap, commentaryQuotaMap, dailyLexicoinClaimMap } from '@/lib/config'
 
 export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boolean }) {
     return <div className="p-4 flex items-center justify-center">
@@ -28,21 +29,21 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>20 次文章注解</span>
-                                <span className="text-default-500 text-sm">相当于 80 次词汇注解</span>
+                                <span>{commentaryQuotaMap.beginner} 次文章注解</span>
+                                <span className="text-default-500 text-sm">相当于 {commentaryQuotaMap.beginner * 4} 次词汇注解</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>3 次朗读生成</span>
+                                <span>{audioQuotaMap.beginner} 次朗读生成</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
                                 <span>每日 LexiCoin</span>
-                                <span className="text-default-500 text-sm">可领取 1 个代币</span>
+                                <span className="text-default-500 text-sm">可领取 {dailyLexicoinClaimMap.beginner} 个代币</span>
                             </div>
                         </div>
                     </div>
@@ -73,21 +74,21 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>100 次文章注解</span>
-                                <span className="text-default-500 text-sm">相当于 400 次词汇注解</span>
+                                <span>{commentaryQuotaMap.bilingual} 次文章注解</span>
+                                <span className="text-default-500 text-sm">相当于 {commentaryQuotaMap.bilingual * 4} 次词汇注解</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>10 次朗读生成</span>
+                                <span>{audioQuotaMap.bilingual} 次朗读生成</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
                                 <span>每日 LexiCoin</span>
-                                <span className="text-default-500 text-sm">可领取 3 个代币</span>
+                                <span className="text-default-500 text-sm">可领取 {dailyLexicoinClaimMap.bilingual} 个代币</span>
                             </div>
                         </div>
                     </div>
@@ -132,21 +133,21 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>200 次文章注解</span>
-                                <span className="text-default-500 text-sm">相当于 800 次词汇注解</span>
+                                <span>{commentaryQuotaMap.polyglot} 次文章注解</span>
+                                <span className="text-default-500 text-sm">相当于 {commentaryQuotaMap.polyglot * 4} 次词汇注解</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
-                                <span>20 次朗读生成</span>
+                                <span>{audioQuotaMap.polyglot} 次朗读生成</span>
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
                             <PiCheck className="text-success-500 w-4 h-4 mt-1" />
                             <div className="flex flex-col">
                                 <span>每日 LexiCoin</span>
-                                <span className="text-default-500 text-sm">可领取 10 个代币</span>
+                                <span className="text-default-500 text-sm">可领取 {dailyLexicoinClaimMap.polyglot} 个代币</span>
                             </div>
                         </div>
                     </div>

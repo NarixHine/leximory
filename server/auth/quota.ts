@@ -2,33 +2,16 @@ import 'server-only'
 import { getPlan, getUserOrThrow } from './user'
 import { incrementQuota, getQuota, getQuotaTTL } from '../db/quota'
 import { isProd } from '@/lib/env'
+import { audioQuotaMap, commentaryQuotaMap } from '@/lib/config'
 
 export const maxCommentaryQuota = async (userId?: string) => {
     const plan = await getPlan(userId)
-    switch (plan) {
-        case 'leximory':
-            return 999
-        case 'polyglot':
-            return 200
-        case 'bilingual':
-            return 100
-        default:
-            return 20
-    }
+    return commentaryQuotaMap[plan]
 }
 
 export const maxAudioQuota = async () => {
     const plan = await getPlan()
-    switch (plan) {
-        case 'leximory':
-            return 100
-        case 'polyglot':
-            return 20
-        case 'bilingual':
-            return 10
-        default:
-            return 3
-    }
+    return audioQuotaMap[plan]
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {
@@ -41,7 +24,7 @@ export async function getCommentaryQuota() {
     const { userId } = await getUserOrThrow()
     const quota = await getQuota(userId, 'commentary')
     const max = await maxCommentaryQuota()
-    const ttl = await getQuotaTTL(userId, 'commentary') 
+    const ttl = await getQuotaTTL(userId, 'commentary')
     return { quota, max, percentage: Math.floor(100 * quota / max), ttl }
 }
 

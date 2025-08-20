@@ -36,6 +36,20 @@ export const planMap: Record<Plan, string> = {
     'leximory': 'Leximory'
 } as const
 
+export const commentaryQuotaMap: Record<Plan, number> = {
+    'beginner': 20,
+    'bilingual': 100,
+    'polyglot': 300,
+    'leximory': 999
+} as const
+
+export const audioQuotaMap: Record<Plan, number> = {
+    'beginner': 3,
+    'bilingual': 10,
+    'polyglot': 20,
+    'leximory': 100
+} as const
+
 export const dailyLexicoinClaimMap: Record<Plan, number> = {
     'beginner': 1,
     'bilingual': 3,
