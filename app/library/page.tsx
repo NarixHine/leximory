@@ -31,7 +31,7 @@ async function getData(orFilter: OrFilter, userId: string) {
 }
 
 export default function Page() {
-    return <Main className='flex flex-col max-w-(--breakpoint-lg) md:pb-5'>
+    return <Main className='flex flex-col max-w-(--breakpoint-lg) md:pb-4 pb-20'>
         <Nav />
 
         <div className='flex flex-col max-w-(--breakpoint-sm) w-full mx-auto'>

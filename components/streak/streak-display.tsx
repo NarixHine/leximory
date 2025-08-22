@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import moment from 'moment'
+import { bgColor } from './constants'
 
 type StreakData = {
     total: number
@@ -28,7 +29,7 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
                 isPressable
                 as={Link}
                 href='/memories'
-                className='bg-orange-100/50 dark:bg-orange-900/20 border-none'
+                className={cn(bgColor, 'border-none')}
             >
                 <CardBody className='p-4'>
                     <div className='flex items-center justify-center gap-4'>
@@ -44,7 +45,7 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
     }
 
     return (
-        <Card shadow='none' fullWidth isPressable as={Link} href='/memories' className='bg-orange-100/50 dark:bg-orange-900/20 border-none'>
+        <Card shadow='none' fullWidth isPressable as={Link} href='/memories' className={cn(bgColor, 'border-none')}>
             <CardBody className='p-8 pb-4 relative'>
                 <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>

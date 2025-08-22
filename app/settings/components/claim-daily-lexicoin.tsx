@@ -24,7 +24,7 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
         className={'text-lg flex-1'}
         isDisabled={hasClaimed}
     >
-        {hasClaimed ? '今日已领取' : '领取每日 LexiCoin'}
+        {hasClaimed ? <span>今日已领取</span> : <span>领取<span className='hidden sm:inline'>每日 LexiCoin</span><span className='inline sm:hidden'>余额</span></span>}
     </Button>
 }
 
