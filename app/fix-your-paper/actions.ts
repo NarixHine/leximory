@@ -3,6 +3,7 @@
 import { type CoreMessage, generateText } from 'ai'
 import { googleModels } from '@/server/ai/models'
 import incrCommentaryQuota from '@/server/auth/quota'
+import { ACTION_QUOTA_COST } from '@/lib/config'
 
 const model = googleModels['pro-2.5']
 
@@ -124,8 +125,9 @@ async function buildMessages(params: {
     return messages
 }
 
+const ANALYZE_PAPER_COST = 3
 export async function analyzePaper(paperFile: File) {
-    if (await incrCommentaryQuota(3)) {
+    if (await incrCommentaryQuota(ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
@@ -141,7 +143,7 @@ export async function analyzePaper(paperFile: File) {
 }
 
 export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
-    if (await incrCommentaryQuota(2)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper - ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 

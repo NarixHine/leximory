@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { getUserOrThrow } from '@/server/auth/user'
 import AdminDashboardLink from './components/dashboard-link'
 import UserAvatar from '@/components/avatar'
-import { exampleSharedLib } from '@/lib/config'
+import { EXAMPLE_SHARED_LIB } from '@/lib/config'
 import LibraryCard from '../marketplace/[page]/components/card'
 import Streak from '@/components/streak'
 
@@ -118,9 +118,9 @@ async function LibraryList({ userId, orFilter }: {
                     <div>
                         <LibraryCard
                             isOwner={false}
-                            avatar={<UserAvatar uid={exampleSharedLib.owner} />}
+                            avatar={<UserAvatar uid={EXAMPLE_SHARED_LIB.owner} />}
                             library={{
-                                ...exampleSharedLib,
+                                ...EXAMPLE_SHARED_LIB,
                                 readers: undefined,
                             }}
                             isStarred={false}

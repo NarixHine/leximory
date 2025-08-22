@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib } from '@/server/auth/role'
-import { libAccessStatusMap, Lang, supportedLangs } from '@/lib/config'
+import { LIB_ACCESS_STATUS, Lang, SUPPORTED_LANGS } from '@/lib/config'
 import { createLib, deleteLib, updateLib, unstarLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -20,7 +20,7 @@ const saveValidator = z.object({
 export async function save(data: z.infer<typeof saveValidator>) {
     const { id, name, access, org, price, prompt } = saveValidator.parse(data)
     await authWriteToLib(id)
-    await updateLib({ id, name, access: access ? libAccessStatusMap.public : libAccessStatusMap.private, org: org ?? null, price, prompt })
+    await updateLib({ id, name, access: access ? LIB_ACCESS_STATUS.public : LIB_ACCESS_STATUS.private, org: org ?? null, price, prompt })
     return {
         name,
         access,
@@ -31,7 +31,7 @@ export async function save(data: z.infer<typeof saveValidator>) {
 
 const createValidator = z.object({
     name: z.string(),
-    lang: z.enum(supportedLangs),
+    lang: z.enum(SUPPORTED_LANGS),
 })
 
 export async function create(data: z.infer<typeof createValidator>) {

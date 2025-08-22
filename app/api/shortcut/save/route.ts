@@ -6,7 +6,7 @@ import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from 'zod'
 import { generateText } from 'ai'
-import { Lang, supportedLangs } from '@/lib/config'
+import { ACTION_QUOTA_COST, Lang, SUPPORTED_LANGS } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { verifyToken } from '@/server/db/token'
@@ -20,7 +20,7 @@ const schema = z.object({
 export async function POST(request: Request) {
     const { word: rawWord, token } = await parseBody(request, schema)
     const sub = await verifyToken(token)
-    if (await incrCommentaryQuota(0.25, sub)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, sub)) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
     }
 
@@ -45,10 +45,10 @@ export async function POST(request: Request) {
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
         model: googleModels['flash-2.5'],
-        prompt: `请判断下述词汇最可能属于哪种语言，在${supportedLangs.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
+        prompt: `请判断下述词汇最可能属于哪种语言，在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxTokens: 50,
         ...noThinkingConfig
     })
-    const lang = z.enum(supportedLangs).parse(text.trim())
+    const lang = z.enum(SUPPORTED_LANGS).parse(text.trim())
     return lang
 }

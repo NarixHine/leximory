@@ -6,7 +6,7 @@ import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { getLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import UserAvatar from '@/components/avatar'
-import { libAccessStatusMap } from '@/lib/config'
+import { LIB_ACCESS_STATUS } from '@/lib/config'
 
 export async function generateMetadata(props: LibProps) {
     const params = await props.params
@@ -28,7 +28,7 @@ export default async function UnauthorizedPage(
 
     const { isOwner, isStarred, price, owner, access } = await authReadToLibWithoutThrowing(params.lib)
 
-    if (access !== libAccessStatusMap.public && !isOwner) {
+    if (access !== LIB_ACCESS_STATUS.public && !isOwner) {
         throw new Error('Access denied to this library')
     }
     else if (isOwner || isStarred) {

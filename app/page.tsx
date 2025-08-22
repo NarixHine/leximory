@@ -19,7 +19,7 @@ import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
-import { exampleSharedLib, SIGN_IN_URL } from '@/lib/config'
+import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { isAtRead } from '@/lib/subapp'
 import { redirect } from 'next/navigation'
@@ -120,7 +120,7 @@ export default async function Home() {
 							<ScopeProvider atoms={[libAtom, isReadOnlyAtom]}>
 								<HydrationBoundary
 									hydrateAtoms={[
-										[libAtom, exampleSharedLib.id],
+										[libAtom, EXAMPLE_SHARED_LIB.id],
 										[isReadOnlyAtom, true]
 									]}
 								>
@@ -152,8 +152,8 @@ export default async function Home() {
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
 							isOwner={false}
-							avatar={<UserAvatar uid={exampleSharedLib.owner} />}
-							library={exampleSharedLib}
+							avatar={<UserAvatar uid={EXAMPLE_SHARED_LIB.owner} />}
+							library={EXAMPLE_SHARED_LIB}
 							isStarred={false}
 						/>
 					</BentoCard>

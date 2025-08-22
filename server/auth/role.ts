@@ -1,6 +1,6 @@
 import 'server-only'
 import { getUserOrThrow } from './user'
-import { ADMIN_UID, Lang, libAccessStatusMap } from '../../lib/config'
+import { ADMIN_UID, Lang, LIB_ACCESS_STATUS } from '../../lib/config'
 import { supabase } from '@/server/client/supabase'
 
 /**
@@ -83,7 +83,7 @@ export const authReadToLib = async (lib: string) => {
         .from('libraries')
         .select('owner, lang, name, starred_by, price, access')
         .eq('id', lib)
-        .or(`owner.eq.${userId},and(access.eq.${libAccessStatusMap.public},starred_by.cs.{"${userId}"})`)
+        .or(`owner.eq.${userId},and(access.eq.${LIB_ACCESS_STATUS.public},starred_by.cs.{"${userId}"})`)
         .single()
 
     if (error || !rec) {
@@ -212,7 +212,7 @@ export const authReadToText = async (text: string) => {
             )
         `)
         .eq('id', text)
-        .or(`owner.eq.${userId},access.eq.${libAccessStatusMap.public}`, { referencedTable: 'libraries' })
+        .or(`owner.eq.${userId},access.eq.${LIB_ACCESS_STATUS.public}`, { referencedTable: 'libraries' })
         .single()
 
     if (error || !rec) {
@@ -248,7 +248,7 @@ export type OrFilter = Awaited<ReturnType<typeof isListedFilter>>
 export const isListedFilter = async () => {
     const { userId } = await getUserOrThrow()
     return {
-        filters: `owner.eq.${userId},and(starred_by.cs.{"${userId}"},access.eq.${libAccessStatusMap.public})`,
+        filters: `owner.eq.${userId},and(starred_by.cs.{"${userId}"},access.eq.${LIB_ACCESS_STATUS.public})`,
         options: { referencedTable: 'libraries' }
     }
 }

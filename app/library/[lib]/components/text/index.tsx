@@ -97,12 +97,16 @@ export function AddTextButton() {
             isLoading={formState.isSubmitting}
             onSubmit={handleSubmit(async (data) => {
                 if (data.url) {
-                    const { title, content } = await getArticleFromUrl(data.url)
-                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                        toast.error('文章内容过长或解析失败，请手动录入')
-                        return
+                    try {
+                        const { title, content } = await getArticleFromUrl(data.url)
+                        if (content.length > getLanguageStrategy(lang).maxArticleLength) {
+                            toast.error('识别内容过长，请手动录入')
+                            return
+                        }
+                        await addAndGenerate({ title, content, lib })
+                    } catch {
+                        toast.error('文章解析失败，请手动录入')
                     }
-                    await addAndGenerate({ title, content, lib })
                 } else if (data.title) {
                     await add({ title: data.title, lib })
                 }

@@ -1,5 +1,5 @@
 import 'server-only'
-import { Lang, libAccessStatusMap } from '@/lib/config'
+import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { nanoid } from '@/lib/utils'
 import { revalidateTag } from 'next/cache'
@@ -72,7 +72,7 @@ export async function unstarLib({ lib, userId }: { lib: string, userId: string }
         .eq('id', lib)
 }
 
-export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof libAccessStatusMap.public | typeof libAccessStatusMap.private, name: string, org: string | null, price: number, prompt?: string | null }) {
+export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof LIB_ACCESS_STATUS.public | typeof LIB_ACCESS_STATUS.private, name: string, org: string | null, price: number, prompt?: string | null }) {
     await supabase
         .from('libraries')
         .update({
@@ -96,7 +96,7 @@ export async function createLib({ name, lang, owner }: { name: string, lang: Lan
         owner,
         name,
         lang,
-        access: libAccessStatusMap.private,
+        access: LIB_ACCESS_STATUS.private,
     })
 
     await supabase.from('lexicon').insert({
@@ -120,7 +120,7 @@ export async function countPublicLibs() {
     const { count } = await supabase
         .from('libraries')
         .select('*', { count: 'exact', head: true })
-        .eq('access', libAccessStatusMap.public)
+        .eq('access', LIB_ACCESS_STATUS.public)
     return count ?? 0
 }
 
@@ -130,7 +130,7 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
     const { data } = await supabase
         .from('libraries')
         .select('id, name, lang, owner, starred_by, price')
-        .eq('access', libAccessStatusMap.public)
+        .eq('access', LIB_ACCESS_STATUS.public)
         .order('created_at', { ascending: false })
         .range((page - 1) * size, page * size - 1)
         .throwOnError()

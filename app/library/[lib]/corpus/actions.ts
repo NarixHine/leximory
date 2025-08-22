@@ -5,6 +5,7 @@ import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
 import { getUserOrThrow } from '@/server/auth/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { inngest } from '@/server/inngest/client'
+import { ACTION_QUOTA_COST } from '@/lib/config'
 
 export default async function load(lib: string, cursor?: string) {
     await authReadToLib(lib)
@@ -25,7 +26,7 @@ export async function generateStory({ comments, lib, isShadow = false }: { comme
     const { userId } = await getUserOrThrow()
     await authWriteToLib(lib)
 
-    if (await incrCommentaryQuota(2)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.story)) {
         return {
             success: false,
             message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`

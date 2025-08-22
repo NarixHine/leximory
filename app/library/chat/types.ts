@@ -3,7 +3,7 @@ import { getAllTextsInLib, getLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
-import { Lang, supportedLangs } from '@/lib/config'
+import { Lang, SUPPORTED_LANGS } from '@/lib/config'
 import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
@@ -74,7 +74,7 @@ export const toolSchemas = {
     getForgetCurve: z.object({ period: z.enum(['day', 'week']).describe('The time period to get words for. You can only choose from: day, week'), }),
     annotateParagraph: z.object({
         content: z.string().describe('The content of the paragraph to annotate'),
-        lang: z.enum(supportedLangs).describe('The language of the paragraph')
+        lang: z.enum(SUPPORTED_LANGS).describe('The language of the paragraph')
     }),
     generateQuiz: z.object({
         content: z.string().describe('The text content to generate quiz from'),

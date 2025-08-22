@@ -5,7 +5,7 @@ import { getAccentPreference, setAccentPreference } from '@/server/db/preference
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import { momentSH } from '@/lib/moment'
 import { revalidatePath } from 'next/cache'
-import { dailyLexicoinClaimMap } from '@/lib/config'
+import { PLAN_DAILY_LEXICOIN } from '@/lib/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'
@@ -40,10 +40,10 @@ export async function getDailyLexicoin() {
 	if (lastDailyClaim && momentSH(lastDailyClaim).isSame(momentSH(), 'day')) {
 		throw new Error('今天已领取 LexiCoin')
 	}
-	await addLexicoinBalance(userId, dailyLexicoinClaimMap[plan])
+	await addLexicoinBalance(userId, PLAN_DAILY_LEXICOIN[plan])
 	await setLastClaimDate(userId)
 	revalidatePath('/settings')
-	return { message: `领取成功，LexiCoin + ${dailyLexicoinClaimMap[plan]}` }
+	return { message: `领取成功，LexiCoin + ${PLAN_DAILY_LEXICOIN[plan]}` }
 }
 
 export async function manageSubscription() {

@@ -1,7 +1,7 @@
 import createMDX from '@next/mdx'
 import withSerwistInit from '@serwist/next'
 import { NextConfig } from 'next'
-import { fixYourPaperBlogLink } from './lib/config'
+import { FYP_BLOG_LINK } from './lib/config'
 import env from '@/lib/env'
 
 const r2Url = new URL(env.R2_PUBLIC_URL)
@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
             permanent: true,
         }, {
             source: '/fix',
-            destination: fixYourPaperBlogLink,
+            destination: FYP_BLOG_LINK,
             permanent: true,
         }, {
             source: '/chat',

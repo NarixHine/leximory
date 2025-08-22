@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone, PiHouseDuotone } from 'react-icons/pi'
 import { Metadata } from 'next'
 import { TypedTitle, Article } from './article'
-import { bilibiliLink } from '@/lib/config'
+import { BILIBILI_LINK } from '@/lib/config'
 import Pricing from '@/components/pricing'
 import H from '@/components/ui/h'
 
@@ -27,7 +27,7 @@ export default function About() {
                         size='sm'
                         variant='light'
                         radius='full'
-                        href={bilibiliLink}
+                        href={BILIBILI_LINK}
                         isIconOnly
                         startContent={<PiTelevisionDuotone />}
                         as={Link}

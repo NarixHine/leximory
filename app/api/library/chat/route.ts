@@ -4,7 +4,7 @@ import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { googleModels } from '@/server/ai/models'
-import { Lang } from '@/lib/config'
+import { ACTION_QUOTA_COST, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
@@ -105,9 +105,6 @@ const tools: ToolSet = {
         description: 'Generate a quiz from the given text content. Available types: cloze (完形填空), reading (阅读理解), fishing (小猫钓鱼).',
         parameters: toolSchemas.generateQuiz,
         execute: async ({ content, type }: { content: string, type: AIGeneratableType }) => {
-            if (await incrCommentaryQuota(1)) {
-                throw new Error('You have reached the maximum number of commentary quota.')
-            }
             const result = await generateQuiz({ prompt: content, type })
             return { ...result, type, id: nanoid() }
         }
@@ -172,7 +169,7 @@ export async function POST(req: NextRequest) {
     if (isProd && plan === 'beginner') {
         return new Response('You are not authorized to use this tool.', { status: 403 })
     }
-    if (await incrCommentaryQuota(1)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat)) {
         return new Response('You have reached the maximum number of commentary quota.', { status: 403 })
     }
 

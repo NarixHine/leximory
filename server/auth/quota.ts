@@ -2,16 +2,16 @@ import 'server-only'
 import { getPlan, getUserOrThrow } from './user'
 import { incrementQuota, getQuota, getQuotaTTL } from '../db/quota'
 import { isProd } from '@/lib/env'
-import { audioQuotaMap, commentaryQuotaMap } from '@/lib/config'
+import { PLAN_AUDIO_QUOTA, PLAN_COMMENTARY_QUOTA } from '@/lib/config'
 
 export const maxCommentaryQuota = async (userId?: string) => {
     const plan = await getPlan(userId)
-    return commentaryQuotaMap[plan]
+    return PLAN_COMMENTARY_QUOTA[plan]
 }
 
 export const maxAudioQuota = async () => {
     const plan = await getPlan()
-    return audioQuotaMap[plan]
+    return PLAN_AUDIO_QUOTA[plan]
 }
 
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string) {

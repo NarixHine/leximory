@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
-import { exampleEbookLink } from '@/lib/config'
+import { ACTION_QUOTA_COST, EXAMPLE_EBOOK_LINK } from '@/lib/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import Link from 'next/link'
 import { ReactNode } from 'react'
@@ -95,7 +95,7 @@ export function Article() {
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
                     className='bg-linear-to-br from-primary-50/50 to-secondary-100/50'
-                    to={exampleEbookLink}
+                    to={EXAMPLE_EBOOK_LINK}
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -199,37 +199,37 @@ export function Article() {
             <TableBody>
                 <TableRow key='article-annotation'>
                     <TableCell>文章注解</TableCell>
-                    <TableCell>1</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.articleAnnotation}</TableCell>
                     <TableCell>对一篇文本的全文进行生词注解</TableCell>
                 </TableRow>
                 <TableRow key='word-annotation'>
                     <TableCell>词汇动态注解</TableCell>
-                    <TableCell>0.25</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.wordAnnotation}</TableCell>
                     <TableCell>根据语境对选中词汇进行动态注解</TableCell>
                 </TableRow>
                 <TableRow key='ebook-word-annotation'>
                     <TableCell>书籍动态注解</TableCell>
-                    <TableCell>0.25</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.wordAnnotation}</TableCell>
                     <TableCell>对电子书内选中词汇根据语境注解</TableCell>
                 </TableRow>
                 <TableRow key='word-list'>
                     <TableCell>提取词汇</TableCell>
-                    <TableCell>1</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.wordList}</TableCell>
                     <TableCell>提取图像中的外语词汇供连词成文使用</TableCell>
                 </TableRow>
                 <TableRow key='story'>
                     <TableCell>连词成文</TableCell>
-                    <TableCell>2</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.story}</TableCell>
                     <TableCell>在语料本或文本页面将词汇串联成文</TableCell>
                 </TableRow>
                 <TableRow key='chat'>
                     <TableCell>Talk to Your Library</TableCell>
-                    <TableCell>1</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.chat}</TableCell>
                     <TableCell>自动化复盘：对话 AI，玩转词汇</TableCell>
                 </TableRow>
                 <TableRow key='fix-your-paper'>
                     <TableCell><Link href='/fix-your-paper' className='underline underline-offset-2'>Fix. Your. Paper.</Link></TableCell>
-                    <TableCell>5</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.fixYourPaper}</TableCell>
                     <TableCell>审阅英语试卷（有需要请联系我们）</TableCell>
                 </TableRow>
             </TableBody>

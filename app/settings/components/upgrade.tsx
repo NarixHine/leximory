@@ -6,7 +6,7 @@ import { Drawer, DrawerBody, DrawerContent } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/modal'
 import { manageSubscription } from '../actions'
 import Link from 'next/link'
-import { bilibiliLink } from '@/lib/config'
+import { BILIBILI_LINK } from '@/lib/config'
 import Pricing from '@/components/pricing'
 
 export default function Upgrade({ isOnFreeTier }: { isOnFreeTier: boolean }) {
@@ -19,7 +19,7 @@ export default function Upgrade({ isOnFreeTier }: { isOnFreeTier: boolean }) {
                     <DrawerBody>
                         <Pricing />
                         <p className='text-default-600 text-sm text-center pb-4'>
-                            <PiQuestion className='inline-block' />遇到问题？<Link href={bilibiliLink} className='underline underline-offset-4'>在 B 站上</Link>联系我们，或发邮件到 <Link href='mailto:hi@leximory.com' className='underline underline-offset-4'>hi@leximory.com</Link>
+                            <PiQuestion className='inline-block' />遇到问题？<Link href={BILIBILI_LINK} className='underline underline-offset-4'>在 B 站上</Link>联系我们，或发邮件到 <Link href='mailto:hi@leximory.com' className='underline underline-offset-4'>hi@leximory.com</Link>
                         </p>
                     </DrawerBody>
                 )}

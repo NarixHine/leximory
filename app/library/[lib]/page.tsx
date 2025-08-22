@@ -8,7 +8,7 @@ import { LibProps } from '@/lib/types'
 import { Button } from '@heroui/button'
 import { PiUsers, PiSortAscending, PiPrinter } from 'react-icons/pi'
 import Link from 'next/link'
-import { libAccessStatusMap } from '@/lib/config'
+import { LIB_ACCESS_STATUS } from '@/lib/config'
 
 async function getData(lib: string) {
     const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)
@@ -28,7 +28,7 @@ export default async function Page(props: LibProps) {
             <Button variant='light' startContent={<PiPrinter />} as={Link} href={`/library/${lib}/all-of-it`}>
                 打印文库
             </Button>
-            {isOwner && access === libAccessStatusMap.public && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
+            {isOwner && access === LIB_ACCESS_STATUS.public && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
                 查看读者
             </Button>}
             {isOwner && <Button variant='light' startContent={<PiSortAscending />} as={Link} href={`/library/${lib}/order`}>

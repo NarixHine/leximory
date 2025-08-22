@@ -2,7 +2,7 @@ import Markdown from '@/components/markdown'
 import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
 import StoryGen from './story-gen'
-import { ForgetCurvePoint, supportedLangs } from '@/lib/config'
+import { ForgetCurvePoint, SUPPORTED_LANGS } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
@@ -18,7 +18,7 @@ export default async function Report({ day }: {
         <div className='my-8'>
             <div className='flex gap-3 items-start'>
                 <H disableCenter className='text-xl font-bold opacity-80 -mb-2'>{day}</H>
-                {supportedLangs.filter((lang) => words.some((word) => word.lang === lang)).map((lang) => (
+                {SUPPORTED_LANGS.filter((lang) => words.some((word) => word.lang === lang)).map((lang) => (
                     <StoryGen key={lang} comments={words.filter((word) => word.lang === lang).map(({ word }) => word)} lang={lang} />
                 ))}
             </div>

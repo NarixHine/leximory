@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { CardBody, CardFooter } from "@heroui/card"
 import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone } from 'react-icons/pi'
-import { libAccessStatusMap, Lang } from '@/lib/config'
+import { LIB_ACCESS_STATUS, Lang } from '@/lib/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import Link from 'next/link'
 import { atomWithStorage } from 'jotai/utils'
@@ -82,7 +82,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 
     const router = useRouter()
     const topics = ([] as string[])
-        .concat(access === libAccessStatusMap.public ? ['共享'] : [])
+        .concat(access === LIB_ACCESS_STATUS.public ? ['共享'] : [])
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
     const [isDeleted, setIsDeleted] = useState(false)
@@ -97,7 +97,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         defaultValues: {
             id,
             name,
-            access: access === libAccessStatusMap.public,
+            access: access === LIB_ACCESS_STATUS.public,
             price,
             prompt,
         }

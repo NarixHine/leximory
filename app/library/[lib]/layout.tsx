@@ -1,6 +1,6 @@
 import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
-import { Lang, libAccessStatusMap } from '@/lib/config'
+import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode } from 'react'
 import { getLib } from '@/server/db/lib'
@@ -34,7 +34,7 @@ export default async function LibLayout(
 
     // Redirect to unauthorized page if user is not owner and hasn't starred the library
     if (!isOwner && !isStarred) {
-        if (access === libAccessStatusMap.public)
+        if (access === LIB_ACCESS_STATUS.public)
             redirect(`/library/unauthorized/${params.lib}`)
         else
             throw new Error('Access denied to this library')

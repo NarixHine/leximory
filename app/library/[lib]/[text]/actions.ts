@@ -6,7 +6,7 @@ import { createStreamableValue } from 'ai/rsc'
 import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
-import { Lang, MAX_FILE_SIZE } from '@/lib/config'
+import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@/lib/config'
 import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction } from '@/lib/prompt'
@@ -36,7 +36,7 @@ export async function extractWords(form: FormData) {
     const { userId } = await getUserOrThrow()
     const file = form.get('file') as File
 
-    if (await incrCommentaryQuota(1, userId)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
         throw new Error('Quota exceeded')
     }
 
@@ -69,7 +69,7 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
     const { userId } = await getUserOrThrow()
     await authWriteToText(textId)
 
-    if (await incrCommentaryQuota(2)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId)) {
         return {
             success: false,
             message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`
@@ -132,7 +132,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
     if (length > maxArticleLength) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(1)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
@@ -163,7 +163,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
     if (prompt.length > maxArticleLength) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(0.25)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
@@ -193,7 +193,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
 }
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
-    if (await incrCommentaryQuota(0.25, userId)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 

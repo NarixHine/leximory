@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { Button } from '@heroui/button'
 import { PiGithubLogo, PiInfo } from 'react-icons/pi'
 import Privacy from './components/privacy'
-import { fixYourPaperGitHubLink, fixYourPaperBlogLink } from '@/lib/config'
+import { FYP_GITHUB_LINK, FYP_BLOG_LINK } from '@/lib/config'
 
 export const metadata: Metadata = {
     title: 'Fix. Your. Paper.',
@@ -56,7 +56,7 @@ export default function FixPaperPage() {
                     as={Link}
                     target='_blank'
                     variant='light'
-                    href={fixYourPaperGitHubLink}
+                    href={FYP_GITHUB_LINK}
                 ></Button>
                 <Button
                     className='rounded-full text-lg text-default-700'
@@ -66,7 +66,7 @@ export default function FixPaperPage() {
                     as={Link}
                     target='_blank'
                     variant='light'
-                    href={fixYourPaperBlogLink}
+                    href={FYP_BLOG_LINK}
                 ></Button>
                 <Privacy />
             </div>

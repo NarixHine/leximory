@@ -9,7 +9,7 @@ import Preference from './components/preference'
 import CopyToken from './components/copy'
 import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
 import GradientCard from '../library/components/cards/card'
-import { planMap } from '@/lib/config'
+import { PLAN_LABELS } from '@/lib/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
@@ -132,7 +132,7 @@ function PlanCard({ text }: { text?: string }) {
 
 async function Plan() {
     const plan = await getPlan()
-    return <PlanCard text={planMap[plan]} />
+    return <PlanCard text={PLAN_LABELS[plan]} />
 }
 
 async function ClaimDailyLexicoinServer() {
