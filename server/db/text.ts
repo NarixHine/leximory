@@ -89,7 +89,8 @@ export async function getTexts({ lib }: { lib: string }) {
             )
         `)
         .eq('lib', lib)
-        .order('no')
+        .order('no', { nullsFirst: true }) // prioritize manual sorting; newly created texts first
+        .order('created_at', { ascending: false })
         .throwOnError()
 
     return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
@@ -199,15 +200,12 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
 }
 
 export async function updateTextOrder({ lib, ids }: { lib: string, ids: string[] }) {
-    const { count, error } = await supabase
+    const { count } = await supabase
         .from('texts')
         .select('id', { count: 'exact', head: true })
         .in('id', ids)
         .eq('lib', lib)
-
-    if (error) {
-        throw new Error('Failed to verify texts ownership.')
-    }
+        .throwOnError()
 
     if (count !== ids.length) {
         throw new Error('Access denied. Not all texts belong to the specified library.')
