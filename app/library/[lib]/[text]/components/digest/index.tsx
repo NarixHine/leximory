@@ -29,6 +29,7 @@ import { useInterval, useIntersectionObserver } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
 import { toast } from 'sonner'
 import { getLanguageStrategy } from '@/lib/languages'
+import { useAuth } from '@/lib/hooks'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -195,11 +196,12 @@ function ReadingView() {
   const hideText = useAtomValue(hideTextAtom)
   const text = useAtomValue(textAtom)
   const lang = useAtomValue(langAtom)
+  const { user } = useAuth()
   const { ref: bottomRef, entry } = useIntersectionObserver({
     freezeOnceVisible: true
   })
   useEffect(() => {
-    if (entry?.isIntersecting) {
+    if (entry?.isIntersecting && user) {
       markAsVisited(text)
     }
   }, [entry?.isIntersecting, text])
@@ -322,7 +324,7 @@ function GeneratingView() {
   )
 }
 
-export default function Digest() {
+export default function Digest({ hideImportControls }: { hideImportControls?: boolean }) {
   const isEditing = useAtomValue(isEditingAtom)
   const ebook = useAtomValue(ebookAtom)
   const lang = useAtomValue(langAtom)
@@ -362,7 +364,7 @@ export default function Digest() {
         )}
       </div>
 
-      {!isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
+      {!hideImportControls && !isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
         <Spacer y={6} />
         <ImportModal />
       </div>}

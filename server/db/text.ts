@@ -4,7 +4,7 @@ import { supabase } from '@/server/client/supabase'
 import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
 import { revalidateTag } from 'next/cache'
-import { Lang } from '@/lib/config'
+import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
@@ -117,7 +117,9 @@ export async function getTextContent({ id }: { id: string }) {
                 id,
                 name,
                 lang,
-                prompt
+                prompt,
+                price,
+                access
             )
         `)
         .eq('id', id)
@@ -141,7 +143,7 @@ export async function getTextContent({ id }: { id: string }) {
         if (error) throw error
         return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree: lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0 }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
