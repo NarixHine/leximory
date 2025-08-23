@@ -199,21 +199,31 @@ function StoryModal() {
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
                         <DrawerBody className='flex flex-col gap-4 max-w-(--breakpoint-sm) mx-auto'>
-                            <div className='prose dark:prose-invert'><blockquote className='not-italic border-l-secondary-300'>连词成文通过将目标单词串联为故事辅助深度记忆。</blockquote></div>
+                            <div className='prose dark:prose-invert'>
+                                <blockquote className='not-italic border-l-secondary-300'>
+                                    连词成文通过将目标单词串联为故事辅助深度记忆。
+                                </blockquote>
+                            </div>
                             <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
                             <FileUpload onChange={async ([file]) => {
                                 const form = new FormData()
                                 form.append('file', file)
-                                toast('提取词汇中……')
-                                const words = await extractWords(form)
-                                setWords(words)
+                                const wordsPromise = extractWords(form)
+                                toast.promise(wordsPromise, {
+                                    loading: '提取重点词汇中……',
+                                    success: (words) => {
+                                        setWords(words)
+                                        return '提取完毕'
+                                    },
+                                    error: '提取失败'
+                                })
                             }}></FileUpload>
                             <div className='flex gap-2 -mt-2 mb-2 items-center'>
                                 <Divider className='flex-1'></Divider>
                                 <span className='opacity-60'>或</span>
                                 <Divider className='flex-1'></Divider>
                             </div>
-                            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 items-center'>
+                            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 w-full items-center'>
                                 {
                                     words.map((word, index) => (
                                         <Input
@@ -233,13 +243,13 @@ function StoryModal() {
                             </div>
                             <Input
                                 fullWidth
-                                variant='flat'
+                                variant='faded'
                                 label='故事风格/内容（可选）'
                                 value={storyStyle}
                                 onValueChange={setStoryStyle}
                             />
                             <Button
-                                className='my-2'
+                                className='my-2 shrink-0'
                                 fullWidth
                                 isLoading={isGenerating}
                                 color='secondary'

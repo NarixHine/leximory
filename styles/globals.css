@@ -7,4 +7,5 @@
     --font-formal: var(--font-english-serif), var(--font-chinese), var(--font-japanese-mincho), serif;
     --font-fancy: var(--font-english-fancy), var(--font-chinese), var(--font-japanese-mincho), serif;
     --font-ja: var(--font-english-serif), var(--font-japanese-mincho), var(--font-chinese), serif;
+    --breakpoint-laptop: 950px;
 }

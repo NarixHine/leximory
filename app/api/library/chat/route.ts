@@ -8,7 +8,7 @@ import { ACTION_QUOTA_COST, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
-import { isProd } from '@/lib/env'
+import { IS_PROD } from '@/lib/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
 import generateQuiz from '@/server/ai/editory'
 import { nanoid } from 'nanoid'
@@ -166,7 +166,7 @@ ${content}`,
 
 export async function POST(req: NextRequest) {
     const plan = await getPlan()
-    if (isProd && plan === 'beginner') {
+    if (IS_PROD && plan === 'beginner') {
         return new Response('You are not authorized to use this tool.', { status: 403 })
     }
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat)) {

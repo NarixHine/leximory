@@ -5,6 +5,7 @@ import React, { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import { PiBoxArrowUp } from 'react-icons/pi'
+import FlatCard from './flat-card'
 
 const mainVariant = {
     initial: {
@@ -53,6 +54,8 @@ export const FileUpload = ({
         maxFiles: 1,
     })
 
+    const MotionCard = motion.create(FlatCard)
+
     return (
         <div className='w-full' {...getRootProps()}>
             <motion.div
@@ -72,12 +75,11 @@ export const FileUpload = ({
                     <div className='relative w-full mt-10 max-w-xl mx-auto'>
                         {files.length > 0 &&
                             [files[files.length - 1]].map((file, idx) => (
-                                <motion.div
+                                <MotionCard
                                     key={file.name}
                                     layoutId={idx === 0 ? 'file-upload' : 'file-upload-' + idx}
                                     className={cn(
-                                        'relative overflow-hidden z-40 flex flex-col items-start justify-start md:h-24 p-4 pb-2 mt-4 w-full mx-auto rounded-md',
-                                        'shadow-sm bg-white dark:bg-default-100',
+                                        'relative overflow-hidden z-40 flex flex-col items-start justify-start p-4 mt-4 mx-auto',
                                     )}
                                 >
                                     <div className='flex justify-between w-full items-center gap-4'>
@@ -85,23 +87,23 @@ export const FileUpload = ({
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             layout
-                                            className='text-base text-neutral-700 dark:text-neutral-300 truncate max-w-xs'
+                                            className='text-base text-neutral-700 dark:text-neutral-300 text-wrap'
                                         >
                                             {file.name}
                                         </motion.p>
                                     </div>
 
-                                    <div className='flex text-sm md:flex-row flex-col items-start md:items-center w-full mt-2 justify-between text-neutral-600 dark:text-neutral-400'>
+                                    <div className='flex text-sm md:flex-row flex-col items-start md:items-center w-full mt-1 justify-between text-neutral-600 dark:text-neutral-400'>
                                         <motion.p
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             layout
-                                            className='px-1 py-0.5 rounded-md bg-default-50 dark:bg-neutral-800 '
+                                            className='px-1 font-mono rounded-md bg-default-50 dark:bg-neutral-800 '
                                         >
                                             {file.type}
                                         </motion.p>
                                     </div>
-                                </motion.div>
+                                </MotionCard>
                             ))}
                         {!files.length && (
                             <motion.div

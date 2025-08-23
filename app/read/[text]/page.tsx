@@ -8,19 +8,18 @@ import { redirect } from 'next/navigation'
 export default async function PublicTextPage(props: { params: Promise<{ text: string }> }) {
     const { text } = await props.params
     const { isPublicAndFree, ...data } = await getArticleData(text, false)
+    if (await getSession()) {
+        redirect(`/library/${data.lib.id}/${text}`)
+    }
     if (!isPublicAndFree) {
-        if (await getSession()) {
-            throw new Error('This text is not public and free.')
-        }
-        else {
-            redirect(SIGN_IN_URL)
-        }
+        redirect(SIGN_IN_URL)
     }
     return (
         <Main className='max-w-(--breakpoint-lg) [counter-reset:sidenote-counter] md:pb-4'>
             <Article
                 text={text}
                 hideControls
+                isPublicAndFree={isPublicAndFree}
                 {...data}
             />
         </Main>

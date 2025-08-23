@@ -17,7 +17,7 @@ import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
 import { Accordion, AccordionItem, AccordionProps } from '@heroui/react'
 import UpgradeMessage from './upgrade-message'
-import { isProd } from '@/lib/env'
+import { IS_PROD } from '@/lib/env'
 import H from '@/components/ui/h'
 import { useCopyToClipboard } from 'usehooks-ts'
 import Text from '@/app/library/[lib]/components/text'
@@ -490,7 +490,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
         },
         onError: (error) => {
-            if (isProd) {
+            if (IS_PROD) {
                 toast.error('发生错误')
             } else {
                 throw error
@@ -644,7 +644,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     color='primary'
                     isIconOnly
                     className='self-start'
-                    isDisabled={(plan === 'beginner' && isProd) || (status === 'ready' && !input.trim())}
+                    isDisabled={(plan === 'beginner' && IS_PROD) || (status === 'ready' && !input.trim())}
                     aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
                     startContent={isLoading ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}

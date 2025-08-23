@@ -1,6 +1,5 @@
 import { authReadToText } from '@/server/auth/role'
 import { getTextContent, getTextAnnotationProgress } from '@/server/db/text'
-import { merge } from 'es-toolkit'
 
 export const getArticleData = async (text: string, throwOnUnauthorized = true) => {
     if (throwOnUnauthorized) {
@@ -8,5 +7,5 @@ export const getArticleData = async (text: string, throwOnUnauthorized = true) =
     }
     const { title, content, topics, ebook, lib, prompt, isPublicAndFree } = await getTextContent({ id: text })
     const annotating = await getTextAnnotationProgress({ id: text })
-    return merge({ title, content, topics, ebook, lib, annotating, prompt }, throwOnUnauthorized ? {} : { isPublicAndFree })
+    return { title, content, topics, ebook, lib, annotating, prompt, isPublicAndFree }
 }

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { createEnv } from '@t3-oss/env-nextjs'
 
-export const isProd = process.env.NODE_ENV === 'production'
+export const IS_PROD = process.env.NODE_ENV === 'production'
+export const TIMES_IS_PAUSED = true
 
 const env = createEnv({
     server: {
@@ -57,4 +58,3 @@ const env = createEnv({
 })
 
 export default env
-

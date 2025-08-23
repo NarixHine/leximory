@@ -11,7 +11,10 @@ import ShareButton from './components/share-button'
 import Topics from './components/topics'
 import { getLanguageStrategy } from '@/lib/languages'
 
-export const Article = ({ title, text, content, topics, ebook, lib, annotating, prompt, hideControls }: Awaited<ReturnType<typeof getArticleData>> & { text: string, hideControls?: boolean }) => {
+export const Article = ({ title, text, content, topics, ebook, lib, annotating, prompt, hideControls, isPublicAndFree }: Awaited<ReturnType<typeof getArticleData>> & { 
+    text: string, 
+    hideControls?: boolean
+ }) => {
     const { FormattedReadingTime } = getLanguageStrategy(lib.lang)
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom]}>
         <HydrationBoundary hydrateAtoms={[
@@ -25,9 +28,9 @@ export const Article = ({ title, text, content, topics, ebook, lib, annotating, 
             [promptAtom, prompt]
         ]}>
             <div className='flex items-center justify-center gap-3'>
-                {hideControls ? <div className='invisible'><ShareButton className='mb-2' /></div> : <QuoteInAgent className='mb-2' />}
+                {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2' />}
                 <EditableH />
-                <ShareButton className='mb-2' />
+                <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' />
             </div>
             <div className='flex flex-wrap gap-2 justify-center items-center'>
                 {FormattedReadingTime && (

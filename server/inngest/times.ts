@@ -7,7 +7,7 @@ import { nanoid } from '@/lib/utils'
 import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
-import { getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
+import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
 import { uploadTimesAudio, uploadTimesImage } from '../db/storage'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
@@ -15,6 +15,7 @@ import { speak } from 'orate'
 import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
+import { TIMES_IS_PAUSED } from '@/lib/env'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'teen romance story (no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel', 'legend', 'memoir', 'travelogue']
 
@@ -217,11 +218,13 @@ The STYLE requirements: paint the novel SCENE/LANDSCAPE (don't zoom in on any sp
 It will serve as the cover image of today's issue on the website. The novel today is as follows. Directly output the prompt that describes the scene and style of the image to be generated in a coherent, organised and detailed way, which will be sent without modification to another AI model.
 `.trim()
 
-/*
 export const triggerGenerateTimes = inngest.createFunction(
     { id: 'trigger-generate-times' },
     { cron: 'TZ=Asia/Shanghai 30 19 * * *' }, // Runs every day at 19:30.
     async ({ step }) => {
+        if (TIMES_IS_PAUSED) {
+            return
+        }
         const hasGeneratedToday = await step.run('check-if-generated-today', async () => {
             const latestTimesData = await getLatestTimesData()
             return latestTimesData.date === momentSH().format('YYYY-MM-DD')
@@ -234,7 +237,6 @@ export const triggerGenerateTimes = inngest.createFunction(
         })
     }
 )
-*/
 
 export const triggerRegenerateTimes = inngest.createFunction(
     { id: 'trigger-regenerate-times' },

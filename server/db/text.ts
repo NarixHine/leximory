@@ -132,6 +132,7 @@ export async function getTextContent({ id }: { id: string }) {
     }
 
     const { content, has_ebook, title, topics, lib } = text[0]
+    const isPublicAndFree = lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0
     const prompt = lib?.prompt ?? ''
     if (!lib) {
         throw new Error('lib not found')
@@ -141,9 +142,9 @@ export async function getTextContent({ id }: { id: string }) {
             .from('user-files')
             .createSignedUrl(`ebooks/${id}.epub`, seconds('7 days'))
         if (error) throw error
-        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt }
+        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree: lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0 }
+    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {

@@ -1,4 +1,4 @@
-import env, { isProd } from './env'
+import env, { IS_PROD } from './env'
 
 export const PLANS = ['beginner', 'bilingual', 'polyglot', 'leximory'] as const
 export type Plan = (typeof PLANS)[number]
@@ -20,7 +20,7 @@ export const EXAMPLE_SHARED_LIB = {
     price: 0,
 } as const
 
-export const prefixUrl = (url: string) => `${isProd ? env.NEXT_PUBLIC_URL : 'http://localhost:3000'}${url}`
+export const prefixUrl = (url: string) => `${IS_PROD ? env.NEXT_PUBLIC_URL : 'http://localhost:3000'}${url}`
 export const EXAMPLE_EBOOK_LINK = '/library/1309fe3b/2dd46083' as const
 export const BILIBILI_LINK = 'https://space.bilibili.com/3494376432994441/' as const
 export const FYP_GITHUB_LINK = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
@@ -78,7 +78,7 @@ export const maxArticleLength = (lang: Lang): number => {
 
 
 export type PaidTier = 'bilingual' | 'polyglot'
-export const CREEM_PRODUCT_ID: Record<PaidTier, string> = isProd ? {
+export const CREEM_PRODUCT_ID: Record<PaidTier, string> = IS_PROD ? {
     'bilingual': 'prod_4M08q7qmqNgs2WYgZGEJwG',
     'polyglot': 'prod_CpdFa9JGOurneLpm9Mhyu',
 } as const : {

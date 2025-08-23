@@ -87,7 +87,7 @@ export default async function Home() {
 				</div>
 			</div>
 
-			<div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
+			<div className='grid grid-cols-1 laptop:grid-cols-3 gap-3'>
 				<div className='md:col-span-2'>
 					<BentoCard title='AI 注解 + AI 朗读'>
 						<div className='px-8 sm:px-16 flex flex-col'>
@@ -95,7 +95,7 @@ export default async function Home() {
 						</div>
 					</BentoCard>
 				</div>
-				<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3'>
+				<div className='grid grid-cols-1 laptop:grid-cols-1 max-laptop:sm:grid-cols-2 gap-3'>
 					<div>
 						<BentoCard
 							title='每日资源'
