@@ -1,3 +1,8 @@
+'use client'
+
+import { type RefObject, useState } from 'react'
+import { useEventListener } from 'usehooks-ts'
+
 /**
  * Resets the selection to the default state.
  * 
@@ -70,4 +75,24 @@ export function getBracketedSelection(selection: Selection): string {
         fullText.slice(idx + selectedText.length)
     )
     return result
+}
+
+export function useSelection(ref: RefObject<Document>) {
+    const [rect, setRect] = useState<DOMRect | null>(null)
+    const [selection, setSelection] = useState<Selection | null>(null)
+
+    useEventListener('selectionchange', () => {
+        const newSelection = getSelection()
+        if (!newSelection) {
+            if (selection) {
+                resetSelection()
+            }
+            return
+        }
+        setRect(newSelection.isCollapsed ? null : newSelection.getRangeAt(0).getBoundingClientRect())
+        setSelection(newSelection)
+    }, ref)
+
+    const { left, width, bottom } = rect || {}
+    return { selection, left, width, bottom }
 }

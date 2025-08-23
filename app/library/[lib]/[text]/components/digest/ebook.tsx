@@ -1,12 +1,10 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { Popover, PopoverTrigger, PopoverContent } from '@heroui/popover'
 import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
-import { PiBookmarkDuotone, PiFrameCornersDuotone, PiMagnifyingGlassDuotone } from 'react-icons/pi'
+import { PiBookmarkDuotone, PiFrameCornersDuotone } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
-import Comment from '@/components/comment'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
@@ -20,10 +18,9 @@ import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { useScrollLock } from 'usehooks-ts'
 import { toast } from 'sonner'
-import { memo } from 'react'
 import { save } from '../../actions'
-import { getBracketedSelection } from '@/components/define/utils'
 import { getChapterName } from '@/lib/epub'
+import Define from '@/components/define'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
@@ -55,33 +52,6 @@ function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
     }
 }
 
-const MemoizedPopover = memo(function MemoizedPopover({
-    prompt,
-    containerRef
-}: {
-    prompt: string | null
-    containerRef: React.RefObject<HTMLDivElement>
-}) {
-    return (
-        <Popover placement='right' isDismissable portalContainer={containerRef.current}>
-            <PopoverTrigger>
-                <Button
-                    color='primary'
-                    variant='light'
-                    size='lg'
-                    isIconOnly
-                    radius='lg'
-                    isDisabled={!prompt}
-                    startContent={<PiMagnifyingGlassDuotone className='text-lg' />}
-                />
-            </PopoverTrigger>
-            <PopoverContent className='sm:w-80 w-60 p-0 bg-transparent'>
-                {prompt && <Comment asCard prompt={prompt} params='["", "↺ Loading ..."]'></Comment>}
-            </PopoverContent>
-        </Popover>
-    )
-})
-
 export default function Ebook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
@@ -92,7 +62,20 @@ export default function Ebook() {
     const [location, setLocation] = useAtom(locationAtomFamily(text))
     const strategy = useMemo(() => getLanguageStrategy(lang), [lang])
 
-    const [prompt, setPrompt] = useState<string | null>(null)
+    const [selection, setSelection] = useState<Selection | null>(null)
+    const [rect, setRect] = useState<{ left: number | null, width: number | null, bottom: number | null }>({
+        left: null,
+        width: null,
+        bottom: null
+    })
+    const reset = () => {
+        setRect({
+            left: null,
+            width: null,
+            bottom: null
+        })
+        setSelection(null)
+    }
     const [bookmark, setBookmark] = useState<string | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [page, setPage] = useState('')
@@ -107,17 +90,19 @@ export default function Ebook() {
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useState(false)
+    const [isFullScreen, setIsFullScreen] = useState(true) // flips to false on load
+    const hasZoomed = isFullViewport || isFullScreen
     const containerRef = useRef<HTMLDivElement>(null!)
 
     const { lock, unlock } = useScrollLock({ autoLock: false })
     useEffect(() => {
-        if (isFullViewport) {
+        if (hasZoomed) {
             lock()
         } else {
             unlock()
         }
         return unlock
-    }, [isFullViewport, lock, unlock])
+    }, [hasZoomed, lock, unlock])
 
     return src && (
         <motion.div
@@ -141,8 +126,14 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
-            <FullScreen handle={handleFullScreen} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-3'>
+            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
+                {hasZoomed && <Define
+                    {...rect}
+                    reset={reset}
+                    container={containerRef.current}
+                    selection={selection}
+                />}
+                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-60'>
                     <Button
                         isIconOnly
                         startContent={<PiFrameCornersDuotone className='text-lg' />}
@@ -153,41 +144,42 @@ export default function Ebook() {
                         radius='lg'
                         onPress={async () => {
                             try {
-                                await handleFullScreen.enter()
+                                if (isFullScreen)
+                                    await handleFullScreen.exit()
+                                else
+                                    await handleFullScreen.enter()
                             } catch {
                                 setIsFullViewport(!isFullViewport)
                             }
                         }}
                     />
-                    <Button
-                        startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
-                        isLoading={savingBookmark}
-                        isDisabled={!bookmark || isReadOnly}
-                        className='z-10'
-                        color='primary'
-                        variant='light'
-                        size='lg'
-                        radius='lg'
-                        isIconOnly
-                        onPress={() => {
-                            if (bookmark) {
-                                startSavingBookmark(async () => {
-                                    try {
-                                        const newContent = content.concat(bookmark)
-                                        await save({ id: text, content: newContent })
-                                        setContent(newContent)
-                                        toast.success('文摘已保存')
-                                    } catch {
-                                        toast.error('文摘保存失败，请重试')
-                                    }
-                                })
-                            }
-                        }}>
-                    </Button>
-                    <MemoizedPopover
-                        prompt={prompt}
-                        containerRef={containerRef}
-                    />
+                    {hasZoomed && <>
+                        <Button
+                            startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
+                            isLoading={savingBookmark}
+                            isDisabled={!bookmark || isReadOnly}
+                            className='z-10'
+                            color='primary'
+                            variant='light'
+                            size='lg'
+                            radius='lg'
+                            isIconOnly
+                            onPress={() => {
+                                if (bookmark) {
+                                    startSavingBookmark(async () => {
+                                        try {
+                                            const newContent = content.concat(bookmark)
+                                            await save({ id: text, content: newContent })
+                                            setContent(newContent)
+                                            toast.success('文摘已保存')
+                                        } catch {
+                                            toast.error('文摘保存失败，请重试')
+                                        }
+                                    })
+                                }
+                            }}>
+                        </Button>
+                    </>}
                 </div>
                 <ReactReader
                     key={isFullViewport ? 'full' : 'normal'}
@@ -249,11 +241,28 @@ export default function Ebook() {
                             },
                         })
                         themeRendition.current = rendition
-                        rendition.on('selected', (_: string, contents: Contents) => {
-                            const selection = contents.window.getSelection()
-                            setPrompt(selection ? getBracketedSelection(selection) : null)
+                        rendition.on('selected', (_: Rendition, contents: Contents) => {
+                            const selection = contents.window.getSelection()!
+                            setSelection(selection)
+                            const rect = selection.getRangeAt(0).getBoundingClientRect()
+                            const epubView = document.getElementsByClassName('epub-view')[0]
+                            const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
+                            setRect({
+                                left: rect.left + offset.left,
+                                width: rect.width,
+                                bottom: rect.bottom + offset.top
+                            })
+
                             const chapter = getChapterName(rendition.book, rendition.location)
                             setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
+                        })
+                        rendition.on('rendered', (_: Rendition, contents: Contents) => {
+                            contents.document.addEventListener('selectionchange', () => {
+                                if (selection && selection.toString()) {
+                                    return
+                                }
+                                reset()
+                            })
                         })
                     }}
                     epubOptions={{
