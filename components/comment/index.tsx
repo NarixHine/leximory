@@ -7,6 +7,7 @@ import { CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
@@ -26,6 +27,7 @@ import styles from '@/styles/sidenote.module.css'
 import { getClickedChunk } from './utils'
 import StoneSkeleton from '../ui/stone-skeleton'
 import FlatCard from '../ui/flat-card'
+import { Spinner } from '@heroui/spinner'
 
 interface CommentProps {
     params: string
@@ -76,32 +78,36 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
-    const commentWord = async (prompt: string) => {
-        const { text, error } = await generateSingleComment({ prompt, lang })
-        if (error) {
-            toast.error(error, {
-                duration: 10000,
-                action: {
-                    label: '升级',
-                    onClick: () => router.push('/settings')
-                }
-            })
-        }
-        else if (text) {
-            try {
-                let commentary = ''
-                for await (const delta of readStreamableValue(text)) {
-                    commentary += delta
-                    setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
-                    if (isOnDemand && !isLoaded) {
-                        setIsLoaded(true)
+    const { mutate: commentWord, isPending } = useMutation({
+        mutationFn: async (prompt: string) => {
+            const { text, error } = await generateSingleComment({ prompt, lang })
+            if (error) {
+                toast.error(error, {
+                    duration: 10000,
+                    action: {
+                        label: '升级',
+                        onClick: () => router.push('/settings')
                     }
-                }
-            } catch {
-                toast.error('生成中止')
+                })
+                throw new Error(error)
             }
-        }
-    }
+            if (text) {
+                try {
+                    let commentary = ''
+                    for await (const delta of readStreamableValue(text)) {
+                        commentary += delta
+                        setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
+                        if (isOnDemand && !isLoaded) {
+                            setIsLoaded(true)
+                        }
+                    }
+                } catch {
+                    toast.error('生成中止')
+                }
+            }
+        },
+        retry: 1
+    })
 
     useEffect(() => {
         if (prompt && prompt !== '') {
@@ -226,7 +232,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         ? <FlatCard fullWidth background='solid' radius='sm' shadow='none' className={className}>
             <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
-                {portions.length > 1 && <div className='relative'>
+                <div className='relative'>
                     {!isVisible && (
                         <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pb-7'>
                             <Button
@@ -248,11 +254,23 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             animate={{ opacity: isVisible ? 1 : 0 }}
                             transition={{ duration: 0.5 }}
                         >
-                            <Note omitOriginal portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
+                            {
+                                isPending && portions.length === 0
+                                    ? <div className='flex font-mono items-center gap-1.5'>
+                                        Generating <Spinner variant='dots' color='default' />
+                                    </div>
+                                    : <Note
+                                        omitOriginal
+                                        portions={portions}
+                                        isEditing={isEditing}
+                                        editedPortions={editedPortions}
+                                        onEdit={setEditedPortions}
+                                    />
+                            }
                         </motion.div>
                         {portions[2] && <><Spacer y={3} /><Save /></>}
                     </motion.div>
-                </div>}
+                </div>
             </CardBody>
         </FlatCard>
         : <>

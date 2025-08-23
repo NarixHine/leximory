@@ -24,7 +24,7 @@ export const chineseStrategy = createLanguageStrategy({
     welcome: '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
     maxChunkSize: 700,
     maxArticleLength: 5000,
-    exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词简短例句（例句中的义项必须与语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
+    exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词**简短例句**（例句必须含有被注释的词，且例句中被注释词的义项必须与原文语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
     proseClassName: 'prose-xl',
     defineLabel: '注解',
     defineClassName: 'font-formal font-semibold',
