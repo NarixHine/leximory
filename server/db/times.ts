@@ -13,7 +13,6 @@ export async function getRecentTimesData(page: number = 1) {
         .select('date, cover', { count: 'exact' })
         .order('date', { ascending: false })
         .range((page - 1) * TIMES_PAGE_SIZE, page * TIMES_PAGE_SIZE - 1)
-
         .throwOnError()
 
     return {

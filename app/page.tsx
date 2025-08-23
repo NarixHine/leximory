@@ -65,7 +65,7 @@ export default async function Home() {
 								label='网址'
 								placeholder='https://example.com/'
 								variant='underlined'
-								color='secondary'
+								color='primary'
 							/>
 							<div className='flex flex-col-reverse'>
 								<Button

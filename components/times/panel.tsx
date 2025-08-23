@@ -25,6 +25,7 @@ import { useIsMobile } from '@/lib/hooks'
 import { useAtomValue } from 'jotai'
 import { isFullScreenAtom } from './atoms'
 import AudioPlayer from '../ui/audio-player'
+import { TIMES_IS_PAUSED } from '@/lib/env'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -115,8 +116,8 @@ function TimesContent() {
         <article className='m-6 md:px-4 md:my-12 max-w-170 prose-lg prose dark:prose-invert'>
             {/* Header */}
             <div>
-                <h1 className='mb-2 font-semibold'>{momentSH(date).format('LL')}</h1>
-                <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='underline-offset-[5px] text-inherit decoration-1'>The Leximory Times</Link></span>
+                <h1 className='mb-3 font-semibold'>{momentSH(date).format('LL')}</h1>
+                <span className='text-xl text-default-600'>Brought to you with AI by <Link href={'/blog/the-times'} className='text-inherit hover:decoration-1 italic'>The Leximory Times</Link></span>
             </div>
 
             {/* Cover Image */}
@@ -235,8 +236,8 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
     } = useInfiniteQuery({
         queryKey: ['times'],
         queryFn: ({ pageParam = 1 }) => fetchMoreIssues(pageParam),
-        getNextPageParam: (lastPage) =>
-            lastPage.hasMore ? lastPage.data.length / TIMES_PAGE_SIZE + 1 : undefined,
+        getNextPageParam: (lastPage, allPages) =>
+            lastPage.hasMore ? allPages.length + 1 : undefined,
         initialPageParam: 1,
         initialData: {
             pages: [initialData],
@@ -256,6 +257,11 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
             <div className='flex flex-row md:flex-col md:static inset-y-0 left-0 z-40'>
                 <div className='p-6 md:ml-6'>
                     <div className='flex flex-row md:flex-col space-x-4 md:space-x-0 md:space-y-3'>
+                        {TIMES_IS_PAUSED && (
+                            <div className='text-sm font-mono text-center text-default-500'>
+                                Update Paused
+                            </div>
+                        )}
                         {data?.pages.map((page) =>
                             page.data.map(({ date, cover }: TimesSummaryData) => (
                                 <Suspense fallback={<TimesDateCardSkeleton />} key={date}>
