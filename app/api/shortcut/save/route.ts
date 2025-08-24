@@ -10,7 +10,7 @@ import { ACTION_QUOTA_COST, Lang, SUPPORTED_LANGS } from '@/lib/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
 import { verifyToken } from '@/server/db/token'
-import { googleModels, noThinkingConfig } from '@/server/ai/models'
+import { nanoAI } from '@/server/ai/configs'
 
 const schema = z.object({
     word: z.string(),
@@ -44,10 +44,9 @@ export async function POST(request: Request) {
 
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
-        model: googleModels['flash-2.5'],
         prompt: `请判断下述词汇最可能属于哪种语言，在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
         maxOutputTokens: 50,
-        ...noThinkingConfig
+        ...nanoAI
     })
     const lang = z.enum(SUPPORTED_LANGS).parse(text.trim())
     return lang

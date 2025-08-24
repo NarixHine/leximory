@@ -1,11 +1,9 @@
 'use server'
 
 import { type ModelMessage, generateText } from 'ai'
-import { googleModels } from '@/server/ai/models'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
-
-const model = googleModels['pro-2.5']
+import { thinkAI } from '@/server/ai/configs'
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
@@ -96,12 +94,9 @@ async function buildMessages(params: {
             },
             {
                 type: 'file',
-
-                file: {
-                    data: await paperFile.arrayBuffer(),
-                    mimeType: paperFile.type
-                }
-            },
+                data: await paperFile.arrayBuffer(),
+                mediaType: paperFile.type
+            }
         ],
     }]
 
@@ -119,11 +114,8 @@ async function buildMessages(params: {
                 text: '拟定试卷参考答案：'
             }, {
                 type: 'file',
-
-                file: {
-                    data: await answerFile.arrayBuffer(),
-                    mimeType: answerFile.type
-                }
+                data: await answerFile.arrayBuffer(),
+                mediaType: answerFile.type
             }]
         })
     }
@@ -139,10 +131,10 @@ export async function analyzePaper(paperFile: File) {
 
     const messages = await buildMessages({ paperFile })
     const { text } = await generateText({
-        model,
         messages,
         temperature: 0.01,
-        maxOutputTokens: 20000
+        maxOutputTokens: 20000,
+        ...thinkAI
     })
 
     return { output: text }
@@ -155,10 +147,10 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
 
     const messages = await buildMessages({ paperFile, answerFile, paperAnalysis })
     const { text } = await generateText({
-        model,
         messages,
         temperature: 0.01,
         maxOutputTokens: 20000,
+        ...thinkAI
     })
 
     return { output: text }

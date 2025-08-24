@@ -14,11 +14,11 @@ import { z } from 'zod'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
 import { getUserOrThrow } from '@/server/auth/user'
-import { googleModels, noThinkingConfig, getBestCommentaryModel } from '@/server/ai/models'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { revalidatePath } from 'next/cache'
 import { visitText } from '@/server/db/visited'
+import { flashAI, nanoAI } from '@/server/ai/configs'
 
 export async function markAsVisited(textId: string) {
     const { userId } = await getUserOrThrow()
@@ -40,7 +40,6 @@ export async function extractWords(form: FormData) {
     }
 
     const { object } = await generateObject({
-        model: googleModels['flash-2.5'],
         messages: [{
             role: 'system',
             content: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
@@ -53,7 +52,8 @@ export async function extractWords(form: FormData) {
             }]
         }],
         schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
-        maxOutputTokens: 8000
+        maxOutputTokens: 8000,
+        ...nanoAI
     })
 
     return object
@@ -159,7 +159,6 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
     }
 
     const { textStream } = streamText({
-        model: getBestCommentaryModel(lang),
         system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
@@ -170,7 +169,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
             await setAnnotationCache({ hash, cache: text })
         },
         experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
-        ...noThinkingConfig
+        ...flashAI
     })
 
     return { text: textStream }
@@ -184,7 +183,6 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
     const { exampleSentencePrompt } = getLanguageStrategy(lang)
     const { getAccentPrompt } = getLanguageServerStrategy(lang)
     const { text } = await generateText({
-        model: getBestCommentaryModel(lang),
         system: `
         生成词汇注解（形如<must>vocabulary</must>、<must></must>中的部分必须注解）。
 
@@ -192,7 +190,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
         `,
         prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}\n你要注解的是：\n${prompt}`,
         maxOutputTokens: 500,
-        ...noThinkingConfig
+        ...flashAI
     })
 
     return text

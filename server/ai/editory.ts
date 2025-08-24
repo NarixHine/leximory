@@ -3,19 +3,19 @@
 import { generateObject } from 'ai'
 import { Schema, z } from 'zod'
 import QuizData, { QuizDataType } from '../../components/editory/generators/types'
-import { googleModels } from '@/server/ai/models'
 import { nanoid } from '@/lib/utils'
 import { AIGeneratableType } from '@/components/editory/generators/config'
+import { thinkAI } from './configs'
 
 export default async function generateQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }): Promise<QuizData> {
     const { system, schema } = getConfig(type)
     const { object } = await generateObject({
-        model: googleModels['flash-2.5'],
         prompt,
         system,
         schema,
         temperature: 0.1,
         maxOutputTokens: 15000,
+        ...thinkAI
     })
     return {
         ...object,

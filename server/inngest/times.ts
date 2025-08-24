@@ -4,18 +4,17 @@ import { ADMIN_UID } from '@/lib/config'
 import { annotateParagraph } from '../ai/annotate'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from '@/lib/utils'
-import { elevenLabsVoiceConfig, googleModels } from '../ai/models'
 import generateQuiz from '../ai/editory'
 import { sample, shuffle } from 'es-toolkit'
 import { getLatestTimesData, getRawNewsByDate, getTimesDataByDate, publishTimes, removeIssue, updateTimes } from '../db/times'
 import { uploadTimesAudio, uploadTimesImage } from '../db/storage'
 import showdown from 'showdown'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
-import { speak } from 'orate'
-import { ElevenLabs } from 'orate/elevenlabs'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
 import { TIMES_IS_PAUSED } from '@/lib/env'
+import { flashAI, landscapeImageAI, searchAI, thinkAI } from '../ai/configs'
+import { speak } from '../ai/speak'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'teen romance story (no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel', 'legend', 'memoir', 'travelogue']
 
@@ -308,22 +307,22 @@ export const generateTimes = inngest.createFunction(
 
         // Step 4: Generate editor's guide
         const { text: editorGuide } = await step.ai.wrap('generate-editor-guide', generateText, {
-            model: googleModels['pro-2.5'],
             system: EDITOR_GUIDE_PROMPT,
             prompt: `${editorPromptExtension}
             
             Yesterday's novel: ${novelYesterday}.`,
             maxOutputTokens: 4000,
-            temperature: 1.2
+            temperature: 1.2,
+            ...thinkAI
         })
 
         // Step 5: Generate novel
         const { text: novel } = await step.ai.wrap('generate-novel', generateText, {
-            model: googleModels['pro-2.5'],
             system: NOVEL_PROMPT,
             prompt: editorGuide,
             maxOutputTokens: 8000,
-            temperature: 1
+            temperature: 1,
+            ...thinkAI
         })
 
         // Step 6: Annotate novel
@@ -333,11 +332,11 @@ export const generateTimes = inngest.createFunction(
 
         // Step 7: Generate daily news
         const { text: news } = await step.ai.wrap('generate-news', generateText, {
-            model: googleModels['pro-2.5-search'],
             system: NEWS_PROMPT,
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
             maxOutputTokens: 9000,
-            temperature: 0.8
+            temperature: 0.8,
+            ...searchAI
         })
 
         // Step 8: Annotate news
@@ -347,14 +346,13 @@ export const generateTimes = inngest.createFunction(
 
         // Step 9: Generate audio for news and upload to Supabase
         const audioResult = await step.run('generate-audio-for-news', async () => {
-            const { voice, options } = elevenLabsVoiceConfig['BrE']
-
             try {
                 // Add a period at the end of every Markdown heading for better TTS pause
                 const ttsReadyNews = news.replace(/^(#+)(.*)$/gm, '$1$2.')
                 const audio = await speak({
-                    model: new ElevenLabs().tts('eleven_turbo_v2_5', voice, options),
-                    prompt: removeMd(ttsReadyNews),
+                    text: removeMd(ttsReadyNews),
+                    userId: ADMIN_UID,
+                    lang: 'en'
                 })
                 const audioUrl = await uploadTimesAudio(date, audio)
                 return { audio: audioUrl, script: ttsReadyNews }
@@ -380,7 +378,6 @@ export const generateTimes = inngest.createFunction(
 
         // Step 11: Generate image prompt
         const { text: imagePrompt } = await step.ai.wrap('generate-image-prompt', generateText, {
-            model: googleModels['flash-2.5'],
             system: IMAGE_PROMPT,
             prompt: `Based on this content, create a detailed text prompt for generating a cover image:
             
@@ -388,15 +385,15 @@ export const generateTimes = inngest.createFunction(
             
             The prompt should be detailed and specific, suitable for an AI image generation model.`,
             maxOutputTokens: 4000,
-            temperature: 0.5
+            temperature: 0.5,
+            ...flashAI
         })
 
         // Step 12: Generate and upload image
         const imageUrl = await step.run('generate-and-upload-image', async () => {
             const { image } = await generateImage({
-                model: googleModels['image-gen'],
                 prompt: imagePrompt,
-                aspectRatio: '16:9',
+                ...landscapeImageAI
             })
             return await uploadTimesImage(date, image)
         })

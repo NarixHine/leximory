@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabase } from '@/server/client/supabase'
 import { revalidateTag } from 'next/cache'
+import { GeneratedAudioFile } from 'ai'
 
 export async function retrieveAudioUrl({ id }: { id: string }) {
     const { data } = await supabase.storage
@@ -14,13 +15,13 @@ export async function retrieveAudioUrl({ id }: { id: string }) {
     return data.signedUrl
 }
 
-export async function uploadAudio({ id, audio }: { id: string, audio: File }) {
+export async function uploadAudio({ id, audio }: { id: string, audio: GeneratedAudioFile }) {
     const path = `audio/${id}.mp3`
 
     const { data: uploadData } = await supabase.storage
         .from('user-files')
-        .upload(path, await audio.arrayBuffer(), {
-            contentType: 'audio/mpeg',
+        .upload(path, audio.uint8Array, {
+            contentType: audio.mediaType,
             upsert: true
         })
 

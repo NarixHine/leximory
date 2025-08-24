@@ -3,7 +3,6 @@ import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
-import { googleModels } from '@/server/ai/models'
 import { ACTION_QUOTA_COST, Lang } from '@/lib/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
@@ -15,11 +14,11 @@ import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
-import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
 import { momentSH } from '@/lib/moment'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
+import { flashAI, nanoAI } from '@/server/ai/configs'
 
 const tools: ToolSet = {
     getLib: {
@@ -117,7 +116,6 @@ const tools: ToolSet = {
 
             // Use AI to distill the main article content from the webpage
             const { text: distilledContent } = await generateText({
-                model: googleModels['flash-2.5'],
                 system: `You are an expert at extracting the main article content from webpage text. Your task is to:
 1. Remove navigation elements, headers, footers, ads, and other non-article content
 2. Keep only the main article body content
@@ -128,6 +126,7 @@ const tools: ToolSet = {
 
 ${content}`,
                 maxOutputTokens: 10000,
+                ...nanoAI
             })
 
             return { title, content: distilledContent }
@@ -177,7 +176,6 @@ export async function POST(req: NextRequest) {
     const messages = convertToModelMessages(body.messages)
 
     const result = streamText({
-        model: googleModels['flash-2.5'],
         tools,
         system: CHAT_SYSTEM_PROMPT,
         messages,
@@ -185,14 +183,7 @@ export async function POST(req: NextRequest) {
         maxOutputTokens: 30000,
         temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    includeThoughts: true,
-                    thinkingBudget: 1024,
-                }
-            } satisfies GoogleGenerativeAIProviderOptions
-        },
+        ...flashAI
     })
 
     return result.toUIMessageStreamResponse()

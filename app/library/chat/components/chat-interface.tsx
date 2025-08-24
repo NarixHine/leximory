@@ -372,11 +372,11 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 </div>
             )
         case 'reasoning':
-            return (
+            return part.text && (
                 <ToolAccordian defaultExpanded title='Reasoning' icon={<PiLightbulb size={16} />}>
                     <Markdown
                         compact
-                        md={part.text || ''}
+                        md={part.text}
                         className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'
                     />
                 </ToolAccordian>
