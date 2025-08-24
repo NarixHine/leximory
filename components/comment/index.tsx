@@ -11,7 +11,6 @@ import { useMutation } from '@tanstack/react-query'
 import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
-import { readStreamableValue } from 'ai/rsc'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { contentAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
@@ -94,7 +93,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             if (text) {
                 try {
                     let commentary = ''
-                    for await (const delta of readStreamableValue(text)) {
+                    for await (const delta of text) {
                         commentary += delta
                         setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
                         if (isOnDemand && !isLoaded) {

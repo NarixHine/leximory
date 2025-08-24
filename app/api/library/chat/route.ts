@@ -1,4 +1,4 @@
-import { generateText, smoothStream, streamText, ToolSet } from 'ai'
+import { convertToModelMessages, generateText, smoothStream, stepCountIs, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
@@ -24,7 +24,7 @@ import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 const tools: ToolSet = {
     getLib: {
         description: 'Get details about a library by its id.',
-        parameters: toolSchemas.getLib,
+        inputSchema: toolSchemas.getLib,
         execute: async ({ id }: { id: string }) => {
             await authReadToLib(id)
             return getLib({ id })
@@ -32,7 +32,7 @@ const tools: ToolSet = {
     },
     getAllWordsInLib: {
         description: 'Get all words in a library by library id.',
-        parameters: toolSchemas.getAllWordsInLib,
+        inputSchema: toolSchemas.getAllWordsInLib,
         execute: async ({ lib }: { lib: string }) => {
             await authReadToLib(lib)
             return getAllWordsInLib({ lib })
@@ -40,7 +40,7 @@ const tools: ToolSet = {
     },
     getTexts: {
         description: 'Get all texts in a library by library id. Use this over getAllTextsInLib wherever possible.',
-        parameters: toolSchemas.getTexts,
+        inputSchema: toolSchemas.getTexts,
         execute: async ({ lib }: { lib: string }) => {
             await authReadToLib(lib)
             return getTexts({ lib })
@@ -48,7 +48,7 @@ const tools: ToolSet = {
     },
     getTextContent: {
         description: 'Get the content and metadata of a text by its id.',
-        parameters: toolSchemas.getTextContent,
+        inputSchema: toolSchemas.getTextContent,
         execute: async ({ id }: { id: string }) => {
             await authReadToText(id)
             const text = await getTextContent({ id })
@@ -57,7 +57,7 @@ const tools: ToolSet = {
     },
     getAllTextsInLib: {
         description: 'Get all texts with their full content in a library. Use getTexts instead if you only need the list of texts.',
-        parameters: toolSchemas.getAllTextsInLib,
+        inputSchema: toolSchemas.getAllTextsInLib,
         execute: async ({ libId }: { libId: string }) => {
             await authReadToLib(libId)
             return getAllTextsInLib({ libId })
@@ -65,14 +65,14 @@ const tools: ToolSet = {
     },
     listLibs: {
         description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
-        parameters: toolSchemas.listLibs,
+        inputSchema: toolSchemas.listLibs,
         execute: async () => {
             return listLibsWithFullInfo({ or: await isListedFilter() })
         }
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
-        parameters: toolSchemas.getForgetCurve,
+        inputSchema: toolSchemas.getForgetCurve,
         execute: async ({ period }: { period: 'day' | 'week' }) => {
             const { userId } = await getUserOrThrow()
             switch (period) {
@@ -85,7 +85,7 @@ const tools: ToolSet = {
     },
     annotateArticle: {
         description: 'Generate annotations for an article. The results will be available a few minutes after the text is created and returned.',
-        parameters: toolSchemas.annotateArticle,
+        inputSchema: toolSchemas.annotateArticle,
         execute: async ({ content, lib, title }: { content: string, lib: string, title: string }) => {
             await authWriteToLib(lib)
             const id = await createText({ lib, title, content })
@@ -95,7 +95,7 @@ const tools: ToolSet = {
     },
     annotateParagraph: {
         description: 'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
-        parameters: toolSchemas.annotateParagraph,
+        inputSchema: toolSchemas.annotateParagraph,
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
             const { userId } = await getUserOrThrow()
             return { annotation: await annotateParagraph({ content, lang, userId }), lang }
@@ -103,7 +103,7 @@ const tools: ToolSet = {
     },
     generateQuiz: {
         description: 'Generate a quiz from the given text content. Available types: cloze (完形填空), reading (阅读理解), fishing (小猫钓鱼).',
-        parameters: toolSchemas.generateQuiz,
+        inputSchema: toolSchemas.generateQuiz,
         execute: async ({ content, type }: { content: string, type: AIGeneratableType }) => {
             const result = await generateQuiz({ prompt: content, type })
             return { ...result, type, id: nanoid() }
@@ -111,7 +111,7 @@ const tools: ToolSet = {
     },
     extractArticleFromWebpage: {
         description: 'Extract the article from the given webpage. The results will be available in Markdown format.',
-        parameters: toolSchemas.extractArticleFromWebpage,
+        inputSchema: toolSchemas.extractArticleFromWebpage,
         execute: async ({ url }: { url: string }) => {
             const { title, content } = await getArticleFromUrl(url)
 
@@ -127,7 +127,7 @@ const tools: ToolSet = {
                 prompt: `Please extract the main article content from this webpage text. Remove any navigation, ads, headers, footers, or other non-article elements. Return only the clean article content in Markdown format:
 
 ${content}`,
-                maxTokens: 10000,
+                maxOutputTokens: 10000,
             })
 
             return { title, content: distilledContent }
@@ -135,21 +135,21 @@ ${content}`,
     },
     getTodaysTimes: {
         description: 'Get today\'s issue of The Leximory Times newspaper.',
-        parameters: toolSchemas.getTodaysTimes,
+        inputSchema: toolSchemas.getTodaysTimes,
         execute: async () => {
             return getLatestTimesData()
         }
     },
     getTimesIssue: {
         description: 'Get a specific issue of The Leximory Times newspaper by date (YYYY-MM-DD).',
-        parameters: toolSchemas.getTimesIssue,
+        inputSchema: toolSchemas.getTimesIssue,
         execute: async ({ date }: { date: string }) => {
             return getTimesDataByDate(momentSH(date).format('YYYY-MM-DD'))
         }
     },
     requestPublishStreakMemory: {
         description: "Presents the user's summary of what they learned today as a draft that they can publish.",
-        parameters: toolSchemas.requestPublishStreakMemory,
+        inputSchema: toolSchemas.requestPublishStreakMemory,
         execute: async ({ content }: { content: string }) => {
             const { userId, username, image } = await getUserOrThrow()
             return {
@@ -174,20 +174,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const messages = body.messages
+    const messages = convertToModelMessages(body.messages)
 
     const result = streamText({
         model: googleModels['flash-2.5'],
         tools,
-        messages: [
-            {
-                role: 'system',
-                content: CHAT_SYSTEM_PROMPT
-            },
-            ...messages
-        ],
-        maxSteps: 30,
-        maxTokens: 30000,
+        system: CHAT_SYSTEM_PROMPT,
+        messages,
+        stopWhen: stepCountIs(20),
+        maxOutputTokens: 30000,
         temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
         providerOptions: {
@@ -200,5 +195,5 @@ export async function POST(req: NextRequest) {
         },
     })
 
-    return result.toDataStreamResponse()
+    return result.toUIMessageStreamResponse()
 } 

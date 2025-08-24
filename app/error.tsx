@@ -26,7 +26,7 @@ export default function Error({
                         An error occurred. <br />
                         If the problem persists, please contact support.
                     </p>
-                    <div className='flex gap-4'>
+                    <div className='flex gap-4 flex-wrap justify-center'>
                         <Button
                             color='primary'
                             variant='flat'
@@ -43,6 +43,19 @@ export default function Error({
                             className='min-w-30'
                         >
                             Return to Library
+                        </Button>
+                        <Button
+                            as={Link}
+                            href='/'
+                            color='danger'
+                            variant='ghost'
+                            onPress={() => {
+                                localStorage.clear()
+                                reset()
+                            }}
+                            className='min-w-30'
+                        >
+                            Clear Cache
                         </Button>
                     </div>
                     <div className='flex items-center justify-center gap-2 mt-10 opacity-70'>

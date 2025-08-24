@@ -1,6 +1,6 @@
 'use server'
 
-import { type CoreMessage, generateText } from 'ai'
+import { type ModelMessage, generateText } from 'ai'
 import { googleModels } from '@/server/ai/models'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
@@ -80,11 +80,11 @@ async function buildMessages(params: {
     paperFile: File,
     answerFile: File,
     paperAnalysis: string
-}): Promise<CoreMessage[]> {
+}): Promise<ModelMessage[]> {
     const { paperFile } = params
     const { paperAnalysis, answerFile } = 'paperAnalysis' in params ? params : { paperAnalysis: null, answerFile: null }
 
-    const messages: CoreMessage[] = [{
+    const messages: ModelMessage[] = [{
         role: 'system',
         content: `${SYSTEM_PROMPT}\n\n## 各大题规则\n\n${Object.keys(SECTION_PROMPTS).map(section => `### ${section}\n\n${SECTION_PROMPTS[section as keyof typeof SECTION_PROMPTS]}`).join('\n\n')}`
     }, {
@@ -96,8 +96,11 @@ async function buildMessages(params: {
             },
             {
                 type: 'file',
-                data: await paperFile.arrayBuffer(),
-                mimeType: paperFile.type,
+
+                file: {
+                    data: await paperFile.arrayBuffer(),
+                    mimeType: paperFile.type
+                }
             },
         ],
     }]
@@ -116,8 +119,11 @@ async function buildMessages(params: {
                 text: '拟定试卷参考答案：'
             }, {
                 type: 'file',
-                data: await answerFile.arrayBuffer(),
-                mimeType: answerFile.type,
+
+                file: {
+                    data: await answerFile.arrayBuffer(),
+                    mimeType: answerFile.type
+                }
             }]
         })
     }
@@ -136,7 +142,7 @@ export async function analyzePaper(paperFile: File) {
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000
+        maxOutputTokens: 20000
     })
 
     return { output: text }
@@ -152,7 +158,7 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
         model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000,
+        maxOutputTokens: 20000,
     })
 
     return { output: text }

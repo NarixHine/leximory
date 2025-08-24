@@ -2,7 +2,6 @@
 
 import { authReadToText, authWriteToText } from '@/server/auth/role'
 import { generateObject, generateText, smoothStream, streamText } from 'ai'
-import { createStreamableValue } from 'ai/rsc'
 import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
@@ -42,24 +41,19 @@ export async function extractWords(form: FormData) {
 
     const { object } = await generateObject({
         model: googleModels['flash-2.5'],
-        messages: [
-            {
-                role: 'user',
-                content: [
-                    {
-                        type: 'text',
-                        text: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
-                    },
-                    {
-                        type: 'file',
-                        data: await file.arrayBuffer(),
-                        mimeType: file.type,
-                    },
-                ],
-            },
-        ],
+        messages: [{
+            role: 'system',
+            content: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
+        }, {
+            role: 'user',
+            content: [{
+                type: 'file',
+                data: await file.arrayBuffer(),
+                mediaType: file.type
+            }]
+        }],
         schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
-        maxTokens: 8000
+        maxOutputTokens: 8000
     })
 
     return object
@@ -149,13 +143,10 @@ export async function generate({ article, textId, onlyComments }: { article: str
 
 export async function generateSingleComment({ prompt, lang }: { prompt: string, lang: Lang }) {
     const { userId } = await getUserOrThrow()
-    const stream = createStreamableValue()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
     const cache = await getAnnotationCache({ hash })
     if (cache) {
-        stream.update(cache)
-        stream.done()
-        return { text: stream.value }
+        return { text: cache }
     }
 
     const { maxArticleLength, exampleSentencePrompt } = getLanguageStrategy(lang)
@@ -167,29 +158,22 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 
-    (async () => {
-        const { textStream } = streamText({
-            model: getBestCommentaryModel(lang),
-            system: `
+    const { textStream } = streamText({
+        model: getBestCommentaryModel(lang),
+        system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
             `,
-            prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
-            maxTokens: 500,
-            onFinish: async ({ text }) => {
-                await setAnnotationCache({ hash, cache: text })
-            },
-            experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
-            ...noThinkingConfig
-        })
+        prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
+        maxOutputTokens: 500,
+        onFinish: async ({ text }) => {
+            await setAnnotationCache({ hash, cache: text })
+        },
+        experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
+        ...noThinkingConfig
+    })
 
-        for await (const delta of textStream) {
-            stream.update(delta)
-        }
-        stream.done()
-    })()
-
-    return { text: stream.value }
+    return { text: textStream }
 }
 
 export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
@@ -207,7 +191,7 @@ export async function generateSingleCommentFromShortcut(prompt: string, lang: La
         ${instruction[lang]}
         `,
         prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}\n你要注解的是：\n${prompt}`,
-        maxTokens: 500,
+        maxOutputTokens: 500,
         ...noThinkingConfig
     })
 

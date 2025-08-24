@@ -19,7 +19,7 @@ export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyCom
     ${await getLanguageServerStrategy(lang).getAccentPrompt(userId)}
     
     ${input}`,
-    maxTokens: 12000,
+    maxOutputTokens: 12000,
     ...noThinkingConfig
 })
 

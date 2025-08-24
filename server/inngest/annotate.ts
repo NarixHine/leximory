@@ -15,7 +15,7 @@ const topicsPrompt = async (input: string) => ({
     prompt: `请从下文提取出1~3个中文标签表示下文的话题或关键词：
     
     ${input}`,
-    maxTokens: 100,
+    maxOutputTokens: 100,
     ...noThinkingConfig
 })
 

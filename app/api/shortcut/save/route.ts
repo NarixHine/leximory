@@ -46,7 +46,7 @@ async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
         model: googleModels['flash-2.5'],
         prompt: `请判断下述词汇最可能属于哪种语言，在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
-        maxTokens: 50,
+        maxOutputTokens: 50,
         ...noThinkingConfig
     })
     const lang = z.enum(SUPPORTED_LANGS).parse(text.trim())

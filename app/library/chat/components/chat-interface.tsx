@@ -1,9 +1,10 @@
 'use client'
 
-import { Message, useChat } from '@ai-sdk/react'
+import { UIMessage as Message, useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper, PiArrowCounterClockwiseDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper, PiArrowCounterClockwiseDuotone, PiFolderOpenDuotone } from 'react-icons/pi'
 import { memo, ReactNode, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -60,11 +61,11 @@ const initialPrompts = [{
 }] as const
 
 type MessagePart = {
-    type: 'text' | 'reasoning' | 'tool-invocation' | 'source' | 'step-start'
+    type: 'text' | 'reasoning' | `tool-${string}` | 'source' | 'step-start' | 'tool-result'
     text?: string
     toolName?: string
     toolCallId?: string
-    state?: string
+    state?: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
     result?: any
     toolInvocation?: {
         state: string
@@ -74,10 +75,13 @@ type MessagePart = {
         args: any
         result: any
     }
+    input?: any
+    output?: any
+    errorText?: string
 }
 
 function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
-    if (state === 'call') {
+    if (state === 'input-available') {
         return (
             <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
                 <Spinner size='sm' color='default' variant='gradient' />
@@ -88,8 +92,8 @@ function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
     return <></>
 }
 
-function ToolAccordian({ title, children, icon, ...props }: { title: string, children: ReactNode, icon: ReactNode } & AccordionProps) {
-    return <Accordion className='mt-2 px-0' {...props}>
+function ToolAccordian({ title, children, defaultExpanded, icon, ...props }: { title: string, children: ReactNode, icon: ReactNode, defaultExpanded?: boolean } & AccordionProps) {
+    return <Accordion className='mt-2 px-0' {...props} defaultExpandedKeys={defaultExpanded ? ['content'] : []}>
         <AccordionItem key='content' title={title} startContent={icon} classNames={{
             titleWrapper: 'flex-none',
             trigger: 'text-sm'
@@ -154,7 +158,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
             const res = result as Awaited<ToolResult['getTexts']>
             const libName = res[0]?.libName
             return (
-                <ToolAccordian key='content' title={`Texts${libName ? ` In ${libName}` : ''}`} icon={<PiPackage />}>
+                <ToolAccordian title={`Texts${libName ? ` In ${libName}` : ''}`} icon={<PiPackage />}>
                     <ul className='flex flex-col gap-1'>
                         {res.map((text, index) => (
                             <li className='font-mono text-sm text-default-500 flex gap-2 items-center' key={text.id}>
@@ -207,7 +211,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateArticle':
             const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
-                <ToolAccordian defaultExpandedKeys={['content']} title={`Article Created`} icon={<PiNewspaperDuotone />}>
+                <ToolAccordian defaultExpanded title={`Article Created`} icon={<PiNewspaperDuotone />}>
                     <div className='flex flex-col gap-2 mb-1'>
                         <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
                         <ScopeProvider atoms={[libAtom]}>
@@ -330,6 +334,27 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
+    if (part.type.startsWith('tool-')) {
+        const toolName = part.type.substring(5) as ToolName
+        switch (part.state) {
+            case 'input-streaming':
+                return <pre>{JSON.stringify(part.input, null, 2)}</pre>
+            case 'input-available':
+                return <ToolState state={'call'} toolName={toolName} />
+            case 'output-available':
+                return (
+                    <div className='mt-2 w-full'>
+                        <ToolResult
+                            toolName={toolName}
+                            result={part.output as Awaited<ToolResult[ToolName]>}
+                        />
+                    </div>
+                )
+            case 'output-error':
+                return <div>Error: {part.errorText}</div>
+        }
+    }
+
     switch (part.type) {
         case 'text':
             return (
@@ -348,36 +373,13 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
             )
         case 'reasoning':
             return (
-                <Accordion className='mt-2' defaultExpandedKeys={['reasoning']}>
-                    <AccordionItem key={'reasoning'} title={part.text || ''}>
-                        <Markdown
-                            md={part.text || ''}
-                            className='prose dark:prose-invert max-w-none'
-                        />
-                    </AccordionItem>
-                </Accordion>
-            )
-        case 'tool-invocation':
-            if (part.toolInvocation?.state === 'result' && part.toolInvocation.result) {
-                return (
-                    <div className='mt-2 w-full'>
-                        <ToolResult
-                            toolName={part.toolInvocation.toolName as ToolName}
-                            result={part.toolInvocation.result as Awaited<ToolResult[ToolName]>}
-                        />
-                    </div>
-                )
-            }
-            return (
-                <div className='mt-4'>
-                    <ToolState state={part.toolInvocation?.state || ''} toolName={part.toolInvocation?.toolName as ToolName} />
-                </div>
-            )
-        case 'step-start':
-            return (
-                <div className='mt-4'>
-                    <span className='text-sm text-default-600 font-mono flex items-center gap-2'><PiLightbulb className='animate-spin' size={16} /> Thinking ...</span>
-                </div>
+                <ToolAccordian defaultExpanded title='Reasoning' icon={<PiLightbulb size={16} />}>
+                    <Markdown
+                        compact
+                        md={part.text || ''}
+                        className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'
+                    />
+                </ToolAccordian>
             )
         default:
             return <></>
@@ -388,16 +390,16 @@ const MemoizedMessagePart = memo(MessagePart)
 
 export function ChatMessage({
     message,
-    reload,
+    regenerate,
     isLast,
     isLoading
 }: {
     message: Message,
-    reload?: () => void,
+    regenerate?: () => void,
     isLast?: boolean,
     isLoading?: boolean
 }) {
-    const { id, parts, role, experimental_attachments } = message
+    const { id, parts, role } = message
 
     const Parts = () => <>
         {parts?.map((part, j) => (
@@ -409,32 +411,40 @@ export function ChatMessage({
         'mb-4 flex flex-col',
         role === 'user' ? 'items-end' : 'items-start'
     )} data-message-id={id}>
-        {experimental_attachments && experimental_attachments.length > 0 && (
-            <div className='flex flex-col gap-2'>
-                {experimental_attachments.map((att, idx) => (
+        {parts?.map((part, index) => {
+            if (part.type === 'file' && part.mediaType?.startsWith('image/')) {
+                return (
+                    <div key={index}>
+                        <img src={part.url} alt='Appended Image' />
+                    </div>
+                )
+            }
+            if (part.type === 'file') {
+                return (
                     <div
-                        key={idx}
+                        key={index}
                         className='flex items-center gap-2 p-2 rounded bg-primary-50/40 border border-primary-100'
                     >
                         <PiPaperclipFill className='text-primary-500' size={20} />
-                        <span className='text-sm text-default-700 truncate max-w-45 sm:max-w-60 md:max-w-100' title={att.name}>
-                            {att.name}
+                        <span className='text-sm text-default-700 truncate max-w-45 sm:max-w-60 md:max-w-100' title={part.url}>
+                            {part.url.split('/').pop()}
                         </span>
                         <a
-                            href={att.url}
+                            href={part.url}
                             target='_blank'
                             rel='noopener noreferrer'
                             className='text-primary-600 underline text-xs'
-                            download={att.name}
+                            download={part.url.split('/').pop()}
                         >
                             下载
                         </a>
                     </div>
-                ))}
-            </div>
-        )}
+                )
+            }
+            return null
+        })}
         {
-            isLast && reload ? (
+            isLast && regenerate ? (
                 <div className='flex gap-1 justify-end items-end w-full'>
                     <Button
                         isIconOnly
@@ -444,7 +454,7 @@ export function ChatMessage({
                         color='secondary'
                         isDisabled={isLoading}
                         className='text-default-500 shrink-0'
-                        onPress={() => reload()}
+                        onPress={() => regenerate()}
                     >
                         <PiArrowCounterClockwiseDuotone className='text-secondary-300' size={16} />
                     </Button>
@@ -458,14 +468,14 @@ export function ChatMessage({
 const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({
-    reload,
+    regenerate,
     messages,
     isLoading
 }: {
-    reload?: () => void,
+    regenerate?: () => void,
     messages: Message[]
     isLoading?: boolean
-}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} reload={reload} />)}</>
+}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} regenerate={regenerate} />)}</>
 
 export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
@@ -473,9 +483,11 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
     const fileInputRef = useRef<HTMLInputElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const [files, setFiles] = useState<FileList | undefined>(undefined)
-    const { messages, input, setInput, handleSubmit, status, setData, stop, setMessages, reload } = useChat({
-        api: '/api/library/chat',
-        initialMessages: storedMessages,
+    const [input, setInput] = useState(initialInput ?? '')
+    const { messages, status, stop, setMessages, regenerate, sendMessage } = useChat({
+        transport: new DefaultChatTransport({
+            api: '/api/library/chat',
+        }),
         onFinish: () => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
             setFiles(undefined)
@@ -484,9 +496,6 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
             }
         },
         onToolCall() {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        },
-        onResponse: () => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
         },
         onError: (error) => {
@@ -499,10 +508,9 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
             if (fileInputRef.current) {
                 fileInputRef.current.value = ''
             }
-        },
-        initialInput
+        }
     })
-    const isLoading = status === 'submitted' || status === 'streaming'
+    const isLoading = status === 'streaming' || status === 'submitted'
     const [isFirstConversation, setIsFirstConversation] = useState(true)
 
     useEffect(() => {
@@ -521,7 +529,6 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
         setStoredMessages([])
         setMessages([])
         setInput(isFirstConversation ? initialInput ?? '' : '')
-        setData([])
         setIsFirstConversation(false)
     }
 
@@ -535,9 +542,32 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
         e.preventDefault()
         if (!input.trim() || isLoading) return
 
-        handleSubmit(e, {
-            experimental_attachments: files
-        })
+        if (files && files.length > 0) {
+            const fileParts = Promise.all(Array.from(files).map(async file => {
+                const buffer = await file.arrayBuffer()
+                const base64 = Buffer.from(buffer).toString('base64')
+                return {
+                    type: 'file' as const,
+                    mediaType: file.type,
+                    url: `data:${file.type};base64,${base64}`
+                }
+            }))
+
+            fileParts.then(parts => {
+                sendMessage({
+                    role: 'user',
+                    parts: [
+                        { type: 'text', text: input },
+                        ...parts
+                    ]
+                })
+            })
+        } else {
+            sendMessage({
+                role: 'user',
+                parts: [{ type: 'text', text: input }]
+            })
+        }
         setInput('')
     }
 
@@ -545,7 +575,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
         if (isLoading) {
             stop()
         } else {
-            handleFormSubmit(new Event('submit') as any)
+            handleFormSubmit(new Event('submit') as unknown as React.FormEvent)
         }
     }
 
@@ -580,9 +610,22 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     </Button>
                 </div>
             </div>
+            {storedMessages.length > 0 && messages.length === 0 && <Button
+                className='mb-4'
+                fullWidth
+                color='primary'
+                variant='flat'
+                radius='lg'
+                startContent={<PiFolderOpenDuotone />}
+                onPress={() => {
+                    setMessages(storedMessages)
+                }}
+            >
+                恢复上次对话
+            </Button>}
             {plan === 'beginner' && <UpgradeMessage />}
             {messages.length === 0 && (
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-8'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8'>
                     {initialPrompts.map((prompt, index) => (
                         <Card
                             key={index}
@@ -606,7 +649,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     ))}
                 </div>
             )}
-            <ChatMessages isLoading={isLoading} messages={messages} reload={reload} />
+            <ChatMessages isLoading={isLoading} messages={messages} regenerate={regenerate} />
             <div ref={messagesEndRef} />
             <form
                 onSubmit={handleFormSubmit}

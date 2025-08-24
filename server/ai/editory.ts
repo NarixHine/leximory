@@ -15,7 +15,7 @@ export default async function generateQuiz({ prompt, type }: { prompt: string, t
         system,
         schema,
         temperature: 0.1,
-        maxTokens: 15000,
+        maxOutputTokens: 15000,
     })
     return {
         ...object,

@@ -313,7 +313,7 @@ export const generateTimes = inngest.createFunction(
             prompt: `${editorPromptExtension}
             
             Yesterday's novel: ${novelYesterday}.`,
-            maxTokens: 4000,
+            maxOutputTokens: 4000,
             temperature: 1.2
         })
 
@@ -322,7 +322,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['pro-2.5'],
             system: NOVEL_PROMPT,
             prompt: editorGuide,
-            maxTokens: 8000,
+            maxOutputTokens: 8000,
             temperature: 1
         })
 
@@ -336,7 +336,7 @@ export const generateTimes = inngest.createFunction(
             model: googleModels['pro-2.5-search'],
             system: NEWS_PROMPT,
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
-            maxTokens: 9000,
+            maxOutputTokens: 9000,
             temperature: 0.8
         })
 
@@ -387,7 +387,7 @@ export const generateTimes = inngest.createFunction(
             Novel: ${novel}
             
             The prompt should be detailed and specific, suitable for an AI image generation model.`,
-            maxTokens: 4000,
+            maxOutputTokens: 4000,
             temperature: 0.5
         })
 
