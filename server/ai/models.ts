@@ -25,7 +25,7 @@ const vertex = createVertex({
 })
 
 export const googleModels = {
-     'image-gen': vertex.image('imagen-4.0-generate-preview-06-06', { maxImagesPerCall: 1 }),
+    'image-gen': vertex.image('imagen-4.0-generate-preview-06-06', { maxImagesPerCall: 1 }),
     'flash-2.5': google('gemini-2.5-flash', {
         safetySettings: [{
             category: 'HARM_CATEGORY_HATE_SPEECH',

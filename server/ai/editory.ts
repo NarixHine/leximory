@@ -1,11 +1,13 @@
 'use server'
 
-import { generateObject } from 'ai'
+import { generateObject, streamObject } from 'ai'
 import { Schema, z } from 'zod'
 import QuizData, { QuizDataType } from '../../components/editory/generators/types'
 import { googleModels } from '@/server/ai/models'
 import { nanoid } from '@/lib/utils'
 import { AIGeneratableType } from '@/components/editory/generators/config'
+import incrCommentaryQuota from '../auth/quota'
+import { ACTION_QUOTA_COST } from '@/lib/config'
 
 export default async function generateQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }): Promise<QuizData> {
     const { system, schema } = getConfig(type)
@@ -23,6 +25,22 @@ export default async function generateQuiz({ prompt, type }: { prompt: string, t
         type,
         text: object.text ?? prompt,
     }
+}
+
+export async function streamQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }) {
+    const { system, schema } = getConfig(type)
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper)) {
+        throw new Error('Commentary quota exceeded')
+    }
+    const { partialObjectStream } = streamObject({
+        model: googleModels['flash-2.5'],
+        prompt,
+        system,
+        schema,
+        temperature: 0.1,
+        maxTokens: 10000,
+    })
+    return partialObjectStream
 }
 
 const getConfig = (type: QuizDataType): { system: string, schema: Schema } => {

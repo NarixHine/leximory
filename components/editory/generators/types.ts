@@ -23,6 +23,7 @@ export interface QuestionStrategy<T extends QuizData = QuizData> {
     renderPaper: (props: StrategyRenderProps<T>) => JSX.Element | null
     renderKey: (props: StrategyRenderProps<T>) => JSX.Element | null
     keyPerLine: number
+    getDefaultValue: () => T
 }
 
 type QuizData = FishingData | ClozeData | GrammarData | SentenceChoiceData | ReadingData | ListeningData | CustomData

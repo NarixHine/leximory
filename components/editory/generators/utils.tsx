@@ -4,6 +4,7 @@ import { QuestionStrategy } from './types'
 import fastShuffle from 'fast-shuffle'
 import { questionStrategies } from './strategies'
 
+
 /**
  * A reusable helper to extract the content from all <code> tags in a string.
  */
@@ -32,6 +33,9 @@ export function createQuestionStrategy<T extends QuizData>(
         getCorrectAnswers: (data) => ('text' in data ? extractCodeContent(data.text) : []),
         renderPaper: () => null,
         renderKey: () => null,
+        getDefaultValue: () => {
+            throw new Error('getDefaultValue must be implemented for each strategy')
+        },
     }
 
     return { ...defaults, ...config }
