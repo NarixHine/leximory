@@ -17,7 +17,9 @@ Leximory integrates features like:
 - Sharing study resources in the **Library Market**,
 - Talking to your library, i.e. **agentic workflows**.
 
-There is also a feature built for exam setters: `Fix. Your. Paper.`.
+There are also two features built for exam setters: `Fix. Your. Paper.` & `Editory`. However, active maintenance for both of them has paused and, although they are still live on the Leximory website, they only serve as an archival snapshot.
+
+The credit of Editory goes to [the original repo](https://github.com/Jiuzhixinzhi/editory/) and the archival version of it is not commercialised, which shares a quota system with the rest of Leximory only to prevent abuse of AI functionalities. If you ever find yourself in need of more credits, feel free to reach out and we are happy to provide them for free.
 
 The platform is built with Next.js, Supabase, Upstash, and Inngest. AI providers are Google Vertex and ElevenLabs.
 

@@ -29,7 +29,7 @@ export default async function generateQuiz({ prompt, type }: { prompt: string, t
 
 export async function streamQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }) {
     const { system, schema } = getConfig(type)
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.makeYourPaper)) {
         throw new Error('Commentary quota exceeded')
     }
     const { partialObjectStream } = streamObject({

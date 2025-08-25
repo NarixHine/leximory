@@ -59,7 +59,8 @@ export const ACTION_QUOTA_COST = {
     wordList: 1,
     story: 2,
     chat: 0.5,
-    fixYourPaper: 5
+    fixYourPaper: 5,
+    makeYourPaper: 1
 } as const
 
 export const LIB_ACCESS_STATUS = {
