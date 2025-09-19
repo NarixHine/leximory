@@ -6,6 +6,7 @@ import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 
 const model = googleModels['pro-2.5']
+const fallbackModel = googleModels['flash-2.5']
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
@@ -126,14 +127,14 @@ async function buildMessages(params: {
 }
 
 const ANALYZE_PAPER_COST = 3
-export async function analyzePaper(paperFile: File) {
+export async function analyzePaper(paperFile: File, useFallbackModel = false) {
     if (await incrCommentaryQuota(ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
     const messages = await buildMessages({ paperFile })
     const { text } = await generateText({
-        model,
+        model: useFallbackModel ? fallbackModel : model,
         messages,
         temperature: 0.01,
         maxTokens: 20000
@@ -142,14 +143,14 @@ export async function analyzePaper(paperFile: File) {
     return { output: text }
 }
 
-export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
+export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string, useFallbackModel = false) {
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper - ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
 
     const messages = await buildMessages({ paperFile, answerFile, paperAnalysis })
     const { text } = await generateText({
-        model,
+        model: useFallbackModel ? fallbackModel : model,
         messages,
         temperature: 0.01,
         maxTokens: 20000,

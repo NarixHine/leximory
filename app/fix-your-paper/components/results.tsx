@@ -55,7 +55,7 @@ export default function Results() {
                     subtitle='A third-party opinion. Just pick what&apos;s reasonable in it.'
                 >
                     <div className='max-w-none'>
-                        <Markdown className='prose-blockquote:!mb-0 prose-h3:mt-0' md={result === '' ? '<article>\n> 未生成\n</article>' : result} />
+                        <Markdown className='prose-blockquote:!mb-0' md={result === '' ? '<article>\n> 未生成\n</article>' : result} />
                     </div>
                 </AccordionItem>
 
