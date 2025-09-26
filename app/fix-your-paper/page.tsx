@@ -43,8 +43,9 @@ export default function FixPaperPage() {
         <Spacer y={10} />
 
         <footer className={cn('text-center text-sm text-default-700 print:hidden')}>
-            <div className='flex justify-center'>
-                <span>每次审题消耗五<Link href='/library' className='underline'>额度</Link></span>
+            <div className='flex flex-col items-center'>
+                <div>每次审题消耗五<Link href='/library' className='underline'>额度</Link></div>
+                <div>仅支持文字版 PDF</div>
             </div>
             <Spacer y={0.5} />
             <div className='flex justify-center'>

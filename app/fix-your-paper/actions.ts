@@ -4,7 +4,7 @@ import { type ModelMessage, generateText } from 'ai'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 import { thinkAI } from '@/server/ai/configs'
-import pdf from 'pdf-parse/lib/pdf-parse.js'
+import pdf from 'pdf-parse'
 
 async function extractPdfText(file: File): Promise<string> {
     const arrayBuffer = Buffer.from(await file.arrayBuffer())
