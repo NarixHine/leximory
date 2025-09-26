@@ -18,7 +18,7 @@ import { AIGeneratableType } from '@/components/editory/generators/config'
 import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
 import { momentSH } from '@/lib/moment'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
-import { flashAI, nanoAI } from '@/server/ai/configs'
+import { miniAI, nanoAI } from '@/server/ai/configs'
 
 const tools: ToolSet = {
     getLib: {
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
         maxOutputTokens: 30000,
         temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
-        ...flashAI
+        ...miniAI
     })
 
     return result.toUIMessageStreamResponse()

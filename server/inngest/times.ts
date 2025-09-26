@@ -13,7 +13,7 @@ import { AI_GENERATABLE } from '@/components/editory/generators/config'
 import removeMd from 'remove-markdown'
 import { momentSH } from '@/lib/moment'
 import { TIMES_IS_PAUSED } from '@/lib/env'
-import { flashAI, landscapeImageAI, searchAI, thinkAI } from '../ai/configs'
+import { landscapeImageAI, miniAI, thinkAI } from '../ai/configs'
 import { speak } from '../ai/speak'
 
 const NOVEL_GENRES = ['science fiction', 'mystery', 'romance', 'historical fiction', 'adventure', 'thriller', 'adolescence fiction', 'adolescence fiction (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'teen romance story (no clichés)', 'dystopian', 'comedy', 'satire', 'urban fantasy', 'supernatural (but without uncomfortable elements)', 'school story', 'school story (set in modern-day China but no Gaokao/rivalry/rebellion clichés; be imaginative, genuine & heartfelt)', 'medical drama', 'suspense', 'detective fiction', 'psychological thriller', 'sci-fi romance', 'epistolary novel', 'noir', 'western', 'eastern', 'spy fiction', 'crime fiction', 'military fiction', 'post-apocalyptic', 'time travel', 'prosaic musings (with 散文 vibes)', 'space travel', 'legend', 'memoir', 'travelogue']
@@ -336,7 +336,8 @@ export const generateTimes = inngest.createFunction(
             prompt: `Today is ${date}. Write today's news, and make sure it is not repetitive with yesterday's news. Yesterday's news: ${newsYesterday}`,
             maxOutputTokens: 9000,
             temperature: 0.8,
-            ...searchAI
+            // ...searchAI,
+            ...miniAI
         })
 
         // Step 8: Annotate news
@@ -386,7 +387,7 @@ export const generateTimes = inngest.createFunction(
             The prompt should be detailed and specific, suitable for an AI image generation model.`,
             maxOutputTokens: 4000,
             temperature: 0.5,
-            ...flashAI
+            ...miniAI
         })
 
         // Step 12: Generate and upload image

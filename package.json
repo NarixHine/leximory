@@ -14,6 +14,7 @@
     }
   },
   "dependencies": {
+    "@ai-sdk-tools/devtools": "^0.6.1",
     "@ai-sdk/elevenlabs": "^1.0.6",
     "@ai-sdk/gateway": "^1.0.11",
     "@ai-sdk/google": "^2.0.8",
@@ -78,7 +79,7 @@
     "@upstash/redis": "^1.34.4",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
-    "ai": "^5.0.22",
+    "ai": "^5.0.54",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.1",
     "epubjs": "^0.3.93",
@@ -86,7 +87,7 @@
     "fast-shuffle": "^6.1.1",
     "framer-motion": "^12.23.12",
     "html-react-parser": "^5.2.5",
-    "inngest": "^3.40.1",
+    "inngest": "^3.43.1",
     "is-url": "^1.2.4",
     "itty-time": "^2.0.1",
     "jotai": "^2.11.3",

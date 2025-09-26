@@ -1,4 +1,4 @@
-import { generateText } from 'ai'
+import { generateText, stepCountIs } from 'ai'
 import { inngest } from './client'
 import { Lang } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
@@ -29,6 +29,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
     maxOutputTokens: 6000,
+    stopWhen: stepCountIs(1),
     ...miniAI,
 })
 
@@ -57,7 +58,8 @@ export const generateStory = inngest.createFunction(
             return await storyPrompt(comments, lang, userId, storyStyle)
         })
 
-        const { text } = await step.ai.wrap('generate-story', generateText, storyConfig)
+        const { steps: [{ content }] } = await step.ai.wrap('generate-story', generateText, storyConfig)
+        const text = content[0].type === 'text' ? content[0].text : ''
 
         // Trigger annotation process
         await step.sendEvent('annotate-story', {

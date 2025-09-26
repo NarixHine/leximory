@@ -1,17 +1,6 @@
-import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 import { GoogleVertexImageProviderOptions, vertex } from '@ai-sdk/google-vertex'
-import { openai, OpenAIResponsesProviderOptions } from '@ai-sdk/openai'
-import { LanguageModel, ToolSet, ToolChoice, ImageModel } from 'ai'
-
-type AI_CONFIG = {
-    model: LanguageModel,
-    providerOptions?: {
-        google?: GoogleGenerativeAIProviderOptions,
-        openai?: OpenAIResponsesProviderOptions
-    },
-    tools?: ToolSet,
-    toolChoice?: ToolChoice<NoInfer<ToolSet>>,
-}
+import { openai } from '@ai-sdk/openai'
+import { ImageModel } from 'ai'
 
 type VISION_AI_CONFIG = {
     model: ImageModel,
@@ -23,61 +12,22 @@ type VISION_AI_CONFIG = {
 }
 
 export const nanoAI = {
-    model: 'openai/gpt-5-nano',
-    providerOptions: {
-        openai: {
-            reasoningEffort: 'minimal',
-            reasoningSummary: 'auto'
-        }
-    }
-} as const satisfies AI_CONFIG
+    model: 'xai/grok-4-fast-non-reasoning',
+} as const
 
 export const miniAI = {
-    model: 'openai/gpt-5-mini',
-    providerOptions: {
-        openai: {
-            reasoningEffort: 'minimal',
-            reasoningSummary: 'auto'
-        }
-    }
-} as const satisfies AI_CONFIG
+    model: 'xai/grok-4-fast-non-reasoning',
+} as const
 
 export const thinkAI = {
-    model: 'openai/gpt-5-mini',
+    model: 'xai/grok-4-fast-reasoning',
     providerOptions: {
         openai: {
             reasoningSummary: 'auto',
             reasoningEffort: 'low'
         }
     }
-} as const satisfies AI_CONFIG
-
-export const flashAI = {
-    model: google('gemini-2.5-flash'),
-    providerOptions: {
-        google: {
-            thinkingConfig: {
-                thinkingBudget: 0
-            },
-            safetySettings: [{
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_NONE',
-            }, {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_NONE',
-            }, {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_NONE',
-            }, {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_NONE',
-            }, {
-                category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-                threshold: 'BLOCK_NONE',
-            }],
-        }
-    }
-} as const satisfies AI_CONFIG
+} as const
 
 export const searchAI = {
     model: 'openai/gpt-5-mini',
@@ -88,11 +38,13 @@ export const searchAI = {
         }
     },
     tools: {
-        web_search_preview: openai.tools.webSearchPreview({}),
+        web_search: openai.tools.webSearchPreview({
+            searchContextSize: 'high',
+        }),
     },
     // Force web search tool:
-    toolChoice: { type: 'tool', toolName: 'web_search_preview' },
-} as const satisfies AI_CONFIG
+    toolChoice: { type: 'tool', toolName: 'web_search' },
+} as const
 
 export const landscapeImageAI = {
     model: vertex.image('imagen-4.0-generate-preview-06-06'),

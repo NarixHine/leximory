@@ -5,7 +5,7 @@ import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '..
 import { getSubsStatus } from '../db/subs'
 import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/configs'
-import { generateText } from 'ai'
+import { generateText, stepCountIs } from 'ai'
 
 const topicsPrompt = (input: string) => ({
     system: `
@@ -15,6 +15,7 @@ const topicsPrompt = (input: string) => ({
     
     ${input}`,
     maxOutputTokens: 100,
+    stopWhen: stepCountIs(1),
     ...nanoAI
 })
 
@@ -107,7 +108,7 @@ export const annotateFullArticle = inngest.createFunction(
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
         ])
 
-        const content = annotatedChunks.map(chunk => chunk.text).join('\n\n')
+        const content = annotatedChunks.map(chunk => chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '').join('\n\n')
 
         const textUrl = `/library/${libId}/${textId}`
 
@@ -115,7 +116,7 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            await updateText({ id: textId, content, topics: topics.text.split('||') })
+            await updateText({ id: textId, content, topics: topics.steps[0].content[0].type==='text' ? topics.steps[0].content[0].text.split('||') : [] })
         })
 
         await step.run('set-annotation-progress-completed', async () => {
