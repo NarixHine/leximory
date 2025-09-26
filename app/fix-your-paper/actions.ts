@@ -4,6 +4,13 @@ import { type ModelMessage, generateText } from 'ai'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 import { thinkAI } from '@/server/ai/configs'
+import pdf from 'pdf-parse/lib/pdf-parse.js'
+
+async function extractPdfText(file: File): Promise<string> {
+    const arrayBuffer = Buffer.from(await file.arrayBuffer())
+    const { text } = await pdf(arrayBuffer)
+    return text
+}
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
@@ -93,9 +100,8 @@ async function buildMessages(params: {
                 text: '请分析以下试卷。'
             },
             {
-                type: 'file',
-                data: await paperFile.arrayBuffer(),
-                mediaType: paperFile.type
+                type: 'text',
+                text: await extractPdfText(paperFile)
             }
         ],
     }]
@@ -113,9 +119,8 @@ async function buildMessages(params: {
                 type: 'text',
                 text: '拟定试卷参考答案：'
             }, {
-                type: 'file',
-                data: await answerFile.arrayBuffer(),
-                mediaType: answerFile.type
+                type: 'text',
+                text: await extractPdfText(answerFile!),
             }]
         })
     }
@@ -124,7 +129,7 @@ async function buildMessages(params: {
 }
 
 const ANALYZE_PAPER_COST = 3
-export async function analyzePaper(paperFile: File, useFallbackModel = false) {
+export async function analyzePaper(paperFile: File) {
     if (await incrCommentaryQuota(ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
@@ -140,7 +145,7 @@ export async function analyzePaper(paperFile: File, useFallbackModel = false) {
     return { output: text }
 }
 
-export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string, useFallbackModel = false) {
+export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper - ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }

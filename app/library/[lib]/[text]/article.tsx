@@ -28,9 +28,9 @@ export const Article = ({ title, text, content, topics, ebook, lib, annotating, 
             [promptAtom, prompt]
         ]}>
             <div className='flex items-center justify-center gap-3'>
-                {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2' />}
+                {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2 print:invisible' />}
                 <EditableH />
-                <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' />
+                <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2 print:invisible' />
             </div>
             <div className='flex flex-wrap gap-2 justify-center items-center'>
                 {FormattedReadingTime && (

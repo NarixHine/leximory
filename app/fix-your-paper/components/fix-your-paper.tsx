@@ -3,7 +3,7 @@
 import { useAtom, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { Button, Switch } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { analyzePaper, compareAnswers } from '../actions'
 import {
     paperFileAtom,
@@ -12,7 +12,6 @@ import {
     resultAtom,
     canSubmitAtom,
     paperAnalysisAtom,
-    useFallbackModelAtom
 } from '../atoms'
 import { PiSealCheckDuotone, PiUpload } from 'react-icons/pi'
 import { MAX_FILE_SIZE } from '@/lib/config'
@@ -24,7 +23,6 @@ export default function FixPaper() {
     const setResult = useSetAtom(resultAtom)
     const [canSubmit] = useAtom(canSubmitAtom)
     const setPaperAnalysis = useSetAtom(paperAnalysisAtom)
-    const [useFallbackModel, setUseFallbackModel] = useAtom(useFallbackModelAtom)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (files: File[]) => void) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -46,7 +44,7 @@ export default function FixPaper() {
         setPaperAnalysis('')
         try {
             // Step 1: Analyze the paper
-            const { output: paperAnalysisOutput, error: paperAnalysisError } = await analyzePaper(paperFile[0], useFallbackModel)
+            const { output: paperAnalysisOutput, error: paperAnalysisError } = await analyzePaper(paperFile[0])
             if (paperAnalysisError) {
                 toast.error(paperAnalysisError)
                 return
@@ -56,7 +54,7 @@ export default function FixPaper() {
             }
 
             // Step 2: Compare with answer key
-            const { output: comparisonOutput, error: comparisonError } = await compareAnswers(paperFile[0], answerFile[0], paperAnalysisOutput!, useFallbackModel)
+            const { output: comparisonOutput, error: comparisonError } = await compareAnswers(paperFile[0], answerFile[0], paperAnalysisOutput!)
             if (comparisonError) {
                 toast.error(comparisonError)
                 return
@@ -118,14 +116,6 @@ export default function FixPaper() {
             </div>
 
             <div className='flex flex-col items-center gap-4 w-full'>
-                <Switch
-                    isSelected={useFallbackModel}
-                    onValueChange={setUseFallbackModel}
-                    size='sm'
-                >
-                    <span className='text-sm text-default-700'>Use Fallback Model</span>
-                </Switch>
-                
                 <Button
                     onPress={handleFix}
                     isDisabled={!canSubmit}

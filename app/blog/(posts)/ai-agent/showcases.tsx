@@ -2,6 +2,7 @@
 
 import { ChatMessages } from '@/app/library/chat/components/chat-interface'
 import { Accordion, AccordionItem } from '@heroui/react'
+import { convertV4PartToV5Part } from './transform'
 
 export function ShowcaseWrapper({ children, title, defaultExpanded }: { children: React.ReactNode, title: string, defaultExpanded?: boolean }) {
     return <Accordion variant='bordered' className='not-prose my-5' defaultExpandedKeys={defaultExpanded ? [title] : []}>
@@ -13,7 +14,7 @@ export function ShowcaseWrapper({ children, title, defaultExpanded }: { children
 
 export function HighlightChunk() {
     return <ShowcaseWrapper title='高分语块 Demo' defaultExpanded>
-        <ChatMessages messages={[{
+        <ChatMessages messages={convertV4PartToV5Part([{
             "id": "HfrdeavX2fvVegLk",
             "role": "user",
             "content": "对于文库 The Economist 中的 AI Manager 文章，提取出适合用在作文里的高分语块💫",
@@ -182,13 +183,13 @@ export function HighlightChunk() {
                     "text": "好的，我已经获取了文章内容。以下是一些适合作文使用的高分词汇和词组，量少而精：\n\n1. *grunt work* 苦差事，指辛苦乏味的工作\n2. *drudgery* 苦工，指辛苦、单调或乏味的工作\n3. *field* 处理（问题或情况）\n4. *plug skills gaps* 弥补技能差距\n5. *awry* 偏差，偏离预期的方向\n6. *indulge* 纵容，允许自己享受某种乐趣\n7. *bureaucracy* 官僚机构\n8. *accrete* 逐渐增长\n9. *bloat* 膨胀，尤指不希望的增长\n10. *warrant* 使有必要，证明...是正当的\n11. *unsung hero* 无名英雄\n12. *C-suite* 高管层\n13. *perverse* 违反常情的，指故意以不合理或不可接受的方式行事\n14. *turnover* 人员流动率\n15. *sentiment* 情绪，情感\n16. *chatty* 健谈的\n17. *invariably* 总是，不变地\n18. *pipe up* 插话\n19. *incentivise* 激励\n20. *ramble on* 喋喋不休\n21. *underling* 下属\n23. *roam* 漫游\n24. *constraint* 限制\n25. *secret sauce* 秘诀\n26. *codify* 编纂，整理成体系\n\n这些词汇和词组可以帮助你的作文更加地道有深度。"
                 }],
         }
-        ]} />
+        ])} />
     </ShowcaseWrapper>
 }
 
 export function TranslationDemo() {
     return <ShowcaseWrapper title='翻译复盘 Demo'>
-        <ChatMessages messages={[{
+        <ChatMessages messages={convertV4PartToV5Part([{
             "id": "HfrdeavX2fvVegLk",
             "role": "user",
             "content": "针对今天学习的英语单词，选出几个单词，对每个单词用中文出一道翻译🌐",
@@ -332,13 +333,13 @@ export function TranslationDemo() {
                 }
             ],
         }
-        ]} />
+        ])} />
     </ShowcaseWrapper>
 }
 
 export function StoryDemo() {
     return <ShowcaseWrapper title='故事生成 Demo'>
-        <ChatMessages messages={[
+        <ChatMessages messages={convertV4PartToV5Part([
             {
                 "id": "fD5TRf69R1aCEyGb",
                 "role": "user",
@@ -507,13 +508,13 @@ export function StoryDemo() {
                     }
                 ],
             }
-        ]} />
+        ])} />
     </ShowcaseWrapper>
 }
 
 export function ImportDemo() {
     return <ShowcaseWrapper title='批量导入 Demo'>
-        <ChatMessages messages={[
+        <ChatMessages messages={convertV4PartToV5Part([
             {
                 "id": "l3VA258CUwnXVSNf",
                 "role": "user",
@@ -716,13 +717,13 @@ export function ImportDemo() {
                     }
                 ],
             }
-        ]} />
+        ])} />
     </ShowcaseWrapper>
 }
 
 export function EssayDemo() {
     return <ShowcaseWrapper title='提炼语块，应用于写作 Demo'>
-        <ChatMessages messages={[
+        <ChatMessages messages={convertV4PartToV5Part([
             {
                 "id": "4ghjWIHvaXSxL8CI",
                 "role": "user",
@@ -1471,13 +1472,13 @@ export function EssayDemo() {
                     }
                 ],
             }
-        ]}></ChatMessages>
+        ])}></ChatMessages>
     </ShowcaseWrapper>
 }
 
 export function PaperDemo() {
     return <ShowcaseWrapper title='小猫钓鱼 Demo'>
-        <ChatMessages messages={[
+        <ChatMessages messages={convertV4PartToV5Part([
             {
                 "id": "56gZEaimGioz0xiS",
                 "role": "user",
@@ -1665,6 +1666,6 @@ export function PaperDemo() {
                     }
                 ],
             }
-        ]}></ChatMessages>
+        ])}></ChatMessages>
     </ShowcaseWrapper>
 }
