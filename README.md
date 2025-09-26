@@ -272,3 +272,7 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+
+### TODO
+
+- Fix missing AI-generated text returned by Inngest-wrapped AI SDK (currently mitigated by direct extraction from `steps` result)

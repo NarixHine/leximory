@@ -180,7 +180,7 @@ export async function getTextAnnotationProgress({ id }: { id: string }) {
 
 export async function setTextAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
     await redis.set(`text:${id}:annotation`, progress, {
-        ex: 60 * 5,
+        ex: seconds('3 minutes'),
     })
 }
 

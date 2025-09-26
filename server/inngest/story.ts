@@ -1,13 +1,12 @@
-import { generateText } from 'ai'
+import { generateText, stepCountIs } from 'ai'
 import { inngest } from './client'
 import { Lang } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
 import { parseComment } from '@/lib/comment'
-import { getBestCommentaryModel } from '../ai/models'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
-import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+import { miniAI } from '../ai/configs'
 
 const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
@@ -29,12 +28,9 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         关键词：
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
-    maxTokens: 6000,
-    providerOptions: {
-        thinkingConfig: {
-            thinkingBudget: 3000
-        }
-    } satisfies GoogleGenerativeAIProviderOptions
+    maxOutputTokens: 6000,
+    stopWhen: stepCountIs(1),
+    ...miniAI,
 })
 
 export const generateStory = inngest.createFunction(
@@ -62,16 +58,14 @@ export const generateStory = inngest.createFunction(
             return await storyPrompt(comments, lang, userId, storyStyle)
         })
 
-        const story = await step.ai.wrap('generate-story', generateText, {
-            model: getBestCommentaryModel(lang),
-            ...storyConfig,
-        })
+        const { steps: [{ content }] } = await step.ai.wrap('generate-story', generateText, storyConfig)
+        const text = content[0].type === 'text' ? content[0].text : ''
 
         // Trigger annotation process
         await step.sendEvent('annotate-story', {
             name: 'app/article.imported',
             data: {
-                article: story.text,
+                article: text,
                 lang,
                 textId,
                 onlyComments: false,

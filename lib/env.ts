@@ -23,6 +23,7 @@ const env = createEnv({
         R2_SECRET_ACCESS_KEY: z.string().min(1),
         R2_BUCKET_NAME: z.string().min(1),
         R2_PUBLIC_URL: z.string().min(1),
+        AI_GATEWAY_API_KEY: z.string().min(1),
     },
 
     client: {
@@ -54,6 +55,7 @@ const env = createEnv({
         R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
         R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
         R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
+        AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
     },
 })
 

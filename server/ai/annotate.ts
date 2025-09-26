@@ -1,9 +1,9 @@
 import 'server-only'
 import { Lang } from '@/lib/config'
 import { generateText } from 'ai'
-import { getBestArticleAnnotationModel, noThinkingConfig } from './models'
 import { instruction } from '@/lib/prompt'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
+import { miniAI } from './configs'
 
 export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string, autoTrim: boolean = true) => ({
     system: `
@@ -19,14 +19,11 @@ export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyCom
     ${await getLanguageServerStrategy(lang).getAccentPrompt(userId)}
     
     ${input}`,
-    maxTokens: 12000,
-    ...noThinkingConfig
+    maxOutputTokens: 12000,
+    ...miniAI
 })
 
 export const annotateParagraph = async ({ content, lang, userId, autoTrim = true }: { content: string, lang: Lang, userId: string, autoTrim?: boolean }) => {
-    const { text } = await generateText({
-        model: getBestArticleAnnotationModel(lang),
-        ...(await articleAnnotationPrompt(lang, content, false, userId, autoTrim)),
-    })
+    const { text } = await generateText(await articleAnnotationPrompt(lang, content, false, userId, autoTrim))
     return text
 }

@@ -1,22 +1,22 @@
-import { generateText } from 'ai'
 import { inngest } from './client'
 import { prefixUrl } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'
-import { noThinkingConfig } from '../ai/models'
-import { getBestArticleAnnotationModel } from '../ai/models'
 import { articleAnnotationPrompt } from '../ai/annotate'
+import { nanoAI } from '../ai/configs'
+import { generateText, stepCountIs } from 'ai'
 
-const topicsPrompt = async (input: string) => ({
+const topicsPrompt = (input: string) => ({
     system: `
     用1~3个中文标签表示下文的话题或关键词。每个关键词间用||分隔。
     `,
     prompt: `请从下文提取出1~3个中文标签表示下文的话题或关键词：
     
     ${input}`,
-    maxTokens: 100,
-    ...noThinkingConfig
+    maxOutputTokens: 100,
+    stopWhen: stepCountIs(1),
+    ...nanoAI
 })
 
 const chunkText = (text: string, maxLength: number): string[] => {
@@ -85,7 +85,7 @@ export const annotateFullArticle = inngest.createFunction(
     { id: 'annotate-article' },
     { event: 'app/article.imported' },
     async ({ step, event }) => {
-        const { article, textId, onlyComments, userId } = event.data
+        const { data: { article, textId, onlyComments, userId } } = event
 
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
@@ -98,19 +98,17 @@ export const annotateFullArticle = inngest.createFunction(
         const chunks = chunkText(article, getLanguageStrategy(lang).maxChunkSize)
 
         const { topicsConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
-            const topicsConfig = await topicsPrompt(article)
+            const topicsConfig = topicsPrompt(article)
             const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
             return { topicsConfig, annotationConfigs }
         })
 
         const [topics, ...annotatedChunks] = await Promise.all([
-            step.ai.wrap('annotate-topics', generateText, { model: await getBestArticleAnnotationModel(lang), ...topicsConfig }),
-            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, {
-                model: getBestArticleAnnotationModel(lang), ...config
-            }))
+            step.ai.wrap('annotate-topics', generateText, topicsConfig),
+            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
         ])
 
-        const content = annotatedChunks.map(chunk => chunk.text).join('\n\n')
+        const content = annotatedChunks.map(chunk => chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '').join('\n\n')
 
         const textUrl = `/library/${libId}/${textId}`
 
@@ -118,7 +116,7 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            await updateText({ id: textId, content, topics: topics.text.split('||') })
+            await updateText({ id: textId, content, topics: topics.steps[0].content[0].type==='text' ? topics.steps[0].content[0].text.split('||') : [] })
         })
 
         await step.run('set-annotation-progress-completed', async () => {

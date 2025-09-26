@@ -26,9 +26,10 @@ export type MarkdownProps = {
     onlyComments?: boolean
     print?: boolean
     commentClassName?: string
+    compact?: boolean
 }
 
-function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print }: MarkdownProps) {
+function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
@@ -68,9 +69,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                     component: ({ children }) => <span className='whitespace-nowrap'>{children}</span>,
                 },
                 img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
-                p: (props) => (<div {...props} className='mb-5 last:mb-0' />),
+                p: (props) => (<div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />),
                 a: (props) => (<Link {...props} className='underline underline-offset-4' />),
-                hr: () => (<div className='text-center text-2xl mt-5 mb-4'>﹡﹡﹡</div>),
+                hr: () => (<div className={cn('text-center text-2xl', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
             },
             renderRule(next, node, _, state) {
                 if (node.type === RuleType.codeBlock && node.lang === 'latex') {

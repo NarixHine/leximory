@@ -1,12 +1,9 @@
 'use server'
 
-import { type CoreMessage, generateText } from 'ai'
-import { googleModels } from '@/server/ai/models'
+import { type ModelMessage, generateText } from 'ai'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
-
-const model = googleModels['pro-2.5']
-const fallbackModel = googleModels['flash-2.5']
+import { thinkAI } from '@/server/ai/configs'
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
@@ -81,11 +78,11 @@ async function buildMessages(params: {
     paperFile: File,
     answerFile: File,
     paperAnalysis: string
-}): Promise<CoreMessage[]> {
+}): Promise<ModelMessage[]> {
     const { paperFile } = params
     const { paperAnalysis, answerFile } = 'paperAnalysis' in params ? params : { paperAnalysis: null, answerFile: null }
 
-    const messages: CoreMessage[] = [{
+    const messages: ModelMessage[] = [{
         role: 'system',
         content: `${SYSTEM_PROMPT}\n\n## 各大题规则\n\n${Object.keys(SECTION_PROMPTS).map(section => `### ${section}\n\n${SECTION_PROMPTS[section as keyof typeof SECTION_PROMPTS]}`).join('\n\n')}`
     }, {
@@ -98,8 +95,8 @@ async function buildMessages(params: {
             {
                 type: 'file',
                 data: await paperFile.arrayBuffer(),
-                mimeType: paperFile.type,
-            },
+                mediaType: paperFile.type
+            }
         ],
     }]
 
@@ -118,7 +115,7 @@ async function buildMessages(params: {
             }, {
                 type: 'file',
                 data: await answerFile.arrayBuffer(),
-                mimeType: answerFile.type,
+                mediaType: answerFile.type
             }]
         })
     }
@@ -134,10 +131,10 @@ export async function analyzePaper(paperFile: File, useFallbackModel = false) {
 
     const messages = await buildMessages({ paperFile })
     const { text } = await generateText({
-        model: useFallbackModel ? fallbackModel : model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000
+        maxOutputTokens: 20000,
+        ...thinkAI
     })
 
     return { output: text }
@@ -150,10 +147,10 @@ export async function compareAnswers(paperFile: File, answerFile: File, paperAna
 
     const messages = await buildMessages({ paperFile, answerFile, paperAnalysis })
     const { text } = await generateText({
-        model: useFallbackModel ? fallbackModel : model,
         messages,
         temperature: 0.01,
-        maxTokens: 20000,
+        maxOutputTokens: 20000,
+        ...thinkAI
     })
 
     return { output: text }
