@@ -124,7 +124,7 @@ async function buildMessages(params: {
 }
 
 const ANALYZE_PAPER_COST = 3
-export async function analyzePaper(paperFile: File) {
+export async function analyzePaper(paperFile: File, useFallbackModel = false) {
     if (await incrCommentaryQuota(ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
@@ -140,7 +140,7 @@ export async function analyzePaper(paperFile: File) {
     return { output: text }
 }
 
-export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string) {
+export async function compareAnswers(paperFile: File, answerFile: File, paperAnalysis: string, useFallbackModel = false) {
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.fixYourPaper - ANALYZE_PAPER_COST)) {
         return { error: '本月 AI 审题额度耗尽' }
     }
