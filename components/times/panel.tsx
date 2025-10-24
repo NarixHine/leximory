@@ -12,7 +12,7 @@ import { fetchIssue, fetchLatestIssue, fetchMoreIssues } from './actions'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { getRecentTimesData } from '@/server/db/times'
 import { Suspense, useEffect } from 'react'
-import { prefixUrl, TIMES_PAGE_SIZE } from '@/lib/config'
+import { prefixUrl } from '@/lib/config'
 import { useQueryState } from 'nuqs'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
@@ -25,7 +25,6 @@ import { useIsMobile } from '@/lib/hooks'
 import { useAtomValue } from 'jotai'
 import { isFullScreenAtom } from './atoms'
 import AudioPlayer from '../ui/audio-player'
-import { TIMES_IS_PAUSED } from '@/lib/env'
 
 interface PanelProps {
     recentData: Awaited<ReturnType<typeof getRecentTimesData>>
@@ -257,11 +256,9 @@ function TimesSidebar({ data: initialData }: { data: Awaited<ReturnType<typeof g
             <div className='flex flex-row md:flex-col md:static inset-y-0 left-0 z-40'>
                 <div className='p-6 md:ml-6'>
                     <div className='flex flex-row md:flex-col space-x-4 md:space-x-0 md:space-y-3'>
-                        {TIMES_IS_PAUSED && (
-                            <div className='text-sm font-mono text-center text-default-500'>
-                                Update Paused
-                            </div>
-                        )}
+                        <div className='text-sm font-mono text-center text-default-500'>
+                            A Sunset Feature
+                        </div>
                         {data?.pages.map((page) =>
                             page.data.map(({ date, cover }: TimesSummaryData) => (
                                 <Suspense fallback={<TimesDateCardSkeleton />} key={date}>

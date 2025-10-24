@@ -46,7 +46,7 @@ export default function Define(props: { left: number | null, width: number | nul
                 exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
                 transition={isMobileIos ? undefined : { duration: 0.2 }}
                 className={cn(
-                    'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-gray-200 dark:border-gray-800 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white',
+                    'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-default-100 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white',
                     isEbookMode && 'opacity-90',
                     defineClassName
                 )}

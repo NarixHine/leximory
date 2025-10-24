@@ -2,7 +2,6 @@
 
 import { supabase } from '@/server/client/supabase'
 import { updatePlan } from '@/server/auth/user'
-import { inngest } from '@/server/inngest/client'
 import { Plan } from '@/lib/config'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/server/auth/role'
@@ -42,27 +41,4 @@ export async function deleteUser(userId: string) {
 
     revalidatePath('/admin')
     return { success: true }
-}
-
-export async function regenerateDailyTimes() {
-    await requireAdmin()
-
-    await inngest.send({
-        name: 'times/regeneration.requested'
-    })
-
-    return { success: true, message: 'Daily times regeneration request submitted (will be processed by the system)' }
-}
-
-export async function regenerateTimesQuiz(date: string) {
-    await requireAdmin()
-
-    await inngest.send({
-        name: 'times/quiz.requested',
-        data: {
-            date
-        }
-    })
-
-    return { success: true, message: 'Times quiz regeneration request submitted (will be processed by the system)' }
 }

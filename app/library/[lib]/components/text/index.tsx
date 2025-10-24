@@ -103,7 +103,7 @@ export function AddTextButton() {
                             toast.error('识别内容过长，请手动录入')
                             return
                         }
-                        await addAndGenerate({ title, content, lib })
+                        addAndGenerate({ title, content, lib })
                     } catch {
                         toast.error('文章解析失败，请手动录入')
                     }

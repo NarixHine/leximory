@@ -1,16 +1,3 @@
-import { GoogleVertexImageProviderOptions, vertex } from '@ai-sdk/google-vertex'
-import { openai } from '@ai-sdk/openai'
-import { ImageModel } from 'ai'
-
-type VISION_AI_CONFIG = {
-    model: ImageModel,
-    aspectRatio?: `${number}:${number}`,
-    providerOptions?: {
-        google?: GoogleVertexImageProviderOptions,
-    }
-    maxImagesPerCall?: number
-}
-
 export const nanoAI = {
     model: 'xai/grok-4-fast-non-reasoning',
 } as const
@@ -28,30 +15,6 @@ export const thinkAI = {
         }
     }
 } as const
-
-export const searchAI = {
-    model: 'openai/gpt-5-mini',
-    providerOptions: {
-        openai: {
-            reasoningEffort: 'minimal',
-            reasoningSummary: 'auto'
-        }
-    },
-    tools: {
-        web_search: openai.tools.webSearchPreview({
-            searchContextSize: 'high',
-        }),
-    },
-    // Force web search tool:
-    toolChoice: { type: 'tool', toolName: 'web_search' },
-} as const
-
-export const landscapeImageAI = {
-    model: vertex.image('imagen-4.0-generate-preview-06-06'),
-    maxImagesPerCall: 1,
-    aspectRatio: '16:9'
-} as const satisfies VISION_AI_CONFIG
-
 
 export const elevenLabsVoiceConfig = {
     'BrE': {
