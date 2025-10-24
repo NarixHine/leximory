@@ -317,9 +317,6 @@ importers:
       react-type-animation:
         specifier: ^3.2.0
         version: 3.2.0(prop-types@15.8.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      react-use-system-color-mode:
-        specifier: ^1.0.4
-        version: 1.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       recharts:
         specifier: ^2.15.1
         version: 2.15.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -5863,12 +5860,6 @@ packages:
       prop-types: ^15.5.4
       react: '>= 15.0.0'
       react-dom: '>= 15.0.0'
-
-  react-use-system-color-mode@1.0.4:
-    resolution: {integrity: sha512-P++n/6/h3xfxn/76GT3bVdNstx4SLQsmDZE18rdFWVHmhPRF0jcuRXFTctBExwMZsjsHnWUGFhvO7/63sh5f6g==}
-    peerDependencies:
-      react: '>=16.8.1'
-      react-dom: '>=16.8.1'
 
   react@19.1.1:
     resolution: {integrity: sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==}
@@ -13778,11 +13769,6 @@ snapshots:
   react-type-animation@3.2.0(prop-types@15.8.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
     dependencies:
       prop-types: 15.8.1
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
-  react-use-system-color-mode@1.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
-    dependencies:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 

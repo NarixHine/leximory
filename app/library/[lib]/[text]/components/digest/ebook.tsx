@@ -8,7 +8,6 @@ import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import { useSystemColorMode } from 'react-use-system-color-mode'
 import { contentAtom, ebookAtom, textAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { useAtom, useAtomValue } from 'jotai'
@@ -16,7 +15,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
-import { useScrollLock } from 'usehooks-ts'
+import { useDarkMode, useScrollLock } from 'usehooks-ts'
 import { toast } from 'sonner'
 import { save } from '../../actions'
 import { getChapterName } from '@/lib/epub'
@@ -35,20 +34,15 @@ const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
 
-function updateTheme(rendition: Rendition, theme: 'light' | 'dark') {
+function updateTheme(rendition: Rendition, isDarkMode: boolean) {
     const themes = rendition.themes
     themes.override('direction', 'ltr')
-    switch (theme) {
-        case 'dark': {
-            themes.override('color', '#CECDC3')
-            themes.override('background', '#100F0F')
-            break
-        }
-        case 'light': {
-            themes.override('color', '#100F0F')
-            themes.override('background', '#FFFCF0')
-            break
-        }
+    if (isDarkMode) {
+        themes.override('color', '#CECDC3')
+        themes.override('background', '#100F0F')
+    } else {
+        themes.override('color', '#100F0F')
+        themes.override('background', '#FFFCF0')
     }
 }
 
@@ -81,12 +75,12 @@ export default function Ebook() {
     const [page, setPage] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
 
-    const theme = useSystemColorMode()
+    const { isDarkMode } = useDarkMode()
     useEffect(() => {
         if (themeRendition.current) {
-            updateTheme(themeRendition.current, theme)
+            updateTheme(themeRendition.current, isDarkMode)
         }
-    }, [lang, theme])
+    }, [lang, isDarkMode])
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useState(false)
@@ -188,7 +182,7 @@ export default function Ebook() {
                         <CircularProgress color='primary' size='lg' className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' />
                     }
                     isRTL={strategy.isRTL}
-                    readerStyles={theme === 'dark' ? darkReaderTheme : lightReaderTheme}
+                    readerStyles={isDarkMode ? darkReaderTheme : lightReaderTheme}
                     location={location}
                     locationChanged={epubcifi => {
                         setLocation(epubcifi)
@@ -199,7 +193,7 @@ export default function Ebook() {
                         }
                     }}
                     getRendition={rendition => {
-                        updateTheme(rendition, theme)
+                        updateTheme(rendition, isDarkMode)
                         rendition.themes.default({
                             p: {
                                 'margin-top': '0.6em',
