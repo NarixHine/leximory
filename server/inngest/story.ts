@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from 'ai'
+import { generateText } from 'ai'
 import { inngest } from './client'
 import { Lang } from '@/lib/config'
 import { getLanguageStrategy } from '@/lib/languages'
@@ -29,7 +29,6 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
     `,
     maxOutputTokens: 6000,
-    stopWhen: stepCountIs(1),
     ...miniAI,
 })
 

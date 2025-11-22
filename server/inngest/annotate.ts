@@ -5,7 +5,7 @@ import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '..
 import { getSubsStatus } from '../db/subs'
 import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/configs'
-import { generateText, stepCountIs } from 'ai'
+import { generateText } from 'ai'
 
 const topicsPrompt = (input: string) => ({
     system: `
@@ -15,7 +15,6 @@ const topicsPrompt = (input: string) => ({
     
     ${input}`,
     maxOutputTokens: 100,
-    stopWhen: stepCountIs(1),
     ...nanoAI
 })
 
