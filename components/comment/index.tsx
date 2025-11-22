@@ -8,7 +8,7 @@ import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill } from 'react-icons/pi'
+import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill, PiEyeSlashDuotone } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
@@ -322,7 +322,17 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 </PopoverContent>
             </Popover>
             {
-                isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm')}>
+                isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm group')}>
+                    <Button
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        color="default"
+                        onPress={() => setPortions([portions[0]])}
+                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                        <PiEyeSlashDuotone />
+                    </Button>
                     <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                 </span>
             }
