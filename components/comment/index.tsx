@@ -23,7 +23,7 @@ import { parseCommentParams } from '@/lib/comment'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
-import { getClickedChunk } from './utils'
+import { getClickedChunk, readStreamableValue } from './utils'
 import StoneSkeleton from '../ui/stone-skeleton'
 import FlatCard from '../ui/flat-card'
 import { Spinner } from '@heroui/spinner'
@@ -93,7 +93,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             if (text) {
                 try {
                     let commentary = ''
-                    for await (const delta of text) {
+                    for await (const delta of readStreamableValue(text)) {
                         commentary += delta
                         setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
                         if (isOnDemand && !isLoaded) {
