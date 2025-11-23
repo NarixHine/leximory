@@ -3,7 +3,7 @@ export const nanoAI = {
 } as const
 
 export const miniAI = {
-    model: 'google/gemini-2.5-flash',
+    model: 'xai/grok-4-fast-non-reasoning',
 } as const
 
 export const thinkAI = {
