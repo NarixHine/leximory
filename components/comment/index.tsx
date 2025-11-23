@@ -100,7 +100,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             setIsLoaded(true)
                         }
                     }
-                } catch {
+                } catch (error) {
+                    console.error(error)
                     toast.error('生成中止')
                 }
             }
