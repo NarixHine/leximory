@@ -32,7 +32,7 @@ export default function BlogHome() {
                         </H>
                     </Link>
                     <H disableCenter className={'text-sm -my-0.5 text-default-400'}>
-                        <Suspense fallback={' '}>{momentSH(post.date).format('ll')}</Suspense>
+                        {new Date(post.date).toLocaleDateString('zh-CN')}
                     </H>
                 </span>)}
             </div>
