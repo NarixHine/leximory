@@ -4,12 +4,11 @@
 
 ### Introduction
 
-> *Leximory* is a language learning platform designed to enhance foreign language proficiency, vocabulary in particular, by means of **intensive input**. 
+> *Leximory* is a language learning platform designed to enhance foreign language proficiency by means of **extensive input**. 
 
-Leximory integrates features like:
+Leximory integrates features including:
 
 - One-click **foreign publication importing**,
-- **Annotated novels and news** updated every day (currently paused),
 - AI-driven targeted **annotations with etymologies**, 
 - **Combination of listening** with reading, 
 - **Easy reviewing** of saved words,
@@ -203,7 +202,6 @@ ALTER TABLE public.libraries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lexicon ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.texts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.times ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
 ```
@@ -216,33 +214,7 @@ Create a `.env.local` file in the root of the project by copying the example fil
 cp .env.example .env.local
 ```
 
-You will need to populate this file with credentials from the following services:
-
-*   **Supabase**:
-    *   `SUPABASE_URL`
-    *   `SUPABASE_SERVICE_ROLE_KEY`
-    *   `NEXT_PUBLIC_SUPABASE_URL`
-    *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-*   **Upstash**:
-    *   `UPSTASH_REDIS_REST_URL`
-    *   `UPSTASH_REDIS_REST_TOKEN`
-*   **Google Cloud (Vertex AI)**:
-    *   `GOOGLE_VERTEX_CLIENT_EMAIL`
-    *   `GOOGLE_VERTEX_PRIVATE_KEY`
-    *   `GOOGLE_VERTEX_PROJECT`
-    *   `GOOGLE_VERTEX_LOCATION`
-*   **ElevenLabs**:
-    *   `ELEVENLABS_API_KEY`
-*   **Creem**:
-    *   `CREEM_API_KEY`
-    *   `CREEM_WEBHOOK_SECRET`
-*   **Web Push Notifications**:
-    *   `VAPID_PRIVATE_KEY`
-    *   `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
-*   **General**:
-    *   `NEXT_PUBLIC_URL`: The public URL of your deployment.
-
-While we incorporate Cloudflare R2 and Creem as necessary components of the Leximory infrastructure, you can modify or replace them when developing locally. (R2 is a storage solution *at scale*, and Creem is for subscription processing, neither of which is required for local development.)
+You will need to populate this file with credentials. For more information, reference [`env.ts`](./lib/env.ts).
 
 #### 6. Run the Development Server
 

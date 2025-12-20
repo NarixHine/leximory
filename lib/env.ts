@@ -25,19 +25,26 @@ const env = createEnv({
     },
 
     runtimeEnv: {
+        // Audio Generation
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
+        // Redis
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+        // Web Push Notifications
         VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
         NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        // Creem Integration
         CREEM_API_KEY: process.env.CREEM_API_KEY,
         CREEM_WEBHOOK_SECRET: process.env.CREEM_WEBHOOK_SECRET,
+        // Supabase
         SUPABASE_URL: process.env.SUPABASE_URL,
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        // AI Gateway
         AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+        // Scraping URL
         TABSTACK_API_KEY: process.env.TABSTACK_API_KEY,
     },
 })
