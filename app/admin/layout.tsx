@@ -1,6 +1,6 @@
 import { getUserOrThrow } from '@/server/auth/user'
 import { ADMIN_UID } from '@/lib/config'
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import Main from '@/components/ui/main'
 import AdminBreadcrumbs from './components/breadcrumbs'
 import { cn } from '@/lib/utils'
@@ -9,7 +9,17 @@ export const metadata = {
     title: 'Admin Area',
 }
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
+    return (
+        <Suspense>
+            <AdminLayoutContetn>
+                {children}
+            </AdminLayoutContetn>
+        </Suspense>
+    )
+}
+
+async function AdminLayoutContetn({ children }: { children: ReactNode }) {
     const { userId } = await getUserOrThrow()
 
     if (userId !== ADMIN_UID) {

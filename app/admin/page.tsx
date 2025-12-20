@@ -1,13 +1,17 @@
 import { Suspense } from 'react'
 import AdminOverview from './components/overview'
 import UsersList from './components/user-list'
-import { Card, CardBody, CardHeader } from '@heroui/card'
+import { Card, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
 import { getUsersOverview, getAllUsers } from './data-fetching'
-import { PiNewspaperDuotone } from 'react-icons/pi'
-import LinkButton from '@/components/ui/link-button'
 
-export default async function AdminPage() {
+export default function AdminPage() {
+    return <Suspense>
+        <AdminPageContent />
+    </Suspense>
+}
+
+async function AdminPageContent() {
     const [overview, users] = await Promise.all([
         getUsersOverview(),
         getAllUsers()
