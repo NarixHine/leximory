@@ -29,7 +29,7 @@ export default function MdImg({ src, alt = 'Image', title }: {
                 alt={alt}
                 src={src}
                 className='rounded-lg'
-                unoptimized={ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
+                unoptimized={!ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
                     return pattern.hostname === new URL(src).hostname && pattern.protocol === new URL(src).protocol
                 })}
                 loading='lazy'

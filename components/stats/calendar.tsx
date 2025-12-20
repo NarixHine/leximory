@@ -1,11 +1,10 @@
-'use client'
-
 import { PiBookBookmarkDuotone } from 'react-icons/pi'
 import { CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
 import { momentSH } from '@/lib/moment'
 import FlatCard from '../ui/flat-card'
+import { connection } from 'next/server'
+import { Suspense } from 'react'
 
 interface VocabularyCalendarProps {
     wordCountData: Map<string, number>
@@ -58,7 +57,14 @@ function getTextColor(count: number): string {
 }
 
 export default function VocabularyCalendar({ wordCountData, isLoading }: VocabularyCalendarProps) {
-    const [today] = useState(momentSH())
+    return <Suspense>
+        <VocabularyCalendarUI wordCountData={wordCountData} isLoading={isLoading} />
+    </Suspense>
+}
+
+async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCalendarProps) {
+    await connection()
+    const today = momentSH()
     const currentMonth = today.month() // 0-indexed
     const currentYear = today.year()
 
@@ -136,6 +142,5 @@ export default function VocabularyCalendar({ wordCountData, isLoading }: Vocabul
 }
 
 export function HeatmapSkeleton() {
-    // Render the calendar in a loading state
     return <VocabularyCalendar wordCountData={new Map()} isLoading={true} />
 }

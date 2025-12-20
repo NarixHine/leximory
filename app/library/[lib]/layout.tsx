@@ -2,7 +2,7 @@ import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
 import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
 import { redirect } from 'next/navigation'
@@ -18,24 +18,21 @@ export async function generateMetadata(props: LibProps) {
     }
 }
 
-export default async function LibLayout(
-    props: {
-        children: ReactNode
-        params: Promise<{ lib: string }>
-    }
-) {
-    const params = await props.params
+async function LibLayoutContent({
+    params,
+    children
+}: {
+    params: Promise<{ lib: string }>
+    children: ReactNode
+}) {
+    const p = await params
 
-    const {
-        children
-    } = props
-
-    const { isReadOnly, isOwner, lang, price, access, isStarred } = await authReadToLibWithoutThrowing(params.lib)
+    const { isReadOnly, isOwner, lang, price, access, isStarred } = await authReadToLibWithoutThrowing(p.lib)
 
     // Redirect to unauthorized page if user is not owner and hasn't starred the library
     if (!isOwner && !isStarred) {
         if (access === LIB_ACCESS_STATUS.public)
-            redirect(`/library/unauthorized/${params.lib}`)
+            redirect(`/library/unauthorized/${p.lib}`)
         else
             throw new Error('Access denied to this library')
     }
@@ -43,7 +40,7 @@ export default async function LibLayout(
     return (<HydrationBoundary options={{
         enableReHydrate: true
     }} hydrateAtoms={[
-        [libAtom, params.lib],
+        [libAtom, p.lib],
         [isReadOnlyAtom, isReadOnly],
         [langAtom, lang as Lang],
         [isStarredAtom, isStarred],
@@ -51,4 +48,17 @@ export default async function LibLayout(
     ]}>
         {children}
     </HydrationBoundary>)
+}
+
+export default function LibLayout(
+    props: {
+        children: ReactNode
+        params: Promise<{ lib: string }>
+    }
+) {
+    return (
+        <Suspense>
+            <LibLayoutContent params={props.params} children={props.children} />
+        </Suspense>
+    )
 }

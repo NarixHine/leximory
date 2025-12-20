@@ -23,7 +23,7 @@ import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { recentAccessAtom } from '@/app/library/components/lib'
 import { getAnnotationProgress, getNewText, remove, revalidate, save, markAsVisited } from '../../actions'
-import { useTransitionRouter } from 'next-view-transitions'
+import { useRouter } from 'next/navigation'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
 import { Progress } from '@heroui/progress'
@@ -113,7 +113,7 @@ function EditingView() {
     <Topics topics={modifiedTopics} remove={handleTopicRemove} />
   ), [modifiedTopics, handleTopicRemove])
 
-  const router = useTransitionRouter()
+  const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)

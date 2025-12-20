@@ -1,7 +1,6 @@
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
-import { ViewTransitions } from 'next-view-transitions'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
 import env, { IS_PROD } from '@/lib/env'
@@ -57,21 +56,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	].join(' ')
 
 	return (
-		<ViewTransitions>
-			<html lang='zh-CN' className={`${fontVariables} subpixel-antialiased`}>
-				<body className='font-ui'>
-					<SpeedInsights />
-					<Analytics />
-					{!IS_PROD && <AIDevtools />}
-					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
-						<div className='relative flex flex-col print:bg-white'>
-							{children}
-							<InstallLeximory />
-							<Dock />
-						</div>
-					</Providers>
-				</body>
-			</html>
-		</ViewTransitions>
+		<html lang='zh-CN' className={`${fontVariables} subpixel-antialiased`}>
+			<body className='font-ui'>
+				<SpeedInsights />
+				<Analytics />
+				{!IS_PROD && <AIDevtools />}
+				<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
+					<div className='relative flex flex-col print:bg-white'>
+						{children}
+						<InstallLeximory />
+						<Dock />
+					</div>
+				</Providers>
+			</body>
+		</html>
 	)
 }

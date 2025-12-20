@@ -1,10 +1,11 @@
 import WordChart from './word-chart'
 import moment from 'moment'
-import VocabularyCalendar from './calendar'
+import VocabularyCalendar, { HeatmapSkeleton } from './calendar'
 import { getUserOrThrow } from '@/server/auth/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
 import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
+import { Suspense } from 'react'
 
 const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'
@@ -30,9 +31,8 @@ export async function UserWordStats({ color = 'warning' }: { color?: AvailableCh
 }
 
 export async function WordHeatmap({ uid }: { uid: string }) {
-    'use cache'
     const countMap = await getCountMap({ uid })
-    return <VocabularyCalendar wordCountData={countMap} />
+    return <Suspense fallback={<HeatmapSkeleton />}><VocabularyCalendar wordCountData={countMap} /></Suspense>
 }
 
 export async function UserWordHeatmap() {

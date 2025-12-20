@@ -22,7 +22,7 @@ async function NavContent(props: NavProps) {
 
 export default function Nav(props: NavProps) {
     return (
-        <Suspense fallback={<NavBreadcrumbs {...props} loading={true} />}>
+        <Suspense fallback={<NavBreadcrumbs {...props} loading />}>
             <NavContent {...props} />
         </Suspense>
     )
