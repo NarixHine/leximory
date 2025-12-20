@@ -1,7 +1,19 @@
 import { Snippet } from '@heroui/snippet'
 import { getUserOrThrow } from '@/server/auth/user'
+import { Suspense } from 'react'
 
-export default async function UID() {
+export default function UidSnippet() {
+    return <Suspense fallback={
+        <Snippet classNames={{
+            pre: 'my-0',
+            base: 'not-prose'
+        }} />
+    }>
+        <UidSnippetContent />
+    </Suspense>
+}
+
+async function UidSnippetContent() {
     const { userId } = await getUserOrThrow()
     return <Snippet classNames={{
         pre: 'my-0',
