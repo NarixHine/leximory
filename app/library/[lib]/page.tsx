@@ -8,6 +8,10 @@ import { LibProps } from '@/lib/types'
 import { PiUsers, PiSortAscending, PiPrinter } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS } from '@/lib/config'
 import LinkButton from '@/components/ui/link-button'
+import { Suspense } from 'react'
+import NavBreadcrumbs from '@/components/nav/breadcrumbs'
+import { Button } from '@heroui/button'
+import { Spinner } from '@heroui/spinner'
 
 async function getData(lib: string) {
     const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)
@@ -15,12 +19,10 @@ async function getData(lib: string) {
     return { texts, name, isReadOnly, isOwner, access }
 }
 
-export default async function Page(props: LibProps) {
-    const params = await props.params
-    const { lib } = params
+async function PageContent({ params }: LibProps) {
+    const { lib } = await params
     const { texts, name, isReadOnly, isOwner, access } = await getData(lib)
-
-    return <Main>
+    return <>
         <Nav lib={{ id: lib, name }}></Nav>
         <H fancy className='mb-4 text-5xl'>{name}</H>
         <div className='flex justify-center mb-5 gap-1 flex-wrap'>
@@ -35,5 +37,24 @@ export default async function Page(props: LibProps) {
             </LinkButton>}
         </div>
         <TextList texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))} isReadOnly={isReadOnly} />
+    </>
+}
+
+export default async function Page(props: LibProps) {
+    return <Main>
+        <Suspense fallback={<>
+            <NavBreadcrumbs loading></NavBreadcrumbs>
+            <H fancy className='mb-4 text-5xl animate-pulse opacity-50'>
+                <Spinner variant='dots' />
+            </H>
+            <div className='flex justify-center mb-5 gap-1 flex-wrap'>
+                <Button variant='light' startContent={<PiPrinter />}>
+                    打印文库
+                </Button>
+            </div>
+            <TextList texts={[]} isReadOnly={true} />
+        </>}>
+            <PageContent params={props.params} />
+        </Suspense>
     </Main>
 }
