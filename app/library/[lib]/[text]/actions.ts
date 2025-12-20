@@ -29,11 +29,6 @@ export async function markAsVisited(textId: string) {
     updateTag(`reads:${lib.id}`)
 }
 
-export async function revalidate(libId: string, textId: string) {
-    await authReadToText(textId)
-    revalidatePath(`/library/${libId}/${textId}`)
-}
-
 export async function extractWords(form: FormData) {
     const { userId } = await getUserOrThrow()
     const file = form.get('file') as File

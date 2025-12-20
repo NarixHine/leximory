@@ -13,10 +13,10 @@ import generateQuiz from '@/server/ai/editory'
 import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
-import { getArticleFromUrl } from '@/lib/utils'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
+import { extractArticleFromUrl } from '@/server/ai/scrape'
 
 const tools: ToolSet = {
     getLib: {
@@ -111,7 +111,7 @@ const tools: ToolSet = {
         description: 'Extract the article from the given webpage. The results will be available in Markdown format.',
         inputSchema: toolSchemas.extractArticleFromWebpage,
         execute: async ({ url }: { url: string }) => {
-            const { title, content } = await getArticleFromUrl(url)
+            const { title, content } = await extractArticleFromUrl(url)
 
             // Use AI to distill the main article content from the webpage
             const { text: distilledContent } = await generateText({

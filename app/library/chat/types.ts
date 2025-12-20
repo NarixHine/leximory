@@ -6,8 +6,8 @@ import { getTexts } from '@/server/db/text'
 import { Lang, SUPPORTED_LANGS } from '@/lib/config'
 import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
-import { getArticleFromUrl } from '@/lib/utils'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
+import { extractArticleFromUrl } from '@/server/ai/scrape'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',
@@ -42,7 +42,7 @@ export type ToolResult = {
         annotation: Awaited<ReturnType<typeof annotateParagraph>>
         lang: Lang
     }
-    extractArticleFromWebpage: Awaited<ReturnType<typeof getArticleFromUrl>>
+    extractArticleFromWebpage: Awaited<ReturnType<typeof extractArticleFromUrl>>
     generateQuiz: QuizData
     requestPublishStreakMemory: {
         content: string

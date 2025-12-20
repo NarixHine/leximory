@@ -22,7 +22,7 @@ import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgress, getNewText, remove, revalidate, save, markAsVisited } from '../../actions'
+import { getAnnotationProgress, getNewText, remove, save, markAsVisited } from '../../actions'
 import { useRouter } from 'next/navigation'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -256,7 +256,7 @@ function GeneratingView() {
   const setContent = useSetAtom(contentAtom)
   const setTopics = useSetAtom(topicsAtom)
   const text = useAtomValue(textAtom)
-  const lib = useAtomValue(libAtom)
+  const router = useRouter()
   const [currentProgress, setCurrentProgress] = useState(0)
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
@@ -293,7 +293,7 @@ function GeneratingView() {
             setContent(content)
             setTopics(topics ?? [])
             setIsLoading(false)
-            revalidate(lib, text)
+            router.refresh()
           })
         }
         setAnnotationProgress(newProgress)

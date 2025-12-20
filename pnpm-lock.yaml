@@ -187,6 +187,9 @@ importers:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.8
         version: 0.13.8(typescript@5.9.2)(zod@3.25.28)
+      '@tabstack/sdk':
+        specifier: ^1.0.5
+        version: 1.0.5
       '@tailwindcss/postcss':
         specifier: ^4.1.11
         version: 4.1.11
@@ -3491,6 +3494,10 @@ packages:
         optional: true
       zod:
         optional: true
+
+  '@tabstack/sdk@1.0.5':
+    resolution: {integrity: sha512-+KzB8077cgA+Dm/J80T4ijKFv8WWiFliFGHMhpTck06EibwfxL9sTbQlYrW174WpLlFxFIm//70TG/S2qKvUUA==}
+    engines: {node: '>=20.0.0'}
 
   '@tailwindcss/forms@0.5.10':
     resolution: {integrity: sha512-utI1ONF6uf/pPNO68kmN1b8rEwNXv3czukalo8VtJH8ksIkZXr3Q3VYudZLkCsDd4Wku120uF02hYK25XGPorw==}
@@ -11247,6 +11254,8 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
       zod: 3.25.28
+
+  '@tabstack/sdk@1.0.5': {}
 
   '@tailwindcss/forms@0.5.10(tailwindcss@4.1.11)':
     dependencies:

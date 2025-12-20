@@ -1,7 +1,6 @@
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { z } from 'zod'
-import ky from 'ky'
 import { customAlphabet } from 'nanoid'
 
 /**
@@ -10,19 +9,6 @@ import { customAlphabet } from 'nanoid'
  * @returns A random ID.
  */
 export const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 12)
-
-/**
- * Fetches an article from a given URL using the Jina API.
- * 
- * @param url - The URL of the article to fetch.
- * @returns An object containing the title and content of the article.
- */
-export async function getArticleFromUrl(url: string) {
-    const res = await ky.get(url, { prefixUrl: 'https://r.jina.ai', timeout: 60000 }).text()
-    const content = (/Markdown Content:\n([\s\S]*)/.exec(res) as string[])[1]
-    const title = (/^Title: (.+)/.exec(res) as string[])[1]
-    return { title, content }
-}
 
 /**
  * Merges class names using Tailwind Merge.
