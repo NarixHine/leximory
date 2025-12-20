@@ -8,9 +8,9 @@ import { deleteMemoryAction } from '../actions'
 import { momentSH } from '@/lib/moment'
 import FlatCard from '@/components/ui/flat-card'
 import Markdown from '@/components/markdown'
-import Link from 'next/link'
 import { useAuth } from '@/lib/hooks'
 import 'moment/locale/zh-cn'
+import LinkButton from '@/components/ui/link-button'
 
 type Memory = {
     id: number
@@ -43,8 +43,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
             <CardBody>
                 <div className='flex flex-col gap-4'>
                     <div className='flex items-center justify-between'>
-                        <Button
-                            as={Link}
+                        <LinkButton
                             className='pl-0 pr-2 rounded-l-full rounded-r-lg'
                             href={`/profile/${memory.creator.id}`}
                             variant='light'
@@ -55,7 +54,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
                                     src: memory.creator.avatar_url ?? ''
                                 }}
                             />}
-                        ></Button>
+                        ></LinkButton>
                         {user?.id === memory.creator.id && <Button
                             isIconOnly
                             size='sm'

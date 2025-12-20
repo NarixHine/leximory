@@ -6,7 +6,6 @@ import { Spacer } from "@heroui/spacer"
 import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS, Lang } from '@/lib/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
-import Link from 'next/link'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import Form from '../../../../components/form'
@@ -26,6 +25,7 @@ import { ConfirmUnstar } from './confirm-unstar'
 import Topics from '../../[lib]/[text]/components/topics'
 import FlatCard from '@/components/ui/flat-card'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
+import LinkButton from '@/components/ui/link-button'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -127,8 +127,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     <div className='text-2xl font-formal'>{name}</div>
                     {
                         shadow
-                            ? <Button
-                                as={Link}
+                            ? <LinkButton
                                 href={`/library/${id}/corpus`}
                                 size='sm'
                                 startContent={<PiBookBookmarkDuotone className='text-lg' />}
@@ -181,18 +180,17 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     <Topics topics={topics.concat([getLanguageStrategy(lang as Lang).name])}></Topics>
                 </CardBody>}
             {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
-                <Button
+                <LinkButton
                     size={'md'}
-                    as={Link}
                     href={`/library/${id}/corpus`}
                     startContent={<PiBookBookmarkDuotone />}
                     variant='flat'
                     className='bg-default/20'
-                >语料本</Button>
+                >语料本</LinkButton>
                 <div className='flex-1'></div>
-                {recentAccessItem && <Button className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch as={Link} href={`/library/${id}/${recentAccessItem.id}`}>
+                {recentAccessItem && <LinkButton className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch href={`/library/${id}/${recentAccessItem.id}`}>
                     <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
-                </Button>}
+                </LinkButton>}
                 <Button
                     as={'span'}
                     isLoading={isTogglingArchive}

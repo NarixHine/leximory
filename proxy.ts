@@ -14,7 +14,7 @@ const isProtectedRouteChecker = (path: string) => {
     return PROTECTED_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     return await updateSession(request, isProtectedRouteChecker)
 }
 

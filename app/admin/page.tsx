@@ -3,10 +3,9 @@ import AdminOverview from './components/overview'
 import UsersList from './components/user-list'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
-import { Button } from '@heroui/button'
 import { getUsersOverview, getAllUsers } from './data-fetching'
-import Link from 'next/link'
 import { PiNewspaperDuotone } from 'react-icons/pi'
+import LinkButton from '@/components/ui/link-button'
 
 export default async function AdminPage() {
     const [overview, users] = await Promise.all([
@@ -34,8 +33,7 @@ export default async function AdminPage() {
                         </CardHeader>
                         <CardBody className='pt-0'>
                             <div className='space-y-2'>
-                                <Button
-                                    as={Link}
+                                <LinkButton
                                     href='/admin/times'
                                     variant='flat'
                                     startContent={<PiNewspaperDuotone />}
@@ -43,7 +41,7 @@ export default async function AdminPage() {
                                     color='secondary'
                                 >
                                     Manage Times Issues
-                                </Button>
+                                </LinkButton>
                             </div>
                         </CardBody>
                     </Card>

@@ -11,6 +11,7 @@ import { ReactNode } from 'react'
 import { useAtomValue } from 'jotai'
 import { isReaderModeAtom } from '@/app/atoms'
 import { cn } from '@/lib/utils'
+import LinkButton from '../ui/link-button'
 
 function LoadingIndicatorWrapper({ children }: { children: ReactNode }) {
     return <DefaultLoadingIndicatorWrapper
@@ -112,11 +113,10 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
                     )}
                     startContent={<PiSkipBackCircle className={iconClassName} />}
                 />
-                : <Button
+                : <LinkButton
                     size='sm'
                     variant='light'
                     href={`/library/${lib.id}/corpus`}
-                    as={Link}
                     radius='full'
                     isIconOnly
                     className={cn(

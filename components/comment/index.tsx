@@ -17,7 +17,6 @@ import { useAtomValue } from 'jotai'
 import { delComment, modifyText, saveComment } from './actions'
 import { motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
-import Link from 'next/link'
 import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/comment'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
@@ -27,6 +26,7 @@ import { getClickedChunk, readStreamableValue } from './utils'
 import StoneSkeleton from '../ui/stone-skeleton'
 import FlatCard from '../ui/flat-card'
 import { Spinner } from '@heroui/spinner'
+import LinkButton from '../ui/link-button'
 
 interface CommentProps {
     params: string
@@ -217,7 +217,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             (() => {
                 const strategy = getLanguageStrategy(lang)
                 if (strategy.dictionaryLink) {
-                    return <Button as={Link} href={strategy.dictionaryLink(portions[1])} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly />
+                    return <LinkButton href={strategy.dictionaryLink(portions[1])} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly />
                 }
                 return null
             })()

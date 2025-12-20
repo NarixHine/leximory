@@ -3,9 +3,9 @@
 import { Button } from '@heroui/button'
 import { cn } from '@/lib/utils'
 import Center from '@/components/ui/center'
-import Link from 'next/link'
 import { PiWarningCircle } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
+import LinkButton from '@/components/ui/link-button'
 
 export default function GlobalError({
   error,
@@ -35,15 +35,14 @@ export default function GlobalError({
                 >
                   Try Again
                 </Button>
-                <Button
-                  as={Link}
+                <LinkButton
                   href='/'
                   color='secondary'
                   variant='flat'
                   className='min-w-30'
                 >
                   Return to Library
-                </Button>
+                </LinkButton>
               </div>
               <div className='flex items-center justify-center gap-2 mt-5 opacity-70'>
                 <div className='h-2 w-2 rounded-full bg-primary'></div>

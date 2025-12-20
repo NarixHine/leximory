@@ -2,9 +2,9 @@
 
 import { Button, Card, CardBody, CardHeader, cn } from '@heroui/react'
 import Center from '@/components/ui/center'
-import Link from 'next/link'
 import { PiWarningCircleDuotone } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
+import LinkButton from '@/components/ui/link-button'
 
 export default function Error({
     error,
@@ -35,17 +35,15 @@ export default function Error({
                         >
                             Try Again
                         </Button>
-                        <Button
-                            as={Link}
+                        <LinkButton
                             href='/'
                             color='secondary'
                             variant='flat'
                             className='min-w-30'
                         >
                             Return to Library
-                        </Button>
+                        </LinkButton>
                         <Button
-                            as={Link}
                             href='/'
                             color='danger'
                             variant='ghost'

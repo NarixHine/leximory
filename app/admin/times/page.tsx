@@ -1,17 +1,16 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { Button } from '@heroui/button'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
 import { momentSH } from '@/lib/moment'
-import Link from 'next/link'
 import { PiPencilDuotone } from 'react-icons/pi'
 import { Image } from '@heroui/image'
 import { fetchMoreIssues } from '@/components/times/actions'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { useEffect } from 'react'
 import { TIMES_PAGE_SIZE } from '@/lib/config'
+import LinkButton from '@/components/ui/link-button'
 
 export default function AdminTimesPage() {
     const { isIntersecting, ref } = useIntersectionObserver({
@@ -95,8 +94,7 @@ export default function AdminTimesPage() {
                                         {momentSH(issue.date).format('dddd')}
                                     </p>
                                 </div>
-                                <Button
-                                    as={Link}
+                                <LinkButton
                                     href={`/admin/times/${issue.date}`}
                                     size='sm'
                                     color='primary'
@@ -104,7 +102,7 @@ export default function AdminTimesPage() {
                                     startContent={<PiPencilDuotone />}
                                 >
                                     Edit
-                                </Button>
+                                </LinkButton>
                             </div>
                         </CardHeader>
                         <CardBody className='pt-0'>

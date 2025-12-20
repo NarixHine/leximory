@@ -5,10 +5,9 @@ import TextList from './components/text-list'
 import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
-import { Button } from '@heroui/button'
 import { PiUsers, PiSortAscending, PiPrinter } from 'react-icons/pi'
-import Link from 'next/link'
 import { LIB_ACCESS_STATUS } from '@/lib/config'
+import LinkButton from '@/components/ui/link-button'
 
 async function getData(lib: string) {
     const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)
@@ -25,15 +24,15 @@ export default async function Page(props: LibProps) {
         <Nav lib={{ id: lib, name }}></Nav>
         <H fancy className='mb-4 text-5xl'>{name}</H>
         <div className='flex justify-center mb-5 gap-1 flex-wrap'>
-            <Button variant='light' startContent={<PiPrinter />} as={Link} href={`/library/${lib}/all-of-it`}>
+            <LinkButton variant='light' startContent={<PiPrinter />} href={`/library/${lib}/all-of-it`}>
                 打印文库
-            </Button>
-            {isOwner && access === LIB_ACCESS_STATUS.public && <Button variant='light' startContent={<PiUsers />} as={Link} href={`/library/${lib}/readers`}>
+            </LinkButton>
+            {isOwner && access === LIB_ACCESS_STATUS.public && <LinkButton variant='light' startContent={<PiUsers />} href={`/library/${lib}/readers`}>
                 查看读者
-            </Button>}
-            {isOwner && <Button variant='light' startContent={<PiSortAscending />} as={Link} href={`/library/${lib}/order`}>
+            </LinkButton>}
+            {isOwner && <LinkButton variant='light' startContent={<PiSortAscending />} href={`/library/${lib}/order`}>
                 文本排序
-            </Button>}
+            </LinkButton>}
         </div>
         <TextList texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))} isReadOnly={isReadOnly} />
     </Main>

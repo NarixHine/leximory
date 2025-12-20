@@ -1,9 +1,8 @@
 'use client'
 
 import { Card, CardBody } from '@heroui/card'
-import { Button } from '@heroui/button'
 import { PiCrownDuotone } from 'react-icons/pi'
-import Link from 'next/link'
+import LinkButton from '@/components/ui/link-button'
 
 export default function UpgradeMessage() {
     return (
@@ -18,14 +17,13 @@ export default function UpgradeMessage() {
                         <p className='text-sm text-default-500 mb-4'>
                             Talk to Your Library 是高级版的专属功能。
                         </p>
-                        <Button
-                            as={Link}
+                        <LinkButton
                             href='/settings'
                             color='primary'
                             variant='flat'
                         >
                             立即升级
-                        </Button>
+                        </LinkButton>
                     </div>
                 </div>
             </CardBody>

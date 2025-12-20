@@ -18,7 +18,6 @@ import { AnimatePresence } from 'framer-motion'
 // Shared color classes for dock items
 const colorClasses = [
     'bg-primary-100/60 text-primary-400',
-    'bg-secondary-100/60 text-secondary-400',
     'bg-warning-100/60 text-warning-300',
     'bg-amber-200/50 text-amber-500 dark:bg-amber-800/50 dark:text-amber-600',
     'bg-danger-50/70 text-danger-400',

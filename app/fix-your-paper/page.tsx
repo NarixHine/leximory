@@ -7,10 +7,10 @@ import Main from '@/components/ui/main'
 import FixPaper from './components/fix-your-paper'
 import Results from './components/results'
 import Link from 'next/link'
-import { Button } from '@heroui/button'
 import { PiGithubLogo, PiInfo } from 'react-icons/pi'
 import Privacy from './components/privacy'
 import { FYP_GITHUB_LINK, FYP_BLOG_LINK } from '@/lib/config'
+import LinkButton from '@/components/ui/link-button'
 
 export const metadata: Metadata = {
     title: 'Fix. Your. Paper.',
@@ -49,26 +49,24 @@ export default function FixPaperPage() {
             </div>
             <Spacer y={0.5} />
             <div className='flex justify-center'>
-                <Button
+                <LinkButton
                     className='rounded-full text-lg text-default-700'
                     startContent={<PiGithubLogo />}
                     isIconOnly
                     size='sm'
-                    as={Link}
                     target='_blank'
                     variant='light'
                     href={FYP_GITHUB_LINK}
-                ></Button>
-                <Button
+                ></LinkButton>
+                <LinkButton
                     className='rounded-full text-lg text-default-700'
                     startContent={<PiInfo />}
                     isIconOnly
                     size='sm'
-                    as={Link}
                     target='_blank'
                     variant='light'
                     href={FYP_BLOG_LINK}
-                ></Button>
+                ></LinkButton>
                 <Privacy />
             </div>
         </footer>

@@ -8,10 +8,9 @@ import Nav from '@/components/nav'
 import { Metadata } from 'next'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
-import Link from 'next/link'
-import { Button } from '@heroui/button'
 import { PiPrinterDuotone } from 'react-icons/pi'
 import { momentSH } from '@/lib/moment'
+import LinkButton from '@/components/ui/link-button'
 
 export const metadata: Metadata = {
     title: '语料库'
@@ -36,8 +35,7 @@ export default async function Page(props: LibProps) {
         <Spacer y={5}></Spacer>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <div className='sm:col-span-1'>
-                <Button
-                    as={Link}
+                <LinkButton
                     variant='flat'
                     fullWidth
                     color='primary'
@@ -48,7 +46,7 @@ export default async function Page(props: LibProps) {
                     startContent={<PiPrinterDuotone />}
                 >
                     打印词卡
-                </Button>
+                </LinkButton>
                 <Test latestTime={words[0] ? words[0].date : momentSH().format('YYYY-MM-DD')}></Test>
             </div>
             <div className='sm:col-span-2'>

@@ -1,12 +1,12 @@
 'use client'
 
-import { Card, CardBody } from '@heroui/card'
+import { CardBody } from '@heroui/card'
 import { PiFireFill, PiCheckBold, PiCursorClickDuotone, PiCircle, PiCheckCircle } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
 import moment from 'moment'
 import { bgColor } from './constants'
+import LinkCard from '../ui/link-card'
 
 type StreakData = {
     total: number
@@ -23,11 +23,10 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
 
     if (compact) {
         return (
-            <Card
+            <LinkCard
                 shadow='none'
                 fullWidth
                 isPressable
-                as={Link}
                 href='/memories'
                 className={cn(bgColor, 'border-none')}
             >
@@ -40,12 +39,12 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
                         </div>
                     </div>
                 </CardBody>
-            </Card>
+            </LinkCard>
         )
     }
 
     return (
-        <Card shadow='none' fullWidth isPressable as={Link} href='/memories' className={cn(bgColor, 'border-none')}>
+        <LinkCard shadow='none' fullWidth isPressable href='/memories' className={cn(bgColor, 'border-none')}>
             <CardBody className='p-8 pb-4 relative'>
                 <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>
@@ -92,6 +91,6 @@ export function StreakDisplay({ streakData, compact = false }: { streakData: Str
                 </div>}
                 <p className={'text-xs text-orange-500/80 dark:text-orange-300/80 font-mono text-center mt-4'}>Historic high: {streakData.highest}</p>
             </CardBody>
-        </Card>
+        </LinkCard>
     )
 }

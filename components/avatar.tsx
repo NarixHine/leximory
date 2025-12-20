@@ -1,13 +1,12 @@
 import { cn } from '@/lib/utils'
 import { Avatar } from '@heroui/avatar'
-import { Button } from '@heroui/button'
 import { User } from '@heroui/user'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { unstable_cacheLife as cacheLife } from 'next/cache'
-import Link from 'next/link'
 import { Suspense } from 'react'
 import { getUserById, getUserOrThrow } from '@/server/auth/user'
+import LinkButton from './ui/link-button'
 
 moment.locale('zh-cn')
 
@@ -35,8 +34,7 @@ function UserAvatarFallback({ showInfo }: { showInfo?: boolean }) {
 }
 
 export default function UserAvatar({ uid, showInfo }: { uid: string, showInfo?: boolean }) {
-    return <Button
-        as={Link}
+    return <LinkButton
         href={`/profile/${uid}`}
         variant='light'
         startContent={<Suspense fallback={<UserAvatarFallback showInfo={showInfo} />}>

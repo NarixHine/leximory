@@ -1,7 +1,6 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
 import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
-import Link from 'next/link'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
 import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiNewspaperDuotone } from 'react-icons/pi'
@@ -24,6 +23,8 @@ import ScopeProvider from '@/components/jotai/scope-provider'
 import { isAtRead } from '@/lib/subapp'
 import { redirect } from 'next/navigation'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
+import LinkButton from '@/components/ui/link-button'
+import LinkCard from '@/components/ui/link-card'
 
 export default async function Home() {
 	if (await isAtRead()) {
@@ -46,7 +47,7 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<Button startContent={<PiShootingStarDuotone />} color='primary' href={SIGN_IN_URL} as={Link} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</Button>
+				<LinkButton startContent={<PiShootingStarDuotone />} color='primary' href={SIGN_IN_URL} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</LinkButton>
 			</div>
 		</div>
 
@@ -101,7 +102,7 @@ export default async function Home() {
 							title='每日资源'
 							description='每日更新的英语新闻和小说'
 						>
-							<Card isPressable as={Link} href='/times' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
+							<LinkCard isPressable href='/times' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
 								<CardBody>
 									<h2 className='font-bold opacity-50 text-xs'>The Leximory Times</h2>
 									<p className='opacity-60 font-bold'>24 March, 2025</p>
@@ -109,7 +110,7 @@ export default async function Home() {
 										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
 									</div>
 								</CardBody>
-							</Card>
+							</LinkCard>
 						</BentoCard>
 					</div>
 					<div>
@@ -182,13 +183,13 @@ export default async function Home() {
 
 		<Spacer y={5}></Spacer>
 
-		<Card shadow='none' isBlurred isPressable prefetch as={Link} href={SIGN_IN_URL}>
+		<LinkCard shadow='none' isBlurred isPressable prefetch href={SIGN_IN_URL}>
 			<CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
 				<TextHoverEffect text={'从记忆'} />
 				<TextHoverEffect text={'到心会'} />
 			</CardBody>
-		</Card>
-	</Main >
+		</LinkCard>
+	</Main>
 }
 
 const BentoCard = ({ title, children, description, }: {

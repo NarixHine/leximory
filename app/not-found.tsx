@@ -1,10 +1,9 @@
-import { Button } from '@heroui/button'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import Center from '@/components/ui/center'
-import Link from 'next/link'
 import { PiImageBrokenDuotone } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
+import LinkButton from '@/components/ui/link-button'
 
 export default function NotFound() {
     return (
@@ -20,15 +19,14 @@ export default function NotFound() {
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-3'>
                     <div className='flex gap-4'>
-                        <Button
-                            as={Link}
+                        <LinkButton
                             href='/'
                             color='primary'
                             variant='flat'
                             className='min-w-30'
                         >
                             Return to Library
-                        </Button>
+                        </LinkButton>
                     </div>
                     <div className='flex items-center justify-center gap-2 mt-5 opacity-70'>
                         <div className='h-2 w-2 rounded-full bg-primary'></div>

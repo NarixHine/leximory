@@ -1,6 +1,5 @@
 import { PiPaperPlaneTilt, PiSignIn } from 'react-icons/pi'
-import Link from 'next/link'
-import { Button } from '@heroui/button'
+import LinkButton from '@/components/ui/link-button'
 
 export default function SignUpSuccessPage() {
     return (
@@ -15,14 +14,13 @@ export default function SignUpSuccessPage() {
                 </div>
 
                 <div>
-                    <Button
+                    <LinkButton
                         variant='flat'
-                        as={Link}
                         href='/login'
                         startContent={<PiSignIn />}
                     >
                         返回登录
-                    </Button>
+                    </LinkButton>
                 </div>
             </div>
         </div>

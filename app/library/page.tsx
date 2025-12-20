@@ -11,8 +11,6 @@ import { PiBooksDuotone, PiVideo } from 'react-icons/pi'
 import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { unstable_cacheTag as cacheTag, unstable_cacheLife as cacheLife } from 'next/cache'
-import { Button } from '@heroui/button'
-import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { getUserOrThrow } from '@/server/auth/user'
 import AdminDashboardLink from './components/dashboard-link'
@@ -20,6 +18,7 @@ import UserAvatar from '@/components/avatar'
 import { EXAMPLE_SHARED_LIB } from '@/lib/config'
 import LibraryCard from '../marketplace/[page]/components/card'
 import Streak from '@/components/streak'
+import LinkButton from '@/components/ui/link-button'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -70,9 +69,9 @@ export default function Page() {
         <Spacer y={2} />
 
         <footer className='flex justify-center gap-2'>
-            <Button as={Link} href='/about' variant='light' startContent={<PiVideo />}>
+            <LinkButton href='/about' variant='light' startContent={<PiVideo />}>
                 使用教程
-            </Button>
+            </LinkButton>
             <Suspense>
                 <AdminDashboardLink />
             </Suspense>
