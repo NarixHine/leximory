@@ -50,7 +50,7 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus, loading 
             {/* Tenant Breadcrumb */}
             <BreadcrumbItem className='max-w-full'>
                 <Link href={`/library`} prefetch={false} className='flex items-center gap-1'>
-                    {loading ? <Spinner variant='dots' size='sm' /> : <PiUserCircle className={iconClassName} />}
+                    {loading ? <Spinner variant='dots' size='sm' color='default' /> : <PiUserCircle className={iconClassName} />}
                     <span className={cn(
                         'inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle',
                         loading ? 'text-default-300 font-mono' : 'text-stone-700 dark:text-default-500',
