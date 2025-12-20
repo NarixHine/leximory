@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
-import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { momentSH } from '@/lib/moment'
 import { ensureUserExists } from './user'
 
@@ -22,7 +22,6 @@ export async function getLexicoinBalance(uid: string) {
 }
 
 export async function addLexicoinBalance(uid: string, amount: number) {
-    revalidateTag('lexicoin', 'max')
     const balance = await getLexicoinBalance(uid)
     await supabase
         .from('users')
@@ -33,7 +32,6 @@ export async function addLexicoinBalance(uid: string, amount: number) {
 }
 
 export async function setLastClaimDate(uid: string) {
-    revalidateTag('lexicoin', 'max')
     await supabase
         .from('users')
         .update({ last_daily_claim: momentSH().toISOString() })
@@ -42,7 +40,6 @@ export async function setLastClaimDate(uid: string) {
 }
 
 export async function subtractLexicoinBalance(uid: string, amount: number) {
-    revalidateTag('lexicoin', 'max')
     const balance = await getLexicoinBalance(uid)
     if (balance < amount) {
         return { success: false, message: `余额不足，你还有 ${balance} LexiCoin` }

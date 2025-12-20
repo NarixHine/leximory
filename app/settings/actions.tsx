@@ -4,7 +4,7 @@ import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import { momentSH } from '@/lib/moment'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { PLAN_DAILY_LEXICOIN } from '@/lib/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
@@ -25,6 +25,7 @@ export async function revokeUserToken() {
 export async function setPreference(isBrE: boolean) {
 	const { userId } = await getUserOrThrow()
 	await setAccentPreference({ accent: isBrE ? 'BrE' : 'AmE', userId })
+	updateTag('accent')
 }
 
 export async function getPreference() {
@@ -42,6 +43,7 @@ export async function getDailyLexicoin() {
 	}
 	await addLexicoinBalance(userId, PLAN_DAILY_LEXICOIN[plan])
 	await setLastClaimDate(userId)
+	updateTag('lexicoin')
 	revalidatePath('/settings')
 	return { message: `领取成功，LexiCoin + ${PLAN_DAILY_LEXICOIN[plan]}` }
 }

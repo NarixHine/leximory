@@ -2,10 +2,9 @@ import 'server-only'
 import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@/lib/config'
 import { languageStrategies } from '@/lib/languages'
 import { supabase } from '@/server/client/supabase'
-import { revalidateTag, unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
+import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/comment'
-import { after } from 'next/server'
 import { momentSH } from '@/lib/moment'
 import moment from 'moment'
 
@@ -43,10 +42,6 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
         .select()
         .single()
         .throwOnError()
-    after(() => {
-        revalidateTag('words', 'max')
-        revalidateTag(`words:${lib}`, 'max')
-    })
     return data
 }
 
@@ -76,10 +71,6 @@ export async function deleteWord(id: string) {
         .select('lib')
         .single()
         .throwOnError()
-    after(() => {
-        revalidateTag('words', 'max')
-        revalidateTag(`words:${data.lib}`, 'max')
-    })
     return data
 }
 

@@ -1,7 +1,6 @@
 import 'server-only'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { supabase } from '../client/supabase'
-import { revalidateTag } from 'next/cache'
 
 export type Accent = 'BrE' | 'AmE'
 
@@ -11,7 +10,6 @@ export async function setAccentPreference({ accent, userId }: { accent: Accent, 
         .update({ accent })
         .eq('id', userId)
         .throwOnError()
-    revalidateTag('accent', 'max')
 }
 
 export async function getAccentPreference({ userId }: { userId: string }) {

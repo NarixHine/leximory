@@ -1,7 +1,7 @@
 'use server'
 
 import { authReadToText, authWriteToText } from '@/server/auth/role'
-import { generateObject, generateText, smoothStream, streamText } from 'ai'
+import { generateObject, smoothStream, streamText } from 'ai'
 import { authWriteToLib } from '@/server/auth/role'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { maxCommentaryQuota } from '@/server/auth/quota'
@@ -16,7 +16,7 @@ import crypto from 'crypto'
 import { getUserOrThrow } from '@/server/auth/user'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { visitText } from '@/server/db/visited'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 
@@ -24,6 +24,9 @@ export async function markAsVisited(textId: string) {
     const { userId } = await getUserOrThrow()
     await authReadToText(textId)
     await visitText({ textId, userId })
+    // Get libId from text
+    const { lib } = await getTextContent({ id: textId })
+    updateTag(`reads:${lib.id}`)
 }
 
 export async function revalidate(libId: string, textId: string) {
@@ -173,27 +176,6 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
     })
 
     return { text: textStream }
-}
-
-export async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
-    }
-
-    const { exampleSentencePrompt } = getLanguageStrategy(lang)
-    const { getAccentPrompt } = getLanguageServerStrategy(lang)
-    const { text } = await generateText({
-        system: `
-        生成词汇注解（形如<must>vocabulary</must>、<must></must>中的部分必须注解）。
-
-        ${instruction[lang]}
-        `,
-        prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}\n你要注解的是：\n${prompt}`,
-        maxOutputTokens: 500,
-        ...miniAI
-    })
-
-    return text
 }
 
 export async function getAnnotationProgress(id: string) {

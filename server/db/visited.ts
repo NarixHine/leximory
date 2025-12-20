@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '@/server/client/supabase'
-import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 export async function visitText({ textId, userId }: { textId: string, userId: string }) {
     // find existing visit record
@@ -15,14 +15,12 @@ export async function visitText({ textId, userId }: { textId: string, userId: st
         return
     }
 
-   const { data: newVisit } = await supabase
+    await supabase
         .from('reads')
         .upsert({ text: textId, uid: userId })
         .select('text, texts (lib)')
         .single()
         .throwOnError()
-
-    revalidateTag(`reads:${newVisit.texts.lib}`, 'max')
 }
 
 export async function getVisitedTextIds({ libId, userId }: { libId: string, userId: string }) {

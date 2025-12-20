@@ -1,7 +1,6 @@
 import 'server-only'
 import { redis } from '../client/redis'
-import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
-import { after } from 'next/server'
+import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { seconds } from 'itty-time'
 
 export async function incrementQuota(userId: string, type: 'commentary' | 'audio', incrBy: number = 1) {
@@ -11,8 +10,6 @@ export async function incrementQuota(userId: string, type: 'commentary' | 'audio
     if (quota === incrBy) {
         await redis.expire(quotaKey, seconds('30 days'))
     }
-
-    after(() => revalidateTag(`quota:${userId}:${type}`, 'max'))
 
     return quota
 }

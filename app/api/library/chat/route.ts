@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
     if (IS_PROD && plan === 'beginner') {
         return new Response('You are not authorized to use this tool.', { status: 403 })
     }
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat, undefined, true)) {
         return new Response('You have reached the maximum number of commentary quota.', { status: 403 })
     }
 

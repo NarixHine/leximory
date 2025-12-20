@@ -1,7 +1,6 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
 import { momentSH } from '@/lib/moment'
-import { revalidateTag } from 'next/cache'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 
 export async function createMemory({ content, creator, isPublic, isStreak }: { content: string, creator: string, isPublic: boolean, isStreak: boolean }) {
@@ -14,9 +13,6 @@ export async function createMemory({ content, creator, isPublic, isStreak }: { c
             streak: isStreak,
         })
         .throwOnError()
-
-    revalidateTag(`memories:${creator}`, 'max')
-    revalidateTag('memories:federated', 'max')
 }
 
 export async function deleteMemory({ id, creator }: { id: number, creator: string }) {
@@ -26,9 +22,6 @@ export async function deleteMemory({ id, creator }: { id: number, creator: strin
         .eq('id', id)
         .eq('creator', creator)
         .throwOnError()
-
-    revalidateTag(`memories:${creator}`, 'max')
-    revalidateTag('memories:federated', 'max')
 }
 
 async function getMemories(queryBuilder: any, page: number, size: number) {

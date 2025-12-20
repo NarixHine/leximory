@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { createMemory, deleteMemory, getPersonalMemories, getFederatedMemories, getPublicMemories } from '@/server/db/memories'
 import { getUserOrThrow } from '@/server/auth/user'
+import { updateTag } from 'next/cache'
 
 const createMemorySchema = z.object({
     content: z.string().min(1, 'Content is required.'),
@@ -19,6 +20,8 @@ export async function createMemoryAction(input: z.infer<typeof createMemorySchem
         ...validatedInput,
         creator: userId,
     })
+    updateTag(`memories:${userId}`)
+    updateTag('memories:federated')
 }
 
 const getMemoriesSchema = z.object({
@@ -61,4 +64,6 @@ export async function deleteMemoryAction(input: z.infer<typeof deleteMemorySchem
         ...validatedInput,
         creator: userId,
     })
+    updateTag(`memories:${userId}`)
+    updateTag('memories:federated')
 }

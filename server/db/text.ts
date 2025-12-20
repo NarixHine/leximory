@@ -3,7 +3,6 @@ import { nanoid } from '@/lib/utils'
 import { supabase } from '@/server/client/supabase'
 import { redis } from '../client/redis'
 import { AnnotationProgress } from '@/lib/types'
-import { revalidateTag } from 'next/cache'
 import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { unstable_cacheTag as cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
@@ -22,7 +21,6 @@ export async function createText({ lib, title, content, topics }: { lib: string 
             topics
         })
         .throwOnError()
-    revalidateTag(`texts:${lib}`, 'max')
     return id
 }
 
@@ -38,7 +36,6 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
         .select()
         .single()
         .throwOnError()
-    revalidateTag(`texts:${lib}`, 'max')
     return data
 }
 
@@ -50,8 +47,7 @@ export async function updateText({ id, title, content, topics }: { id: string } 
         .select('lib')
         .single()
         .throwOnError()
-    revalidateTag(`texts:${rec.lib}`, 'max')
-    revalidateTag(`texts:${id}`, 'max')
+    return rec.lib!
 }
 
 export async function deleteText({ id }: { id: string }) {
@@ -67,9 +63,6 @@ export async function deleteText({ id }: { id: string }) {
             .from('user-files')
             .remove([`ebooks/${id}.epub`])
     }
-
-    revalidateTag(`texts:${rec.lib}`, 'max')
-    revalidateTag(`texts:${id}`, 'max')
 }
 
 export async function getTexts({ lib }: { lib: string }) {
@@ -168,8 +161,6 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
     if (updateError) throw updateError
     if (!text?.lib) throw new Error('Library not found')
 
-    revalidateTag(`texts:${text.lib}`, 'max')
-    revalidateTag(`texts:${id}`, 'max')
     return path
 }
 
@@ -222,6 +213,4 @@ export async function updateTextOrder({ lib, ids }: { lib: string, ids: string[]
     )
 
     await Promise.all(updates)
-
-    revalidateTag(`texts:${lib}`, 'max')
 }

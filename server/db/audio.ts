@@ -1,6 +1,5 @@
 import 'server-only'
 import { supabase } from '@/server/client/supabase'
-import { revalidateTag } from 'next/cache'
 import { GeneratedAudioFile } from 'ai'
 
 export async function retrieveAudioUrl({ id }: { id: string }) {
@@ -29,6 +28,5 @@ export async function uploadAudio({ id, audio }: { id: string, audio: GeneratedA
 
     const url = await retrieveAudioUrl({ id })
 
-    revalidateTag(`audio:${id}`, 'max')
     return url!
 }
