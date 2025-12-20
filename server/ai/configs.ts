@@ -1,9 +1,45 @@
+import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+
 export const nanoAI = {
     model: 'xai/grok-4-fast-non-reasoning',
 } as const
 
 export const miniAI = {
-    model: 'xai/grok-4-fast-non-reasoning',
+    model: 'google/gemini-3-flash',
+    providerOptions: {
+        google: {
+            thinkingConfig: {
+                thinkingLevel: 'minimal',
+                includeThoughts: true,
+            },
+            safetySettings: [
+                {
+                    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                    threshold: 'BLOCK_NONE',
+                },
+                {
+                    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                    threshold: 'BLOCK_NONE',
+                },
+                {
+                    category: 'HARM_CATEGORY_HATE_SPEECH',
+                    threshold: 'BLOCK_NONE',
+                },
+                {
+                    category: 'HARM_CATEGORY_HARASSMENT',
+                    threshold: 'BLOCK_NONE',
+                },
+                {
+                    category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+                    threshold: 'BLOCK_NONE',
+                },
+                {
+                    category: 'HARM_CATEGORY_UNSPECIFIED',
+                    threshold: 'BLOCK_NONE',
+                },
+            ],
+        } satisfies GoogleGenerativeAIProviderOptions,
+    },
 } as const
 
 export const thinkAI = {

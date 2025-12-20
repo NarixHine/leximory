@@ -372,6 +372,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 </div>
             )
         case 'reasoning':
+            console.log(part)
             return part.text && (
                 <ToolAccordian defaultExpanded title='Reasoning' icon={<PiLightbulb size={16} />}>
                     <Markdown
