@@ -118,7 +118,7 @@ export async function saveEbook(id: string, form: FormData) {
     return url
 }
 
-export async function generate({ article, textId, onlyComments }: { article: string, textId: string, onlyComments: boolean }) {
+export async function generate({ article, textId, onlyComments, delayRevalidate }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean }) {
     const { userId } = await getUserOrThrow()
     const { lib } = await authWriteToText(textId)
     const libId = lib!.id
@@ -129,7 +129,7 @@ export async function generate({ article, textId, onlyComments }: { article: str
     if (length > maxArticleLength) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId, delayRevalidate)) {
         return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
     }
 

@@ -86,7 +86,7 @@ const tools: ToolSet = {
         execute: async ({ content, lib, title }: { content: string, lib: string, title: string }) => {
             await authWriteToLib(lib)
             const id = await createText({ lib, title, content })
-            await generate({ article: content, textId: id, onlyComments: false })
+            await generate({ article: content, textId: id, onlyComments: false, delayRevalidate: true })
             return { id, libId: lib, title, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() }
         }
     },
@@ -96,6 +96,7 @@ const tools: ToolSet = {
         execute: async ({ content, lang }: { content: string, lang: Lang }) => {
             const { userId } = await getUserOrThrow()
             return { annotation: await annotateParagraph({ content, lang, userId }), lang }
+
         }
     },
     generateQuiz: {

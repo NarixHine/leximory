@@ -17,7 +17,7 @@ export const maxAudioQuota = async () => {
 export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string, delayRevalidate: boolean = false) {
     const userId = explicitUserId ?? (await getUserOrThrow()).userId
     const quota = await incrementQuota(userId, 'commentary', incrBy)
-    if (!delayRevalidate)
+    if (delayRevalidate)
         revalidateTag(`quota:${userId}:commentary`, 'max')
     else
         updateTag(`quota:${userId}:commentary`)
