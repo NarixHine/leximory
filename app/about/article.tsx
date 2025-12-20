@@ -4,7 +4,6 @@ import { Card, CardBody } from "@heroui/card"
 import { motion } from 'framer-motion'
 import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiPlanetDuotone, PiHeadphonesDuotone, PiArrowSquareOutDuotone } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
-import { TypeAnimation } from 'react-type-animation'
 import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
 import { ACTION_QUOTA_COST, EXAMPLE_EBOOK_LINK } from '@/lib/config'
@@ -24,22 +23,6 @@ export function LeximoryGuide() {
     >
         <PiPlanetDuotone className='text-5xl opacity-60 mt-3 ml-3' />
     </GradientCard>
-}
-
-export function TypedTitle() {
-    return <TypeAnimation
-        sequence={[
-            'About Leximory',
-            2000,
-            'About Leximory, Our Mission',
-            2000,
-            'About Leximory, Our Mission, and More'
-        ]}
-        speed={50}
-        cursor={true}
-        repeat={0}
-        preRenderFirstString={true}
-    />
 }
 
 export function Article() {
@@ -153,7 +136,7 @@ export function Article() {
                 className='col-span-5'
             >
                 <GradientCard
-                    title={<span className='font-mono'><img src='/images/eck.ico' className='size-8 inline-block mr-2 align-top' alt='Exam Char Key' />Exam Char Key <span className='text-xl'>*</span></span>}
+                    title={<span className='font-mono'><img src='/images/eck.ico' className='size-8 inline-block mr-2 align-top' alt='Exam Char Key' />Exam Char Key</span>}
                     text='专注于文言文词语释义，集成 AI 助手的文言文学习辅助平台（友链）'
                     to='https://eck.cup11.top/'
                     className='border-amber-300 dark:border-default text-amber-600 dark:text-default-600 border-3 border-dashed bg-transparent min-h-32'

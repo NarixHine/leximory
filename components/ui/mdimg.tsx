@@ -2,16 +2,15 @@
 
 import { isReaderModeAtom } from '@/app/atoms'
 import { Button } from '@heroui/button'
-import { Image } from '@heroui/image'
+import Image from 'next/image'
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
 import { PiEyeSlash } from 'react-icons/pi'
 
-export default function MdImg({ src, alt = 'Image', title, disableSpecialStyles }: {
+export default function MdImg({ src, alt = 'Image', title }: {
     src: string,
     alt?: string,
     title?: string,
-    disableSpecialStyles?: boolean
 }) {
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const [isHidden, setIsHidden] = useState(false)
@@ -19,15 +18,17 @@ export default function MdImg({ src, alt = 'Image', title, disableSpecialStyles 
         return <></>
     }
 
-        const enableSpecialStyles = !isReaderMode && !disableSpecialStyles
     return (
-        <div className='relative mx-auto w-fit'>
+        <div className='mx-auto w-full'>
             <Image
-                isBlurred={enableSpecialStyles}
-                isZoomed={enableSpecialStyles}
+                sizes='(max-width: 768px) 100vw, 800px'
                 title={title}
+                width={0}
+                height={0}
                 alt={alt}
                 src={src}
+                className='rounded-lg'
+                style={{ width: '100%', height: 'auto' }}
             />
             {isReaderMode && (
                 <Button

@@ -3,7 +3,7 @@ import { ENGLISH_FANCY } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone, PiHouseDuotone } from 'react-icons/pi'
 import { Metadata } from 'next'
-import { TypedTitle, Article } from './article'
+import { Article } from './article'
 import { BILIBILI_LINK } from '@/lib/config'
 import Pricing from '@/components/pricing'
 import H from '@/components/ui/h'
@@ -18,8 +18,8 @@ export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
             <section className='max-w-(--breakpoint-sm) mx-auto'>
-                <h1 className={cn('text-4xl', ENGLISH_FANCY.className)}>
-                    <TypedTitle />
+                <h1 className={cn('text-5xl', ENGLISH_FANCY.className)}>
+                    About Leximory
                 </h1 >
                 <div className='flex w-fit mt-1 mb-6'>
                     <LinkButton

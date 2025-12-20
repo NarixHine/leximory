@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
             bodySizeLimit: '4.5mb',
         },
         useCache: true,
-        serverComponentsExternalPackages: ['pdf-parse'],
     },
+    serverExternalPackages: ['pdf-parse'],
     images: {
         remotePatterns: [
             {
@@ -25,7 +25,11 @@ const nextConfig: NextConfig = {
             {
                 protocol: r2Url.protocol.slice(0, -1) as 'http' | 'https',
                 hostname: r2Url.hostname
-            }
+            },
+            {
+                protocol: 'https',
+                hostname: 'static01.nyt.com',
+            },
         ],
     },
     turbopack: {},
