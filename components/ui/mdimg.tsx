@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
 import { PiEyeSlash } from 'react-icons/pi'
+import { ALLOWED_IMAGE_REMOTE_PATTERNS } from '@/lib/config'
 
 export default function MdImg({ src, alt = 'Image', title }: {
     src: string,
@@ -28,6 +29,10 @@ export default function MdImg({ src, alt = 'Image', title }: {
                 alt={alt}
                 src={src}
                 className='rounded-lg'
+                unoptimized={ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
+                    return pattern.hostname === new URL(src).hostname && pattern.protocol === new URL(src).protocol
+                })}
+                loading='lazy'
                 style={{ width: '100%', height: 'auto' }}
             />
             {isReaderMode && (

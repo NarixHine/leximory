@@ -8,15 +8,12 @@ import env, { IS_PROD } from '@/lib/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { CHINESE, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF, JAPANESE_MINCHO } from '@/lib/fonts'
-import { isAtRead } from '@/lib/subapp'
 import InstallLeximory from './install-leximory'
 import { AIDevtools } from '@ai-sdk-tools/devtools'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
 const APP_DESCRIPTION = '从记忆到心会'
-
-export const experimental_ppr = true
 
 export const metadata: Metadata = {
 	applicationName: TITLE_DEFAULT,
@@ -45,16 +42,11 @@ export const metadata: Metadata = {
 	},
 }
 
-export async function generateViewport(): Promise<Viewport> {
-	return await isAtRead() ? {
-		themeColor: '#FFFFFF',
-	} : {
-		themeColor: '#FFFCF0',
-	}
+export const viewport: Viewport = {
+	themeColor: '#FFFCF0',
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-	const hideIrrelevantElements = await isAtRead()
 	const fontVariables = [
 		ENGLISH.variable,
 		CHINESE.variable,
@@ -74,8 +66,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 						<div className='relative flex flex-col print:bg-white'>
 							{children}
-							{!hideIrrelevantElements && <InstallLeximory />}
-							{!hideIrrelevantElements && <Dock />}
+							<InstallLeximory />
+							<Dock />
 						</div>
 					</Providers>
 				</body>

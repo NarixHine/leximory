@@ -2,6 +2,7 @@
 
 import { Breadcrumbs, BreadcrumbItem } from '@heroui/breadcrumbs'
 import { Button } from '@heroui/button'
+import { Spinner } from '@heroui/spinner'
 import { PiBookBookmark, PiFileText, PiBooks, PiUserCircle, PiSkipBackCircle } from 'react-icons/pi'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -28,10 +29,11 @@ function LoadingIndicatorWrapper({ children }: { children: ReactNode }) {
 }
 
 interface NavPropsExtended extends NavProps {
-    tenant: string
+    tenant?: string
+    loading?: boolean
 }
 
-export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPropsExtended) {
+export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus, loading }: NavPropsExtended) {
     const router = useRouter()
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const iconClassName = 'text-stone-700 dark:text-default-500 dark:text-default-500 text-lg'
@@ -48,11 +50,12 @@ export default function NavBreadcrumbs({ lib, text, tenant, isAtCorpus }: NavPro
             {/* Tenant Breadcrumb */}
             <BreadcrumbItem className='max-w-full'>
                 <Link href={`/library`} prefetch={false} className='flex items-center gap-1'>
-                    <LoadingIndicatorWrapper>
-                        <PiUserCircle className={iconClassName} />
-                    </LoadingIndicatorWrapper>
-                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle text-stone-700 dark:text-default-500'>
-                        {tenant}
+                    {loading ? <Spinner variant='dots' size='sm' /> : <PiUserCircle className={iconClassName} />}
+                    <span className={cn(
+                        'inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw] md:max-w-[25vw] align-middle',
+                        loading ? 'text-default-300 font-mono' : 'text-stone-700 dark:text-default-500',
+                    )}>
+                        {loading ? 'Loading…' : tenant}
                     </span>
                 </Link>
             </BreadcrumbItem>

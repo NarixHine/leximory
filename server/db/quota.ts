@@ -1,6 +1,6 @@
 import 'server-only'
 import { redis } from '../client/redis'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 import { seconds } from 'itty-time'
 
 export async function incrementQuota(userId: string, type: 'commentary' | 'audio', incrBy: number = 1) {

@@ -1,7 +1,7 @@
 import { WordHeatmap, WordStats } from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Suspense } from 'react'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { cacheLife } from 'next/cache'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
 
 export default async function WordStatsSection({ uid }: { uid: string }) {

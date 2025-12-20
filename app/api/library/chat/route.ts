@@ -15,8 +15,6 @@ import { getPlan, getUserOrThrow } from '@/server/auth/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { getArticleFromUrl } from '@/lib/utils'
 import { AIGeneratableType } from '@/components/editory/generators/config'
-import { getLatestTimesData, getTimesDataByDate } from '@/server/db/times'
-import { momentSH } from '@/lib/moment'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 
@@ -130,20 +128,6 @@ ${content}`,
             })
 
             return { title, content: distilledContent }
-        }
-    },
-    getTodaysTimes: {
-        description: 'Get today\'s issue of The Leximory Times newspaper.',
-        inputSchema: toolSchemas.getTodaysTimes,
-        execute: async () => {
-            return getLatestTimesData()
-        }
-    },
-    getTimesIssue: {
-        description: 'Get a specific issue of The Leximory Times newspaper by date (YYYY-MM-DD).',
-        inputSchema: toolSchemas.getTimesIssue,
-        execute: async ({ date }: { date: string }) => {
-            return getTimesDataByDate(momentSH(date).format('YYYY-MM-DD'))
         }
     },
     requestPublishStreakMemory: {

@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '@/server/client/supabase'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 
 export async function visitText({ textId, userId }: { textId: string, userId: string }) {
     // find existing visit record

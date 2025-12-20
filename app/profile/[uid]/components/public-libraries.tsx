@@ -2,7 +2,7 @@ import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@/server/auth/user'
 import LibraryCard from '@/app/marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
-import { unstable_cacheLife as cacheLife } from 'next/cache'
+import { cacheLife } from 'next/cache'
 import { PiEmptyThin } from 'react-icons/pi'
 
 async function getPublicLibraries(uid: string, userId?: string | null) {

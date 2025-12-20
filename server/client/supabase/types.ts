@@ -7,10 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   graphql_public: {
     Tables: {
@@ -22,10 +22,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          extensions?: Json
           operationName?: string
           query?: string
           variables?: Json
-          extensions?: Json
         }
         Returns: Json
       }
@@ -273,45 +273,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      times: {
-        Row: {
-          audio: string | null
-          cover: string
-          created_at: string
-          date: string
-          id: number
-          is_sequel: boolean
-          news: string
-          novel: string
-          quiz: Json | null
-          raw_news: string | null
-        }
-        Insert: {
-          audio?: string | null
-          cover: string
-          created_at?: string
-          date: string
-          id?: number
-          is_sequel?: boolean
-          news: string
-          novel: string
-          quiz?: Json | null
-          raw_news?: string | null
-        }
-        Update: {
-          audio?: string | null
-          cover?: string
-          created_at?: string
-          date?: string
-          id?: number
-          is_sequel?: boolean
-          news?: string
-          novel?: string
-          quiz?: Json | null
-          raw_news?: string | null
-        }
-        Relationships: []
       }
       users: {
         Row: {

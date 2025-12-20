@@ -1,5 +1,5 @@
 import 'server-only'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 import { supabase } from '../client/supabase'
 
 export type Accent = 'BrE' | 'AmE'

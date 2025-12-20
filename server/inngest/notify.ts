@@ -9,9 +9,9 @@ import { momentSH } from '@/lib/moment'
 type Events = GetEvents<typeof inngest>
 
 webpush.setVapidDetails(
-    env.NEXT_PUBLIC_URL!,
-    env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    env.VAPID_PRIVATE_KEY!
+    env.NEXT_PUBLIC_URL,
+    env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    env.VAPID_PRIVATE_KEY
 )
 
 export const fanNotification = inngest.createFunction(

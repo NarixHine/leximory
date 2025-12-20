@@ -5,6 +5,6 @@ import Link, { LinkProps } from 'next/link'
 
 type LinkCardProps = CardProps & LinkProps
 
-export default function LinkCard({ href, prefetch, ...props }: LinkCardProps) {
-    return <Card as={Link} href={href} prefetch={prefetch} {...props} />
+export default function LinkCard({ ...props }: LinkCardProps) {
+    return <Card as={Link} {...props} />
 }

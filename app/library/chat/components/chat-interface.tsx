@@ -28,19 +28,15 @@ import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
 import type { Plan } from '@/lib/config'
-import moment from 'moment'
-import { Image } from '@heroui/image'
-import { Divider } from '@heroui/divider'
-import AudioPlayer from '@/components/ui/audio-player'
 import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
-    title: '造句巩固',
-    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出五道翻译题，考察并巩固我的掌握。',
+    title: '近日造句巩固',
+    prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出三道翻译题，考察并巩固我的掌握。',
     icon: PiPencilCircleDuotone
 }, {
-    title: '今日词汇',
-    prompt: '获取［今天］的 The Leximory Times 并提取 News 里实用于日常写作的高分语块，量少而精。',
+    title: '本周造句巩固',
+    prompt: '针对［本周］学习的［英语］单词，选出几个语块，总共出六道翻译题，考察并巩固我的掌握。',
     icon: PiBookmarksDuotone
 }, {
     title: '金句提取',
@@ -263,65 +259,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         <Paper data={[generatedQuiz]} />
                     </CardBody>
                 </Card>
-            )
-
-        case 'getTodaysTimes':
-        case 'getTimesIssue':
-            const { cover, audio, date, news, novel, quiz } = result as ToolResult['getTodaysTimes']
-            return (
-                <ToolAccordian title={`The Leximory Times — ${moment(date).tz('Asia/Shanghai').format('LL')}`} icon={<PiNewspaper />}>
-                    <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
-                        <CardBody className='p-6'>
-                            <div className='space-y-4'>
-                                {/* Cover Image */}
-                                <div className='w-full aspect-video rounded-lg flex items-center justify-center overflow-hidden'>
-                                    <Image
-                                        src={cover}
-                                        alt='Times Cover'
-                                        className='w-full h-full object-cover'
-                                    />
-                                </div>
-
-                                {/* News Section */}
-                                <Divider />
-                                <div className='pt-4'>
-                                    <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                                        <PiNewspaperDuotone className='text-primary' size={20} />
-                                        <span>Daily News</span>
-                                        {audio && <AudioPlayer src={audio} />}
-                                    </h4>
-                                    <div className='text-default-700 prose prose-sm max-w-none'>
-                                        <Markdown md={news} />
-                                    </div>
-                                </div>
-
-                                {/* Novel Section */}
-                                <Divider />
-                                <div className='pt-4'>
-                                    <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                                        <PiBooks className='text-primary' size={20} />
-                                        Daily Novel
-                                    </h4>
-                                    <div className='text-default-700 prose prose-sm max-w-none'>
-                                        <Markdown md={novel} />
-                                    </div>
-                                </div>
-
-                                {/* Quiz Section */}
-                                {quiz && (<>
-                                    <Divider />
-                                    <div className='pt-4'>
-                                        <h4 className='text-lg font-semibold mb-3 flex items-center gap-2'>
-                                            <PiGameControllerDuotone className='text-primary' size={20} />
-                                            Daily Quiz
-                                        </h4>
-                                        <Paper data={[quiz]} />
-                                    </div>
-                                </>)}
-                            </div>
-                        </CardBody>
-                    </Card>
-                </ToolAccordian>
             )
 
         case 'requestPublishStreakMemory':

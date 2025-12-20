@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getUserOrThrow } from '@/server/auth/user'
 import NavBreadcrumbs from './breadcrumbs'
 
@@ -13,8 +14,16 @@ export type NavProps = {
     isAtCorpus?: boolean
 }
 
-export default async function Nav(props: NavProps) {
+async function NavContent(props: NavProps) {
     const user = await getUserOrThrow()
     const tenant = user.username ?? 'You'
     return <NavBreadcrumbs {...props} tenant={tenant} />
+}
+
+export default function Nav(props: NavProps) {
+    return (
+        <Suspense fallback={<NavBreadcrumbs {...props} loading={true} />}>
+            <NavContent {...props} />
+        </Suspense>
+    )
 }

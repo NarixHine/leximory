@@ -31,19 +31,6 @@ export default async function AdminPage() {
                         <CardHeader className='pb-3'>
                             <h3 className='text-lg'>Quick Actions</h3>
                         </CardHeader>
-                        <CardBody className='pt-0'>
-                            <div className='space-y-2'>
-                                <LinkButton
-                                    href='/admin/times'
-                                    variant='flat'
-                                    startContent={<PiNewspaperDuotone />}
-                                    fullWidth
-                                    color='secondary'
-                                >
-                                    Manage Times Issues
-                                </LinkButton>
-                            </div>
-                        </CardBody>
                     </Card>
                 </div>
             </div>

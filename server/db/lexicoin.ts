@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 import { momentSH } from '@/lib/moment'
 import { ensureUserExists } from './user'
 

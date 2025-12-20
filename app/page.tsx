@@ -20,16 +20,11 @@ import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
-import { isAtRead } from '@/lib/subapp'
-import { redirect } from 'next/navigation'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
 import LinkButton from '@/components/ui/link-button'
 import LinkCard from '@/components/ui/link-card'
 
 export default async function Home() {
-	if (await isAtRead()) {
-		redirect('/times')
-	}
 	return <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
 		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl italic'} fancy>
 			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:[text-shadow:none]'>Leximory</span>
@@ -99,13 +94,13 @@ export default async function Home() {
 				<div className='grid grid-cols-1 laptop:grid-cols-1 max-laptop:sm:grid-cols-2 gap-3'>
 					<div>
 						<BentoCard
-							title='每日资源'
-							description='每日更新的英语新闻和小说'
+							title='一键分享'
+							description='将导入的外刊分享给好友。无需登录。'
 						>
-							<LinkCard isPressable href='/times' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
+							<LinkCard isPressable href='/read/SfuLVs7SqDJk' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
 								<CardBody>
-									<h2 className='font-bold opacity-50 text-xs'>The Leximory Times</h2>
-									<p className='opacity-60 font-bold'>24 March, 2025</p>
+									<h2 className='font-bold opacity-50 text-xs'>The Economist</h2>
+									<p className='opacity-60 font-bold'>The Flying Car Promise</p>
 									<div className='absolute bottom-0 right-0 p-2'>
 										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
 									</div>

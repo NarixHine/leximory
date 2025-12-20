@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
 import { momentSH } from '@/lib/moment'
-import { unstable_cacheTag as cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 
 export async function createMemory({ content, creator, isPublic, isStreak }: { content: string, creator: string, isPublic: boolean, isStreak: boolean }) {
     await supabase
