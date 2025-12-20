@@ -39,14 +39,6 @@ export function useAuth() {
     return { user, isLoading }
 }
 
-export const useIsMobileIos = () => {
-    const { navigator } = globalThis
-    if (!navigator)
-        return false
-    const userAgent = navigator.userAgent.toLowerCase()
-    return /iphone|ipad|ipod|macintosh|safari/.test(userAgent) && !/chrome/.test(userAgent) && !/android/.test(userAgent)
-}
-
 export const useOnWindowResize = (handler: { (): void }) => {
     useEffect(() => {
         const handleResize = () => {

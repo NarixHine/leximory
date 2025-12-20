@@ -6,7 +6,6 @@ import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useIsMobileIos } from '@/lib/hooks'
 import { getBracketedSelection, useSelection } from './utils'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { useAtomValue } from 'jotai'
@@ -23,8 +22,6 @@ export default function Define(props: { left: number | null, width: number | nul
     const buttonRef = useRef<HTMLButtonElement>(null!)
     const lang = useAtomValue(langAtom)
 
-    const MotionTrigger = motion.create(Drawer.Trigger)
-    const isMobileIos = useIsMobileIos()
     const isEbookMode = !!container
 
     const { defineClassName, defineLabel } = getLanguageStrategy(lang)
@@ -34,17 +31,12 @@ export default function Define(props: { left: number | null, width: number | nul
     })
 
     return <Drawer.Root repositionInputs={false} container={container}>
-        <AnimatePresence>
-            {selection && selection.anchorNode?.textContent && selection.toString() && left && width && bottom && <MotionTrigger
+            {selection && selection.anchorNode?.textContent && selection.toString() && left && width && bottom && <Drawer.Trigger
                 ref={buttonRef}
                 style={{
                     left: left + width / 2,
                     top: (isEbookMode ? 0 : scrollY) + bottom + 10
                 }}
-                initial={isMobileIos ? undefined : { opacity: 0 }}
-                animate={isMobileIos ? undefined : { opacity: 1 }}
-                exit={isMobileIos ? undefined : { opacity: 0, display: 'none' }}
-                transition={isMobileIos ? undefined : { duration: 0.2 }}
                 className={cn(
                     'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-default-100 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white',
                     isEbookMode && 'opacity-90',
@@ -53,8 +45,7 @@ export default function Define(props: { left: number | null, width: number | nul
             >
                 <PiMagnifyingGlass />
                 {defineLabel}
-            </MotionTrigger>}
-        </AnimatePresence>
+            </Drawer.Trigger>}
         <Drawer.Portal>
             <Drawer.Overlay className={cn(
                 'fixed inset-0 z-60',
