@@ -1,5 +1,5 @@
 import { HydrationBoundary } from 'jotai-ssr'
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { totalPagesAtom } from './atoms'
 import { countPublicLibs } from '@/server/db/lib'
 import { MARKETPLACE_PAGE_SIZE } from '@/lib/config'
@@ -13,16 +13,30 @@ async function getTotalPages() {
     return Math.ceil(total / MARKETPLACE_PAGE_SIZE)
 }
 
-export default async function MarketplaceLayout({
+async function TotalPagesHydrator({
     children
 }: {
     children: ReactNode
 }) {
     const totalPages = await getTotalPages()
 
-    return (<HydrationBoundary hydrateAtoms={[
-        [totalPagesAtom, totalPages]
-    ]}>
-        {children}
-    </HydrationBoundary>)
+    return (
+        <HydrationBoundary hydrateAtoms={[
+            [totalPagesAtom, totalPages]
+        ]}>
+            {children}
+        </HydrationBoundary>
+    )
+}
+
+export default function MarketplaceLayout({
+    children
+}: {
+    children: ReactNode
+}) {
+    return (
+        <Suspense>
+            <TotalPagesHydrator>{children}</TotalPagesHydrator>
+        </Suspense>
+    )
 }

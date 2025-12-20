@@ -42,18 +42,7 @@ async function PageContent({ params }: LibProps) {
 
 export default async function Page(props: LibProps) {
     return <Main>
-        <Suspense fallback={<>
-            <NavBreadcrumbs loading></NavBreadcrumbs>
-            <H fancy className='mb-4 text-5xl animate-pulse opacity-50'>
-                <Spinner variant='dots' />
-            </H>
-            <div className='flex justify-center mb-5 gap-1 flex-wrap'>
-                <Button variant='light' startContent={<PiPrinter />}>
-                    打印文库
-                </Button>
-            </div>
-            <TextList texts={[]} isReadOnly={true} />
-        </>}>
+        <Suspense fallback={<NavBreadcrumbs loading />}>
             <PageContent params={props.params} />
         </Suspense>
     </Main>

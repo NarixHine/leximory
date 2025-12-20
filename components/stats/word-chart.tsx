@@ -22,7 +22,10 @@ export default function WordChart({ data, color }: { data: WordData[], color?: A
 export function WordChartSkeleton() {
     return <AreaChart
         className='opacity-30 animate-pulse'
-        data={formatChartData(new Map(), 30)}
+        data={new Array(30).fill(0).map((_, i) => ({
+            date: `Day ${i + 1}`,
+            '记忆单词数': 0
+        }))}
         index='date'
         colors={['default']}
         categories={['记忆单词数']}

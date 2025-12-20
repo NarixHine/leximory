@@ -8,7 +8,21 @@ import WordStatsSection from './components/word-stats'
 import { UserPublicFeed } from '@/app/memories/components/user-public-feed'
 import { Spacer } from '@heroui/spacer'
 
-export default async function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
+type ProfilePageProps = {
+    params: Promise<{
+        uid: string
+    }>
+}
+
+export default function ProfilePage({ params }: ProfilePageProps) {
+    return (
+        <Suspense>
+            <ProfilePageContent params={params} />
+        </Suspense>
+    )
+}
+
+async function ProfilePageContent({ params }: ProfilePageProps) {
     const uid = (await params).uid
     return <Center className='flex-col max-w-(--breakpoint-xl) gap-4'>
         <UserInfo uid={uid} />

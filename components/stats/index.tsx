@@ -1,11 +1,11 @@
 import WordChart from './word-chart'
-import moment from 'moment'
 import VocabularyCalendar, { HeatmapSkeleton } from './calendar'
 import { getUserOrThrow } from '@/server/auth/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
 import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
 import { Suspense } from 'react'
+import { momentSH } from '@/lib/moment'
 
 const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'
@@ -42,12 +42,12 @@ export async function UserWordHeatmap() {
 
 export function formatChartData(countMap: Map<string, number>, size: number) {
     const dates = Array.from({ length: size }, (_, i) => {
-        const d = moment().subtract(i, 'days').toDate()
+        const d = momentSH().subtract(i, 'days').toDate()
         return d.toISOString().split('T')[0]
     }).reverse()
 
     const data = dates.map(date => ({
-        date: moment(date).format('MMM Do'),
+        date: momentSH(date).format('ll'),
         '记忆单词数': countMap.get(date) || 0
     }))
 

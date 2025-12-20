@@ -1,13 +1,9 @@
 import { WordHeatmap, WordStats } from '@/components/stats'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { Suspense } from 'react'
-import { cacheLife } from 'next/cache'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
 
 export default async function WordStatsSection({ uid }: { uid: string }) {
-    'use cache'
-    cacheLife('days')
-
     return (
         <div className='flex flex-col basis-full md:basis-2/5 gap-4 sm:min-w-96'>
             <div>

@@ -21,9 +21,10 @@ export const subscribe = async (hour: number) => {
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 
-export default function Bell({ hasSubs, hour = 22 }: {
+export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
     hasSubs: boolean
     hour?: number | null
+    isDisabled?: boolean
 }) {
     const [isUpdating, startUpdating] = useTransition()
     const [selectedHour, setSelectedHour] = useState(hour ?? 22)
@@ -33,6 +34,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
             <Button
                 variant={hasSubs ? 'flat' : 'ghost'}
                 isLoading={isUpdating}
+                isDisabled={isDisabled}
                 onPress={() => {
                     startUpdating(async () => {
                         if (hasSubs) {
@@ -60,7 +62,7 @@ export default function Bell({ hasSubs, hour = 22 }: {
                 className='w-28'
                 startContent='于'
                 endContent={<span className='text-sm'>时</span>}
-                isDisabled={hasSubs}
+                isDisabled={hasSubs || isDisabled}
             >
                 {new Array(24).fill(0).map((_, i) => (
                     <SelectItem key={i}>{i.toString()}</SelectItem>
@@ -68,4 +70,11 @@ export default function Bell({ hasSubs, hour = 22 }: {
             </Select>
         </div>
     )
+}
+
+export function BellSkeleton() {    
+    return <BellButton 
+        hasSubs={false} 
+        isDisabled={true} 
+    />
 }
