@@ -30,6 +30,8 @@ export default function MdImg({ src, alt = 'Image', title }: {
                 src={src}
                 className='rounded-lg'
                 unoptimized={!ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
+                    if (src.startsWith('/'))
+                        return true
                     return pattern.hostname === new URL(src).hostname && pattern.protocol === new URL(src).protocol
                 })}
                 loading='lazy'

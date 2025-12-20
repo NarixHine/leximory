@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import moment from 'moment'
 import { bgColor } from './constants'
 import LinkCard from '../ui/link-card'
+import { Suspense } from 'react'
 
 type StreakData = {
     total: number
@@ -17,7 +18,28 @@ type StreakData = {
     highest: number
 }
 
-export function StreakDisplay({ streakData, compact = false }: { streakData: StreakData, compact?: boolean }) {
+type StreakDisplayProps = {
+    streakData: StreakData
+    compact?: boolean
+}
+
+export function StreakSkeleton() {
+    return <div className={cn('h-77 sm:h-58 w-full rounded-lg animate-pulse', bgColor)} />
+}
+
+export function CompactStreakSkeleton() {
+    return <div className={cn('h-15 w-full rounded-lg animate-pulse', bgColor)} />
+}
+
+export function StreakDisplay({ streakData, compact = false }: StreakDisplayProps) {
+    return (
+        <Suspense fallback={compact ? <CompactStreakSkeleton /> : <StreakSkeleton />}>
+            <StreakDisplayContent streakData={streakData} compact={compact} />
+        </Suspense>
+    )
+}
+
+function StreakDisplayContent({ streakData, compact = false }: StreakDisplayProps) {
     const todayEntry = streakData.history.find(entry => moment(entry.date).isSame(moment(), 'day'))
     const isTodayActive = todayEntry?.active || false
 

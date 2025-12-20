@@ -2,7 +2,9 @@
 
 import { ChatMessages } from '@/app/library/chat/components/chat-interface'
 import { Accordion, AccordionItem } from '@heroui/react'
-import { convertV4PartToV5Part } from './transform'
+import { convertV4MessageToV5 } from './transform'
+
+const convert = (v4message: Array<any>) => v4message.map(convertV4MessageToV5).filter(m => m !== null)
 
 export function ShowcaseWrapper({ children, title, defaultExpanded }: { children: React.ReactNode, title: string, defaultExpanded?: boolean }) {
     return <Accordion variant='bordered' className='not-prose my-5' defaultExpandedKeys={defaultExpanded ? [title] : []}>
@@ -14,7 +16,7 @@ export function ShowcaseWrapper({ children, title, defaultExpanded }: { children
 
 export function HighlightChunk() {
     return <ShowcaseWrapper title='高分语块 Demo' defaultExpanded>
-        <ChatMessages messages={convertV4PartToV5Part([{
+        <ChatMessages messages={convert([{
             "id": "HfrdeavX2fvVegLk",
             "role": "user",
             "content": "对于文库 The Economist 中的 AI Manager 文章，提取出适合用在作文里的高分语块💫",
@@ -189,7 +191,7 @@ export function HighlightChunk() {
 
 export function TranslationDemo() {
     return <ShowcaseWrapper title='翻译复盘 Demo'>
-        <ChatMessages messages={convertV4PartToV5Part([{
+        <ChatMessages messages={convert([{
             "id": "HfrdeavX2fvVegLk",
             "role": "user",
             "content": "针对今天学习的英语单词，选出几个单词，对每个单词用中文出一道翻译🌐",
@@ -339,7 +341,7 @@ export function TranslationDemo() {
 
 export function StoryDemo() {
     return <ShowcaseWrapper title='故事生成 Demo'>
-        <ChatMessages messages={convertV4PartToV5Part([
+        <ChatMessages messages={convert([
             {
                 "id": "fD5TRf69R1aCEyGb",
                 "role": "user",
@@ -514,7 +516,7 @@ export function StoryDemo() {
 
 export function ImportDemo() {
     return <ShowcaseWrapper title='批量导入 Demo'>
-        <ChatMessages messages={convertV4PartToV5Part([
+        <ChatMessages messages={convert([
             {
                 "id": "l3VA258CUwnXVSNf",
                 "role": "user",
@@ -723,7 +725,7 @@ export function ImportDemo() {
 
 export function EssayDemo() {
     return <ShowcaseWrapper title='提炼语块，应用于写作 Demo'>
-        <ChatMessages messages={convertV4PartToV5Part([
+        <ChatMessages messages={convert([
             {
                 "id": "4ghjWIHvaXSxL8CI",
                 "role": "user",
@@ -1478,7 +1480,7 @@ export function EssayDemo() {
 
 export function PaperDemo() {
     return <ShowcaseWrapper title='小猫钓鱼 Demo'>
-        <ChatMessages messages={convertV4PartToV5Part([
+        <ChatMessages messages={convert([
             {
                 "id": "56gZEaimGioz0xiS",
                 "role": "user",

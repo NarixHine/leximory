@@ -11,10 +11,3 @@ export async function StreakServer({ compact = false }: { compact?: boolean }) {
     return <StreakDisplay streakData={streakData} compact={compact} />
 }
 
-export function StreakSkeleton() {
-    return <div className={cn('h-77 sm:h-58 w-full rounded-lg animate-pulse', bgColor)} />
-}
-
-export function CompactStreakSkeleton() {
-    return <div className={cn('h-15 w-full rounded-lg animate-pulse', bgColor)} />
-}
