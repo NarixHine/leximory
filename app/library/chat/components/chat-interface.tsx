@@ -5,7 +5,7 @@ import { DefaultChatTransport } from 'ai'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
 import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper, PiArrowCounterClockwiseDuotone, PiFolderOpenDuotone } from 'react-icons/pi'
-import { memo, ReactNode, useEffect, useRef, useState } from 'react'
+import { memo, ReactNode, Suspense, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
 import { Card, CardBody } from '@heroui/card'
@@ -17,7 +17,6 @@ import LibraryComponent from '@/app/library/components/lib'
 import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
 import { Accordion, AccordionItem, AccordionProps } from '@heroui/react'
-import UpgradeMessage from './upgrade-message'
 import { IS_PROD } from '@/lib/env'
 import H from '@/components/ui/h'
 import { useCopyToClipboard } from 'usehooks-ts'
@@ -27,7 +26,6 @@ import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
-import type { Plan } from '@/lib/config'
 import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
@@ -415,7 +413,7 @@ export const ChatMessages = ({
     isLoading?: boolean
 }) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} regenerate={regenerate} />)}</>
 
-export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { plan: Plan, initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean }) {
+function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialInput?: string, shouldOpenNew?: boolean, UpgradeMessage?: ReactNode }) {
     const [storedMessages, setStoredMessages] = useAtom(messagesAtom)
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -527,7 +525,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
     }
 
     return (
-        <Main className='flex flex-col max-w-2xl font-formal'>
+        <>
             <div className={cn(
                 'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-1.5 sm:pl-7 sm:pr-3 top-10 z-10 rounded-full',
                 'border border-slate-300/50 dark:border-stone-600/30',
@@ -561,7 +559,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
             >
                 恢复上次对话
             </Button>}
-            {plan === 'beginner' && <UpgradeMessage />}
+            {<Suspense>{UpgradeMessage}</Suspense>}
             {messages.length === 0 && (
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8'>
                     {initialPrompts.map((prompt, index) => (
@@ -625,7 +623,7 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     color='primary'
                     isIconOnly
                     className='self-start'
-                    isDisabled={(plan === 'beginner' && IS_PROD) || (status === 'ready' && !input.trim())}
+                    isDisabled={status === 'ready' && !input.trim()}
                     aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
                     startContent={isLoading ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
@@ -637,6 +635,16 @@ export default function ChatInterface({ plan, initialInput, shouldOpenNew }: { p
                     <span>Conversations are stored locally.</span>
                 </span>
             </footer>
+        </>
+    )
+}
+
+export default function ChatInterface({ initialInput, shouldOpenNew, UpgradeMessage }: { initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean, UpgradeMessage?: ReactNode }) {
+    return (
+        <Main className='flex flex-col max-w-2xl font-formal'>
+            <Suspense fallback={<div className='flex justify-center items-center h-full min-h-[200px]'><Spinner /></div>}>
+                <ChatSession initialInput={initialInput} shouldOpenNew={shouldOpenNew} UpgradeMessage={UpgradeMessage} />
+            </Suspense>
         </Main>
     )
 }
