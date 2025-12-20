@@ -7,6 +7,7 @@ import { getLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import UserAvatar from '@/components/avatar'
 import { LIB_ACCESS_STATUS } from '@/lib/config'
+import { Suspense } from 'react'
 
 export async function generateMetadata(props: LibProps) {
     const params = await props.params
@@ -19,10 +20,14 @@ export async function generateMetadata(props: LibProps) {
     }
 }
 
-export default async function UnauthorizedPage(
-    props: {
-        params: Promise<{ lib: string }>
-    }
+export default function UnauthorizedPage(props: LibProps) {
+    return <Suspense>
+        <UnauthorizedPageContent params={props.params} />
+    </Suspense>
+}
+
+async function UnauthorizedPageContent(
+    props: LibProps
 ) {
     const params = await props.params
 
