@@ -23,6 +23,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
 
     return (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            {!isReadOnly && <AddTextButton />}
             {texts.map(({ title, id, topics, hasEbook, createdAt }) => (
                 <Text
                     id={id}
@@ -38,7 +39,6 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     }
                 />
             ))}
-            {!isReadOnly && <AddTextButton />}
         </div>
     )
 }

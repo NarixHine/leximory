@@ -93,8 +93,8 @@ async function LibraryList({ userId, orFilter }: {
     cacheLife('days')
     const data = await getData(orFilter, userId)
     const archives = await getArchivedLibs({ userId })
-    const compactLibs = data.filter(({ lib }) => lib?.shadow || archives.includes(lib!.id))
-    const normalLibs = data.filter(({ lib }) => !lib?.shadow && !archives.includes(lib!.id))
+    const compactLibs = data.filter(({ lib }) => lib.shadow || archives.includes(lib.id)).sort((a, b) => (b.lib.shadow ? 1 : 0) - (a.lib.shadow ? 1 : 0))
+    const normalLibs = data.filter(({ lib }) => !lib.shadow && !archives.includes(lib.id))
     return (
         <div className='flex flex-col gap-5 w-full'>
             <ConfirmUnstarRoot />

@@ -364,8 +364,9 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
         )}
       </div>
 
+      <Spacer y={6} />
+      
       {!hideImportControls && !isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
-        <Spacer y={6} />
         <ImportModal />
       </div>}
     </div>
