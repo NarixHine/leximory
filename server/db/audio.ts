@@ -29,6 +29,6 @@ export async function uploadAudio({ id, audio }: { id: string, audio: GeneratedA
 
     const url = await retrieveAudioUrl({ id })
 
-    revalidateTag(`audio:${id}`)
+    revalidateTag(`audio:${id}`, 'max')
     return url!
 }

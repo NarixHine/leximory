@@ -12,7 +12,7 @@ export async function incrementQuota(userId: string, type: 'commentary' | 'audio
         await redis.expire(quotaKey, seconds('30 days'))
     }
 
-    after(() => revalidateTag(`quota:${userId}:${type}`))
+    after(() => revalidateTag(`quota:${userId}:${type}`, 'max'))
 
     return quota
 }

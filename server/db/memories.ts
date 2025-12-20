@@ -15,8 +15,8 @@ export async function createMemory({ content, creator, isPublic, isStreak }: { c
         })
         .throwOnError()
 
-    revalidateTag(`memories:${creator}`)
-    revalidateTag('memories:federated')
+    revalidateTag(`memories:${creator}`, 'max')
+    revalidateTag('memories:federated', 'max')
 }
 
 export async function deleteMemory({ id, creator }: { id: number, creator: string }) {
@@ -27,8 +27,8 @@ export async function deleteMemory({ id, creator }: { id: number, creator: strin
         .eq('creator', creator)
         .throwOnError()
 
-    revalidateTag(`memories:${creator}`)
-    revalidateTag('memories:federated')
+    revalidateTag(`memories:${creator}`, 'max')
+    revalidateTag('memories:federated', 'max')
 }
 
 async function getMemories(queryBuilder: any, page: number, size: number) {

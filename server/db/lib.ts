@@ -38,7 +38,7 @@ export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang 
 }
 
 export async function starLib({ lib, userId }: { lib: string, userId: string }) {
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
     const { data: library } = await supabase
         .from('libraries')
         .select('starred_by')
@@ -58,7 +58,7 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
 }
 
 export async function unstarLib({ lib, userId }: { lib: string, userId: string }) {
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
     const { data: library } = await supabase
         .from('libraries')
         .select('starred_by')
@@ -84,8 +84,8 @@ export async function updateLib({ id, access, name, org, price, prompt }: { id: 
         })
         .eq('id', id)
 
-    revalidateTag('libraries')
-    revalidateTag(`lib:${id}`)
+    revalidateTag('libraries', 'max')
+    revalidateTag(`lib:${id}`, 'max')
 }
 
 export async function createLib({ name, lang, owner }: { name: string, lang: Lang, owner: string }) {
@@ -104,14 +104,14 @@ export async function createLib({ name, lang, owner }: { name: string, lang: Lan
         word: getLanguageStrategy(lang).welcome,
     })
 
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
     return id
 }
 
 export async function deleteLib({ id }: { id: string }) {
     await supabase.from('libraries').delete().eq('id', id)
     // will automatically delete cascaded texts and lexicon entries
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
 }
 
 export async function countPublicLibs() {
@@ -209,7 +209,7 @@ export async function getArchivedLibs({ userId }: { userId: string }) {
 }
 
 export async function addToArchive({ userId, libId }: { userId: string, libId: string }) {
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
     const archive = await getArchivedLibs({ userId })
     await supabase
         .from('users')
@@ -218,7 +218,7 @@ export async function addToArchive({ userId, libId }: { userId: string, libId: s
 }
 
 export async function removeFromArchive({ userId, libId }: { userId: string, libId: string }) {
-    revalidateTag('libraries')
+    revalidateTag('libraries', 'max')
     const archive = await getArchivedLibs({ userId })
     await supabase
         .from('users')

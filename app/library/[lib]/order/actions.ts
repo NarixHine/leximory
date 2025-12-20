@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { z } from 'zod'
 import { authWriteToLib } from '@/server/auth/role'
 import { updateTextOrder } from '@/server/db/text'
@@ -14,5 +14,5 @@ export async function reorderTexts(props: z.infer<typeof reorderSchema>) {
     const { lib, ids } = reorderSchema.parse(props)
     await authWriteToLib(lib)
     await updateTextOrder({ lib, ids })
-    revalidateTag(`texts:${lib}`)
+    updateTag(`texts:${lib}`)
 }

@@ -11,7 +11,7 @@ export async function setAccentPreference({ accent, userId }: { accent: Accent, 
         .update({ accent })
         .eq('id', userId)
         .throwOnError()
-    revalidateTag('accent')
+    revalidateTag('accent', 'max')
 }
 
 export async function getAccentPreference({ userId }: { userId: string }) {

@@ -44,8 +44,8 @@ export async function saveWord({ lib, word }: { lib: string, word: string }) {
         .single()
         .throwOnError()
     after(() => {
-        revalidateTag('words')
-        revalidateTag(`words:${lib}`)
+        revalidateTag('words', 'max')
+        revalidateTag(`words:${lib}`, 'max')
     })
     return data
 }
@@ -77,8 +77,8 @@ export async function deleteWord(id: string) {
         .single()
         .throwOnError()
     after(() => {
-        revalidateTag('words')
-        revalidateTag(`words:${data.lib}`)
+        revalidateTag('words', 'max')
+        revalidateTag(`words:${data.lib}`, 'max')
     })
     return data
 }

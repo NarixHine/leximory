@@ -2,7 +2,7 @@
 
 import { requireAdmin } from '@/server/auth/role'
 import { getTimesDataByDate, removeIssue, updateTimes } from '@/server/db/times'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { z } from 'zod'
 
 // Zod schema for Times data validation
@@ -47,7 +47,7 @@ export async function updateTimesIssue(date: string, formData: z.infer<typeof ti
         // Insert updated data
         await updateTimes(date, updatedData)
 
-        revalidateTag('times')
+        updateTag('times')
 
         return { success: true, message: 'Times issue updated successfully' }
     } catch (error) {
@@ -66,7 +66,7 @@ export async function deleteTimesIssue(date: string) {
 
     try {
         await removeIssue(date)
-        revalidateTag('times')
+        updateTag('times')
 
         return { success: true, message: 'Times issue deleted successfully' }
     } catch {

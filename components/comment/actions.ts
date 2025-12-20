@@ -5,7 +5,7 @@ import { extractSaveForm } from '@/lib/comment'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
-import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { getUserOrThrow } from '@/server/auth/user'
 
 export async function delComment(id: string) {
@@ -16,10 +16,10 @@ export async function delComment(id: string) {
 
 export async function saveComment({ portions, lib, editId, shadow, lang }: { portions: string[], lib: string, editId?: string, shadow?: boolean, lang: "en" | "zh" | "ja" | "nl" }) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
-
+    
     after(async () => {
-        revalidateTag(`words:${lib}`)
-        revalidateTag(`words`)
+        updateTag(`words:${lib}`)
+        updateTag(`words`)
     })
 
     const { userId } = await getUserOrThrow()

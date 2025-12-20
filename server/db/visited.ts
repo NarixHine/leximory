@@ -22,7 +22,7 @@ export async function visitText({ textId, userId }: { textId: string, userId: st
         .single()
         .throwOnError()
 
-    revalidateTag(`reads:${newVisit.texts.lib}`)
+    revalidateTag(`reads:${newVisit.texts.lib}`, 'max')
 }
 
 export async function getVisitedTextIds({ libId, userId }: { libId: string, userId: string }) {
