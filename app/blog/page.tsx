@@ -3,9 +3,8 @@ import { Spacer } from "@heroui/spacer"
 import Center from '@/components/ui/center'
 import type { Metadata } from 'next'
 import { postsData } from './posts'
-import { momentSH } from '@/lib/moment'
+import { luxon } from '@/lib/luxon'
 import Link from 'next/link'
-import { Suspense } from 'react'
 
 export const metadata: Metadata = {
     title: 'The Leximory Blog',
@@ -32,7 +31,7 @@ export default function BlogHome() {
                         </H>
                     </Link>
                     <H disableCenter className={'text-sm -my-0.5 text-default-400'}>
-                        {new Date(post.date).toLocaleDateString('zh-CN')}
+                        {luxon(new Date(post.date)).toLocaleString()}
                     </H>
                 </span>)}
             </div>
