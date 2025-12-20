@@ -6,7 +6,7 @@ import { PiChatsDuotone } from 'react-icons/pi'
 
 async function PlanProvider({ className }: { className?: string }) {
     const plan = await getPlan()
-    return <QuoteInAgentButton plan={plan} className={className} />
+    return plan === 'beginner' ? null : <QuoteInAgentButton className={className} />
 }
 
 export default function QuoteInAgent({ className }: { className?: string }) {
