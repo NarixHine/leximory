@@ -4,13 +4,6 @@ import { type ModelMessage, generateText } from 'ai'
 import incrCommentaryQuota from '@/server/auth/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 import { thinkAI } from '@/server/ai/configs'
-import pdf from 'pdf-parse'
-
-async function extractPdfText(file: File): Promise<string> {
-    const arrayBuffer = Buffer.from(await file.arrayBuffer())
-    const { text } = await pdf(arrayBuffer)
-    return text
-}
 
 const SECTION_PROMPTS = {
     '语法填空（Grammar & Vocabulary: Section A）':
@@ -100,8 +93,9 @@ async function buildMessages(params: {
                 text: '请分析以下试卷。'
             },
             {
-                type: 'text',
-                text: await extractPdfText(paperFile)
+                type: 'file',
+                mediaType: paperFile.type,
+                data: await paperFile.arrayBuffer()
             }
         ],
     }]
@@ -119,8 +113,9 @@ async function buildMessages(params: {
                 type: 'text',
                 text: '拟定试卷参考答案：'
             }, {
-                type: 'text',
-                text: await extractPdfText(answerFile!),
+                type: 'file',
+                mediaType: answerFile.type,
+                data: await answerFile.arrayBuffer()
             }]
         })
     }
