@@ -46,10 +46,6 @@ export const thinkAI = {
     model: 'google/gemini-3-flash',
     providerOptions: {
         google: {
-            thinkingConfig: {
-                thinkingLevel: 'high',
-                includeThoughts: true,
-            },
             safetySettings: [
                 {
                     category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
