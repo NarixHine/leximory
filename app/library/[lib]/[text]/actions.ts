@@ -16,7 +16,7 @@ import crypto from 'crypto'
 import { getUserOrThrow } from '@/server/auth/user'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
-import { revalidatePath, updateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { visitText } from '@/server/db/visited'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 
