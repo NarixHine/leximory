@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
         serverActions: {
             bodySizeLimit: '4.5mb',
         },
+        turbopackFileSystemCacheForBuild: true,
+        turbopackFileSystemCacheForDev: true,
     },
     serverExternalPackages: ['pdf-parse'],
     images: {

@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const messages = convertToModelMessages(body.messages)
+    const messages = await convertToModelMessages(body.messages)
 
     const result = streamText({
         tools,
