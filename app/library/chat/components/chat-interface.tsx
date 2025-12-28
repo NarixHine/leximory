@@ -74,23 +74,20 @@ type MessagePart = {
     errorText?: string
 }
 
-function ToolState({ state, toolName }: { state: string; toolName: ToolName }) {
-    if (state === 'input-available') {
-        return (
-            <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
-                <Spinner size='sm' color='default' variant='gradient' />
-                <span>{toolDescriptions[toolName]}</span>
-            </div>
-        )
-    }
-    return <></>
+function ToolLoading({ toolName }: { toolName: ToolName }) {
+    return (
+        <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
+            <Spinner size='sm' color='default' variant='dots' />
+            <span>{toolDescriptions[toolName]}</span>
+        </div>
+    )
 }
 
 function ToolAccordian({ title, children, defaultExpanded, icon, ...props }: { title: string, children: ReactNode, icon: ReactNode, defaultExpanded?: boolean } & AccordionProps) {
-    return <Accordion className='mt-2 px-0' {...props} defaultExpandedKeys={defaultExpanded ? ['content'] : []}>
+    return <Accordion className='px-0 not-prose' {...props} defaultExpandedKeys={defaultExpanded ? ['content'] : []}>
         <AccordionItem key='content' title={title} startContent={icon} classNames={{
             titleWrapper: 'flex-none',
-            trigger: 'text-sm'
+            trigger: 'text-sm py-2'
         }}>
             {children}
         </AccordionItem>
@@ -269,14 +266,12 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
-    console.log(part)
     if (part.type.startsWith('tool-')) {
         const toolName = part.type.substring(5) as ToolName
         switch (part.state) {
             case 'input-streaming':
-                return <pre>{JSON.stringify(part.input, null, 2)}</pre>
             case 'input-available':
-                return <ToolState state={'call'} toolName={toolName} />
+                return <ToolLoading toolName={toolName} />
             case 'output-available':
                 return (
                     <div className='mt-2 w-full'>
@@ -308,7 +303,6 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 </div>
             )
         case 'reasoning':
-            console.log(part)
             return part.text && (
                 <ToolAccordian defaultExpanded title='Reasoning' icon={<PiLightbulb size={16} />}>
                     <Markdown
