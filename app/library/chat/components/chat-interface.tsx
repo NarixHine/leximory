@@ -269,6 +269,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
+    console.log(part)
     if (part.type.startsWith('tool-')) {
         const toolName = part.type.substring(5) as ToolName
         switch (part.state) {
@@ -286,7 +287,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     </div>
                 )
             case 'output-error':
-                return <div>Error: {part.errorText}</div>
+                return <div className='font-mono text-sm'>Error: {part.errorText}</div>
         }
     }
 
