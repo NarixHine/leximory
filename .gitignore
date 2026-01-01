@@ -19,6 +19,8 @@
 .DS_Store
 *.pem
 /public/sw.js
+public/sw*
+public/swe-worker*
 
 # debug
 npm-debug.log*

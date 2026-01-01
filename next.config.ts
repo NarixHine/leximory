@@ -1,5 +1,4 @@
 import createMDX from '@next/mdx'
-import withSerwistInit from '@serwist/next'
 import { NextConfig } from 'next'
 import { ALLOWED_IMAGE_REMOTE_PATTERNS, FYP_BLOG_LINK } from './lib/config'
 
@@ -13,7 +12,6 @@ const nextConfig: NextConfig = {
         turbopackFileSystemCacheForBuild: true,
         turbopackFileSystemCacheForDev: true,
     },
-    serverExternalPackages: ['pdf-parse'],
     images: {
         remotePatterns: [
             {
@@ -23,7 +21,6 @@ const nextConfig: NextConfig = {
             ...ALLOWED_IMAGE_REMOTE_PATTERNS
         ],
     },
-    turbopack: {},
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
         return [{
@@ -44,11 +41,6 @@ const nextConfig: NextConfig = {
     },
 }
 
-const withSerwist = withSerwistInit({
-    swSrc: 'app/sw.ts',
-    swDest: 'public/sw.js',
-})
-
 const withMDX = createMDX({})
 
-export default withSerwist(withMDX(nextConfig))
+export default withMDX(nextConfig)
