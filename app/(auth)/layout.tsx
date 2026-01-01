@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { ReactNode, Suspense } from 'react'
 
 export default async function Layout({ children }: { children: ReactNode }) {
-
     return <Center className='max-w-none flex flex-col justify-center lg:flex-row gap-4 overflow-hidden'>
         <div className='lg:basis-1/2'>
             <Suspense>

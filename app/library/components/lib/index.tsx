@@ -34,20 +34,16 @@ export function ConfirmUnstarRoot() {
 export function LibrarySkeleton() {
     return (
         <FlatCard className='w-full opacity-60' background='solid'>
-            <CardBody className='px-6 pt-5'>
+            <CardBody className='px-6 pt-6'>
                 <StoneSkeleton className='w-48 h-10 rounded-lg' />
-                <Spacer y={8} />
+                <Spacer y={2} />
                 <div className='flex space-x-2'>
-                    <StoneSkeleton className='w-16 h-6 rounded-lg' />
-                    <StoneSkeleton className='w-16 h-6 rounded-lg' />
+                    <StoneSkeleton className='w-16 h-4 rounded-lg' />
+                    <StoneSkeleton className='w-16 h-4 rounded-lg' />
                 </div>
             </CardBody>
-            <CardFooter className='px-4 pb-4 flex gap-4'>
+            <CardFooter className='px-4 pb-4 flex'>
                 <StoneSkeleton className='w-24 h-9 rounded-lg' />
-                <div className='flex flex-col gap-1'>
-                    <StoneSkeleton className='w-16 h-3 rounded-lg' />
-                    <StoneSkeleton className='w-12 h-5 rounded-lg' />
-                </div>
             </CardFooter>
         </FlatCard>
     )
