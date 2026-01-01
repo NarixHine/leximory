@@ -10,8 +10,6 @@ import { LIB_ACCESS_STATUS } from '@/lib/config'
 import LinkButton from '@/components/ui/link-button'
 import { Suspense } from 'react'
 import NavBreadcrumbs from '@/components/nav/breadcrumbs'
-import { Button } from '@heroui/button'
-import { Spinner } from '@heroui/spinner'
 
 async function getData(lib: string) {
     const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)

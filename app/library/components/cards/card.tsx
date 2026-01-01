@@ -19,7 +19,7 @@ const GradientCard = ({ text, className, title, children, caption }: {
         )}>
             {
                 title
-                    ? <h1 className={'font-fancy opacity-80'}>{title}<span className='text-sm align-baseline'>{caption}</span></h1>
+                    ? <h1 className={'opacity-80 font-formal'}>{title}<span className='text-sm align-baseline'>{caption}</span></h1>
                     : <Skeleton className='h-3 w-1/3 max-w-10 my-1 rounded-lg opacity-50' />
             }
             {
