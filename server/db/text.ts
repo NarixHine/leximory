@@ -133,7 +133,7 @@ export async function getTextContent({ id }: { id: string }) {
     if (has_ebook) {
         const { data, error } = await supabase.storage
             .from('user-files')
-            .createSignedUrl(`ebooks/${id}.epub`, seconds('7 days'))
+            .createSignedUrl(`ebooks/${id}.epub`, seconds('3 days'))
         if (error) throw error
         return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
     }
@@ -161,7 +161,12 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
     if (updateError) throw updateError
     if (!text?.lib) throw new Error('Library not found')
 
-    return path
+    const { data } = await supabase.storage
+        .from('user-files')
+        .createSignedUrl(path, seconds('3 days'))
+        console.log(path)
+
+    return data!.signedUrl
 }
 
 export async function getTextAnnotationProgress({ id }: { id: string }) {

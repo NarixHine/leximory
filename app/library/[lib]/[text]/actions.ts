@@ -101,7 +101,7 @@ export async function remove({ id }: { id: string }) {
 
 export async function saveEbook(id: string, form: FormData) {
     const ebook = form.get('ebook') as File
-    if (ebook.type !== 'application/epub+zip') {
+    if (!['application/epub+zip'].includes(ebook.type)) {
         throw new Error('Not an epub file')
     }
     if (ebook.size > MAX_FILE_SIZE) {

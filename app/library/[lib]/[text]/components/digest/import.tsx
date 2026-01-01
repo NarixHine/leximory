@@ -146,7 +146,7 @@ export default function ImportModal() {
                                     <p className='text-center font-bold text-xl -mb-10'>上传电子书</p>
                                     <FileUpload acceptableTypes={['application/epub+zip']} onChange={async (files) => {
                                         const ebook = files[files.length - 1]
-                                        if (ebook.type !== 'application/epub+zip') {
+                                        if (!['application/epub+zip'].includes(ebook.type)) {
                                             toast.error('发生错误，文件需为 .epub 格式')
                                             return
                                         }
