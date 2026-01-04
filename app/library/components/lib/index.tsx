@@ -1,20 +1,21 @@
 'use client'
 
-import { Button } from "@heroui/button"
-import { CardBody, CardFooter } from "@heroui/card"
-import { Spacer } from "@heroui/spacer"
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone } from 'react-icons/pi'
+import { Button } from '@heroui/button'
+import { CardBody, CardFooter } from '@heroui/card'
+import { Spacer } from '@heroui/spacer'
+import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone, PiWarningOctagonFill } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS, Lang } from '@/lib/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import Form from '../../../../components/form'
-import { Input, Textarea } from "@heroui/input"
-import { Checkbox } from "@heroui/checkbox"
-import { Select, SelectItem } from "@heroui/select"
+import { Input, Textarea } from '@heroui/input'
+import { Checkbox } from '@heroui/checkbox'
+import { Select, SelectItem } from '@heroui/select'
 import { create, remove, save, archive, unarchive, unstar } from './actions'
 import { useForm } from 'react-hook-form'
-import { useDisclosure } from "@heroui/react"
+import { useDisclosure } from '@heroui/react'
+import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useState, useTransition } from 'react'
@@ -205,24 +206,32 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         </MotionCard>
 
         <Form
-            actionButton={<Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} onPress={() => {
-                const timer = setTimeout(() => {
-                    remove({ id })
-                    setIsDeleted(true)
-                    toast.success('删除成功')
-                }, 5000)
-                toast('五秒后删除……', {
-                    duration: 5000,
-                    icon: <PiHourglassMediumDuotone />,
-                    cancel: {
-                        label: '撤销',
-                        onClick: () => {
-                            clearTimeout(timer)
-                            toast.dismiss()
-                        },
-                    },
-                })
-            }}></Button>}
+            actionButton={<Popover>
+                <PopoverTrigger>
+                    <Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} />
+                </PopoverTrigger>
+                <PopoverContent className='p-0'>
+                    <Button color='danger' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
+                        const timer = setTimeout(() => {
+                            remove({ id })
+                            setIsDeleted(true)
+                            toast.success('删除成功')
+                        }, 5000)
+                        onOpenChange()
+                        toast('五秒后删除……', {
+                            duration: 5000,
+                            icon: <PiHourglassMediumDuotone />,
+                            cancel: {
+                                label: '撤销',
+                                onClick: () => {
+                                    clearTimeout(timer)
+                                    toast.dismiss()
+                                },
+                            },
+                        })
+                    }}>确认删除</Button>
+                </PopoverContent>
+            </Popover >}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             isLoading={formState.isSubmitting}
@@ -241,7 +250,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             </div>
             <p className='text-xs text-center opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
             <Textarea label='Talk to Your Library 默认提示词' placeholder='在文本界面唤起 AI 对话时的初始提示词。'  {...register('prompt')} />
-        </Form>
+        </Form >
     </>)
 }
 
