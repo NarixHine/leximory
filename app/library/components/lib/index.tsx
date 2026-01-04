@@ -13,7 +13,7 @@ import { Input, Textarea } from '@heroui/input'
 import { Checkbox } from '@heroui/checkbox'
 import { Select, SelectItem } from '@heroui/select'
 import { create, remove, save, archive, unarchive, unstar } from './actions'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { useDisclosure } from '@heroui/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
 import { motion } from 'framer-motion'
@@ -84,7 +84,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     const recentAccessItem = recentAccess[id]
     const [isDeleted, setIsDeleted] = useState(false)
 
-    const { register, handleSubmit, formState } = useForm<{
+    const { register, handleSubmit, formState, control } = useForm<{
         id: string,
         name: string,
         access: boolean,
@@ -244,9 +244,21 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 <Checkbox color='primary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
                     设为公开并上架集市
                 </Checkbox>
-                <NumberInput size='sm' placeholder='0~100' minValue={0} maxValue={100} variant='underlined' label='上架价格' {...register('price')} onChange={(e) => {
-                    register('price').onChange({ target: { value: e } })
-                }} />
+                <Controller
+                    name='price'
+                    control={control}
+                    render={({ field }) => (
+                        <NumberInput
+                            {...field}
+                            size='sm'
+                            placeholder='0~100'
+                            minValue={0}
+                            maxValue={100}
+                            variant='underlined'
+                            label='上架价格'
+                        />
+                    )}
+                />
             </div>
             <p className='text-xs text-center opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
             <Textarea label='Talk to Your Library 默认提示词' placeholder='在文本界面唤起 AI 对话时的初始提示词。'  {...register('prompt')} />
