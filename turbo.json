@@ -10,6 +10,8 @@
                 "!.next/cache/**"
             ],
             "env": [
+                "BETTER_AUTH_SECRET",
+                "BETTER_AUTH_URL",
                 "ELEVENLABS_API_KEY",
                 "UPSTASH_REDIS_REST_URL",
                 "UPSTASH_REDIS_REST_TOKEN",
