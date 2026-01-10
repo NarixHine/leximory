@@ -2,7 +2,7 @@ import { GetEvents } from 'inngest'
 import { inngest } from './client'
 import webpush from 'web-push'
 import { prefixUrl } from '@/lib/config'
-import env from '@/lib/env'
+import env from '@repo/env'
 import { getHourlySubs } from '@/server/db/subs'
 import { momentSH } from '@/lib/moment'
 

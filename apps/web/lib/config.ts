@@ -1,4 +1,4 @@
-import env, { IS_PROD } from './env'
+import env, { IS_PROD } from '@repo/env'
 
 export const PLANS = ['beginner', 'bilingual', 'polyglot', 'leximory'] as const
 export type Plan = (typeof PLANS)[number]

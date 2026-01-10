@@ -1,6 +1,6 @@
 'use server'
 
-import env from '@/lib/env'
+import env from '@repo/env'
 import { Tabstack } from '@tabstack/sdk'
 
 const tabs = new Tabstack({

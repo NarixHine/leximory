@@ -3,7 +3,7 @@
 import { Button } from "@heroui/button"
 import { PiClockClockwiseDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
-import env from '@/lib/env'
+import env from '@repo/env'
 import { save, remove } from '../actions'
 import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'

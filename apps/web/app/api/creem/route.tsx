@@ -1,6 +1,6 @@
 import { getPlanFromProductId } from '@/lib/config'
 import { createWebhookHandler } from '@/lib/creem-sdk/webhook-handler'
-import env from '@/lib/env'
+import env from '@repo/env'
 import { creem } from '@/server/client/creem'
 import { getRequestUserId, fillCustomerId, getUserIdByCustomerId, updateSubscription } from '@/server/db/creem'
 import { NextRequest, NextResponse } from 'next/server'

@@ -1,7 +1,7 @@
 import 'server-only'
 import { nanoid } from '@/lib/utils'
 import { supabase } from '@/server/client/supabase'
-import { redis } from '../client/redis'
+import { redis } from '@repo/kv/redis'
 import { AnnotationProgress } from '@/lib/types'
 import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { cacheTag } from 'next/cache'
