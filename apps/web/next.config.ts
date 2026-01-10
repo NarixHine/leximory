@@ -1,6 +1,6 @@
 import createMDX from '@next/mdx'
 import { NextConfig } from 'next'
-import { ALLOWED_IMAGE_REMOTE_PATTERNS, FYP_BLOG_LINK } from './lib/config'
+import { ALLOWED_IMAGE_REMOTE_PATTERNS, FYP_BLOG_LINK } from '@/lib/config'
 
 const nextConfig: NextConfig = {
     cacheComponents: true,

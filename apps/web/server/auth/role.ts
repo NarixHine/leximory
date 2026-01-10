@@ -1,6 +1,6 @@
 import 'server-only'
 import { getUserOrThrow } from './user'
-import { ADMIN_UID, Lang, LIB_ACCESS_STATUS } from '../../lib/config'
+import { ADMIN_UID, Lang, LIB_ACCESS_STATUS } from '@/lib/config'
 import { supabase } from '@/server/client/supabase'
 
 /**

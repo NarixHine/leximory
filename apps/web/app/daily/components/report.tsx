@@ -8,7 +8,6 @@ import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { getUserOrThrow } from '@/server/auth/user'
 
-
 export default async function Report({ day }: {
     day: ForgetCurvePoint
 }) {
