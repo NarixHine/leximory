@@ -1,5 +1,5 @@
 import 'server-only'
-import { redis } from "../client/redis"
+import { redis } from '@repo/kv/redis'
 import { seconds } from 'itty-time'
 
 export const getAnnotationCache = async ({ hash }: { hash: string }) => {

@@ -6,14 +6,8 @@
     "build": "tsc"
   },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
-    },
-    "./redis": {
-      "types": "./src/redis.ts",
-      "default": "./dist/redis.js"
-    }
+    ".": "./src/index.ts",
+    "./redis": "./src/redis.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

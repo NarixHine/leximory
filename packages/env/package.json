@@ -6,10 +6,7 @@
     "build": "tsc"
   },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
-    }
+    ".": "./src/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

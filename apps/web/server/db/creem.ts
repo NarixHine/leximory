@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabase } from '../client/supabase'
 import { Plan } from '@/lib/config'
-import { redis } from '../client/redis'
+import { redis } from '@repo/kv/redis'
 import { updatePlan } from '../auth/user'
 
 export async function getCustomerId(userId: string) {
