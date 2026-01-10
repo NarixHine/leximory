@@ -16,8 +16,7 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
                 getAll() {
                     return request.cookies.getAll()
                 },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
                     supabaseResponse = NextResponse.next({
                         request,
                     })
