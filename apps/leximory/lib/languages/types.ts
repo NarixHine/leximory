@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Lang } from '../config'
+import { Lang } from '@repo/env/config'
 
 export interface LanguageStrategy {
     type: Lang

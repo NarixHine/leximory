@@ -1,5 +1,5 @@
 import { ENGLISH_SERIF } from '../fonts'
-import { Lang } from '../config'
+import { Lang } from '@repo/env/config'
 import { createLanguageStrategy } from './utils'
 
 export const englishStrategy = createLanguageStrategy({

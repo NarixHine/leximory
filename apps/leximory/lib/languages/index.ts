@@ -1,4 +1,4 @@
-import { Lang } from '../config'
+import { Lang } from '@repo/env/config'
 import { chineseStrategy, englishStrategy, japaneseStrategy, notListedStrategy } from './strategies'
 import { LanguageStrategy } from './types'
 

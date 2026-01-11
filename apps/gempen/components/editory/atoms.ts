@@ -48,21 +48,22 @@ export const setAnswerAtom = atom(
 
 export const editoryItemsAtom = atomWithStorage<QuizItems>('editory-items', [], {
     getItem(key, initialValue) {
+        if (typeof window === 'undefined')
+            return initialValue
+
         const storedValue = localStorage.getItem(key)
-        const { data, error } = QuizItemsSchema.safeParse(JSON.parse(storedValue ?? ''))
-        if (error) {
-            toast.error(error.message)
+        if (!storedValue) return initialValue
+
+        try {
+            const parsed = JSON.parse(storedValue)
+            const { data, success } = QuizItemsSchema.safeParse(parsed)
+            return success ? data : initialValue
+        } catch {
             return initialValue
         }
-        return data
     },
     setItem(key, value) {
-        try {
-            QuizItemsSchema.parse(value)
-            localStorage.setItem(key, JSON.stringify(value))
-        } catch {
-            toast.error('Invalid. Not saved.')
-        }
+        localStorage.setItem(key, JSON.stringify(value))
     },
     removeItem(key) {
         localStorage.removeItem(key)

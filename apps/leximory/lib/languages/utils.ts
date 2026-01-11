@@ -1,4 +1,4 @@
-import { Lang } from '../config'
+import { Lang } from '@repo/env/config'
 import type { LanguageServerStrategy, LanguageStrategy } from './types'
 
 export function createLanguageStrategy(
