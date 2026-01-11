@@ -2,7 +2,7 @@
 
 import { Button } from '@heroui/button'
 import { toast } from 'sonner'
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { genStoryInShadowLib } from '../actions'
 import { subscribe } from './bell'

@@ -6,7 +6,7 @@ import { Drawer, DrawerBody, DrawerContent } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/modal'
 import { manageSubscription } from '../actions'
 import Link from 'next/link'
-import { BILIBILI_LINK } from '@/lib/config'
+import { BILIBILI_LINK } from '@repo/env/config'
 import Pricing from '@/components/pricing'
 
 export default function Upgrade({ isOnFreeTier }: { isOnFreeTier: boolean }) {

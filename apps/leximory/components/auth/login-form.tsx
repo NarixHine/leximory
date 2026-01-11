@@ -12,7 +12,7 @@ import { login } from './actions'
 import { Form } from '@heroui/form'
 import { toast } from 'sonner'
 import { createClient } from '@repo/supabase/client'
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import { useSearchParams } from 'next/navigation'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -28,7 +28,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       provider: 'github',
       options: {
         redirectTo: prefixUrl('/callback?next=' + encodeURIComponent(next || '/')),
-      }
+      },
     })
 
     if (error) {

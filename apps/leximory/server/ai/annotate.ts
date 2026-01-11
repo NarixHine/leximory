@@ -1,5 +1,5 @@
 import 'server-only'
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { generateText } from 'ai'
 import { instruction } from '@/lib/prompt'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'

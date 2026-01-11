@@ -7,7 +7,14 @@ import { AvatarDropdown } from './dropdown'
 export async function CurrentUserAvatar() {
     const user = await getUser()
     const { image } = user ?? {}
-    return <Avatar src={image} isBordered color='primary' className='size-16!' />
+    return <AvatarDropdown
+        isLoggedIn={!!user}
+        trigger={<Button
+            variant='light'
+            startContent={<Avatar src={image} isBordered color='primary' className='size-16!' />}
+            className={'rounded-full'}
+            isIconOnly={true}
+        />} />
 }
 
 function UserAvatarFallback() {
@@ -16,13 +23,8 @@ function UserAvatarFallback() {
 
 export default function UserAvatar() {
     return (
-        <AvatarDropdown trigger={<Button
-            variant='light'
-            startContent={<Suspense fallback={<UserAvatarFallback />}>
-                <CurrentUserAvatar />
-            </Suspense>}
-            className={'rounded-full'}
-            isIconOnly={true}
-        />} />
+        <Suspense fallback={<UserAvatarFallback />}>
+            <CurrentUserAvatar />
+        </Suspense>
     )
 }

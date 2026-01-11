@@ -5,7 +5,7 @@ import { getAccentPreference, setAccentPreference } from '@/server/db/preference
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import { momentSH } from '@/lib/moment'
 import { revalidatePath, updateTag } from 'next/cache'
-import { PLAN_DAILY_LEXICOIN } from '@/lib/config'
+import { PLAN_DAILY_LEXICOIN } from '@repo/env/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'

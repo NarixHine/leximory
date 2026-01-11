@@ -5,7 +5,7 @@ import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
 import { getUserOrThrow } from '@repo/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { inngest } from '@/server/inngest/client'
-import { ACTION_QUOTA_COST } from '@/lib/config'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 
 export default async function load(lib: string, cursor?: string) {
     await authReadToLib(lib)

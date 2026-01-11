@@ -1,5 +1,5 @@
 import { getUserOrThrow } from '@repo/user'
-import { ADMIN_UID } from '@/lib/config'
+import { ADMIN_UID } from '@repo/env/config'
 import { ReactNode, Suspense } from 'react'
 import Main from '@/components/ui/main'
 import AdminBreadcrumbs from './components/breadcrumbs'

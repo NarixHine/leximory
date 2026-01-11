@@ -1,5 +1,5 @@
 import 'server-only'
-import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@/lib/config'
+import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@repo/env/config'
 import { languageStrategies } from '@/lib/languages'
 import { supabase } from '@repo/supabase'
 import { cacheLife, cacheTag } from 'next/cache'

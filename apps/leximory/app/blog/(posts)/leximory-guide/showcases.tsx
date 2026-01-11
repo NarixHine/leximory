@@ -1,5 +1,5 @@
 import { UserPublicFeed } from '@/app/memories/components/user-public-feed'
-import { ADMIN_UID } from '@/lib/config'
+import { ADMIN_UID } from '@repo/env/config'
 import { ShowcaseWrapper } from '../ai-agent/showcases'
 import { StreakDisplay } from '@/components/streak/streak-display'
 

@@ -790,6 +790,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.90.1
         version: 2.90.1
+      itty-time:
+        specifier: ^2.0.2
+        version: 2.0.2
       next:
         specifier: 16.1.1
         version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -808,6 +811,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@repo/env':
+        specifier: workspace:^
+        version: link:../env
       '@repo/supabase':
         specifier: workspace:^
         version: link:../supabase

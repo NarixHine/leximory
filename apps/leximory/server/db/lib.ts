@@ -1,5 +1,5 @@
 import 'server-only'
-import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
+import { Lang, LIB_ACCESS_STATUS } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { nanoid } from '@/lib/utils'
 import { cacheTag } from 'next/cache'

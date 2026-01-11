@@ -1,6 +1,6 @@
 import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
-import { Lang, LIB_ACCESS_STATUS } from '@/lib/config'
+import { Lang, LIB_ACCESS_STATUS } from '@repo/env/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode, Suspense } from 'react'
 import { getLib } from '@/server/db/lib'

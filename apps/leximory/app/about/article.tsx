@@ -6,7 +6,7 @@ import { PiAppleLogoDuotone, PiBookOpenDuotone, PiSpeakerHifiDuotone, PiPlanetDu
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { Spacer } from "@heroui/spacer"
-import { ACTION_QUOTA_COST, EXAMPLE_EBOOK_LINK } from '@/lib/config'
+import { ACTION_QUOTA_COST, EXAMPLE_EBOOK_LINK } from '@repo/env/config'
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import Link from 'next/link'
 import { ReactNode } from 'react'

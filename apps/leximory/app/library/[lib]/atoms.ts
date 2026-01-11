@@ -1,6 +1,6 @@
 'use client'
 
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { atom } from 'jotai'
 
 export const isReadOnlyAtom = atom(false)

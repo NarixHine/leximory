@@ -1,6 +1,6 @@
 'use client'
 
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { CardBody, CardFooter } from "@heroui/card"
 import H from '@/components/ui/h'

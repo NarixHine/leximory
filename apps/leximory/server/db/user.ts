@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '@repo/supabase'
-import { Plan } from '@/lib/config'
+import { Plan } from '@repo/env/config'
 
 export async function getUsersPlansByIds(userIds: string[]): Promise<Record<string, Plan>> {
     if (userIds.length === 0) {

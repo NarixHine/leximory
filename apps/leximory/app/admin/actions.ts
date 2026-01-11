@@ -2,7 +2,7 @@
 
 import { supabase } from '@repo/supabase'
 import { updatePlan } from '@repo/user'
-import { Plan } from '@/lib/config'
+import { Plan } from '@repo/env/config'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/server/auth/role'
 

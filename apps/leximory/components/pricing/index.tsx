@@ -7,7 +7,7 @@ import { Divider } from '@heroui/divider'
 import { Button } from '@heroui/button'
 import { cn } from '@/lib/utils'
 import { upgrade } from './actions'
-import { PLAN_AUDIO_QUOTA, PLAN_COMMENTARY_QUOTA, PLAN_DAILY_LEXICOIN } from '@/lib/config'
+import { PLAN_AUDIO_QUOTA, PLAN_COMMENTARY_QUOTA, PLAN_DAILY_LEXICOIN } from '@repo/env/config'
 
 export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boolean }) {
     return <div className="p-4 flex items-center justify-center">

@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib } from '@/server/auth/role'
-import { LIB_ACCESS_STATUS, Lang, SUPPORTED_LANGS } from '@/lib/config'
+import { LIB_ACCESS_STATUS, Lang, SUPPORTED_LANGS } from '@repo/env/config'
 import { createLib, deleteLib, updateLib, unstarLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'

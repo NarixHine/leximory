@@ -6,7 +6,7 @@ import { Button, type ButtonProps } from '@heroui/button'
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import { LibAndTextProps } from '@/lib/types'
 
 export default function ShareButton({ isPublicAndFree, ...props }: ButtonProps & { isPublicAndFree: boolean }) {

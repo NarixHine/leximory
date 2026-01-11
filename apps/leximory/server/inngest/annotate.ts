@@ -1,5 +1,5 @@
 import { inngest } from './client'
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '../db/text'
 import { getSubsStatus } from '../db/subs'

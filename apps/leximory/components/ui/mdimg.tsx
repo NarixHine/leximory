@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
 import { PiEyeSlash } from 'react-icons/pi'
-import { ALLOWED_IMAGE_REMOTE_PATTERNS } from '@/lib/config'
+import { ALLOWED_IMAGE_REMOTE_PATTERNS } from '@repo/env/config'
 
 export default function MdImg({ src, alt = 'Image', title }: {
     src: string,

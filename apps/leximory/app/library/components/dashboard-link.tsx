@@ -1,6 +1,6 @@
 import { getUserOrThrow } from '@repo/user'
 import { PiPaperPlane } from 'react-icons/pi'
-import { ADMIN_UID } from '@/lib/config'
+import { ADMIN_UID } from '@repo/env/config'
 import LinkButton from '@repo/ui/link-button'
 
 export default async function AdminDashboardLink() {

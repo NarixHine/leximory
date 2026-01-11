@@ -8,10 +8,10 @@ import { Suspense } from 'react'
 import UserAvatar from '@repo/ui/user'
 
 export const metadata: Metadata = {
-    title: '作业编辑器'
+    title: 'Editor | GemPen',
 }
 
-export default function CreateAssignmentPage() {
+export default function Page() {
     return (
         <>
             <Main className='max-w-none sm:w-full lg:-translate-x-5'>

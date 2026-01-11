@@ -18,7 +18,7 @@ const env = createEnv({
     },
 
     client: {
-        NEXT_PUBLIC_URL: z.string().min(1),
+        NEXT_PUBLIC_LEXIMORY_URL: z.string().min(1),
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
         NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
         NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
@@ -33,7 +33,7 @@ const env = createEnv({
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         // Web Push Notifications
         VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-        NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+        NEXT_PUBLIC_LEXIMORY_URL: process.env.NEXT_PUBLIC_LEXIMORY_URL,
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
         // Creem Integration
         CREEM_API_KEY: process.env.CREEM_API_KEY,

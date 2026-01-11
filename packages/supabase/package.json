@@ -13,13 +13,14 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
-    "typescript": "latest",
-    "@types/node": "^25.0.5"
+    "@types/node": "^25.0.5",
+    "typescript": "latest"
   },
   "dependencies": {
     "@repo/env": "workspace:^",
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.90.1"
+    "@supabase/supabase-js": "^2.90.1",
+    "itty-time": "^2.0.2"
   },
   "peerDependencies": {
     "next": "16.1.1"

@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import { postsData } from './blog/posts'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

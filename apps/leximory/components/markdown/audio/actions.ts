@@ -6,7 +6,7 @@ import { maxAudioQuota } from '@repo/user/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
 import { generateText } from 'ai'
 import { getUserOrThrow } from '@repo/user'
-import { MAX_TTS_LENGTH } from '@/lib/config'
+import { MAX_TTS_LENGTH } from '@repo/env/config'
 import { speak } from '@/server/ai/speak'
 import { nanoAI } from '@/server/ai/configs'
 

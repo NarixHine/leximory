@@ -4,7 +4,7 @@ import { revokeUserToken, getUserToken } from '../actions'
 import { toast } from 'sonner'
 import { PiKeyDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
 import { Button } from "@heroui/button"
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import { Drawer } from 'vaul'
 import { Snippet } from "@heroui/snippet"
 import { Progress } from "@heroui/progress"

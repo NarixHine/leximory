@@ -1,6 +1,6 @@
 import Main from '@/components/ui/main'
 import Pagination from './pagination'
-import { MARKETPLACE_PAGE_SIZE } from '@/lib/config'
+import { MARKETPLACE_PAGE_SIZE } from '@repo/env/config'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'

@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { inngest } from './client'
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'

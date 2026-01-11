@@ -6,7 +6,7 @@ import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { getLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import UserAvatar from '@/components/avatar'
-import { LIB_ACCESS_STATUS } from '@/lib/config'
+import { LIB_ACCESS_STATUS } from '@repo/env/config'
 import { Suspense } from 'react'
 
 export async function generateMetadata(props: LibProps) {

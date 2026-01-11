@@ -18,7 +18,7 @@ import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
-import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@/lib/config'
+import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
 import LinkButton from '@repo/ui/link-button'
@@ -27,7 +27,7 @@ import LinkCard from '@/components/ui/link-card'
 export default async function Home() {
 	return <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
 		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl italic'} fancy>
-			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:[text-shadow:none]'>Leximory</span>
+			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:text-shadow-none'>Leximory</span>
 		</H>
 
 		<Spacer y={5}></Spacer>

@@ -12,8 +12,6 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
             const response = NextResponse.redirect(`${origin}${next}`)
-            // Clear the cookie on the response
-            response.cookies.set('next', '', { maxAge: 0 })
             return response
         }
     }

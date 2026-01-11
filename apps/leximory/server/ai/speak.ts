@@ -1,4 +1,4 @@
-import { Lang } from '@/lib/config'
+import { Lang } from '@repo/env/config'
 import { elevenLabsVoiceConfig } from '@/server/ai/configs'
 import { elevenlabs } from '@ai-sdk/elevenlabs'
 import { getAccentPreference } from '../db/preference'

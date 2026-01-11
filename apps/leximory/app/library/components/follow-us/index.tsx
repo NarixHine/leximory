@@ -8,7 +8,7 @@ import { FaBilibili } from 'react-icons/fa6'
 import { cn } from '@heroui/react'
 import { showFollowUsModal } from './actions'
 import { useRouter } from 'next/navigation'
-import { BILIBILI_LINK } from '@/lib/config'
+import { BILIBILI_LINK } from '@repo/env/config'
 
 export default function FollowUs() {
     const { isOpen, onOpenChange } = useDisclosure({ defaultOpen: true })

@@ -16,7 +16,7 @@ const APP_DESCRIPTION = '从记忆到心会'
 
 export const metadata: Metadata = {
 	applicationName: TITLE_DEFAULT,
-	metadataBase: new URL(env.NEXT_PUBLIC_URL),
+	metadataBase: new URL(env.NEXT_PUBLIC_LEXIMORY_URL),
 	title: {
 		default: TITLE_DEFAULT,
 		template: TITLE_TEMPLATE,

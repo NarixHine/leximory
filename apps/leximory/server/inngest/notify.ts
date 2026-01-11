@@ -1,7 +1,7 @@
 import { GetEvents } from 'inngest'
 import { inngest } from './client'
 import webpush from 'web-push'
-import { prefixUrl } from '@/lib/config'
+import { prefixUrl } from '@repo/env/config'
 import env from '@repo/env'
 import { getHourlySubs } from '@/server/db/subs'
 import { momentSH } from '@/lib/moment'
@@ -9,7 +9,7 @@ import { momentSH } from '@/lib/moment'
 type Events = GetEvents<typeof inngest>
 
 webpush.setVapidDetails(
-    env.NEXT_PUBLIC_URL,
+    env.NEXT_PUBLIC_LEXIMORY_URL,
     env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     env.VAPID_PRIVATE_KEY
 )

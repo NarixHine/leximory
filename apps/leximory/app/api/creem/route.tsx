@@ -1,4 +1,4 @@
-import { getPlanFromProductId } from '@/lib/config'
+import { getPlanFromProductId } from '@repo/env/config'
 import { createWebhookHandler } from '@/lib/creem-sdk/webhook-handler'
 import env from '@repo/env'
 import { creem } from '@/server/client/creem'
