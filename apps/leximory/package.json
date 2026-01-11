@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently 'serwist build --watch' 'next dev' 'npx inngest-cli@latest dev'",
+    "dev": "concurrently 'serwist build --watch' 'next dev -p 3001' 'npx inngest-cli@latest dev'",
     "build": "next build && serwist build",
     "start": "next start",
     "lint": "next lint",

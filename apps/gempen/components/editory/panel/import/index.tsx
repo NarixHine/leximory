@@ -53,16 +53,16 @@ export function ImportButton() {
             </Button>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
                 <ModalContent>
-                    <ModalHeader className='flex flex-col gap-1'>Smart Import</ModalHeader>
+                    <ModalHeader className='flex flex-col gap-1'>AI 导入</ModalHeader>
                     <ModalBody>
                         <p>
-                            <b>Automatically generate an assignment with AI</b> from a PDF of your exam, which must also include the key.
+                            <b>智能导入</b> PDF 试卷（须含答案），转换为 GemPen 格式以便使用编辑器进行操作。
                         </p>
                         <input type='file' ref={fileInputRef} onChange={handleFileChange} className='hidden' accept='.pdf' />
                     </ModalBody>
                     <ModalFooter>
                         <Button startContent={!isPending && <MagicWandIcon size={20} />} color='secondary' onPress={handleAIImportClick} isLoading={isPending}>
-                            Upload Exam PDF
+                            上传 PDF
                         </Button>
                     </ModalFooter>
                 </ModalContent>

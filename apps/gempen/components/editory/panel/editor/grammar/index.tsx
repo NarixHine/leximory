@@ -50,10 +50,10 @@ export default function GrammarEditor({
                         </ModalBody>
                         <ModalFooter className='w-full'>
                             <Button variant='light' onPress={onClose}>
-                                Close
+                                关闭
                             </Button>
                             <Button type='submit' color='secondary' variant='flat'>
-                                Save
+                                保存
                             </Button>
                         </ModalFooter>
                     </Form>

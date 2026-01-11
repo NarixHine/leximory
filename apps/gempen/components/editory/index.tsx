@@ -63,8 +63,16 @@ export function Key({
     accordionItemClassName?: string
 }) {
     return (
-        <Accordion className={cn('not-prose w-full', accordionClassName)} defaultExpandedKeys={['key']}>
-            <AccordionItem key={'key'} title='Key' className={cn('shadow-none', accordionItemClassName)} subtitle='点击以展开／折叠'>
+        <Accordion className={cn('not-prose w-full', accordionClassName)} defaultExpandedKeys={[]}>
+            <AccordionItem
+                key={'key'}
+                title='Key'
+                className={cn('shadow-none', accordionItemClassName)}
+                classNames={{
+                    trigger: 'pb-2'
+                }}
+                subtitle='点击以展开／折叠'
+            >
                 {data && <QuizKey quizData={data} />}
             </AccordionItem>
         </Accordion>

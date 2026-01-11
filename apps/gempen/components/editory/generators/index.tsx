@@ -15,7 +15,7 @@ const QuestionProcessor = ({ data, config, variant }: { data: QuizData; config: 
 export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
     const questionStarts = getQuestionStarts(quizData)
     return (
-        <div className='my-2'>
+        <div>
             {quizData.map((data, index) => (
                 <QuestionProcessor key={data.id || index} data={data} config={{ start: questionStarts[index] }} variant='key' />
             ))}

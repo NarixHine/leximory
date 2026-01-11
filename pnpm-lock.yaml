@@ -151,6 +151,9 @@ importers:
       '@repo/ui':
         specifier: workspace:^
         version: link:../../packages/ui
+      '@repo/user':
+        specifier: workspace:^
+        version: link:../../packages/user
       '@tanstack/react-query':
         specifier: ^5.85.5
         version: 5.90.16(react@19.2.0)

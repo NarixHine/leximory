@@ -40,7 +40,7 @@ export function Ask() {
                 <Drawer.Content className='flex flex-col h-[50vh] mt-24 fixed bottom-0 w-full sm:left-0 z-999999 sm:w-fit px-3'>
                     <Drawer.Title className='sr-only'>AI Explanation</Drawer.Title>
                     <div className='p-4 bg-default-50 rounded-t-xl flex-1 flex flex-col items-center overflow-y-auto shadow-lg'>
-                        <div aria-hidden className='mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-default-300' />
+                        <div aria-hidden className='mx-auto w-12 h-1.5 shrink-0 rounded-full bg-default-300' />
                         <div className='prose dark:prose-invert'>
                             {explanationProps && <Explanation {...explanationProps} />}
                         </div>

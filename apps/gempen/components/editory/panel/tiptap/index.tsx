@@ -26,11 +26,11 @@ import Image from '@tiptap/extension-image'
 import { useCallback, useEffect, useMemo } from 'react'
 import { QuizData } from '../../generators/types'
 import { toast } from 'sonner'
-import { streamQuiz } from '@/server/ai/generate-quiz'
 import { AIGeneratableType } from '../../generators/config'
 import { IS_PROD } from '@repo/env'
 import { throttle } from 'es-toolkit'
 import { ms } from 'itty-time'
+import { streamQuizAction } from './actions'
 
 // Define interfaces for cleaner prop typing
 interface TiptapProps extends UseEditorOptions {
@@ -145,7 +145,7 @@ const Tiptap = ({
     
     toast.promise(
       async () => {
-        const { partialObjectStream, object } = await streamQuiz({
+        const { partialObjectStream, object } = await streamQuizAction({
           prompt: promptText,
           type: ai.data.type as AIGeneratableType,
         })

@@ -9,7 +9,7 @@ import { PiSignIn, PiSignOut } from 'react-icons/pi'
 export function AvatarDropdown({ trigger, isLoggedIn }: { trigger: React.ReactNode, isLoggedIn: boolean }) {
     const router = useRouter()
     const handleLogin = () => {
-        window.location.href = prefixUrl('/satellite?next=' + encodeURIComponent(window.location.pathname))
+        window.location.href = prefixUrl('/satellite?next=' + encodeURIComponent(window.location.href))
     }
     const handleLogout = () => {
         const supabase = createClient()

@@ -1,5 +1,4 @@
-'use server'
-
+import 'server-only'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { streamObject } from 'ai'
 import { z } from 'zod'

@@ -25,7 +25,7 @@ const GradientCard = ({ text, className, title, children, caption }: {
             {
                 text
                     ? <div className='opacity-60'>{text}</div>
-                    : <Skeleton className='h-2 w-2/3 max-w-30 my-3 rounded-lg opacity-50' />
+                    : <Skeleton className='h-2 w-2/3 max-w-30 my-2 rounded-lg opacity-50' />
             }
             <div className='absolute bottom-0 right-0 p-3'>
                 {children ?? <CircularProgress

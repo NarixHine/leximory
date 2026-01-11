@@ -48,7 +48,7 @@ export default function ClozeEditor({
                         </ModalBody>
                         <ModalFooter>
                             <Button variant='light' onPress={onClose}>
-                                Close
+                                关闭
                             </Button>
                             <Button color='secondary' variant='flat' onPress={() => {
                                 const newData = clone(data)
@@ -65,7 +65,7 @@ export default function ClozeEditor({
                                 setData(newData)
                                 onClose()
                             }}>
-                                Save
+                                保存
                             </Button>
                         </ModalFooter>
                     </>

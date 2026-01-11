@@ -32,7 +32,8 @@ export function JsonEditor() {
             <Textarea
                 value={json}
                 onChange={handleJsonChange}
-                rows={20}
+                maxRows={20}
+                minRows={2}
                 className='font-mono text-sm'
                 variant='flat'
                 description='仅供复制粘贴使用，编辑请使用编辑器 UI。'

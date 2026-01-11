@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -54,6 +54,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@repo/env": "workspace:^",
     "@repo/ui": "workspace:^",
+    "@repo/user": "workspace:^",
     "@tanstack/react-query": "^5.85.5",
     "@tiptap/extension-bubble-menu": "3.15.3",
     "@tiptap/extension-image": "3.15.3",

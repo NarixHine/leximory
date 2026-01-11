@@ -24,6 +24,8 @@ export default async function incrCommentaryQuota(incrBy: number = 1, explicitUs
     return quota > await maxCommentaryQuota(explicitUserId)
 }
 
+export { incrCommentaryQuota }
+
 export async function getCommentaryQuota() {
     const { userId } = await getUserOrThrow()
     const quota = await getQuota(userId, 'commentary')
