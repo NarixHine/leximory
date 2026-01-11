@@ -10,13 +10,17 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
-    "typescript": "latest",
-    "@types/node": "^25.0.5"
+    "@types/node": "^25.0.5",
+    "typescript": "latest"
   },
   "dependencies": {
+    "@repo/env": "workspace:^",
     "@repo/kv": "workspace:^",
     "@repo/supabase": "workspace:^",
-    "@repo/env": "workspace:^",
+    "kv": "^1.1.1",
+    "supabase": "^2.72.4"
+  },
+  "peerDependencies": {
     "next": "16.1.1"
   }
 }

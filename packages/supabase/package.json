@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "@repo/env": "workspace:^",
-    "next": "16.1.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1"
+  },
+  "peerDependencies": {
+    "next": "16.1.1"
   }
 }
