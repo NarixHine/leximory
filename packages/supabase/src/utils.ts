@@ -8,7 +8,7 @@ export function cookiesFactory() {
         const domain = new URL(prefixUrl('/')).hostname
         return {
             name: `leximory-auth-token`,
-            domain,
+            domain: `.${domain}`,
             path: '/',
             maxAge: seconds('1 year'),
             sameSite: 'lax' as const,

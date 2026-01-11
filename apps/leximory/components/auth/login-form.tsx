@@ -20,14 +20,14 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const [password, setPassword] = useState('')
   const searchParams = useSearchParams()
   const [isLoading, startTransition] = useTransition()
-  const next = searchParams.get('next')
+  const next = decodeURIComponent(searchParams.get('next') || '')
 
   const handleGithubLogin = async () => {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: prefixUrl('/callback?next=' + encodeURIComponent(next || '/')),
+        redirectTo: next && next !== '/' ? prefixUrl('/callback?next=' + encodeURIComponent(next)) : prefixUrl('/callback'),
       },
     })
 
