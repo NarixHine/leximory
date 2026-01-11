@@ -7,7 +7,7 @@ import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
 import { PiUsers, PiSortAscending, PiPrinter } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS } from '@/lib/config'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 import { Suspense } from 'react'
 import NavBreadcrumbs from '@/components/nav/breadcrumbs'
 

@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
         },
         turbopackFileSystemCacheForBuild: true,
     },
-    transpilePackages: ['@repo/env', '@repo/kv'],
+    transpilePackages: ['@repo/env', '@repo/kv', '@repo/supabase', '@repo/user', '@repo/ui'],
     images: {
         remotePatterns: [
             {

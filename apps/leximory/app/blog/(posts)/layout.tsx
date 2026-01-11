@@ -2,7 +2,7 @@ import Main from '@/components/ui/main'
 import { Metadata } from 'next'
 import { ReactNode } from 'react'
 import { PiArrowLeft } from 'react-icons/pi'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
     title: {

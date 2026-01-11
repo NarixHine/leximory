@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import Center from '@/components/ui/center'
 import { PiWarningCircle } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export default function GlobalError({
   error,

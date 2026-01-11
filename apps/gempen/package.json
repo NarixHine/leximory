@@ -53,6 +53,7 @@
     "@heroui/tooltip": "2.2.21",
     "@phosphor-icons/react": "^2.1.10",
     "@repo/env": "workspace:^",
+    "@repo/ui": "workspace:^",
     "@tanstack/react-query": "^5.85.5",
     "@tiptap/extension-bubble-menu": "3.15.3",
     "@tiptap/extension-image": "3.15.3",

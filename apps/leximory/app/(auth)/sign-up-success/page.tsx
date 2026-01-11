@@ -1,5 +1,5 @@
 import { PiPaperPlaneTilt, PiSignIn } from 'react-icons/pi'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export default function SignUpSuccessPage() {
     return (

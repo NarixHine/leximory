@@ -25,11 +25,11 @@ export async function getSession() {
     return data.session
 }
 
-export async function getUserOrThrow() {
+export async function getUser() {
     const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) {
-        redirect(SIGN_IN_URL)
+        return null
     }
     const { id, email, user_metadata: { username, avatar_url }, last_sign_in_at, created_at } = user
     return {
@@ -40,6 +40,14 @@ export async function getUserOrThrow() {
         lastActiveAt: last_sign_in_at as string,
         createdAt: created_at as string,
     }
+}
+
+export async function getUserOrThrow() {
+    const user = await getUser()
+    if (!user) {
+        redirect(SIGN_IN_URL)
+    }
+    return user
 }
 
 export async function getPlan(userId?: string) {

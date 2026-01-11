@@ -26,7 +26,7 @@ import { ConfirmUnstar } from './confirm-unstar'
 import Topics from '../../[lib]/[text]/components/topics'
 import FlatCard from '@/components/ui/flat-card'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>

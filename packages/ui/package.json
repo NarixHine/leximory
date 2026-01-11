@@ -1,0 +1,29 @@
+{
+  "name": "@repo/ui",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    "./user": "./src/user/index.tsx",
+    "./link-button": "./src/link-button/index.tsx"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "@types/node": "^25.0.5",
+    "@types/react": "19.2.7",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "@repo/user": "workspace:^",
+    "@repo/supabase": "workspace:^",
+    "kv": "^1.1.1",
+    "react-icons": "^5.5.0",
+    "supabase": "^2.72.4"
+  },
+  "peerDependencies": {
+    "next": "16.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

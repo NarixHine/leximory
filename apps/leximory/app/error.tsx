@@ -4,7 +4,7 @@ import { Button, Card, CardBody, CardHeader, cn } from '@heroui/react'
 import Center from '@/components/ui/center'
 import { PiWarningCircleDuotone } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export default function Error({
     error,

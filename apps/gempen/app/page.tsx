@@ -5,6 +5,7 @@ import { ScopeProvider } from '@/components/ui/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
+import UserAvatar from '@repo/ui/user'
 
 export const metadata: Metadata = {
     title: '作业编辑器'
@@ -12,16 +13,21 @@ export const metadata: Metadata = {
 
 export default function CreateAssignmentPage() {
     return (
-        <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-            <HydrationBoundary hydrateAtoms={[
-                [paperIdAtom, EDITORY_PAPER_ID],
-            ]}>
-                <ScopeProvider atoms={[editoryItemsAtom, viewModeAtom]}>
-                    <Suspense>
-                        <Editory />
-                    </Suspense>
-                </ScopeProvider>
-            </HydrationBoundary>
-        </Main>
+        <>
+            <Main className='max-w-none sm:w-full lg:-translate-x-5'>
+                <HydrationBoundary hydrateAtoms={[
+                    [paperIdAtom, EDITORY_PAPER_ID],
+                ]}>
+                    <ScopeProvider atoms={[editoryItemsAtom, viewModeAtom]}>
+                        <Suspense>
+                            <Editory />
+                        </Suspense>
+                    </ScopeProvider>
+                </HydrationBoundary>
+            </Main>
+            <div className='fixed top-3 right-3'>
+                <UserAvatar />
+            </div>
+        </>
     )
 }

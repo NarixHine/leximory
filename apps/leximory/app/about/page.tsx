@@ -7,7 +7,7 @@ import { Article } from './article'
 import { BILIBILI_LINK } from '@/lib/config'
 import Pricing from '@/components/pricing'
 import H from '@/components/ui/h'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
     title: 'About Leximory',

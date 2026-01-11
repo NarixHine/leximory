@@ -18,7 +18,7 @@ import UserAvatar from '@/components/avatar'
 import { EXAMPLE_SHARED_LIB } from '@/lib/config'
 import LibraryCard from '../marketplace/[page]/components/card'
 import Streak from '@/components/streak'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
     title: '文库'

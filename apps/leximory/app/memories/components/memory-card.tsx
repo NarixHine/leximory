@@ -10,7 +10,7 @@ import FlatCard from '@/components/ui/flat-card'
 import Markdown from '@/components/markdown'
 import { useAuth } from '@/lib/hooks'
 import 'moment/locale/zh-cn'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 type Memory = {
     id: number

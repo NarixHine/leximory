@@ -10,7 +10,7 @@ import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
 import { PiPrinterDuotone } from 'react-icons/pi'
 import { momentSH } from '@/lib/moment'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
     title: '语料库'

@@ -3,6 +3,7 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  transpilePackages: ['@repo/env', '@repo/ui'],
   experimental: {
     optimizePackageImports: ['@phosphor-icons/react'],
     taint: true,

@@ -21,7 +21,7 @@ import UserAvatar from '@/components/avatar'
 import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@/lib/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 import LinkCard from '@/components/ui/link-card'
 
 export default async function Home() {

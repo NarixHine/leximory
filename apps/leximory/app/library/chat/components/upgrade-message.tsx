@@ -1,6 +1,6 @@
 import { Card, CardBody } from '@heroui/card'
 import { PiCrownDuotone } from 'react-icons/pi'
-import LinkButton from '@/components/ui/link-button'
+import LinkButton from '@repo/ui/link-button'
 import { getPlan } from '@repo/user'
 
 export default async function UpgradeMessage() {
