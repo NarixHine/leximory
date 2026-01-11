@@ -21,12 +21,15 @@ export function ImportButton() {
         fileInputRef.current?.click()
     }
 
-    const { execute, isPending } = useAction(smartImport, {
+    const { execute, isPending, } = useAction(smartImport, {
         onSuccess: ({ data }) => {
             if (data) {
                 setEditoryItems(data)
                 onClose()
             }
+        },
+        onError: (error) => {
+            toast.error(`Import failed.`)
         }
     })
 

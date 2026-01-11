@@ -8,7 +8,6 @@ import { JsonEditor } from './json-editor'
 import { ImportButton } from './import'
 import { useAtomValue } from 'jotai'
 import { editoryItemsAtom } from '../atoms'
-import { PublishButton } from './publish'
 import { ReviseAllButton } from './editor/revise-paper/revise-all-button'
 
 export default function Editory({ id }: { id?: string }) {
