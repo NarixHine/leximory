@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@repo/supabase/server'
-import { cookies } from 'next/headers'
+import { isTrustedPathname } from '@/lib/url'
 
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    const cookieStore = await cookies()
-    let next = cookieStore.get('next')?.value ?? '/'
-    if (!next.startsWith('/')) {
-        next = '/'
-    }
+    const nextParam = searchParams.get('next') || '/'
+    const next = isTrustedPathname(nextParam) ? nextParam : '/'
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)

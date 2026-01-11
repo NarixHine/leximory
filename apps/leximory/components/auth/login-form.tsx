@@ -13,31 +13,34 @@ import { Form } from '@heroui/form'
 import { toast } from 'sonner'
 import { createClient } from '@repo/supabase/client'
 import { prefixUrl } from '@/lib/config'
+import { useSearchParams } from 'next/navigation'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const searchParams = useSearchParams()
   const [isLoading, startTransition] = useTransition()
- 
+  const next = searchParams.get('next')
+
   const handleGithubLogin = async () => {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: prefixUrl('/callback')
+        redirectTo: prefixUrl('/callback?next=' + encodeURIComponent(next || '/')),
       }
     })
- 
+
     if (error) {
       toast.error('GitHub 登录失败')
     }
   }
- 
+
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-3 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1'>继续语言学习之旅</H>
     <Form action={() => {
       startTransition(async () => {
-        const { error } = await login({ email, password })
+        const { error } = await login({ email, password, next })
         if (error) {
           toast.error(error)
         } else {

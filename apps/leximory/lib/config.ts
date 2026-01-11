@@ -25,7 +25,7 @@ export const EXAMPLE_SHARED_LIB = {
     price: 0,
 } as const
 
-export const prefixUrl = (url: string) => `${IS_PROD ? env.NEXT_PUBLIC_URL : 'http://localhost:3000'}${url}`
+export const prefixUrl = (url: string) => `${IS_PROD ? env.NEXT_PUBLIC_URL : 'http://localhost:3001'}${url}`
 export const EXAMPLE_EBOOK_LINK = '/library/1309fe3b/2dd46083' as const
 export const BILIBILI_LINK = 'https://space.bilibili.com/3494376432994441/' as const
 export const FYP_GITHUB_LINK = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
