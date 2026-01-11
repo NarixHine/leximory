@@ -6,7 +6,6 @@ const PROTECTED_ROUTE_PREFIXES = [
     '/settings',
     '/marketplace',
     '/daily',
-    '/fix-your-paper',
     '/admin',
     '/memories'
 ]

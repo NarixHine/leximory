@@ -210,10 +210,10 @@ export function Article() {
                     <TableCell>{ACTION_QUOTA_COST.chat}</TableCell>
                     <TableCell>自动化复盘：对话 AI，玩转词汇</TableCell>
                 </TableRow>
-                <TableRow key='fix-your-paper'>
-                    <TableCell><Link href='/fix-your-paper' className='underline underline-offset-2'>Fix. Your. Paper.</Link></TableCell>
+                <TableRow key='gempen'>
+                    <TableCell><Link href='editor' className='underline underline-offset-2'>「GemPen」编辑器</Link></TableCell>
                     <TableCell>{ACTION_QUOTA_COST.fixYourPaper}</TableCell>
-                    <TableCell>审阅英语试卷（有需要请联系我们）</TableCell>
+                    <TableCell>搭载 AI 出题和审阅的英语试卷编辑器</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

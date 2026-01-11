@@ -3,7 +3,6 @@
         "types": [
             "node"
         ],
-        
         "target": "ESNext",
         "allowJs": true,
         "skipLibCheck": true,
