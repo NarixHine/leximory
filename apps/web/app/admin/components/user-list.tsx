@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from 'react'
 import { changeUserEmail, changeUserPlan, deleteUser } from '../actions'
 import { Plan, PLANS } from '@/lib/config'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
 import { Select, SelectItem } from '@heroui/select'

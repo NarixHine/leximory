@@ -2,7 +2,7 @@ import 'server-only'
 import { supabase } from '@repo/supabase'
 import { Plan } from '@/lib/config'
 import { redis } from '@repo/kv/redis'
-import { updatePlan } from '../auth/user'
+import { updatePlan } from '@repo/user'
 
 export async function getCustomerId(userId: string) {
     const { data } = await supabase

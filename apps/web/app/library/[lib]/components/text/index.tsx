@@ -60,9 +60,18 @@ function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefe
     return (<div className='w-full h-full relative'>
         {disableNavigation
             ? <FlatCard background='solid' fullWidth className={'h-full'}><CardInnerContent /></FlatCard>
-            : <Link href={`/library/${lib}/${id}`} prefetch={!disablePrefetch}><FlatCard background='solid' fullWidth className={'h-full'} isPressable><CardInnerContent /></FlatCard></Link>
+            : <FlatCard
+                as={Link}
+                href={`/library/${lib}/${id}`}
+                prefetch={!disablePrefetch}
+                background='solid'
+                fullWidth
+                className={'h-full'}
+                isPressable>
+                <CardInnerContent />
+            </FlatCard>
         }
-    </div>)
+    </div >)
 }
 
 export function AddTextButton() {

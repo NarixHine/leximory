@@ -6,7 +6,7 @@ import { cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
 import { supabase } from '@repo/supabase'
 import { OrFilter } from '../auth/role'
-import { ensureUserExists } from './user'
+import { ensureUserExists } from '@repo/user'
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const { data: rec } = await supabase

@@ -1,7 +1,7 @@
 import 'server-only'
 import { nanoid } from 'nanoid'
 import { supabase } from '@repo/supabase'
-import { ensureUserExists } from './user'
+import { ensureUserExists } from '@repo/user'
 
 // Get or create a token for the current user
 export async function getOrCreateToken(userId: string) {
