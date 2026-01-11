@@ -1,6 +1,6 @@
 'use server'
 
-import { getPlan, getUserOrThrow } from '@/server/auth/user'
+import { getPlan, getUserOrThrow } from '@repo/user'
 import { getAccentPreference, setAccentPreference } from '@/server/db/preference'
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import { momentSH } from '@/lib/moment'
@@ -9,7 +9,7 @@ import { PLAN_DAILY_LEXICOIN } from '@/lib/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { getOrCreateToken, revokeToken } from '@/server/db/token'
 
 export async function getUserToken() {

@@ -8,7 +8,7 @@ import H from '@/components/ui/h'
 import { PiStorefrontDuotone } from 'react-icons/pi'
 import UserAvatar from '@/components/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 
 async function LibraryList({ page }: {
     page: number

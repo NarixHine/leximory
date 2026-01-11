@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import NavBreadcrumbs from './breadcrumbs'
 
 export type NavProps = {

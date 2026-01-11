@@ -5,7 +5,7 @@ import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { cacheLife } from 'next/cache'
 import { Suspense } from 'react'
-import { getUserById, getUserOrThrow } from '@/server/auth/user'
+import { getUserById, getUserOrThrow } from '@repo/user'
 import LinkButton from './ui/link-button'
 
 moment.locale('zh-cn')

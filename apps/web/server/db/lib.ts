@@ -4,7 +4,7 @@ import { getLanguageStrategy } from '@/lib/languages'
 import { nanoid } from '@/lib/utils'
 import { cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { OrFilter } from '../auth/role'
 import { ensureUserExists } from './user'
 

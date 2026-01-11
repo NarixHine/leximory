@@ -6,7 +6,7 @@ import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
 import { updateTag } from 'next/cache'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 
 export async function delComment(id: string) {
     const { lib } = await getWord({ id })

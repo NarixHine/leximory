@@ -1,7 +1,7 @@
 import 'server-only'
 import { getUserOrThrow } from './user'
 import { ADMIN_UID, Lang, LIB_ACCESS_STATUS } from '@/lib/config'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 
 /**
  * Role-based access control utilities for Leximory application.

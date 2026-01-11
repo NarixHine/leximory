@@ -6,7 +6,7 @@ import { createLib, deleteLib, updateLib, unstarLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { addToArchive, removeFromArchive } from '@/server/db/lib'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { updateTag } from 'next/cache'
 
 const saveValidator = z.object({

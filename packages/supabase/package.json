@@ -2,12 +2,14 @@
   "name": "@repo/supabase",
   "type": "module",
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc"
+    "dev": "tsc --watch"
   },
   "exports": {
     ".": "./src/index.ts",
-    "./quota": "./src/quota.ts"
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./proxy": "./src/proxyy.ts",
+    "./types": "./src/types.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

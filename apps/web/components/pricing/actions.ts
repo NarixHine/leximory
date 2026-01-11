@@ -4,7 +4,7 @@ import { createRequest } from '@/server/db/creem'
 import { redirect } from 'next/navigation'
 import { CREEM_PRODUCT_ID, PaidTier, prefixUrl, SIGN_IN_URL } from '@/lib/config'
 import { creem } from '@/server/client/creem'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 
 export async function upgrade({ plan }: { plan: PaidTier }) {
     const { userId } = await getUserOrThrow()

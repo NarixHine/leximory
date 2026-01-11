@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server'
-import { updateSession } from '@/server/client/supabase/middleware'
+import { updateSession } from '@repo/supabase/proxy'
 
 const PROTECTED_ROUTE_PREFIXES = [
     '/library',

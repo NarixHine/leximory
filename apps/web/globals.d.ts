@@ -1,4 +1,4 @@
-export { Plan } from '@/server/auth/quota'
+export { Plan } from '@repo/user/quota'
 
 declare global {
     interface CustomJwtSessionClaims {

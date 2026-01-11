@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { createMemory, deleteMemory, getPersonalMemories, getFederatedMemories, getPublicMemories } from '@/server/db/memories'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { updateTag } from 'next/cache'
 
 const createMemorySchema = z.object({

@@ -2,8 +2,8 @@
 
 import { authReadToLib, authWriteToLib } from '@/server/auth/role'
 import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
-import { getUserOrThrow } from '@/server/auth/user'
-import incrCommentaryQuota, { maxCommentaryQuota } from '@/server/auth/quota'
+import { getUserOrThrow } from '@repo/user'
+import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { inngest } from '@/server/inngest/client'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 

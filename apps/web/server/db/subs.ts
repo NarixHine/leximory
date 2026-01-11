@@ -1,5 +1,5 @@
 import 'server-only'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { PushSubscription } from 'web-push'
 import { revalidatePath } from 'next/cache'
 

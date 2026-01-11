@@ -1,4 +1,4 @@
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { getSubsStatus } from '@/server/db/subs'
 import BellButton from './bell'
 

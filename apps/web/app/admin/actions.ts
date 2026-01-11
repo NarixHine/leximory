@@ -1,7 +1,7 @@
 'use server'
 
-import { supabase } from '@/server/client/supabase'
-import { updatePlan } from '@/server/auth/user'
+import { supabase } from '@repo/supabase'
+import { updatePlan } from '@repo/user'
 import { Plan } from '@/lib/config'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/server/auth/role'

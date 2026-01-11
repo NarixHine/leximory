@@ -1,5 +1,5 @@
 import { getPaginatedPublicLibs } from '@/server/db/lib'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import LibraryCard from '@/app/marketplace/[page]/components/card'
 import UserAvatar from '@/components/avatar'
 import { cacheLife } from 'next/cache'

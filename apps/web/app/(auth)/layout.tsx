@@ -1,5 +1,5 @@
 import Center from '@/components/ui/center'
-import { getSession } from '@/server/auth/user'
+import { getSession } from '@repo/user'
 import { Image } from '@heroui/image'
 import { redirect } from 'next/navigation'
 import { ReactNode, Suspense } from 'react'

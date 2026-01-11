@@ -1,5 +1,5 @@
 import 'server-only'
-import { supabase } from '../client/supabase'
+import { supabase } from '@repo/supabase'
 import { momentSH } from '@/lib/moment'
 import { cacheTag } from 'next/cache'
 

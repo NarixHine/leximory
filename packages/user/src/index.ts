@@ -1,10 +1,22 @@
 import 'server-only'
-import { createClient } from '@/server/client/supabase/server'
-import { Plan } from '@/lib/config'
+import { createClient } from '@repo/supabase/server'
+import { Plan } from '@repo/env/config'
 import { redirect } from 'next/navigation'
-import { supabase } from '../client/supabase'
-import { SIGN_IN_URL } from '@/lib/config'
-import { ensureUserExists } from '../db/user'
+import { supabase } from '@repo/supabase'
+import { SIGN_IN_URL } from '@repo/env/config'
+
+export async function ensureUserExists(uid: string) {
+    await supabase
+        .from('users')
+        .upsert(
+            { id: uid, lexicoin: 20 },
+            {
+                onConflict: 'id', // Conflict resolution on the 'id' column.
+                ignoreDuplicates: true // If conflict, return existing row without updating.
+            }
+        )
+        .throwOnError()
+}
 
 export async function getSession() {
     const supabase = await createClient()

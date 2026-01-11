@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { createClient } from '@/server/client/supabase/client'
+import { createClient } from '@repo/supabase/client'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
 import { useRouter } from 'next/navigation'

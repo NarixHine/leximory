@@ -3,7 +3,7 @@ import { Chip } from '@heroui/chip'
 import { PiCalendarBlankDuotone, PiNotebookDuotone } from 'react-icons/pi'
 import H from '@/components/ui/h'
 import { cacheLife } from 'next/cache'
-import { getUserById } from '@/server/auth/user'
+import { getUserById } from '@repo/user'
 import { momentSH } from '@/lib/moment'
 import 'moment/locale/zh-cn'
 

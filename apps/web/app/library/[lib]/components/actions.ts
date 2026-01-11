@@ -2,7 +2,7 @@
 
 import { getLib, starLib } from '@/server/db/lib'
 import { subtractLexicoinBalance, getLibPrice, addLexicoinBalance } from '@/server/db/lexicoin'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 
 export const star = async (lib: string) => {
     const { userId } = await getUserOrThrow()

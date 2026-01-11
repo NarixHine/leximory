@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { SIGN_IN_URL } from '@/lib/config'
+import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 
 export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean) {

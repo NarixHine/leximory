@@ -1,5 +1,5 @@
 import 'server-only'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { cacheTag } from 'next/cache'
 
 export async function visitText({ textId, userId }: { textId: string, userId: string }) {

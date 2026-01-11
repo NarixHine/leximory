@@ -189,6 +189,12 @@ importers:
         version: link:../../packages/env
       '@repo/kv':
         specifier: workspace:^
+        version: link:../../packages/kv
+      '@repo/supabase':
+        specifier: workspace:^
+        version: link:../../packages/supabase
+      '@repo/user':
+        specifier: workspace:^
         version: link:../../packages/user
       '@serwist/cli':
         specifier: ^9.4.2
@@ -457,10 +463,6 @@ importers:
         version: 5.9.3
 
   packages/env:
-    dependencies:
-      '@upstash/redis':
-        specifier: ^1.34.4
-        version: 1.36.1
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:^
@@ -532,9 +534,15 @@ importers:
 
   packages/user:
     dependencies:
+      '@repo/env':
+        specifier: workspace:^
+        version: link:../env
       '@repo/kv':
         specifier: workspace:^
-        version: 'link:'
+        version: link:../kv
+      '@repo/supabase':
+        specifier: workspace:^
+        version: link:../supabase
       next:
         specifier: 16.1.1
         version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

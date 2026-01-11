@@ -1,5 +1,5 @@
 import 'server-only'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { GeneratedAudioFile } from 'ai'
 
 export async function retrieveAudioUrl({ id }: { id: string }) {

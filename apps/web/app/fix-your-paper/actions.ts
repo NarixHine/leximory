@@ -1,7 +1,7 @@
 'use server'
 
 import { type ModelMessage, generateText } from 'ai'
-import incrCommentaryQuota from '@/server/auth/quota'
+import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@/lib/config'
 import { thinkAI } from '@/server/ai/configs'
 

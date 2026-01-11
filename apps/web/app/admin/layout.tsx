@@ -1,4 +1,4 @@
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { ADMIN_UID } from '@/lib/config'
 import { ReactNode, Suspense } from 'react'
 import Main from '@/components/ui/main'

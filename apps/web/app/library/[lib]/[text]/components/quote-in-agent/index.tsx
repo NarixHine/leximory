@@ -1,4 +1,4 @@
-import { getPlan } from '@/server/auth/user'
+import { getPlan } from '@repo/user'
 import QuoteInAgentButton from './button'
 import { Suspense } from 'react'
 import { Button } from '@heroui/button'

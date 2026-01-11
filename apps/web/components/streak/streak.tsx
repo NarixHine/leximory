@@ -1,5 +1,5 @@
 import { calculateStreak } from '@/server/db/memories'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { StreakDisplay } from './streak-display'
 import { cn } from '@/lib/utils'
 import { bgColor } from './constants'

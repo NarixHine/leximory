@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/server/client/supabase/server'
+import { createClient } from '@repo/supabase/server'
 import { z } from 'zod'
 import { getAuthErrorMessage } from './error-messages'
 

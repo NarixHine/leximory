@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { login } from './actions'
 import { Form } from '@heroui/form'
 import { toast } from 'sonner'
-import { createClient } from '@/server/client/supabase/client'
+import { createClient } from '@repo/supabase/client'
 import { prefixUrl } from '@/lib/config'
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {

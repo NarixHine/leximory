@@ -1,7 +1,7 @@
 import 'server-only'
 import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@/lib/config'
 import { languageStrategies } from '@/lib/languages'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { cacheLife, cacheTag } from 'next/cache'
 import { getShadowLib } from './lib'
 import { validateOrThrow } from '@/lib/comment'

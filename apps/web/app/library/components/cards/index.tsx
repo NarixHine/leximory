@@ -1,4 +1,4 @@
-import { getAudioQuota, getCommentaryQuota } from '@/server/auth/quota'
+import { getAudioQuota, getCommentaryQuota } from '@repo/user/quota'
 import GradientCard from './card'
 import { CircularProgress } from "@heroui/progress"
 import moment from 'moment'

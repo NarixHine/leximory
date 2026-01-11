@@ -1,6 +1,6 @@
 import WordChart from './word-chart'
 import VocabularyCalendar, { HeatmapSkeleton } from './calendar'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
 import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'

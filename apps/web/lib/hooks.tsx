@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/server/client/supabase/client'
+import { createClient } from '@repo/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useMediaQuery } from 'usehooks-ts'
 

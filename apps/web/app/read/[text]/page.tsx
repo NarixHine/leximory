@@ -2,7 +2,7 @@ import { Article } from '@/app/library/[lib]/[text]/article'
 import { getArticleData } from '@/app/library/[lib]/[text]/data'
 import Main from '@/components/ui/main'
 import { SIGN_IN_URL } from '@/lib/config'
-import { getSession } from '@/server/auth/user'
+import { getSession } from '@repo/user'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 

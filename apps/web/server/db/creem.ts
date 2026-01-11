@@ -1,5 +1,5 @@
 import 'server-only'
-import { supabase } from '../client/supabase'
+import { supabase } from '@repo/supabase'
 import { Plan } from '@/lib/config'
 import { redis } from '@repo/kv/redis'
 import { updatePlan } from '../auth/user'

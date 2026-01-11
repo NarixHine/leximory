@@ -6,7 +6,7 @@ import { ForgetCurvePoint, SUPPORTED_LANGS } from '@/lib/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 
 export default async function Report({ day }: {
     day: ForgetCurvePoint

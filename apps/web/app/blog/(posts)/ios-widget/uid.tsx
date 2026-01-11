@@ -1,5 +1,5 @@
 import { Snippet } from '@heroui/snippet'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { Suspense } from 'react'
 
 export default function UidSnippet() {

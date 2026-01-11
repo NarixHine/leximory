@@ -1,7 +1,7 @@
 import { Plan } from '@/globals'
 import { momentSH } from '@/lib/moment'
 import { requireAdmin } from '@/server/auth/role'
-import { supabase } from '@/server/client/supabase'
+import { supabase } from '@repo/supabase'
 import { getUsersPlansByIds } from '@/server/db/user'
 
 export async function getUsersOverview() {

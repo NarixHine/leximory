@@ -1,9 +1,8 @@
 {
-  "name": "@repo/kv",
+  "name": "@repo/user",
   "type": "module",
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc"
+    "dev": "tsc --watch"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -16,6 +15,8 @@
   },
   "dependencies": {
     "@repo/kv": "workspace:^",
+    "@repo/supabase": "workspace:^",
+    "@repo/env": "workspace:^",
     "next": "16.1.1"
   }
 }

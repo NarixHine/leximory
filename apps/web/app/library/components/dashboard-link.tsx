@@ -1,4 +1,4 @@
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { PiPaperPlane } from 'react-icons/pi'
 import { ADMIN_UID } from '@/lib/config'
 import LinkButton from '@/components/ui/link-button'

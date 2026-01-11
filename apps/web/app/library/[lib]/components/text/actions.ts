@@ -3,7 +3,7 @@
 import { authWriteToLib } from '@/server/auth/role'
 import { createText, setTextAnnotationProgress } from '@/server/db/text'
 import { generate } from '../../[text]/actions'
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import { getVisitedTextIds } from '@/server/db/visited'
 import { redirect } from 'next/navigation'
 import { updateTag } from 'next/cache'

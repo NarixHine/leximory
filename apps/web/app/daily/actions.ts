@@ -1,6 +1,6 @@
 'use server'
 
-import { getUserOrThrow } from '@/server/auth/user'
+import { getUserOrThrow } from '@repo/user'
 import saveSubs, { delSubs } from '@/server/db/subs'
 import { PushSubscription } from 'web-push'
 import { Lang } from '@/lib/config'
