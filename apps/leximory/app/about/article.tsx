@@ -176,7 +176,7 @@ export function Article() {
         <Table>
             <TableHeader>
                 <TableColumn className='font-medium'>操作</TableColumn>
-                <TableColumn className='font-medium'>消耗 AI 注解次数</TableColumn>
+                <TableColumn className='font-medium'>消耗 AI 注解额度</TableColumn>
                 <TableColumn className='font-medium'>描述</TableColumn>
             </TableHeader>
             <TableBody>
@@ -211,8 +211,8 @@ export function Article() {
                     <TableCell>自动化复盘：对话 AI，玩转词汇</TableCell>
                 </TableRow>
                 <TableRow key='gempen'>
-                    <TableCell><Link href='editor' className='underline underline-offset-2'>「GemPen」编辑器</Link></TableCell>
-                    <TableCell>{ACTION_QUOTA_COST.fixYourPaper}</TableCell>
+                    <TableCell>「GemPen」编辑器</TableCell>
+                    <TableCell>待定</TableCell>
                     <TableCell>搭载 AI 出题和审阅的英语试卷编辑器</TableCell>
                 </TableRow>
             </TableBody>
