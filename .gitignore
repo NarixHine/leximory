@@ -1,2 +1,5 @@
-.turbo
-node_modules
+**/dist/
+**/out/
+**/.next/
+**/.turbo/
+node_modules/

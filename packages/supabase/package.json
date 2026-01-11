@@ -1,0 +1,23 @@
+{
+  "name": "@repo/supabase",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./quota": "./src/quota.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "typescript": "latest",
+    "@types/node": "^25.0.5"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:^",
+    "next": "16.1.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.90.1"
+  }
+}
