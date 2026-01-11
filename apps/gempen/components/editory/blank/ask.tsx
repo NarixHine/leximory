@@ -1,13 +1,12 @@
 'use client'
 
 import { Drawer } from 'vaul'
-import { queryOptions, useQuery, experimental_streamedQuery as streamedQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { Streamdown } from 'streamdown'
 import { Spinner } from '@heroui/spinner'
 import { streamExplanationAction } from './actions'
 import { cn } from '@heroui/theme'
-import { hashAskParams } from './utils'
-import { useEffectEvent, useEffect } from 'react'
+import { useEffectEvent, useEffect, useState } from 'react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { askParamsAtom, highlightsAtom, openAskAtom } from './atoms'
 import { AskResponseSchema } from '@/server/ai/types'
@@ -54,30 +53,29 @@ export function Ask() {
 function Explanation({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
     const setHighlights = useSetAtom(highlightsAtom)
     const { scrollTo } = useScrollToMatch()
+    const [explanationData, setExplanationData] = useState<any[]>([])
 
-    const { data, fetchStatus } = useQuery(queryOptions({
-        queryKey: ['ask-ai', hashAskParams({ quizData, questionNo, userAnswer })],
-        queryFn: streamedQuery({
-            queryFn: async function* () {
-                try {
-                    const result = await streamExplanationAction({ quizData, questionNo, userAnswer })
-                    if ('partialObjectStream' in result && Symbol.asyncIterator in result.partialObjectStream) {
-                        for await (const chunk of result.partialObjectStream) {
-                            yield chunk
-                        }
+    const { mutate: fetchExplanation } = useMutation({
+        mutationFn: async () => {
+            try {
+                const result = await streamExplanationAction({ quizData, questionNo, userAnswer })
+                let accumulated: any[] = []
+                if ('partialObjectStream' in result && Symbol.asyncIterator in result.partialObjectStream) {
+                    for await (const chunk of result.partialObjectStream) {
+                        accumulated.push(chunk)
+                        setExplanationData([...accumulated])
                     }
-                    yield result.object
-                } catch {
-                    toast.error('AI 输出中止，请重试')
                 }
+                accumulated.push(result.object)
+                setExplanationData(accumulated)
+            } catch {
+                toast.error('AI 输出中止，请重试')
             }
-        }),
-        retry: 1,
-        enabled: true,
-        refetchOnWindowFocus: false,
-    }))
+        },
+        retry: 1
+    })
 
-    const askResponseParseResult = data ? AskResponseSchema.safeParse(data[data.length - 1]) : null
+    const askResponseParseResult = explanationData.length > 0 ? AskResponseSchema.safeParse(explanationData[explanationData.length - 1]) : null
     const askResponse = askResponseParseResult?.success ? askResponseParseResult.data : null
 
     const onDataChange = useEffectEvent((response: typeof askResponse) => {
@@ -93,14 +91,18 @@ function Explanation({ quizData, questionNo, userAnswer }: StreamExplanationPara
     })
 
     useEffect(() => {
-        if (data && fetchStatus === 'idle') {
-            onDataChange(data.findLast(d => AskResponseSchema.safeParse(d).success) as typeof askResponse)
+        fetchExplanation()
+    }, [quizData.id, questionNo, userAnswer])
+
+    useEffect(() => {
+        if (explanationData.length > 0) {
+            onDataChange(explanationData.findLast(d => AskResponseSchema.safeParse(d).success) as typeof askResponse)
         }
-    }, [data, fetchStatus])
+    }, [explanationData])
 
     return (
         <div className='px-4 py-2'>{
-            data && data.length > 0
+            explanationData.length > 0
                 ? <div className={cn('py-2 w-sm', PAPER_CLASS_NAME)}>
                     <Streamdown className='prose-blockquote:not-italic prose-blockquote:prose-p:before:content-none prose-blockquote:prose-p:after:content-non prose-code:px-0.5 prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400'>
                         {askResponse?.explanation}
