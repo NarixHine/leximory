@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
+import { cookiesFactory } from './utils'
 
 export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean) {
     let supabaseResponse = NextResponse.next({
@@ -23,6 +24,13 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
                     cookiesToSet.forEach(({ name, value, options }) =>
                         supabaseResponse.cookies.set(name, value, options)
                     )
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        const cookieOptions = {
+                            ...options,
+                            ...cookiesFactory(),
+                        }
+                        supabaseResponse.cookies.set(name, value, cookieOptions)
+                    })
                 },
             },
         }

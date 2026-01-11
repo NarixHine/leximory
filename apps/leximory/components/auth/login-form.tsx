@@ -27,7 +27,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: next && next !== '/' ? prefixUrl('/callback?next=' + encodeURIComponent(next)) : prefixUrl('/callback'),
+        redirectTo: next ? prefixUrl('/callback?next=' + encodeURIComponent(next)) : prefixUrl('/callback'),
       },
     })
 
