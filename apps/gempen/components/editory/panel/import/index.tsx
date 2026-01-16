@@ -45,7 +45,7 @@ export function ImportButton() {
     return (
         <>
             <ProtectedButton
-                color='secondary'
+                color='default'
                 variant='flat'
                 startContent={<ArrowSquareInIcon />}
                 onPress={onOpen}

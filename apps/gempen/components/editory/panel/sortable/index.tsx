@@ -40,7 +40,7 @@ export default function Sortable() {
                 <Button as={Link} href='/print' variant='flat' size='lg' startContent={<PrinterIcon />} isIconOnly></Button>
                 <Dropdown>
                     <DropdownTrigger>
-                        <Button color='secondary' variant='flat' size='lg' startContent={<PlusCircleIcon />} isIconOnly></Button>
+                        <Button color='secondary' size='lg' startContent={<PlusCircleIcon />} isIconOnly></Button>
                     </DropdownTrigger>
                     <DropdownMenu color='secondary' variant='flat'>
                         {(Object.keys(NAME_MAP) as QuizDataType[]).map((key) => (

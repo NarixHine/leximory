@@ -10,8 +10,8 @@ export function ReviseAllButton() {
     return <ProtectedButton
         onPress={() => reviseAll()}
         startContent={<BugDroidIcon />}
-        color={'secondary'}
-        variant='solid'
+        color='secondary'
+        variant='flat'
         size='lg'
     >
         AI 审题

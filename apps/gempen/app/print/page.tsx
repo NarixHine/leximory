@@ -12,21 +12,20 @@ export default function Page() {
     const data = useAtomValue(editoryItemsAtom)
     const router = useRouter()
     return <Main>
-        <div className='flex gap-3'>
+        <div className='flex gap-3 print:hidden'>
             <Button
                 startContent={<SkipBackIcon />}
                 size='lg'
-                className='print:none'
                 onPress={() => { router.back() }}
                 isIconOnly
             ></Button>
             <Button
                 startContent={<PrinterIcon />}
                 size='lg'
-                className='print:none flex-1'
+                className='flex-1'
                 color='primary'
                 onPress={() => { print() }}
-            >打印</Button>
+            >打印试卷</Button>
         </div>
         <Paper data={data} />
         <Key data={data} accordionClassName='print:hidden' />
