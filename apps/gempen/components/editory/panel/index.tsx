@@ -17,7 +17,7 @@ export default function Editory({ id }: { id?: string }) {
   return (
     <div className='gap-4 flex-col lg:flex-row flex'>
       <section className='flex flex-col sm:flex-row sm:basis-7/12 shrink-0'>
-        <div className='p-4 flex-col space-y-3 items-end'>
+        <div className='p-4 flex flex-col space-y-3 items-end'>
           <div className='flex flex-row items-center justify-between sm:items-end sm:justify-normal sm:flex-col w-full gap-2 sm:w-min min-w-50'>
             <h2 className='font-bold text-5xl text-secondary-300 sm:mt-8'>
               Editor
@@ -63,9 +63,10 @@ export default function Editory({ id }: { id?: string }) {
           <div className='flex justify-end lg:pl-4 gap-2 flex-col sm:flex-wrap sm:justify-end w-full'>
             <ImportButton />
             <ReviseAllButton />
-            <div className='hidden sm:flex justify-end mt-4'>
-              <Copyright />
-            </div>
+          </div>
+
+          <div className='hidden sm:flex justify-end mt-auto'>
+            <Copyright />
           </div>
         </div>
 
