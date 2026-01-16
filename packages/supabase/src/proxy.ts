@@ -1,11 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
+import { CookieOptions, createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
 
 export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean) {
-    let supabaseResponse = NextResponse.next({
+    let response = NextResponse.next({
         request,
     })
 
@@ -13,24 +13,31 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
         env.NEXT_PUBLIC_SUPABASE_URL,
         env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
+            cookieOptions: cookiesFactory(),
             cookies: {
-                getAll() {
-                    return request.cookies.getAll()
+                get(name: string) {
+                    return request.cookies.get(name)?.value
                 },
-                setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-                    supabaseResponse = NextResponse.next({
-                        request,
+                set(name: string, value: string, options: CookieOptions) {
+                    // 2. Update the request cookies (so the Server Component can see the change)
+                    request.cookies.set({ name, value, ...options })
+                    // 3. Update the response cookies (so the browser saves the change)
+                    response = NextResponse.next({
+                        request: {
+                            headers: request.headers,
+                        },
                     })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    )
-                    cookiesToSet.forEach(({ name, value, options }) => {
-                        const cookieOptions = {
-                            ...options,
-                            ...cookiesFactory(),
-                        }
-                        supabaseResponse.cookies.set(name, value, cookieOptions)
+                    response.cookies.set({ name, value, ...options })
+                },
+                remove(name: string, options: CookieOptions) {
+                    // 4. Handle cookie removal (sign out)
+                    request.cookies.set({ name, value: '', ...options })
+                    response = NextResponse.next({
+                        request: {
+                            headers: request.headers,
+                        },
                     })
+                    response.cookies.set({ name, value: '', ...options })
                 },
             },
         }
@@ -58,5 +65,5 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
         return response
     }
 
-    return supabaseResponse
+    return response
 }

@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: `${MAX_FILE_SIZE / 1024 / 1024}mb`,
     },
+    turbopackFileSystemCacheForBuild: true,
   },
 }
 

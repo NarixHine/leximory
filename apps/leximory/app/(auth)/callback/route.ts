@@ -14,9 +14,9 @@ export async function GET(request: Request) {
             const response = NextResponse.redirect(next.startsWith('/') ? `${origin}${next}` : next)
             return response
         }
-        console.error('Error exchanging code for session:', error.message)
+        console.error({ message: 'Error exchanging code for session:' + error.message, url: request.url })
     }
-
+    console.error('No code found in callback URL')
     // return the user to an error page with instructions
     return NextResponse.redirect(`${origin}/callback-error`)
 }
