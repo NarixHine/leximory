@@ -6,7 +6,9 @@
   },
   "exports": {
     "./user": "./src/user/index.tsx",
-    "./link-button": "./src/link-button/index.tsx"
+    "./link-button": "./src/link-button/index.tsx",
+    "./auth": "./src/auth/index.tsx",
+    "./protected-button": "./src/protected-button/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -15,16 +17,20 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "@repo/user": "workspace:^",
-    "@repo/supabase": "workspace:^",
     "@repo/env": "workspace:^",
+    "@repo/supabase": "workspace:^",
+    "@repo/user": "workspace:^",
     "kv": "^1.1.1",
     "react-icons": "^5.5.0",
-    "supabase": "^2.72.4"
+    "supabase": "^2.72.4",
+    "tailwindcss": "^4.0.0",
+    "usehooks-ts": "^3.1.1"
   },
   "peerDependencies": {
+    "framer-motion": "^12.0.0",
     "next": "16.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0"
   }
 }

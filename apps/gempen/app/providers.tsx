@@ -7,6 +7,7 @@ import { ReactNode } from 'react'
 import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@heroui/theme'
+import { AuthProvider } from '@repo/ui/auth'
 import {
   QueryClient,
   QueryClientProvider,
@@ -23,23 +24,25 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <HeroUIProvider navigate={router.push}>
-        <ThemeProvider {...themeProps}>
-          <JotaiProvider>
-            <Toaster toastOptions={{
-              classNames: {
-                toast: cn(
-                  'font-ui! pl-5! text-default-900! bg-default-100/80!',
-                  'border-0! shadow-none!',
-                  'backdrop-blur-lg! backdrop-saturate-150!',
-                )
-              },
-            }}></Toaster>
-            {children}
-          </JotaiProvider>
-        </ThemeProvider>
-      </HeroUIProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <HeroUIProvider navigate={router.push}>
+          <ThemeProvider {...themeProps}>
+            <JotaiProvider>
+              <Toaster toastOptions={{
+                classNames: {
+                  toast: cn(
+                    'font-ui! pl-5! text-default-900! bg-default-100/80!',
+                    'border-0! shadow-none!',
+                    'backdrop-blur-lg! backdrop-saturate-150!',
+                  )
+                },
+              }}></Toaster>
+              {children}
+            </JotaiProvider>
+          </ThemeProvider>
+        </HeroUIProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   )
 }

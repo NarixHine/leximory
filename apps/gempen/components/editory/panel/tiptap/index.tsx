@@ -31,8 +31,8 @@ import { IS_PROD } from '@repo/env'
 import { throttle } from 'es-toolkit'
 import { ms } from 'itty-time'
 import { streamQuizAction } from './actions'
+import { ProtectedButton } from '@repo/ui/protected-button'
 
-// Define interfaces for cleaner prop typing
 interface TiptapProps extends UseEditorOptions {
   blank?: (selection: string) => void
   unblank?: (selection: string) => void
@@ -74,7 +74,7 @@ const Tiptap = ({
     },
     editable: true,
     immediatelyRender: false,
-    // CRITICAL: Set to true (default) so buttons (Bold, Italic) update their active state visually
+    // Set to true so buttons (Bold, Italic) update their active state visually
     shouldRerenderOnTransaction: true, 
     ...props
   })
@@ -120,7 +120,7 @@ const Tiptap = ({
   // --- AI Logic ---
 
   // Memoize the throttled function to prevent recreating it on every render
-  const debouncedUpdate = useMemo(
+  const throttledUpdate = useMemo(
     () =>
       throttle((partialObject: any, currentAiData: any, setAiData: any) => {
         const { text } = partialObject
@@ -134,7 +134,7 @@ const Tiptap = ({
           // We access editor from closure, which is stable enough here
           if (editor && text) editor.commands.setContent(text)
         }
-      }, ms('0.3 seconds')),
+      }, ms('0.2 seconds')),
     [editor] // Re-create only if editor instance changes
   )
 
@@ -153,7 +153,7 @@ const Tiptap = ({
         for await (const partialObject of partialObjectStream) {
           if (partialObject && 'text' in partialObject) {
             // Pass ai.data and ai.setData explicitly to avoid stale closures in the throttled function
-            debouncedUpdate(partialObject, ai.data, ai.setData)
+            throttledUpdate(partialObject, ai.data, ai.setData)
           }
         }
 
@@ -335,14 +335,14 @@ const Tiptap = ({
 
             {/* AI Generator */}
             {ai && (
-              <Button
+              <ProtectedButton
                 onPress={handleAIGeneration}
                 variant='light'
                 isIconOnly
                 aria-label='Generate with AI'
               >
                 <MagicWandIcon />
-              </Button>
+              </ProtectedButton>
             )}
             
           </IconContext.Provider>

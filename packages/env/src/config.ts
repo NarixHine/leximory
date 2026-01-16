@@ -26,6 +26,7 @@ export const EXAMPLE_SHARED_LIB = {
 } as const
 
 export const prefixUrl = (url: string) => `${IS_PROD ? env.NEXT_PUBLIC_LEXIMORY_URL : 'http://localhost:3001'}${url}`
+export const prefixPathname = ({ path, next }: { path: string, next?: string }) => prefixUrl(next ? `${path}?next=${encodeURIComponent(next)}` : path)
 export const EXAMPLE_EBOOK_LINK = '/library/1309fe3b/2dd46083' as const
 export const BILIBILI_LINK = 'https://space.bilibili.com/3494376432994441/' as const
 export const FYP_GITHUB_LINK = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const

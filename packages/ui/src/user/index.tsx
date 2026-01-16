@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { getUser } from '@repo/user'
 import { Button } from '@heroui/button'
 import { AvatarDropdown } from './dropdown'
-import { PiUserCircleDuotone, PiUserCircleThin } from 'react-icons/pi'
+import { PiUserCircleDuotone } from 'react-icons/pi'
 
 export async function CurrentUserAvatar() {
     const user = await getUser()
@@ -11,9 +11,9 @@ export async function CurrentUserAvatar() {
     return <AvatarDropdown
         isLoggedIn={!!user}
         trigger={<Button
-            variant={'flat'}
+            variant={'light'}
             color='secondary'
-            startContent={image ? <Avatar src={image} isBordered color='primary' className='size-16!' /> : <PiUserCircleThin size={40} />}
+            startContent={image ? <Avatar src={image} isBordered color='primary' className='size-16!' /> : <PiUserCircleDuotone size={30} />}
             radius='full'
             isIconOnly={true}
         />} />
@@ -21,11 +21,11 @@ export async function CurrentUserAvatar() {
 
 function UserAvatarFallback() {
     return <Button
-        variant='flat'
+        variant='light'
         color='secondary'
         radius='full'
         isIconOnly={true}
-        startContent={<PiUserCircleThin size={40} />}
+        startContent={<PiUserCircleDuotone size={30} />}
     />
 }
 

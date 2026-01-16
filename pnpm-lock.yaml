@@ -823,6 +823,9 @@ importers:
       '@repo/user':
         specifier: workspace:^
         version: link:../user
+      framer-motion:
+        specifier: ^12.0.0
+        version: 12.25.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       kv:
         specifier: ^1.1.1
         version: 1.1.1
@@ -841,6 +844,12 @@ importers:
       supabase:
         specifier: ^2.72.4
         version: 2.72.4
+      tailwindcss:
+        specifier: ^4.0.0
+        version: 4.1.18
+      usehooks-ts:
+        specifier: ^3.1.1
+        version: 3.1.1(react@19.2.3)
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:^

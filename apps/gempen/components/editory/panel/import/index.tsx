@@ -11,6 +11,7 @@ import { ArrowSquareInIcon, MagicWandIcon } from '@phosphor-icons/react'
 import { useAction } from 'next-safe-action/hooks'
 import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
+import { ProtectedButton } from '@repo/ui/protected-button'
 
 export function ImportButton() {
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure()
@@ -28,7 +29,7 @@ export function ImportButton() {
                 onClose()
             }
         },
-        onError: (error) => {
+        onError: () => {
             toast.error(`Import failed.`)
         }
     })
@@ -40,9 +41,10 @@ export function ImportButton() {
         execute(file)
     }
 
+
     return (
         <>
-            <Button
+            <ProtectedButton
                 color='secondary'
                 variant='flat'
                 startContent={<ArrowSquareInIcon />}
@@ -50,7 +52,7 @@ export function ImportButton() {
                 size='lg'
             >
                 AI 导入
-            </Button>
+            </ProtectedButton>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
                 <ModalContent>
                     <ModalHeader className='flex flex-col gap-1'>AI 导入</ModalHeader>

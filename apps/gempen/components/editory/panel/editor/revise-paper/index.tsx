@@ -10,6 +10,7 @@ import { Streamdown } from 'streamdown'
 import { toast } from 'sonner'
 import { ArrowClockwiseIcon, MicroscopeIcon } from '@phosphor-icons/react'
 import { useRegisterRevise } from './atoms'
+import { useProtectedButtonProps } from '@repo/ui/auth'
 
 const MotionCard = motion.create(Card)
 const MotionCardBody = motion.create(CardBody)
@@ -62,8 +63,10 @@ export default function RevisePaper({ data }: { data: QuizData }) {
         }
     }
 
+    const { isDisabled } = useProtectedButtonProps()
+
     return (
-        <MotionCard transition={{ type: 'tween', duration: 0.3 }} isPressable={!expanded} shadow='none' onPress={handlePress} data-expanded={expanded} className='bg-secondary-50 border-0 border-secondary-100 data-[expanded=true]:border-5 data-[expanded=true]:bg-transparent transition-all mt-3 mb-2 duration-300'>
+        <MotionCard isDisabled={isDisabled} transition={{ type: 'tween', duration: 0.3 }} isPressable={!expanded && !isDisabled} shadow='none' onPress={handlePress} data-expanded={expanded} className='bg-secondary-50 border-0 border-secondary-100 data-[expanded=true]:border-5 data-[expanded=true]:bg-transparent transition-all mt-3 mb-2 duration-300'>
             <MotionCardBody className={`p-4 duration-500`}>
                 {!expanded && <p className='text-center'><MicroscopeIcon className='inline mr-1' weight='duotone' size={20} />AI 审题</p>}
                 {expanded && (

@@ -1,6 +1,6 @@
 import 'server-only'
 import { createClient } from '@repo/supabase/server'
-import { Plan } from '@repo/env/config'
+import { Plan, prefixUrl } from '@repo/env/config'
 import { redirect } from 'next/navigation'
 import { supabase } from '@repo/supabase'
 import { SIGN_IN_URL } from '@repo/env/config'
@@ -45,7 +45,7 @@ export async function getUser() {
 export async function getUserOrThrow() {
     const user = await getUser()
     if (!user) {
-        redirect(SIGN_IN_URL)
+        redirect(prefixUrl(SIGN_IN_URL))
     }
     return user
 }
