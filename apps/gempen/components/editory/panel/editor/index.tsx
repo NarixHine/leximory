@@ -8,13 +8,22 @@ import ReadingEditor from './reading'
 import ListeningEditor from './listening'
 import CustomTextEditor from './custom'
 import { QuizData } from '../../generators/types'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { editoryItemsAtom } from '@/components/editory/atoms'
+import { isChatAtom } from '../atoms'
+import ChatInterface from './chat'
 
 export default function Editor({ id }: { id?: string }) {
     const [items, setItems] = useAtom(editoryItemsAtom)
-
+    const isChat = useAtomValue(isChatAtom)
     const setData = (data: QuizData) => setItems((prevItems) => prevItems.map((item) => item.id === data.id ? data : item))
+
+    if (isChat) {
+        return <div className='flex-1 border-secondary-400/20 border-4  min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
+            <ChatInterface />
+        </div>
+    }
+
     return <div className='flex-1 border-secondary-400/20 border-4  min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
         {
             items.map((data) => {

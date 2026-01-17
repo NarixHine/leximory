@@ -10,6 +10,8 @@ import { useAtomValue } from 'jotai'
 import { editoryItemsAtom } from '../atoms'
 import { ReviseAllButton } from './editor/revise-paper/revise-all-button'
 import { Copyright } from './copyright'
+import { Switch } from '@heroui/react'
+import { EditModeSwitch } from './edit-mode-switch'
 
 export default function Editory({ id }: { id?: string }) {
   const data = useAtomValue(editoryItemsAtom)
@@ -63,6 +65,7 @@ export default function Editory({ id }: { id?: string }) {
           <div className='flex justify-end lg:pl-4 gap-2 flex-col sm:flex-wrap sm:justify-end w-full'>
             <ImportButton />
             <ReviseAllButton />
+            <EditModeSwitch />
           </div>
 
           <div className='hidden sm:flex justify-end mt-auto'>

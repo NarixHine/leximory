@@ -2,7 +2,6 @@
 
 import { atom } from 'jotai'
 import { atomFamily, atomWithStorage } from 'jotai/utils'
-import { toast } from 'sonner'
 import { QuizItems, QuizItemsSchema } from './generators/types'
 
 export type Answers = Record<number, string | null>
