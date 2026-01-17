@@ -10,11 +10,12 @@ import { useChat } from '@ai-sdk/react'
 import { memo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Streamdown } from 'streamdown'
-import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, PlusCircleIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon } from '@phosphor-icons/react'
+import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { ToolName, toolDescriptions, ToolResult, toolSchemas } from './tool-types'
 import { useAtom } from 'jotai'
 import { editoryItemsAtom } from '@/components/editory/atoms'
 import { nanoid } from 'nanoid'
+import { ProtectedButton } from '@repo/ui/protected-button'
 
 type MessagePart = UIMessage['parts'][number]
 
@@ -266,7 +267,7 @@ function ChatSession() {
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <h2 className={'text-2xl bg-linear-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+                <h2 className={'text-2xl font-bold bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent'}>
                     GemPen Your Paper
                 </h2>
                 <div className='flex items-center gap-0.5'>
@@ -274,10 +275,10 @@ function ChatSession() {
                         radius='full'
                         color='primary'
                         variant='light'
-                        startContent={<PlusCircleIcon />}
+                        startContent={<ArrowsClockwiseIcon />}
                         onPress={() => startNewConversation()}
                     >
-                        新建对话
+                        重开对话
                     </Button>
                 </div>
             </div>
@@ -296,7 +297,7 @@ function ChatSession() {
                     autoComplete='off'
                     startContent={<ChatCircleDotsIcon className='text-default-500' />}
                 />
-                <Button
+                <ProtectedButton
                     type='button'
                     color='primary'
                     isIconOnly
@@ -305,7 +306,7 @@ function ChatSession() {
                     aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
                     startContent={isLoading ? <StopCircleIcon size={22} /> : <PaperPlaneRightIcon size={22} />}
-                ></Button>
+                ></ProtectedButton>
             </form>
         </div>
     )

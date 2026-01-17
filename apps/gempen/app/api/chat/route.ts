@@ -2,10 +2,14 @@ import { AIGeneratableType } from '@/components/editory/generators/config'
 import { toolSchemas } from '@/components/editory/panel/editor/chat/tool-types'
 import { generateQuiz } from '@/server/ai/generate-quiz'
 import { AgentPrompt } from '@/server/ai/prompts/agent'
+import incrCommentaryQuota from '@repo/user/quota'
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from 'ai'
 
 export async function POST(request: Request) {
     const { messages, currentItems } = await request.json()
+    if (await incrCommentaryQuota(1)) {
+        throw new Error('Quota exceeded')
+    }
 
     const agent = new ToolLoopAgent({
         model: 'google/gemini-3-flash',
