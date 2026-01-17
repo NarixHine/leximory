@@ -4,11 +4,13 @@ import { getUser } from '@repo/user'
 import { Button } from '@heroui/button'
 import { AvatarDropdown } from './dropdown'
 import { PiUserCircleDuotone } from 'react-icons/pi'
+import { getCommentaryQuota } from '@repo/user/quota'
 
 export async function CurrentUserAvatar() {
     const user = await getUser()
     const { image } = user ?? {}
     return <AvatarDropdown
+        quotaPromise={getCommentaryQuota()}
         isLoggedIn={!!user}
         trigger={<Button
             variant={'light'}

@@ -20,7 +20,7 @@ export const ConfirmStory = createCallable<{ comments:string[] }, Response>(({ c
                 通过<b>阅读辅助语言习得</b>是最有效记忆词汇的方式。
             </p>
             <p>
-                点击继续则会根据在该日期内记忆的单词生成一个故事（消耗2次AI注释生成额度）：
+                点击继续则会根据在该日期内记忆的单词生成一个故事：
 
             </p>
             <ul className='max-h-60 overflow-y-auto'>

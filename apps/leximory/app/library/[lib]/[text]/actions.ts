@@ -64,7 +64,7 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId)) {
         return {
             success: false,
-            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`
+            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
         }
     }
 
@@ -125,7 +125,7 @@ export async function generate({ article, textId, onlyComments, delayRevalidate 
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId, delayRevalidate)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
+        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
     }
 
     await inngest.send({
@@ -153,7 +153,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
         throw new Error('Text too long')
     }
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。` }
+        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
     }
 
     const { textStream } = streamText({

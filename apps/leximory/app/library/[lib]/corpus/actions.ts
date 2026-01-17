@@ -29,7 +29,7 @@ export async function generateStory({ comments, lib, isShadow = false }: { comme
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.story)) {
         return {
             success: false,
-            message: `本月 ${await maxCommentaryQuota()} 次 AI 注释生成额度耗尽。`
+            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
         }
     }
 

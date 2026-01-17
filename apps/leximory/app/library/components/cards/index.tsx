@@ -36,12 +36,12 @@ function createQuotaUI({
 }
 
 export const CommentaryQuotaUI = createQuotaUI({
-    name: 'AI 注解额度',
+    name: 'AI 词点额度',
     getQuota: getCommentaryQuota,
     className: 'bg-linear-to-br from-primary-50 to-secondary-50 dark:bg-linear-to-bl dark:from-stone-900 dark:to-default-200'
 })
 
 export const AudioQuotaUI = createQuotaUI({
-    name: 'AI 朗读额度',
+    name: 'AI 语点额度',
     getQuota: getAudioQuota,
 })

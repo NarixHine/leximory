@@ -23,7 +23,7 @@ export async function generate(id: string, lib: string, text: string) {
         return { error: `文本长度超过 ${MAX_TTS_LENGTH} 字符。` }
     }
     if (await incrAudioQuota()) {
-        return { error: `你已用完本月的 ${await maxAudioQuota()} 次 AI 音频生成额度。` }
+        return { error: `你已用完本月的 ${await maxAudioQuota()} 语点（AI 音频生成）。` }
     }
 
     const prompt = lang === 'ja' ? await japaneseToKana(text) : text

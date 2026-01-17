@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const { word: rawWord, token } = await parseBody(request, schema)
     const sub = await verifyToken(token)
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, sub, true)) {
-        return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 次 AI 注释生成额度。` })
+        return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 词点。` })
     }
 
     const lang = await getWordLang(rawWord)
