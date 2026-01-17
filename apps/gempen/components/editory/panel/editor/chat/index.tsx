@@ -1,49 +1,37 @@
 'use client'
 
-import { AccordionProps, Accordion, AccordionItem } from '@heroui/accordion'
 import { Button } from '@heroui/button'
-import { Input } from '@heroui/input'
-import { Card, CardBody } from '@heroui/react'
+import { Input, Textarea } from '@heroui/input'
 import { Spinner } from '@heroui/spinner'
 import { cn } from '@heroui/theme'
 import { IS_PROD } from '@repo/env'
 import { DefaultChatTransport, UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
-import Main from '@/components/ui/main'
-import { ReactNode, memo, useRef, useState, useEffect, Suspense } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Streamdown } from 'streamdown'
 import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, PlusCircleIcon, StopCircleIcon, LightbulbIcon } from '@phosphor-icons/react'
-import { ToolName, toolDescriptions, ToolResult } from './tool-types'
+import { ToolName, toolDescriptions, ToolResult, toolSchemas } from './tool-types'
+import { useAtom } from 'jotai'
+import { editoryItemsAtom } from '@/components/editory/atoms'
+import { nanoid } from 'nanoid'
 
 type MessagePart = UIMessage['parts'][number]
 
 function ToolLoading({ toolName }: { toolName: ToolName }) {
     return (
-        <div className='flex justify-center items-center gap-2 text-sm text-default-400 font-mono mt-2'>
+        <div className='flex justify-center items-center gap-2 text-sm text-default-600 font-mono mt-2 ml-2'>
             <Spinner size='sm' color='default' variant='dots' />
             <span>{toolDescriptions[toolName]}</span>
         </div>
     )
 }
 
-function ToolAccordian({ title, children, defaultExpanded, icon, ...props }: { title: string, children: ReactNode, icon: ReactNode, defaultExpanded?: boolean } & AccordionProps) {
-    return <Accordion className='px-0 not-prose' {...props} defaultExpandedKeys={defaultExpanded ? ['content'] : []}>
-        <AccordionItem key='content' title={title} startContent={icon} classNames={{
-            titleWrapper: 'flex-none',
-            trigger: 'text-sm py-2'
-        }}>
-            {children}
-        </AccordionItem>
-    </Accordion>
-}
 
-function ToolResultDisplay({ toolName, result }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
-    switch (toolName) {
-
-        default:
-            return null
-    }
+function ToolResultDisplay({ toolName }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
+    return <div className='flex items-center gap-2'>
+        <LightbulbIcon size={16} /> {toolDescriptions[toolName]}
+    </div>
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
@@ -64,7 +52,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     </div>
                 )
             case 'output-error':
-                return <div className='font-mono text-sm'>Error: {typedPart.errorText}</div>
+                return <div className='font-mono text-sm ml-2'>Error</div>
         }
     }
 
@@ -72,23 +60,21 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'px-4 py-3 mt-4 rounded-2xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
+                    'px-4 mt-4 rounded-2xl max-w-4/5 prose overflow-x-hidden',
                     isUser
                         ? 'bg-default-50 text-default-900 dark:bg-stone-900'
-                        : 'text-default-900 dark:bg-neutral-900',
+                        : 'text-default-900',
                 )}>
                     <Streamdown>{part.text}</Streamdown>
                 </div>
             )
         case 'reasoning':
             return part.text && (
-                <ToolAccordian defaultExpanded title='Reasoning' icon={<LightbulbIcon size={16} />}>
-                    <Streamdown
-                        className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'
-                    >
-                        {part.text}
-                    </Streamdown>
-                </ToolAccordian>
+                <Streamdown
+                    className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'
+                >
+                    {part.text}
+                </Streamdown>
             )
         default:
             return <></>
@@ -145,27 +131,102 @@ export function ChatMessage({
 const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({
-    regenerate,
     messages,
     isLoading
 }: {
-    regenerate?: () => void,
     messages: UIMessage[]
     isLoading?: boolean
-}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} regenerate={regenerate} />)}</>
+}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} />)}</>
 
 function ChatSession() {
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [data, setData] = useAtom(editoryItemsAtom)
+    const inputRef = useRef<HTMLTextAreaElement>(null)
     const [input, setInput] = useState('')
-    const { messages, status, stop, setMessages, regenerate, sendMessage } = useChat({
+    const { messages, status, stop, setMessages, sendMessage, addToolOutput } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/chat',
+            body: { currentItems: data },
         }),
+        onToolCall: async ({ toolCall }) => {
+            if (toolCall.dynamic) return
+
+            switch (toolCall.toolName) {
+                case 'getCurrentItems':
+                    addToolOutput({
+                        tool: 'getCurrentItems',
+                        toolCallId: toolCall.toolCallId,
+                        output: JSON.stringify(data),
+                    })
+                    break
+                case 'addQuizItem':
+                    const input1 = toolSchemas.addQuizItem.safeParse(toolCall.input)
+                    if (input1.success) {
+                        const { data } = input1
+                        const newItem = { id: nanoid(8), ...data }
+                        setData(prev => [...prev, newItem])
+                        addToolOutput({
+                            tool: 'addQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: true, id: newItem.id }),
+                        })
+                    }
+                    else {
+                        addToolOutput({
+                            tool: 'addQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: false, error: input1.error.message }),
+                        })
+                        throw new Error(input1.error.message)
+                    }
+                    break
+                case 'removeQuizItem':
+                    const input2 = toolSchemas.removeQuizItem.safeParse(toolCall.input)
+                    if (input2.success) {
+                        const { id: removeId } = input2.data
+                        setData(prev => prev.filter(item => item.id !== removeId))
+                        addToolOutput({
+                            tool: 'removeQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: true }),
+                        })
+                    }
+                    else {
+                        addToolOutput({
+                            tool: 'removeQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: false, error: input2.error.message }),
+                        })
+                        throw new Error(input2.error.message)
+                    }
+                    break
+                case 'updateQuizItem':
+                    const input3 = toolSchemas.updateQuizItem.safeParse(toolCall.input)
+                    if (input3.success) {
+                        const { id: updateId, data: updateData } = input3.data
+                        setData(prev => prev.map(item => item.id === updateId ? { ...item, ...updateData } : item))
+                        addToolOutput({
+                            tool: 'updateQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: true }),
+                        })
+                    }
+                    else {
+                        addToolOutput({
+                            tool: 'updateQuizItem',
+                            toolCallId: toolCall.toolCallId,
+                            output: JSON.stringify({ success: false, error: input3.error.message }),
+                        })
+                        throw new Error(input3.error.message)
+                    }
+                    break
+            }
+        },
         onError: (error) => {
             if (IS_PROD) {
                 toast.error('发生错误')
             } else {
-                throw error
+                toast.error(error.message)
+                console.error(error)
             }
         }
     })
@@ -221,12 +282,12 @@ function ChatSession() {
                 </div>
             </div>
 
-            <ChatMessages isLoading={isLoading} messages={messages} regenerate={regenerate} />
+            <ChatMessages isLoading={isLoading} messages={messages} />
             <form
                 onSubmit={handleFormSubmit}
                 className='flex items-center gap-2 mt-auto'
             >
-                <Input
+                <Textarea
                     ref={inputRef}
                     className='flex-1'
                     value={input}

@@ -2,7 +2,7 @@ import 'server-only'
 import { generateObject } from 'ai'
 import { IMPORT_PROMPT } from './prompts/import'
 import { nanoid } from 'nanoid'
-import { SECTIONS } from './prompts/sections'
+import { GeneratableDataSchema } from './prompts/sections'
 import z from 'zod'
 import { FILE_AI } from './config'
 
@@ -22,7 +22,7 @@ export async function aiSmartImport(file: File) {
                 mediaType: file.type,
             }],
         }],
-        schema: z.array(z.union(Object.values(SECTIONS).map(s => s.schema))),
+        schema: z.array(GeneratableDataSchema).min(1),
         ...FILE_AI
     })
     // reassign ID to items

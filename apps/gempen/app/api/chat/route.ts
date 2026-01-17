@@ -1,13 +1,45 @@
-import { createAgentUIStreamResponse, ToolLoopAgent } from 'ai'
-
-const agent = new ToolLoopAgent({
-    model: 'xai/grok-4.1-fast-non-reasoning',
-    instructions:
-        'You are an expert data analyst. You provide clear insights from complex data.',
-})
+import { AIGeneratableType } from '@/components/editory/generators/config'
+import { toolSchemas } from '@/components/editory/panel/editor/chat/tool-types'
+import { generateQuiz } from '@/server/ai/generate-quiz'
+import { AgentPrompt } from '@/server/ai/prompts/agent'
+import { createAgentUIStreamResponse, ToolLoopAgent, tool } from 'ai'
 
 export async function POST(request: Request) {
-    const { messages } = await request.json()
+    const { messages, currentItems } = await request.json()
+
+    const agent = new ToolLoopAgent({
+        model: 'google/gemini-3-flash',
+        instructions: AgentPrompt,
+        tools: {
+            getCurrentItems: tool({
+                description: 'Get the current list of quiz items',
+                inputSchema: toolSchemas.getCurrentItems,
+                execute: async () => {
+                    return currentItems
+                }
+            }),
+            addQuizItem: tool({
+                description: 'Add a new quiz item to the paper',
+                inputSchema: toolSchemas.addQuizItem,
+            }),
+            removeQuizItem: tool({
+                description: 'Remove a quiz item by its id',
+                inputSchema: toolSchemas.removeQuizItem,
+            }),
+            updateQuizItem: tool({
+                description: 'Update an existing quiz item',
+                inputSchema: toolSchemas.updateQuizItem
+            }),
+            designQuestions: tool({
+                description: 'Design questions based on the adapted text',
+                inputSchema: toolSchemas.designQuestionsInput,
+                execute: async ({ adaptedText, type }: { adaptedText: string, type: AIGeneratableType }) => {
+                    const object = await generateQuiz({ prompt: adaptedText, type })
+                    return object
+                }
+            }),
+        },
+    })
 
     return createAgentUIStreamResponse({
         agent,

@@ -637,7 +637,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
 export default function ChatInterface({ initialInput, shouldOpenNew, UpgradeMessage }: { initialPromptIndex?: number | null, initialInput?: string, shouldOpenNew?: boolean, UpgradeMessage?: ReactNode }) {
     return (
         <Main className='flex flex-col max-w-2xl font-formal'>
-            <Suspense fallback={<div className='flex justify-center items-center h-full min-h-[200px]'><Spinner /></div>}>
+            <Suspense fallback={<div className='flex justify-center items-center h-full min-h-50'><Spinner /></div>}>
                 <ChatSession initialInput={initialInput} shouldOpenNew={shouldOpenNew} UpgradeMessage={UpgradeMessage} />
             </Suspense>
         </Main>

@@ -120,5 +120,7 @@ const formats = (Object.keys(SECTIONS) as Array<keyof typeof SECTIONS>).map((sec
         </${section}>`
 })
 
-export { SECTIONS, SECTION_TYPES, SECTION_NAMES, details, examples, formats }
+const GeneratableDataSchema = z.union(Object.values(SECTIONS).map(s => s.schema))
+
+export { SECTIONS, SECTION_TYPES, SECTION_NAMES, details, examples, formats, GeneratableDataSchema }
 export { type SectionType }
