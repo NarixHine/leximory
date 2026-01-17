@@ -332,11 +332,9 @@ export function ChatMessage({
 }) {
     const { id, parts, role } = message
 
-    const Parts = () => <>
-        {parts?.map((part, j) => (
-            <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
-        ))}
-    </>
+    const Parts = parts.map((part, j) => (
+        <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+    ))
 
     return <div className={cn(
         'mb-4 flex flex-col',
@@ -389,9 +387,11 @@ export function ChatMessage({
                     >
                         <PiArrowCounterClockwiseDuotone className='text-secondary-300' size={16} />
                     </Button>
-                    <Parts />
+                    {Parts}
                 </div>
-            ) : <Parts />
+            ) : (
+                Parts
+            )
         }
     </div>
 }

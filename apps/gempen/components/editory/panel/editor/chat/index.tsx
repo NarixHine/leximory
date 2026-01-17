@@ -5,7 +5,7 @@ import { Textarea } from '@heroui/input'
 import { Spinner } from '@heroui/spinner'
 import { cn } from '@heroui/theme'
 import { IS_PROD } from '@repo/env'
-import { DefaultChatTransport, UIMessage } from 'ai'
+import { DefaultChatTransport, ToolCallPart, UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
 import { memo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -36,9 +36,12 @@ function ToolResultDisplay({ toolName }: { toolName: ToolName; result: Awaited<T
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
-    if (part.type.startsWith('tool-')) {
+    function isToolPart(part: any): part is ToolCallPart {
+        return part.type.startsWith('tool-')
+    }
+    if (isToolPart(part)) {
         const toolName = part.type.substring(5) as ToolName
-        const typedPart = part as any
+        const typedPart = part
         switch (typedPart.state) {
             case 'input-streaming':
             case 'input-available':
@@ -263,24 +266,22 @@ function ChatSession() {
     return (
         <div className='flex flex-col h-full'>
             <div className={cn(
-                'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-1.5 sm:pl-7 sm:pr-3 top-4 z-10 rounded-full',
+                'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-2 top-4 z-10 rounded-lg',
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <h2 className={'text-2xl font-bold bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent'}>
+                <h2 className={'text-xl font-bold bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent'}>
                     GemPen Your Paper
                 </h2>
-                <div className='flex items-center gap-0.5'>
-                    <Button
-                        radius='full'
-                        color='primary'
-                        variant='light'
-                        startContent={<ArrowsClockwiseIcon />}
-                        onPress={() => startNewConversation()}
-                    >
-                        重开对话
-                    </Button>
-                </div>
+                <Button
+                    radius='sm'
+                    color='primary'
+                    variant='light'
+                    startContent={<ArrowsClockwiseIcon />}
+                    onPress={() => startNewConversation()}
+                >
+                    重开对话
+                </Button>
             </div>
 
             <ChatMessages isLoading={isLoading} messages={messages} />
