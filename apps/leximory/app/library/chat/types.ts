@@ -7,7 +7,7 @@ import { Lang, SUPPORTED_LANGS } from '@repo/env/config'
 import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { AI_GENERATABLE } from '@/components/editory/generators/config'
-import { extractArticleFromUrl } from '@/server/ai/scrape'
+import { extractArticleFromUrl } from '@repo/scrape'
 
 export const toolDescriptions = {
     listLibs: 'Fetching available libraries ...',

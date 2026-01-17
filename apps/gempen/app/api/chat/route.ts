@@ -4,10 +4,11 @@ import { generateQuiz } from '@/server/ai/generate-quiz'
 import { AgentPrompt } from '@/server/ai/prompts/agent'
 import incrCommentaryQuota from '@repo/user/quota'
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from 'ai'
+import { extractArticleFromUrl } from '@repo/scrape'
 
 export async function POST(request: Request) {
     const { messages, currentItems } = await request.json()
-    if (await incrCommentaryQuota(1)) {
+    if (await incrCommentaryQuota(1, undefined, true)) {
         throw new Error('Quota exceeded')
     }
 
@@ -40,6 +41,13 @@ export async function POST(request: Request) {
                 execute: async ({ adaptedText, type }: { adaptedText: string, type: AIGeneratableType }) => {
                     const object = await generateQuiz({ prompt: adaptedText, type })
                     return object
+                }
+            }),
+            scrapeArticle: tool({
+                description: 'Scrape an article from a URL',
+                inputSchema: toolSchemas.scrapeArticle,
+                execute: async ({ url }: { url: string }) => {
+                    return extractArticleFromUrl(url)
                 }
             }),
         },

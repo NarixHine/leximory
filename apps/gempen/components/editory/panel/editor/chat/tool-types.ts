@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { QuizData } from '@/components/editory/generators/types'
 import { GeneratableDataSchema } from '@/server/ai/prompts/sections'
 import { GeneratableTypeSchema } from '@/components/editory/generators/config'
+import { extractArticleFromUrl } from '@repo/scrape'
 
 export const toolDescriptions = {
     getCurrentItems: 'Reading Paper',
@@ -9,6 +10,7 @@ export const toolDescriptions = {
     removeQuizItem: 'Removing Section',
     updateQuizItem: 'Updating Questions',
     designQuestions: 'Devising Questions',
+    scrapeArticle: 'Extracting Article from Webpage'
 } as const
 
 export type ToolResult = {
@@ -17,6 +19,7 @@ export type ToolResult = {
     removeQuizItem: undefined
     updateQuizItem: undefined
     designQuestions: z.infer<typeof GeneratableDataSchema>
+    scrapeArticle: Awaited<ReturnType<typeof extractArticleFromUrl>>
 }
 
 export const toolSchemas = {
@@ -34,6 +37,9 @@ export const toolSchemas = {
         type: GeneratableTypeSchema,
     }),
     designQuestionsOutput: GeneratableDataSchema,
+    scrapeArticle: z.object({
+        url: z.url().describe('The URL of the webpage to extract the article from'),
+    }),
 } as const
 
 export type ToolName = keyof ToolResult

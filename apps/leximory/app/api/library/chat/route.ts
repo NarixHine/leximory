@@ -16,7 +16,7 @@ import { annotateParagraph } from '@/server/ai/annotate'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
-import { extractArticleFromUrl } from '@/server/ai/scrape'
+import { extractArticleFromUrl } from '@repo/scrape'
 
 const tools: ToolSet = {
     getLib: {

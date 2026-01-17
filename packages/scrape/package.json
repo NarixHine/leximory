@@ -1,0 +1,21 @@
+{
+  "name": "@repo/scrape",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "typescript": "latest",
+    "@types/node": "latest"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:^",
+    "@tabstack/sdk": "2.0.0",
+    "server-only": "0.0.1"
+  }
+}

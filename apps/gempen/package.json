@@ -55,6 +55,7 @@
     "@repo/env": "workspace:^",
     "@repo/ui": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/scrape": "workspace:^",
     "@tanstack/react-query": "^5.90.16",
     "@tiptap/extension-bubble-menu": "3.15.3",
     "@tiptap/extension-image": "3.15.3",

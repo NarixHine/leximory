@@ -21,7 +21,7 @@ type MessagePart = UIMessage['parts'][number]
 
 function ToolLoading({ toolName }: { toolName: ToolName }) {
     return (
-        <div className='flex justify-center items-center gap-2 text-sm text-default-600 font-mono mt-2 ml-2'>
+        <div className='flex justify-center items-center gap-2 text-sm text-default-600 font-mono ml-2'>
             <Spinner size='sm' color='default' variant='dots' />
             <span>{toolDescriptions[toolName]}</span>
         </div>
@@ -48,7 +48,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 return <ToolLoading toolName={toolName} />
             case 'output-available':
                 return (
-                    <div className='mt-2 w-full'>
+                    <div className='w-full text-default-600'>
                         <ToolResultDisplay
                             toolName={toolName}
                             result={typedPart.output as Awaited<ToolResult[ToolName]>}
@@ -56,7 +56,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     </div>
                 )
             case 'output-error':
-                return <div className='flex items-center gap-2'>
+                return <div className='flex items-center gap-2 text-danger'>
                     <WarningCircleIcon size={16} /> {toolDescriptions[toolName]}
                 </div>
         }
@@ -66,7 +66,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'mt-4 rounded-2xl max-w-4/5 prose overflow-x-hidden',
+                    'rounded-2xl max-w-4/5 prose overflow-x-hidden',
                     isUser
                         ? 'bg-default-50 text-default-900 dark:bg-stone-900 px-6'
                         : 'text-default-900 px-4',
@@ -107,7 +107,7 @@ export function ChatMessage({
     ))
 
     return <div className={cn(
-        'mb-4 flex flex-col',
+        'mb-8 flex flex-col',
         role === 'user' ? 'items-end' : 'items-start'
     )} data-message-id={id}>
         {
@@ -264,11 +264,11 @@ function ChatSession() {
     }
 
     return (
-        <div className='flex flex-col h-full'>
+        <div className='flex flex-col min-h-[calc(88vh)]'>
             <div className={cn(
                 'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-2 top-4 z-10 rounded-lg',
                 'border border-slate-300/50 dark:border-stone-600/30',
-                'backdrop-blur-xl backdrop-saturate-150',
+                'backdrop-blur backdrop-saturate-150',
             )}>
                 <h2 className={'text-xl font-bold bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent'}>
                     GemPen Your Paper

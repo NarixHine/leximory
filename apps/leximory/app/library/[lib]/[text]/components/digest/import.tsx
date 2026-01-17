@@ -19,7 +19,7 @@ import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getLanguageStrategy } from '@/lib/languages'
-import { extractArticleFromUrl } from '@/server/ai/scrape'
+import { scrapeArticle } from '@/server/ai/scrape'
 
 export default function ImportModal() {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
@@ -35,7 +35,7 @@ export default function ImportModal() {
     const [isPopulating, startPopulating] = useTransition()
     const setTitle = useSetAtom(titleAtom)
     const populate = async () => {
-        const { title, content } = await extractArticleFromUrl(url)
+        const { title, content } = await scrapeArticle(url)
         setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
         save({ id: text, title })
         setTitle(title)

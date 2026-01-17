@@ -11,13 +11,8 @@ const nextConfig: NextConfig = {
         },
         turbopackFileSystemCacheForBuild: true,
     },
-    transpilePackages: ['@repo/env', '@repo/kv', '@repo/supabase', '@repo/user', '@repo/ui'],
     images: {
         remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'pcsjszvydprmevipvpva.supabase.co',
-            },
             ...ALLOWED_IMAGE_REMOTE_PATTERNS
         ],
     },

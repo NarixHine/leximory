@@ -73,7 +73,9 @@ export default function Editory({ id }: { id?: string }) {
           </div>
         </div>
 
-        <Editor id={id} />
+        <div className='flex-1'>
+          <Editor id={id} />
+        </div>
       </section>
 
       <div className='flex flex-col items-center gap-2 basis-5/12 pt-8'>
