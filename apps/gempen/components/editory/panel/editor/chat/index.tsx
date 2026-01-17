@@ -1,16 +1,16 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { Input, Textarea } from '@heroui/input'
+import { Textarea } from '@heroui/input'
 import { Spinner } from '@heroui/spinner'
 import { cn } from '@heroui/theme'
 import { IS_PROD } from '@repo/env'
 import { DefaultChatTransport, UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Streamdown } from 'streamdown'
-import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, PlusCircleIcon, StopCircleIcon, LightbulbIcon } from '@phosphor-icons/react'
+import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, PlusCircleIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon } from '@phosphor-icons/react'
 import { ToolName, toolDescriptions, ToolResult, toolSchemas } from './tool-types'
 import { useAtom } from 'jotai'
 import { editoryItemsAtom } from '@/components/editory/atoms'
@@ -30,7 +30,7 @@ function ToolLoading({ toolName }: { toolName: ToolName }) {
 
 function ToolResultDisplay({ toolName }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
     return <div className='flex items-center gap-2'>
-        <LightbulbIcon size={16} /> {toolDescriptions[toolName]}
+        <NavigationArrowIcon size={16} /> {toolDescriptions[toolName]}
     </div>
 }
 
@@ -52,7 +52,9 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     </div>
                 )
             case 'output-error':
-                return <div className='font-mono text-sm ml-2'>Error</div>
+                return <div className='flex items-center gap-2'>
+                    <WarningCircleIcon size={16} /> {toolDescriptions[toolName]}
+                </div>
         }
     }
 
@@ -60,10 +62,10 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'px-4 mt-4 rounded-2xl max-w-4/5 prose overflow-x-hidden',
+                    'mt-4 rounded-2xl max-w-4/5 prose overflow-x-hidden',
                     isUser
-                        ? 'bg-default-50 text-default-900 dark:bg-stone-900'
-                        : 'text-default-900',
+                        ? 'bg-default-50 text-default-900 dark:bg-stone-900 px-6'
+                        : 'text-default-900 px-4',
                 )}>
                     <Streamdown>{part.text}</Streamdown>
                 </div>
@@ -96,11 +98,9 @@ export function ChatMessage({
 }) {
     const { id, parts, role } = message
 
-    const Parts = () => <>
-        {parts?.map((part, j) => (
-            <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
-        ))}
-    </>
+    const content = parts.map((part, j) => (
+        <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
+    ))
 
     return <div className={cn(
         'mb-4 flex flex-col',
@@ -121,9 +121,9 @@ export function ChatMessage({
                     >
                         <ArrowCounterClockwiseIcon className='text-secondary-300' size={16} />
                     </Button>
-                    <Parts />
+                    {content}
                 </div>
-            ) : <Parts />
+            ) : content
         }
     </div>
 }
