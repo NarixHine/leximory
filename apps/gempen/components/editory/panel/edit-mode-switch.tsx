@@ -1,6 +1,7 @@
 import { Switch } from '@heroui/switch'
 import { useAtom } from 'jotai'
 import { isChatAtom } from './atoms'
+import { ThemeShinyText } from '@repo/ui/shiny-text'
 
 export function EditModeSwitch() {
     const [isChat, setIsChat] = useAtom(isChatAtom)
@@ -11,8 +12,9 @@ export function EditModeSwitch() {
                 isSelected={isChat}
                 onValueChange={setIsChat}
                 color='secondary'
+                className='flex-row-reverse gap-2'
             >
-                {isChat ? '自动' : '手动'}
+                {isChat ? <ThemeShinyText className='font-bold' text='Autopilot' /> : 'Edit Mode'}
             </Switch>
         </div>
     )

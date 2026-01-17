@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, useMotionValue, useAnimationFrame, useTransform } from 'framer-motion'
+import { useDarkMode } from 'usehooks-ts'
 
 interface ShinyTextProps {
     text: string
@@ -13,6 +14,15 @@ interface ShinyTextProps {
     pauseOnHover?: boolean
     direction?: 'left' | 'right'
     delay?: number
+}
+
+export function ThemeShinyText(props: ShinyTextProps) {
+    const { isDarkMode } = useDarkMode()
+    return isDarkMode ? (
+        <ShinyText color='#ffffff' shineColor='#666f87' {...props} />
+    ) : (
+        <ShinyText color='#000000' shineColor='#ffffff' {...props} />
+    )
 }
 
 const ShinyText: React.FC<ShinyTextProps> = ({
