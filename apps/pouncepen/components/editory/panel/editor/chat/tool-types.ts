@@ -5,12 +5,30 @@ import { GeneratableTypeSchema } from '@/components/editory/generators/config'
 import { extractArticleFromUrl } from '@repo/scrape'
 
 export const toolDescriptions = {
-    getCurrentItems: 'Reading Paper',
-    addQuizItem: 'Adding Section',
-    removeQuizItem: 'Removing Section',
-    updateQuizItem: 'Updating Questions',
-    designQuestions: 'Devising Questions',
-    scrapeArticle: 'Extracting Article from Webpage'
+    getCurrentItems: {
+        loading: 'Reading Paper',
+        completed: 'Paper Retrieved'
+    },
+    addQuizItem: {
+        loading: 'Adding Section',
+        completed: 'Section Added'
+    },
+    removeQuizItem: {
+        loading: 'Removing Section',
+        completed: 'Section Removed'
+    },
+    updateQuizItem: {
+        loading: 'Updating Questions',
+        completed: 'Questions Updated'
+    },
+    designQuestions: {
+        loading: 'Devising Questions',
+        completed: 'Questions Devised'
+    },
+    scrapeArticle: {
+        loading: 'Extracting Article from Webpage',
+        completed: 'Article Extracted'
+    }
 } as const
 
 export type ToolResult = {

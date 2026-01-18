@@ -19,20 +19,29 @@ import { ProtectedButton } from '@repo/ui/protected-button'
 
 type MessagePart = UIMessage['parts'][number]
 
+function ToolMessageWrapper({ children }: { children: React.ReactNode }) {
+    return <div className='flex items-center gap-2 text-default-600 ml-2'>
+        {children}
+    </div>
+}
+
 function ToolLoading({ toolName }: { toolName: ToolName }) {
     return (
-        <div className='flex justify-center items-center gap-2 text-sm text-default-600 font-mono ml-2'>
+        <ToolMessageWrapper>
             <Spinner size='sm' color='default' variant='dots' />
-            <span>{toolDescriptions[toolName]}</span>
-        </div>
+            <span>{toolDescriptions[toolName].loading}</span>
+        </ToolMessageWrapper>
     )
 }
 
 
 function ToolResultDisplay({ toolName }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
-    return <div className='flex items-center gap-2'>
-        <NavigationArrowIcon size={16} /> {toolDescriptions[toolName]}
-    </div>
+    return (
+        <ToolMessageWrapper>
+            <NavigationArrowIcon size={16} />
+            {toolDescriptions[toolName].completed}
+        </ToolMessageWrapper>
+    )
 }
 
 function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
@@ -48,17 +57,15 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 return <ToolLoading toolName={toolName} />
             case 'output-available':
                 return (
-                    <div className='w-full text-default-600'>
-                        <ToolResultDisplay
-                            toolName={toolName}
-                            result={typedPart.output as Awaited<ToolResult[ToolName]>}
-                        />
-                    </div>
+                    <ToolResultDisplay
+                        toolName={toolName}
+                        result={typedPart.output as Awaited<ToolResult[ToolName]>}
+                    />
                 )
             case 'output-error':
-                return <div className='flex items-center gap-2 text-danger'>
-                    <WarningCircleIcon size={16} /> {toolDescriptions[toolName]}
-                </div>
+                return <ToolMessageWrapper>
+                    <WarningCircleIcon size={16} /> Error
+                </ToolMessageWrapper>
         }
     }
 
