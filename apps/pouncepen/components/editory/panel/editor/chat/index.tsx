@@ -264,14 +264,14 @@ function ChatSession() {
     }
 
     return (
-        <div className='flex flex-col min-h-[calc(88vh)]'>
+        <div className='flex flex-col flex-1'>
             <div className={cn(
                 'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-2 top-4 z-10 rounded-lg',
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur backdrop-saturate-150',
             )}>
-                <h2 className={'text-xl font-bold text-secondary-300'}>
-                    PouncePen Your Paper.
+                <h2 className={'text-2xl font-formal'}>
+                    <span className='italic'>PouncePen</span> your paper.
                 </h2>
                 <Button
                     radius='sm'

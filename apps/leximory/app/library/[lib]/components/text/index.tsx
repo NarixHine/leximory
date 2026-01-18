@@ -17,7 +17,7 @@ import { momentSH } from '@/lib/moment'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import FlatCard from '@/components/ui/flat-card'
-import { extractArticleFromUrl } from '@/server/ai/scrape'
+import { scrapeArticle } from '@/server/ai/scrape'
 
 function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation, visitStatus }: {
     id: string,
@@ -106,7 +106,7 @@ export function AddTextButton() {
             onSubmit={handleSubmit(async (data) => {
                 if (data.url) {
                     try {
-                        const { title, content } = await extractArticleFromUrl(data.url)
+                        const { title, content } = await scrapeArticle(data.url)
                         if (content.length > getLanguageStrategy(lang).maxArticleLength) {
                             toast.error('识别内容过长，请手动录入')
                             return

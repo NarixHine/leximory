@@ -19,7 +19,7 @@ export default function Editor({ id }: { id?: string }) {
     const setData = (data: QuizData) => setItems((prevItems) => prevItems.map((item) => item.id === data.id ? data : item))
 
     if (isChat) {
-        return <div className='flex-1 border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
+        return <div className='flex-1 flex flex-col border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
             <ChatInterface />
         </div>
     }

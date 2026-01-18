@@ -28,7 +28,7 @@ export function JsonEditor() {
 
     return (
         <section className='w-full'>
-            <h2 className='font-bold text-4xl pt-6 pb-4'>Raw Data</h2>
+            <h2 className='font-bold text-4xl pt-6 pb-3'>Raw Data</h2>
             <Textarea
                 value={json}
                 onChange={handleJsonChange}

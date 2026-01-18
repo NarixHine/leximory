@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Rethink_Sans } from 'next/font/google'
+import { Instrument_Serif, Newsreader, Rethink_Sans } from 'next/font/google'
 import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
@@ -17,6 +17,13 @@ const sans = Rethink_Sans({
   subsets: ['latin'],
 })
 
+const serif = Instrument_Serif({
+  variable: '--font-formal',
+  weight: '400',
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+})
+
 const chinese = localFont({
   src: './chinese.woff2',
   variable: '--font-chinese',
@@ -31,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang='zh-CN' suppressHydrationWarning>
       <body
-        className={`${sans.variable} ${chinese.variable} antialiased font-ui`}
+        className={`${sans.variable} ${chinese.variable} ${serif.variable} antialiased font-ui`}
       >
         <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
           {children}

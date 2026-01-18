@@ -83,7 +83,7 @@ export default function Editory({ id }: { id?: string }) {
 
         <section className='w-full'>
           <div className='flex items-center mt-5 mb-3'>
-            <h2 className='font-bold text-4xl'>Output Paper & Key</h2>
+            <h2 className='font-bold text-4xl'>Paper & Key</h2>
           </div>
           <div className='px-4 pb-3 rounded-medium border border-default-500/20'>
             <Paper data={data} />

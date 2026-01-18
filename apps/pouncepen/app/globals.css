@@ -11,4 +11,5 @@
 @theme inline {
     --font-ui: var(--font-sans), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
     --font-serif: 'Times New Roman', Times, serif;
+    --font-formal: var(--font-formal), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', serif;
 }
