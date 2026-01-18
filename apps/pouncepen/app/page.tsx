@@ -8,7 +8,7 @@ import { Suspense } from 'react'
 import UserAvatar from '@repo/ui/user'
 
 export const metadata: Metadata = {
-    title: 'Editor | GemPen',
+    title: 'Editor | PouncePen',
 }
 
 export default function Page() {

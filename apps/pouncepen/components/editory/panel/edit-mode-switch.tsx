@@ -14,7 +14,7 @@ export function EditModeSwitch() {
                 color='secondary'
                 className='flex-row-reverse gap-2'
             >
-                {isChat ? <ThemeShinyText className='font-bold' text='Autopilot' /> : 'Edit Mode'}
+                {isChat ? <ThemeShinyText className='font-bold' text='PouncePen' /> : 'Manual Pen'}
             </Switch>
         </div>
     )

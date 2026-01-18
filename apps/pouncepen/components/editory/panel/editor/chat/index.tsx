@@ -270,8 +270,8 @@ function ChatSession() {
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur backdrop-saturate-150',
             )}>
-                <h2 className={'text-xl font-bold bg-linear-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent'}>
-                    GemPen Your Paper
+                <h2 className={'text-xl font-bold text-secondary-300'}>
+                    PouncePen Your Paper.
                 </h2>
                 <Button
                     radius='sm'

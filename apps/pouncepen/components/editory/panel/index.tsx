@@ -10,8 +10,8 @@ import { useAtomValue } from 'jotai'
 import { editoryItemsAtom } from '../atoms'
 import { ReviseAllButton } from './editor/revise-paper/revise-all-button'
 import { Copyright } from './copyright'
-import { Switch } from '@heroui/react'
 import { EditModeSwitch } from './edit-mode-switch'
+import { PouncePenIcon } from '@/components/ui/logo'
 
 export default function Editory({ id }: { id?: string }) {
   const data = useAtomValue(editoryItemsAtom)
@@ -21,8 +21,8 @@ export default function Editory({ id }: { id?: string }) {
       <section className='flex flex-col sm:flex-row sm:basis-7/12 shrink-0'>
         <div className='p-4 flex flex-col space-y-3 items-end'>
           <div className='flex flex-row items-center justify-between sm:items-end sm:justify-normal sm:flex-col w-full gap-2 sm:w-min min-w-50'>
-            <h2 className='font-bold text-5xl text-secondary-300 sm:mt-8'>
-              Editor
+            <h2 className='font-bold text-6xl text-secondary-300 sm:mt-8 items-center flex'>
+              <PouncePenIcon className='size-15 hidden sm:block dark:opacity-80' /> Pen
             </h2>
 
             <div className='flex flex-col gap-2 text-sm text-secondary-400/70 w-32 self-end shrink sm:shrink-0'>

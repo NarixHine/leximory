@@ -1,5 +1,6 @@
 import { prefixUrl } from '@repo/env/config'
 import Link from 'next/link'
+import { PouncePenIcon } from '../../ui/logo'
 
 export function Copyright() {
   return (
@@ -8,7 +9,7 @@ export function Copyright() {
         <p className='text-xs'>A <Link className='font-bold' target='_blank' href={prefixUrl('/')}>Leximory</Link> Product</p>
         <p className='text-xs'>With <Link target='_blank' rel='noopener noreferrer' className='font-bold' href={'https://github.com/Jiuzhixinzhi'}>Perennial Branch</Link></p>
       </div>
-      <img src={'/logo.webp'} className='size-10 hidden sm:block opacity-80'></img>
+      <PouncePenIcon width={40} height={40} className='dark:opacity-70' />
     </footer>
   )
 }

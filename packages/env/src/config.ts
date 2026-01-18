@@ -65,7 +65,7 @@ export const ACTION_QUOTA_COST = {
     wordList: 1,
     story: 2,
     chat: 0.5,
-    gempen: {
+    pouncepen: {
         import: 5,
         answer: 1,
         verdict: 1,

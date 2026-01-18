@@ -20,7 +20,7 @@ export default function Hero({
         <Main className='flex flex-col justify-center gap-4'>
             <header className='flex px-2'>
                 <div className='flex gap-2 items-center font-bold'>
-                    <OrangeIcon weight='bold' /> GemPen
+                    <OrangeIcon weight='bold' /> PouncePen
                 </div>
                 <div className='flex-1'></div>
                 <div>AI 原生的英语试卷编辑器</div>

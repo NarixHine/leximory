@@ -6,8 +6,8 @@ import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: {
-    default: 'GemPen',
-    template: '%s | GemPen',
+    default: 'PouncePen',
+    template: '%s | PouncePen',
   }
 }
 

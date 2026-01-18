@@ -58,7 +58,7 @@ export function ImportButton() {
                     <ModalHeader className='flex flex-col gap-1'>AI 导入</ModalHeader>
                     <ModalBody>
                         <p>
-                            <b>智能导入</b> PDF 试卷（须含答案），转换为 GemPen 格式以便使用编辑器进行操作。
+                            <b>智能导入</b> PDF 试卷（须含答案），转换为 PouncePen 格式以便使用编辑器进行操作。
                         </p>
                         <input type='file' ref={fileInputRef} onChange={handleFileChange} className='hidden' accept='.pdf' />
                     </ModalBody>

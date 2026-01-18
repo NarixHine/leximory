@@ -17,7 +17,7 @@ importers:
         specifier: ^2.7.3
         version: 2.7.3
 
-  apps/gempen:
+  apps/pouncepen:
     dependencies:
       '@ai-sdk/gateway':
         specifier: ^3.0.10
