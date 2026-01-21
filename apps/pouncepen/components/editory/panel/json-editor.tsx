@@ -36,7 +36,7 @@ export function JsonEditor() {
                 minRows={2}
                 className='font-mono text-sm'
                 variant='flat'
-                description='仅供复制粘贴使用，编辑请使用编辑器 UI。'
+                description='仅供复制粘贴使用，编辑请使用 Pen 界面。'
                 classNames={{
                     description: 'font-ui'
                 }}
