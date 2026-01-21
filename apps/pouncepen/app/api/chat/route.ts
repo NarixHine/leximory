@@ -5,10 +5,11 @@ import { AgentPrompt } from '@/server/ai/prompts/agent'
 import incrCommentaryQuota from '@repo/user/quota'
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from 'ai'
 import { extractArticleFromUrl } from '@repo/scrape'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 
 export async function POST(request: Request) {
     const { messages, currentItems } = await request.json()
-    if (await incrCommentaryQuota(1, undefined, true)) {
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.pouncepen.agent, undefined, true)) {
         throw new Error('Quota exceeded')
     }
 

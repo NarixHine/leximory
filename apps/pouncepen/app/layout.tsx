@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Instrument_Serif, Newsreader, Rethink_Sans } from 'next/font/google'
+import { Instrument_Serif, Rethink_Sans, Source_Code_Pro } from 'next/font/google'
 import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
@@ -10,6 +10,13 @@ export const metadata: Metadata = {
     template: '%s | PouncePen',
   }
 }
+
+export const ENGLISH_MONO = Source_Code_Pro({
+    subsets: ['latin'],
+    weight: ['400'],
+    style: ['normal', 'italic'],
+    variable: '--font-english-mono',
+})
 
 const sans = Rethink_Sans({
   variable: '--font-sans',
@@ -38,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang='zh-CN' suppressHydrationWarning>
       <body
-        className={`${sans.variable} ${chinese.variable} ${serif.variable} antialiased font-ui`}
+        className={`${sans.variable} ${chinese.variable} ${serif.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
       >
         <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
           {children}
