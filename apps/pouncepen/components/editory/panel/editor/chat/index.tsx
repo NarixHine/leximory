@@ -7,7 +7,7 @@ import { cn } from '@heroui/theme'
 import { IS_PROD } from '@repo/env'
 import { DefaultChatTransport, ToolCallPart, UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
-import { memo, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Streamdown } from 'streamdown'
 import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
@@ -152,7 +152,12 @@ export const ChatMessages = ({
 function ChatSession() {
     const [data, setData] = useAtom(editoryItemsAtom)
     const inputRef = useRef<HTMLTextAreaElement>(null)
-    const [input, setInput] = useState('')
+    const [input, setInput] = useState('读取以下链接内的外刊出成完形填空\n')
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.setSelectionRange(input.length, input.length)
+        }
+    }, [])
     const { messages, status, stop, setMessages, sendMessage, addToolOutput } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/chat',
@@ -297,6 +302,7 @@ function ChatSession() {
                 className='flex items-center gap-2 mt-auto'
             >
                 <Textarea
+                    autoFocus
                     ref={inputRef}
                     className='flex-1'
                     value={input}
