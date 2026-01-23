@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, ButtonGroup, cn } from '@heroui/react'
+import { Button, ButtonGroup, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, cn } from '@heroui/react'
 import { useEditor, EditorContent, UseEditorOptions, getHTMLFromFragment } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { Markdown } from 'tiptap-markdown'
@@ -19,7 +19,9 @@ import {
   ImageIcon,
   MagicWandIcon,
   IconContext,
-  TextUnderlineIcon
+  TextUnderlineIcon,
+  DotsThreeIcon,
+  DotsThreeCircleIcon
 } from '@phosphor-icons/react'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Image from '@tiptap/extension-image'
@@ -75,7 +77,7 @@ const Tiptap = ({
     editable: true,
     immediatelyRender: false,
     // Set to true so buttons (Bold, Italic) update their active state visually
-    shouldRerenderOnTransaction: true, 
+    shouldRerenderOnTransaction: true,
     ...props
   })
 
@@ -142,7 +144,7 @@ const Tiptap = ({
     if (!ai || !editor) return
 
     const promptText = getSelectionHTML()
-    
+
     toast.promise(
       async () => {
         const { partialObjectStream, object } = await streamQuizAction({
@@ -201,154 +203,134 @@ const Tiptap = ({
         pluginKey='bubbleMenuMain'
         updateDelay={250}
         options={{
-            placement: 'top',
-            flip: true,
-            offset: 10,
-            strategy: 'absolute'
+          placement: 'top',
+          flip: true,
+          offset: 10,
+          strategy: 'absolute'
         }}
         shouldShow={({ editor, state }) => {
-            // Show only if selection is not empty and editor is editable
-            return !state.selection.empty && editor.isEditable
+          // Show only if selection is not empty and editor is editable
+          return !state.selection.empty && editor.isEditable
         }}
       >
-        <ButtonGroup radius='full' className='bg-background/50 backdrop-blur shadow-medium overflow-clip rounded-full'>
-          <IconContext.Provider value={{ className: 'text-primary', size: 16, weight: 'duotone' }}>
-            {/* Headers */}
-            <Button
-              onPress={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-              variant={editor.isActive('heading', { level: 1 }) ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Heading 1'
-            >
-              <TextHOneIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-              variant={editor.isActive('heading', { level: 2 }) ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Heading 2'
-            >
-              <TextHTwoIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-              variant={editor.isActive('heading', { level: 3 }) ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Heading 3'
-            >
-              <TextHThreeIcon />
-            </Button>
-
-            {/* Formatting */}
-            <Button
-              onPress={() => editor.chain().focus().toggleBold().run()}
-              variant={editor.isActive('bold') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Bold'
-            >
-              <TextBIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleItalic().run()}
-              variant={editor.isActive('italic') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Italic'
-            >
-              <TextItalicIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleStrike().run()}
-              variant={editor.isActive('strike') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Strikethrough'
-            >
-              <TextStrikethroughIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleUnderline().run()}
-              variant={editor.isActive('underline') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Underline'
-            >
-              <TextUnderlineIcon />
-            </Button>
-            
-            {/* Structural */}
-            <Button
-              onPress={() => editor.chain().focus().toggleBlockquote().run()}
-              variant={editor.isActive('blockquote') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Blockquote'
-            >
-              <QuotesIcon />
-            </Button>
-            <Button
-              onPress={() => editor.chain().focus().toggleBulletList().run()}
-              variant={editor.isActive('bulletList') ? 'shadow' : 'light'}
-              isIconOnly
-              aria-label='Bullet List'
-            >
-              <ListBulletsIcon />
-            </Button>
-            <Button
-              onPress={addImage}
-              variant='light'
-              isIconOnly
-              aria-label='Insert Image'
-            >
-              <ImageIcon />
-            </Button>
-
-            {/* Custom Logic: Blank/Unblank */}
-            {!unblankable && (
+        <IconContext.Provider value={{ className: 'text-primary', size: 16, weight: 'duotone' }}>
+          <div className='flex items-center gap-1'>
+            <ButtonGroup className='bg-background/50 backdrop-blur shadow-medium dark:border-primary-50 rounded-xl overflow-clip'>
+              {/* Formatting */}
               <Button
-                onPress={() => {
-                  trimSelection()
-                  if (!editor.isActive('code') && blank) {
+                onPress={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                variant={editor.isActive('heading', { level: 3 }) ? 'shadow' : 'light'}
+                isIconOnly
+                aria-label='Heading 3'
+              >
+                <TextHThreeIcon />
+              </Button>
+              <Button
+                onPress={() => editor.chain().focus().toggleBold().run()}
+                variant={editor.isActive('bold') ? 'shadow' : 'light'}
+                isIconOnly
+                aria-label='Bold'
+              >
+                <TextBIcon />
+              </Button>
+              <Button
+                onPress={() => editor.chain().focus().toggleItalic().run()}
+                variant={editor.isActive('italic') ? 'shadow' : 'light'}
+                isIconOnly
+                aria-label='Italic'
+              >
+                <TextItalicIcon />
+              </Button>
+              <Button
+                onPress={() => editor.chain().focus().toggleUnderline().run()}
+                variant={editor.isActive('underline') ? 'shadow' : 'light'}
+                isIconOnly
+                aria-label='Underline'
+              >
+                <TextUnderlineIcon />
+              </Button>
+
+              {/* Custom Logic: Blank/Unblank */}
+              {!unblankable && (
+                <Button
+                  onPress={() => {
+                    trimSelection()
+                    if (!editor.isActive('code') && blank) {
+                      blank(getSelectionText())
+                    } else if (editor.isActive('code') && unblank) {
+                      unblank(getSelectionText())
+                    }
+                    editor.chain().focus().toggleCode().run()
+                  }}
+                  variant={editor.isActive('code') ? 'shadow' : 'light'}
+                  isIconOnly
+                  aria-label='Toggle Code/Blank'
+                >
+                  <SealQuestionIcon />
+                </Button>
+              )}
+
+              {blank && editor.isActive('code') && (
+                <Button
+                  onPress={() => {
+                    trimSelection()
                     blank(getSelectionText())
-                  } else if (editor.isActive('code') && unblank) {
-                    unblank(getSelectionText())
-                  }
-                  editor.chain().focus().toggleCode().run()
-                }}
-                variant={editor.isActive('code') ? 'shadow' : 'light'}
-                isIconOnly
-                aria-label='Toggle Code/Blank'
-              >
-                <SealQuestionIcon />
-              </Button>
-            )}
+                  }}
+                  variant={editor.isActive('code') ? 'shadow' : 'light'}
+                  isIconOnly
+                  aria-label='Blank Selection'
+                >
+                  <OptionIcon />
+                </Button>
+              )}
 
-            {blank && editor.isActive('code') && (
-              <Button
-                onPress={() => {
-                  trimSelection()
-                  blank(getSelectionText())
-                }}
-                variant={editor.isActive('code') ? 'shadow' : 'light'}
-                isIconOnly
-                aria-label='Blank Selection'
-              >
-                <OptionIcon />
-              </Button>
-            )}
-
-            {/* AI Generator */}
-            {ai && (
-              <ProtectedButton
-                onPress={handleAIGeneration}
-                variant='light'
-                isIconOnly
-                aria-label='Generate with AI'
-              >
-                <MagicWandIcon />
-              </ProtectedButton>
-            )}
-            
-          </IconContext.Provider>
-        </ButtonGroup>
+              {/* AI Generator */}
+              {ai && (
+                <ProtectedButton
+                  onPress={handleAIGeneration}
+                  variant='light'
+                  isIconOnly
+                  aria-label='Generate with AI'
+                >
+                  <MagicWandIcon />
+                </ProtectedButton>
+              )}
+            </ButtonGroup>
+            <Dropdown>
+              <DropdownTrigger className='bg-transparent'>
+                <Button
+                  variant='light'
+                  isIconOnly
+                  aria-label='More options'
+                  className='bg-background/50 backdrop-blur shadow-medium'
+                  startContent={<DotsThreeCircleIcon weight='duotone' />}
+                />
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="h1" startContent={<TextHOneIcon />} onPress={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+                  Heading 1
+                </DropdownItem>
+                <DropdownItem key="h2" startContent={<TextHTwoIcon />} onPress={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+                  Heading 2
+                </DropdownItem>
+                <DropdownItem key="strikethrough" startContent={<TextStrikethroughIcon />} onPress={() => editor.chain().focus().toggleStrike().run()}>
+                  Strikethrough
+                </DropdownItem>
+                <DropdownItem key="blockquote" startContent={<QuotesIcon />} onPress={() => editor.chain().focus().toggleBlockquote().run()}>
+                  Blockquote
+                </DropdownItem>
+                <DropdownItem key="bullet-list" startContent={<ListBulletsIcon />} onPress={() => editor.chain().focus().toggleBulletList().run()}>
+                  Bullet List
+                </DropdownItem>
+                <DropdownItem key="image" startContent={<ImageIcon />} onPress={addImage}>
+                  Insert Image
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </IconContext.Provider>
       </BubbleMenu>
-      
+
       <EditorContent editor={editor} />
     </div>
   )

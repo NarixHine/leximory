@@ -1,4 +1,3 @@
-// cookieFactory.ts
 import { IS_PROD } from '@repo/env'
 import { prefixUrl } from '@repo/env/config'
 import { seconds } from 'itty-time'
@@ -6,14 +5,6 @@ import { seconds } from 'itty-time'
 export function cookiesFactory() {
     if (IS_PROD) {
         const domain = new URL(prefixUrl('/')).hostname
-        console.log('Setting cookie options for production:', {
-            name: `leximory-auth-token`,
-            domain: `.${domain}`,
-            path: '/',
-            maxAge: seconds('1 year'),
-            sameSite: 'lax' as const,
-            secure: true,
-        })
         return {
             name: `leximory-auth-token`,
             domain: `.${domain}`,

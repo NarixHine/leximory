@@ -25,7 +25,7 @@ export default function Editory({ id }: { id?: string }) {
               <PouncePenIcon className='size-15 hidden sm:block dark:opacity-80' /> Pen
             </h2>
 
-            <div className='flex flex-col gap-2 text-sm text-secondary-400/70 w-32 self-end shrink sm:shrink-0'>
+            <div className='flex flex-col gap-2 text-sm text-secondary-400/70 w-26 sm:w-36 self-end shrink sm:shrink-0'>
               <div className='flex items-center gap-2'>
                 <div>
                   <SealQuestionIcon weight='fill' />
@@ -57,7 +57,7 @@ export default function Editory({ id }: { id?: string }) {
 
             <div className='flex flex-col gap-2'>
               <p className='text-sm text-default-800/50 text-balance text-center sm:text-end'>
-                <span className='font-bold'>选中</span>以唤起悬浮菜单
+                <span className='font-bold sm:tracking-widest'>选中<span className='hidden sm:inline'>词句</span></span>唤起<span className='hidden sm:inline'>悬浮</span>菜单
               </p>
             </div>
           </div>

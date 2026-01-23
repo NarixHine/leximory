@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { ArrowClockwiseIcon, MicroscopeIcon } from '@phosphor-icons/react'
 import { useRegisterRevise } from './atoms'
 import { useProtectedButtonProps } from '@repo/ui/auth'
+import { readStreamableValue } from '@repo/ui/utils'
 
 const MotionCard = motion.create(Card)
 const MotionCardBody = motion.create(CardBody)
@@ -27,7 +28,7 @@ export default function RevisePaper({ data }: { data: QuizData }) {
             setVerdictText('')
             const textStream = await streamAnsweraAction(data)
             let answer = ''
-            for await (const delta of textStream) {
+            for await (const delta of readStreamableValue(textStream)) {
                 answer += delta
                 setAnswerText(answer)
             }
@@ -48,7 +49,7 @@ export default function RevisePaper({ data }: { data: QuizData }) {
         mutationFn: async (answer: string) => {
             const textStream = await streamVerdictAction(data, answer)
             let verdict = ''
-            for await (const delta of textStream) {
+            for await (const delta of readStreamableValue(textStream)) {
                 verdict += delta
                 setVerdictText(verdict)
             }
