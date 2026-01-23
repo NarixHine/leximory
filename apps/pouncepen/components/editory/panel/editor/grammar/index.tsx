@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
 import { omit, toMerged } from 'es-toolkit'
 import { GrammarData } from '@/components/editory/generators/types'
+import { extractCodeContent } from '@/components/editory/generators/utils'
 
 export default function GrammarEditor({
     data,
@@ -28,11 +29,20 @@ export default function GrammarEditor({
                 {(onClose) => (
                     <Form className='w-full' onSubmit={(e) => {
                         e.preventDefault()
-                        setData(toMerged(data, {
+
+                        const newData = toMerged(data, {
                             hints: {
                                 [blankedWord]: hint
                             }
-                        }))
+                        })
+                        
+                        // clean up questions that are no longer in the text
+                        const blanks = extractCodeContent(newData.text)
+                        newData.hints = Object.fromEntries(
+                            Object.entries(newData.hints).filter(([key]) => blanks.includes(key))
+                        )
+
+                        setData(newData)
                         onClose()
                     }}>
                         <ModalHeader className='flex flex-col gap-1 w-full'>设置提示词</ModalHeader>

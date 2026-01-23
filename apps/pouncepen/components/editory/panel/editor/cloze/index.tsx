@@ -63,8 +63,11 @@ export default function ClozeEditor({
                                         distractors,
                                     })
                                 }
+                                
+                                // clean up questions that are no longer in the text
                                 const blanks = extractCodeContent(data.text)
                                 newData.questions = questions.filter(q => blanks.includes(q.original))
+                                
                                 setData(newData)
                                 onClose()
                             }}>
