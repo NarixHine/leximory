@@ -91,8 +91,10 @@ async function LibraryList({ userId, orFilter }: {
     'use cache'
     cacheTag('libraries')
     cacheLife('days')
-    const data = await getData(orFilter, userId)
-    const archives = await getArchivedLibs({ userId })
+    const [data, archives] = await Promise.all([
+        getData(orFilter, userId),
+        getArchivedLibs({ userId })
+    ])
     const compactLibs = data.filter(({ lib }) => lib.shadow || archives.includes(lib.id)).sort((a, b) => (b.lib.shadow ? 1 : 0) - (a.lib.shadow ? 1 : 0))
     const normalLibs = data.filter(({ lib }) => !lib.shadow && !archives.includes(lib.id))
     return (

@@ -5,7 +5,12 @@ export const getArticleData = async (text: string, throwOnUnauthorized = true) =
     if (throwOnUnauthorized) {
         await authReadToText(text)
     }
-    const { title, content, topics, ebook, lib, prompt, isPublicAndFree } = await getTextContent({ id: text })
-    const annotating = await getTextAnnotationProgress({ id: text })
+    const [
+        { title, content, topics, ebook, lib, prompt, isPublicAndFree },
+        annotating
+    ] = await Promise.all([
+        getTextContent({ id: text }),
+        getTextAnnotationProgress({ id: text })
+    ])
     return { title, content, topics, ebook, lib, annotating, prompt, isPublicAndFree }
 }

@@ -12,8 +12,10 @@ import { Suspense } from 'react'
 import NavBreadcrumbs from '@/components/nav/breadcrumbs'
 
 async function getData(lib: string) {
-    const { name, isReadOnly, isOwner, access } = await authReadToLib(lib)
-    const texts = await getTexts({ lib })
+    const [{ name, isReadOnly, isOwner, access }, texts] = await Promise.all([
+        authReadToLib(lib),
+        getTexts({ lib })
+    ])
     return { texts, name, isReadOnly, isOwner, access }
 }
 

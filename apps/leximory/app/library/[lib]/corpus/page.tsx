@@ -17,8 +17,10 @@ export const metadata: Metadata = {
 }
 
 const getData = async (lib: string) => {
-    const { words, cursor, more } = await load(lib)
-    const { name } = await getLib({ id: lib })
+    const [{ words, cursor, more }, { name }] = await Promise.all([
+        load(lib),
+        getLib({ id: lib })
+    ])
     return { words, cursor, more, name }
 }
 

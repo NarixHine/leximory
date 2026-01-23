@@ -6,8 +6,6 @@ import { ReactNode, Suspense } from 'react'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
 import { redirect } from 'next/navigation'
-import { Spinner } from '@heroui/spinner'
-import Center from '@/components/ui/center'
 import NavBreadcrumbs from '@/components/nav/breadcrumbs'
 import Main from '@/components/ui/main'
 
