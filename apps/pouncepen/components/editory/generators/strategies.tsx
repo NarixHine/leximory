@@ -520,9 +520,7 @@ const customStrategy: QuestionStrategy<CustomData> = createQuestionStrategy<Cust
     }),
 })
 
-export const questionStrategies: {
-    [K in QuizData['type']]: QuestionStrategy<Extract<QuizData, { type: K }>, any>
-} = {
+export const questionStrategies = {
     fishing: fishingStrategy,
     cloze: clozeStrategy,
     grammar: grammarStrategy,
@@ -530,6 +528,6 @@ export const questionStrategies: {
     sentences: sentenceChoiceStrategy,
     listening: listeningStrategy,
     custom: customStrategy,
-}
+} as const
 
 export const questionStrategiesList = Object.values(questionStrategies)

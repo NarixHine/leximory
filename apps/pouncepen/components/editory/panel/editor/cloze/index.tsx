@@ -7,6 +7,7 @@ import { toFilled } from 'es-toolkit/array'
 import { clone } from 'es-toolkit'
 import { ClozeData } from '@/components/editory/generators/types'
 import RevisePaper from '../revise-paper'
+import { extractCodeContent } from '@/components/editory/generators/utils'
 
 export default function ClozeEditor({
     data,
@@ -62,6 +63,8 @@ export default function ClozeEditor({
                                         distractors,
                                     })
                                 }
+                                const blanks = extractCodeContent(data.text)
+                                newData.questions = questions.filter(q => blanks.includes(q.original))
                                 setData(newData)
                                 onClose()
                             }}>
