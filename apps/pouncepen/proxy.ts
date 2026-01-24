@@ -1,9 +1,22 @@
-import { ProxyConfig, NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { updateSession } from '@repo/supabase/proxy'
 
-export async function proxy(request: NextRequest) {
-    return NextResponse.next()
+const PROTECTED_ROUTE_PREFIXES = [
+    '/paper',
+]
+const isProtectedRouteChecker = (path: string) => {
+    return PROTECTED_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 
-export const config: ProxyConfig = {
-    matcher: ['/user/:path*', '/assignment/:path*'],
+export async function proxy(request: NextRequest) {
+    return await updateSession(request, isProtectedRouteChecker, '/paper')
+}
+
+export const config = {
+    matcher: [
+        // Skip Next.js internals and all static files, unless found in search params
+        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        // Always run for API routes
+        '/(api|trpc)(.*)',
+    ]
 }

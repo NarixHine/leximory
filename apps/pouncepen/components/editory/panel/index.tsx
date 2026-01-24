@@ -1,6 +1,6 @@
 'use client'
 
-import { SealQuestionIcon, OptionIcon, MagicWandIcon } from '@phosphor-icons/react'
+import { SealQuestionIcon, OptionIcon, MagicWandIcon, CloudCheckIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { Key, Paper } from '..'
 import Sortable from './sortable'
 import Editor from './editor'
@@ -12,9 +12,31 @@ import { ReviseAllButton } from './editor/revise-paper/revise-all-button'
 import { Copyright } from './copyright'
 import { EditModeSwitch } from './edit-mode-switch'
 import { PouncePenIcon } from '@/components/ui/logo'
+import { useUpdateEffect } from 'ahooks'
+import { useDebounceCallback } from 'usehooks-ts'
+import { updatePaperAction } from '@repo/service/paper'
+import { useAction } from '@repo/service'
+import { AnimatePresence, motion } from 'framer-motion'
+
 
 export default function Editory({ id }: { id?: string }) {
   const data = useAtomValue(editoryItemsAtom)
+
+  const { execute: sync, isPending } = useAction(updatePaperAction)
+  const debouncedSync = useDebounceCallback(() => {
+    if (!id) {
+      return
+    }
+    sync({
+      id: parseInt(id),
+      data: {
+        content: data,
+      },
+    })
+  }, 1000)
+  useUpdateEffect(() => {
+    debouncedSync()
+  }, [data])
 
   return (
     <div className='gap-4 flex-col lg:flex-row flex'>
@@ -22,7 +44,37 @@ export default function Editory({ id }: { id?: string }) {
         <div className='p-4 flex flex-col space-y-3 items-end'>
           <div className='flex flex-row items-center justify-between sm:items-end sm:justify-normal sm:flex-col w-full gap-2 sm:w-min min-w-50'>
             <h2 className='font-bold text-6xl text-secondary-300 sm:mt-8 items-center flex'>
-              <PouncePenIcon className='size-15 hidden sm:block dark:opacity-80' /> Pen
+              {
+                id
+                  ? (
+                    <AnimatePresence mode='wait'>
+                      {isPending ? (
+                        <motion.span
+                          key='loading'
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className='inline-block mr-2 mb-2 self-baseline-last'
+                        >
+                          <ArrowsClockwiseIcon weight='duotone' className='size-7 animate-spin' />
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key='saved'
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className='inline-block mr-2 mb-2 self-baseline-last'
+                        >
+                          <CloudCheckIcon weight='duotone' className='size-7' />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  )
+                  : <PouncePenIcon className='size-15 hidden sm:block dark:opacity-80' />
+              } Pen
             </h2>
 
             <div className='flex flex-col gap-2 text-sm text-secondary-400/70 w-26 sm:w-36 self-end shrink sm:shrink-0'>

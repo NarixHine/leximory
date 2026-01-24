@@ -18,11 +18,11 @@
     "@kilpi/react-client": "^1.0.6",
     "@kilpi/react-server": "^1.0.4",
     "@repo/supabase": "workspace:^",
-    "@repo/user": "workspace:^"
+    "@repo/user": "workspace:^",
+    "next-safe-action": "8.0.10"
   },
   "peerDependencies": {
-    "next": "16.0.0",
-    "next-safe-action": "^8.0.0",
-    "zod": "^4.0.0"
+    "next": "^16.0.0",
+    "zod": "^4.1.3"
   }
 }

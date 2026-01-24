@@ -44,7 +44,7 @@ async function Paper({ params }: PaperPageProps) {
         ]}>
             <ScopeProvider atoms={[editoryItemsAtom, viewModeAtom]}>
                 <Suspense>
-                    <Editory />
+                    <Editory id={id} />
                 </Suspense>
             </ScopeProvider>
         </HydrationBoundary>

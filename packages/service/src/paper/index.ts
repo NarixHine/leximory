@@ -9,7 +9,6 @@ import { getUserOrThrow } from '@repo/user'
 const createPaperSchema = z.object({
   content: z.any().optional(),
   public: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
   title: z.string().optional(),
 })
 
@@ -22,7 +21,6 @@ const updatePaperSchema = z.object({
   data: z.object({
     content: z.any().optional(),
     public: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
     title: z.string().optional(),
   }),
 })

@@ -11,7 +11,6 @@ import {
   Switch,
 } from '@heroui/react'
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon } from '@phosphor-icons/react'
-import { useAction } from 'next-safe-action/hooks'
 import {
   createPaperAction,
   updatePaperAction,
@@ -19,6 +18,7 @@ import {
   togglePaperVisibilityAction,
 } from '@repo/service/paper'
 import { PaperOverview } from '@repo/supabase/paper'
+import { useAction } from '@repo/service'
 
 export function PaperManagerHeader({ isCreating, handleCreate }: { isCreating?: boolean, handleCreate?: () => void }) {
   return (
@@ -111,14 +111,16 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
     } else if (editingPaper) {
       executeUpdatePaper({
         id: editingPaper.id,
-        title: formData.title,
-        public: formData.public,
+        data: {
+          title: formData.title,
+          public: formData.public,
+        }
       })
     }
   }
 
   const handleDelete = (id: number) => {
-    if (confirm('确定要删除这篇试卷吗？')) {
+    if (confirm('确定要删除该试卷吗？')) {
       // Optimistic update
       setPapers(prev => prev.filter(p => p.id !== id))
       executeDeletePaper({ id })
@@ -265,9 +267,9 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                           isDisabled={isTogglingVisibility}
                         >
                           {paper.public ? (
-                            <EyeSlashIcon size={16} className='text-secondary' />
+                            <EyeSlashIcon size={16} />
                           ) : (
-                            <EyeIcon size={16} className='text-foreground/60' />
+                            <EyeIcon size={16} />
                           )}
                         </Button>
                         <Button

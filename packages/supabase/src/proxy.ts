@@ -4,7 +4,7 @@ import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
 
-export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean) {
+export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean, authedHomepageRedirectPathname = '/library') {
     let response = NextResponse.next({
         request,
     })
@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
     const { pathname } = request.nextUrl
     if (user && pathname === '/') {
         const url = request.nextUrl.clone()
-        url.pathname = '/library'
+        url.pathname = authedHomepageRedirectPathname
         return NextResponse.redirect(url)
     }
 
