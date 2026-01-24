@@ -306,6 +306,7 @@ function ChatSession() {
                     ref={inputRef}
                     className='flex-1'
                     value={input}
+                    color='primary'
                     variant='flat'
                     onChange={e => setInput(e.target.value)}
                     autoComplete='off'

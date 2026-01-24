@@ -30,6 +30,7 @@ export function JsonEditor() {
         <section className='w-full'>
             <h2 className='font-bold text-4xl pt-6 pb-3'>Raw Data</h2>
             <Textarea
+                color='primary'
                 value={json}
                 onChange={handleJsonChange}
                 maxRows={20}

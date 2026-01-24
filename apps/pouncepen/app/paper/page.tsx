@@ -1,5 +1,5 @@
 import Main from '@/components/ui/main'
-import { PaperManager, PaperManagerHeader } from './components/paper-manager/dashboard'
+import { PaperManager, PaperManagerHeader } from './components/paper-manager'
 import { getPapersByCreator } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
 import { Suspense } from 'react'
