@@ -14,6 +14,6 @@ export function cookiesFactory() {
         }
     }
     else {
-        return {}
+        return undefined
     }
 }

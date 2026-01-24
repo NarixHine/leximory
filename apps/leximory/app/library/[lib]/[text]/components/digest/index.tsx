@@ -12,7 +12,7 @@ import { Input } from "@heroui/input"
 import { Tooltip } from "@heroui/tooltip"
 import { Snippet } from "@heroui/snippet"
 import ImportModal from './import'
-import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
+import { useEffect, useState, useCallback, useMemo, useTransition, Suspense } from 'react'
 import Link from 'next/link'
 import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
 import Editor from '../editor'
@@ -365,7 +365,7 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
       </div>
 
       <Spacer y={6} />
-      
+
       {!hideImportControls && !isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
         <ImportModal />
       </div>}

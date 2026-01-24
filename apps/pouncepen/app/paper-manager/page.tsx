@@ -4,6 +4,11 @@ import { getPapersByCreator } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
 import { Suspense } from 'react'
 import { Progress } from '@heroui/progress'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: '我的试卷',
+}
 
 export default async function PaperManagerPage() {
     return (

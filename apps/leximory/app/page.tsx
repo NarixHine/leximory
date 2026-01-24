@@ -26,7 +26,7 @@ import LinkCard from '@/components/ui/link-card'
 
 export default async function Home() {
 	return <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
-		<H className={'text-[#a49393] dark:text-default text-7xl sm:text-8xl lg:text-9xl italic'} fancy>
+		<H className={'text-[#a49393] dark:text-default text-8xl lg:text-9xl italic'} fancy>
 			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:text-shadow-none'>Leximory</span>
 		</H>
 
@@ -48,7 +48,7 @@ export default async function Home() {
 
 		<Spacer y={10}></Spacer>
 
-		<div className={cn(CHINESE_CALLIGRAPHY.className, 'text-5xl sm:text-6xl mb-4 text-center')}>
+		<div className={cn(CHINESE_CALLIGRAPHY.className, 'text-5xl sm:text-6xl mb-4 text-center text-balance')}>
 			助力<FlipWords words={['外刊', '文摘', '书籍', '古文']} />阅读
 		</div>
 		<div className='grid w-full gap-3'>
