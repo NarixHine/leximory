@@ -21,18 +21,27 @@ import { PaperOverview } from '@repo/supabase/paper'
 import { useAction } from '@repo/service'
 
 export function PaperManagerHeader({ isCreating, handleCreate }: { isCreating?: boolean, handleCreate?: () => void }) {
+  const router = useRouter()
   return (
-    <div className='flex items-center justify-between my-12'>
-      <div className='flex items-center space-x-4'>
-        <div className='p-3 rounded-xl bg-primary/10 border border-primary/20'>
+    <div className='flex items-center my-8'>
+      <div className='flex items-center gap-4'>
+        <div className='hidden sm:block p-3 rounded-xl bg-primary/10 border border-primary/20'>
           <FileTextIcon size={24} className='text-primary' />
         </div>
         <div>
-          <h1 className='text-3xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+          <h1 className='text-2xl sm:text-3xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
             我的试卷
           </h1>
         </div>
       </div>
+      <div className='flex-1'></div>
+      <Button
+        variant='flat'
+        onPress={() => router.push('/local-editor')}
+        className='mr-2'
+      >
+        本地编辑器
+      </Button>
       <Button
         color='primary'
         variant='solid'
