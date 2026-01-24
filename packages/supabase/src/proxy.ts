@@ -1,10 +1,11 @@
 import { CookieOptions, createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
+export type { NextRequest }
 
-export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean, authedHomepageRedirectPathname = '/library') {
+export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean, authedHomepageRedirectPathname: string) {
     let response = NextResponse.next({
         request,
     })

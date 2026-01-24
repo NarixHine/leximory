@@ -1,5 +1,4 @@
-import type { NextRequest } from 'next/server'
-import { updateSession } from '@repo/supabase/proxy'
+import { updateSession, type NextRequest } from '@repo/supabase/proxy'
 
 const PROTECTED_ROUTE_PREFIXES = [
     '/paper',

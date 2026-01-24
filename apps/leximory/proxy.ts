@@ -14,7 +14,7 @@ const isProtectedRouteChecker = (path: string) => {
 }
 
 export async function proxy(request: NextRequest) {
-    return await updateSession(request, isProtectedRouteChecker)
+    return await updateSession(request, isProtectedRouteChecker, '/library')
 }
 
 export const config = {
