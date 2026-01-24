@@ -7,6 +7,7 @@ import { ScopeProvider } from '@/components/ui/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
+import { CircularProgress } from '@heroui/progress'
 
 type PaperPageProps = {
     params: Promise<{
@@ -23,7 +24,9 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
 export default async function PaperPage({ params }: PaperPageProps) {
     return (
         <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-            <Suspense>
+            <Suspense fallback={<div className='absolute inset-0 flex justify-center items-center'>
+                <CircularProgress />
+            </div>}>
                 <Paper params={params} />
             </Suspense>
         </Main>

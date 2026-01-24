@@ -1,3 +1,4 @@
+import 'server-only'
 import { supabase } from '..'
 import type { Tables, TablesInsert, TablesUpdate } from '../types'
 export * from './types'

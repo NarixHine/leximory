@@ -17,7 +17,7 @@ import {
   updatePaperAction,
   deletePaperAction,
   togglePaperVisibilityAction,
-} from './actions'
+} from '@repo/service/paper'
 import { PaperOverview } from '@repo/supabase/paper'
 
 export function PaperManagerHeader({ isCreating, handleCreate }: { isCreating?: boolean, handleCreate?: () => void }) {

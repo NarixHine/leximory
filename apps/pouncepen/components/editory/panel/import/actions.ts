@@ -1,7 +1,7 @@
 'use server'
 
 import { aiSmartImport } from '@/server/ai/import'
-import { actionClient } from '@/lib/safe-actions'
+import { actionClient } from '@repo/service'
 import { z } from 'zod'
 import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
