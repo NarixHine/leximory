@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
+export { type NextRequest } from 'next/server'
 
 export async function updateSession(
     request: NextRequest,
