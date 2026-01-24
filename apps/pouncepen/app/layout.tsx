@@ -3,6 +3,7 @@ import { Instrument_Serif, Rethink_Sans, Source_Code_Pro } from 'next/font/googl
 import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
+import UserAvatar from '@repo/ui/user'
 
 export const metadata: Metadata = {
   title: {
@@ -12,10 +13,10 @@ export const metadata: Metadata = {
 }
 
 export const ENGLISH_MONO = Source_Code_Pro({
-    subsets: ['latin'],
-    weight: ['400'],
-    style: ['normal', 'italic'],
-    variable: '--font-english-mono',
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-english-mono',
 })
 
 const sans = Rethink_Sans({
@@ -49,6 +50,9 @@ export default function RootLayout({
       >
         <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
           {children}
+          <div className='fixed top-3 right-3'>
+            <UserAvatar />
+          </div>
         </Providers>
       </body>
     </html>

@@ -1,10 +1,10 @@
 'use client'
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger } from '@heroui/dropdown'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, DropdownItemProps } from '@heroui/dropdown'
 import { prefixUrl, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createClient } from '@repo/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Suspense, Usable, use } from 'react'
+import React, { Suspense, Usable, use } from 'react'
 import { PiSignIn, PiSignOut } from 'react-icons/pi'
 import { Progress } from '@heroui/progress'
 import { Spinner } from '@heroui/spinner'
@@ -56,7 +56,7 @@ function QuotaFallback() {
     )
 }
 
-export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise }) {
+export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, items }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise, items?: DropdownItemProps[] }) {
     const router = useRouter()
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const handleLogin = () => {
@@ -89,6 +89,9 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise }: { trigger:
                             ? <DropdownItem key='logout' startContent={<PiSignOut />} onPress={handleLogout}>登出 Leximory 账户</DropdownItem>
                             : <DropdownItem key='login' startContent={<PiSignIn />} onPress={handleLogin}>通过 Leximory 登录</DropdownItem>
                     }
+                    {items ? items.map((item) => (
+                        <DropdownItem {...item} /> 
+                    )) as any : <></>}
                 </DropdownMenu>
             </Dropdown>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange}>

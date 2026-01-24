@@ -5,13 +5,15 @@ import { Button } from '@heroui/button'
 import { AvatarDropdown } from './dropdown'
 import { PiUserCircleDuotone } from 'react-icons/pi'
 import { getCommentaryQuota } from '@repo/user/quota'
+import type { DropdownItemProps } from '@heroui/dropdown'
 
-export async function CurrentUserAvatar() {
+export async function CurrentUserAvatar({ items }: { items?: DropdownItemProps[] }) {
     const user = await getUser()
     const { image } = user ?? {}
     return <AvatarDropdown
         quotaPromise={getCommentaryQuota()}
         isLoggedIn={!!user}
+        items={items}
         trigger={<Button
             variant={'light'}
             color='secondary'
