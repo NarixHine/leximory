@@ -1,12 +1,17 @@
-import { CookieOptions, createServerClient } from '@supabase/ssr'
-import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 import { SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
-export type { NextRequest }
 
-export async function updateSession(request: NextRequest, isProtectedRouteChecker: (path: string) => boolean, authedHomepageRedirectPathname: string) {
-    let response = NextResponse.next({
+export async function updateSession(
+    request: NextRequest,
+    isProtectedRouteChecker: (path: string) => boolean,
+    authedHomepageRedirectPathname: string
+) {
+    // 1. Create the response object ONCE.
+    // We will mutate this object inside setAll to add cookies.
+    let supabaseResponse = NextResponse.next({
         request,
     })
 
@@ -16,55 +21,74 @@ export async function updateSession(request: NextRequest, isProtectedRouteChecke
         {
             cookieOptions: cookiesFactory(),
             cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value
+                getAll() {
+                    return request.cookies.getAll()
                 },
-                set(name: string, value: string, options: CookieOptions) {
-                    // 2. Update the request cookies (so the Server Component can see the change)
-                    request.cookies.set({ name, value, ...options })
-                    // 3. Update the response cookies (so the browser saves the change)
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        // Update Request (so Server Components see the new session immediately)
+                        request.cookies.set({
+                            name,
+                            value,
+                            ...options,
+                        })
+
+                        // Update Response (so the Browser saves the new session)
+                        supabaseResponse.cookies.set({
+                            name,
+                            value,
+                            ...options,
+                        })
                     })
-                    response.cookies.set({ name, value, ...options })
-                },
-                remove(name: string, options: CookieOptions) {
-                    // 4. Handle cookie removal (sign out)
-                    request.cookies.set({ name, value: '', ...options })
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    })
-                    response.cookies.set({ name, value: '', ...options })
                 },
             },
         }
     )
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // 3. Use getClaims() for performance (no DB hit)
+    // This validates the JWT signature and expiration.
+    const { data, error } = await supabase.auth.getClaims()
+
+    // If there is no error and we have claims, the user is authenticated.
+    const user = !error && data?.claims
 
     const { pathname } = request.nextUrl
+
+    // --- Logic: Redirect Authenticated User from Root to Dashboard ---
     if (user && pathname === '/') {
         const url = request.nextUrl.clone()
         url.pathname = authedHomepageRedirectPathname
-        return NextResponse.redirect(url)
+
+        // Create the redirect response
+        const redirectResponse = NextResponse.redirect(url)
+
+        // IMPORTANT: Copy any cookies set during 'getClaims' (refreshes) to this new response
+        copyCookies(supabaseResponse, redirectResponse)
+
+        return redirectResponse
     }
 
-    if (
-        !user &&
-        isProtectedRouteChecker(pathname)
-    ) {
+    // --- Logic: Redirect Unauthenticated User from Protected Routes ---
+    if (!user && isProtectedRouteChecker(pathname)) {
         const url = request.nextUrl.clone()
         url.pathname = SIGN_IN_URL
         url.searchParams.set('next', pathname)
-        const response = NextResponse.redirect(url)
-        return response
+
+        const redirectResponse = NextResponse.redirect(url)
+
+        // IMPORTANT: Even on logout/redirect, we might need to clear cookies
+        copyCookies(supabaseResponse, redirectResponse)
+
+        return redirectResponse
     }
 
-    return response
+    return supabaseResponse
+}
+
+// Helper to preserve cookies when switching response objects (e.g. redirects)
+function copyCookies(source: NextResponse, destination: NextResponse) {
+    const sourceCookies = source.cookies.getAll()
+    sourceCookies.forEach((cookie) => {
+        destination.cookies.set(cookie)
+    })
 }
