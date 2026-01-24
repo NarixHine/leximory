@@ -34,6 +34,13 @@
     "next": "16.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "@heroui/button": "^2.2.22",
+    "@heroui/modal": "^2.2.22",
+    "@heroui/spinner": "^2.2.22",
+    "@heroui/table": "^2.2.21",
+    "@heroui/react": "^2.2.25",
+    "@heroui/progress": "^2.2.22",
+    "@heroui/dropdown": "^2.2.21"
   }
 }

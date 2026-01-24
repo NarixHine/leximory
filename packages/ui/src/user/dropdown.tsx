@@ -8,14 +8,14 @@ import React, { Suspense, Usable, use } from 'react'
 import { PiSignIn, PiSignOut } from 'react-icons/pi'
 import { Progress } from '@heroui/progress'
 import { Spinner } from '@heroui/spinner'
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from '@heroui/react'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal'
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
+import { Button } from '@heroui/button'
 import { getCommentaryQuota } from '@repo/user/quota'
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 
 type QuotaPromise = Usable<Awaited<ReturnType<typeof getCommentaryQuota>>>
-
 
 function QuotaProgress({ quotaPromise }: { quotaPromise: QuotaPromise }) {
     const { max, quota } = use(quotaPromise)
@@ -56,7 +56,7 @@ function QuotaFallback() {
     )
 }
 
-export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, items }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise, items?: DropdownItemProps[] }) {
+export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise }) {
     const router = useRouter()
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const handleLogin = () => {
@@ -89,9 +89,6 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, items }: { t
                             ? <DropdownItem key='logout' startContent={<PiSignOut />} onPress={handleLogout}>登出 Leximory 账户</DropdownItem>
                             : <DropdownItem key='login' startContent={<PiSignIn />} onPress={handleLogin}>通过 Leximory 登录</DropdownItem>
                     }
-                    {items ? items.map((item) => (
-                        <DropdownItem {...item} /> 
-                    )) as any : <></>}
                 </DropdownMenu>
             </Dropdown>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange}>

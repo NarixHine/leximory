@@ -10,7 +10,8 @@
     "./server": "./src/server.ts",
     "./proxy": "./src/proxy.ts",
     "./types": "./src/types.ts",
-    "./auth-types": "./src/auth-types.ts"
+    "./auth-types": "./src/auth-types.ts",
+    "./paper": "./src/paper/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

@@ -1,5 +1,6 @@
 import { supabase } from '..'
 import type { Tables, TablesInsert, TablesUpdate } from '../types'
+export * from './types'
 
 /**
  * Creates a new paper record in the database.
@@ -47,12 +48,12 @@ export async function getPaper({ id }: { id: number }) {
 export async function getPapersByCreator({ creator }: { creator: string }) {
   const { data: papers, error } = await supabase
     .from('papers')
-    .select('*')
+    .select('id, public, title, tags, created_at')
     .eq('creator', creator)
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return papers as Tables<'papers'>[]
+  return papers
 }
 
 /**
