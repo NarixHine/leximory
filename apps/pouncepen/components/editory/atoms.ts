@@ -62,6 +62,8 @@ export const editoryItemsAtom = atomWithStorage<QuizItems>('editory-items', [], 
         }
     },
     setItem(key, value) {
+        if (typeof window === 'undefined')
+            return
         localStorage.setItem(key, JSON.stringify(value))
     },
     removeItem(key) {

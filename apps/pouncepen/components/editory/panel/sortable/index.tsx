@@ -16,7 +16,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger } from '@heroui/react'
-import { PlusCircleIcon, PrinterIcon } from '@phosphor-icons/react'
+import { PlusCircleIcon } from '@phosphor-icons/react'
 import SortableItem from './item'
 import { QuizDataType } from '../../generators/types'
 import { NAME_MAP, ICON_MAP } from '../../generators/config'
@@ -37,7 +37,6 @@ export default function Sortable() {
     return (
         <div className='flex gap-4 lg:ml-5'>
             <div className='flex flex-col gap-1 place-self-end'>
-                <Button as={Link} href='/print' variant='flat' size='lg' startContent={<PrinterIcon />} isIconOnly></Button>
                 <Dropdown>
                     <DropdownTrigger>
                         <Button color='secondary' size='lg' startContent={<PlusCircleIcon />} isIconOnly></Button>

@@ -69,7 +69,7 @@ export default function Editory({ id }: { id?: string }) {
                           transition={{ duration: 0.2 }}
                           className='inline-block mr-2 mb-2 self-baseline-last'
                         >
-                          <CloudCheckIcon weight='duotone' className='size-7' />
+                          <CloudCheckIcon className='size-7' />
                         </motion.span>
                       )}
                     </AnimatePresence>

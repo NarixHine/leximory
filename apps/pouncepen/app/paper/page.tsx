@@ -16,7 +16,7 @@ export default async function PaperManagerPage() {
             <Suspense fallback={
                 <>
                     <PaperManagerHeader />
-                    <Progress isIndeterminate />
+                    <Progress size='lg' isIndeterminate />
                 </>}>
                 <PaperManagerWrapper />
             </Suspense>
