@@ -17,6 +17,7 @@ import { useDebounceCallback } from 'usehooks-ts'
 import { updatePaperAction } from '@repo/service/paper'
 import { useAction } from '@repo/service'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Spinner } from '@heroui/react'
 
 
 export default function Editory({ id }: { id?: string }) {
@@ -55,9 +56,9 @@ export default function Editory({ id }: { id?: string }) {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className='inline-block mr-2 mb-2 self-baseline-last'
+                          className='inline-block mr-3 mb-2.5 self-baseline-last'
                         >
-                          <ArrowsClockwiseIcon weight='duotone' className='size-7 animate-spin' />
+                          <Spinner variant='simple' className='block' color='secondary' size='sm' />
                         </motion.span>
                       ) : (
                         <motion.span

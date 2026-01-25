@@ -8,7 +8,7 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { CircularProgress } from '@heroui/progress'
-import { Backward } from '../components/backward'
+import { ToHome } from '../components/to-home'
 
 type PaperPageProps = {
     params: Promise<{
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
 export default async function PaperPage({ params }: PaperPageProps) {
     return (
         <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-                       <Backward />
+            <ToHome />
             <Suspense fallback={<div className='absolute inset-0 flex justify-center items-center'>
                 <CircularProgress />
             </div>}>

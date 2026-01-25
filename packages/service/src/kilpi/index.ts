@@ -2,10 +2,13 @@ import 'server-only'
 import { createKilpi, Grant, Deny } from '@kilpi/core'
 import { getUser } from '@repo/user'
 import type { Tables } from '@repo/supabase/types'
+import { ReactServerPlugin } from '@kilpi/react-server'
 
 type Paper = Tables<'papers'>
 
 export const Kilpi = createKilpi({
+  plugins: [ReactServerPlugin()],
+
   async getSubject() {
     const user = await getUser()
     return user
