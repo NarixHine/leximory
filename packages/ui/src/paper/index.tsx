@@ -3,7 +3,7 @@ import { cn } from '@heroui/react'
 import { QuizItems } from '@repo/schema/paper'
 import { merge } from 'es-toolkit'
 import { highlightSubstrings, PAPER_CLASS_NAME } from '@repo/ui/paper/utils'
-import { QuizAnswerSheetRSC, QuizPaperRSC } from '@repo/ui/paper/rsc'
+import { QuizPaperRSC } from '@repo/ui/paper/rsc'
 import { QuizKey } from './generators'
 
 export function Paper({

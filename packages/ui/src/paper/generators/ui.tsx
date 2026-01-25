@@ -17,7 +17,7 @@ export const QuestionSection = ({ children, title }: {
 export const Question = <K extends QuizData['type']>({ strategy, specificData, variant, config, answers }: {
     strategy: QuestionStrategy<Extract<QuizData, { type: K }>>,
     specificData: Extract<QuizData, { type: K }>,
-    variant: 'paper' | 'key' | 'answersheet'
+    variant: 'paper' | 'key'
     config: any
     answers?: Record<number, string | null>
 }) => {
@@ -48,15 +48,5 @@ export const Question = <K extends QuizData['type']>({ strategy, specificData, v
         </table>
     }
 
-            if (variant === 'answersheet') {
-        if (!strategy.renderAnswerSheet) return null
-            return (
-            <QuestionSection>
-                {strategy.renderRubric()}
-                {strategy.renderAnswerSheet(renderProps)}
-            </QuestionSection>
-            )
-    }
-
-            return null
+    return null
 }
