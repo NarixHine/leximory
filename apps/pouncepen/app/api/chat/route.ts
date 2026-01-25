@@ -1,4 +1,3 @@
-import { AIGeneratableType } from '@/components/editory/generators/config'
 import { toolSchemas } from '@/components/editory/panel/editor/chat/tool-types'
 import { generateQuiz } from '@/server/ai/generate-quiz'
 import { AgentPrompt } from '@/server/ai/prompts/agent'
@@ -6,6 +5,7 @@ import incrCommentaryQuota from '@repo/user/quota'
 import { createAgentUIStreamResponse, ToolLoopAgent, tool } from 'ai'
 import { extractArticleFromUrl } from '@repo/scrape'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
+import { AIGeneratableType } from '@repo/ui/paper/utils'
 
 export async function POST(request: Request) {
     const { messages, currentItems } = await request.json()

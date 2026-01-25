@@ -1,4 +1,4 @@
-import { QuizItemsSchema } from '@/components/editory/generators/types'
+import { QuizItemsSchema } from '@repo/schema/paper'
 
 export const MOCK_PAPER = QuizItemsSchema.parse([
     {
