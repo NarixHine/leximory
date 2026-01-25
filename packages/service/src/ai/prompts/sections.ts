@@ -1,7 +1,5 @@
 import { ClozeDataSchema, CustomDataSchema, FishingDataSchema, GrammarDataSchema, ReadingDataSchema, SentenceChoiceDataSchema } from '@repo/schema/paper'
-import { omit } from 'es-toolkit'
 import { z } from '@repo/schema'
-import { questionStrategiesList } from '@repo/ui/paper/strategies'
 
 const SECTIONS = {
         grammar: {
@@ -99,7 +97,6 @@ questions数组中，每个问题对象包含q、a、correct，分别对应题�
 
 type SectionType = keyof typeof SECTIONS
 const SECTION_TYPES = Object.keys(SECTIONS) as SectionType[]
-const SECTION_QUIZ_TYPES = ['grammar', 'fishing', 'cloze', 'reading', 'sentences', 'custom'] as const
 const SECTION_NAMES = Object.values(SECTIONS).map(section => section.name)
 export const SectionTypeSchema = z.enum(SECTION_TYPES)
 
@@ -108,19 +105,11 @@ const details = (Object.keys(SECTIONS) as Array<keyof typeof SECTIONS>).map((sec
         ${SECTIONS[section].description}
         </${section}>`
 })
-const examples = questionStrategiesList.filter((strategy) => (SECTION_QUIZ_TYPES as readonly string[]).includes(strategy.getDefaultValue().type)).map((strategy) => {
-        const value = omit(strategy.getDefaultValue(), ['id'])
-        return `<${value.type}>
-        ${JSON.stringify(value, null, 2)}
-        </${value.type}>`
-})
 const formats = (Object.keys(SECTIONS) as Array<keyof typeof SECTIONS>).map((section) => {
         return `<${section}>
         ${SECTIONS[section].format}
         </${section}>`
 })
 
-const GeneratableDataSchema = z.union(Object.values(SECTIONS).map(s => s.schema))
-
-export { SECTIONS, SECTION_TYPES, SECTION_NAMES, details, examples, formats, GeneratableDataSchema }
+export { SECTIONS, SECTION_TYPES, SECTION_NAMES, details, formats }
 export { type SectionType }

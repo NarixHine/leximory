@@ -1,7 +1,7 @@
 'use server'
 
 import { actionClient } from '@repo/service'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'

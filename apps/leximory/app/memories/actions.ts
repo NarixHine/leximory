@@ -1,6 +1,6 @@
 'use server'
 
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { createMemory, deleteMemory, getPersonalMemories, getFederatedMemories, getPublicMemories } from '@/server/db/memories'
 import { getUserOrThrow } from '@repo/user'
 import { updateTag } from 'next/cache'

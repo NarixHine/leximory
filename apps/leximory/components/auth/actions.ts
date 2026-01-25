@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@repo/supabase/server'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { getAuthErrorMessage } from './error-messages'
 import { isTrustedPathname } from '@/lib/url'
 

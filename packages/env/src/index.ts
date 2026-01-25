@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { createEnv } from '@t3-oss/env-nextjs'
 
 export const IS_PROD = process.env.NODE_ENV === 'production'

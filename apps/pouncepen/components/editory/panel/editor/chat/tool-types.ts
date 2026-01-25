@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { QuizData } from '@/components/editory/generators/types'
 import { GeneratableDataSchema } from '@/server/ai/prompts/sections'
 import { GeneratableTypeSchema } from '@/components/editory/generators/config'

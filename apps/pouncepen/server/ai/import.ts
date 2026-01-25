@@ -2,9 +2,9 @@ import 'server-only'
 import { generateObject } from 'ai'
 import { IMPORT_PROMPT } from './prompts/import'
 import { nanoid } from 'nanoid'
-import { GeneratableDataSchema } from './prompts/sections'
-import z from 'zod'
+import { z } from '@repo/schema'
 import { FILE_AI } from './config'
+import { GeneratableDataSchema } from './prompts/sections'
 
 export async function aiSmartImport(file: File) {
     const { object: items } = await generateObject({

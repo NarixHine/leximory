@@ -10,7 +10,7 @@ import { deleteText, getTextAnnotationProgress, getTextContent, setTextAnnotatio
 import { inngest } from '@/server/inngest/client'
 import { instruction } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
 import { getUserOrThrow } from '@repo/user'

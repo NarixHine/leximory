@@ -1,4 +1,4 @@
-import { details, formats, SECTIONS } from './sections'
+import { details, formats, SECTIONS } from '../../../../../packages/service/src/ai/prompts/sections'
 
 export const AgentPrompt = `
 <paper_editing_agent_prompt>

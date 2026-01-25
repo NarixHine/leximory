@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from '@repo/schema'
 
 export const AskResponseSchema = z.object({
     explanation: z.string(),

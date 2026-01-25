@@ -1,7 +1,7 @@
 'use server'
 
 import { compareAnswers, pilotPaper } from '@/server/ai/fix'
-import { QuizData } from '../../generators/types'
+import { QuizData } from '../../../../../../packages/ui/src/paper/types'
 import { incrCommentaryQuota } from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
 

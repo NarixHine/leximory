@@ -1,7 +1,7 @@
 'use server'
 
 import { updateTag } from 'next/cache'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { authWriteToLib } from '@/server/auth/role'
 import { updateTextOrder } from '@/server/db/text'
 

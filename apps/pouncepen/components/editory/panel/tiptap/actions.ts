@@ -1,7 +1,7 @@
 'use server'
 
 import { streamQuiz } from '@/server/ai/generate-quiz'
-import { AIGeneratableType } from '../../generators/config'
+import { AIGeneratableType } from '../../../../../../packages/ui/src/paper/config'
 import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
 

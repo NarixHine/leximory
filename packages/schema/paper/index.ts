@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { JSX } from 'react'
 
 /**

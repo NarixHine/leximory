@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from '@repo/schema/v3'
 
 // AI generated list of extension maps, customize for your purpose.
 export const inferMediaTypeFromUrl = (url: string): string | null => {

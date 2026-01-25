@@ -2,7 +2,7 @@
 
 import { aiSmartImport } from '@/server/ai/import'
 import { actionClient } from '@repo/service'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
 

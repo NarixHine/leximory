@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { getAllTextsInLib, getLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'

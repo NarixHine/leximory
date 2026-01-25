@@ -1,0 +1,11 @@
+{
+    "extends": "@repo/typescript-config/base.json",
+    "include": [
+        "src"
+, "paper"    ],
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist",
+        "noEmit": false
+    }
+}

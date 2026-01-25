@@ -1,6 +1,6 @@
 import { ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { customAlphabet } from 'nanoid'
 
 /**

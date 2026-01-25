@@ -1,7 +1,7 @@
 import 'server-only'
 import { AIGeneratableType } from '@/components/editory/generators/config'
 import { generateObject, streamObject } from 'ai'
-import { z } from 'zod'
+import { z } from '@repo/schema'
 import { SMART_AI } from './config'
 import { QuizDataType } from '@/components/editory/generators/types'
 

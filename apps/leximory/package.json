@@ -85,10 +85,8 @@
     "ai": "^6.0.3",
     "clsx": "^2.1.1",
     "epubjs": "^0.3.93",
-    "es-toolkit": "^1.35.0",
-    "fast-shuffle": "^6.1.1",
+    "es-toolkit": "^1.44.0",
     "framer-motion": "^12.23.12",
-    "html-react-parser": "^5.2.5",
     "inngest": "^3.43.1",
     "is-url": "^1.2.4",
     "itty-time": "^2.0.1",
@@ -131,7 +129,7 @@
     "vaul": "^1.1.2",
     "web-push": "^3.6.7",
     "wink-lemmatizer": "^3.0.4",
-    "zod": "^3.25.28"
+    "@repo/schema": "workspace:^"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

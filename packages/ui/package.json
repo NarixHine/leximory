@@ -10,7 +10,9 @@
     "./auth": "./src/auth/index.tsx",
     "./protected-button": "./src/protected-button/index.tsx",
     "./utils": "./src/utils/index.ts",
-    "./shiny-text": "./src/shiny-text/index.tsx"
+    "./shiny-text": "./src/shiny-text/index.tsx",
+    "./paper": "./src/paper/index.tsx",
+    "./paper/strategies": "./src/paper/strategies.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -22,12 +24,20 @@
     "@repo/env": "workspace:^",
     "@repo/supabase": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/schema": "workspace:^",
     "kv": "^1.1.1",
     "moment": "^2.30.1",
     "react-icons": "^5.5.0",
     "supabase": "^2.72.4",
     "tailwindcss": "^4.0.0",
-    "usehooks-ts": "^3.1.1"
+    "usehooks-ts": "^3.1.1",
+    "@phosphor-icons/react": "^2.1.10",
+    "fast-shuffle": "^6.1.1",
+    "html-react-parser": "^5.2.5",
+    "es-toolkit": "^1.44.0",
+    "rand-seed": "^3.0.0",
+    "nanoid": "^5.1.6",
+    "streamdown": "^2.1.0"
   },
   "peerDependencies": {
     "framer-motion": "^12.0.0",
@@ -41,6 +51,11 @@
     "@heroui/table": "^2.2.21",
     "@heroui/react": "^2.2.25",
     "@heroui/progress": "^2.2.22",
-    "@heroui/dropdown": "^2.2.21"
+    "@heroui/dropdown": "^2.2.21",
+    "@heroui/accordion": "^2.2.21",
+    "sonner": "^2.0.0",
+    "vaul": "^1.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "jotai": "^2.0.0"
   }
 }

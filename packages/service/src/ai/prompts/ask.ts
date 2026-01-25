@@ -1,5 +1,5 @@
-import { QuizData } from '@/components/editory/generators/types'
-import { SECTIONS, type SectionType } from './sections'
+import { QuizData } from '@repo/schema/paper'
+import { SECTIONS, SectionType } from './sections'
 
 export const buildAskSystemPrompt = (type: SectionType) => `
 <instructions>
