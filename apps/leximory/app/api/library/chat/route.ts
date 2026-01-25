@@ -9,13 +9,12 @@ import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@
 import incrCommentaryQuota from '@repo/user/quota'
 import { IS_PROD } from '@repo/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
-import generateQuiz from '@/server/ai/editory'
 import { nanoid } from 'nanoid'
 import { getPlan, getUserOrThrow } from '@repo/user'
 import { annotateParagraph } from '@/server/ai/annotate'
-import { AIGeneratableType } from '@/components/editory/generators/config'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
+import { AIGeneratableType } from '@repo/ui/paper/utils'
 import { extractArticleFromUrl } from '@repo/scrape'
 
 const tools: ToolSet = {
@@ -97,14 +96,6 @@ const tools: ToolSet = {
             const { userId } = await getUserOrThrow()
             return { annotation: await annotateParagraph({ content, lang, userId }), lang }
 
-        }
-    },
-    generateQuiz: {
-        description: 'Generate a quiz from the given text content. Available types: cloze (完形填空), reading (阅读理解), fishing (小猫钓鱼).',
-        inputSchema: toolSchemas.generateQuiz,
-        execute: async ({ content, type }: { content: string, type: AIGeneratableType }) => {
-            const result = await generateQuiz({ prompt: content, type })
-            return { ...result, type, id: nanoid() }
         }
     },
     extractArticleFromWebpage: {

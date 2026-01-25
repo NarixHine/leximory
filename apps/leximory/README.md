@@ -51,7 +51,7 @@ graph TD
             ApiRoutes["API Routes/Server Actions"]
         end
         subgraph "Server-side Logic (server/)"
-            AI["AI Module (annotate, editory)"]
+            AI["AI Module (annotate)"]
             Auth["Auth Module (role, quota)"]
             DB["Data Access (db/)"]
         end

@@ -1,6 +1,6 @@
 'use client'
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, DropdownItemProps } from '@heroui/dropdown'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger } from '@heroui/dropdown'
 import { prefixUrl, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createClient } from '@repo/supabase/client'
 import { useRouter } from 'next/navigation'

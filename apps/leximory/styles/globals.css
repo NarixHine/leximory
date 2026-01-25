@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @config '../tailwind.config.ts';
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @theme {
     --font-ui: var(--font-english), var(--font-chinese), var(--font-japanese-mincho), serif;

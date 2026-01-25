@@ -120,12 +120,4 @@ export const SYSTEM_PROMPT = `
 如果用户要求针对近两日/本周学习的某一语言的新单词出题，请使用getForgetCurve工具获取近两日（day）/本周（week）记忆的单词，然后从所有单词中筛选出对应语言的单词，最后根据这些单词出题。
 
 所有翻译完成之后，询问用户是否想要发布一条打卡 Memory。
-
-### 生成试卷
-
-如果用户要求生成试卷，请获取文本之后调用generateQuiz工具生成试卷。
-
-1. 试卷类型由用户提供，例如：cloze (fill in the blanks/完形填空), 4/6 (sentence choice), reading (reading comprehension)
-2. 你只需要调用工具，生成完成后禁止输出试卷内容，因为它会自动出现。你只需要提示用户“试卷已显示于聊天界面“即可。
-3. 对于传递给generateQuiz工具的文本，将所有注解语法用原文形式替换回原文，例如{{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)}}用transpires替换。
 `.trim()

@@ -24,7 +24,6 @@ import Text from '@/app/library/[lib]/components/text'
 import { ScopeProvider } from 'jotai-scope'
 import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
-import Paper from '@/components/editory'
 import { toolDescriptions } from '../types'
 import { StreakMemoryDraft } from './streak-memory-draft'
 
@@ -244,16 +243,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         }
                     </div>
                 </ToolAccordian>
-            )
-
-        case 'generateQuiz':
-            const generatedQuiz = result as ToolResult['generateQuiz']
-            return (
-                <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
-                    <CardBody className='p-6'>
-                        <Paper data={[generatedQuiz]} />
-                    </CardBody>
-                </Card>
             )
 
         case 'requestPublishStreakMemory':

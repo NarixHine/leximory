@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 export function ToHome() {
     const router = useRouter()
     return (
-        <div className='sticky top-4 -mt-4 px-4 h-0'>
+        <div className='sticky top-2 -mt-4 px-4 h-0 backdrop-blur-lg'>
             <Button
                 variant='flat'
                 radius='full'

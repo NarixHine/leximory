@@ -4,7 +4,7 @@
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @plugin '@tailwindcss/typography';
 @source '../node_modules/streamdown/dist/index.js';
-@source "../../../node_modules/@repo/ui";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

@@ -4,9 +4,7 @@ import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { getTextContent } from '@/server/db/text'
 import { getTexts } from '@/server/db/text'
 import { Lang, SUPPORTED_LANGS } from '@repo/env/config'
-import QuizData from '@/components/editory/generators/types'
 import { annotateParagraph } from '@/server/ai/annotate'
-import { AI_GENERATABLE } from '@/components/editory/generators/config'
 import { extractArticleFromUrl } from '@repo/scrape'
 
 export const toolDescriptions = {
@@ -19,7 +17,6 @@ export const toolDescriptions = {
     annotateArticle: 'Creating annotated article ...',
     getForgetCurve: 'Looking for words to review ...',
     annotateParagraph: 'Adding annotations ...',
-    generateQuiz: 'Generating quiz questions ...',
     extractArticleFromWebpage: 'Extracting article from webpage ...',
     requestPublishStreakMemory: 'Drafting streak memory ...'
 } as const
@@ -43,7 +40,6 @@ export type ToolResult = {
         lang: Lang
     }
     extractArticleFromWebpage: Awaited<ReturnType<typeof extractArticleFromUrl>>
-    generateQuiz: QuizData
     requestPublishStreakMemory: {
         content: string
         user: {
@@ -70,10 +66,6 @@ export const toolSchemas = {
     annotateParagraph: z.object({
         content: z.string().describe('The content of the paragraph to annotate'),
         lang: z.enum(SUPPORTED_LANGS).describe('The language of the paragraph')
-    }),
-    generateQuiz: z.object({
-        content: z.string().describe('The text content to generate quiz from'),
-        type: z.enum(AI_GENERATABLE).describe('The type of quiz to generate. Choose from: fishing (vocabulary, 十一选十/小猫钓鱼), cloze (fill in the blanks), 4/6 (sentence choice), reading (reading comprehension)')
     }),
     extractArticleFromWebpage: z.object({
         url: z.string().describe('The URL of the webpage to extract the article from')
