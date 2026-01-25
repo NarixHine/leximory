@@ -5,6 +5,8 @@ import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
+import { QuizData } from '@repo/schema/paper'
+import { streamExplanation } from '../ai'
 
 const createPaperSchema = z.object({
   content: z.any().optional(),
@@ -122,3 +124,14 @@ export const deletePaperAction = actionClient
 
     return deletePaper({ id })
   })
+
+export type StreamExplanationParams = {
+    quizData: QuizData,
+    questionNo: number,
+    userAnswer: string
+}
+
+export async function streamExplanationAction({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
+    await Kilpi.papers.askAI().authorize().assert()
+    return streamExplanation({ quizData, questionNo, userAnswer })
+}

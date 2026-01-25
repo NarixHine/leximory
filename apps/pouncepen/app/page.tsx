@@ -1,8 +1,8 @@
-import { EDITORY_PAPER_ID, editoryItemsAtom, paperIdAtom, viewModeAtom } from '@/components/editory/atoms'
 import Editory from '@/components/editory/panel'
 import Main from '@/components/ui/main'
 import { ScopeProvider } from '@/components/ui/scope-provider'
-import { HydrationBoundary } from 'jotai-ssr'
+import { paperIdAtom, EDITORY_PAPER_ID, editoryItemsAtom, viewModeAtom } from '@repo/ui/paper/atoms'
+import { HydrationBoundary } from '@repo/ui/paper/utils'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 

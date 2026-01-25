@@ -1,4 +1,4 @@
-import { SECTION_TYPES, SECTION_NAMES, details, formats, examples } from '../../../../../packages/service/src/ai/prompts/sections'
+import { SECTION_TYPES, SECTION_NAMES, details, formats, examples } from './sections'
 
 export const IMPORT_PROMPT = `
 <instructions>

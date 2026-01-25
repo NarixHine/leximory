@@ -5,9 +5,9 @@ import { useState } from 'react'
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
 import { toFilled } from 'es-toolkit/array'
 import { clone } from 'es-toolkit'
-import { ClozeData } from '@/components/editory/generators/types'
+import { ClozeData } from '@repo/schema/paper'
 import RevisePaper from '../revise-paper'
-import { extractCodeContent } from '@/components/editory/generators/utils'
+import { extractCodeContent } from '@repo/ui/paper/utils'
 
 export default function ClozeEditor({
     data,

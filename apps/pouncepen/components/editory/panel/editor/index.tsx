@@ -7,11 +7,11 @@ import SentenceChoiceEditor from './sentence'
 import ReadingEditor from './reading'
 import ListeningEditor from './listening'
 import CustomTextEditor from './custom'
-import { QuizData } from '../../../../../../packages/ui/src/paper/types'
 import { useAtom, useAtomValue } from 'jotai'
-import { editoryItemsAtom } from '@/components/editory/atoms'
 import { isChatAtom } from '../atoms'
 import ChatInterface from './chat'
+import { QuizData } from '@repo/schema/paper'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 
 export default function Editor({ id }: { id?: string }) {
     const [items, setItems] = useAtom(editoryItemsAtom)

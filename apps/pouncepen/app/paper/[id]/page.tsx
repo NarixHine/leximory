@@ -1,14 +1,14 @@
-import { paperIdAtom, EDITORY_PAPER_ID, editoryItemsAtom, viewModeAtom } from '@/components/editory/atoms'
-import { QuizItemsSchema } from '@/components/editory/generators/types'
 import Editory from '@/components/editory/panel'
 import Main from '@/components/ui/main'
 import { getPaper } from '@repo/supabase/paper'
 import { ScopeProvider } from '@/components/ui/scope-provider'
-import { HydrationBoundary } from 'jotai-ssr'
+import { HydrationBoundary } from '@repo/ui/paper/utils'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { CircularProgress } from '@heroui/progress'
 import { ToHome } from '../components/to-home'
+import { QuizItemsSchema } from '@repo/schema/paper'
+import { paperIdAtom, EDITORY_PAPER_ID, editoryItemsAtom, viewModeAtom } from '@repo/ui/paper/atoms'
 
 type PaperPageProps = {
     params: Promise<{

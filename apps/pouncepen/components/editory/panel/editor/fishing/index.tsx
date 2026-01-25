@@ -1,6 +1,6 @@
 'use client'
 
-import { FishingData } from '@/components/editory/generators/types'
+import { FishingData } from '@repo/schema/paper'
 import Tiptap from '../../tiptap'
 import { without } from 'es-toolkit'
 import List from '../list'

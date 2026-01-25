@@ -1,11 +1,10 @@
-import { QuizKey } from '@/components/editory/generators'
-import { Accordion, AccordionItem } from '@heroui/accordion'
-import { cn } from '@heroui/theme'
-import { QuizItems } from '../../../../packages/ui/src/paper/types'
-import { QuizAnswerSheetRSC, QuizPaperRSC } from '../../../../packages/ui/src/paper/rsc'
-import { merge } from 'es-toolkit'
-import { highlightSubstrings } from './blank/utils'
 import { PAPER_CLASS_NAME } from '@/lib/styles'
+import { cn, Accordion, AccordionItem } from '@heroui/react'
+import { QuizItems } from '@repo/schema/paper'
+import { merge } from 'es-toolkit'
+import { highlightSubstrings } from '@repo/ui/paper/utils'
+import { QuizAnswerSheetRSC, QuizPaperRSC } from '@repo/ui/paper/rsc'
+import { QuizKey } from '@repo/ui/paper'
 
 export function Paper({
     data,

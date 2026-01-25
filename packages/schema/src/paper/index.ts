@@ -2,6 +2,15 @@ import { z } from '@repo/schema'
 import { JSX } from 'react'
 
 /**
+ * The types of sections supported in Ask.
+ */
+export const AskResponseSchema = z.object({
+    explanation: z.string(),
+    highlights: z.array(z.string()).optional(),
+})
+export type AskResponse = z.infer<typeof AskResponseSchema>
+
+/**
  * Defines the props that are passed to a strategy's render functions.
  * It includes all the necessary data calculated by the main component.
  */

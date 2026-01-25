@@ -18,12 +18,11 @@ import {
 import { Button, Dropdown, DropdownMenu, DropdownItem, DropdownTrigger } from '@heroui/react'
 import { PlusCircleIcon } from '@phosphor-icons/react'
 import SortableItem from './item'
-import { QuizDataType } from '../../../../../../packages/ui/src/paper/types'
-import { NAME_MAP, ICON_MAP } from '../../../../../../packages/ui/src/paper/config'
+import { QuizDataType } from '@repo/schema/paper'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
+import { questionStrategies } from '@repo/ui/paper/strategies'
+import { NAME_MAP, ICON_MAP } from '@repo/ui/paper/utils'
 import { useAtom } from 'jotai'
-import { editoryItemsAtom } from '@/components/editory/atoms'
-import { questionStrategies } from '../../../../../../packages/ui/src/paper/strategies'
-import Link from 'next/link'
 
 export default function Sortable() {
     const [items, setItems] = useAtom(editoryItemsAtom)

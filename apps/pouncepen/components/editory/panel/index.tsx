@@ -1,13 +1,12 @@
 'use client'
 
-import { SealQuestionIcon, OptionIcon, MagicWandIcon, CloudCheckIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
+import { SealQuestionIcon, OptionIcon, MagicWandIcon, CloudCheckIcon } from '@phosphor-icons/react'
 import { Key, Paper } from '..'
 import Sortable from './sortable'
 import Editor from './editor'
 import { JsonEditor } from './json-editor'
 import { ImportButton } from './import'
 import { useAtomValue } from 'jotai'
-import { editoryItemsAtom } from '../../../../../packages/ui/src/paper/atoms'
 import { ReviseAllButton } from './editor/revise-paper/revise-all-button'
 import { Copyright } from './copyright'
 import { EditModeSwitch } from './edit-mode-switch'
@@ -18,6 +17,7 @@ import { updatePaperAction } from '@repo/service/paper'
 import { useAction } from '@repo/service'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Spinner } from '@heroui/react'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 
 
 export default function Editory({ id }: { id?: string }) {

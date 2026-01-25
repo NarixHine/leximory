@@ -1,6 +1,6 @@
 'use client'
 
-import { ListeningData } from '@/components/editory/generators/types'
+import { ListeningData } from '@repo/schema/paper'
 import QnA from '../qna'
 
 export default function ListeningEditor({

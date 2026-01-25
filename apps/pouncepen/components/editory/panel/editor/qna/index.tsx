@@ -1,4 +1,4 @@
-import { ListeningQuestion, Question } from '@/components/editory/generators/types'
+import { ListeningQuestion, Question } from '@repo/schema/paper'
 import { Button } from '@heroui/button'
 import { Textarea, Input } from '@heroui/input'
 import { toFilled } from 'es-toolkit'

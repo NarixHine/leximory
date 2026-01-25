@@ -1,6 +1,6 @@
 'use client'
 
-import { SentenceChoiceData } from '@/components/editory/generators/types'
+import { SentenceChoiceData } from '@repo/schema/paper'
 import Tiptap from '../../tiptap'
 import { without } from 'es-toolkit'
 import List from '../list'

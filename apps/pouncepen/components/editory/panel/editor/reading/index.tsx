@@ -1,6 +1,6 @@
 'use client'
 
-import { ReadingData } from '@/components/editory/generators/types'
+import { ReadingData } from '@repo/schema/paper'
 import Tiptap from '../../tiptap'
 import QnA from '../qna'
 import RevisePaper from '../revise-paper'

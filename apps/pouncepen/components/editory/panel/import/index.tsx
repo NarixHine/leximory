@@ -6,12 +6,12 @@ import { useDisclosure } from '@heroui/use-disclosure'
 import { useRef } from 'react'
 import { smartImport } from './actions'
 import { useSetAtom } from 'jotai'
-import { editoryItemsAtom } from '@/components/editory/atoms'
 import { ArrowSquareInIcon, MagicWandIcon } from '@phosphor-icons/react'
 import { useAction } from '@repo/service'
 import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { ProtectedButton } from '@repo/ui/protected-button'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 
 export function ImportButton() {
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure()

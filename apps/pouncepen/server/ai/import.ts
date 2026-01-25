@@ -3,8 +3,8 @@ import { generateObject } from 'ai'
 import { IMPORT_PROMPT } from './prompts/import'
 import { nanoid } from 'nanoid'
 import { z } from '@repo/schema'
-import { FILE_AI } from './config'
 import { GeneratableDataSchema } from './prompts/sections'
+import { FILE_AI } from './config'
 
 export async function aiSmartImport(file: File) {
     const { object: items } = await generateObject({

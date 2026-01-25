@@ -2,7 +2,7 @@
 
 import { Divider } from '@heroui/react'
 import Tiptap from '../../tiptap'
-import { CustomData } from '@/components/editory/generators/types'
+import { CustomData } from '@repo/schema/paper'
 
 export default function CustomTextEditor({
     data,

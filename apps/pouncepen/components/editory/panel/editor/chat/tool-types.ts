@@ -1,8 +1,8 @@
-import { z } from '@repo/schema'
-import { QuizData } from '@/components/editory/generators/types'
 import { GeneratableDataSchema } from '@/server/ai/prompts/sections'
-import { GeneratableTypeSchema } from '@/components/editory/generators/config'
+import { z } from '@repo/schema'
+import { QuizData } from '@repo/schema/paper'   
 import { extractArticleFromUrl } from '@repo/scrape'
+import { GeneratableTypeSchema } from '@repo/ui/paper/utils'
 
 export const toolDescriptions = {
     getCurrentItems: {

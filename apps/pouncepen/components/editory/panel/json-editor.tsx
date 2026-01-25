@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAtom } from 'jotai'
-import { editoryItemsAtom } from '@/components/editory/atoms'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 
 export function JsonEditor() {
     const [items, setItems] = useAtom(editoryItemsAtom)

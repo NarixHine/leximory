@@ -4,8 +4,8 @@ import Tiptap from '../../tiptap'
 import { useState } from 'react'
 import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
 import { omit, toMerged } from 'es-toolkit'
-import { GrammarData } from '@/components/editory/generators/types'
-import { extractCodeContent } from '@/components/editory/generators/utils'
+import { GrammarData } from '@repo/schema/paper'
+import { extractCodeContent } from '@repo/ui/paper/utils'
 
 export default function GrammarEditor({
     data,

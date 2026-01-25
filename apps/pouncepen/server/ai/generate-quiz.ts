@@ -1,9 +1,9 @@
 import 'server-only'
-import { AIGeneratableType } from '@/components/editory/generators/config'
 import { generateObject, streamObject } from 'ai'
 import { z } from '@repo/schema'
 import { SMART_AI } from './config'
-import { QuizDataType } from '@/components/editory/generators/types'
+import { QuizDataType } from '@repo/schema/paper'
+import { AIGeneratableType } from '@repo/ui/paper/utils'
 
 export async function streamQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }) {
     const { system, schema } = getConfig(type)

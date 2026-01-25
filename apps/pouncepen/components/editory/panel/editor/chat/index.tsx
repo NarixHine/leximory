@@ -13,7 +13,7 @@ import { Streamdown } from 'streamdown'
 import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { ToolName, toolDescriptions, ToolResult, toolSchemas } from './tool-types'
 import { useAtom } from 'jotai'
-import { editoryItemsAtom } from '@/components/editory/atoms'
+import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 import { nanoid } from 'nanoid'
 import { ProtectedButton } from '@repo/ui/protected-button'
 

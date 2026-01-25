@@ -12,7 +12,10 @@
     "./utils": "./src/utils/index.ts",
     "./shiny-text": "./src/shiny-text/index.tsx",
     "./paper": "./src/paper/index.tsx",
-    "./paper/strategies": "./src/paper//generators/strategies.tsx"
+    "./paper/strategies": "./src/paper/generators/strategies.tsx",
+    "./paper/atoms": "./src/paper/atoms.ts",
+    "./paper/utils": "./src/paper/utils.ts",
+    "./paper/rsc": "./src/paper/generators/rsc.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -25,6 +28,7 @@
     "@repo/supabase": "workspace:^",
     "@repo/user": "workspace:^",
     "@repo/schema": "workspace:^",
+    "@repo/service": "workspace:^",
     "kv": "^1.1.1",
     "moment": "^2.30.1",
     "react-icons": "^5.5.0",
@@ -56,6 +60,7 @@
     "sonner": "^2.0.0",
     "vaul": "^1.0.0",
     "@tanstack/react-query": "^5.0.0",
-    "jotai": "^2.0.0"
+    "jotai": "^2.16.2",
+    "jotai-ssr": "^0.2.0"
   }
 }

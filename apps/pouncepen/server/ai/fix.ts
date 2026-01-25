@@ -1,7 +1,7 @@
 import 'server-only'
 import { ModelMessage, streamText } from 'ai'
 import { buildFeedbackPrompt, buildTestTakerPrompt } from './prompts/fix'
-import { QuizData } from '@/components/editory/generators/types'
+import { QuizData } from '@repo/schema/paper'
 import { SMART_AI } from './config'
 
 async function buildMessages(params: {

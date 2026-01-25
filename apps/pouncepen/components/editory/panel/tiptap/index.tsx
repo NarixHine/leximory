@@ -20,20 +20,19 @@ import {
   MagicWandIcon,
   IconContext,
   TextUnderlineIcon,
-  DotsThreeIcon,
   DotsThreeCircleIcon
 } from '@phosphor-icons/react'
 import { TextStyle } from '@tiptap/extension-text-style'
 import Image from '@tiptap/extension-image'
 import { useCallback, useEffect, useMemo } from 'react'
-import { QuizData } from '../../../../../../packages/ui/src/paper/types'
 import { toast } from 'sonner'
-import { AIGeneratableType } from '../../../../../../packages/ui/src/paper/config'
 import { IS_PROD } from '@repo/env'
 import { throttle } from 'es-toolkit'
 import { ms } from 'itty-time'
 import { streamQuizAction } from './actions'
 import { ProtectedButton } from '@repo/ui/protected-button'
+import { QuizData } from '@repo/schema/paper'
+import { AIGeneratableType } from '@repo/ui/paper/utils'
 
 interface TiptapProps extends UseEditorOptions {
   blank?: (selection: string) => void

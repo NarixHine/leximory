@@ -4,7 +4,7 @@ import { FLASH_AI } from '../config'
 import { QuizData } from '@repo/schema/paper'
 import { buildAskPrompt, buildAskSystemPrompt } from '../prompts/ask'
 import { SectionType } from '../prompts/sections'
-import { AskResponseSchema } from './schema'
+import { AskResponseSchema } from '@repo/schema/paper'
 
 export type StreamExplanationParams = {
     quizData: QuizData,

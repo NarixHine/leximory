@@ -4,18 +4,17 @@ import { Drawer } from 'vaul'
 import { useMutation } from '@tanstack/react-query'
 import { Streamdown } from 'streamdown'
 import { Spinner } from '@heroui/spinner'
-import { streamExplanationAction } from './actions'
+import { streamExplanationAction } from '@repo/service/paper'
 import { cn } from '@heroui/theme'
 import { useEffectEvent, useEffect, useState } from 'react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { askParamsAtom, highlightsAtom, openAskAtom } from './atoms'
-import { AskResponseSchema } from '@/server/ai/types'
-import { StreamExplanationParams } from '@/server/ai/ask'
+import { AskResponseSchema } from '@repo/schema/paper'
+import { StreamExplanationParams } from '@repo/service/paper'
 import { toast } from 'sonner'
 import { Button, ButtonProps } from '@heroui/button'
 import { StudentIcon } from '@phosphor-icons/react'
 import { useScrollToMatch } from './hooks'
-import { PAPER_CLASS_NAME } from '@/lib/styles'
 
 export function AskButton({ ask, ...props }: { ask: () => void } & ButtonProps) {
     return (
@@ -103,7 +102,7 @@ function Explanation({ quizData, questionNo, userAnswer }: StreamExplanationPara
     return (
         <div className='px-4 py-2'>{
             explanationData.length > 0
-                ? <div className={cn('py-2 w-sm', PAPER_CLASS_NAME)}>
+                ? <div className={cn('py-2 w-sm')}>
                     <Streamdown className='prose-blockquote:not-italic prose-blockquote:prose-p:before:content-none prose-blockquote:prose-p:after:content-non prose-code:px-0.5 prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400'>
                         {askResponse?.explanation}
                     </Streamdown>

@@ -10,7 +10,6 @@ import { memo } from 'react'
 import { useAsk, useBlankInfo, useCorrectAnswer } from './hooks'
 import { matchColor } from './utils'
 import { AskButton } from './ask'
-import { getOptionByMarker } from '../generators/utils'
 
 const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: number, groupId: string, children?: React.ReactNode, blankCount?: number }) => {
     const quizData = useAtomValue(editoryItemsAtom)
@@ -40,16 +39,8 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
                 : <XCircleIcon className='inline ml-2 -mr-6 mb-1' />
         }
         else {
-            return answer
-                ? <CursorClickIcon weight='fill' className='inline ml-2 -mr-6 mb-1 print:hidden' />
-                : <CursorClickIcon className='inline ml-2 -mr-6 mb-1 print:hidden' />
+            return <CursorClickIcon weight={answer ? 'fill' : 'regular'} className='inline ml-2 -mr-6 mb-1 print:hidden' />
         }
-    }
-    const getTextColor = () => {
-        if (viewMode === 'revise') {
-            return checkAnswerCorrectness() ? 'text-success' : 'text-danger'
-        }
-        return answer ? 'text-primary' : 'text-secondary'
     }
 
     const ShownBlank = (

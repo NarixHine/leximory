@@ -1,6 +1,6 @@
-import { QuizData } from '@/components/editory/generators/types'
-import { SECTIONS, SectionTypeSchema } from '../../../../../packages/service/src/ai/prompts/sections'
-import { applyStrategy } from '@/components/editory/generators/utils'
+import { QuizData } from '@repo/schema/paper'
+import { applyStrategy } from '@repo/ui/paper/utils'
+import { SectionTypeSchema, SECTIONS } from './sections'
 
 export function buildTestTakerPrompt({ questionGroup }: { questionGroup: QuizData }) {
     const parsedType = SectionTypeSchema.parse(questionGroup.type)

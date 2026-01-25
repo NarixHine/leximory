@@ -1,4 +1,4 @@
-import { StreamExplanationParams } from '@/server/ai/ask'
+import { StreamExplanationParams } from '@repo/service/paper'
 import { createHash } from 'crypto'
 import { AlphabeticalMarker } from '../generators/config'
 
