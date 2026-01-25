@@ -66,7 +66,6 @@ function Explanation({ quizData, questionNo, userAnswer }: StreamExplanationPara
                     }
                 }
                 accumulated.push(result.object)
-                setExplanationData(accumulated)
             } catch {
                 toast.error('AI 输出中止，请重试')
             }

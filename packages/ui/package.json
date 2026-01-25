@@ -51,6 +51,8 @@
     "usehooks-ts": "^3.1.1"
   },
   "peerDependencies": {
+    "@heroui/theme": "^2.2.21",
+    "@heroui/avatar": "^2.2.21",
     "@heroui/accordion": "^2.2.21",
     "@heroui/button": "^2.2.22",
     "@heroui/dropdown": "^2.2.21",

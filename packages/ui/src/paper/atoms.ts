@@ -5,6 +5,8 @@ import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
 
+export { highlightsAtom } from './blank/atoms'
+
 export type Answers = Record<number, string | null>
 
 export const paperIdAtom = atom<string | null>(null)

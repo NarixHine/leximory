@@ -10,6 +10,5 @@ export const submitAnswersAction = actionClient
         id: z.number()
     }))
     .action(async ({ parsedInput: { answers, id } }) => {
-        const { content } = await getPaper({ id })
-        return content
+        await getPaper({ id })
     })

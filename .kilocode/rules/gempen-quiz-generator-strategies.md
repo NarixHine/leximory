@@ -1,62 +1,182 @@
-# Editory Quiz Generator Strategies
+# Quiz Generator System Documentation
 
-This document outlines the architecture and implementation of the quiz generation system located in `components/editory/generators/`. The system uses a Strategy design pattern to handle various types of quiz questions in a modular and extensible way.
+## 1. System Overview
 
-## Core Concepts
+The Quiz Generator is a React-based system designed to render interactive quizzes, manage user state (answers), handle submission/revision modes, and integrate AI-assisted explanations. It utilizes **Jotai** for state management, **React Query** for async operations, and a Strategy Pattern to render different question types (Cloze, Reading, Grammar, etc.).
 
-The generator's primary responsibility is to render different views of a quiz based on the same underlying data:
-1.  **Paper**: The printable quiz paper for students.
-2.  **Answer Sheet**: The interactive form where students input their answers.
-3.  **Key**: The correct answers for grading.
+### Core Capabilities
 
-This is achieved by abstracting the logic for each quiz type into a dedicated "strategy" object.
+* **Dual Rendering:** Supports Client-Side Rendering (Interactive) and Server-Side Rendering (Static/Print).
+* **State Modes:** Handles input (`normal`), answer checking (`revise`), and teacher tracking (`track`).
+* **Persistence:** Automatically syncs answers to `localStorage` via Jotai utils.
+* **AI Integration:** "Ask AI" context-aware explanations for specific blanks/questions.
 
-### The `QuestionStrategy` Interface
+---
 
-The core of the system is the `QuestionStrategy<T, O>` interface defined in [`types.ts`](components/editory/generators/types.ts). Each strategy object must implement this interface, providing the specific logic for a single quiz type.
+## 2. State Management (Jotai)
 
-Key properties of the interface include:
+The system relies on a complex atom structure to manage the lifecycle of a quiz session.
 
--   `getQuestionCount(data: T)`: Calculates how many questions a given data object contains.
--   `getCorrectAnswers(data: T, options: O)`: Extracts the correct answers from the data.
--   `getOptions?(data: T)`: (Optional) Generates and shuffles choices for multiple-choice questions.
--   `generateKey(props)`: Generates a standardized answer key object mapping question numbers to correct answer strings (e.g., `{ 1: 'A', 2: 'the correct answer' }`).
--   `isCorrect(userAnswer: string, correctAnswer: string)`: (Optional) Compares the user's answer with the correct answer. Defaults to strict equality (`===`). The `grammar` strategy overrides this to allow for multiple correct answers separated by slashes.
--   `renderPaper(props)`: Returns the JSX for the student-facing quiz paper.
--   `renderAnswerSheet?(props)`: (Optional) Returns the JSX for the interactive answer sheet.
--   `renderKey(props)`: Returns the JSX for the answer key, using the output of `generateKey`.
--   `keyPerLine`: Specifies how many answer keys should be displayed per line in the key view.
--   `getDefaultValue()`: Provides a default data structure for creating a new question of that type.
+### 2.1 Atom Architecture (`paper/atoms.ts`)
 
-### Data Flow and Rendering
+| Atom Name | Scope | Persistence | Description |
+| --- | --- | --- | --- |
+| `paperIdAtom` | Global | Memory | Stores current paper ID. Defaults to `DEFAULT-PAPER`. |
+| `viewModeAtom` | Global | Memory | Controls UI state: `'normal'` (editing) or `'revise'` (reviewing). |
+| `editoryItemsAtom` | Global | LocalStorage | Stores the raw Quiz Data (`QuizItems`). Key: `'editory-items'`. |
+| `answersAtomFamily` | Family | LocalStorage | **Source of Truth.** Maps `paperId` -> `Record<QuestionNo, Answer>`. |
+| `submittedAnswersAtom` | Global | Memory | Read-only copy of answers used during `revise` mode for comparison. |
 
-1.  **Data Structure**: Each quiz section is represented by a `QuizData` object, which is a discriminated union based on the `type` property (e.g., 'listening', 'cloze'). The specific data schemas for each type (e.g., `ListeningData`, `ClozeData`) are defined using Zod in [`types.ts`](components/editory/generators/types.ts).
+### 2.2 Access Patterns
 
-2.  **Strategy Dispatch**: The `applyStrategy` utility function in [`utils.tsx`](components/editory/generators/utils.tsx:87) acts as a dispatcher. It takes a `QuizData` object, looks up the corresponding strategy from the `questionStrategies` map in [`strategies.tsx`](components/editory/generators/strategies.tsx:399), and executes a callback with the correct, type-safe strategy and data.
+**Reading Answers:**
+Do not read `answersAtomFamily` directly in components. Use the derived atom:
 
-3.  **Component Rendering**:
-    -   The main rendering logic resides in the `Question` component in [`ui.tsx`](components/editory/generators/ui.tsx:19).
-    -   It receives the `strategy` and `specificData` for a quiz section.
-    -   Based on the `variant` prop ('paper', 'key', or 'answersheet'), it calls the appropriate render function (`renderPaper`, `renderKey`, `renderAnswerSheet`) from the strategy object.
-    -   Server-side rendering for the paper and answer sheet is handled by `QuizPaperRSC` and `QuizAnswerSheetRSC` in [`rsc.tsx`](components/editory/generators/rsc.tsx) to ensure answers are not exposed to the client.
+```typescript
+const answers = useAtomValue(answersAtom); // returns Record<number, string | null>
 
-## Implemented Strategies
+```
 
-The file [`strategies.tsx`](components/editory/generators/strategies.tsx) contains the concrete implementations for each quiz type.
+**Writing Answers:**
+Use the dedicated setter atom to ensure referential integrity and correct paper ID targeting:
 
-### Common Patterns
+```typescript
+const setAnswer = useSetAtom(setAnswerAtom);
+// Usage:
+setAnswer({ questionId: 5, option: "B" });
 
--   **Content Parsing & Blank Replacement**: Most strategies parse an HTML string (`data.text`). Blanks or special sections are marked with `<code>` tags. The `replaceBlanks` and `extractBlanks` utilities in [`utils.tsx`](components/editory/generators/utils.tsx) handle the logic for finding these `<code>` tags and replacing them with interactive components like `MultipleChoice` or `FillInTheBlank`.
--   **Shuffling**: `fast-shuffle` is used with a seed generated by `getSeed` to ensure consistent, deterministic shuffling of options for multiple-choice questions.
+```
 
-### Strategy-Specific Logic
+---
 
--   **`listeningStrategy`**: Renders a list of questions, each with multiple-choice options.
--   **`grammarStrategy`**: Replaces `<code>` tags in a text with fill-in-the-blank inputs. It can optionally display hints.
--   **`fishingStrategy`**: A "word bank" quiz. It extracts all correct words from `<code>` tags, combines them with distractors, shuffles them, and presents them in a shared word bank. Each `<code>` tag location becomes a multiple-choice dropdown.
--   **`clozeStrategy`**: Similar to `fishing`, but each blank has its own unique set of choices (the original word plus specific distractors), rather than a shared word bank.
--   **`readingStrategy`**: Renders a reading passage followed by a series of standard multiple-choice questions.
--   **`sentenceChoiceStrategy`**: A variation of the "word bank" quiz where the options are full sentences. Correct sentences are extracted from `<code>` tags and mixed with distractor sentences.
--   **`customStrategy`**: A flexible strategy that allows for arbitrary HTML content for both the paper and the key, offering an escape hatch for question types that don't fit other models.
+## 3. Component Architecture
 
-This architecture allows for easy addition of new quiz types by simply defining a new data schema and implementing a corresponding strategy object.
+The rendering pipeline transforms raw `QuizData` into interactive UI components using a Strategy Pattern.
+
+### 3.1 Entry Points (`paper/generators`)
+
+* **`QuizPaperRSC` (`rsc.tsx`):**
+* **Usage:** Server Components / Static generation.
+* **Logic:** Renders the quiz structure without client-side state logic initially (for SEO/Print).
+
+
+* **`QuizKey` (`index.tsx`):**
+* **Usage:** Renders the answer key.
+
+
+* **`QuestionProcessor`:**
+* **Logic:** The middleware that calculates question numbering offsets (`getQuestionStarts`) and selects the correct strategy.
+
+
+
+### 3.2 The Strategy Pattern (`paper/generators/strategies.tsx`)
+
+The system maps `QuizDataType` strings to rendering logic.
+
+* **Logic:** `applyStrategy(data, callback)`
+* **Supported Types:**
+* `choice`, `cloze`, `reading`, `grammar`, `listening`, `fishing`, `sentences`, `custom`.
+
+
+
+### 3.3 Core UI Components
+
+#### `Blank` (`paper/blank/index.tsx`)
+
+The fundamental unit of interaction. It handles the display logic for a specific question number.
+
+* **Props:** `number` (Question ID), `groupId` (Parent Item ID), `blankCount`.
+* **Modes:**
+* **Normal:** Wraps content in a `Popover` allowing interaction.
+* **Revise:** Displays correct/incorrect icons (`CheckCircleIcon`, `XCircleIcon`). Shows the user's answer vs. the correct key.
+
+
+
+#### `MultipleChoice` (`paper/blank/index.tsx`)
+
+Renders options (A, B, C, D) horizontally or in a grid.
+
+* **Normal:** Buttons change color on selection (`secondary`).
+* **Revise:**
+* User Correct: Green Solid.
+* User Wrong: Red Solid (User selection) + Green Flat (Correct Answer).
+
+
+
+#### `Choice` (`paper/choice.tsx`)
+
+Vertical list layout for options, typically used in Reading/Listening comprehension.
+
+* **Logic:** Similar state handling to `MultipleChoice` but different visual presentation (List vs Grid).
+
+#### `FillInTheBlank` (`paper/blank/index.tsx`)
+
+Renders a text input.
+
+* **UX Feature:** Auto-focuses next input on `Enter` key press.
+
+---
+
+## 4. Feature: Ask AI
+
+The system includes a context-aware AI tutor feature triggered from `revise` mode.
+
+### 4.1 Data Flow
+
+1. **Trigger:** User clicks "Ask AI" (`AskButton`).
+2. **Context Assembly (`hooks.tsx`):**
+* `useAsk` hook gathers: Question context, User Answer, Correct Answer, and text surrounding the blank.
+
+
+3. **UI State:** `openAskAtom` opens the `Drawer` component (`blank/ask.tsx`).
+4. **Streaming:** `Streamdown` component renders markdown streamed from `streamExplanationAction`.
+
+### 4.2 Highlighting Logic (`paper/blank/hooks.tsx`)
+
+The AI response can return specific text segments to highlight in the original passage.
+
+* **Hook:** `useScrollToMatch`
+* **Mechanism:** Searches the DOM tree for text nodes matching the returned string and scrolls them into view.
+
+---
+
+## 5. Developer Guides
+
+### 5.1 Adding a New Question Strategy
+
+1. **Define Schema:** Update `QuizDataType` in `@repo/schema/paper`.
+2. **Update Config:** Add the type name and icon to `NAME_MAP` and `ICON_MAP` in `paper/generators/config.tsx`.
+3. **Create Strategy:** In `paper/generators/strategies.tsx` (implied content), register a new strategy function that returns the UI component.
+4. **Implement UI:** Use `MultipleChoice`, `FillInTheBlank`, or `Choice` components to ensure state wiring is handled automatically.
+
+### 5.2 Type Definitions (`paper/generators/config.tsx`)
+
+```typescript
+type AlphabeticalMarker = 'A' | 'B' | ... | 'Z';
+
+interface QuizData {
+  id: string;
+  type: 'cloze' | 'reading' | ...;
+  // ... other properties from schema
+}
+
+```
+
+### 5.3 Working with Blanks
+
+When creating custom question layouts, always wrap the interactive element in the `Blank` component or use the `MemoizedBlank` wrapper to inherit View Mode logic automatically.
+
+```tsx
+// Example of a custom blank implementation
+<MemoizedBlank number={questionIndex} groupId={data.id}>
+  <PopoverContent>
+    <MyCustomInput questionId={questionIndex} />
+  </PopoverContent>
+</MemoizedBlank>
+
+```
+
+### 5.4 Utility Functions (`paper/generators/utils.ts`)
+
+* `getQuestionStarts(quizData)`: Returns an array of start indices for each question group. Essential for continuous numbering across different question types.
+* `matchColor(...)`: Helper to determine UI colors based on `(userAnswer, correctAnswer)` tuples.

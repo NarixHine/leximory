@@ -6,6 +6,8 @@ import { highlightSubstrings, PAPER_CLASS_NAME } from '@repo/ui/paper/utils'
 import { QuizPaperRSC } from '@repo/ui/paper/rsc'
 import { QuizKey } from './generators'
 
+export { Ask } from './blank/ask'
+
 export function Paper({
     data,
     className,
@@ -44,8 +46,8 @@ export function Key({
         <Accordion
             className={cn('not-prose w-full', accordionClassName)}
             defaultExpandedKeys={[]}
+            itemKey={'key'}
             itemProps={{
-                key: 'key',
                 title: 'Key',
                 className: cn('shadow-none', accordionItemClassName),
                 classNames: {
