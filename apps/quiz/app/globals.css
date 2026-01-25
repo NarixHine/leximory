@@ -8,7 +8,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-    --font-ui: var(--font-sans), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    --font-ui: var(--font-serif), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
     --font-serif: 'Times New Roman', Times, serif;
     --font-formal: var(--font-formal), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', serif;
     --font-mono: var(--font-english-mono), 'Courier New', Courier, monospace;

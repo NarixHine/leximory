@@ -57,8 +57,6 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
     )
 
     switch (viewMode) {
-        case 'pure':
-            return children
         case 'normal':
             return (
                 <Popover shadow='sm'>
@@ -123,11 +121,6 @@ export const MultipleChoice = ({ number, options, groupId }: { number: number, o
 
     if (options && options.length > 0) {
         switch (viewMode) {
-            case 'pure':
-                return <div>
-                    <div className={cn('font-bold', !answer && 'text-secondary')}>{number}.</div>
-                    {content}
-                </div>
             case 'revise':
                 return (
                     <MemoizedBlank number={number} groupId={groupId}>
@@ -193,11 +186,6 @@ export const FillInTheBlank = ({ groupId, number, blankCount = 1 }: { groupId: s
     )
 
     switch (viewMode) {
-        case 'pure':
-            return <div>
-                <div className={cn('font-bold', !answer && 'text-secondary')}>{number}.</div>
-                {content}
-            </div>
         case 'revise':
             return <MemoizedBlank
                 blankCount={blankCount}

@@ -98,6 +98,20 @@ const config: Config = {
             background: '#FFFCF0',
             foreground: '#100F0F',
 
+            focus: {
+              DEFAULT: '#9F9D96',
+              50: '#F2F0E5',
+              100: '#E6E4D9',
+              200: '#CECDC3',
+              300: '#B7B5AC',
+              400: '#9F9D96',
+              500: '#878580',
+              600: '#6F6E69',
+              700: '#575653',
+              800: '#403E3C',
+              900: '#282726',
+            },
+
             default: {
               DEFAULT: '#9F9D96',
               50: '#F2F0E5',
@@ -174,6 +188,20 @@ const config: Config = {
           colors: {
             background: '#100F0F',
             foreground: '#CECDC3',
+
+            focus: {
+              DEFAULT: '#878580',
+              50: '#282726',
+              100: '#403E3C',
+              200: '#575653',
+              300: '#6F6E69',
+              400: '#878580',
+              500: '#9F9D96',
+              600: '#B7B5AC',
+              700: '#CECDC3',
+              800: '#E6E4D9',
+              900: '#F2F0E5',
+            },
 
             default: {
               DEFAULT: '#878580',

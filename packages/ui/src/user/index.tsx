@@ -6,10 +6,11 @@ import { AvatarDropdown } from './dropdown'
 import { PiUserCircleDuotone } from 'react-icons/pi'
 import { getCommentaryQuota } from '@repo/user/quota'
 
-export async function CurrentUserAvatar() {
+export async function CurrentUserAvatar({ quotaModalChildren }: { quotaModalChildren?: React.ReactNode }) {
     const user = await getUser()
     const { image } = user ?? {}
     return <AvatarDropdown
+        quotaModalChildren={quotaModalChildren}
         quotaPromise={getCommentaryQuota()}
         isLoggedIn={!!user}
         trigger={<Button
@@ -31,10 +32,10 @@ function UserAvatarFallback() {
     />
 }
 
-export default function UserAvatar() {
+export default function UserAvatar({ quotaModalChildren }: { quotaModalChildren?: React.ReactNode }) {
     return (
         <Suspense fallback={<UserAvatarFallback />}>
-            <CurrentUserAvatar />
+            <CurrentUserAvatar quotaModalChildren={quotaModalChildren} />
         </Suspense>
     )
 }

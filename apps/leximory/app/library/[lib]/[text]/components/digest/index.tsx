@@ -339,7 +339,6 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
     setRecentAccess(prev => ({ ...prev, [lib]: { id: text, title } }))
   }, [lib, text, title])
 
-
   return (
     <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
       <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>

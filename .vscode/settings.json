@@ -1,8 +1,0 @@
-{
-    "tailwindCSS.experimental.configFile": {
-        "apps/pouncepen/app/globals.css": [
-            "apps/pouncepen/**/*.{ts,tsx,js,jsx}",
-            "packages/ui/src/**/*.{ts,tsx,js,jsx}"
-        ]
-    }
-}

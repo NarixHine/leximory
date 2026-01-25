@@ -1,4 +1,5 @@
-import { cn, Accordion, AccordionItem } from '@heroui/react'
+import { Accordion } from '../accordion'
+import { cn } from '@heroui/react'
 import { QuizItems } from '@repo/schema/paper'
 import { merge } from 'es-toolkit'
 import { highlightSubstrings, PAPER_CLASS_NAME } from '@repo/ui/paper/utils'
@@ -30,27 +31,6 @@ export function Paper({
     )
 }
 
-export function AnswerSheet({
-    data,
-    className,
-}: {
-    className?: string
-    data: QuizItems
-}) {
-    return (
-        <div
-            className={cn(
-                'w-full mx-auto min-h-40 max-w-none focus:outline-none',
-                data?.length === 0 && 'hidden',
-                PAPER_CLASS_NAME,
-                className
-            )}
-        >
-            {data && <QuizAnswerSheetRSC quizData={data}></QuizAnswerSheetRSC>}
-        </div>
-    )
-}
-
 export function Key({
     data,
     accordionClassName,
@@ -61,18 +41,20 @@ export function Key({
     accordionItemClassName?: string
 }) {
     return (
-        <Accordion className={cn('not-prose w-full', accordionClassName)} defaultExpandedKeys={[]}>
-            <AccordionItem
-                key={'key'}
-                title='Key'
-                className={cn('shadow-none', accordionItemClassName)}
-                classNames={{
+        <Accordion
+            className={cn('not-prose w-full', accordionClassName)}
+            defaultExpandedKeys={[]}
+            itemProps={{
+                key: 'key',
+                title: 'Key',
+                className: cn('shadow-none', accordionItemClassName),
+                classNames: {
                     trigger: 'pb-2'
-                }}
-                subtitle='点击以展开／折叠'
-            >
-                {data && <QuizKey quizData={data} />}
-            </AccordionItem>
-        </Accordion>
+                },
+                subtitle: '点击以展开／折叠'
+            }}
+        >
+            {data && <QuizKey quizData={data} />}
+        </Accordion >
     )
 }

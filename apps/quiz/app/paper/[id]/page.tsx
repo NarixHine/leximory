@@ -3,11 +3,13 @@ import { paperIdAtom } from '@repo/ui/paper/atoms'
 import { questionStrategies } from '@repo/ui/paper/strategies'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
-import { taintObjectReference } from 'next/dist/server/app-render/entry-base'
-import Main from '@/components/ui/main'
+import { experimental_taintObjectReference as taintObjectReference } from 'react'
+import { Main } from '@repo/ui/main'
 import { QuizTabs } from './components/quiz-tabs'
 import { SubmitAnswers } from './components/submit-answers'
-import { AnswerSheet, Paper } from '@repo/ui/paper'
+import { Suspense } from 'react'
+import { Paper } from '@repo/ui/paper'
+import { Spinner } from '@heroui/spinner'
 
 export const metadata: Metadata = {
     title: '小练习'
@@ -19,7 +21,19 @@ async function getData({ id }: { id: number }) {
     return content
 }
 
-export default async function AssignmentPage({ params }: { params: Promise<{ id: string }> }) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+    return (
+        <Main className='max-w-160'>
+            <Suspense fallback={<div className='absolute inset-0 flex justify-center items-center'>
+                <Spinner variant='wave' />
+            </div>}>
+                <Content params={params} />
+            </Suspense>
+        </Main>
+    )
+}
+
+async function Content({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const data = await getData({ id: parseInt(id) })
     const questionCount = data.reduce((count, item) => count + questionStrategies[item.type].getQuestionCount(item as any), 0)
@@ -27,10 +41,8 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
         ]}>
-            <Main className='max-w-150'>
-                <QuizTabs Paper={<Paper data={data} />} AnswerSheet={<AnswerSheet data={data} />} />
-                <SubmitAnswers questionCount={questionCount} />
-            </Main>
+            <QuizTabs Paper={<Paper data={data} />} />
+            <SubmitAnswers questionCount={questionCount} />
         </HydrationBoundary>
     )
 }

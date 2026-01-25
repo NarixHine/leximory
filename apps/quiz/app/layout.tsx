@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
-import { Instrument_Serif, Rethink_Sans, Source_Code_Pro } from 'next/font/google'
+import { Instrument_Serif, Libre_Baskerville, Source_Code_Pro } from 'next/font/google'
 import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
 import UserAvatar from '@repo/ui/user'
-import { CostTable } from './components/cost-table'
 
 export const metadata: Metadata = {
   title: {
-    default: 'PouncePen',
-    template: '%s | PouncePen',
+    default: '猫谜',
+    template: '%s | 猫谜',
   }
 }
 
@@ -20,20 +19,21 @@ export const ENGLISH_MONO = Source_Code_Pro({
   variable: '--font-english-mono',
 })
 
-const sans = Rethink_Sans({
-  variable: '--font-sans',
-  weight: 'variable',
+const ENGLISH_SERIF = Libre_Baskerville({
+  variable: '--font-serif',
+  weight: '400',
+  style: ['normal', 'italic'],
   subsets: ['latin'],
 })
 
-const serif = Instrument_Serif({
+const ENGLISH_DISPLAY = Instrument_Serif({
   variable: '--font-formal',
   weight: '400',
   style: ['normal', 'italic'],
   subsets: ['latin'],
 })
 
-const chinese = localFont({
+const CHINESE = localFont({
   src: './chinese.woff2',
   variable: '--font-chinese',
   display: 'swap',
@@ -47,12 +47,12 @@ export default function RootLayout({
   return (
     <html lang='zh-CN' suppressHydrationWarning>
       <body
-        className={`${sans.variable} ${chinese.variable} ${serif.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
+        className={`${CHINESE.variable} ${ENGLISH_SERIF.variable} ${ENGLISH_DISPLAY.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
       >
         <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
           {children}
           <div className='fixed top-3 right-3'>
-            <UserAvatar quotaModalChildren={<CostTable />} />
+            <UserAvatar />
           </div>
         </Providers>
       </body>

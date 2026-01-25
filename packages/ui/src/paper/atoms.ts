@@ -2,14 +2,14 @@
 
 import { QuizItems, QuizItemsSchema } from '@repo/schema/paper'
 import { atom } from 'jotai'
-import { atomFamily } from 'jotai/utils'
+import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
 
 export type Answers = Record<number, string | null>
 
 export const paperIdAtom = atom<string | null>(null)
 
-export const viewModeAtom = atom<'normal' | 'pure' | 'revise'>('normal')
+export const viewModeAtom = atom<'normal' | 'revise'>('normal')
 
 export const DEFAULT_PAPER_ID = 'DEFAULT-PAPER' as const
 export const EDITORY_PAPER_ID = 'EDITORY-PAPER' as const

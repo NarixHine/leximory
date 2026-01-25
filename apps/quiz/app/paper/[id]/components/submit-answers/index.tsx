@@ -6,7 +6,7 @@ import { submitAnswersAction } from './actions'
 import { useAction } from '@repo/service'
 import { Key } from '@repo/ui/paper'
 import { answersAtom, paperIdAtom } from '@repo/ui/paper/atoms'
-import { PiBoxArrowUp } from 'react-icons/pi'
+import { BoxArrowUpIcon } from '@phosphor-icons/react/ssr'
 
 export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const answers = useAtomValue(answersAtom)
@@ -17,12 +17,13 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     return (
         <div className='flex flex-col gap-4'>
             <Button
-                onPress={() => execute({ answers, id: parseInt(paperId!) })}
+                onPress={() => {
+                    console.log({ answers, questionCount, hasCompleted,paperId })
+                }}
                 fullWidth
                 color='primary'
-                startContent={!isPending && <PiBoxArrowUp />}
+                startContent={!isPending && <BoxArrowUpIcon />}
                 isLoading={isPending}
-                isDisabled={hasSucceeded || !hasCompleted}
             >
                 {
                     hasSucceeded
@@ -30,7 +31,9 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
                         : hasCompleted ? '提交' : '尚未完成作答'
                 }
             </Button>
-            {data && <Key data={data} />}
+            {data && <>
+                <Key data={data} />
+            </>}
         </div>
     )
 }

@@ -2,7 +2,7 @@ import Editory from '@/components/editory/panel'
 import Main from '@/components/ui/main'
 import { ScopeProvider } from '@/components/ui/scope-provider'
 import { paperIdAtom, EDITORY_PAPER_ID, editoryItemsAtom, viewModeAtom } from '@repo/ui/paper/atoms'
-import { HydrationBoundary } from '@repo/ui/paper/utils'
+import { HydrationBoundary } from '@repo/ui/jotai-ssr'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 
