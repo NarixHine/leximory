@@ -26,5 +26,5 @@
     "next.config.ts",
     "postcss.config.mjs",
     ".next/dev/types/**/*.ts"
-, "../../packages/ui/src/paper/choice.tsx", "../../packages/ui/src/paper/atoms.ts", "../../packages/ui/src/accordian/index.tsx", "../../packages/service/src/ai/prompts/sections.ts"  ],
+, "../../packages/ui/src/paper/choice.tsx", "../../packages/ui/src/paper/atoms.ts", "../../packages/ui/src/accordion/index.tsx", "../../packages/service/src/ai/prompts/sections.ts"  ],
 }

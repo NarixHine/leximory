@@ -12,7 +12,7 @@
     "./utils": "./src/utils/index.ts",
     "./shiny-text": "./src/shiny-text/index.tsx",
     "./paper": "./src/paper/index.tsx",
-    "./paper/strategies": "./src/paper/strategies.tsx"
+    "./paper/strategies": "./src/paper//generators/strategies.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
