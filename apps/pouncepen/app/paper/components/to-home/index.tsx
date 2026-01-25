@@ -2,20 +2,21 @@
 
 import { Button } from '@heroui/button'
 import { FolderIcon } from '@phosphor-icons/react'
-import { useRouter } from 'next/navigation'
+import { NavIndicator } from '@repo/ui/nav-indicator'
+import Link from 'next/link'
 
 export function ToHome() {
-    const router = useRouter()
     return (
         <div className='sticky top-2 -mt-4 px-4 h-0 backdrop-blur-lg'>
             <Button
                 variant='flat'
                 radius='full'
                 size='lg'
-                onPress={() => router.push('/paper')}
+                as={Link}
+                href='/paper'
                 isIconOnly
                 aria-label='Go Home'
-                startContent={<FolderIcon weight='duotone' size={24} />}
+                startContent={<NavIndicator icon={<FolderIcon weight='duotone' size={24} />} />}
             />
         </div>
     )
