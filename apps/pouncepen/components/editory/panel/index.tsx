@@ -1,7 +1,7 @@
 'use client'
 
 import { SealQuestionIcon, OptionIcon, MagicWandIcon, CloudCheckIcon } from '@phosphor-icons/react'
-import { Key, Paper } from '..'
+import { Key, Paper } from '@repo/ui/paper'
 import Sortable from './sortable'
 import Editor from './editor'
 import { JsonEditor } from './json-editor'

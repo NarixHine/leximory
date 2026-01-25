@@ -1,10 +1,9 @@
-import { QuizKey } from './generators'
-import { Accordion, AccordionItem } from '@heroui/accordion'
-import { cn } from '@heroui/theme'
-import { QuizAnswerSheetRSC, QuizPaperRSC } from './generators/rsc'
-import { merge } from 'es-toolkit'
-import { highlightSubstrings } from './blank/utils'
+import { cn, Accordion, AccordionItem } from '@heroui/react'
 import { QuizItems } from '@repo/schema/paper'
+import { merge } from 'es-toolkit'
+import { highlightSubstrings, PAPER_CLASS_NAME } from '@repo/ui/paper/utils'
+import { QuizAnswerSheetRSC, QuizPaperRSC } from '@repo/ui/paper/rsc'
+import { QuizKey } from './generators'
 
 export function Paper({
     data,
@@ -20,6 +19,7 @@ export function Paper({
             className={cn(
                 'w-full mx-auto min-h-40 max-w-none focus:outline-none',
                 data?.length === 0 && 'hidden',
+                PAPER_CLASS_NAME,
                 className
             )}
         >
@@ -42,6 +42,7 @@ export function AnswerSheet({
             className={cn(
                 'w-full mx-auto min-h-40 max-w-none focus:outline-none',
                 data?.length === 0 && 'hidden',
+                PAPER_CLASS_NAME,
                 className
             )}
         >
@@ -75,5 +76,3 @@ export function Key({
         </Accordion>
     )
 }
-
-export * from './generators'

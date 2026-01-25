@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabase } from '..'
 import type { Tables, TablesInsert, TablesUpdate } from '../types'
+import { QuizItemsSchema } from '@repo/schema/paper'
 export * from './types'
 
 /**
@@ -35,8 +36,10 @@ export async function getPaper({ id }: { id: number }) {
     .eq('id', id)
     .single()
 
-  if (error) throw error
-  return paper as Tables<'papers'>
+  if (error)
+    throw error
+
+  return { ...paper, content: QuizItemsSchema.parse(paper.content) }
 }
 
 /**

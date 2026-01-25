@@ -23,7 +23,8 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "itty-time": "^2.0.2",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "@repo/schema": "workspace:^"
   },
   "peerDependencies": {
     "next": "^16.0.0"
