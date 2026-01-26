@@ -17,16 +17,6 @@ export const ALPHABET_SET = [
 export type AlphabeticalMarker = (typeof ALPHABET_SET)[number]
 export const ALPHABET_ELEMENTS = ALPHABET_SET.map((letter) => <span key={letter} className='font-bold'>{letter}.</span>)
 
-export const NAME_MAP: Record<QuizDataType, string> = {
-    'listening': 'Listening',
-    'grammar': 'Grammar',
-    'fishing': 'Vocabulary',
-    'cloze': 'Cloze',
-    'reading': 'Reading',
-    'sentences': 'Sentence Choice',
-    'custom': 'Custom Text'
-} as const
-
 export const AI_GENERATABLE = ['cloze', 'fishing', 'reading'] as const
 export type AIGeneratableType = (typeof AI_GENERATABLE)[number]
 export const GeneratableTypeSchema = z.enum(AI_GENERATABLE)

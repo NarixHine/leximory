@@ -1084,6 +1084,9 @@ importers:
       '@kilpi/react-server':
         specifier: ^1.0.4
         version: 1.0.4
+      '@repo/env':
+        specifier: workspace:^
+        version: link:../env
       '@repo/schema':
         specifier: workspace:^
         version: link:../schema
@@ -1181,6 +1184,9 @@ importers:
       '@heroui/theme':
         specifier: ^2.2.21
         version: 2.4.25(tailwindcss@4.1.18)
+      '@heroui/user':
+        specifier: ^2.2.22
+        version: 2.2.24(@heroui/system@2.4.25(@heroui/theme@2.4.25(tailwindcss@4.1.18))(framer-motion@12.25.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@heroui/theme@2.4.25(tailwindcss@4.1.18))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

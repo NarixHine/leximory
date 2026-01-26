@@ -1,7 +1,7 @@
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
 import LibraryCard from '@/app/marketplace/[page]/components/card'
-import UserAvatar from '@/components/avatar'
+import UserAvatar from '@repo/ui/avatar'
 import { cacheLife } from 'next/cache'
 import { PiEmptyThin } from 'react-icons/pi'
 

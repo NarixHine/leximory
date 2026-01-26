@@ -4,11 +4,12 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 const nextConfig: NextConfig = {
   cacheComponents: true,
   experimental: {
-    optimizePackageImports: ['@phosphor-icons/react'],
+    optimizePackageImports: ['@phosphor-icons/react', '@heroui/react'],
     serverActions: {
       bodySizeLimit: `${MAX_FILE_SIZE / 1024 / 1024}mb`,
     },
     turbopackFileSystemCacheForBuild: true,
+    turbopackFileSystemCacheForDev: true,
     taint: true
   },
 }

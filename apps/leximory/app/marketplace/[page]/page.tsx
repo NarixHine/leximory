@@ -6,7 +6,7 @@ import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
 import H from '@/components/ui/h'
 import { PiStorefrontDuotone } from 'react-icons/pi'
-import UserAvatar from '@/components/avatar'
+import UserAvatar from '@repo/ui/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
 

@@ -1,7 +1,7 @@
 import Main from '@/components/ui/main'
 import Nav from '@/components/nav'
 import H from '@/components/ui/h'
-import UserAvatar from '@/components/avatar'
+import UserAvatar from '@repo/ui/avatar'
 import { PiUsersDuotone } from 'react-icons/pi'
 import { getLib } from '@/server/db/lib'
 import { authWriteToLib } from '@/server/auth/role'

@@ -109,6 +109,16 @@ export const getPlanFromProductId = (productId: typeof CREEM_PRODUCT_ID[keyof ty
     }
 }
 
+export const SECTION_NAME_MAP = {
+    'listening': 'Listening',
+    'grammar': 'Grammar',
+    'fishing': 'Vocabulary',
+    'cloze': 'Cloze',
+    'reading': 'Reading',
+    'sentences': 'Sentence Choice',
+    'custom': 'Custom Text'
+} as const
+
 export const FORGET_CURVE = {
     '今天记忆': [0, -1],
     '一天前记忆': [1, 0],

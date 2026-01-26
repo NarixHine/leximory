@@ -21,7 +21,8 @@ import SortableItem from './item'
 import { QuizDataType } from '@repo/schema/paper'
 import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 import { questionStrategies } from '@repo/ui/paper/strategies'
-import { NAME_MAP, ICON_MAP } from '@repo/ui/paper/utils'
+import { ICON_MAP } from '@repo/ui/paper/utils'
+import { SECTION_NAME_MAP as NAME_MAP } from '@repo/env/config'
 import { useAtom } from 'jotai'
 
 export default function Sortable() {

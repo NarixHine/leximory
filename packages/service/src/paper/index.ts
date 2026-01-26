@@ -5,11 +5,12 @@ import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
-import { QuizData } from '@repo/schema/paper'
+import { QuizData, QuizItemsSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
+import { SECTION_NAME_MAP } from '@repo/env/config'
 
 const createPaperSchema = z.object({
-  content: z.any().optional(),
+  content: QuizItemsSchema.optional(),
   public: z.boolean().optional(),
   title: z.string().optional(),
 })
@@ -21,7 +22,7 @@ const getPaperSchema = z.object({
 const updatePaperSchema = z.object({
   id: z.number(),
   data: z.object({
-    content: z.any().optional(),
+    content: QuizItemsSchema.optional(),
     public: z.boolean().optional(),
     title: z.string().optional(),
   }),
@@ -94,7 +95,13 @@ export const updatePaperAction = actionClient
 
     await Kilpi.papers.update(paper).authorize().assert()
 
-    return updatePaper({ id, data })
+    return updatePaper({
+      id,
+      data: {
+        ...data,
+        tags: data.content ? data.content.map(item => SECTION_NAME_MAP[item.type]) : undefined,
+      }
+    })
   })
 
 /**
@@ -126,12 +133,12 @@ export const deletePaperAction = actionClient
   })
 
 export type StreamExplanationParams = {
-    quizData: QuizData,
-    questionNo: number,
-    userAnswer: string
+  quizData: QuizData,
+  questionNo: number,
+  userAnswer: string
 }
 
 export async function streamExplanationAction({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
-    await Kilpi.papers.askAI().authorize().assert()
-    return streamExplanation({ quizData, questionNo, userAnswer })
+  await Kilpi.papers.askAI().authorize().assert()
+  return streamExplanation({ quizData, questionNo, userAnswer })
 }

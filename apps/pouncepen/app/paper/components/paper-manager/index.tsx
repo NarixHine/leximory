@@ -242,7 +242,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
               <CardBody className='px-6 pb-6 pt-5'>
                 <div className='flex flex-col justify-between items-start'>
                   <div className='flex-1 w-full'>
-                    <div className='flex items-center space-x-1 mb-2'>
+                    <div className='flex items-center flex-wrap gap-1 mb-2'>
                       <Chip
                         color={paper.public ? 'secondary' : 'default'}
                         variant='dot'

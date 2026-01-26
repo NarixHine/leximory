@@ -1,14 +1,23 @@
 import { Main } from '@repo/ui/main'
 import { Metadata } from 'next'
+import { PaperCard } from './components/paper-card'
+import { getPublicPapers } from '@repo/supabase/paper'
+import UserAvatar from '@repo/ui/avatar'
+import moment from 'moment'
 
 export const metadata: Metadata = {
-    title: '猫咪',
+    title: '猫谜',
 }
 
-export default function Page() {
+export default async function Page() {
+    const papers = await getPublicPapers()
     return (
-        <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-      
+        <Main>
+            <section className='grid grid-cols-2 gap-3'>
+                {papers.map(paper => (
+                    <PaperCard key={paper.id} id={paper.id} title={paper.title} tags={paper.tags} avatar={<UserAvatar uid={paper.creator} />} createdAt={moment(paper.created_at).format('ll')} />
+                ))}
+            </section>
         </Main>
     )
 }

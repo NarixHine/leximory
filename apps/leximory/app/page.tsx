@@ -17,7 +17,7 @@ import { Card, CardBody } from "@heroui/card"
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
-import UserAvatar from '@/components/avatar'
+import UserAvatar from '@repo/ui/avatar'
 import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
