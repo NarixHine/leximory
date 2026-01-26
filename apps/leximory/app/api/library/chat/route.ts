@@ -7,14 +7,11 @@ import { ACTION_QUOTA_COST, Lang } from '@repo/env/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
 import incrCommentaryQuota from '@repo/user/quota'
-import { IS_PROD } from '@repo/env'
 import { generate } from '@/app/library/[lib]/[text]/actions'
-import { nanoid } from 'nanoid'
-import { getPlan, getUserOrThrow } from '@repo/user'
+import { getUserOrThrow } from '@repo/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
-import { AIGeneratableType } from '@repo/ui/paper/utils'
 import { extractArticleFromUrl } from '@repo/scrape'
 
 const tools: ToolSet = {
@@ -140,10 +137,6 @@ ${content}`,
 }
 
 export async function POST(req: NextRequest) {
-    const plan = await getPlan()
-    if (IS_PROD && plan === 'beginner') {
-        return new Response('You are not authorized to use this tool.', { status: 403 })
-    }
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat, undefined, true)) {
         return new Response('You have reached the maximum number of commentary quota.', { status: 403 })
     }

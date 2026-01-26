@@ -2,7 +2,6 @@ import ChatInterface from './components/chat-interface'
 import { Metadata } from 'next'
 import { isReadOnlyAtom } from '../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
-import UpgradeMessage from './components/upgrade-message'
 
 export const metadata: Metadata = {
     title: 'Talk to Your Library',
@@ -11,6 +10,6 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
     return <HydrationBoundary hydrateAtoms={[[isReadOnlyAtom, true]]}>
-        <ChatInterface UpgradeMessage={<UpgradeMessage />} />
+        <ChatInterface />
     </HydrationBoundary>
 } 
