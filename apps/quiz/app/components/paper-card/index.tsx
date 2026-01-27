@@ -1,39 +1,51 @@
 'use client'
 
-import { Card, CardHeader, CardBody, CardFooter, Chip } from '@heroui/react'
+import { Card, CardHeader, CardBody, Avatar, Skeleton } from '@heroui/react'
+import { useQuery } from '@tanstack/react-query'
+import { getUserProfileAction } from '@repo/service/user'
 
 export function PaperCard({
     title,
     tags,
-    avatar,
+    uid,
     createdAt
 }: {
     id: number
     title: string
     tags: string[]
-    avatar: React.ReactNode
+    uid: string
     createdAt: string
 }) {
+    const { data: user, isSuccess } = useQuery({
+        queryKey: ['user', uid],
+        queryFn: async () => {
+            const { data } = await getUserProfileAction({ id: uid })
+            return data
+        },
+    })
+
     return (
-        <Card shadow="sm" className="max-w-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex gap-3">
-                {avatar}
-                <div className="flex flex-col">
-                    <h3 className="text-lg font-semibold">{title}</h3>
-                </div>
+        <Card shadow='none' className='border border-default p-3'>
+            <CardHeader className='flex flex-col items-start'>
+                <Skeleton isLoaded={false} className='h-5 mb-2 rounded-2xl'>
+                    <div className='flex gap-2 text-default-500 items-center mb-2'>
+                        <span className='font-mono'>{user?.name}</span>
+                        <Avatar src={user?.imageUrl} className='size-5' />
+                    </div>
+                </Skeleton>
+                <h3 className='text-3xl italic'>{title}</h3>
             </CardHeader>
-            <CardBody>
-                <div className="flex flex-wrap gap-2">
-                    {tags.map(tag => (
-                        <Chip key={tag} size="sm" variant="flat" color="primary">
+            <CardBody className='px-3 pb-2'>
+                <div className='font-mono text-default-400'>
+                    {tags.map(tag => (<span key={tag} className='not-last:after:content-["\00B7"] after:mx-1'>
+                        <span>
                             {tag}
-                        </Chip>
+                        </span>
+                    </span>
                     ))}
                 </div>
+                <div className='font-mono text-default-400'>{createdAt}</div>
             </CardBody>
-            <CardFooter>
-                <p className="text-small text-default-500">{createdAt}</p>
-            </CardFooter>
         </Card>
     )
 }

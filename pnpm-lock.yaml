@@ -867,9 +867,6 @@ importers:
       '@repo/schema':
         specifier: workspace:^
         version: link:../../packages/schema
-      '@repo/scrape':
-        specifier: workspace:^
-        version: link:../../packages/scrape
       '@repo/service':
         specifier: workspace:^
         version: link:../../packages/service
@@ -930,12 +927,6 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      tiptap-markdown:
-        specifier: ^0.9.0
-        version: 0.9.0(@tiptap/core@3.15.3(@tiptap/pm@3.15.3))
-      usehooks-ts:
-        specifier: ^3.1.1
-        version: 3.1.1(react@19.2.3)
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

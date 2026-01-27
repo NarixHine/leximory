@@ -2,7 +2,6 @@ import { Main } from '@repo/ui/main'
 import { Metadata } from 'next'
 import { PaperCard } from './components/paper-card'
 import { getPublicPapers } from '@repo/supabase/paper'
-import UserAvatar from '@repo/ui/avatar'
 import moment from 'moment'
 
 export const metadata: Metadata = {
@@ -15,7 +14,7 @@ export default async function Page() {
         <Main>
             <section className='grid grid-cols-2 gap-3'>
                 {papers.map(paper => (
-                    <PaperCard key={paper.id} id={paper.id} title={paper.title} tags={paper.tags} avatar={<UserAvatar uid={paper.creator} />} createdAt={moment(paper.created_at).format('ll')} />
+                    <PaperCard key={paper.id} uid={paper.creator} id={paper.id} title={paper.title} tags={paper.tags} createdAt={moment(paper.created_at).format('ll')} />
                 ))}
             </section>
         </Main>

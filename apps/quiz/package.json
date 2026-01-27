@@ -50,7 +50,6 @@
     "@heroui/tooltip": "2.2.21",
     "@phosphor-icons/react": "^2.1.10",
     "@repo/env": "workspace:^",
-    "@repo/scrape": "workspace:^",
     "@repo/service": "workspace:^",
     "@repo/supabase": "workspace:^",
     "@repo/ui": "workspace:^",
@@ -72,8 +71,6 @@
     "react-dom": "19.2.3",
     "server-only": "^0.0.1",
     "sonner": "^2.0.7",
-    "tiptap-markdown": "^0.9.0",
-    "usehooks-ts": "^3.1.1",
     "vaul": "^1.1.2"
   },
   "devDependencies": {

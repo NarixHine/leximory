@@ -7,7 +7,8 @@
   "exports": {
     "./paper": "./src/paper/index.ts",
     "./ai": "./src/ai/index.ts",
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./user": "./src/user/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
