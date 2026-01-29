@@ -1,0 +1,25 @@
+{
+  "name": "@repo/kv",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./redis": "./src/redis.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "typescript": "latest",
+    "@types/node": "^25.0.5"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:^",
+    "@upstash/redis": "^1.34.4",
+    "itty-time": "^2.0.1"
+  },
+  "peerDependencies": {
+    "next": "16.1.1"
+  }
+}

@@ -1,0 +1,35 @@
+import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
+import { formatChartData } from '.'
+import { AreaChart } from '../ui/area-chart'
+
+type WordData = {
+    date: string
+    '记忆单词数': number
+}
+
+export default function WordChart({ data, color }: { data: WordData[], color?: AvailableChartColorsKeys }) {
+    return <AreaChart
+        data={data}
+        colors={[color || 'warning']}
+        index='date'
+        categories={['记忆单词数']}
+        showLegend
+        startEndOnly
+        allowDecimals={false}
+    />
+}
+
+export function WordChartSkeleton() {
+    return <AreaChart
+        className='opacity-30 animate-pulse'
+        data={new Array(30).fill(0).map((_, i) => ({
+            date: `Day ${i + 1}`,
+            '记忆单词数': 0
+        }))}
+        index='date'
+        colors={['default']}
+        categories={['记忆单词数']}
+        showLegend
+        startEndOnly
+    />
+} 

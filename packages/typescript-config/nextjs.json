@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "types": [
+            "node"
+        ],
+        "target": "ESNext",
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "Bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "incremental": true,
+        "paths": {
+            "@/*": [
+                "./*"
+            ]
+        }
+    },
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

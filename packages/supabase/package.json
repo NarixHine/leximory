@@ -1,0 +1,32 @@
+{
+  "name": "@repo/supabase",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./proxy": "./src/proxy.ts",
+    "./types": "./src/types.ts",
+    "./auth-types": "./src/auth-types.ts",
+    "./paper": "./src/paper/index.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "@types/node": "^25.0.5",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:^",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.90.1",
+    "itty-time": "^2.0.2",
+    "server-only": "^0.0.1",
+    "@repo/schema": "workspace:^"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0"
+  }
+}

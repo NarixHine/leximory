@@ -1,0 +1,40 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "tasks": {
+        "build": {
+            "dependsOn": [
+                "^build"
+            ],
+            "outputs": [
+                ".next/**",
+                "!.next/cache/**"
+            ],
+            "env": [
+                "BETTER_AUTH_SECRET",
+                "BETTER_AUTH_URL",
+                "ELEVENLABS_API_KEY",
+                "UPSTASH_REDIS_REST_URL",
+                "UPSTASH_REDIS_REST_TOKEN",
+                "VAPID_PRIVATE_KEY",
+                "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+                "CREEM_API_KEY",
+                "CREEM_WEBHOOK_SECRET",
+                "SUPABASE_URL",
+                "SUPABASE_SERVICE_ROLE_KEY",
+                "NEXT_PUBLIC_SUPABASE_URL",
+                "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+                "AI_GATEWAY_API_KEY",
+                "TABSTACK_API_KEY"
+            ]
+        },
+        "check-types": {
+            "dependsOn": [
+                "^check-types"
+            ]
+        },
+        "dev": {
+            "persistent": true,
+            "cache": false
+        }
+    }
+}

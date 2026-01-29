@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+@plugin '../hero.ts';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@plugin '@tailwindcss/typography';
+@source '../node_modules/streamdown/dist/index.js';
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-ui: var(--font-serif), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    --font-serif: 'Times New Roman', Times, serif;
+    --font-formal: var(--font-display), -apple-system, BlinkMacSystemFont, 'PingFang SC', serif;
+    --font-mono: var(--font-english-mono), 'Courier New', var(--font-chinese), Courier, monospace;
+}

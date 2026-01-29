@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@config '../tailwind.config.ts';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@plugin '@tailwindcss/typography';
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+@theme {
+    --font-ui: var(--font-english), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-mono: var(--font-english-mono), monospace;
+    --font-formal: var(--font-english-serif), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-fancy: var(--font-english-fancy), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-ja: var(--font-english-serif), var(--font-japanese-mincho), var(--font-chinese), serif;
+    --breakpoint-laptop: 950px;
+}

@@ -1,0 +1,46 @@
+.sidenote {
+    float: right;
+    clear: right;
+    vertical-align: baseline;
+    position: relative;
+    font-style: normal;
+    font-size: 0.7rem;
+    width: 85%;
+    margin-right: -85%;
+    padding-left: 3rem;
+    margin-top: 1rem;
+}
+
+.sidenote-number {
+    counter-increment: sidenote-counter;
+}
+
+.sidenote-number:after,
+.sidenote:before {
+    position: relative;
+    vertical-align: baseline;
+}
+
+.sidenote-number:after {
+    content: counter(sidenote-counter);
+    font-size: 0.7rem;
+    top: -0.5rem;
+    left: 0rem;
+}
+
+.sidenote:before {
+    content: counter(sidenote-counter) ' ';
+    font-size: 0.9rem;
+    top: -0.3rem;
+    transform: translateX(-130%);
+    position: absolute;
+}
+
+label.sidenote-number {
+    display: inline-block;
+    max-height: 2rem;
+}
+
+.margin-toggle {
+    display: none;
+}

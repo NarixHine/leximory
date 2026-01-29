@@ -1,0 +1,62 @@
+import { HighlightChunk, TranslationDemo, StoryDemo, ImportDemo, EssayDemo } from './showcases'
+import Link from 'next/link'
+
+export const metadata = {
+    title: 'Introducing: Talk to Your Library',
+    description: 'The future is agentic.'
+}
+
+<iframe className='rounded-xl w-full aspect-video mb-12' src='//player.bilibili.com/player.html?isOutside=true&aid=114606102153816&bvid=BV1g873z5EPJ&cid=30261575913&p=1&muted=true' allowFullScreen></iframe>
+
+# Talk to Your Library
+
+学习是构建知识库的过程。一边阅读、保存、积累海量“原料”——笔记本里的知识库；一边将这些材料内化为我之所有——人脑里的知识库。添加、整理、归纳、复盘、实践，从提炼到沉淀，知识不必从杂乱无章的外界直接吸纳，而有一个从“第二大脑”到“第一大脑”的过程。AI 无法替代你磨砺认知，却可以帮你借助“第二大脑”的跳板学习未知。
+
+与 AI 的对话中，一切无序庞杂都将井井有条。自从数字技术出现以来，有序化就成为了信息的趋势，我们可以检索、比对、共享，却依然无法更加智能地操作读写。而第一次具备了智力的人工智能会将它推到新的高度。
+
+语言学习的过程是构建知识库的典型代表。Leximory 的核心就是基于这一理念设计的：我相信“互联网+”的潜力还远未开发殆尽，在数字设备上阅读外刊比需要手动查阅字典的纸质阅读更加高效，不仅仅由于它消去了翻阅的时间，还因为它便捷了记录、方便了复习。在此之上，[AI 功能](/about)和系统提醒的深度整合使学习体验远不止于此。
+
+Leximory 的知识库架构是这样的：你可以创建不同的“文库”，然后在“文库”里从网址导入外刊，作为一篇“文本”。每个文库内的文本都属于同一语言，你可以一边阅读一边将文本里的词汇保存到这一文库的“语料本”。随着你的数字知识库慢慢壮大，你的思维知识库也慢慢充实起来。
+
+但“第一大脑”与“第二大脑”之间总存在着一些差距。没有人可以过目不忘，保证自己记住了每一篇文本里每一个精妙的表达。数字知识库越是巨大，未能利用的角落就越多。若要弥补这一差距，尽可能地将数字知识库里每一处的精华拧干吸收，需要更高维度的有序化。
+
+如果你重视且享受学习的过程，当然可以自行摘抄、自制闪卡、自助复盘。但与深度思考不同，信息提取的过程于此远远没有结果重要。它不是学习最有效的部分，而是学习最琐碎的部分。
+
+于是我决定解决这一问题。解决这一问题的方式，就是在 AI 的帮助下，让你与自己的文库对话。
+
+*Talk to your library.*
+
+不必字字相同，告诉它文库，告诉它文本，你就可以一键提取高分语块：
+
+<HighlightChunk />
+
+——让 AI 给你出几道翻译题：
+
+<TranslationDemo />
+
+——将过去一周保存的词汇串成一篇用来加深印象的小故事：
+
+<StoryDemo />
+
+有了 AI，操作文库也更加方便。如果你是给学生制作资料的老师，你现在可以：
+
+——一次性导入多篇文章（比如说，如果你有模考卷的 PDF），生成语块注解版以供打印：
+
+<ImportDemo />
+
+——提取我们学过的词汇里有哪些可以放进这次的作文：
+
+<EssayDemo />
+
+以上功能均在 [`leximory.com/library/chat`](/library/chat) 可用。
+
+AI 有改变世界的能力，它改变世界的能力就在于在填满“熵”的茫茫数字海洋中富集有效信息、提升信息价值。Leximory 起于一个简单的想法：AI 词汇注解可以突破传统的字典查询，实现具体精炼、感知上下文。从它最初的智能注解，到后来加入的 [AI 朗读功能](/blog/reading-while-listening)、电子书阅读、[iOS 快捷保存](/blog/ios-shortcuts)，再到今天的 *Talk to Your Library*，我始终希望 AI 能成为一股催人进步的力量。
+
+Leximory 一周年补记。
+
+<address className="text-right">
+— Narix
+<span className="text-sm not-italic">
+P.S. 感谢和我一起开发 Editory 的<Link target="_blank" href="https://github.com/orgs/Jiuzhixinzhi/people">小伙伴</Link>
+</span>
+</address>

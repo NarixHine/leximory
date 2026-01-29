@@ -1,0 +1,79 @@
+import Main from '@/components/ui/main'
+import { ENGLISH_FANCY } from '@/lib/fonts'
+import { cn } from '@/lib/utils'
+import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone, PiHouseDuotone } from 'react-icons/pi'
+import { Metadata } from 'next'
+import { Article } from './article'
+import { BILIBILI_LINK } from '@repo/env/config'
+import Pricing from '@/components/pricing'
+import H from '@/components/ui/h'
+import LinkButton from '@repo/ui/link-button'
+
+export const metadata: Metadata = {
+    title: 'About Leximory',
+    description: '漫游 Leximory——文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
+}
+
+export default function About() {
+    return (
+        <Main className={cn('max-w-7xl')}>
+            <section className='max-w-(--breakpoint-sm) mx-auto'>
+                <h1 className={cn('text-5xl', ENGLISH_FANCY.className)}>
+                    About Leximory
+                </h1 >
+                <div className='flex w-fit mt-1 mb-6'>
+                    <LinkButton
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href={BILIBILI_LINK}
+                        isIconOnly
+                        startContent={<PiTelevisionDuotone />}
+                        className='text-xl text-pink-400'
+                    ></LinkButton>
+                    <LinkButton
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='/home'
+                        isIconOnly
+                        startContent={<PiHouseDuotone />}
+                        className='text-xl opacity-50'
+                    ></LinkButton>
+                    <LinkButton
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='/blog'
+                        isIconOnly
+                        startContent={<PiPenNibDuotone />}
+                        className='text-xl opacity-50'
+                    ></LinkButton>
+                    <LinkButton
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='https://github.com/narixhine/leximory'
+                        isIconOnly
+                        startContent={<PiGithubLogoDuotone />}
+                        className='text-xl opacity-50'
+                    ></LinkButton>
+                    <LinkButton
+                        size='sm'
+                        variant='light'
+                        radius='full'
+                        href='mailto:hi@leximory.com'
+                        isIconOnly
+                        startContent={<PiMailboxDuotone />}
+                        className='text-xl opacity-50'
+                    ></LinkButton>
+                </div>
+                <Article />
+            </section>
+            <section className='max-w-7xl mx-auto mt-5'>
+                <H disableCenter className='text-2xl pl-4'>订价</H>
+                <Pricing hideUpgradeButton />
+            </section>
+        </Main >
+    )
+}
