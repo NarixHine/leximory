@@ -70,7 +70,7 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalCh
     }
     return (
         <>
-            <Dropdown>
+            <Dropdown className='z-1000000'>
                 <DropdownTrigger>
                     {trigger}
                 </DropdownTrigger>

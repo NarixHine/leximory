@@ -68,7 +68,7 @@ const Tiptap = ({
     editorProps: {
       attributes: {
         class: cn(
-          'focus:outline-none prose prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400 prose-blockquote:my-3 prose-h1:my-3 prose-h1:text-2xl prose-h2:my-2.5 prose-h2:text-xl prose-h3:my-2 prose-h3:text-lg prose-p:my-2 prose-ul:my-1 prose-li:my-0 prose-img:my-4 dark:prose-invert prose-code:before:content-none prose-code:after:content-none',
+          'focus:outline-none prose prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400 prose-blockquote:my-3 prose-h1:my-3 prose-h1:text-2xl prose-h2:my-2.5 prose-h2:text-xl prose-h3:my-2 prose-h3:text-lg prose-p:my-2 prose-ul:my-1 prose-li:my-0 prose-img:my-4 dark:prose-invert prose-code:before:content-none prose-code:after:content-none prose-a[href]:break-all',
           className
         ),
       },

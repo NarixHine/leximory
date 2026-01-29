@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function Page() {
     return (
         <Main>
-            <h1 className='text-4xl mb-6'>猫谜</h1>
+            <h1 className='text-4xl mb-6 mt-3'>猫谜</h1>
             <section className='grid sm:grid-cols-2 gap-3'>
                 <Suspense fallback={new Array(6).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />))}>
                     <Content />

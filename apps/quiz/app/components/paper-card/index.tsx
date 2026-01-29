@@ -54,7 +54,7 @@ export function PaperCard({
 
 export function PaperCardSkeleton() {
     return (
-        <Card shadow='none' className='border border-default p-3'>
+        <Card shadow='none' className='border border-default p-3 opacity-50'>
             <CardHeader className='flex flex-col items-start'>
                 <Skeleton className='h-3 mb-2 rounded-2xl'>
                     <div className='flex gap-2 text-default-600 text-lg items-center mb-2'>
