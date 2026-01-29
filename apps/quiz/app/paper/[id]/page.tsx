@@ -1,6 +1,5 @@
 import { getPaper } from '@repo/supabase/paper'
-import { Answers, editoryItemsAtom, paperIdAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
-import { questionStrategies } from '@repo/ui/paper/strategies'
+import { editoryItemsAtom, paperIdAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { experimental_taintObjectReference as taintObjectReference } from 'react'
@@ -12,9 +11,9 @@ import { Ask, Paper } from '@repo/ui/paper'
 import { Spinner } from '@heroui/spinner'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
-import { QuizData, QuizItems } from '@repo/schema/paper'
+import { Answers, QuizItems } from '@repo/schema/paper'
 import { KeyIcon } from '@phosphor-icons/react/ssr'
-import { applyStrategy } from '@repo/ui/paper/utils'
+import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
 
 type PaperPageProps = {
@@ -37,7 +36,7 @@ async function getData({ id }: { id: number }) {
         taintObjectReference('Do not pass raw paper data to the client', content)
     return {
         content,
-        submission
+        answers: submission?.answers
     }
 }
 
@@ -55,18 +54,18 @@ export default function Page({ params }: PaperPageProps) {
 
 async function Content({ params }: { params: PaperPageProps['params'] }) {
     const { id } = await params
-    const { content, submission } = await getData({ id: parseInt(id) })
+    const { content, answers } = await getData({ id: parseInt(id) })
     const questionCount = content.reduce((count, item) => count + applyStrategy(item, (strategy, data) => strategy.getQuestionCount(data)), 0)
     return (
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
         ]}>
             <QuizTabs
-                Paper={!submission && <>
+                Paper={!answers && <>
                     <Paper data={content} />
                     <SubmitAnswers questionCount={questionCount} />
                 </>}
-                Revise={submission && <RevisePaper quizData={content} answers={submission} />}
+                Revise={answers && <RevisePaper quizData={content} answers={answers} />}
                 leaderboard={<Leaderboard paperId={parseInt(id)} />}
             />
         </HydrationBoundary>
@@ -79,9 +78,11 @@ function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: Answ
         [submittedAnswersAtom, answers],
         [editoryItemsAtom, quizData]
     ]}>
-        <h1 className='text-3xl tracking-tight font-bold mb-4 text-balance items-center flex'>
-            <KeyIcon className='inline mr-1' />
-            校对答案
+        <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
+            <span className='text-5xl'>{computeTotalScore(quizData, answers)}</span>
+            <span className='ml-1 text-default-400 text-xl flex items-center'>
+                /{computePerfectScore(quizData)} <KeyIcon className='ml-1 size-5' />
+            </span>
         </h1>
         <HighlightedPaper
             data={quizData}

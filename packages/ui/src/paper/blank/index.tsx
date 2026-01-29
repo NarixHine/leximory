@@ -19,7 +19,6 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
     const answer = answers[no]
     const submittedAnswer = submittedAnswers[no]
     const spaces = '\u00A0'
-
     const key = useCorrectAnswer(no)
     const { ask } = useAsk({ no, groupId })
     const { getFullInfo } = useBlankInfo({ no, groupId })

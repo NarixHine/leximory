@@ -2,7 +2,13 @@ import { z } from '@repo/schema'
 import { JSX } from 'react'
 
 /**
- * The types of sections supported in Ask.
+ * The schema for user-submitted answers.
+ */
+export const AnswersSchema = z.record(z.number(), z.string().nullable())
+export type Answers = z.infer<typeof AnswersSchema>
+
+/**
+ * The type of a response from Ask.
  */
 export const AskResponseSchema = z.object({
     explanation: z.string(),

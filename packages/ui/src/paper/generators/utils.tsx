@@ -5,10 +5,9 @@ import Rand from 'rand-seed'
 import parse, { DOMNode } from 'html-react-parser'
 import { ReactNode } from 'react'
 import { merge } from 'es-toolkit'
-import { Answers } from '../atoms'
 import { ALPHABET_SET } from './config'
 import { z } from '@repo/schema'
-import { QuizData, QuestionStrategy, ClozeData } from '@repo/schema/paper'
+import { QuizData, QuestionStrategy, ClozeData, Answers } from '@repo/schema/paper'
 
 /**
  * A reusable helper to extract the content from all <code> tags in a string.
@@ -332,7 +331,7 @@ export const getClozeOriginalWord = (clozeQuestionGroup: ClozeData, no: number):
  * @param quizData - An array of quiz data sections.
  * @returns The total perfect score for the quiz.
  */
-export const getPerfectScore = (quizData: QuizData[]): number => {
+export const computePerfectScore = (quizData: QuizData[]): number => {
     return quizData.reduce((acc, data) => {
         return acc + applyStrategy(data, (strategy, specificData) => {
             const questionCount = strategy.getQuestionCount(specificData)

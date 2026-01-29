@@ -164,7 +164,6 @@ export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
     const { data } = await supabase.storage
         .from('user-files')
         .createSignedUrl(path, seconds('3 days'))
-        console.log(path)
 
     return data!.signedUrl
 }

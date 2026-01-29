@@ -16,7 +16,6 @@ export const Article = ({ title, text, content, topics, ebook, lib, annotating, 
     hideControls?: boolean
  }) => {
     const { FormattedReadingTime } = getLanguageStrategy(lib.lang)
-    console.log(ebook)
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('>', '>')],
