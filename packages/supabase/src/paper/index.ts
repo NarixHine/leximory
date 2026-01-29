@@ -70,7 +70,7 @@ export async function getPapersByCreator({ creator }: { creator: string }) {
 export async function getPublicPapers() {
   const { data: papers, error } = await supabase
     .from('papers')
-    .select('id, public, title, tags, created_at')
+    .select('id, public, title, tags, created_at, creator')
     .eq('public', true)
     .order('created_at', { ascending: false })
 

@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
 import UserAvatar from '@repo/ui/user'
+import { NavDock } from './components/nav-dock'
 
 export const metadata: Metadata = {
   title: {
@@ -53,6 +54,7 @@ export default function RootLayout({
           <div className='fixed top-3 right-3'>
             <UserAvatar />
           </div>
+          <NavDock />
         </Providers>
       </body>
     </html>

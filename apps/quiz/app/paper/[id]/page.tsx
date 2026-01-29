@@ -61,12 +61,14 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
         ]}>
-            <QuizTabs 
-                Paper={!submission && <Paper data={content} />} 
-                Revise={submission && <RevisePaper quizData={content} answers={submission} />} 
+            <QuizTabs
+                Paper={!submission && <>
+                    <Paper data={content} />
+                    <SubmitAnswers questionCount={questionCount} />
+                </>}
+                Revise={submission && <RevisePaper quizData={content} answers={submission} />}
                 leaderboard={<Leaderboard paperId={parseInt(id)} />}
             />
-            {!submission && <SubmitAnswers questionCount={questionCount} />}
         </HydrationBoundary>
     )
 }

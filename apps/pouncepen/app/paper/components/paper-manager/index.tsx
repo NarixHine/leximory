@@ -6,11 +6,15 @@ import {
   Button,
   Card,
   CardBody,
+  CardFooter,
   Chip,
   Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Switch,
 } from '@heroui/react'
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon } from '@phosphor-icons/react'
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon, WarningOctagonIcon } from '@phosphor-icons/react'
 import {
   createPaperAction,
   updatePaperAction,
@@ -129,11 +133,8 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
   }
 
   const handleDelete = (id: number) => {
-    if (confirm('确定要删除该试卷吗？')) {
-      // Optimistic update
-      setPapers(prev => prev.filter(p => p.id !== id))
-      executeDeletePaper({ id })
-    }
+    setPapers(prev => prev.filter(p => p.id !== id))
+    executeDeletePaper({ id })
   }
 
   const handleToggleVisibility = (id: number) => {
@@ -240,7 +241,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                 router.push(`/paper/${paper.id}`)
               }}
             >
-              <CardBody className='px-6 pb-6 pt-5'>
+              <CardBody className='px-6 pt-5 pb-2'>
                 <div className='flex flex-col justify-between items-start'>
                   <div className='flex-1 w-full'>
                     <div className='flex items-center flex-wrap gap-1 mb-2'>
@@ -293,16 +294,29 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                         >
                           <PencilIcon size={16} />
                         </Button>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          color='danger'
-                          onPress={() => handleDelete(paper.id)}
-                          isDisabled={isDeleting}
-                        >
-                          <TrashIcon size={16} />
-                        </Button>
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button
+                              isIconOnly
+                              variant='light'
+                              size='sm'
+                              color='danger'
+                              isDisabled={isDeleting}
+                            >
+                              <TrashIcon size={16} />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className='p-0 w-fit'>
+                            <Button
+                              color='danger'
+                              startContent={<WarningOctagonIcon weight='duotone' size={20} />}
+                              onPress={() => handleDelete(paper.id)}
+                              isDisabled={isDeleting}
+                            >
+                              确认删除
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
 
@@ -310,16 +324,18 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                       <h3 className='text-2xl truncate'>
                         {paper.title || '未命名试卷'}
                       </h3>
-                      <p className='text-xs text-foreground/50 flex items-center space-x-2'>
-                        <span className='mr-1'>创建于</span>
-                        <span className='font-mono'>{new Date(paper.created_at || '').toLocaleDateString('zh-CN')}</span>
-                        <span className='font-mono'>•</span>
-                        <span className='font-mono'>ID: {paper.id}</span>
-                      </p>
                     </div>
                   </div>
                 </div>
               </CardBody>
+              <CardFooter className='pt-0 px-6 pb-5'>
+                <p className='text-xs text-foreground/50 flex items-center space-x-2'>
+                  <span className='mr-1'>创建于</span>
+                  <span className='font-mono'>{new Date(paper.created_at || '').toLocaleDateString('zh-CN')}</span>
+                  <span className='font-mono'>•</span>
+                  <span className='font-mono'>ID: {paper.id}</span>
+                </p>
+              </CardFooter>
             </Card>
           ))
         )}

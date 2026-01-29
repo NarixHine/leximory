@@ -63,10 +63,10 @@ export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank
 
     if (leaderboardData.length === 0) {
         return (
-            <div className='flex flex-col items-center justify-center py-16 text-default-400'>
+            <div className='flex flex-col items-center justify-center py-16 text-default-500'>
                 <TrophyIcon size={48} weight='thin' />
-                <p className='mt-4 text-lg'>暂无提交记录</p>
-                <p className='text-sm'>成为第一个提交的人吧！</p>
+                <p className='mt-4 text-xl'>榜上无人</p>
+                <p className='text-sm mt-1'>成为第一个解出此谜的人吧</p>
             </div>
         )
     }

@@ -18,7 +18,8 @@
     "./paper/rsc": "./src/paper/generators/rsc.tsx",
     "./nav-indicator": "./src/nav-indicator/index.tsx",
     "./main": "./src/main/index.tsx",
-    "./avatar": "./src/avatar/index.tsx"
+    "./avatar": "./src/avatar/index.tsx",
+    "./dock": "./src/dock/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -37,6 +38,7 @@
     "@repo/service": "workspace:^",
     "@repo/supabase": "workspace:^",
     "@repo/user": "workspace:^",
+    "class-variance-authority": "^0.7.1",
     "es-toolkit": "^1.44.0",
     "fast-shuffle": "^6.1.1",
     "html-react-parser": "^5.2.5",
@@ -52,9 +54,8 @@
     "usehooks-ts": "^3.1.1"
   },
   "peerDependencies": {
-    "@heroui/theme": "^2.2.21",
-    "@heroui/avatar": "^2.2.21",
     "@heroui/accordion": "^2.2.21",
+    "@heroui/avatar": "^2.2.21",
     "@heroui/button": "^2.2.22",
     "@heroui/dropdown": "^2.2.21",
     "@heroui/modal": "^2.2.22",
@@ -62,6 +63,7 @@
     "@heroui/react": "^2.2.25",
     "@heroui/spinner": "^2.2.22",
     "@heroui/table": "^2.2.21",
+    "@heroui/theme": "^2.2.21",
     "@heroui/user": "^2.2.22",
     "@tanstack/react-query": "^5.0.0",
     "framer-motion": "^12.0.0",
