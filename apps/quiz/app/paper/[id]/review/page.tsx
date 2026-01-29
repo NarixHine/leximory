@@ -5,7 +5,7 @@ import { Metadata } from 'next'
 import { Main } from '@repo/ui/main'
 import { Ask } from '@repo/ui/paper'
 import HighlightedPaper from './components/highlighted-paper'
-import { MagicWandIcon } from '@phosphor-icons/react/ssr'
+import { KeyIcon } from '@phosphor-icons/react/ssr'
 
 export const metadata: Metadata = {
     title: 'AI 校对'
@@ -37,7 +37,7 @@ export default async function AskAIPage({
         ]}>
             <Main className='max-w-150'>
                 <h1 className='text-3xl tracking-tight font-bold mb-4 text-balance items-center flex'>
-                    <MagicWandIcon className='inline mr-1' />
+                    <KeyIcon className='inline mr-1' />
                     校对答案
                 </h1>
                 <HighlightedPaper

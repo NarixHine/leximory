@@ -233,6 +233,51 @@ export type Database = {
           },
         ]
       }
+      submissions: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: number
+          paper: number
+          question_count: number
+          score: number
+          user: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: number
+          paper: number
+          question_count: number
+          score: number
+          user?: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: number
+          paper?: number
+          question_count?: number
+          score?: number
+          user?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_paper_fkey"
+            columns: ["paper"]
+            isOneToOne: false
+            referencedRelation: "papers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_user_fkey"
+            columns: ["user"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subs: {
         Row: {
           created_at: string | null
