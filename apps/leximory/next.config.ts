@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
             bodySizeLimit: '4.5mb',
         },
         turbopackFileSystemCacheForBuild: true,
-        taint: true,
     },
     images: {
         remotePatterns: [

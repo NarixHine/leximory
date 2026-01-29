@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   experimental: {
     optimizePackageImports: ['@phosphor-icons/react'],
-    taint: true,
     serverActions: {
       bodySizeLimit: `${MAX_FILE_SIZE / 1024 / 1024}mb`,
     },
