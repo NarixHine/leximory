@@ -62,7 +62,21 @@ export const Kilpi = createKilpi({
         } else {
           return Grant(subject)
         }
-      }
+      },
+
+      submit(subject, paper: Paper) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        if (paper.public) return Grant(subject)
+        if (subject.userId === paper.creator) return Grant(subject)
+        return Deny({ message: 'Not authorized to submit this paper' })
+      },
+
+      readSubmissions(subject, paper: Paper) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        if (paper.public) return Grant(subject)
+        if (subject.userId === paper.creator) return Grant(subject)
+        return Deny({ message: 'Not authorized to read submissions of this paper' })
+      },
     }
   },
 

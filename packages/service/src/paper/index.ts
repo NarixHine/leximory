@@ -3,7 +3,7 @@
 import { actionClient } from '@repo/service'
 import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
-import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper } from '@repo/supabase/paper'
+import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
 import { QuizData, QuizItemsSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
@@ -34,6 +34,21 @@ const togglePaperVisibilitySchema = z.object({
 
 const deletePaperSchema = z.object({
   id: z.number(),
+})
+
+const getPaperSubmissionSchema = z.object({
+  paperId: z.number(),
+})
+
+const submitPaperSchema = z.object({
+  paperId: z.number(),
+  answers: z.record(z.string(), z.string().nullable()),
+  score: z.number(),
+  perfectScore: z.number(),
+})
+
+const fetchLeaderboardSchema = z.object({
+  paperId: z.number(),
 })
 
 /**
@@ -130,6 +145,58 @@ export const deletePaperAction = actionClient
     await Kilpi.papers.delete(paper).authorize().assert()
 
     return deletePaper({ id })
+  })
+
+/**
+ * Retrieves a paper submission of the current user with authorization check.
+ */
+export const getPaperSubmissionAction = actionClient
+  .inputSchema(getPaperSubmissionSchema)
+  .action(async ({ parsedInput: { paperId } }) => {
+    const user = await getUserOrThrow()
+    await Kilpi.authed().authorize().assert()
+
+    return getPaperSubmission({ paperId, userId: user.userId })
+  })
+
+/**
+ * Submits a paper with user answers and authorization check.
+ * Users can submit public papers or their own papers.
+ */
+export const submitPaperAction = actionClient
+  .inputSchema(submitPaperSchema)
+  .action(async ({ parsedInput: { paperId, answers, score, perfectScore } }) => {
+    const user = await getUserOrThrow()
+    const paper = await getPaper({ id: paperId })
+
+    await Kilpi.papers.submit(paper).authorize().assert()
+
+    return submitPaper({
+      paperId,
+      answers,
+      score,
+      perfectScore,
+      userId: user.userId
+    })
+  })
+
+/**
+* Submits a paper with user answers and authorization check.
+* Users can submit public papers or their own papers.
+*/
+export const fetchLeaderboardAction = actionClient
+  .inputSchema(fetchLeaderboardSchema)
+  .action(async ({ parsedInput: { paperId } }) => {
+    const paper = await getPaper({ id: paperId })
+
+    await Kilpi.papers.readSubmissions(paper).authorize().assert()
+
+    const submissions = await getAllPaperSubmissions({ paperId })
+    return submissions.map(submission => ({
+      score: submission.score,
+      perfectScore: submission.perfect_score,
+      user: submission.user
+    }))
   })
 
 export type StreamExplanationParams = {

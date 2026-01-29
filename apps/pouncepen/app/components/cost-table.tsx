@@ -1,3 +1,5 @@
+'use client'
+
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
 

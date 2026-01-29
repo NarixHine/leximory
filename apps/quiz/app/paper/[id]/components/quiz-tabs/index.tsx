@@ -4,29 +4,43 @@ import { Tab, Tabs } from '@heroui/tabs'
 import type { ReactNode } from 'react'
 import { ScopeProvider } from 'jotai-scope'
 import { viewModeAtom } from '@repo/ui/paper/atoms'
-import { SpeedometerIcon } from '@phosphor-icons/react/ssr'
+import { MagicWandIcon, SpeedometerIcon, TrophyIcon } from '@phosphor-icons/react/ssr'
 
 type QuizTabsUIProps = {
-    Paper: ReactNode,
+    Paper?: ReactNode,
+    Revise?: ReactNode
+    leaderboard?: ReactNode
 }
 
-export function QuizTabsUI({ Paper }: QuizTabsUIProps) {
+export function QuizTabsUI({ Paper, Revise, leaderboard }: QuizTabsUIProps) {
     return (
         <Tabs defaultSelectedKey={'paper'}>
-            <Tab key='paper' title={<div className='flex items-center space-x-2'>
+            {Paper && <Tab key='paper' title={<div className='flex items-center space-x-2'>
                 <SpeedometerIcon weight='bold' />
-                <span><span>解谜</span><span className='text-xs'></span></span>
+                <span>解谜</span>
             </div>}>
                 {Paper}
-            </Tab>
+            </Tab>}
+             {Revise && <Tab key='revise' title={<div className='flex items-center space-x-2'>
+                 <MagicWandIcon weight='bold' />
+                <span>解惑</span>
+            </div>}>
+                {Revise}
+            </Tab>}
+            {leaderboard && <Tab key='leaderboard' title={<div className='flex items-center space-x-2'>
+                <TrophyIcon weight='bold' />
+                <span>排行榜</span>
+            </div>}>
+                {leaderboard}
+            </Tab>}
         </Tabs>
     )
 }
 
-export function QuizTabs({ Paper }: QuizTabsUIProps) {
+export function QuizTabs(props: QuizTabsUIProps) {
     return (
         <ScopeProvider atoms={[viewModeAtom]}>
-            <QuizTabsUI Paper={Paper} />
+            <QuizTabsUI {...props} />
         </ScopeProvider>
     )
 }

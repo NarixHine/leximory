@@ -14,7 +14,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const router = useRouter()
     const { isPending, execute, hasSucceeded } = useAction(submitAnswersAction, {
         onSuccess() {
-            router.push(`/paper/${paperId}/review`)
+            router.refresh()
         }
     })
     const hasCompleted = Object.values(answers).filter(Boolean).length >= questionCount

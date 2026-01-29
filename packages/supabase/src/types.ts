@@ -239,7 +239,7 @@ export type Database = {
           created_at: string
           id: number
           paper: number
-          question_count: number
+          perfect_score: number
           score: number
           user: string
         }
@@ -248,7 +248,7 @@ export type Database = {
           created_at?: string
           id?: number
           paper: number
-          question_count: number
+          perfect_score: number
           score: number
           user?: string
         }
@@ -257,7 +257,7 @@ export type Database = {
           created_at?: string
           id?: number
           paper?: number
-          question_count?: number
+          perfect_score?: number
           score?: number
           user?: string
         }

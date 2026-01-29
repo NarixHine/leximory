@@ -2,7 +2,9 @@
 
 import { z } from '@repo/schema'
 import { actionClient } from '@repo/service'
+import { submitPaperAction } from '@repo/service/paper'
 import { getPaper } from '@repo/supabase/paper'
+import { computeTotalScore, getPerfectScore } from '@repo/ui/paper/utils'
 
 export const submitAnswersAction = actionClient
     .inputSchema(z.object({
@@ -10,5 +12,11 @@ export const submitAnswersAction = actionClient
         id: z.number()
     }))
     .action(async ({ parsedInput: { answers, id } }) => {
-        await getPaper({ id })
+        const { content } = await getPaper({ id })
+        await submitPaperAction({
+            paperId: id,
+            score: computeTotalScore(content, answers),
+            perfectScore: getPerfectScore(content),
+            answers: answers
+        })
     })
