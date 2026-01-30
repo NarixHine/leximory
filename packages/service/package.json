@@ -9,7 +9,8 @@
     "./ai": "./src/ai/index.ts",
     ".": "./src/index.ts",
     "./user": "./src/user/index.ts",
-    "./prompts": "./src/ai/prompts/index.ts"
+    "./prompts": "./src/ai/prompts/index.ts",
+    "./annotate": "./src/annotate/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

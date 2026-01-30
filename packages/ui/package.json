@@ -19,7 +19,8 @@
     "./nav-indicator": "./src/nav-indicator/index.tsx",
     "./main": "./src/main/index.tsx",
     "./avatar": "./src/avatar/index.tsx",
-    "./dock": "./src/dock/index.tsx"
+    "./dock": "./src/dock/index.tsx",
+    "./define": "./src/define/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

@@ -31,5 +31,5 @@
     "next.config.ts",
     "postcss.config.mjs",
     ".next/dev/types/**/*.ts"
-  ],
+, "../../packages/ui/src/define/utils.tsx"  ],
 }

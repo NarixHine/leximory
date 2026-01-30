@@ -5,12 +5,12 @@ import Comment from '@/components/comment'
 import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
-import { getBracketedSelection, useSelection } from './utils'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { useAtomValue } from 'jotai'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { EmptyObject } from 'react-hook-form'
 import { useOnClickOutside } from 'usehooks-ts'
+import { getBracketedSelection, useSelection } from '@repo/ui/define'
 
 export default function Define(props: { left: number | null, width: number | null, bottom: number | null, selection: Selection | null, container: HTMLElement | null, reset: () => void } | EmptyObject) {
     const ref = useRef(globalThis.document)

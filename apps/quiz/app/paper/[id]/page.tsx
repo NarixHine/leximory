@@ -15,6 +15,7 @@ import { Answers, QuizItems } from '@repo/schema/paper'
 import { KeyIcon } from '@phosphor-icons/react/ssr'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
+import { Define } from '@repo/ui/define'
 
 type PaperPageProps = {
     params: Promise<{
@@ -88,5 +89,6 @@ function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: Answ
             data={quizData}
         />
         <Ask />
+        <Define />
     </HydrationBoundary>
 }

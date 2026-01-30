@@ -1,3 +1,5 @@
+'use server'
+
 import { ACTION_QUOTA_COST, maxArticleLength } from '@repo/env/config'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { annotateWord, hashPrompt } from '../ai/annotate'
