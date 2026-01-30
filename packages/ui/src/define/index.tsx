@@ -1,60 +1,69 @@
 'use client'
 
 import { Drawer } from 'vaul'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { cn } from '@heroui/theme'
-import { useSelection } from './utils'
-import { Button, Card, CardBody, Spacer } from '@heroui/react'
+import { getBracketedSelection, useSelection } from './utils'
+import { Button, Card, CardBody } from '@heroui/react'
 import { Spinner } from '@heroui/spinner'
-import { useMutation } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import {
+    useQuery,
+    queryOptions,
+    experimental_streamedQuery as streamedQuery
+} from '@tanstack/react-query'
 import { readStreamableValue } from '../utils'
 import { annotateWordAction } from '@repo/service/annotate'
 import { toast } from 'sonner'
-import { prefixUrl } from '@repo/env/config'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { Streamdown } from 'streamdown'
 
-const useAnnotate = () => {
-    const [portions, setPortions] = useState<string[]>([])
-    const router = useRouter()
-    const { mutate: commentWord, isPending } = useMutation({
-        mutationFn: async (prompt: string) => {
-            const { text, error } = await annotateWordAction({ text: prompt })
-            if (error) {
-                toast.error(error, {
-                    duration: 10000,
-                    action: {
-                        label: '升级',
-                        onClick: () => router.push(prefixUrl('/settings'))
-                    }
-                })
-                throw new Error(error)
+async function* annotateWordStream(prompt: string) {
+    const { data } = await annotateWordAction({ prompt })
+    if (!data) {
+        throw new Error('No data received from annotation service')
+    }
+    const { annotation, error } = data
+    if (error) {
+        toast.error(error, {
+            duration: 10000,
+        })
+        throw new Error(error)
+    }
+    if (annotation) {
+        try {
+            let completeAnnotation = ''
+            for await (const delta of readStreamableValue(annotation)) {
+                completeAnnotation += delta
+                yield completeAnnotation
             }
-            if (text) {
-                try {
-                    let commentary = ''
-                    for await (const delta of readStreamableValue(text)) {
-                        commentary += delta
-                        setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
-                    }
-                } catch (error) {
-                    console.error(error)
-                    toast.error('生成中止')
-                }
-            }
-        },
-        retry: 1
+        } catch (error) {
+            console.error(error)
+            toast.error('生成中止')
+            throw error
+        }
+    }
+}
+
+const annotateQueryOptions = (prompt: string) =>
+    queryOptions({
+        queryKey: ['annotate-word', prompt],
+        queryFn: streamedQuery({
+            streamFn: () => annotateWordStream(prompt)
+        }),
+        staleTime: Infinity,
+        enabled: prompt.length > 0
     })
 
-    return { commentWord, portions, isPending }
+const useAnnotate = ({ prompt }: { prompt: string }) => {
+    const { data = [], isPending } = useQuery(annotateQueryOptions(prompt))
+    const portions = data.length > 0 ? data[data.length - 1].replace('{{', '').replace('}}', '').split('||') : []
+    return { portions, isPending }
 }
 
 export function Define() {
     const ref = useRef(globalThis.document)
     const selectionContext = useSelection(ref)
     const { left, width, selection } = selectionContext
-    const [open, setOpen] = useState(false)
-    const { commentWord, portions, isPending } = useAnnotate()
 
     // 1. Get the bounding rectangle of the selection
     const rect = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).getBoundingClientRect() : null
@@ -78,21 +87,21 @@ export function Define() {
     }
 
     return (
-        <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
+        <Drawer.Root repositionInputs={false}>
             {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
-                <Drawer.Trigger
-                    style={{
-                        left: left + width / 2,
-                        top: buttonTop
-                    }}
-                    className={cn(
-                        'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-white border border-default-100 px-4 text-sm font-medium shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white',
-                    )}
-                >
-                    <Button startContent={<MagnifyingGlassIcon />} variant='light' onPress={() => {
-                        commentWord(selection.toString())
-                        setOpen(true)
-                    }}>
+                <Drawer.Trigger asChild>
+                    <Button
+                        style={{
+                            left: left + width / 2,
+                            top: buttonTop
+                        }}
+                        className={cn(
+                            'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full',
+                        )}
+                        color='primary'
+                        startContent={<MagnifyingGlassIcon weight='duotone' />}
+                        variant='shadow'
+                    >
                         Define
                     </Button>
                 </Drawer.Trigger>
@@ -104,26 +113,44 @@ export function Define() {
                 )} />
                 <Drawer.Content className='h-fit px-2 fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    <Card fullWidth radius='sm' shadow='none'>
-                        <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug font-formal')}>
-                            <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
-                            <div className='overflow-hidden'>
-                                <div>
-                                    {
-                                        isPending && portions.length === 0
-                                            ? <div className='flex font-mono items-center gap-1.5'>
-                                                Generating <Spinner variant='dots' color='default' />
-                                            </div>
-                                            : <></>
-                                    }
-                                </div>
-                                {portions[2] && <><Spacer y={3} /></>}
-                            </div>
-                        </CardBody>
-                    </Card>
+                    {selection && <Annotation prompt={getBracketedSelection(selection)} />}
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>
+    )
+}
+
+function Annotation({ prompt }: { prompt: string }) {
+    const { portions, isPending } = useAnnotate({ prompt })
+    return (
+        <Card fullWidth radius='sm' shadow='none'>
+            <CardBody className={cn('pt-3 pb-4 px-5 leading-snug')}>
+                <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
+                <div className='overflow-hidden'>
+                    <div>
+                        {
+                            isPending && portions.length === 0
+                                ? <div className='flex font-mono items-center gap-1.5'>
+                                    Generating <Spinner variant='dots' color='default' />
+                                </div>
+                                : <></>
+                        }
+                    </div>
+                    {portions[2] && <div className={'mt-2'}>
+                        <div className='font-semibold text-sm'>释义</div>
+                        <Streamdown>{portions[2]}</Streamdown>
+                    </div>}
+                    {portions[3] && <div className={'mt-2'}>
+                        <div className='font-semibold text-sm'>语源</div>
+                        <Streamdown>{portions[3]}</Streamdown>
+                    </div>}
+                    {portions[4] && <div className={'mt-2'}>
+                        <div className='font-semibold text-sm'>同源词</div>
+                        <Streamdown>{portions[4]}</Streamdown>
+                    </div>}
+                </div>
+            </CardBody>
+        </Card>
     )
 }
 
