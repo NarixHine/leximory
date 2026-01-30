@@ -127,6 +127,7 @@ export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank
                                         src={item.userImage}
                                         name={item.userName}
                                         size='sm'
+                                        radius='md'
                                         className='shrink-0'
                                     />
                                     <div className='flex flex-col'>

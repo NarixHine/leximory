@@ -87,7 +87,6 @@ export function AvatarSection({ image }: { image?: string }) {
             const supabase = createClient()
             const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: url } })
             if (updateError) throw new Error(updateError.message)
-            setPreview(url)
             toast.success('头像已更新')
         } catch {
             toast.error('上传失败')
