@@ -126,21 +126,19 @@ function Annotation({ prompt }: { prompt: string }) {
     const { portions, isPending } = useAnnotate({ prompt })
     return (
         <Card fullWidth radius='sm' shadow='none'>
-            <CardBody className={cn('pt-3 pb-4 px-5 leading-snug gap-2')}>
+            <CardBody className={cn('px-5 py-3 leading-snug gap-2')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='overflow-hidden'>
-                    <div>
-                        {
-                            isPending && portions.length === 0
-                                ? <div className='flex font-mono items-center gap-1.5'>
-                                    Generating <Spinner variant='dots' color='default' />
-                                </div>
-                                : <></>
-                        }
-                    </div>
+                    {
+                        isPending && portions.length === 0
+                            ? <div className='flex font-mono items-center gap-1.5 -mt-2.5'>
+                                Generating <Spinner variant='dots' color='default' />
+                            </div>
+                            : <></>
+                    }
                     {portions[2] && <div>
                         <div className='font-semibold text-sm'>释义</div>
-                        <Streamdown>{portions[2]}</Streamdown>
+                        <Streamdown className='prose-code:before:content-["["] prose-code:after:content-["]"]'>{portions[2]}</Streamdown>
                     </div>}
                     {portions[3] && <div className={'mt-2'}>
                         <div className='font-semibold text-sm'>语源</div>
@@ -151,9 +149,7 @@ function Annotation({ prompt }: { prompt: string }) {
                         <Streamdown>{portions[4]}</Streamdown>
                     </div>}
                 </div>
-                <div>
-                    {portions[2] && <Save portions={portions} />}
-                </div>
+                {portions[2] && <div className='my-1'><Save portions={portions} /></div>}
             </CardBody>
         </Card>
     )
