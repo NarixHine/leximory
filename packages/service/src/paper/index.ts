@@ -8,6 +8,7 @@ import { getUserOrThrow } from '@repo/user'
 import { QuizData, QuizItemsSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
 import { SECTION_NAME_MAP } from '@repo/env/config'
+import incrCommentaryQuota from '@repo/user/quota'
 
 const createPaperSchema = z.object({
   content: QuizItemsSchema.optional(),
@@ -206,6 +207,11 @@ export type StreamExplanationParams = {
 }
 
 export async function streamExplanationAction({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
-  await Kilpi.papers.askAI().authorize().assert()
+  const { subject } = await Kilpi.papers.askAI().authorize().assert()
+  
+  if (await incrCommentaryQuota(1, subject.userId)) {
+    throw new Error('Quota exceeded')
+  }
+  
   return streamExplanation({ quizData, questionNo, userAnswer })
 }

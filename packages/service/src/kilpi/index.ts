@@ -3,7 +3,6 @@ import { createKilpi, Grant, Deny } from '@kilpi/core'
 import { getUser } from '@repo/user'
 import type { Tables } from '@repo/supabase/types'
 import { ReactServerPlugin } from '@kilpi/react-server'
-import incrCommentaryQuota from '@repo/user/quota'
 
 type Paper = Tables<'papers'>
 
@@ -54,14 +53,10 @@ export const Kilpi = createKilpi({
         return Deny({ message: 'Not the paper creator' })
       },
 
-      async askAI(subject) {
+      askAI(subject) {
         if (!subject)
           return Deny({ message: 'Not authenticated' })
-        if (await incrCommentaryQuota(1, subject.userId)) {
-          return Deny({ message: 'Quota exceeded' })
-        } else {
-          return Grant(subject)
-        }
+        return Grant(subject)
       },
 
       submit(subject, paper: Paper) {

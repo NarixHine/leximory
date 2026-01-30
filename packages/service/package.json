@@ -8,7 +8,8 @@
     "./paper": "./src/paper/index.ts",
     "./ai": "./src/ai/index.ts",
     ".": "./src/index.ts",
-    "./user": "./src/user/index.ts"
+    "./user": "./src/user/index.ts",
+    "./prompts": "./src/ai/prompts/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -23,6 +24,7 @@
     "@repo/user": "workspace:^",
     "@repo/schema": "workspace:^",
     "@repo/env": "workspace:^",
+    "@repo/kv": "workspace:^",
     "next-safe-action": "8.0.10",
     "ai": "^6.0.26",
     "@ai-sdk/gateway": "3.0.10"
