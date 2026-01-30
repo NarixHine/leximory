@@ -110,13 +110,13 @@ export const getPlanFromProductId = (productId: typeof CREEM_PRODUCT_ID[keyof ty
 }
 
 export const SECTION_NAME_MAP = {
-    'listening': 'Listening',
-    'grammar': 'Grammar',
-    'fishing': 'Vocabulary',
-    'cloze': 'Cloze',
-    'reading': 'Reading',
-    'sentences': 'Sentence Choice',
-    'custom': 'Custom'
+    'listening': '听力',
+    'grammar': '语法',
+    'fishing': '词汇',
+    'cloze': '完形填空',
+    'reading': '阅读',
+    'sentences': '六选四',
+    'custom': '其他'
 } as const
 
 export const FORGET_CURVE = {
