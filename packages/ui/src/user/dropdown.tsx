@@ -91,7 +91,9 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalCh
                     }
                 </DropdownMenu>
             </Dropdown>
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange} classNames={{
+                backdrop: 'bg-black/50'
+            }}>
                 <ModalContent>
                     {(onClose) => (
                         <>

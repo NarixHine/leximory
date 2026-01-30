@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardHeader, CardBody, Avatar, Skeleton } from '@heroui/react'
+import { Card, CardHeader, CardBody, Avatar, Skeleton, CardFooter } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { getUserProfileAction } from '@repo/service/user'
 import Link from 'next/link'
@@ -27,8 +27,8 @@ export function PaperCard({
     })
 
     return (
-        <Card shadow='none' className='border border-default p-3 hover:border-default-300 transition-all duration-200 ease-in-out' isPressable as={Link} href={`/paper/${id}`}>
-            <CardHeader className='flex flex-col items-start'>
+        <Card shadow='none' className='border border-default px-3 hover:border-default-300 dark:border-default-200 transition-all duration-200 ease-in-out' isPressable as={Link} href={`/paper/${id}`}>
+            <CardBody className='flex flex-col items-start pt-4'>
                 <Skeleton isLoaded={isSuccess} className='h-5 rounded-2xl min-w-20 mb-2'>
                     <div className='flex gap-3 text-default-600 text-lg items-center'>
                         <span className='font-mono text-ellipsis overflow-hidden whitespace-nowrap max-w-40'>{user?.name}</span>
@@ -37,17 +37,15 @@ export function PaperCard({
                 </Skeleton>
                 <h3 className='text-3xl font-formal'>{title}</h3>
                 <div className='font-mono text-default-400'>{createdAt}</div>
-            </CardHeader>
-            <CardBody className='px-3 pb-2 pt-0'>
-                <div className='font-mono text-sm text-default-400'>
+            </CardBody>
+            <CardFooter className='px-3 pb-4 pt-0'>
+                <div className='font-mono text-sm text-default-400 flex flex-wrap'>
                     {tags.map((tag, idx) => (<span key={idx} className='not-last:after:content-["\00B7"] after:mx-1'>
-                        <span>
-                            {tag}
-                        </span>
+                        {tag}
                     </span>
                     ))}
                 </div>
-            </CardBody>
+            </CardFooter>
         </Card>
     )
 }
