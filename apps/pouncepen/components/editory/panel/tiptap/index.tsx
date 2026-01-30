@@ -214,7 +214,7 @@ const Tiptap = ({
       >
         <IconContext.Provider value={{ className: 'text-primary', size: 16, weight: 'duotone' }}>
           <div className='flex items-center gap-1'>
-            <ButtonGroup className='bg-background/50 backdrop-blur shadow-medium dark:border-primary-50 rounded-xl overflow-clip'>
+            <ButtonGroup className='bg-background/50 backdrop-blur-md z-10 shadow-medium dark:border-primary-50 rounded-xl overflow-clip'>
               {/* Formatting */}
               <Button
                 onPress={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
