@@ -31,10 +31,10 @@ async function* annotateWordStream(prompt: string) {
     }
     if (annotation) {
         try {
-            let completeAnnotation = ''
+            let mergedAnnotation = ''
             for await (const delta of readStreamableValue(annotation)) {
-                completeAnnotation += delta
-                yield completeAnnotation
+                mergedAnnotation += delta
+                yield mergedAnnotation
             }
         } catch (error) {
             console.error(error)

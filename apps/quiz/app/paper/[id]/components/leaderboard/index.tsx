@@ -36,7 +36,7 @@ async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]
                     userId: submission.user,
                     userName: user.username,
                     userImage: user.image,
-                    createdAt: new Date().toISOString()
+                    createdAt: submission.created_at
                 }
             } catch (error) {
                 return {
@@ -46,7 +46,7 @@ async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]
                     userId: submission.user,
                     userName: undefined,
                     userImage: undefined,
-                    createdAt: new Date().toISOString()
+                    createdAt: submission.created_at
                 }
             }
         })
