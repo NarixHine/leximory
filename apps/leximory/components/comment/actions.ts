@@ -1,7 +1,7 @@
 'use server'
 
 import { authWriteToLib, authWriteToText } from '@/server/auth/role'
-import { extractSaveForm } from '@/lib/comment'
+import { extractSaveForm } from '@repo/utils'
 import { updateText } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
@@ -16,7 +16,7 @@ export async function delComment(id: string) {
 
 export async function saveComment({ portions, lib, editId, shadow, lang }: { portions: string[], lib: string, editId?: string, shadow?: boolean, lang: "en" | "zh" | "ja" | "nl" }) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
-    
+
     after(async () => {
         updateTag(`words:${lib}`)
         updateTag(`words`)

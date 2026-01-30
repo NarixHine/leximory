@@ -208,6 +208,9 @@ importers:
       '@repo/user':
         specifier: workspace:^
         version: link:../../packages/user
+      '@repo/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@serwist/cli':
         specifier: ^9.4.2
         version: 9.5.0(@types/node@22.19.5)(esbuild@0.27.2)(typescript@5.9.3)
@@ -602,6 +605,9 @@ importers:
       '@repo/env':
         specifier: workspace:^
         version: link:../../packages/env
+      '@repo/languages':
+        specifier: workspace:^
+        version: link:../../packages/languages
       '@repo/schema':
         specifier: workspace:^
         version: link:../../packages/schema
@@ -620,6 +626,9 @@ importers:
       '@repo/user':
         specifier: workspace:^
         version: link:../../packages/user
+      '@repo/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@tanstack/react-query':
         specifier: ^5.90.16
         version: 5.90.16(react@19.2.3)
@@ -1020,6 +1029,22 @@ importers:
         specifier: latest
         version: 5.9.3
 
+  packages/languages:
+    dependencies:
+      '@repo/env':
+        specifier: workspace:^
+        version: link:../env
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.0.5
+        version: 25.1.0
+      typescript:
+        specifier: latest
+        version: 5.9.3
+
   packages/schema:
     dependencies:
       react:
@@ -1093,6 +1118,9 @@ importers:
       '@repo/user':
         specifier: workspace:^
         version: link:../user
+      '@repo/utils':
+        specifier: workspace:^
+        version: link:../utils
       ai:
         specifier: ^6.0.26
         version: 6.0.49(zod@4.3.5)
@@ -1118,9 +1146,15 @@ importers:
       '@repo/env':
         specifier: workspace:^
         version: link:../env
+      '@repo/languages':
+        specifier: workspace:^
+        version: link:../languages
       '@repo/schema':
         specifier: workspace:^
         version: link:../schema
+      '@repo/utils':
+        specifier: workspace:^
+        version: link:../utils
       '@supabase/ssr':
         specifier: ^0.8.0
         version: 0.8.0(@supabase/supabase-js@2.90.1)
@@ -1130,6 +1164,12 @@ importers:
       itty-time:
         specifier: ^2.0.2
         version: 2.0.2
+      moment:
+        specifier: ^2.30.1
+        version: 2.30.1
+      moment-timezone:
+        specifier: ^0.5.45
+        version: 0.5.48
       next:
         specifier: ^16.0.0
         version: 16.1.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1314,6 +1354,28 @@ importers:
       supabase:
         specifier: ^2.72.4
         version: 2.72.4
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.0.5
+        version: 25.1.0
+      typescript:
+        specifier: latest
+        version: 5.9.3
+
+  packages/utils:
+    dependencies:
+      es-toolkit:
+        specifier: ^1.44.0
+        version: 1.44.0
+      moment:
+        specifier: ^2.30.1
+        version: 2.30.1
+      moment-timezone:
+        specifier: ^0.5.45
+        version: 0.5.48
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:^
@@ -8385,6 +8447,9 @@ packages:
 
   module-details-from-path@1.0.4:
     resolution: {integrity: sha512-EGWKgxALGMgzvxYF1UyGTy0HXX/2vHLkw6+NvDKW2jypWbHpjQuj4UMcqQWXHERJhVGKikolT06G3bcKe4fi7w==}
+
+  moment-timezone@0.5.48:
+    resolution: {integrity: sha512-f22b8LV1gbTO2ms2j2z13MuPogNoh5UzxL3nzNAYKGraILnbGc9NEE6dyiiiLv46DGRb8A4kg8UKWLjPthxBHw==}
 
   moment-timezone@0.6.0:
     resolution: {integrity: sha512-ldA5lRNm3iJCWZcBCab4pnNL3HSZYXVb/3TYr75/1WCTWYuTqYUb5f/S384pncYjJ88lbO8Z4uPDvmoluHJc8Q==}
@@ -20388,6 +20453,10 @@ snapshots:
   mkdirp@0.3.5: {}
 
   module-details-from-path@1.0.4: {}
+
+  moment-timezone@0.5.48:
+    dependencies:
+      moment: 2.30.1
 
   moment-timezone@0.6.0:
     dependencies:

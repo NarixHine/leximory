@@ -1,0 +1,22 @@
+{
+  "name": "@repo/utils",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./comment": "./src/comment.ts",
+    "./moment": "./src/moment.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "@types/node": "^25.0.5",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "es-toolkit": "^1.44.0",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45"
+  }
+}

@@ -9,13 +9,15 @@ import { Spinner } from '@heroui/spinner'
 import {
     useQuery,
     queryOptions,
-    experimental_streamedQuery as streamedQuery
+    experimental_streamedQuery as streamedQuery,
+    useMutation
 } from '@tanstack/react-query'
 import { readStreamableValue } from '../utils'
 import { annotateWordAction } from '@repo/service/annotate'
 import { toast } from 'sonner'
-import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { BookmarkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
 import { Streamdown } from 'streamdown'
+import { saveWordAction } from '@repo/service/word'
 
 async function* annotateWordStream(prompt: string) {
     const { data } = await annotateWordAction({ prompt })
@@ -124,7 +126,7 @@ function Annotation({ prompt }: { prompt: string }) {
     const { portions, isPending } = useAnnotate({ prompt })
     return (
         <Card fullWidth radius='sm' shadow='none'>
-            <CardBody className={cn('pt-3 pb-4 px-5 leading-snug')}>
+            <CardBody className={cn('pt-3 pb-4 px-5 leading-snug gap-2')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='overflow-hidden'>
                     <div>
@@ -136,7 +138,7 @@ function Annotation({ prompt }: { prompt: string }) {
                                 : <></>
                         }
                     </div>
-                    {portions[2] && <div className={'mt-2'}>
+                    {portions[2] && <div>
                         <div className='font-semibold text-sm'>释义</div>
                         <Streamdown>{portions[2]}</Streamdown>
                     </div>}
@@ -149,8 +151,32 @@ function Annotation({ prompt }: { prompt: string }) {
                         <Streamdown>{portions[4]}</Streamdown>
                     </div>}
                 </div>
+                <div>
+                    {portions[2] && <Save portions={portions} />}
+                </div>
             </CardBody>
         </Card>
+    )
+}
+
+function Save({ portions }: { portions: string[] }) {
+    const { mutate, isPending, isSuccess } = useMutation({
+        mutationFn: async () => {
+            await saveWordAction({ portions })
+        },
+    })
+    return (
+        <Button
+            color='secondary'
+            isLoading={isPending}
+            startContent={<BookmarkIcon weight='duotone' />}
+            isDisabled={isSuccess}
+            onPress={() => {
+                mutate()
+            }}
+        >
+            {isSuccess ? '已保存' : '保存'}
+        </Button>
     )
 }
 

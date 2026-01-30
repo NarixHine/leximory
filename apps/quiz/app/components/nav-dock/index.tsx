@@ -8,7 +8,7 @@ export function NavDock() {
             <Dock
                 items={[
                     { title: '主页', icon: <HouseLineIcon weight='duotone' size={20} />, href: '/' },
-                    { title: 'Leximory', icon: <ArrowSquareOutIcon weight='duotone' size={20} />, href: prefixUrl('/') },
+                    { title: 'Leximory', icon: <ArrowSquareOutIcon weight='duotone' size={20} />, href: prefixUrl('/daily') },
                 ]}
             />
         </div>

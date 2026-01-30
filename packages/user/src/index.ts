@@ -4,19 +4,7 @@ import { Plan, prefixUrl } from '@repo/env/config'
 import { redirect } from 'next/navigation'
 import { supabase } from '@repo/supabase'
 import { SIGN_IN_URL } from '@repo/env/config'
-
-export async function ensureUserExists(uid: string) {
-    await supabase
-        .from('users')
-        .upsert(
-            { id: uid, lexicoin: 20 },
-            {
-                onConflict: 'id', // Conflict resolution on the 'id' column.
-                ignoreDuplicates: true // If conflict, return existing row without updating.
-            }
-        )
-        .throwOnError()
-}
+import { ensureUserExists } from '@repo/supabase/user'
 
 export async function getSession() {
     const supabase = await createClient()

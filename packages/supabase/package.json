@@ -11,7 +11,10 @@
     "./proxy": "./src/proxy.ts",
     "./types": "./src/types.ts",
     "./auth-types": "./src/auth-types.ts",
-    "./paper": "./src/paper/index.ts"
+    "./paper": "./src/paper/index.ts",
+    "./word": "./src/word/index.ts",
+    "./library": "./src/library/index.ts",
+    "./user": "./src/user/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -20,11 +23,15 @@
   },
   "dependencies": {
     "@repo/env": "workspace:^",
+    "@repo/utils": "workspace:^",
+    "@repo/languages": "workspace:^",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "itty-time": "^2.0.2",
     "server-only": "^0.0.1",
-    "@repo/schema": "workspace:^"
+    "@repo/schema": "workspace:^",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45"
   },
   "peerDependencies": {
     "next": "^16.0.0"

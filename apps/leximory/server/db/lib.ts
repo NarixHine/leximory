@@ -6,35 +6,9 @@ import { cacheTag } from 'next/cache'
 import { pick } from 'es-toolkit'
 import { supabase } from '@repo/supabase'
 import { OrFilter } from '../auth/role'
-import { ensureUserExists } from '@repo/user'
+import { ensureUserExists } from '@repo/supabase/user'
 
-export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
-    const { data: rec } = await supabase
-        .from('libraries')
-        .select('*')
-        .eq('owner', owner)
-        .eq('shadow', true)
-        .eq('lang', lang)
-        .single()
-
-    if (rec) {
-        return rec
-    }
-
-    await ensureUserExists(owner)
-    const { data: lib } = await supabase
-        .from('libraries')
-        .insert({
-            owner,
-            shadow: true,
-            name: `🗃️ ${getLanguageStrategy(lang).name}词汇仓库`,
-            lang,
-        })
-        .select()
-        .single()
-
-    return lib!
-}
+export * from '@repo/supabase/library'
 
 export async function starLib({ lib, userId }: { lib: string, userId: string }) {
     const { data: library } = await supabase

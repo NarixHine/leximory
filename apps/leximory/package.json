@@ -73,6 +73,7 @@
     "@repo/supabase": "workspace:^",
     "@repo/ui": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/utils": "workspace:^",
     "@serwist/cli": "^9.4.2",
     "@serwist/next": "^9.4.2",
     "@supabase/ssr": "^0.8.0",

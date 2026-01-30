@@ -61,6 +61,8 @@
     "@repo/supabase": "workspace:^",
     "@repo/ui": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/utils": "workspace:^",
+    "@repo/languages": "workspace:^",
     "@tanstack/react-query": "^5.90.16",
     "@tiptap/extension-bubble-menu": "3.15.3",
     "@tiptap/extension-image": "3.15.3",

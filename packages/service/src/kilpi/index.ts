@@ -6,6 +6,8 @@ import { ReactServerPlugin } from '@kilpi/react-server'
 
 type Paper = Tables<'papers'>
 
+type Library = Tables<'libraries'>
+
 export const Kilpi = createKilpi({
   plugins: [ReactServerPlugin()],
 
@@ -72,7 +74,18 @@ export const Kilpi = createKilpi({
         if (subject.userId === paper.creator) return Grant(subject)
         return Deny({ message: 'Not authorized to read submissions of this paper' })
       },
-    }
+    },
+
+    libraries: {
+      async write(subject, lib: Library) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        const isOwner = lib.owner === subject.userId
+        if (isOwner) {
+          return Grant(subject)
+        }
+        return Deny({ message: 'Not authorized to write to this library' })
+      },
+    },
   },
 
   onUnauthorizedAssert(decision) {
