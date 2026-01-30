@@ -1,7 +1,7 @@
 import 'server-only'
 import { nanoid } from 'nanoid'
 import { supabase } from '@repo/supabase'
-import { ensureUserExists } from '@repo/user'
+import { ensureUserExists } from '@repo/supabase/user'
 
 // Get or create a token for the current user
 export async function getOrCreateToken(userId: string) {
@@ -12,7 +12,7 @@ export async function getOrCreateToken(userId: string) {
         return token
     }
     const newToken = nanoid(32)
-    await supabase.from('users').update({ token: newToken }).eq('id', userId)
+    await supabase.from('users').update({ token: newToken }).eq('id', userId).throwOnError()
     return newToken
 }
 
@@ -23,5 +23,5 @@ export async function verifyToken(token: string) {
 }
 
 export async function revokeToken(userId: string) {
-    await supabase.from('users').update({ token: null }).eq('id', userId)
+    await supabase.from('users').update({ token: null }).eq('id', userId).throwOnError()
 }

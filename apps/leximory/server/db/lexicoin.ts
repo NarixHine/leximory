@@ -2,7 +2,7 @@ import 'server-only'
 import { supabase } from '@repo/supabase'
 import { cacheTag } from 'next/cache'
 import { momentSH } from '@/lib/moment'
-import { ensureUserExists } from '@repo/user'
+import { ensureUserExists } from '@repo/supabase/user'
 
 // Function to get the LexiCoin balance for a user
 // Or to ensure the user exists and create them with a default balance if they don't
