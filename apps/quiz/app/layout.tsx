@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Instrument_Serif, Libre_Baskerville, Source_Code_Pro } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro } from 'next/font/google'
 import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './providers'
@@ -22,7 +22,7 @@ export const ENGLISH_MONO = Source_Code_Pro({
 
 const ENGLISH_SERIF = Libre_Baskerville({
   variable: '--font-serif',
-  weight: '400',
+  weight: ['400', '700'],
   style: ['normal', 'italic'],
   subsets: ['latin'],
 })
