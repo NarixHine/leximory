@@ -9,16 +9,20 @@ import {
     useSpring,
     useTransform,
 } from 'framer-motion'
-import Link from 'next/link'
+import Link, { LinkProps } from 'next/link'
 
 import { useRef, useState } from 'react'
 import { NavIndicator } from '../nav-indicator'
 
+type ItemProps = {
+    title: string
+    icon: React.ReactNode
+} & LinkProps & React.AnchorHTMLAttributes<HTMLAnchorElement>
 export const Dock = ({
     items,
     className,
 }: {
-    items: { title: string; icon: React.ReactNode; href: string }[]
+    items: ItemProps[]
     className?: string
 }) => {
     const mouseX = useMotionValue(Infinity)
@@ -42,13 +46,10 @@ function IconContainer({
     mouseX,
     title,
     icon,
-    href,
+    ...props
 }: {
     mouseX: MotionValue
-    title: string
-    icon: React.ReactNode
-    href: string
-}) {
+} & ItemProps) {
     const ref = useRef<HTMLDivElement>(null)
 
     const distance = useTransform(mouseX, (val) => {
@@ -92,7 +93,7 @@ function IconContainer({
     const [hovered, setHovered] = useState(false)
 
     return (
-        <Link href={href}>
+        <Link {...props}>
             <motion.div
                 ref={ref}
                 style={{ width, height }}

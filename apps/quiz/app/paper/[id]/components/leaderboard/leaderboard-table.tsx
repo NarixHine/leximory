@@ -6,6 +6,7 @@ import { Button } from '@heroui/button'
 import { TrophyIcon, UserIcon } from '@phosphor-icons/react'
 import { cn } from '@heroui/theme'
 import moment from 'moment'
+import { Logo } from '@/components/logo'
 
 type User = {
     userId: string
@@ -63,8 +64,8 @@ export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank
 
     if (leaderboardData.length === 0) {
         return (
-            <div className='flex flex-col items-center justify-center py-16 text-default-500'>
-                <TrophyIcon size={48} weight='thin' />
+            <div className='flex flex-col items-center justify-center py-16 text-default-600'>
+                <Logo className='size-12' />
                 <p className='mt-4 text-xl'>榜上无人</p>
                 <p className='text-sm mt-1'>成为第一个解出此谜的人吧</p>
             </div>

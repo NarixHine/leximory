@@ -9,7 +9,7 @@ export function NavDock() {
                 items={[
                     { title: '主页', icon: <HouseLineIcon weight='duotone' size={20} />, href: '/' },
                     { title: '生词本', icon: <BookBookmarkIcon weight='duotone' size={20} />, href: '/notebook' },
-                    { title: 'Leximory', icon: <ArrowSquareOutIcon weight='duotone' size={20} />, href: prefixUrl('/daily') },
+                    { title: 'Leximory', icon: <ArrowSquareOutIcon weight='duotone' size={20} />, href: prefixUrl('/daily'), target: '_blank' },
                 ]}
             />
         </div>
