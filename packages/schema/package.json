@@ -5,9 +5,9 @@
     "dev": "tsc --watch"
   },
   "exports": {
-    "./paper": "./src/paper/index.ts",
     ".": "./src/index.ts",
-    "./v3": "./src/v3/index.ts"
+    "./v3": "./src/v3/index.ts",
+    "./paper": "./src/paper/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

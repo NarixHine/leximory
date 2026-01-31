@@ -39,7 +39,6 @@ async function* annotateWordStream(prompt: string) {
         } catch (error) {
             console.error(error)
             toast.error('生成中止')
-            throw error
         }
     }
 }

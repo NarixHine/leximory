@@ -1,6 +1,12 @@
 import { z } from '@repo/schema'
 import { JSX } from 'react'
 
+export type StreamExplanationParams = {
+    quizData: QuizData,
+    questionNo: number,
+    userAnswer: string
+}
+
 /**
  * The schema for user-submitted answers.
  */

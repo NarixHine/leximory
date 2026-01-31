@@ -1379,6 +1379,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@repo/schema':
+        specifier: workspace:^
+        version: link:../schema
       es-toolkit:
         specifier: ^1.44.0
         version: 1.44.0

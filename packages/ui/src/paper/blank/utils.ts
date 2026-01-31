@@ -1,10 +1,4 @@
-import { StreamExplanationParams } from '@repo/service/paper'
-import { createHash } from 'crypto'
 import { AlphabeticalMarker } from '../generators/config'
-
-export function hashAskParams({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
-    return createHash('sha256').update(`${JSON.stringify(quizData)}${questionNo}${userAnswer}`).digest('hex')
-}
 
 export const highlightSubstrings = (mainString: string, substringsToMatch: string[]): string => {
     let resultString = mainString

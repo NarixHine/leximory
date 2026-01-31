@@ -5,10 +5,12 @@ import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
-import { QuizData, QuizItemsSchema } from '@repo/schema/paper'
+import { AskResponseSchema, QuizData, QuizItemsSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
 import { SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
+import { getAskCache } from '@repo/kv'
+import { hashAskParams } from '@repo/utils/paper'
 
 const createPaperSchema = z.object({
   content: QuizItemsSchema.optional(),
@@ -208,10 +210,18 @@ export type StreamExplanationParams = {
 
 export async function streamExplanationAction({ quizData, questionNo, userAnswer }: StreamExplanationParams) {
   const { subject } = await Kilpi.papers.askAI().authorize().assert()
-  
+  const cache = await getAskCache({
+    hash: hashAskParams({ quizData, questionNo, userAnswer }),
+  })
+  if (cache) {
+    const { success, data } = AskResponseSchema.safeParse(cache)
+    if (success) {
+      return data
+    }
+  }
   if (await incrCommentaryQuota(1, subject.userId)) {
     throw new Error('Quota exceeded')
   }
-  
+
   return streamExplanation({ quizData, questionNo, userAnswer })
 }
