@@ -1,0 +1,53 @@
+'use client'
+
+import { WordNote } from '@repo/ui/word-note'
+import { getRecentWordsAction } from '@repo/service/word'
+import { Spinner } from '@heroui/spinner'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useIntersectionObserver } from 'usehooks-ts'
+import { parseWord } from '@repo/utils'
+
+export function NotebookList({ initialData }: { initialData: { words: Array<{ word: string, id: string, date: string }>, cursor: string, more: boolean } | undefined }) {
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+        queryKey: ['recent-words'],
+        queryFn: async ({ pageParam }) => {
+            const result = await getRecentWordsAction({ cursor: pageParam })
+            return result.data
+        },
+        initialPageParam: '0',
+        initialData: initialData ? { pages: [initialData], pageParams: ['0'] } : undefined,
+        getNextPageParam: (lastPage) => lastPage?.more ? lastPage.cursor : undefined,
+    })
+
+    const { ref } = useIntersectionObserver({
+        threshold: 0.1,
+        onChange: (isIntersecting) => {
+            if (isIntersecting && hasNextPage && !isFetchingNextPage) {
+                fetchNextPage()
+            }
+        },
+    })
+
+    const allWords = data.pages.flatMap(page => page?.words ?? []) ?? []
+
+    return (
+        <>
+            {allWords.map(({ word, id, date }) => {
+                const portions = parseWord(word)
+                return (
+                    <div key={id} className='rounded-sm border border-divider'>
+                        <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
+                            <span className='text-xs text-default-500 font-mono'>{date}</span>
+                        </div>
+                        <WordNote portions={portions} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                    </div>
+                )
+            })}
+            {hasNextPage && (
+                <div ref={ref} className='col-span-full flex justify-center py-4'>
+                    {isFetchingNextPage ? <Spinner size='sm' /> : null}
+                </div>
+            )}
+        </>
+    )
+}

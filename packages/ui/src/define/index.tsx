@@ -4,20 +4,18 @@ import { Drawer } from 'vaul'
 import { useRef } from 'react'
 import { cn } from '@heroui/theme'
 import { getBracketedSelection, useSelection } from './utils'
-import { Button, Card, CardBody } from '@heroui/react'
-import { Spinner } from '@heroui/spinner'
+import { Button } from '@heroui/react'
 import {
     useQuery,
     queryOptions,
     experimental_streamedQuery as streamedQuery,
-    useMutation
 } from '@tanstack/react-query'
 import { readStreamableValue } from '../utils'
 import { annotateWordAction } from '@repo/service/annotate'
 import { toast } from 'sonner'
-import { BookmarkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
-import { Streamdown } from 'streamdown'
-import { saveWordAction } from '@repo/service/word'
+import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { WordNote } from '../word-note'
+import { parseWord } from '@repo/utils'
 
 async function* annotateWordStream(prompt: string) {
     const { data } = await annotateWordAction({ prompt })
@@ -58,7 +56,7 @@ const annotateQueryOptions = (prompt: string) =>
 
 const useAnnotate = ({ prompt }: { prompt: string }) => {
     const { data = [], isPending } = useQuery(annotateQueryOptions(prompt))
-    const portions = data.length > 0 ? data[data.length - 1].replace('{{', '').replace('}}', '').split('||') : []
+    const portions = data.length > 0 ? parseWord(data[data.length - 1]) : []
     return { portions, isPending }
 }
 
@@ -125,54 +123,7 @@ export function Define() {
 function Annotation({ prompt }: { prompt: string }) {
     const { portions, isPending } = useAnnotate({ prompt })
     return (
-        <Card fullWidth radius='sm' shadow='none'>
-            <CardBody className={cn('px-5 py-3 leading-snug gap-2')}>
-                <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
-                <div className='overflow-hidden'>
-                    {
-                        isPending && portions.length === 0
-                            ? <div className='flex font-mono items-center gap-1.5 -mt-2.5'>
-                                Generating <Spinner variant='dots' color='default' />
-                            </div>
-                            : <></>
-                    }
-                    {portions[2] && <div>
-                        <div className='font-semibold text-sm'>释义</div>
-                        <Streamdown className='prose-code:before:content-["["] prose-code:after:content-["]"]'>{portions[2]}</Streamdown>
-                    </div>}
-                    {portions[3] && <div className={'mt-2'}>
-                        <div className='font-semibold text-sm'>语源</div>
-                        <Streamdown>{portions[3]}</Streamdown>
-                    </div>}
-                    {portions[4] && <div className={'mt-2'}>
-                        <div className='font-semibold text-sm'>同源词</div>
-                        <Streamdown>{portions[4]}</Streamdown>
-                    </div>}
-                </div>
-                {portions[2] && <div className='my-1'><Save portions={portions} /></div>}
-            </CardBody>
-        </Card>
-    )
-}
-
-function Save({ portions }: { portions: string[] }) {
-    const { mutate, isPending, isSuccess } = useMutation({
-        mutationFn: async () => {
-            await saveWordAction({ portions })
-        },
-    })
-    return (
-        <Button
-            color='secondary'
-            isLoading={isPending}
-            startContent={<BookmarkIcon weight='duotone' />}
-            isDisabled={isSuccess}
-            onPress={() => {
-                mutate()
-            }}
-        >
-            {isSuccess ? '已保存' : '保存'}
-        </Button>
+        <WordNote portions={portions} isPending={isPending} showSaveButton={true} />
     )
 }
 

@@ -56,6 +56,7 @@
     "@repo/supabase": "workspace:^",
     "@repo/ui": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/utils": "workspace:^",
     "@tanstack/react-query": "^5.90.16",
     "ai": "^6.0.26",
     "es-toolkit": "^1.44.0",
@@ -72,6 +73,7 @@
     "react-dom": "19.2.3",
     "server-only": "^0.0.1",
     "sonner": "^2.0.7",
+    "usehooks-ts": "^3.1.1",
     "vaul": "^1.1.2"
   },
   "devDependencies": {

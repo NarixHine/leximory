@@ -20,7 +20,8 @@
     "./main": "./src/main/index.tsx",
     "./avatar": "./src/avatar/index.tsx",
     "./dock": "./src/dock/index.tsx",
-    "./define": "./src/define/index.tsx"
+    "./define": "./src/define/index.tsx",
+    "./word-note": "./src/word-note/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -38,6 +39,7 @@
     "@repo/schema": "workspace:^",
     "@repo/service": "workspace:^",
     "@repo/supabase": "workspace:^",
+    "@repo/utils": "workspace:^",
     "@repo/user": "workspace:^",
     "class-variance-authority": "^0.7.1",
     "es-toolkit": "^1.44.0",
@@ -58,6 +60,7 @@
     "@heroui/accordion": "^2.2.21",
     "@heroui/avatar": "^2.2.21",
     "@heroui/button": "^2.2.22",
+    "@heroui/card": "^2.2.22",
     "@heroui/dropdown": "^2.2.21",
     "@heroui/modal": "^2.2.22",
     "@heroui/progress": "^2.2.22",

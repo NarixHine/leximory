@@ -14,3 +14,7 @@ export function extractSaveForm(portions: string[]) {
     const comment = drop(portions, 1)
     return [comment[0]].concat(comment)
 }
+
+export function parseWord(word: string): string[] {
+    return word.replaceAll('{{', '').replaceAll('}}', '').split('||')
+}
