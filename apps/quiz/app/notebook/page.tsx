@@ -16,7 +16,7 @@ export default function Page() {
                 <h1 className='text-4xl font-bold'>生词本</h1>
                 <p className='text-default-400 mt-1'>最近保存的语块</p>
             </div>
-            <section className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <section className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 <Suspense fallback={<Progress isIndeterminate />}>
                     <Content />
                 </Suspense>

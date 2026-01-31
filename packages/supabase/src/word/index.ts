@@ -2,7 +2,7 @@ import 'server-only'
 import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@repo/env/config'
 import { supabase } from '@repo/supabase'
 import { cacheLife, cacheTag } from 'next/cache'
-import { validateOrThrow, momentSH } from '@repo/utils'
+import { validateOrThrow, stdMoment } from '@repo/utils'
 import { getShadowLib } from '../library'
 import { getWelcomeWord } from '@repo/languages'
 
@@ -84,7 +84,7 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
         words: data.map(({ word, id, created_at }) => ({
             word,
             id,
-            date: created_at ? momentSH(created_at).toISOString().split('T')[0] : momentSH().toISOString().split('T')[0]
+            date: created_at ? stdMoment(created_at).format('ll') : '',
         })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
         more: data.length === 20
@@ -117,8 +117,8 @@ export async function getWordsWithin({ fromDayAgo, toDayAgo, userId }: { fromDay
     const { data } = await supabase
         .from('lexicon')
         .select('word, id, lib:libraries!inner(id, lang)')
-        .gte('created_at', momentSH().startOf('day').subtract(fromDayAgo, 'day').toISOString())
-        .lte('created_at', momentSH().startOf('day').subtract(toDayAgo, 'day').toISOString())
+        .gte('created_at', stdMoment().startOf('day').subtract(fromDayAgo, 'day').toISOString())
+        .lte('created_at', stdMoment().startOf('day').subtract(toDayAgo, 'day').toISOString())
         .not('word', 'in', `(${welcomeWords.join(',')})`)
         .eq('lib.owner', userId)
         .throwOnError()
@@ -129,7 +129,7 @@ export async function aggrWordHistogram({ libs, size }: { libs: string[], size: 
     if (libs.length === 0) {
         return []
     }
-    const startDate = momentSH().subtract(size, 'days').toDate()
+    const startDate = stdMoment().subtract(size, 'days').toDate()
 
     const { data } = await supabase
         .from('lexicon')
@@ -139,7 +139,7 @@ export async function aggrWordHistogram({ libs, size }: { libs: string[], size: 
         .throwOnError()
 
     const histogram = data.reduce((acc: Record<string, number>, curr) => {
-        const date = momentSH(curr.created_at).startOf('day').format('YYYY-MM-DD')
+        const date = stdMoment(curr.created_at).startOf('day').format('YYYY-MM-DD')
         acc[date] = (acc[date] || 0) + 1
         return acc
     }, {})

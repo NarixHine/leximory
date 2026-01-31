@@ -27,7 +27,7 @@ export const Dock = ({
             onMouseMove={(e) => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-default-50 px-4 pb-3 md:flex',
+                'mx-auto h-16 items-end gap-4 rounded-2xl bg-default-50 px-4 pb-3 flex',
                 className,
             )}
         >

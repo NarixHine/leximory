@@ -1,4 +1,3 @@
-import momentTz from 'moment-timezone'
-import 'moment/locale/en-gb'
+import moment from 'moment'
 
-export const momentSH = (inp?: momentTz.MomentInput) => momentTz(inp).locale('en-gb').tz('Asia/Shanghai')
+export const stdMoment = (inp?: moment.MomentInput) => moment(inp)

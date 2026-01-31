@@ -6,6 +6,7 @@ import { Spinner } from '@heroui/spinner'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { parseWord } from '@repo/utils'
+import { Logo } from '@/components/logo'
 
 export function NotebookList({ initialData }: { initialData: { words: Array<{ word: string, id: string, date: string }>, cursor: string, more: boolean } | undefined }) {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -38,6 +39,7 @@ export function NotebookList({ initialData }: { initialData: { words: Array<{ wo
                     <div key={id} className='rounded-sm border border-divider'>
                         <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
                             <span className='text-xs text-default-500 font-mono'>{date}</span>
+                            <Logo className='size-5 grayscale-75 opacity-80 dark:opacity-40' />
                         </div>
                         <WordNote portions={portions} className='bg-transparent' cardBodyClassName='px-4 py-3' />
                     </div>
