@@ -24,6 +24,7 @@ export default function Page() {
 }
 
 async function Content() {
+    'use cache'
     const papers = await getPublicPapers()
     return (
         <>

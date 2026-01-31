@@ -15,6 +15,7 @@ const getUserByIdSchema = z.object({
 export const getUserProfileAction = actionClient
     .inputSchema(getUserByIdSchema)
     .action(async ({ parsedInput: { id } }) => {
+        'use cache'
         const user = await getUserById(id)
         return {
             imageUrl: user.image,
