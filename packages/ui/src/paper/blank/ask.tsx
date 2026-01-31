@@ -38,12 +38,12 @@ export function Ask() {
     return (
         <Drawer.Root modal={true} open={open} onOpenChange={setOpen}>
             <Drawer.Portal>
-                <Drawer.Content className='flex chat gap-4 p-2 h-[50vh] mt-24 fixed bottom-0 w-full sm:left-5 z-999999 sm:w-fit'>
+                <Drawer.Content className='flex chat gap-2 p-2 h-[50vh] mt-24 fixed bottom-0 w-full sm:left-5 z-999999 sm:w-fit'>
                     <Drawer.Title className='sr-only'>AI Explanation</Drawer.Title>
                     <QuizLogo className='size-12 self-end' />
                     <div className={cn(
                         'px-4 pt-4 border-1 border-divider bg-content1/50 backdrop-blur-lg flex-1 flex flex-col items-center overflow-y-auto',
-                        'chat-bubble'
+                        'rounded-3xl rounded-bl-none mb-2',
                     )}>
                         <div aria-hidden className='mx-auto w-12 h-1.5 shrink-0 rounded-full bg-default-300' />
                         <div className='prose dark:prose-invert'>
