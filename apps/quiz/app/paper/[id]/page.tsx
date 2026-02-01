@@ -16,6 +16,8 @@ import { KeyIcon } from '@phosphor-icons/react/ssr'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
 import { Define } from '@repo/ui/define'
+import { MarkForLater } from '@repo/ui/mark-for-later'
+import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 
 type PaperPageProps = {
     params: Promise<{
@@ -65,6 +67,7 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
                 Paper={!answers && <>
                     <Paper data={content} />
                     <SubmitAnswers questionCount={questionCount} />
+                    <MarkForLater />
                 </>}
                 Revise={answers && <RevisePaper quizData={content} answers={answers} />}
                 leaderboard={<Leaderboard paperId={parseInt(id)} />}
@@ -85,6 +88,7 @@ function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: Answ
                 /{computePerfectScore(quizData)} <KeyIcon className='ml-1 size-5' />
             </span>
         </h1>
+        <MarkedItemsPanel />
         <HighlightedPaper
             data={quizData}
         />

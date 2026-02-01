@@ -4,6 +4,7 @@ import { Answers, QuizItems, QuizItemsSchema } from '@repo/schema/paper'
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
+import { nanoid } from 'nanoid'
 
 export { highlightsAtom } from './blank/atoms'
 
@@ -42,6 +43,50 @@ export const setAnswerAtom = atom(
             ...current,
             [questionId]: option
         })
+    }
+)
+
+export interface MarkedItem {
+    id: string
+    text: string
+    xpath: string
+    timestamp: number
+}
+
+export const markedItemsAtomFamily = atomFamily((paperId: string) =>
+    atomWithStorage<MarkedItem[]>(`marked-items-${paperId}`, [])
+)
+export const markedItemsAtom = atom((get) => {
+    const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+    return get(markedItemsAtomFamily(paperId))
+})
+export const addMarkedItemAtom = atom(
+    null,
+    (get, set, { text, xpath }: { text: string, xpath: string }) => {
+        const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+        const current = get(markedItemsAtomFamily(paperId))
+        const newItem: MarkedItem = {
+            id: nanoid(),
+            text,
+            xpath,
+            timestamp: Date.now()
+        }
+        set(markedItemsAtomFamily(paperId), [...current, newItem])
+    }
+)
+export const removeMarkedItemAtom = atom(
+    null,
+    (get, set, { id }: { id: string }) => {
+        const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+        const current = get(markedItemsAtomFamily(paperId))
+        set(markedItemsAtomFamily(paperId), current.filter(item => item.id !== id))
+    }
+)
+export const clearMarkedItemsAtom = atom(
+    null,
+    (get, set) => {
+        const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+        set(markedItemsAtomFamily(paperId), [])
     }
 )
 

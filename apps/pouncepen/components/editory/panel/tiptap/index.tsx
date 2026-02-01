@@ -289,6 +289,7 @@ const Tiptap = ({
                   onPress={handleAIGeneration}
                   variant='light'
                   isIconOnly
+                  radius='none'
                   aria-label='Generate with AI'
                 >
                   <MagicWandIcon />

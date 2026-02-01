@@ -207,7 +207,7 @@ export async function getPaperSubmission({
 
   if (error && error.code !== 'PGRST116') // PGRST116 is "not found"
     throw error
-  return { ...submission, answers: AnswersSchema.parse(submission?.answers) }
+  return { ...submission, answers: submission ? AnswersSchema.parse(submission.answers) : undefined }
 }
 
 /**
