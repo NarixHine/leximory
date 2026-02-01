@@ -1,7 +1,7 @@
 'use client'
 
 import { Drawer } from 'vaul'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { cn } from '@heroui/theme'
 import { getBracketedSelection, useSelection } from './utils'
 import { useSelectionPosition } from '../utils/hooks'
@@ -59,15 +59,25 @@ const useAnnotate = ({ prompt }: { prompt: string }) => {
     const portions = data.length > 0 ? parseWord(data[data.length - 1]) : []
     return { portions, isPending }
 }
-
 export function Define() {
     const ref = useRef(globalThis.document)
     const selectionContext = useSelection(ref)
     const { left, width, selection } = selectionContext
     const { buttonTop, rect } = useSelectionPosition(selection)
 
+    // State to hold the prompt persistently while the drawer is open
+    const [activePrompt, setActivePrompt] = useState('')
+
     return (
-        <Drawer.Root repositionInputs={false}>
+        <Drawer.Root
+            repositionInputs={false}
+            // Capture the selection when the drawer opens
+            onOpenChange={(open) => {
+                if (open && selection) {
+                    setActivePrompt(getBracketedSelection(selection))
+                }
+            }}
+        >
             {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
                 <Drawer.Trigger asChild>
                     <Button
@@ -93,7 +103,7 @@ export function Define() {
                 )} />
                 <Drawer.Content className='h-fit px-2 fixed rounded-t-xl bottom-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    {selection && <Annotation prompt={getBracketedSelection(selection)} />}
+                    {activePrompt && <Annotation prompt={activePrompt} />}
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>

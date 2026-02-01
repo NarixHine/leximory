@@ -42,6 +42,7 @@ export function WordNote({ portions, isPending, showSaveButton, className, cardB
 
 function Save({ portions }: { portions: string[] }) {
     const { mutate, isPending, isSuccess } = useMutation({
+        mutationKey: ['save-word', ...portions],
         mutationFn: async () => {
             await saveWordAction({ portions })
         },

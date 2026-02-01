@@ -49,6 +49,7 @@ export function MarkForLater() {
                     startContent={<BookmarkSimpleIcon weight='duotone' />}
                     variant='solid'
                     onPress={handleMark}
+                    onPointerDown={(e) => e.preventDefault()}
                 >
                     Mark for later
                 </Button>

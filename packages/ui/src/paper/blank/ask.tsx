@@ -18,6 +18,7 @@ import { useScrollToMatch } from './hooks'
 import { QuizLogo } from '../../logo'
 import { hashAskParams } from '@repo/utils/paper'
 import { last } from 'es-toolkit'
+import { readStreamableValue } from '../../utils'
 
 export function AskButton({ ask, ...props }: { ask: () => void } & ButtonProps) {
     return (
@@ -60,15 +61,16 @@ async function* streamExplanation(props: StreamExplanationParams) {
     try {
         const result = await streamExplanationAction(props)
         if ('partialObjectStream' in result) {
-            for await (const chunk of result.partialObjectStream) {
+            for await (const chunk of readStreamableValue(result.partialObjectStream)) {
                 yield chunk
             }
         }
         else {
             yield result
         }
-    } catch {
+    } catch (error) {
         toast.error('AI 输出中止，请重试')
+        console.error(error)
     }
 }
 
@@ -76,7 +78,7 @@ function Explanation(props: StreamExplanationParams) {
     const setHighlights = useSetAtom(highlightsAtom)
     const { scrollTo } = useScrollToMatch()
 
-    const { data: explanation, isPending } = useQuery(queryOptions({
+    const { data: explanation } = useQuery(queryOptions({
         queryKey: ['ask', hashAskParams(props)],
         queryFn: streamedQuery<{
             explanation?: string

@@ -1,7 +1,7 @@
 import 'server-only'
 import { streamObject } from 'ai'
 import { FLASH_AI } from '../config'
-import { QuizData, StreamExplanationParams } from '@repo/schema/paper'
+import { StreamExplanationParams } from '@repo/schema/paper'
 import { buildAskPrompt, buildAskSystemPrompt } from '../prompts/ask'
 import { SectionType } from '../prompts/sections'
 import { AskResponseSchema } from '@repo/schema/paper'

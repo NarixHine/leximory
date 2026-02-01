@@ -71,7 +71,7 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
                 <Popover shadow='sm'>
                     <PopoverTrigger>
                         <span id={`q${no}`} className={cn(!checkAnswerCorrectness() && 'text-danger')}>
-                            {ShownBlank} {!checkAnswerCorrectness() && <span >[<span className='line-through'><FormattedFullAnswer /></span>; <span className='text-success'><FormattedFullKey /></span>]</span>}
+                            {ShownBlank} {!checkAnswerCorrectness() && <span>(<span className='line-through'><FormattedFullAnswer /></span>; <span className='text-success'><FormattedFullKey /></span>)</span>}
                         </span>
                     </PopoverTrigger>
                     <PopoverContent>
