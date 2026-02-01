@@ -46,7 +46,6 @@ export function Ask() {
                         'px-4 pt-4 border-1 border-divider bg-content1/50 backdrop-blur-lg flex-1 flex flex-col items-center overflow-y-auto',
                         'rounded-3xl rounded-bl-none mb-2',
                     )}>
-                        <div aria-hidden className='mx-auto w-12 h-1.5 shrink-0 rounded-full bg-default-300' />
                         <div className='prose dark:prose-invert'>
                             {explanationProps && <Explanation {...explanationProps} />}
                         </div>

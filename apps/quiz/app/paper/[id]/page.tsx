@@ -29,16 +29,17 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
     const id = (await params).id
     const paper = await getPaper({ id: parseInt(id) })
     return {
-        title: `小试身手「${paper.title}」`,
+        title: paper.title
     }
 }
 
 async function getData({ id }: { id: number }) {
-    const [{ content }, { data: submission }] = await Promise.all([getPaper({ id }), getPaperSubmissionAction({ paperId: id })])
+    const [{ content, title }, { data: submission }] = await Promise.all([getPaper({ id }), getPaperSubmissionAction({ paperId: id })])
     if (!submission) // allow tainting only when the user hasn't submitted yet
         taintObjectReference('Do not pass raw paper data to the client', content)
     return {
         content,
+        title,
         answers: submission?.answers
     }
 }
@@ -57,12 +58,13 @@ export default function Page({ params }: PaperPageProps) {
 
 async function Content({ params }: { params: PaperPageProps['params'] }) {
     const { id } = await params
-    const { content, answers } = await getData({ id: parseInt(id) })
+    const { content, answers, title } = await getData({ id: parseInt(id) })
     const questionCount = content.reduce((count, item) => count + applyStrategy(item, (strategy, data) => strategy.getQuestionCount(data)), 0)
     return (
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
         ]}>
+            <h2 className='text-4xl mb-2 font-formal'>{title}</h2>
             <QuizTabs
                 Paper={!answers && <>
                     <Paper data={content} />
