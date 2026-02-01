@@ -5,6 +5,7 @@ import { getPublicPapers } from '@repo/supabase/paper'
 import moment from 'moment'
 import { Suspense } from 'react'
 import { Logo } from '@/components/logo'
+import { cacheLife, cacheTag } from 'next/cache'
 
 export const metadata: Metadata = {
     title: '猫谜',
@@ -29,6 +30,8 @@ export default function Page() {
 
 async function Content() {
     'use cache'
+    cacheTag('paper:public')
+    cacheLife('minutes')
     const papers = await getPublicPapers()
     return (
         <>

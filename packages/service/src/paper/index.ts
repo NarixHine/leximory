@@ -11,6 +11,7 @@ import { SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
 import { getAskCache } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
+import { revalidateTag } from 'next/cache'
 
 const createPaperSchema = z.object({
   content: QuizItemsSchema.optional(),
@@ -64,6 +65,8 @@ export const createPaperAction = actionClient
     const user = await getUserOrThrow()
     await Kilpi.authed().authorize().assert()
     const paper = await createPaper({ data: { ...input, creator: user.userId } })
+
+    revalidateTag('paper:public', 'max')
     return paper
   })
 
@@ -133,7 +136,10 @@ export const togglePaperVisibilityAction = actionClient
 
     await Kilpi.papers.update(paper).authorize().assert()
 
-    return togglePaperVisibility({ id })
+    const result = await togglePaperVisibility({ id })
+
+    revalidateTag('paper:public', 'max')
+    return result
   })
 
 /**
@@ -147,7 +153,8 @@ export const deletePaperAction = actionClient
 
     await Kilpi.papers.delete(paper).authorize().assert()
 
-    return deletePaper({ id })
+    await deletePaper({ id })
+    revalidateTag('paper:public', 'max')
   })
 
 /**
