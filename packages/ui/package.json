@@ -24,7 +24,8 @@
     "./word-note": "./src/word-note/index.tsx",
     "./logo": "./src/logo/index.tsx",
     "./mark-for-later": "./src/mark-for-later/index.tsx",
-    "./mark-for-later/panel": "./src/mark-for-later/panel.tsx"
+    "./mark-for-later/panel": "./src/mark-for-later/panel.tsx",
+    "./confirm-popover": "./src/confirm-popover/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

@@ -28,7 +28,7 @@ export function PaperCard({
     })
 
     return (
-        <Card shadow='none' className='border border-default px-3 hover:border-default-300 dark:border-default-200 transition-all duration-200 ease-in-out' isPressable as={Link} href={`/paper/${id}`}>
+        <Card shadow='none' className='border bg-default-50 border-default px-3 hover:border-default-300 dark:border-default-200 transition-all duration-200 ease-in-out' isPressable as={Link} href={`/paper/${id}`}>
             <CardBody className='flex flex-col items-start pt-4'>
                 <Skeleton isLoaded={isSuccess} className={cn(!isSuccess && 'opacity-50', 'h-5 rounded-2xl min-w-20 mb-2')}>
                     <div className='flex gap-3 text-default-600 text-lg items-center'>
@@ -53,7 +53,7 @@ export function PaperCard({
 
 export function PaperCardSkeleton() {
     return (
-        <Card shadow='none' className='border border-default px-3 dark:border-default-200 p-3 opacity-50'>
+        <Card shadow='none' className='border bg-default-50 border-default px-3 dark:border-default-200 p-3 opacity-50'>
             <CardHeader className='flex flex-col items-start'>
                 <Skeleton className='h-3 mb-2 rounded-2xl'>
                     <div className='flex gap-2 text-default-600 text-lg items-center mb-2'>

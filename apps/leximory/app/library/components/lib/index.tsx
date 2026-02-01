@@ -231,7 +231,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         })
                     }}>确认删除</Button>
                 </PopoverContent>
-            </Popover >}
+            </Popover>}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             isLoading={formState.isSubmitting}
