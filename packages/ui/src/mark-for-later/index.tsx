@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { cn } from '@heroui/theme'
 import { useSelection } from '../define/utils'
 import { useSelectionPosition } from '../utils/hooks'
-import { Button, PressEvent } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { addMarkedItemAtom } from '../paper/atoms'
 import { useSetAtom } from 'jotai'
 import { BookmarkSimpleIcon } from '@phosphor-icons/react'
@@ -17,26 +17,26 @@ export function MarkForLater() {
     const { buttonTop, rect } = useSelectionPosition(selection)
     const addMarkedItem = useSetAtom(addMarkedItemAtom)
 
-    const handleMark = (e: PressEvent) => {
-        if (!selection) return
+    // freeze the selection text so it persists during the click
+    const lastValidText = useRef('')
+    const lastValidXpath = useRef('')
 
-        const text = selection.toString()
-        if (!text) return
+    if (selection && selection.toString()) {
+        lastValidText.current = selection.toString()
+        lastValidXpath.current = getXPathForSelection(selection) ?? ''
+    }
 
-        // Get XPath for the selection
-        const xpath = getXPathForSelection(selection)
-        if (!xpath) {
-            toast.error('无法标记此内容')
-            return
-        }
-
-        addMarkedItem({ text, xpath })
+    const handleMark = () => {
+        addMarkedItem({
+            text: lastValidText.current,
+            xpath: lastValidXpath.current
+        })
         toast.success('已标记')
     }
 
     return (
         <>
-            {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
+            {selection && left && width && rect && (
                 <Button
                     style={{
                         left: left + width / 2,
