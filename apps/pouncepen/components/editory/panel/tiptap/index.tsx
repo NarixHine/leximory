@@ -30,9 +30,9 @@ import { IS_PROD } from '@repo/env'
 import { throttle } from 'es-toolkit'
 import { ms } from 'itty-time'
 import { streamQuizAction } from './actions'
-import { ProtectedButton } from '@repo/ui/protected-button'
 import { QuizData } from '@repo/schema/paper'
 import { AIGeneratableType } from '@repo/ui/paper/utils'
+import { useUser } from '@repo/ui/auth'
 
 interface TiptapProps extends UseEditorOptions {
   blank?: (selection: string) => void
@@ -139,8 +139,15 @@ const Tiptap = ({
     [editor] // Re-create only if editor instance changes
   )
 
-  const handleAIGeneration = async () => {
-    if (!ai || !editor) return
+  const { user } = useUser()
+  const handleAIGeneration = () => {
+    if (!user) {
+      toast.error('请先登录以使用 AI 出题功能。')
+      return
+    }
+    if (!ai || !editor) {
+      return
+    }
 
     const promptText = getSelectionHTML()
 
@@ -282,19 +289,6 @@ const Tiptap = ({
                   <OptionIcon />
                 </Button>
               )}
-
-              {/* AI Generator */}
-              {ai && (
-                <ProtectedButton
-                  onPress={handleAIGeneration}
-                  variant='light'
-                  isIconOnly
-                  radius='none'
-                  aria-label='Generate with AI'
-                >
-                  <MagicWandIcon />
-                </ProtectedButton>
-              )}
             </ButtonGroup>
             <Dropdown>
               <DropdownTrigger className='bg-transparent'>
@@ -307,6 +301,17 @@ const Tiptap = ({
                 />
               </DropdownTrigger>
               <DropdownMenu>
+                {ai ? (
+                  <DropdownItem
+                    key='ai-generate'
+                    onPress={handleAIGeneration}
+                    variant='light'
+                    aria-label='Generate with AI'
+                    startContent={<MagicWandIcon />}
+                  >
+                    AI 出题
+                  </DropdownItem>
+                ) : null}
                 <DropdownItem key="h1" startContent={<TextHOneIcon />} onPress={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
                   Heading 1
                 </DropdownItem>

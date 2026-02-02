@@ -26,7 +26,7 @@ export const toolDescriptions = {
         completed: 'Questions Devised'
     },
     scrapeArticle: {
-        loading: 'Extracting Article from Webpage',
+        loading: 'Scraping Webpage',
         completed: 'Article Extracted'
     }
 } as const

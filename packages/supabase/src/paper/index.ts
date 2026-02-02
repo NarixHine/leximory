@@ -30,8 +30,6 @@ export async function createPaper({ data }: { data: TablesInsert<'papers'> }) {
  * @throws Error if the paper is not found or query fails
  */
 export async function getPaper({ id }: { id: number }) {
-  'use cache'
-
   const { data: paper, error } = await supabase
     .from('papers')
     .select('*')

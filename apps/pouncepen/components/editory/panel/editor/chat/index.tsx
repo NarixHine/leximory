@@ -64,7 +64,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 )
             case 'output-error':
                 return <ToolMessageWrapper>
-                    <WarningCircleIcon size={16} /> Error
+                    <WarningCircleIcon size={16} /> Error: {toolDescriptions[toolName].loading}
                 </ToolMessageWrapper>
         }
     }
@@ -308,6 +308,7 @@ function ChatSession() {
                     value={input}
                     color='primary'
                     variant='flat'
+                    maxRows={30}
                     onChange={e => setInput(e.target.value)}
                     autoComplete='off'
                     startContent={<ChatCircleDotsIcon className='text-default-500' />}
