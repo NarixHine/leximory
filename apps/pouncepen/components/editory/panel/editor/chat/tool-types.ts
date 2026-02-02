@@ -53,6 +53,7 @@ export const toolSchemas = {
     designQuestionsInput: z.object({
         adaptedText: z.string().min(1),
         type: GeneratableTypeSchema,
+        specialInstructions: z.string().optional(),
     }),
     designQuestionsOutput: GeneratableDataSchema,
     scrapeArticle: z.object({

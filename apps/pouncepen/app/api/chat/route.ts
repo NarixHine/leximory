@@ -37,10 +37,10 @@ export async function POST(request: Request) {
                 inputSchema: toolSchemas.updateQuizItem
             }),
             designQuestions: tool({
-                description: 'Design questions based on the adapted text',
+                description: 'Design questions based on the adapted text. ALWAYS CALL this tool to generate new questions, rather than directly do it as the main agent. Add special instructions ONLY WHEN the user provides them.',
                 inputSchema: toolSchemas.designQuestionsInput,
-                execute: async ({ adaptedText, type }: { adaptedText: string, type: AIGeneratableType }) => {
-                    const object = await generateQuiz({ prompt: adaptedText, type })
+                execute: async ({ adaptedText, type, specialInstructions }: { adaptedText: string, type: AIGeneratableType, specialInstructions?: string }) => {
+                    const object = await generateQuiz({ prompt: adaptedText, type, specialInstructions })
                     return object
                 }
             }),

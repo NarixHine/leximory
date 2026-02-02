@@ -17,7 +17,7 @@ export default function Page() {
             <div className='mb-6 mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3'>
                 <Logo className='size-13' />
                 <h1 className='text-4xl'>猫谜</h1>
-                <p className='text-default-700 text-sm col-span-2'>与你一起解开英语之谜</p>
+                <p className='text-default-700 text-sm col-span-2'>陪你一起解开英语之谜</p>
             </div>
             <section className='grid sm:grid-cols-2 gap-3'>
                 <Suspense fallback={new Array(6).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />))}>

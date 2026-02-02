@@ -17,11 +17,11 @@ export async function streamQuiz({ prompt, type }: { prompt: string, type: AIGen
     return { partialObjectStream, object }
 }
 
-export async function generateQuiz({ prompt, type }: { prompt: string, type: AIGeneratableType }) {
+export async function generateQuiz({ prompt, type, specialInstructions }: { prompt: string, type: AIGeneratableType, specialInstructions?: string }) {
     const { system, schema } = getConfig(type)
     const { object } = await generateObject({
         prompt,
-        system,
+        system: specialInstructions ? `${system}\n${specialInstructions}` : system,
         schema,
         maxOutputTokens: 10000,
         ...SMART_AI
