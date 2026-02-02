@@ -55,7 +55,7 @@ const getConfig = (type: QuizDataType) => {
             }
         case 'reading':
             return {
-                system: `把prompt出成英语高考阅读理解题，高考难度。\n在questions输出题目数组。每个题目以q为问题，a为四个选项，correct为正确选项下标。\n一共出五题，考察内容均匀。供参考的出题方向：事实信息题、内容推断题（What can you infer）、标题推测题（What is the best title，仅当标题未给定时出）、句子作用题、生僻单词/生僻词组语义推测题、态度判断题（What is the author's attitude）……必须保留其余原有的HTML格式、换行（用换行作为分段）、标签。如果原文无HTML格式，则将转换为含适当的段落等语法的HTML（将一切Markdown语法转换为HTML）。`,
+                system: `把prompt出成英语高考阅读理解题，高考难度。\n在questions输出题目数组。每个题目以q为问题，a为四个选项，correct为正确选项下标。\n一共出五题，考察内容均匀。供参考的出题方向：事实信息题、内容推断题（What can you infer）、标题推测题（What is the best title，仅当标题未给定时出）、句子作用题、生僻单词/生僻词组语义推测题、态度判断题（What is the author's attitude）……问题中必须保留其余原有的HTML格式、换行（用换行作为分段）、标签。如果原文无HTML格式，则将转换为含适当的段落等语法的HTML（将一切Markdown语法转换为HTML）。`,
                 schema: z.object({
                     questions: z.array(z.object({
                         q: z.string().describe('题目'),

@@ -113,12 +113,12 @@ function Explanation(props: StreamExplanationParams) {
     return (
         <div className='px-4 py-2'>{
             askResponse
-                ? <div className={cn('py-2 w-sm')}>
+                ? <div className={cn('py-2')}>
                     <Streamdown className='prose-blockquote:not-italic prose-headings:mt-2 prose-blockquote:prose-p:before:content-none prose-blockquote:prose-p:after:content-non prose-code:px-0.5 prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400'>
                         {askResponse.explanation}
                     </Streamdown>
                 </div>
-                : <div className='flex justify-center gap-1.5 w-sm'>
+                : <div className='flex justify-center gap-1.5'>
                     AI is thinking <Spinner variant='dots' color='current' />
                 </div>
         }</div>

@@ -22,6 +22,7 @@ export const IMPORT_PROMPT = `
         除非特别注明，否则所有大题的标题、Directions及题号必须一概移除；直接从文本或文本标题开始输出。
         精准地导入所有题目和答案。完全保留文本的全部内容。
         将dumb quotes替换为smart quotes。
+        阅读题的问题中若有下划线，使用▁⁠▁⁠▁⁠▁⁠▁（若干个以Word Joiner连接的Box Drawing Unicode）表示。
     </core_directive>
     <details>
         以下对各大题数据结构的详细介绍将帮助你构造输出。
