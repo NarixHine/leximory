@@ -163,6 +163,7 @@ export const FillInTheBlank = ({ groupId, number, blankCount = 1 }: { groupId: s
 
     const content = (
         <Input
+            autoCapitalize='off'
             autoFocus
             variant='flat'
             value={answer ?? ''}

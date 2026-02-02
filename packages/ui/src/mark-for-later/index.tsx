@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { cn } from '@heroui/theme'
 import { useSelection } from '../define/utils'
 import { useSelectionPosition } from '../utils/hooks'
-import { Button } from '@heroui/react'
+import { Button, PressEvent } from '@heroui/react'
 import { addMarkedItemAtom } from '../paper/atoms'
 import { useSetAtom } from 'jotai'
 import { BookmarkSimpleIcon } from '@phosphor-icons/react'
@@ -17,7 +17,7 @@ export function MarkForLater() {
     const { buttonTop, rect } = useSelectionPosition(selection)
     const addMarkedItem = useSetAtom(addMarkedItemAtom)
 
-    const handleMark = () => {
+    const handleMark = (e: PressEvent) => {
         if (!selection) return
 
         const text = selection.toString()
@@ -49,7 +49,6 @@ export function MarkForLater() {
                     startContent={<BookmarkSimpleIcon weight='duotone' />}
                     variant='solid'
                     onPress={handleMark}
-                    onPointerDown={(e) => e.preventDefault()}
                 >
                     Mark for later
                 </Button>
