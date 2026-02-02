@@ -17,6 +17,6 @@ export const submitAnswersAction = actionClient
             paperId: id,
             score: computeTotalScore(content, answers),
             perfectScore: computePerfectScore(content),
-            answers: answers
+            answers: Object.fromEntries(Object.entries(answers).map(([questionId, answer]) => ([questionId, answer?.trim() ?? ''])))
         })
     })
