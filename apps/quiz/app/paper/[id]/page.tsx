@@ -18,6 +18,7 @@ import Leaderboard from './components/leaderboard'
 import { Define } from '@repo/ui/define'
 import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
+import { getUser } from '@repo/user'
 
 type PaperPageProps = {
     params: Promise<{
@@ -34,13 +35,22 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
 }
 
 async function getData({ id }: { id: number }) {
-    const [{ content, title }, { data: submission }] = await Promise.all([getPaper({ id }), getPaperSubmissionAction({ paperId: id })])
-    if (!submission) // allow tainting only when the user hasn't submitted yet
-        taintObjectReference('Do not pass raw paper data to the client', content)
-    return {
-        content,
-        title,
-        answers: submission?.answers
+    if (await getUser()) {
+        const [{ content, title }, { data: submission }] = await Promise.all([getPaper({ id }), getPaperSubmissionAction({ paperId: id })])
+        if (!submission) // only taint when the user hasn't submitted yet
+            taintObjectReference('Do not pass raw paper data to the client', content)
+        return {
+            content,
+            title,
+            answers: submission?.answers
+        }
+    }
+    else {
+        const { content, title } = await getPaper({ id })
+        return {
+            content,
+            title,
+        }
     }
 }
 

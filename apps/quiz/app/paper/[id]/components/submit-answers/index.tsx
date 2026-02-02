@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { ConfirmPopover } from '@repo/ui/confirm-popover'
 import { toast } from 'sonner'
 import { WarningOctagonIcon } from '@phosphor-icons/react'
+import { ProtectedButton } from '@repo/ui/protected-button'
 
 export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const answers = useAtomValue(answersAtom)
@@ -28,7 +29,8 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
             <ConfirmPopover
                 skipConfirm={hasCompleted}
                 actionButton={(
-                    <Button
+                    <ProtectedButton
+                        label='登录一下即可查看答案，并且荣登排行榜喵～'
                         onPress={() => execute({ answers, id: parseInt(paperId!) })}
                         fullWidth
                         startContent={!isPending && <BoxArrowUpIcon weight='duotone' />}
@@ -41,7 +43,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
                                 ? '已上传'
                                 : (hasCompleted ? '提交' : '仅提交已完成部分')
                         }
-                    </Button>
+                    </ProtectedButton>
                 )}
             >
                 <Button startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' fullWidth isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>

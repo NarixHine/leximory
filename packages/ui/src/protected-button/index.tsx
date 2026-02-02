@@ -9,7 +9,7 @@ import Link from 'next/link'
 import ShinyText from '../shiny-text'
 import { useDarkMode } from 'usehooks-ts'
 
-export function ProtectedButton(props: ButtonProps) {
+export function ProtectedButton({ label, ...props }: { label?: string } & ButtonProps) {
     const { isLoggedIn, isLoading } = useUser()
     const { isDarkMode } = useDarkMode()
 
@@ -34,9 +34,9 @@ export function ProtectedButton(props: ButtonProps) {
                     href={prefixPathname({ path: '/satellite', next: window.location.href })}
                 >
                     {isDarkMode ? (
-                        <ShinyText color='#ffffff' shineColor='#666f87' text='请登录，因为这是一个厉害的功能' />
+                        <ShinyText color='#ffffff' shineColor='#666f87' text={label ?? '请登录，因为这是一个厉害的功能'} />
                     ) : (
-                        <ShinyText color='#000000' shineColor='#ffffff' text='请登录，因为这是一个厉害的功能' />
+                        <ShinyText color='#000000' shineColor='#ffffff' text={label ?? '请登录，因为这是一个厉害的功能'} />
                     )}
                 </DropdownItem>
             </DropdownMenu>
