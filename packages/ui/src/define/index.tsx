@@ -59,6 +59,7 @@ const useAnnotate = ({ prompt }: { prompt: string }) => {
     const portions = data.length > 0 ? parseWord(data[data.length - 1]) : []
     return { portions, isPending }
 }
+
 export function Define() {
     const ref = useRef(globalThis.document)
     const selectionContext = useSelection(ref)
@@ -72,12 +73,6 @@ export function Define() {
         <Drawer.Root
             direction='top'
             repositionInputs={false}
-            // Capture the selection when the drawer opens
-            onOpenChange={(open) => {
-                if (open && selection) {
-                    setActivePrompt(getBracketedSelection(selection))
-                }
-            }}
         >
             {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
                 <Drawer.Trigger asChild>
@@ -92,6 +87,12 @@ export function Define() {
                         color='primary'
                         startContent={<MagnifyingGlassIcon weight='duotone' />}
                         variant='shadow'
+                        onPress={(e) => {
+                            // capture the selection text when opening the drawer
+                            if (selection && selection.toString()) 
+                                setActivePrompt(getBracketedSelection(selection))
+                            e.continuePropagation()
+                        }}
                     >
                         Define
                     </Button>
