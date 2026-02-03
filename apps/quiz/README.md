@@ -1,67 +1,39 @@
-# 猫谜 (Quiz)
+# 猫谜
 
-**陪你一起解开英语之谜** — Your companion in unlocking the mysteries of English.
-
-## What is 猫谜?
-
-猫谜 is an interactive English learning platform that transforms vocabulary and grammar practice into engaging quiz experiences. Instead of rote memorization, you'll solve carefully crafted puzzles that help you truly understand and retain what you learn.
-
-## Features
-
-### 📝 Quiz Papers
-
-Browse and take quiz papers created by the community. Each paper contains various types of exercises designed to challenge and improve your English skills:
-
-- **Fill-in-the-blanks** — Test your vocabulary by completing sentences with the right words
-- **Grammar challenges** — Practice sentence structure and grammatical patterns
-- **Reading comprehension** — Improve your understanding of English texts
-- **Listening exercises** — Sharpen your listening skills with audio-based questions
-
-### 🏆 Leaderboard
-
-Compete with other learners! After submitting your answers, see how you rank against others who have completed the same quiz. Track your progress and strive for the top spot.
-
-### 📚 Vocabulary Notebook (生词本)
-
-Never lose track of words you're learning. Save vocabulary items you encounter during quizzes to your personal notebook. Review them anytime to reinforce your memory.
-
-### 🔍 Define
-
-Encounter an unfamiliar word while taking a quiz? Simply select it and tap "Define" to get an instant annotation with:
-- Definitions and meanings
-- Etymology (word origins)
-- Related words from the same root
-
-You can save these annotations directly to your vocabulary notebook for future review.
-
-### 🔖 Mark for Later
-
-Found something you want to revisit? Use the "Mark for Later" feature to bookmark specific parts of a quiz. Perfect for flagging tricky questions or interesting vocabulary you want to study more deeply.
-
-### 📋 Working Papers
-
-Keep track of quizzes you're currently working on. The app remembers which papers you've started, making it easy to continue where you left off.
-
-## How to Use
-
-1. **Browse** — Explore available quiz papers on the home page. Pinned papers are recommended starting points for new learners.
-
-2. **Take a Quiz** — Select a paper and start answering questions. Take your time — there's no rush!
-
-3. **Submit** — When you're ready, submit your answers to see your score. You'll need to sign in to save your results and appear on the leaderboard.
-
-4. **Review** — After submission, review your answers with detailed explanations. Use the "Define" feature to learn more about any words you're unsure of.
-
-5. **Save & Learn** — Save new vocabulary to your notebook and use the "Mark for Later" feature to flag content for further study.
-
-## Navigation
-
-Use the dock at the bottom of the screen to navigate:
-
-- **主页 (Home)** — Return to the quiz paper listing
-- **生词本 (Notebook)** — Access your saved vocabulary
-- **Leximory** — Visit the main Leximory platform for more learning resources
+*陪你一起解开英语之谜*
 
 ---
 
-Start your English learning journey with 猫谜 today! 🐱✨
+Learning English shouldn't feel like drowning in flashcards or grinding through textbooks. We believe that language is best acquired when you're actually doing something with it—when you're curious, engaged, and maybe even a little competitive.
+
+That's why we built 猫谜.
+
+## The idea is simple
+
+You take quizzes. Not the boring, multiple-choice kind you suffered through in school, but thoughtfully crafted exercises that make you think. Fill in the missing words. Unscramble grammar. Parse through a passage and answer questions that require real comprehension. Each quiz (we call them "papers") is a small puzzle waiting to be solved.
+
+And here's where it gets interesting: you're not alone. Every paper has a leaderboard. Submit your answers, and you'll see where you stand against everyone else who's tackled the same challenge. There's something motivating about seeing your name climb that list—or about chasing down the person who's one spot above you.
+
+## What happens when you get stuck
+
+We've all been there. You're reading along, doing great, and then a word appears that you've never seen before. In most apps, you'd have to leave, look it up somewhere else, and lose your flow.
+
+Not here. Select any word and hit "Define." You'll get a proper annotation: what the word means, where it comes from, and other words that share the same root. It's like having a thoughtful dictionary built right into the quiz. And if you want to remember that word for later? Save it to your 生词本 (your personal vocabulary notebook) with one tap.
+
+## For the things you want to revisit
+
+Sometimes you'll encounter a sentence or a question that you just need to come back to. Maybe you got it wrong and want to understand why. Maybe the phrasing was beautiful and you want to remember it. That's what "Mark for Later" is for—a simple way to flag anything that deserves a second look.
+
+## How it works in practice
+
+Browse the papers on the home page. The pinned ones are good starting points if you're new. Pick one that catches your eye and start working through it at your own pace. When you're done, submit your answers.
+
+After submission, the real learning begins. Review what you got right and what you missed. Ask questions about specific answers—the app can explain the reasoning. Look up unfamiliar words. Save the ones worth keeping. Then move on to the next paper, or try to beat your previous score.
+
+The navigation is minimal by design. Home takes you back to the paper list. 生词本 is where your saved vocabulary lives. And there's always a link back to Leximory if you want to explore the broader platform.
+
+---
+
+We hope 猫谜 becomes your companion in this journey. Language learning is a long road, but it doesn't have to be a lonely or tedious one. Find a paper that interests you, solve a puzzle, learn something new.
+
+That's all there is to it.
