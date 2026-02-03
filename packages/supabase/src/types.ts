@@ -165,6 +165,7 @@ export type Database = {
           created_at: string
           creator: string
           id: number
+          is_pinned: boolean
           public: boolean
           tags: string[]
           title: string
@@ -174,6 +175,7 @@ export type Database = {
           created_at?: string
           creator: string
           id?: number
+          is_pinned?: boolean
           public?: boolean
           tags?: string[]
           title?: string
@@ -183,6 +185,7 @@ export type Database = {
           created_at?: string
           creator?: string
           id?: number
+          is_pinned?: boolean
           public?: boolean
           tags?: string[]
           title?: string

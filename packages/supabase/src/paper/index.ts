@@ -68,8 +68,9 @@ export async function getPapersByCreator({ creator }: { creator: string }) {
 export async function getPublicPapers() {
   const { data: papers, error } = await supabase
     .from('papers')
-    .select('id, public, title, tags, created_at, creator')
+    .select('id, public, title, tags, created_at, creator, is_pinned')
     .eq('public', true)
+    .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error

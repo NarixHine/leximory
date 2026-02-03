@@ -114,7 +114,7 @@ function Explanation(props: StreamExplanationParams) {
         <div className='px-4 py-2 w-sm max-w-fit'>{
             askResponse
                 ? <div className={cn('py-2')}>
-                    <Streamdown className='prose-blockquote:not-italic prose-headings:mt-2 prose-blockquote:prose-p:before:content-none prose-blockquote:prose-p:after:content-non prose-code:px-0.5 prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400'>
+                    <Streamdown className='prose-blockquote:not-italic prose-headings:mt-2 prose-blockquote:prose-p:before:content-none prose-blockquote:prose-p:after:content-none prose-code:px-0.5 prose-code:underline prose-code:underline-offset-4 prose-code:text-secondary-400'>
                         {askResponse.explanation}
                     </Streamdown>
                 </div>

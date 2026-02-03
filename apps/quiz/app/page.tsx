@@ -6,6 +6,8 @@ import moment from 'moment'
 import { Suspense } from 'react'
 import { Logo } from '@/components/logo'
 import { cacheLife, cacheTag } from 'next/cache'
+import { Spacer } from '@heroui/spacer'
+import { Skeleton } from '@heroui/skeleton'
 
 export const metadata: Metadata = {
     title: '猫谜',
@@ -19,25 +21,35 @@ export default function Page() {
                 <h1 className='text-4xl'>猫谜</h1>
                 <p className='text-default-700 text-sm col-span-2'>陪你一起解开英语之谜</p>
             </div>
-            <section className='grid sm:grid-cols-2 gap-3'>
-                <Suspense fallback={new Array(6).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />))}>
+            <div className='flex flex-col gap-3'>
+                <Suspense fallback={<>
+                    <Skeleton className='h-8 w-1/3 mb-2 rounded-2xl' />
+                    <section className='grid sm:grid-cols-2 gap-3'>
+                        {(new Array(6).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />)))}
+                    </section>
+                </>}>
                     <Content />
                 </Suspense>
-            </section>
+            </div>
         </Main>
     )
 }
 
 async function Content() {
-    'use cache'
-    cacheTag('paper:public')
-    cacheLife('minutes')
     const papers = await getPublicPapers()
-    return (
-        <>
-            {papers.map(paper => (
-                <PaperCard key={paper.id} uid={paper.creator} id={paper.id} title={paper.title} tags={paper.tags} createdAt={moment(paper.created_at).format('ll')} />
+    return (<>
+        <h2 className='font-formal text-4xl block'>从这些练习开始</h2>
+        <section className='grid sm:grid-cols-2 gap-3'>
+            {papers.filter(({ is_pinned }) => is_pinned).map(paper => (
+                <PaperCard key={paper.id} uid={paper.creator} id={paper.id} title={paper.title} tags={paper.tags} createdAt={moment(paper.created_at).format('ll')} isPinned={paper.is_pinned} />
             ))}
-        </>
-    )
+        </section>
+        <Spacer y={1} />
+        <h2 className='font-formal text-4xl block'>浏览所有</h2>
+        <section className='grid sm:grid-cols-2 gap-3'>
+            {papers.map(paper => (
+                <PaperCard key={paper.id} uid={paper.creator} id={paper.id} title={paper.title} tags={paper.tags} createdAt={moment(paper.created_at).format('ll')} isPinned={false} />
+            ))}
+        </section>
+    </>)
 }
