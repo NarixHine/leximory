@@ -5,9 +5,9 @@ import { getPublicPapers } from '@repo/supabase/paper'
 import moment from 'moment'
 import { Suspense } from 'react'
 import { Logo } from '@/components/logo'
-import { cacheLife, cacheTag } from 'next/cache'
 import { Spacer } from '@heroui/spacer'
 import { Skeleton } from '@heroui/skeleton'
+import { WorkingPapers } from './components/working-paper'
 
 export const metadata: Metadata = {
     title: '猫谜',
@@ -23,9 +23,9 @@ export default function Page() {
             </div>
             <div className='flex flex-col gap-3'>
                 <Suspense fallback={<>
-                    <Skeleton className='h-8 w-1/3 mb-2 rounded-2xl' />
+                    <Skeleton className='h-8 opacity-40 w-1/3 mb-2 rounded-2xl' />
                     <section className='grid sm:grid-cols-2 gap-3'>
-                        {(new Array(6).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />)))}
+                        {(new Array(4).fill(0).map((_, idx) => (<PaperCardSkeleton key={idx} />)))}
                     </section>
                 </>}>
                     <Content />
@@ -38,6 +38,7 @@ export default function Page() {
 async function Content() {
     const papers = await getPublicPapers()
     return (<>
+        <WorkingPapers />
         <h2 className='font-formal text-4xl block'>从这些练习开始</h2>
         <section className='grid sm:grid-cols-2 gap-3'>
             {papers.filter(({ is_pinned }) => is_pinned).map(paper => (

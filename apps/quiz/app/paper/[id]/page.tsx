@@ -19,6 +19,7 @@ import { Define } from '@repo/ui/define'
 import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { getUser } from '@repo/user'
+import { AddWorkingPaper } from '@/app/components/working-paper'
 
 type PaperPageProps = {
     params: Promise<{
@@ -74,6 +75,7 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
         ]}>
+            <AddWorkingPaper id={parseInt(id)} title={title} />
             <h2 className='text-4xl mb-2 font-formal'>{title}</h2>
             <QuizTabs
                 Paper={!answers && <>

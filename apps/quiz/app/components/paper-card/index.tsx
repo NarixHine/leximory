@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { cn } from '@heroui/theme'
 import { Spacer } from '@heroui/spacer'
 import { Logo } from '@/components/logo'
+import { getPaperSubmissionAction } from '@repo/service/paper'
+import { CheckCircleIcon } from '@phosphor-icons/react'
 
 export function PaperCard({
     id,
@@ -30,6 +32,13 @@ export function PaperCard({
             return data
         },
     })
+    const { data: hasCompleted } = useQuery({
+        queryKey: ['paperSubmission', id],
+        queryFn: async () => {
+            const { data } = await getPaperSubmissionAction({ paperId: id })
+            return !!(data?.id)
+        },
+    })
 
     return (
         <Card
@@ -48,16 +57,20 @@ export function PaperCard({
                         <Avatar src={user?.imageUrl} className='size-5' />
                     </div>
                 </Skeleton>}
-                <h3 className='text-3xl font-formal'>{title}{isPinned && <Logo className='inline size-7 grayscale-75 ml-1.5' />}</h3>
+                <h3 className='text-3xl font-formal'>
+                    {title}
+                    {isPinned && <Logo className='inline size-7 grayscale-75 ml-1.5' />}
+                </h3>
                 <div className='font-mono text-default-400'>{createdAt}</div>
             </CardBody>
             <CardFooter className='px-3 pb-4 pt-0'>
-                <div className='font-mono text-sm text-default-400 flex flex-wrap'>
+                <div className='font-mono text-sm text-default-400 flex flex-wrap items-center'>
                     {tags.map((tag, idx) => (
                         <span key={idx} className='not-last:after:content-["\00B7"] after:mx-1'>
                             {tag}
                         </span>
                     ))}
+                    {!isPinned && hasCompleted && <CheckCircleIcon className='size-5' />}
                 </div>
             </CardFooter>
         </Card>
