@@ -1,6 +1,6 @@
 'use client'
 
-import { Answers, QuizItems, QuizItemsSchema } from '@repo/schema/paper'
+import { SectionAnswers, QuizItems, QuizItemsSchema } from '@repo/schema/paper'
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
@@ -14,34 +14,69 @@ export const viewModeAtom = atom<'normal' | 'revise'>('normal')
 
 export const DEFAULT_PAPER_ID = 'DEFAULT-PAPER' as const
 export const EDITORY_PAPER_ID = 'EDITORY-PAPER' as const
+
+/**
+ * Family of atoms that store section-based answers for each paper.
+ * Structure: { sectionId: { localQuestionNo: optionText } }
+ * Note: Uses v2 storage key to avoid conflicts with legacy answer format.
+ */
 export const answersAtomFamily = atomFamily((paperId: string) =>
     EDITORY_PAPER_ID === paperId
-        ? atom<Answers>({})
-        : atomWithStorage<Answers>(`answers-${paperId}`, {})
+        ? atom<SectionAnswers>({})
+        : atomWithStorage<SectionAnswers>(`answers-v2-${paperId}`, {})
 )
-export const submittedAnswersAtom = atom<Answers>({})
+
+/**
+ * Atom for storing submitted answers in revise mode.
+ * Uses the new section-based structure.
+ */
+export const submittedAnswersAtom = atom<SectionAnswers>({})
+
+/**
+ * Derived atom that returns the answers for the current paper.
+ */
 export const answersAtom = atom((get) => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
     return get(answersAtomFamily(paperId))
 })
+
+/**
+ * Atom family for setting an answer within a specific paper.
+ * @param sectionId - The section ID
+ * @param localQuestionNo - The 1-based question number within the section
+ * @param option - The actual answer text (not the marker)
+ */
 export const setAnswerAtomFamily = atomFamily((paperId: string) => atom(
     null,
-    (get, set, { questionId, option }: { questionId: number, option: string }) => {
+    (get, set, { sectionId, localQuestionNo, option }: { sectionId: string, localQuestionNo: number, option: string }) => {
         const current = get(answersAtomFamily(paperId))
         set(answersAtomFamily(paperId), {
             ...current,
-            [questionId]: option
+            [sectionId]: {
+                ...(current[sectionId] || {}),
+                [localQuestionNo]: option
+            }
         })
     }
 ))
+
+/**
+ * Atom for setting an answer in the current paper.
+ * @param sectionId - The section ID
+ * @param localQuestionNo - The 1-based question number within the section
+ * @param option - The actual answer text (not the marker)
+ */
 export const setAnswerAtom = atom(
     null,
-    (get, set, { questionId, option }: { questionId: number, option: string }) => {
+    (get, set, { sectionId, localQuestionNo, option }: { sectionId: string, localQuestionNo: number, option: string }) => {
         const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
         const current = get(answersAtomFamily(paperId))
         set(answersAtomFamily(paperId), {
             ...current,
-            [questionId]: option
+            [sectionId]: {
+                ...(current[sectionId] || {}),
+                [localQuestionNo]: option
+            }
         })
     }
 )

@@ -11,7 +11,7 @@ import { Ask, Paper } from '@repo/ui/paper'
 import { Spinner } from '@heroui/spinner'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
-import { Answers, QuizItems } from '@repo/schema/paper'
+import { SectionAnswers, QuizItems } from '@repo/schema/paper'
 import { KeyIcon } from '@phosphor-icons/react/ssr'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
@@ -90,7 +90,7 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
     )
 }
 
-function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: Answers }) {
+function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: SectionAnswers }) {
     return <HydrationBoundary hydrateAtoms={[
         [viewModeAtom, 'revise'],
         [submittedAnswersAtom, answers],

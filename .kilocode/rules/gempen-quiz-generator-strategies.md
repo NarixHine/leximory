@@ -7,7 +7,7 @@ The Quiz Generator is a React-based system designed to render interactive quizze
 ### Core Capabilities
 
 * **Dual Rendering:** Supports Client-Side Rendering (Interactive) and Server-Side Rendering (Static/Print).
-* **State Modes:** Handles input (`normal`), answer checking (`revise`), and teacher tracking (`track`).
+* **State Modes:** Handles input (`normal`), answer checking (`revise`).
 * **Persistence:** Automatically syncs answers to `localStorage` via Jotai utils.
 * **AI Integration:** "Ask AI" context-aware explanations for specific blanks/questions.
 
@@ -19,13 +19,32 @@ The system relies on a complex atom structure to manage the lifecycle of a quiz 
 
 ### 2.1 Atom Architecture (`paper/atoms.ts`)
 
-| Atom Name | Scope | Persistence | Description |
-| --- | --- | --- | --- |
-| `paperIdAtom` | Global | Memory | Stores current paper ID. Defaults to `DEFAULT-PAPER`. |
-| `viewModeAtom` | Global | Memory | Controls UI state: `'normal'` (editing) or `'revise'` (reviewing). |
-| `editoryItemsAtom` | Global | LocalStorage | Stores the raw Quiz Data (`QuizItems`). Key: `'editory-items'`. |
-| `answersAtomFamily` | Family | LocalStorage | **Source of Truth.** Maps `paperId` -> `Record<QuestionNo, Answer>`. |
-| `submittedAnswersAtom` | Global | Memory | Read-only copy of answers used during `revise` mode for comparison. |
+| Atom Name              | Scope  | Persistence  | Description                                                                                                          |
+| ---------------------- | ------ | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `paperIdAtom`          | Global | Memory       | Stores current paper ID. Defaults to `DEFAULT-PAPER`.                                                                |
+| `viewModeAtom`         | Global | Memory       | Controls UI state: `'normal'` (editing) or `'revise'` (reviewing).                                                   |
+| `editoryItemsAtom`     | Global | LocalStorage | Stores the raw Quiz Data (`QuizItems`). Key: `'editory-items'`.                                                      |
+| `answersAtomFamily`    | Family | LocalStorage | **Source of Truth.** Maps `paperId` -> `SectionAnswers`. Structure: `{ sectionId: { localQuestionNo: optionText } }` |
+| `submittedAnswersAtom` | Global | Memory       | Read-only copy of answers used during `revise` mode for comparison. Uses same `SectionAnswers` structure.            |
+
+#### Answer Structure
+
+The answer schema uses a **section-based structure** to ensure reliability when options are shuffled or questions are added/removed:
+
+```typescript
+// SectionAnswers type
+type SectionAnswers = Record<string, Record<number, string | null>>
+
+// Example:
+{
+  "abc123": { 1: "word", 2: "hello" },  // Section "abc123" with local question numbers
+  "xyz789": { 1: "option A text", 2: "option B text" }
+}
+```
+
+- **sectionId**: The unique ID of the quiz section (from `data.id`)
+- **localQuestionNo**: 1-based index within the section (not global question number)
+- **optionText**: The actual answer text/word, not the marker (A, B, C, etc.)
 
 ### 2.2 Access Patterns
 
@@ -33,8 +52,10 @@ The system relies on a complex atom structure to manage the lifecycle of a quiz 
 Do not read `answersAtomFamily` directly in components. Use the derived atom:
 
 ```typescript
-const answers = useAtomValue(answersAtom); // returns Record<number, string | null>
+const answers = useAtomValue(answersAtom); // returns SectionAnswers
 
+// Access a specific answer:
+const answer = answers[sectionId]?.[localQuestionNo]; // e.g., answers["abc123"]?.[1]
 ```
 
 **Writing Answers:**
@@ -42,10 +63,11 @@ Use the dedicated setter atom to ensure referential integrity and correct paper 
 
 ```typescript
 const setAnswer = useSetAtom(setAnswerAtom);
-// Usage:
-setAnswer({ questionId: 5, option: "B" });
-
+// Usage - pass sectionId, localQuestionNo, and the actual option text:
+setAnswer({ sectionId: "abc123", localQuestionNo: 1, option: "the actual answer text" });
 ```
+
+> **Important:** Store the actual option text, not the marker letter (A, B, C). This ensures answers remain valid even when options are shuffled.
 
 ---
 
@@ -58,11 +80,6 @@ The rendering pipeline transforms raw `QuizData` into interactive UI components 
 * **`QuizPaperRSC` (`rsc.tsx`):**
 * **Usage:** Server Components / Static generation.
 * **Logic:** Renders the quiz structure without client-side state logic initially (for SEO/Print).
-
-
-* **`QuizKey` (`index.tsx`):**
-* **Usage:** Renders the answer key.
-
 
 * **`QuestionProcessor`:**
 * **Logic:** The middleware that calculates question numbering offsets (`getQuestionStarts`) and selects the correct strategy.
@@ -83,12 +100,16 @@ The system maps `QuizDataType` strings to rendering logic.
 
 #### `Blank` (`paper/blank/index.tsx`)
 
-The fundamental unit of interaction. It handles the display logic for a specific question number.
+The fundamental unit of interaction. It handles the display logic for a specific question.
 
-* **Props:** `number` (Question ID), `groupId` (Parent Item ID), `blankCount`.
+* **Props:** 
+  * `displayNo` (Global question number for display)
+  * `localNo` (1-based question number within the section, used for answer storage)
+  * `groupId` (Section ID from `data.id`)
+  * `blankCount` (Optional)
 * **Modes:**
-* **Normal:** Wraps content in a `Popover` allowing interaction.
-* **Revise:** Displays correct/incorrect icons (`CheckCircleIcon`, `XCircleIcon`). Shows the user's answer vs. the correct key.
+  * **Normal:** Wraps content in a `Popover` allowing interaction.
+  * **Revise:** Displays correct/incorrect icons (`CheckCircleIcon`, `XCircleIcon`). Shows the user's answer vs. the correct key.
 
 
 
@@ -96,10 +117,15 @@ The fundamental unit of interaction. It handles the display logic for a specific
 
 Renders options (A, B, C, D) horizontally or in a grid.
 
-* **Normal:** Buttons change color on selection (`secondary`).
+* **Props:**
+  * `displayNo` (Global question number for display)
+  * `localNo` (1-based local question number for storage)
+  * `options` (Array of option strings)
+  * `groupId` (Section ID)
+* **Normal:** Buttons change color on selection (`secondary`). Stores the **actual option text**, not the marker.
 * **Revise:**
-* User Correct: Green Solid.
-* User Wrong: Red Solid (User selection) + Green Flat (Correct Answer).
+  * User Correct: Green Solid.
+  * User Wrong: Red Solid (User selection) + Green Flat (Correct Answer).
 
 
 
@@ -107,12 +133,21 @@ Renders options (A, B, C, D) horizontally or in a grid.
 
 Vertical list layout for options, typically used in Reading/Listening comprehension.
 
+* **Props:**
+  * `localNo` (1-based local question number)
+  * `options` (Array of option strings)
+  * `groupId` (Section ID)
 * **Logic:** Similar state handling to `MultipleChoice` but different visual presentation (List vs Grid).
 
 #### `FillInTheBlank` (`paper/blank/index.tsx`)
 
 Renders a text input.
 
+* **Props:**
+  * `displayNo` (Global question number for display)
+  * `localNo` (1-based local question number for storage)
+  * `groupId` (Section ID)
+  * `blankCount` (Optional)
 * **UX Feature:** Auto-focuses next input on `Enter` key press.
 
 ---
@@ -168,15 +203,37 @@ When creating custom question layouts, always wrap the interactive element in th
 
 ```tsx
 // Example of a custom blank implementation
-<MemoizedBlank number={questionIndex} groupId={data.id}>
+// displayNo is the global question number shown to users
+// localNo is the 1-based index within the section (used for answer storage)
+<MemoizedBlank displayNo={globalQuestionNumber} localNo={index + 1} groupId={data.id}>
   <PopoverContent>
-    <MyCustomInput questionId={questionIndex} />
+    <MyCustomInput 
+      sectionId={data.id} 
+      localQuestionNo={index + 1} 
+    />
   </PopoverContent>
 </MemoizedBlank>
+```
 
+When using `replaceBlanks` or `extractBlanks` utilities, the callback now receives both display and local numbers:
+
+```tsx
+// The callback receives (displayNo, localNo, originalContent)
+replaceBlanks(data.text, config.start ?? 1, (displayNo, localNo, originalContent) => {
+  return <MultipleChoice 
+    displayNo={displayNo} 
+    localNo={localNo} 
+    options={options} 
+    groupId={data.id} 
+  />
+})
 ```
 
 ### 5.4 Utility Functions (`paper/generators/utils.ts`)
 
 * `getQuestionStarts(quizData)`: Returns an array of start indices for each question group. Essential for continuous numbering across different question types.
-* `matchColor(...)`: Helper to determine UI colors based on `(userAnswer, correctAnswer)` tuples.
+* `getSectionKey(quizData, sectionId)`: Returns the answer key for a specific section as `Record<localNo, correctAnswerText>`.
+* `getSectionBasedKey(quizData)`: Returns the complete answer key in section-based format: `{ sectionId: { localNo: correctAnswerText } }`.
+* `checkAnswers(quizData, userAnswers)`: Checks section-based user answers against correct answers, returning `{ sectionId: { localNo: boolean } }`.
+* `computeTotalScore(quizData, userAnswers)`: Computes total score from section-based answers.
+* `matchColor(pattern, key)`: Helper to determine UI colors based on answer comparison. Works with option text strings.

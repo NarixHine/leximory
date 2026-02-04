@@ -5,7 +5,7 @@ import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions } from '@repo/supabase/paper'
 import { getUserOrThrow } from '@repo/user'
-import { AskResponseSchema, QuizData, QuizItemsSchema } from '@repo/schema/paper'
+import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
 import { SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
@@ -46,7 +46,7 @@ const getPaperSubmissionSchema = z.object({
 
 const submitPaperSchema = z.object({
   paperId: z.number(),
-  answers: z.record(z.string(), z.string().nullable()),
+  answers: SectionAnswersSchema,
   score: z.number(),
   perfectScore: z.number(),
 })

@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabase } from '..'
 import type { TablesInsert, TablesUpdate } from '../types'
-import { AnswersSchema, QuizItemsSchema } from '@repo/schema/paper'
+import { QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 export * from './types'
 
 /**
@@ -206,7 +206,7 @@ export async function getPaperSubmission({
 
   if (error && error.code !== 'PGRST116') // PGRST116 is "not found"
     throw error
-  return { ...submission, answers: submission ? AnswersSchema.parse(submission.answers) : undefined }
+  return { ...submission, answers: submission ? SectionAnswersSchema.parse(submission.answers) : undefined }
 }
 
 /**

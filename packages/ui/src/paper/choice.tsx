@@ -3,19 +3,26 @@
 import { Button } from '@heroui/react'
 import { useSetAtom, useAtomValue } from 'jotai'
 import { viewModeAtom, submittedAnswersAtom, setAnswerAtom, answersAtom } from './atoms'
-import { ALPHABET_SET, AlphabeticalMarker } from './generators/config'
+import { ALPHABET_SET } from './generators/config'
 import { useAsk, useCorrectAnswer } from './blank/hooks'
 import { matchColor } from './blank/utils'
 import { AskButton } from './blank/ask'
 
-const Choice = ({ no, options, groupId }: { no: number, options: string[], groupId: string }) => {
+/**
+ * Choice component for rendering multiple choice questions.
+ * @param localNo - The 1-based question number within the section (not global)
+ * @param options - Array of option texts
+ * @param groupId - The section ID
+ */
+const Choice = ({ localNo, options, groupId }: { localNo: number, options: string[], groupId: string }) => {
     const setAnswer = useSetAtom(setAnswerAtom)
     const answers = useAtomValue(answersAtom)
     const viewMode = useAtomValue(viewModeAtom)
-    const answer = answers[no]
-    const submittedAnswer = useAtomValue(submittedAnswersAtom)[no] as AlphabeticalMarker
-    const correctAnswer = useCorrectAnswer(no) as AlphabeticalMarker
-    const { ask } = useAsk({ no, groupId })
+    // Get the answer for this section and local question number (stored as option text)
+    const answer = answers[groupId]?.[localNo]
+    const submittedAnswer = useAtomValue(submittedAnswersAtom)[groupId]?.[localNo]
+    const correctAnswer = useCorrectAnswer({ sectionId: groupId, localNo })
+    const { ask } = useAsk({ localNo, groupId })
 
     return <div className='pb-2 flex flex-col gap-2 print:gap-0 print:-space-y-1'>
         {options.map((option, index) => {
@@ -26,12 +33,12 @@ const Choice = ({ no, options, groupId }: { no: number, options: string[], group
                             color={matchColor([
                                 [correctAnswer, 'success'],
                                 [submittedAnswer, 'danger'],
-                            ], ALPHABET_SET[index])}
+                            ], option)}
                             variant={
-                                [submittedAnswer, correctAnswer].includes(ALPHABET_SET[index])
+                                [submittedAnswer, correctAnswer].includes(option)
                                     ? submittedAnswer === correctAnswer
                                         ? 'solid'
-                                        : ALPHABET_SET[index] === correctAnswer
+                                        : option === correctAnswer
                                             ? 'flat'
                                             : 'solid'
                                     : 'ghost'
@@ -51,14 +58,14 @@ const Choice = ({ no, options, groupId }: { no: number, options: string[], group
                     return <div key={index} className='flex items-center gap-2'>
                         <Button
                             className='size-6 print:hidden'
-                            color={answer === ALPHABET_SET[index] ? 'secondary' : 'default'}
-                            variant={answer === ALPHABET_SET[index] ? 'solid' : 'ghost'}
+                            color={answer === option ? 'secondary' : 'default'}
+                            variant={answer === option ? 'solid' : 'ghost'}
                             size='sm'
                             radius='full'
                             isIconOnly
                             startContent={<span>{ALPHABET_SET[index]}</span>}
                             onPress={() => {
-                                setAnswer({ questionId: no, option: ALPHABET_SET[index] })
+                                setAnswer({ sectionId: groupId, localQuestionNo: localNo, option })
                             }}
                         ></Button>
                         <span className='print:inline hidden'>{ALPHABET_SET[index]}.</span>

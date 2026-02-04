@@ -1,5 +1,5 @@
 import React, { JSX, useMemo } from 'react'
-import { QuizData, QuestionStrategy } from '@repo/schema/paper'
+import { QuizData, QuestionStrategy, SectionAnswers } from '@repo/schema/paper'
 import { toTableRows } from './utils'
 
 export const QuestionSection = ({ children, title }: {
@@ -19,7 +19,7 @@ export const Question = <K extends QuizData['type']>({ strategy, specificData, v
     specificData: Extract<QuizData, { type: K }>,
     variant: 'paper' | 'key'
     config: any
-    answers?: Record<number, string | null>
+    answers?: SectionAnswers
 }) => {
     const options = useMemo(() => strategy.getOptions?.(specificData), [specificData, strategy])
     const correctAnswers = useMemo(() => strategy.getCorrectAnswers(specificData, options), [specificData, strategy, options])
@@ -33,19 +33,6 @@ export const Question = <K extends QuizData['type']>({ strategy, specificData, v
                 {strategy.renderPaper(renderProps)}
             </QuestionSection>
         )
-    }
-
-    if (variant === 'key') {
-        const keyElements = strategy.renderKey(renderProps)
-        if (!keyElements) return null
-        if (strategy.keyPerLine === 0) return <>{keyElements}</>
-
-        const cells = React.Children.toArray(keyElements.props.children) as JSX.Element[]
-        return <table>
-            <tbody>
-                {toTableRows(cells, strategy.keyPerLine)}
-            </tbody>
-        </table>
     }
 
     return null

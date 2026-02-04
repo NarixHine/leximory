@@ -1,7 +1,7 @@
 'use client'
 
 import { SealQuestionIcon, OptionIcon, MagicWandIcon, CloudCheckIcon } from '@phosphor-icons/react'
-import { Key, Paper } from '@repo/ui/paper'
+import { Paper } from '@repo/ui/paper'
 import Sortable from './sortable'
 import Editor from './editor'
 import { JsonEditor } from './json-editor'
@@ -140,7 +140,6 @@ export default function Editory({ id }: { id?: string }) {
           </div>
           <div className='px-4 pb-3 rounded-medium border border-default-500/20'>
             <Paper data={data} />
-            <Key data={data} />
           </div>
         </section>
 

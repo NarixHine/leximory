@@ -1,64 +1,72 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { getClozeOriginalWord, getKey, getOptionByMarker, getQuestionStarts } from '../generators/utils'
+import { getClozeOriginalWord, getSectionKey } from '../generators/utils'
 import { editoryItemsAtom, submittedAnswersAtom } from '../atoms'
 import { askParamsAtom, openAskAtom } from './atoms'
 import { useCallback } from 'react'
 
+/**
+ * Identifier for a blank/question using section-based structure.
+ * @param localNo - The 1-based question number within the section
+ * @param groupId - The section ID
+ */
 type BlankIdentifier = {
-    no: number
+    localNo: number
     groupId: string
 }
 
-export const useCorrectAnswer = (no: number) => {
+/**
+ * Hook to get the correct answer for a question.
+ * Returns the correct answer text (not the marker).
+ * @param sectionId - The section ID
+ * @param localNo - The 1-based question number within the section
+ */
+export const useCorrectAnswer = ({ sectionId, localNo }: { sectionId: string, localNo: number }) => {
     const quizData = useAtomValue(editoryItemsAtom)
     if (!quizData) return null
-    const correctAnswer = getKey(quizData)[no]
-    return correctAnswer
+    const sectionKey = getSectionKey(quizData, sectionId)
+    return sectionKey?.[localNo] ?? null
 }
 
-export const useBlankInfo = ({ no, groupId }: BlankIdentifier) => {
+export const useBlankInfo = ({ localNo, groupId }: BlankIdentifier) => {
     const quizData = useAtomValue(editoryItemsAtom)
-    const key = useCorrectAnswer(no)
-    const getRelativeQuestionIndex = () => {
-        const start = getQuestionStarts(quizData)[quizData.findIndex((item) => item.id === groupId)]
-        return no - start + 1
-    }
+    const key = useCorrectAnswer({ sectionId: groupId, localNo })
     const getQuestionGroup = () => quizData.find((item) => item.id === groupId)!
-    const getFullInfo = (submittedAnswer: string) => {
+    const getFullInfo = (submittedAnswer: string | null | undefined) => {
         const questionGroup = getQuestionGroup()
-        const clozeOriginal = questionGroup?.type === 'cloze' && getClozeOriginalWord(questionGroup, getRelativeQuestionIndex()) || undefined
-        const fullAnswer = getOptionByMarker(questionGroup, submittedAnswer, clozeOriginal)
-        const fullKey = clozeOriginal || getOptionByMarker(questionGroup, key!, clozeOriginal)
+        const clozeOriginal = questionGroup?.type === 'cloze' && getClozeOriginalWord(questionGroup, localNo) || undefined
+        // With the new structure, submittedAnswer and key are already the full text
         const FormattedFullAnswer = () => (
             <span className='font-semibold'>
-                {submittedAnswer ?? '∅'}{fullAnswer ? <span className='font-light'>. {fullAnswer}</span> : <></>}
+                {submittedAnswer ?? '∅'}
             </span>
         )
         const FormattedFullKey = () => (
             <span className='font-semibold'>
-                {key}<span>
-                    {fullKey ? <span className='font-light'>. {fullKey}</span> : <></>}
-                </span>
+                {key}
             </span>
         )
-        return { fullAnswer, fullKey, clozeOriginal, FormattedFullAnswer, FormattedFullKey }
+        return { clozeOriginal, FormattedFullAnswer, FormattedFullKey, key }
     }
-    return { getRelativeQuestionIndex, getQuestionGroup, getFullInfo }
+    return { localNo, getQuestionGroup, getFullInfo }
 }
 
-export const useAsk = ({ no, groupId }: BlankIdentifier) => {
+export const useAsk = ({ localNo, groupId }: BlankIdentifier) => {
     const setAskParams = useSetAtom(askParamsAtom)
     const setOpen = useSetAtom(openAskAtom)
-    const submittedAnswer = useAtomValue(submittedAnswersAtom)[no]
-    const { getRelativeQuestionIndex, getQuestionGroup, getFullInfo } = useBlankInfo({ no, groupId })
+    const submittedAnswer = useAtomValue(submittedAnswersAtom)[groupId]?.[localNo]
+    const { getQuestionGroup, getFullInfo } = useBlankInfo({ localNo, groupId })
     const getAskParams = () => {
-        const { fullAnswer, fullKey } = getFullInfo(submittedAnswer!)
+        const { key } = getFullInfo(submittedAnswer)
+        // Build userAnswer conditionally to avoid truthy template string issue
+        const userAnswerDisplay = submittedAnswer 
+            ? `${submittedAnswer}${key ? ` (Correct answer: ${key})` : ''}`
+            : '[No Answer Submitted]'
         return {
             quizData: getQuestionGroup(),
-            questionNo: getRelativeQuestionIndex(),
-            userAnswer: `${submittedAnswer}${fullAnswer ? `. ${fullAnswer}` : ''}${fullKey ? ` (Correct answer: ${fullKey})` : ''}` || '[No Answer Submitted]',
+            questionNo: localNo,
+            userAnswer: userAnswerDisplay,
         }
     }
     const ask = () => {

@@ -32,32 +32,3 @@ export function Paper({
         </div>
     )
 }
-
-export function Key({
-    data,
-    accordionClassName,
-    accordionItemClassName
-}: {
-    data: QuizItems
-    accordionClassName?: string
-    accordionItemClassName?: string
-}) {
-    return (
-        <Accordion
-            className={cn('w-full', accordionClassName)}
-            defaultExpandedKeys={[]}
-            itemKey={'key'}
-            itemProps={{
-                title: 'Key',
-                className: cn('shadow-none', accordionItemClassName),
-                classNames: {
-                    titleWrapper: 'not-prose',
-                    trigger: 'pb-2'
-                },
-                subtitle: '点击以展开／折叠'
-            }}
-        >
-            {data && <QuizKey quizData={data} />}
-        </Accordion >
-    )
-}
