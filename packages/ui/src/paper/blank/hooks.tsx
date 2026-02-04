@@ -33,10 +33,10 @@ export const useBlankInfo = ({ localNo, groupId }: BlankIdentifier) => {
     const quizData = useAtomValue(editoryItemsAtom)
     const key = useCorrectAnswer({ sectionId: groupId, localNo })
     const getQuestionGroup = () => quizData.find((item) => item.id === groupId)!
-    const getFullInfo = (submittedAnswer: string) => {
+    const getFullInfo = (submittedAnswer: string | null | undefined) => {
         const questionGroup = getQuestionGroup()
         const clozeOriginal = questionGroup?.type === 'cloze' && getClozeOriginalWord(questionGroup, localNo) || undefined
-        // With the new structure, submittedAnswer and key are already the full text, not markers
+        // With the new structure, submittedAnswer and key are already the full text
         const FormattedFullAnswer = () => (
             <span className='font-semibold'>
                 {submittedAnswer ?? '∅'}
@@ -47,7 +47,7 @@ export const useBlankInfo = ({ localNo, groupId }: BlankIdentifier) => {
                 {key}
             </span>
         )
-        return { fullAnswer: submittedAnswer, fullKey: key, clozeOriginal, FormattedFullAnswer, FormattedFullKey }
+        return { clozeOriginal, FormattedFullAnswer, FormattedFullKey, key }
     }
     return { localNo, getQuestionGroup, getFullInfo }
 }
@@ -58,11 +58,11 @@ export const useAsk = ({ localNo, groupId }: BlankIdentifier) => {
     const submittedAnswer = useAtomValue(submittedAnswersAtom)[groupId]?.[localNo]
     const { getQuestionGroup, getFullInfo } = useBlankInfo({ localNo, groupId })
     const getAskParams = () => {
-        const { fullKey } = getFullInfo(submittedAnswer!)
+        const { key } = getFullInfo(submittedAnswer)
         return {
             quizData: getQuestionGroup(),
             questionNo: localNo,
-            userAnswer: `${submittedAnswer}${fullKey ? ` (Correct answer: ${fullKey})` : ''}` || '[No Answer Submitted]',
+            userAnswer: `${submittedAnswer}${key ? ` (Correct answer: ${key})` : ''}` || '[No Answer Submitted]',
         }
     }
     const ask = () => {

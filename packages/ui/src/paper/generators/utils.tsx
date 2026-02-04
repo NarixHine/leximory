@@ -198,11 +198,14 @@ export const getQuestionStarts = (quizData: QuizData[]): number[] => {
  */
 export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers): Record<string, Record<number, boolean>> => {
     const results: Record<string, Record<number, boolean>> = {}
+    
+    // Pre-compute section keys to avoid repeated linear searches
+    const sectionKeyMap = getSectionBasedKey(quizData)
 
     for (const data of quizData) {
         const sectionId = data.id
         const sectionAnswers = userAnswers[sectionId] || {}
-        const sectionKey = getSectionKey(quizData, sectionId)
+        const sectionKey = sectionKeyMap[sectionId]
         results[sectionId] = {}
 
         for (const localNoStr in sectionAnswers) {
@@ -210,7 +213,7 @@ export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers):
             const userAns = sectionAnswers[localNo]
             const correctAns = sectionKey?.[localNo]
 
-            if (userAns === null || userAns === undefined || correctAns === undefined) {
+            if (userAns === null || userAns === undefined || correctAns === undefined || correctAns === null) {
                 results[sectionId][localNo] = false
                 continue
             }
