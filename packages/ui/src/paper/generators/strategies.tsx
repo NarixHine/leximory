@@ -170,7 +170,7 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
             <b>Section A</b>
         </div>
     </>),
-    getQuestionCount: (data) => data.questions.filter(q => data.text.includes(`<code>${q.original}</code>`)).length,
+    getQuestionCount: (data) => extractCodeContent(data.text).length,
     getOptions: (data) => {
         // create a map of original words to shuffled distractors
         return data.questions.reduce((acc, q) => {
@@ -179,7 +179,9 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
             return acc
         }, {} as { [key: string]: string[] })
     },
-    getCorrectAnswers: (data) => data.questions.map(q => q.original),
+    // Derive correct answers from the text order using extractCodeContent
+    // to ensure alignment with rendered blanks (not data.questions order)
+    getCorrectAnswers: (data) => extractCodeContent(data.text),
     getLlmReadyText: (data) => {
         const textWithBlanks = data.text.replace(/<code>(.*?)<\/code>/g, '_____').replace(/<[^>]*>?/gm, '')
         const optionsText = data.questions.map((q, index) => {

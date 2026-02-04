@@ -220,16 +220,14 @@ export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers):
 }
 
 /**
- * Gets the answer key for a specific section.
+ * Gets the answer key for a specific section from a QuizData item.
  * Returns a record mapping local question numbers (1-based) to correct answer text.
- * @param quizData - An array of quiz data sections.
- * @param sectionId - The section ID to get the key for.
- * @returns A record mapping local question numbers to correct answer text, or null if section not found.
+ * For text-based strategies (cloze, fishing, sentences, grammar), derives answers from the text order
+ * using extractCodeContent to ensure alignment with rendered blanks.
+ * @param data - The QuizData item for the section.
+ * @returns A record mapping local question numbers to correct answer text.
  */
-export const getSectionKey = (quizData: QuizData[], sectionId: string): Record<number, string> | null => {
-    const data = quizData.find((item) => item.id === sectionId)
-    if (!data) return null
-
+export const getSectionKeyFromData = (data: QuizData): Record<number, string> => {
     return applyStrategy(data, (strategy, specificData) => {
         const options = strategy.getOptions?.(specificData)
         const correctAnswers = strategy.getCorrectAnswers(specificData, options)
@@ -242,17 +240,27 @@ export const getSectionKey = (quizData: QuizData[], sectionId: string): Record<n
 }
 
 /**
+ * Gets the answer key for a specific section by section ID.
+ * @param quizData - An array of quiz data sections.
+ * @param sectionId - The section ID to get the key for.
+ * @returns A record mapping local question numbers to correct answer text, or null if section not found.
+ */
+export const getSectionKey = (quizData: QuizData[], sectionId: string): Record<number, string> | null => {
+    const data = quizData.find((item) => item.id === sectionId)
+    if (!data) return null
+    return getSectionKeyFromData(data)
+}
+
+/**
  * Generates a section-based answer key for all sections of a quiz.
  * Structure: { sectionId: { localNo: correctAnswerText } }
+ * Optimized to O(n) by iterating sections directly instead of calling getSectionKey with find().
  * @param quizData - An array of quiz data sections.
  * @returns Section-based key with correct answer text (not markers).
  */
 export const getSectionBasedKey = (quizData: QuizData[]): SectionAnswers => {
     return quizData.reduce((acc, data) => {
-        const sectionKey = getSectionKey(quizData, data.id)
-        if (sectionKey) {
-            acc[data.id] = sectionKey
-        }
+        acc[data.id] = getSectionKeyFromData(data)
         return acc
     }, {} as SectionAnswers)
 }

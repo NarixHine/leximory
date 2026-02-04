@@ -9,6 +9,7 @@ import { SectionAnswersSchema, SectionAnswers } from '@repo/schema/paper'
 
 /**
  * Sanitizes section-based answers by trimming whitespace from all answer strings.
+ * Empty strings are normalized to null (treated as unanswered).
  */
 function sanitizeAnswers(answers: SectionAnswers): SectionAnswers {
     const sanitized: SectionAnswers = {}
@@ -18,7 +19,8 @@ function sanitizeAnswers(answers: SectionAnswers): SectionAnswers {
         for (const localNoStr in sectionAnswers) {
             const localNo = Number(localNoStr)
             const answer = sectionAnswers[localNo]
-            sanitized[sectionId][localNo] = answer?.trim() ?? null
+            const trimmed = answer?.trim()
+            sanitized[sectionId][localNo] = trimmed === '' ? null : trimmed ?? null
         }
     }
     return sanitized

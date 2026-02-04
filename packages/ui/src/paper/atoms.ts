@@ -18,11 +18,12 @@ export const EDITORY_PAPER_ID = 'EDITORY-PAPER' as const
 /**
  * Family of atoms that store section-based answers for each paper.
  * Structure: { sectionId: { localQuestionNo: optionText } }
+ * Note: Uses v2 storage key to avoid conflicts with legacy answer format.
  */
 export const answersAtomFamily = atomFamily((paperId: string) =>
     EDITORY_PAPER_ID === paperId
         ? atom<SectionAnswers>({})
-        : atomWithStorage<SectionAnswers>(`answers-${paperId}`, {})
+        : atomWithStorage<SectionAnswers>(`answers-v2-${paperId}`, {})
 )
 
 /**

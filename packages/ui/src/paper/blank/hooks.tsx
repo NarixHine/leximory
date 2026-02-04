@@ -59,10 +59,14 @@ export const useAsk = ({ localNo, groupId }: BlankIdentifier) => {
     const { getQuestionGroup, getFullInfo } = useBlankInfo({ localNo, groupId })
     const getAskParams = () => {
         const { key } = getFullInfo(submittedAnswer)
+        // Build userAnswer conditionally to avoid truthy template string issue
+        const userAnswerDisplay = submittedAnswer 
+            ? `${submittedAnswer}${key ? ` (Correct answer: ${key})` : ''}`
+            : '[No Answer Submitted]'
         return {
             quizData: getQuestionGroup(),
             questionNo: localNo,
-            userAnswer: `${submittedAnswer}${key ? ` (Correct answer: ${key})` : ''}` || '[No Answer Submitted]',
+            userAnswer: userAnswerDisplay,
         }
     }
     const ask = () => {

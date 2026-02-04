@@ -1,8 +1,36 @@
 import 'server-only'
 import { supabase } from '..'
 import type { TablesInsert, TablesUpdate } from '../types'
-import { SectionAnswersSchema, QuizItemsSchema } from '@repo/schema/paper'
+import { SectionAnswersSchema, AnswersSchema, QuizItemsSchema, SectionAnswers } from '@repo/schema/paper'
 export * from './types'
+
+/**
+ * Parses submission answers, supporting both legacy and new formats.
+ * Legacy format: { globalQuestionNo: marker } (e.g., { 1: "A", 2: "B" })
+ * New format: { sectionId: { localNo: optionText } }
+ * @param answers - The raw answers from the database
+ * @returns Parsed answers in SectionAnswers format, or undefined if parsing fails
+ */
+function parseSubmissionAnswers(answers: unknown): SectionAnswers | undefined {
+  if (!answers) return undefined
+  
+  // Try parsing as new section-based format first
+  const newFormatResult = SectionAnswersSchema.safeParse(answers)
+  if (newFormatResult.success) {
+    return newFormatResult.data
+  }
+  
+  // Fallback: try parsing as legacy format (returns empty object for backwards compat)
+  // Legacy submissions cannot be meaningfully converted without quiz data context
+  const legacyResult = AnswersSchema.safeParse(answers)
+  if (legacyResult.success) {
+    // Return empty object for legacy submissions - they cannot be displayed correctly
+    // without knowing which section each question belongs to
+    return {}
+  }
+  
+  return undefined
+}
 
 /**
  * Creates a new paper record in the database.
@@ -206,7 +234,7 @@ export async function getPaperSubmission({
 
   if (error && error.code !== 'PGRST116') // PGRST116 is "not found"
     throw error
-  return { ...submission, answers: submission ? SectionAnswersSchema.parse(submission.answers) : undefined }
+  return { ...submission, answers: submission ? parseSubmissionAnswers(submission.answers) : undefined }
 }
 
 /**

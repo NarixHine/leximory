@@ -3,7 +3,7 @@
 import { Popover, PopoverTrigger, PopoverContent, Button, Input, cn, Spacer, Chip } from '@heroui/react'
 import { useSetAtom, useAtomValue } from 'jotai'
 import { viewModeAtom, submittedAnswersAtom, editoryItemsAtom, answersAtom, setAnswerAtom } from '../atoms'
-import { ALPHABET_ELEMENTS, ALPHABET_SET } from '../generators/config'
+import { ALPHABET_ELEMENTS } from '../generators/config'
 import { CursorClickIcon, XCircleIcon, CheckCircleIcon } from '@phosphor-icons/react/ssr'
 import { questionStrategies } from '../generators/strategies'
 import { memo } from 'react'

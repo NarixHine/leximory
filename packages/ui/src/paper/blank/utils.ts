@@ -1,5 +1,3 @@
-import { AlphabeticalMarker } from '../generators/config'
-
 export const highlightSubstrings = (mainString: string, substringsToMatch: string[]): string => {
     let resultString = mainString
 
