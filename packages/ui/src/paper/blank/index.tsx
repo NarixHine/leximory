@@ -10,6 +10,7 @@ import { memo } from 'react'
 import { useAsk, useBlankInfo, useCorrectAnswer } from './hooks'
 import { matchColor } from './utils'
 import { AskButton } from './ask'
+import { SaveQuestionNoteButton } from './save-question-note'
 
 /**
  * Props for the Blank component.
@@ -96,6 +97,7 @@ const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankP
                             {children}
                             <Spacer y={1} />
                             <AskButton fullWidth ask={ask} />
+                            <SaveQuestionNoteButton fullWidth localNo={localNo} groupId={groupId} />
                         </div>
                     </PopoverContent>
                 </Popover >

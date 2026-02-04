@@ -22,6 +22,7 @@
     "./dock": "./src/dock/index.tsx",
     "./define": "./src/define/index.tsx",
     "./word-note": "./src/word-note/index.tsx",
+    "./question-note": "./src/question-note/index.tsx",
     "./logo": "./src/logo/index.tsx",
     "./mark-for-later": "./src/mark-for-later/index.tsx",
     "./mark-for-later/panel": "./src/mark-for-later/panel.tsx",
