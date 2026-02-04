@@ -159,11 +159,44 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          related_paper: number | null
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: number
+          related_paper?: number | null
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: number
+          related_paper?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_related_paper_fkey"
+            columns: ["related_paper"]
+            isOneToOne: false
+            referencedRelation: "papers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       papers: {
         Row: {
           content: Json
           created_at: string
           creator: string
+          dictation: Json | null
           id: number
           is_pinned: boolean
           public: boolean
@@ -174,6 +207,7 @@ export type Database = {
           content?: Json
           created_at?: string
           creator: string
+          dictation?: Json | null
           id?: number
           is_pinned?: boolean
           public?: boolean
@@ -184,6 +218,7 @@ export type Database = {
           content?: Json
           created_at?: string
           creator?: string
+          dictation?: Json | null
           id?: number
           is_pinned?: boolean
           public?: boolean
