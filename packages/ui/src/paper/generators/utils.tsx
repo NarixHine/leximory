@@ -7,7 +7,7 @@ import { ReactNode } from 'react'
 import { merge } from 'es-toolkit'
 import { ALPHABET_SET } from './config'
 import { z } from '@repo/schema'
-import { QuizData, QuestionStrategy, ClozeData, Answers } from '@repo/schema/paper'
+import { QuizData, QuestionStrategy, ClozeData, SectionAnswers } from '@repo/schema/paper'
 
 /**
  * A reusable helper to extract the content from all <code> tags in a string.
@@ -108,15 +108,15 @@ export function applyStrategy<T>(data: QuizData, callback: StrategyCallback<T>):
  * This is the core logic for rendering fill-in-the-blank and multiple-choice questions.
  *
  * @param text The HTML string to parse.
- * @param start The starting question number.
- * @param replacer A function that receives the question number and the original content
- * of the `<code>` tag, and returns the React node to insert.
+ * @param start The starting global question number (for display).
+ * @param replacer A function that receives both the display number and local number (1-based index within section),
+ * along with the original content of the `<code>` tag, and returns the React node to insert.
  * @returns A ReactNode with the `<code>` tags replaced.
  */
 export const replaceBlanks = (
     text: string,
     start: number,
-    replacer: (questionNumber: number, originalContent: string) => ReactNode
+    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode
 ): ReactNode => {
     let i = 0
     return parse(text, {
@@ -132,9 +132,10 @@ export const replaceBlanks = (
                 }
                 if (child.type !== 'text') return
                 i++
-                const questionNumber = start + i - 1
+                const displayNo = start + i - 1
+                const localNo = i // 1-based index within section
                 const originalContent = child.data
-                return replacer(questionNumber, originalContent) as JSX.Element
+                return replacer(displayNo, localNo, originalContent) as JSX.Element
             }
         }
     })
@@ -145,15 +146,15 @@ export const replaceBlanks = (
  * This is used for answer sheet views where questions are listed vertically.
  *
  * @param text The HTML string to parse.
- * @param start The starting question number.
- * @param replacer A function that receives the question number and the original content
- * of the `<code>` tag, and returns the React node for that blank.
+ * @param start The starting global question number (for display).
+ * @param replacer A function that receives both the display number and local number (1-based index within section),
+ * along with the original content of the `<code>` tag, and returns the React node for that blank.
  * @returns An array of ReactNodes, one for each blank found.
  */
 export const extractBlanks = (
     text: string,
     start: number,
-    replacer: (questionNumber: number, originalContent: string) => ReactNode
+    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode
 ): ReactNode[] => {
     const blanks: ReactNode[] = []
     let i = 0
@@ -161,9 +162,10 @@ export const extractBlanks = (
         replace: (node: DOMNode) => {
             if ('name' in node && node.name === 'code' && 'children' in node && node.children[0]?.type === 'text') {
                 i++
-                const questionNumber = start + i - 1
+                const displayNo = start + i - 1
+                const localNo = i // 1-based index within section
                 const originalContent = node.children[0].data
-                blanks.push(replacer(questionNumber, originalContent))
+                blanks.push(replacer(displayNo, localNo, originalContent))
             }
         }
     })
@@ -189,53 +191,33 @@ export const getQuestionStarts = (quizData: QuizData[]): number[] => {
 
 /**
  * Checks user answers against the correct answers for a quiz.
+ * Uses section-based answer structure: { sectionId: { localNo: answerText } }
  * @param quizData - An array of quiz data sections.
- * @param userAnswers - A record mapping question numbers to user-submitted answers.
- * @returns A record mapping question numbers to a boolean indicating if the answer was correct.
+ * @param userAnswers - Section-based answers mapping section IDs to local question numbers to answers.
+ * @returns A section-based record mapping section IDs to local question numbers to correctness.
  */
-export const checkAnswers = (quizData: QuizData[], userAnswers: Answers): Record<number, boolean> => {
-    const correctAnswers = getKey(quizData)
-    const results: Record<string, boolean> = {}
-    const questionStarts = getQuestionStarts(quizData)
+export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers): Record<string, Record<number, boolean>> => {
+    const results: Record<string, Record<number, boolean>> = {}
 
-    for (const questionNumberStr in userAnswers) {
-        const questionNumber = Number(questionNumberStr)
-        const userAns = userAnswers[questionNumber]
-        const correctAns = correctAnswers[questionNumber]
+    for (const data of quizData) {
+        const sectionId = data.id
+        const sectionAnswers = userAnswers[sectionId] || {}
+        const sectionKey = getSectionKey(quizData, sectionId)
+        results[sectionId] = {}
 
-        if (userAns === null || userAns === undefined || correctAns === undefined) {
-            results[questionNumber] = false
-            continue
-        }
+        for (const localNoStr in sectionAnswers) {
+            const localNo = Number(localNoStr)
+            const userAns = sectionAnswers[localNo]
+            const correctAns = sectionKey?.[localNo]
 
-        // Find the strategy for the current question number to use its `isCorrect` method
-        const sectionIndex = questionStarts.findIndex((start, i) => {
-            const nextStart = questionStarts[i + 1] || Infinity
-            return questionNumber >= start && questionNumber < nextStart
-        })
+            if (userAns === null || userAns === undefined || correctAns === undefined) {
+                results[sectionId][localNo] = false
+                continue
+            }
 
-        if (sectionIndex !== -1) {
-            const data = quizData[sectionIndex]
-            results[questionNumber] = applyStrategy(data, (strategy) => {
-                // For multiple-choice questions, the correct answer in the key is the letter (e.g., 'A'),
-                // but the user's answer is the full text. We need to find the corresponding letter for the user's answer.
-                if (['listening', 'cloze', 'fishing', 'reading', 'sentences'].includes(data.type)) {
-                    const options = strategy.getOptions?.(data as any)
-                    const correctAnswers = strategy.getCorrectAnswers(data as any, options)
-                    const keyMap = strategy.generateKey({
-                        data: data as any,
-                        config: { start: questionStarts[sectionIndex] },
-                        options,
-                        correctAnswers,
-                        answers: {},
-                        isCorrect: () => false,
-                    })
-                    return keyMap[questionNumber] === userAns
-                }
+            results[sectionId][localNo] = applyStrategy(data, (strategy) => {
                 return strategy.isCorrect(userAns, correctAns)
             })
-        } else {
-            results[questionNumber] = false
         }
     }
 
@@ -243,6 +225,45 @@ export const checkAnswers = (quizData: QuizData[], userAnswers: Answers): Record
 }
 
 /**
+ * Gets the answer key for a specific section.
+ * Returns a record mapping local question numbers (1-based) to correct answer text.
+ * @param quizData - An array of quiz data sections.
+ * @param sectionId - The section ID to get the key for.
+ * @returns A record mapping local question numbers to correct answer text, or null if section not found.
+ */
+export const getSectionKey = (quizData: QuizData[], sectionId: string): Record<number, string> | null => {
+    const data = quizData.find((item) => item.id === sectionId)
+    if (!data) return null
+
+    return applyStrategy(data, (strategy, specificData) => {
+        const options = strategy.getOptions?.(specificData)
+        const correctAnswers = strategy.getCorrectAnswers(specificData, options)
+        // Use local question numbers starting from 1
+        return correctAnswers.reduce((acc, answer, index) => {
+            acc[index + 1] = answer
+            return acc
+        }, {} as Record<number, string>)
+    })
+}
+
+/**
+ * Generates a section-based answer key for all sections of a quiz.
+ * Structure: { sectionId: { localNo: correctAnswerText } }
+ * @param quizData - An array of quiz data sections.
+ * @returns Section-based key with correct answer text (not markers).
+ */
+export const getSectionBasedKey = (quizData: QuizData[]): SectionAnswers => {
+    return quizData.reduce((acc, data) => {
+        const sectionKey = getSectionKey(quizData, data.id)
+        if (sectionKey) {
+            acc[data.id] = sectionKey
+        }
+        return acc
+    }, {} as SectionAnswers)
+}
+
+/**
+ * @deprecated Use getSectionBasedKey instead. This function is kept for backwards compatibility.
  * Generates a combined answer key for all sections of a quiz.
  * This is a server-side utility function.
  * @param quizData - An array of quiz data sections.
@@ -306,16 +327,16 @@ export const getOptionByMarker = (questionGroup: QuizData, marker: string, recor
  * It uses the replaceBlanks utility to iterate through the <code> tags
  * and find the content corresponding to the given question number.
  * @param clozeQuestionGroup The ClozeData object representing the cloze question group.
- * @param no The 1-based question number for which to retrieve the original word.
+ * @param no The 1-based local question number for which to retrieve the original word.
  * @returns The original word for the specified question number, or undefined if not found.
  */
 export const getClozeOriginalWord = (clozeQuestionGroup: ClozeData, no: number): string | undefined => {
     let originalWord: string | undefined
 
     // Use replaceBlanks to iterate through the <code> tags in the text.
-    // The replacer function captures the original content if the question number matches.
-    replaceBlanks(clozeQuestionGroup.text, 1, (questionNumber, originalContent) => {
-        if (questionNumber === no) {
+    // The replacer function captures the original content if the local question number matches.
+    replaceBlanks(clozeQuestionGroup.text, 1, (displayNo, localNo, originalContent) => {
+        if (localNo === no) {
             originalWord = originalContent
         }
         // Return an empty fragment as replaceBlanks expects a ReactNode,
@@ -342,26 +363,21 @@ export const computePerfectScore = (quizData: QuizData[]): number => {
 
 /**
  * Computes the total score for a student's answers.
+ * Uses section-based answer structure: { sectionId: { localNo: answerText } }
  * @param quizData - An array of quiz data sections.
- * @param userAnswers - A record mapping question numbers to user-submitted answers.
+ * @param userAnswers - Section-based answers mapping section IDs to local question numbers to answers.
  * @returns The total score obtained by the student.
  */
-export const computeTotalScore = (quizData: QuizData[], userAnswers: Answers): number => {
+export const computeTotalScore = (quizData: QuizData[], userAnswers: SectionAnswers): number => {
     const results = checkAnswers(quizData, userAnswers)
-    const questionStarts = getQuestionStarts(quizData)
     let totalScore = 0
 
-    for (const questionNumberStr in results) {
-        const questionNumber = Number(questionNumberStr)
-        if (results[questionNumber]) {
-            // Find the strategy for the current question number to get its `scorePerQuestion`
-            const sectionIndex = questionStarts.findIndex((start, i) => {
-                const nextStart = questionStarts[i + 1] || Infinity
-                return questionNumber >= start && questionNumber < nextStart
-            })
+    for (const data of quizData) {
+        const sectionId = data.id
+        const sectionResults = results[sectionId] || {}
 
-            if (sectionIndex !== -1) {
-                const data = quizData[sectionIndex]
+        for (const localNoStr in sectionResults) {
+            if (sectionResults[Number(localNoStr)]) {
                 totalScore += applyStrategy(data, (strategy) => {
                     return strategy.scorePerQuestion ?? 1
                 })

@@ -5,10 +5,11 @@ import { actionClient } from '@repo/service'
 import { submitPaperAction } from '@repo/service/paper'
 import { getPaper } from '@repo/supabase/paper'
 import { computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
+import { SectionAnswersSchema } from '@repo/schema/paper'
 
 export const submitAnswersAction = actionClient
     .inputSchema(z.object({
-        answers: z.record(z.string(), z.string().nullable()),
+        answers: SectionAnswersSchema,
         id: z.number()
     }))
     .action(async ({ parsedInput: { answers, id } }) => {
@@ -17,6 +18,6 @@ export const submitAnswersAction = actionClient
             paperId: id,
             score: computeTotalScore(content, answers),
             perfectScore: computePerfectScore(content),
-            answers: Object.fromEntries(Object.entries(answers).map(([questionId, answer]) => ([questionId, answer?.trim() ?? ''])))
+            answers
         })
     })

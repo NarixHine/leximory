@@ -13,7 +13,12 @@ export const highlightSubstrings = (mainString: string, substringsToMatch: strin
 }
 
 type Color = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
-export function matchColor(pattern: [AlphabeticalMarker | undefined, Color][], key: AlphabeticalMarker): Color | undefined {
+
+/**
+ * Matches a value against a list of patterns and returns the corresponding color.
+ * Works with either alphabetical markers (A, B, C) or option text strings.
+ */
+export function matchColor(pattern: [string | null | undefined, Color][], key: string): Color | undefined {
     for (const [k, v] of pattern) {
         if (k === key) {
             return v

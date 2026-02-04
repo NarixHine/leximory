@@ -8,7 +8,18 @@ export type StreamExplanationParams = {
 }
 
 /**
- * The schema for user-submitted answers.
+ * The schema for section-based answers.
+ * Structure: { sectionId: { localQuestionNo: optionText } }
+ * - sectionId: The unique ID of the quiz section (e.g., 'abc123')
+ * - localQuestionNo: 1-based index within the section (not global question number)
+ * - optionText: The actual answer text/word, not the marker (A, B, C, etc.)
+ */
+export const SectionAnswersSchema = z.record(z.string(), z.record(z.coerce.number(), z.string().nullable()))
+export type SectionAnswers = z.infer<typeof SectionAnswersSchema>
+
+/**
+ * @deprecated Use SectionAnswersSchema instead. This schema is kept for backwards compatibility.
+ * The legacy schema for user-submitted answers using global question numbers.
  */
 export const AnswersSchema = z.record(z.number(), z.string().nullable())
 export type Answers = z.infer<typeof AnswersSchema>
@@ -29,7 +40,7 @@ export type AskResponse = z.infer<typeof AskResponseSchema>
 export interface StrategyRenderProps<T extends QuizData = QuizData, O = unknown> {
     data: T
     config: Config
-    answers: { [key: number]: string | null }
+    answers: SectionAnswers
     options: O
     correctAnswers: string[]
     isCorrect: (userAnswer: string, correctAnswer: string) => boolean

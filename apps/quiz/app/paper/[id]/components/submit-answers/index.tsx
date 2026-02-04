@@ -11,7 +11,7 @@ import { ConfirmPopover } from '@repo/ui/confirm-popover'
 import { toast } from 'sonner'
 import { WarningOctagonIcon } from '@phosphor-icons/react'
 import { ProtectedButton } from '@repo/ui/protected-button'
-import { removeWorkingPaperAtom, setWorkingPaperCompletedAtom } from '@/app/components/working-paper/atoms'
+import { setWorkingPaperCompletedAtom } from '@/app/components/working-paper/atoms'
 
 export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const answers = useAtomValue(answersAtom)
@@ -25,7 +25,11 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
             router.refresh()
         }
     })
-    const hasCompleted = Object.values(answers).filter(Boolean).length >= questionCount
+    // Count total answers across all sections
+    const answeredCount = Object.values(answers).reduce((count, sectionAnswers) => {
+        return count + Object.values(sectionAnswers || {}).filter(Boolean).length
+    }, 0)
+    const hasCompleted = answeredCount >= questionCount
 
     return (
         <div className='flex flex-col gap-4'>

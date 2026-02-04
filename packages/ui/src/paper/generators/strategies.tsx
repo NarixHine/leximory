@@ -35,20 +35,28 @@ const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrateg
     ),
     renderAnswerSheet: ({ data, config }) => (
         <section>
-            {data.questions.map((q, index) => (
-                <div key={index} className='flex gap-x-2 listening-item'>
-                    <div>{`${(config.start ?? 1) + index}.`}</div>
-                    <MultipleChoice key={`${data.id}-${index}`} number={(config.start ?? 1) + index} options={q.a} groupId={data.id} />
-                </div>
-            ))}
+            {data.questions.map((q, index) => {
+                const displayNo = (config.start ?? 1) + index
+                const localNo = index + 1
+                return (
+                    <div key={index} className='flex gap-x-2 listening-item'>
+                        <div>{`${displayNo}.`}</div>
+                        <MultipleChoice key={`${data.id}-${index}`} displayNo={displayNo} localNo={localNo} options={q.a} groupId={data.id} />
+                    </div>
+                )
+            })}
         </section>
     ),
     renderKey: (props) => {
         const key = listeningStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    // Convert global question number to local number
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>
@@ -86,9 +94,9 @@ const grammarStrategy: QuestionStrategy<GrammarData> = createQuestionStrategy<Gr
         </div>
     </>),
     renderPaper: ({ data, config }) => {
-        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (questionNumber, originalContent) => {
+        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (displayNo, localNo, originalContent) => {
             const hint = data.hints[originalContent]
-            const blank = <FillInTheBlank blankCount={hint ? 1 : originalContent.split('/')[0].split(' ').length} number={questionNumber} groupId={data.id} />
+            const blank = <FillInTheBlank blankCount={hint ? 1 : originalContent.split('/')[0].split(' ').length} displayNo={displayNo} localNo={localNo} groupId={data.id} />
             if (!hint) {
                 return blank
             }
@@ -99,17 +107,20 @@ const grammarStrategy: QuestionStrategy<GrammarData> = createQuestionStrategy<Gr
         </section>
     },
     renderAnswerSheet: ({ data, config }) => {
-        const blanks = extractBlanks(data.text, config.start ?? 1, (questionNumber) => {
-            return <FillInTheBlank key={questionNumber} number={questionNumber} groupId={data.id} />
+        const blanks = extractBlanks(data.text, config.start ?? 1, (displayNo, localNo) => {
+            return <FillInTheBlank key={displayNo} displayNo={displayNo} localNo={localNo} groupId={data.id} />
         })
         return <section className='flex flex-col gap-2'>{blanks}</section>
     },
     renderKey: (props) => {
         const key = grammarStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>
@@ -156,8 +167,8 @@ const fishingStrategy: QuestionStrategy<FishingData, string[]> = createQuestionS
         return { paper, key }
     },
     renderPaper: ({ data, config, options }) => {
-        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (questionNumber) => {
-            return <MultipleChoice number={questionNumber} options={options} groupId={data.id} />
+        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (displayNo, localNo) => {
+            return <MultipleChoice displayNo={displayNo} localNo={localNo} options={options} groupId={data.id} />
         })
         return (
             <>
@@ -171,8 +182,8 @@ const fishingStrategy: QuestionStrategy<FishingData, string[]> = createQuestionS
         )
     },
     renderAnswerSheet: ({ data, config, options }) => {
-        const blanks = extractBlanks(data.text, config.start ?? 1, (questionNumber) => {
-            return <MultipleChoice key={questionNumber} number={questionNumber} options={options} groupId={data.id} />
+        const blanks = extractBlanks(data.text, config.start ?? 1, (displayNo, localNo) => {
+            return <MultipleChoice key={displayNo} displayNo={displayNo} localNo={localNo} options={options} groupId={data.id} />
         })
         return <section className='flex flex-col gap-2'>{blanks}</section>
     },
@@ -186,10 +197,13 @@ const fishingStrategy: QuestionStrategy<FishingData, string[]> = createQuestionS
     },
     renderKey: (props) => {
         const key = fishingStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>
@@ -239,8 +253,8 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
         return { paper, key }
     },
     renderPaper: ({ data, config, options: shuffledOptionsMap }) => {
-        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (questionNumber, originalContent) => {
-            return <MultipleChoice number={questionNumber} options={shuffledOptionsMap[originalContent]} groupId={data.id} />
+        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (displayNo, localNo, originalContent) => {
+            return <MultipleChoice displayNo={displayNo} localNo={localNo} options={shuffledOptionsMap[originalContent]} groupId={data.id} />
         })
         const Options = () => <section className='my-2 flex flex-col gap-y-2 print:gap-y-0'>
             {data.questions.map((q, index) => {
@@ -272,8 +286,8 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
         )
     },
     renderAnswerSheet: ({ data, config, options: shuffledOptionsMap }) => {
-        const blanks = extractBlanks(data.text, config.start ?? 1, (questionNumber, originalContent) => {
-            return <MultipleChoice key={questionNumber} number={questionNumber} options={shuffledOptionsMap[originalContent]} groupId={data.id} />
+        const blanks = extractBlanks(data.text, config.start ?? 1, (displayNo, localNo, originalContent) => {
+            return <MultipleChoice key={displayNo} displayNo={displayNo} localNo={localNo} options={shuffledOptionsMap[originalContent]} groupId={data.id} />
         })
         return <section className='flex flex-col gap-2'>{blanks}</section>
     },
@@ -288,10 +302,13 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
     },
     renderKey: (props) => {
         const key = clozeStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>
@@ -343,13 +360,14 @@ const readingStrategy: QuestionStrategy<ReadingData> = createQuestionStrategy<Re
             <section>{'text' in data ? parse(data.text) : null}</section>
             <section className='my-2 flex flex-col gap-y-2 print:gap-y-0'>
                 {data.questions.map((q, index) => {
-                    const questionNumber = (config.start ?? 1) + index
+                    const displayNo = (config.start ?? 1) + index
+                    const localNo = index + 1
                     return (
-                        <div key={index} id={`q${questionNumber}`} className='flex flex-col'>
+                        <div key={index} id={`q${displayNo}`} className='flex flex-col'>
                             <div>
-                                <span className='font-bold'>{questionNumber}. </span>{q.q}
+                                <span className='font-bold'>{displayNo}. </span>{q.q}
                             </div>
-                            <Choice no={questionNumber} options={q.a} groupId={data.id} />
+                            <Choice localNo={localNo} options={q.a} groupId={data.id} />
                         </div>
                     )
                 })}
@@ -359,13 +377,14 @@ const readingStrategy: QuestionStrategy<ReadingData> = createQuestionStrategy<Re
     renderAnswerSheet: ({ data, config, answers }) => (
         <section className='my-2 flex flex-col gap-y-2'>
             {data.questions.map((q, index) => {
-                const questionNumber = (config.start ?? 1) + index
+                const displayNo = (config.start ?? 1) + index
+                const localNo = index + 1
                 return (
                     <div key={index} className='flex gap-2 flex-col'>
                         <p>
-                            <span className={cn('font-bold', !answers[questionNumber] && 'text-secondary')}>{questionNumber}. </span>{q.q}
+                            <span className={cn('font-bold', !(answers[data.id]?.[localNo]) && 'text-secondary')}>{displayNo}. </span>{q.q}
                         </p>
-                        <Choice no={questionNumber} options={q.a} groupId={data.id} />
+                        <Choice localNo={localNo} options={q.a} groupId={data.id} />
                     </div>
                 )
             })}
@@ -381,10 +400,13 @@ const readingStrategy: QuestionStrategy<ReadingData> = createQuestionStrategy<Re
     },
     renderKey: (props) => {
         const key = readingStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>
@@ -438,8 +460,8 @@ const sentenceChoiceStrategy: QuestionStrategy<SentenceChoiceData, string[]> = c
         return { paper, key }
     },
     renderPaper: ({ data, config, options }) => {
-        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (questionNumber) => {
-            return <MultipleChoice groupId={data.id} options={options} number={questionNumber} />
+        const parsedContent = replaceBlanks(data.text, config.start ?? 1, (displayNo, localNo) => {
+            return <MultipleChoice groupId={data.id} options={options} displayNo={displayNo} localNo={localNo} />
         })
         return (
             <>
@@ -455,8 +477,8 @@ const sentenceChoiceStrategy: QuestionStrategy<SentenceChoiceData, string[]> = c
         )
     },
     renderAnswerSheet: ({ data, config, options }) => {
-        const blanks = extractBlanks(data.text, config.start ?? 1, (questionNumber) => {
-            return <MultipleChoice key={questionNumber} groupId={data.id} options={options} number={questionNumber} />
+        const blanks = extractBlanks(data.text, config.start ?? 1, (displayNo, localNo) => {
+            return <MultipleChoice key={displayNo} groupId={data.id} options={options} displayNo={displayNo} localNo={localNo} />
         })
         return (
             <>
@@ -481,10 +503,13 @@ const sentenceChoiceStrategy: QuestionStrategy<SentenceChoiceData, string[]> = c
     },
     renderKey: (props) => {
         const key = sentenceChoiceStrategy.generateKey(props)
+        const { data, config } = props
         return (
             <>
                 {Object.entries(key).map(([number, correctAnswer]) => {
-                    const userAnswer = props.answers[Number(number)]
+                    const globalNo = Number(number)
+                    const localNo = globalNo - (config.start ?? 1) + 1
+                    const userAnswer = props.answers[data.id]?.[localNo]
                     return <td key={number} className={cn('px-2', userAnswer && (props.isCorrect(userAnswer, correctAnswer) ? 'text-success' : 'text-danger'))}>{number}. <span className='font-bold'>{correctAnswer}</span></td>
                 })}
             </>

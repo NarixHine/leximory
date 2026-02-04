@@ -3,7 +3,7 @@
 import { Popover, PopoverTrigger, PopoverContent, Button, Input, cn, Spacer, Chip } from '@heroui/react'
 import { useSetAtom, useAtomValue } from 'jotai'
 import { viewModeAtom, submittedAnswersAtom, editoryItemsAtom, answersAtom, setAnswerAtom } from '../atoms'
-import { ALPHABET_ELEMENTS, ALPHABET_SET, AlphabeticalMarker } from '../generators/config'
+import { ALPHABET_ELEMENTS, ALPHABET_SET } from '../generators/config'
 import { CursorClickIcon, XCircleIcon, CheckCircleIcon } from '@phosphor-icons/react/ssr'
 import { questionStrategies } from '../generators/strategies'
 import { memo } from 'react'
@@ -11,17 +11,32 @@ import { useAsk, useBlankInfo, useCorrectAnswer } from './hooks'
 import { matchColor } from './utils'
 import { AskButton } from './ask'
 
-const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: number, groupId: string, children?: React.ReactNode, blankCount?: number }) => {
+/**
+ * Props for the Blank component.
+ * @param displayNo - The question number to display (global number)
+ * @param localNo - The 1-based question number within the section (used for storage)
+ * @param groupId - The section ID
+ */
+interface BlankProps {
+    displayNo: number
+    localNo: number
+    groupId: string
+    children?: React.ReactNode
+    blankCount?: number
+}
+
+const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankProps) => {
     const quizData = useAtomValue(editoryItemsAtom)
     const answers = useAtomValue(answersAtom)
     const submittedAnswers = useAtomValue(submittedAnswersAtom)
     const viewMode = useAtomValue(viewModeAtom)
-    const answer = answers[no]
-    const submittedAnswer = submittedAnswers[no]
+    // Get answer using section-based structure
+    const answer = answers[groupId]?.[localNo]
+    const submittedAnswer = submittedAnswers[groupId]?.[localNo]
     const spaces = '\u00A0'
-    const key = useCorrectAnswer(no)
-    const { ask } = useAsk({ no, groupId })
-    const { getFullInfo } = useBlankInfo({ no, groupId })
+    const key = useCorrectAnswer({ sectionId: groupId, localNo })
+    const { ask } = useAsk({ localNo, groupId })
+    const { getFullInfo } = useBlankInfo({ localNo, groupId })
     const getQuestionGroup = () => quizData ? quizData.find((item) => item.id === groupId)! : null
     const checkAnswerCorrectness = () => {
         const questionGroup = getQuestionGroup()
@@ -49,7 +64,7 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
                     key={index}
                     className={cn('whitespace-nowrap print:text-black')}
                 >
-                    {<Icon />} <span className='print:hidden'>{spaces.repeat(6)}</span><span className='hidden print:inline'>{spaces.repeat(3)}</span>{no}<span>{spaces.repeat(3)}</span>
+                    {<Icon />} <span className='print:hidden'>{spaces.repeat(6)}</span><span className='hidden print:inline'>{spaces.repeat(3)}</span>{displayNo}<span>{spaces.repeat(3)}</span>
                 </u>
             ))}
         </span>
@@ -70,7 +85,7 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
             return (
                 <Popover shadow='sm'>
                     <PopoverTrigger>
-                        <span id={`q${no}`} className={cn(!checkAnswerCorrectness() && 'text-danger')}>
+                        <span id={`q${displayNo}`} className={cn(!checkAnswerCorrectness() && 'text-danger')}>
                             {ShownBlank} {!checkAnswerCorrectness() && <span>(<span className='line-through'><FormattedFullAnswer /></span>; <span className='text-success'><FormattedFullKey /></span>)</span>}
                         </span>
                     </PopoverTrigger>
@@ -90,25 +105,33 @@ const Blank = ({ number: no, groupId, children, blankCount = 1 }: { number: numb
 }
 const MemoizedBlank = memo(Blank)
 
-export const MultipleChoice = ({ number, options, groupId }: { number: number, options?: string[], groupId: string }) => {
+/**
+ * MultipleChoice component for cloze/fishing/sentence choice questions.
+ * @param displayNo - The question number to display (global number)
+ * @param localNo - The 1-based question number within the section (used for storage)
+ * @param options - Array of option texts
+ * @param groupId - The section ID
+ */
+export const MultipleChoice = ({ displayNo, localNo, options, groupId }: { displayNo: number, localNo: number, options?: string[], groupId: string }) => {
     const answers = useAtomValue(answersAtom)
     const setAnswer = useSetAtom(setAnswerAtom)
     const viewMode = useAtomValue(viewModeAtom)
-    const answer = viewMode === 'revise' ? undefined : answers[number] as AlphabeticalMarker
+    // Get the answer for this section and local question number (stored as option text)
+    const answer = viewMode === 'revise' ? undefined : answers[groupId]?.[localNo]
     const submittedAnswers = useAtomValue(submittedAnswersAtom)
-    const correctAnswer = useCorrectAnswer(number) as AlphabeticalMarker
+    const submittedAnswer = submittedAnswers[groupId]?.[localNo]
+    const correctAnswer = useCorrectAnswer({ sectionId: groupId, localNo })
 
     const content = (
         <div className='p-2 grid grid-cols-1 sm:grid-cols-2 gap-2'>
             {options?.map((option, index) => {
-                const optionMarker = ALPHABET_SET[index]
                 return <Button
                     key={index}
-                    color={matchColor([[answer, 'secondary']], optionMarker)}
+                    color={matchColor([[answer, 'secondary']], option)}
                     variant='flat'
                     size='sm'
                     isDisabled={viewMode === 'revise'}
-                    onPress={() => setAnswer({ questionId: number, option: optionMarker })}
+                    onPress={() => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option })}
                 >
                     <div className='max-w-48 truncate text-left'>
                         {ALPHABET_ELEMENTS[index]} {option}
@@ -122,16 +145,15 @@ export const MultipleChoice = ({ number, options, groupId }: { number: number, o
         switch (viewMode) {
             case 'revise':
                 return (
-                    <MemoizedBlank number={number} groupId={groupId}>
+                    <MemoizedBlank displayNo={displayNo} localNo={localNo} groupId={groupId}>
                         <div className='p-2 flex flex-wrap gap-2 max-w-60'>
                             {options?.map((option, index) => {
-                                const optionMarker = ALPHABET_SET[index]
                                 return <Chip
                                     key={index}
                                     color={matchColor([
                                         [correctAnswer, 'success'],
-                                        [submittedAnswers[number] as AlphabeticalMarker, 'danger'],
-                                    ], optionMarker)}
+                                        [submittedAnswer, 'danger'],
+                                    ], option)}
                                     variant='flat'
                                     size='sm'
                                 >
@@ -145,20 +167,27 @@ export const MultipleChoice = ({ number, options, groupId }: { number: number, o
                 )
             default:
                 return (
-                    <MemoizedBlank number={number} groupId={groupId}>
+                    <MemoizedBlank displayNo={displayNo} localNo={localNo} groupId={groupId}>
                         <PopoverContent>{content}</PopoverContent>
                     </MemoizedBlank>
                 )
         }
     }
 
-    return <MemoizedBlank number={number} groupId={groupId} />
+    return <MemoizedBlank displayNo={displayNo} localNo={localNo} groupId={groupId} />
 }
 
-export const FillInTheBlank = ({ groupId, number, blankCount = 1 }: { groupId: string, number: number, blankCount?: number }) => {
+/**
+ * FillInTheBlank component for grammar questions.
+ * @param displayNo - The question number to display (global number)
+ * @param localNo - The 1-based question number within the section (used for storage)
+ * @param groupId - The section ID
+ */
+export const FillInTheBlank = ({ groupId, displayNo, localNo, blankCount = 1 }: { groupId: string, displayNo: number, localNo: number, blankCount?: number }) => {
     const answers = useAtomValue(answersAtom)
     const setAnswer = useSetAtom(setAnswerAtom)
-    const answer = answers[number]
+    // Get the answer for this section and local question number
+    const answer = answers[groupId]?.[localNo]
     const viewMode = useAtomValue(viewModeAtom)
 
     const content = (
@@ -167,7 +196,7 @@ export const FillInTheBlank = ({ groupId, number, blankCount = 1 }: { groupId: s
             autoFocus
             variant='flat'
             value={answer ?? ''}
-            onChange={(e) => setAnswer({ questionId: number, option: e.target.value })}
+            onChange={(e) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: e.target.value })}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                     const section = (e.target as HTMLElement).closest('section')
@@ -189,12 +218,13 @@ export const FillInTheBlank = ({ groupId, number, blankCount = 1 }: { groupId: s
         case 'revise':
             return <MemoizedBlank
                 blankCount={blankCount}
-                number={number}
+                displayNo={displayNo}
+                localNo={localNo}
                 groupId={groupId}
             />
         default:
             return (
-                <MemoizedBlank blankCount={blankCount} number={number} groupId={groupId}>
+                <MemoizedBlank blankCount={blankCount} displayNo={displayNo} localNo={localNo} groupId={groupId}>
                     <PopoverContent className='p-0'>{content}</PopoverContent>
                 </MemoizedBlank>
             )
