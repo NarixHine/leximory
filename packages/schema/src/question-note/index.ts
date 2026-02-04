@@ -18,6 +18,38 @@ export const QuestionNoteResponseSchema = z.object({
 export type QuestionNoteResponse = z.infer<typeof QuestionNoteResponseSchema>
 
 /**
+ * The content structure for a question note (stored as JSON string in DB).
+ */
+export interface QuestionNoteContent {
+    sentence: string
+    correctAnswer: string
+    wrongAnswer?: string
+    keyPoints: string
+}
+
+/**
+ * Serializes the question note content to JSON string.
+ */
+export function serializeQuestionNoteContent(content: QuestionNoteContent): string {
+    return JSON.stringify(content)
+}
+
+/**
+ * Parses a question note content from JSON string.
+ */
+export function parseQuestionNoteContent(content: string): QuestionNoteContent | null {
+    try {
+        const parsed = JSON.parse(content)
+        if (typeof parsed.sentence === 'string' && typeof parsed.correctAnswer === 'string' && typeof parsed.keyPoints === 'string') {
+            return parsed as QuestionNoteContent
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
+/**
  * Schema for a saved question note entry.
  */
 export const QuestionNoteSchema = z.object({

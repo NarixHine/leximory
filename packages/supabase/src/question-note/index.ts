@@ -1,38 +1,11 @@
 import 'server-only'
 import { supabase } from '@repo/supabase'
 import { stdMoment } from '@repo/utils'
+import { serializeQuestionNoteContent } from '@repo/schema/question-note'
 
-/**
- * The content structure for a question note.
- */
-export interface QuestionNoteContent {
-    sentence: string
-    correctAnswer: string
-    wrongAnswer?: string
-    keyPoints: string
-}
-
-/**
- * Serializes the question note content to JSON string.
- */
-export function serializeQuestionNoteContent(content: QuestionNoteContent): string {
-    return JSON.stringify(content)
-}
-
-/**
- * Parses a question note content from JSON string.
- */
-export function parseQuestionNoteContent(content: string): QuestionNoteContent | null {
-    try {
-        const parsed = JSON.parse(content)
-        if (typeof parsed.sentence === 'string' && typeof parsed.correctAnswer === 'string' && typeof parsed.keyPoints === 'string') {
-            return parsed as QuestionNoteContent
-        }
-        return null
-    } catch {
-        return null
-    }
-}
+// Re-export types from schema for convenience
+export type { QuestionNoteContent } from '@repo/schema/question-note'
+export { parseQuestionNoteContent, serializeQuestionNoteContent } from '@repo/schema/question-note'
 
 /**
  * Saves a question note to the notes table.

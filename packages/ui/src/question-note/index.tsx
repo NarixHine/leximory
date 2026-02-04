@@ -1,7 +1,7 @@
 import { Card, CardBody } from '@heroui/card'
 import { cn } from '@heroui/theme'
 import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react/ssr'
-import { parseQuestionNoteContent, QuestionNoteContent } from '@repo/supabase/question-note'
+import { parseQuestionNoteContent } from '@repo/schema/question-note'
 
 export interface QuestionNoteCardProps {
     content: string
