@@ -21,9 +21,10 @@ export type QuestionNoteResponse = z.infer<typeof QuestionNoteResponseSchema>
  * Schema for a saved question note entry.
  */
 export const QuestionNoteSchema = z.object({
-    id: z.string(),
-    word: z.string(),
+    id: z.number(),
+    content: z.string(),
     date: z.string(),
+    relatedPaper: z.number().nullable(),
 })
 
 export type QuestionNote = z.infer<typeof QuestionNoteSchema>
