@@ -36,15 +36,7 @@ export function createQuestionStrategy<T extends QuizData, O = unknown>(
         getOptions: () => undefined as O,
         getCorrectAnswers: (data) => ('text' in data ? extractCodeContent(data.text) : []),
         isCorrect: (userAnswer, correctAnswer) => userAnswer === correctAnswer,
-        generateKey: ({ correctAnswers, config }) => {
-            return correctAnswers.reduce((acc, answer, index) => {
-                const questionNumber = (config.start ?? 1) + index
-                acc[questionNumber] = answer
-                return acc
-            }, {} as Record<number, string>)
-        },
         renderPaper: () => null,
-        renderKey: () => null,
         getDefaultValue: () => {
             throw new Error('getDefaultValue must be implemented for each strategy')
         },
@@ -263,34 +255,6 @@ export const getSectionBasedKey = (quizData: QuizData[]): SectionAnswers => {
         }
         return acc
     }, {} as SectionAnswers)
-}
-
-/**
- * @deprecated Use getSectionBasedKey instead. This function is kept for backwards compatibility.
- * Generates a combined answer key for all sections of a quiz.
- * This is a server-side utility function.
- * @param quizData - An array of quiz data sections.
- * @returns A single object mapping each question number to its correct answer.
- */
-export const getKey = (quizData: QuizData[]): Record<number, string> => {
-    const questionStarts = getQuestionStarts(quizData)
-
-    return quizData.reduce((acc, data, index) => {
-        const start = questionStarts[index]
-        const key = applyStrategy(data, (strategy, specificData) => {
-            const options = strategy.getOptions?.(specificData)
-            const correctAnswers = strategy.getCorrectAnswers(specificData, options)
-            return strategy.generateKey({
-                data: specificData,
-                config: { start },
-                options,
-                correctAnswers,
-                answers: {},
-                isCorrect: () => false,
-            })
-        })
-        return merge(acc, key)
-    }, {} as Record<number, string>)
 }
 
 /**

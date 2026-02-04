@@ -35,18 +35,5 @@ export const Question = <K extends QuizData['type']>({ strategy, specificData, v
         )
     }
 
-    if (variant === 'key') {
-        const keyElements = strategy.renderKey(renderProps)
-        if (!keyElements) return null
-        if (strategy.keyPerLine === 0) return <>{keyElements}</>
-
-        const cells = React.Children.toArray(keyElements.props.children) as JSX.Element[]
-        return <table>
-            <tbody>
-                {toTableRows(cells, strategy.keyPerLine)}
-            </tbody>
-        </table>
-    }
-
     return null
 }

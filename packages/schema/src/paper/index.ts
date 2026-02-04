@@ -56,10 +56,8 @@ export interface QuestionStrategy<T extends QuizData = QuizData, O = unknown> {
     getCorrectAnswers: (data: T, options: O) => string[]
     getLlmReadyText?: (data: T) => { paper: string, key: string }
     isCorrect: (userAnswer: string, correctAnswer: string) => boolean
-    generateKey: (props: StrategyRenderProps<T, O>) => Record<number, string>
     renderPaper: (props: StrategyRenderProps<T, O>) => JSX.Element | null
     renderAnswerSheet?: (props: StrategyRenderProps<T, O>) => JSX.Element | null
-    renderKey: (props: StrategyRenderProps<T, O>) => JSX.Element | null
     renderRubric: () => JSX.Element | null
     keyPerLine: number
     getDefaultValue: () => T
