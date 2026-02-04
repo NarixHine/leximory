@@ -9,7 +9,6 @@ import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
 
-
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
     getQuestionCount: (data) => data.questions.length,

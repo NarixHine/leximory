@@ -7,7 +7,7 @@ The Quiz Generator is a React-based system designed to render interactive quizze
 ### Core Capabilities
 
 * **Dual Rendering:** Supports Client-Side Rendering (Interactive) and Server-Side Rendering (Static/Print).
-* **State Modes:** Handles input (`normal`), answer checking (`revise`), and teacher tracking (`track`).
+* **State Modes:** Handles input (`normal`), answer checking (`revise`).
 * **Persistence:** Automatically syncs answers to `localStorage` via Jotai utils.
 * **AI Integration:** "Ask AI" context-aware explanations for specific blanks/questions.
 
@@ -19,13 +19,13 @@ The system relies on a complex atom structure to manage the lifecycle of a quiz 
 
 ### 2.1 Atom Architecture (`paper/atoms.ts`)
 
-| Atom Name | Scope | Persistence | Description |
-| --- | --- | --- | --- |
-| `paperIdAtom` | Global | Memory | Stores current paper ID. Defaults to `DEFAULT-PAPER`. |
-| `viewModeAtom` | Global | Memory | Controls UI state: `'normal'` (editing) or `'revise'` (reviewing). |
-| `editoryItemsAtom` | Global | LocalStorage | Stores the raw Quiz Data (`QuizItems`). Key: `'editory-items'`. |
-| `answersAtomFamily` | Family | LocalStorage | **Source of Truth.** Maps `paperId` -> `SectionAnswers`. Structure: `{ sectionId: { localQuestionNo: optionText } }` |
-| `submittedAnswersAtom` | Global | Memory | Read-only copy of answers used during `revise` mode for comparison. Uses same `SectionAnswers` structure. |
+| Atom Name              | Scope  | Persistence  | Description                                                                                                          |
+| ---------------------- | ------ | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `paperIdAtom`          | Global | Memory       | Stores current paper ID. Defaults to `DEFAULT-PAPER`.                                                                |
+| `viewModeAtom`         | Global | Memory       | Controls UI state: `'normal'` (editing) or `'revise'` (reviewing).                                                   |
+| `editoryItemsAtom`     | Global | LocalStorage | Stores the raw Quiz Data (`QuizItems`). Key: `'editory-items'`.                                                      |
+| `answersAtomFamily`    | Family | LocalStorage | **Source of Truth.** Maps `paperId` -> `SectionAnswers`. Structure: `{ sectionId: { localQuestionNo: optionText } }` |
+| `submittedAnswersAtom` | Global | Memory       | Read-only copy of answers used during `revise` mode for comparison. Uses same `SectionAnswers` structure.            |
 
 #### Answer Structure
 
@@ -80,11 +80,6 @@ The rendering pipeline transforms raw `QuizData` into interactive UI components 
 * **`QuizPaperRSC` (`rsc.tsx`):**
 * **Usage:** Server Components / Static generation.
 * **Logic:** Renders the quiz structure without client-side state logic initially (for SEO/Print).
-
-
-* **`QuizKey` (`index.tsx`):**
-* **Usage:** Renders the answer key.
-
 
 * **`QuestionProcessor`:**
 * **Logic:** The middleware that calculates question numbering offsets (`getQuestionStarts`) and selects the correct strategy.
