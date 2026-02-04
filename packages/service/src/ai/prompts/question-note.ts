@@ -20,7 +20,7 @@ export const buildQuestionNoteSystemPrompt = (type: SectionType) => `
 
 <output_format>
     你必须输出一个JSON对象，包含以下字段：
-    - sentence: 题目所在的句子（含前后各一句上下文，如有必要）。用省略号（……）表示部分引用的开头或结尾，用▁▁▁▁▁替代空格/挖空处。不要包含任何HTML标签。
+    - sentence: 题目所在的句子（含前后各一句上下文，如有必要）。用省略号（……）表示部分引用的开头或结尾，用▁▁▁▁▁替代空格/挖空处。移除一切HTML标签，以纯文本形式输出。
     - correctAnswer: 正确答案（简洁表述）
     - wrongAnswer: 用户的错误答案（仅当用户作答错误时提供此字段）
     - keyPoints: 关键考点的简洁总结（一两句话即可，点明核心语法/词汇/逻辑要点）
@@ -29,8 +29,7 @@ export const buildQuestionNoteSystemPrompt = (type: SectionType) => `
 <tone>
     笔记条目应当：
     - 极其精练，便于复习时快速回顾
-    - 直接给出要点，不要有冗余解释
-    - keyPoints 应当是可操作的学习提示，而非泛泛的描述
+    - 直接给出要点和相关知识点；剔除冗余解释
 </tone>
 `.trim()
 

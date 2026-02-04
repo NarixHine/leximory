@@ -59,7 +59,6 @@ export function PaperCard({
                 </Skeleton>}
                 <h3 className='text-3xl font-formal'>
                     {title}
-                    {isPinned && <Logo className='inline size-7 grayscale-75 ml-1.5' />}
                 </h3>
                 <div className='font-mono text-default-400'>{createdAt}</div>
             </CardBody>

@@ -23,13 +23,13 @@ import { readStreamableValue } from '../../utils'
 export function AskButton({ ask, ...props }: { ask: () => void } & ButtonProps) {
     return (
         <Button
-            startContent={<StudentIcon weight='fill' size={20} />}
+            startContent={<StudentIcon weight='duotone' size={20} />}
             color='primary'
             {...props}
             onPress={() => {
                 ask()
             }}
-        >Ask AI</Button>
+        >问猫谜</Button>
     )
 }
 

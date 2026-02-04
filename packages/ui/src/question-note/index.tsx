@@ -29,7 +29,7 @@ export function QuestionNoteCard({ content, className, cardBodyClassName }: Ques
         <Card fullWidth radius='sm' shadow='none' className={className}>
             <CardBody className={cn('px-5 py-3 leading-snug gap-3', cardBodyClassName)}>
                 {/* Sentence with blank */}
-                <div className='text-base leading-relaxed font-serif'>
+                <div className='leading-relaxed'>
                     {sentence}
                 </div>
                 

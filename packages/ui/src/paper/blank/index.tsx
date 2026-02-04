@@ -91,11 +91,10 @@ const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankP
                         </span>
                     </PopoverTrigger>
                     <PopoverContent>
-                        <div className='p-3 flex flex-col gap-1 max-w-64'>
+                        <div className='p-3 flex flex-col gap-2 max-w-64'>
                             <div>你的答案是 <FormattedFullAnswer />。</div>
                             <div>参考答案是 <FormattedFullKey />。</div>
                             {children}
-                            <Spacer y={1} />
                             <AskButton fullWidth ask={ask} />
                             <SaveQuestionNoteButton fullWidth localNo={localNo} groupId={groupId} />
                         </div>

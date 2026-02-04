@@ -7,16 +7,16 @@ import { toast } from 'sonner'
 import { useSaveQuestionNoteParams } from './hooks'
 import { useMutation } from '@tanstack/react-query'
 
-export function SaveQuestionNoteButton({ 
-    localNo, 
+export function SaveQuestionNoteButton({
+    localNo,
     groupId,
-    ...props 
-}: { 
+    ...props
+}: {
     localNo: number
-    groupId: string 
+    groupId: string
 } & Omit<ButtonProps, 'onPress'>) {
     const { getSaveParams } = useSaveQuestionNoteParams({ localNo, groupId })
-    
+
     const { mutate, isPending, isSuccess } = useMutation({
         mutationKey: ['save-question-note', groupId, localNo],
         mutationFn: async () => {
@@ -31,7 +31,7 @@ export function SaveQuestionNoteButton({
             return result?.data
         },
     })
-    
+
     const handleSave = () => {
         toast.promise(
             new Promise((resolve, reject) => {
@@ -47,10 +47,10 @@ export function SaveQuestionNoteButton({
             }
         )
     }
-    
+
     return (
         <Button
-            startContent={<NotebookIcon weight='fill' size={20} />}
+            startContent={!isPending && <NotebookIcon weight='duotone' size={20} />}
             color='secondary'
             variant='flat'
             isLoading={isPending}
@@ -58,7 +58,7 @@ export function SaveQuestionNoteButton({
             {...props}
             onPress={handleSave}
         >
-            {isSuccess ? '已收录' : '收录题目'}
+            {isSuccess ? '已收录' : '收录本题于笔记'}
         </Button>
     )
 }
