@@ -15,15 +15,18 @@ type QuizTabsUIProps = {
 
 export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUIProps) {
     return (
-        <Tabs defaultSelectedKey={'paper'}>
+        <Tabs defaultSelectedKey={'paper'} classNames={{
+            tabList: 'print:hidden',
+            panel: 'print:-mt-5'
+        }}>
             {Paper && <Tab key='paper' title={<div className='flex items-center space-x-2'>
                 <SpeedometerIcon weight='bold' />
                 <span>解谜</span>
             </div>}>
                 {Paper}
             </Tab>}
-             {Revise && <Tab key='revise' title={<div className='flex items-center space-x-2'>
-                 <MagicWandIcon weight='bold' />
+            {Revise && <Tab key='revise' title={<div className='flex items-center space-x-2'>
+                <MagicWandIcon weight='bold' />
                 <span>解惑</span>
             </div>}>
                 {Revise}

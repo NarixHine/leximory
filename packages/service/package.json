@@ -9,6 +9,7 @@
     "./ai": "./src/ai/index.ts",
     "./ai/dictation": "./src/ai/dictation/index.ts",
     ".": "./src/index.ts",
+    "./kilpi": "./src/kilpi/index.ts",
     "./user": "./src/user/index.ts",
     "./prompts": "./src/ai/prompts/index.ts",
     "./annotate": "./src/annotate/index.ts",

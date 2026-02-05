@@ -147,7 +147,7 @@ export const deleteChunkNoteAction = actionClient
     .action(async ({ parsedInput: { noteId } }) => {
         await Kilpi.authed().authorize().assert()
         const { userId } = await getUserOrThrow()
-        
+
         await deleteNote({ id: noteId, creator: userId })
     })
 
@@ -160,9 +160,9 @@ export const deleteDictationEntryAction = actionClient
         paperId: z.number(),
         dictationId: z.number(),
         sectionIndex: z.number(),
-        entryIndex: z.number(),
+        entryEnglish: z.string(),
     }))
-    .action(async ({ parsedInput: { paperId, dictationId, sectionIndex, entryIndex } }) => {
+    .action(async ({ parsedInput: { paperId, dictationId, sectionIndex, entryEnglish } }) => {
         const paper = await getPaper({ id: paperId })
         await Kilpi.papers.update(paper).authorize().assert()
 
@@ -177,7 +177,7 @@ export const deleteDictationEntryAction = actionClient
             if (sIdx === sectionIndex) {
                 return {
                     ...section,
-                    entries: section.entries.filter((_, eIdx) => eIdx !== entryIndex)
+                    entries: section.entries.filter(entry => entry.english !== entryEnglish)
                 }
             }
             return section
@@ -186,8 +186,8 @@ export const deleteDictationEntryAction = actionClient
         // Update the dictation content
         const newContent: DictationContent = { sections: newSections }
         await updateDictationContent({ id: dictationId, content: newContent })
-        
+
         revalidateTag(`dictation:${paperId}`, 'max')
-        
+
         return newContent
     })

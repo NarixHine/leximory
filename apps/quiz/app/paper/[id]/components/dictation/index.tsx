@@ -1,26 +1,23 @@
 import { getDictation } from '@repo/supabase/dictation'
-import { getPaper } from '@repo/supabase/paper'
-import { getUser } from '@repo/user'
 import { DictationContent } from './dictation-content'
+import { Kilpi } from '@repo/service/kilpi'
+import { getPaper } from '@repo/supabase/paper'
 
 type DictationProps = {
     paperId: number
 }
 
 export default async function Dictation({ paperId }: DictationProps) {
-    const [dictation, paper, user] = await Promise.all([
+    const [dictation, { granted }] = await Promise.all([
         getDictation({ paperId }),
-        getPaper({ id: paperId }),
-        getUser(),
+        Kilpi.papers.update(await getPaper({ id: paperId })).authorize(),
     ])
-    
-    const isOwner = user?.userId === paper.creator
-    
+
     return (
-        <DictationContent 
+        <DictationContent
             paperId={paperId}
             dictation={dictation}
-            isOwner={isOwner}
+            hasWriteAccess={granted}
         />
     )
 }
