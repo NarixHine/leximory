@@ -14,12 +14,12 @@ export interface GenerateChunksParams {
  */
 export async function generateChunksForSection({ quizData }: GenerateChunksParams) {
     const text = extractTextFromQuizData(quizData)
-    
+
     // Skip if no meaningful text
     if (!text || text.length < 50) {
         return { entries: [] }
     }
-    
+
     const { object } = await generateObject({
         prompt: buildChunkGenerationPrompt(text, quizData.type),
         system: buildChunkGenerationSystemPrompt(),
@@ -27,6 +27,6 @@ export async function generateChunksForSection({ quizData }: GenerateChunksParam
         ...FLASH_AI,
         schema: ChunkGenerationResponseSchema,
     })
-    
+
     return object
 }

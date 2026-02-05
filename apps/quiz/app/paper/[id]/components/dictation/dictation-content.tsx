@@ -18,7 +18,6 @@ type DictationContentProps = {
     dictation: {
         id: number
         content: DictationContentType
-        createdAt: string
     } | null
     isOwner: boolean
 }
@@ -34,16 +33,17 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
     const handleGenerate = async () => {
         setIsGenerating(true)
         try {
-            const { data, serverError } = await generateDictationAction({ paperId })
-            
-            if (serverError) {
-                throw new Error(serverError)
-            }
-            
-            if (data) {
-                setDictation(data)
-                toast.success('默写纸生成完成！')
-            }
+            toast.promise(async () => {
+                const { data } = await generateDictationAction({ paperId })
+                if (data)
+                    setDictation(data)
+            },
+                {
+                    loading: '默写纸生成中',
+                    success: '默写纸生成成功',
+                    error: (err) => `生成失败：${err.message}`,
+                }
+            )
         } catch (error) {
             toast.error(error instanceof Error ? error.message : '生成失败，请稍后重试')
         } finally {
@@ -54,9 +54,9 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
     const deleteMutation = useMutation({
         mutationFn: async () => {
             if (!dictation) return
-            const { serverError } = await deleteDictationAction({ 
-                paperId, 
-                dictationId: dictation.id 
+            const { serverError } = await deleteDictationAction({
+                paperId,
+                dictationId: dictation.id
             })
             if (serverError) throw new Error(serverError)
         },
@@ -71,10 +71,10 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
 
     const saveMutation = useMutation({
         mutationFn: async ({ english, chinese }: { english: string; chinese: string }) => {
-            const { data, serverError } = await saveChunkNoteAction({ 
-                english, 
-                chinese, 
-                paperId 
+            const { data, serverError } = await saveChunkNoteAction({
+                english,
+                chinese,
+                paperId
             })
             if (serverError) throw new Error(serverError)
             return data
@@ -173,9 +173,9 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                             {section.entries.map((entry, entryIndex) => {
                                 const entryKey = `${sectionIndex}-${entryIndex}`
                                 const revealed = isEntryRevealed(entryKey)
-                                
+
                                 return (
-                                    <div 
+                                    <div
                                         key={entryIndex}
                                         className='flex items-center justify-between gap-4 py-2 border-b border-divider last:border-b-0'
                                     >
@@ -188,7 +188,7 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                                                 </p>
                                             )}
                                         </div>
-                                        
+
                                         {/* Right side: Buttons */}
                                         <div className='flex items-center gap-2 shrink-0'>
                                             <Button
@@ -204,9 +204,9 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                                                     size='sm'
                                                     variant='flat'
                                                     color='primary'
-                                                    onPress={() => saveMutation.mutate({ 
-                                                        english: entry.english, 
-                                                        chinese: entry.chinese 
+                                                    onPress={() => saveMutation.mutate({
+                                                        english: entry.english,
+                                                        chinese: entry.chinese
                                                     })}
                                                     isLoading={saveMutation.isPending}
                                                     startContent={<FloppyDiskIcon weight='duotone' />}

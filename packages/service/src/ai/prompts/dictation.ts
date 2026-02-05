@@ -35,13 +35,12 @@ export const buildChunkGenerationSystemPrompt = () => `
 你的任务是从给定的英语文本中提取有价值的表达片段（chunks），并提供准确的中文翻译。
 
 什么是值得提取的chunks：
-- 介词性表达（prepositional phrases）：如 "in the wake of", "by virtue of", "in terms of"
-- 名词性表达（noun phrases）：如 "a wealth of experience", "the lion's share", "a far cry from"
-- 动宾搭配（verb-object collocations）：如 "take into account", "shed light on", "bear in mind"
-- 精妙/高级/有表现力的复杂表达：如 "leave no stone unturned", "stand the test of time"
-- 部分句子片段或复杂修饰结构：如 "not so much... as...", "it is ... that..."
+- 介词性表达（prepositional phrases）：如 "at the forefront of innovation"
+- 名词性表达（noun phrases）：如 "a wealth of experience to tap into", "a far cry from the brutal reality"
+- 动宾搭配（verb-object collocations）：如 "emerge from pandemic hibernation", "shed light on unknown aspects"
+- 精妙/高级/有表现力的复杂表达：如 "a quieter upheaval taking place behind closed doors", "be swept up into altercations"
 
-不应该提取的内容：
+禁止提取的内容：
 - 过于简单或基础的表达（如 "very good", "a lot of"）
 - 专业术语或罕见词汇（除非在上下文中有特殊意义）
 - 完整的句子（只提取有价值的片段）
