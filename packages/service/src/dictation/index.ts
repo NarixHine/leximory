@@ -7,7 +7,7 @@ import { Kilpi } from '../kilpi'
 import { getDictation, deleteDictation, createDictation } from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes } from '@repo/supabase/question-note'
-import { releaseDictationLock } from '@repo/kv'
+import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
 import { revalidateTag } from 'next/cache'
 import { DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
 import { generateChunksForSection } from '../ai'
@@ -36,10 +36,17 @@ export const generateDictationAction = actionClient
     .action(async ({ parsedInput: { paperId } }) => {
         await Kilpi.authed().authorize().assert()
 
+        // Try to acquire lock to prevent concurrent generation
+        const lockAcquired = await acquireDictationLock({ paperId })
+        if (!lockAcquired) {
+            throw new Error('Dictation generation is already in progress for this paper')
+        }
+
         try {
             // Check if dictation already exists
             const existingDictation = await getDictation({ paperId })
             if (existingDictation) {
+                await releaseDictationLock({ paperId })
                 return existingDictation
             }
 
@@ -71,7 +78,7 @@ export const generateDictationAction = actionClient
 
             return {
                 ...dictation,
-                content: DictationContentSchema.parse(dictationContent),
+                content: dictationContent,
             }
         } catch (error) {
             await releaseDictationLock({ paperId })
