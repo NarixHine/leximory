@@ -17,7 +17,7 @@ export function SaveQuestionNoteButton({
 } & Omit<ButtonProps, 'onPress'>) {
     const { getSaveParams } = useSaveQuestionNoteParams({ localNo, groupId })
 
-    const { mutate, isPending, isSuccess } = useMutation({
+    const { mutateAsync, isPending, isSuccess } = useMutation({
         mutationKey: ['save-question-note', groupId, localNo],
         mutationFn: async () => {
             const params = getSaveParams()
@@ -33,19 +33,11 @@ export function SaveQuestionNoteButton({
     })
 
     const handleSave = () => {
-        toast.promise(
-            new Promise((resolve, reject) => {
-                mutate(undefined, {
-                    onSuccess: resolve,
-                    onError: reject,
-                })
-            }),
-            {
-                loading: '正在收录题目……',
-                success: '已收录到错题本',
-                error: (err) => `收录失败：${err.message}`,
-            }
-        )
+        toast.promise(mutateAsync, {
+            loading: '正在收录题目……',
+            success: '已收录到错题本',
+            error: (err) => `收录失败：${err.message}`,
+        })
     }
 
     return (

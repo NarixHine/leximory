@@ -40,11 +40,11 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const result = await deleteQuestionNoteAction({ id })
-            if (result?.serverError) {
-                throw new Error(result.serverError)
+            const { data, serverError } = await deleteQuestionNoteAction({ id })
+            if (serverError) {
+                throw new Error(serverError)
             }
-            return result?.data
+            return data
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['recent-question-notes'] })
@@ -62,11 +62,12 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
         )
     }
 
-    const allNotes = data?.pages.flatMap(page => page?.notes ?? []) ?? []
+    const allNotes = data.pages.flatMap(page => page?.notes ?? []) ?? []
 
     if (allNotes.length === 0) {
         return (
             <div className='col-span-full text-center text-default-400 py-12'>
+                <Logo className='mx-auto mb-4 size-20' />
                 <p>还没有收录任何题目</p>
                 <p className='text-sm mt-1'>做完试卷后点击「收录题目」即可添加</p>
             </div>
@@ -82,14 +83,13 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
                         <div className='flex items-center gap-2'>
                             <Button
                                 size='sm'
+                                className='size-5'
                                 variant='light'
-                                color='danger'
                                 isIconOnly
                                 onPress={() => handleDelete(id)}
                                 isLoading={deleteMutation.isPending && deleteMutation.variables === id}
-                            >
-                                <TrashIcon size={16} />
-                            </Button>
+                                startContent={<TrashIcon weight='duotone' size={16} />}
+                            />
                             <Logo className='size-5 grayscale-75 opacity-80' />
                         </div>
                     </div>

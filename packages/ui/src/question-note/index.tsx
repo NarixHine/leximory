@@ -2,6 +2,7 @@ import { Card, CardBody } from '@heroui/card'
 import { cn } from '@heroui/theme'
 import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react/ssr'
 import { parseQuestionNoteContent } from '@repo/schema/question-note'
+import { Streamdown } from 'streamdown'
 
 export interface QuestionNoteCardProps {
     content: string
@@ -29,12 +30,12 @@ export function QuestionNoteCard({ content, className, cardBodyClassName }: Ques
         <Card fullWidth radius='sm' shadow='none' className={className}>
             <CardBody className={cn('px-5 py-3 leading-snug gap-3', cardBodyClassName)}>
                 {/* Sentence with blank */}
-                <div className='leading-relaxed'>
+                <Streamdown className='leading-relaxed'>
                     {sentence}
-                </div>
+                </Streamdown>
                 
                 {/* Answers section */}
-                <div className='flex flex-col gap-1.5'>
+                <div className='flex flex-col'>
                     {hasWrongAnswer && (
                         <div className='flex items-center gap-2 text-sm'>
                             <XCircleIcon weight='fill' className='text-danger shrink-0' />

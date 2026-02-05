@@ -6,7 +6,6 @@ import { getUserProfileAction } from '@repo/service/user'
 import Link from 'next/link'
 import { cn } from '@heroui/theme'
 import { Spacer } from '@heroui/spacer'
-import { Logo } from '@/components/logo'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import { CheckCircleIcon } from '@phosphor-icons/react'
 
