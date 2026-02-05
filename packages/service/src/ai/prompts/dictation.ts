@@ -51,6 +51,10 @@ export const buildChunkGenerationSystemPrompt = () => `
 2. 优先选择对高中生英语学习有价值的表达
 3. 中文翻译应准确、地道，符合中文表达习惯
 4. 每个section提取5-15个chunks（根据文本长度和内容质量调整）
+
+输出要求：
+- 总是以辞书形输出英文表达片段（例如 "use" 而不是 "uses" 或 "using"）
+- 精当审慎地只挑选出最精彩的语块；“少”而“精”
 </instructions>
 
 <output_format>

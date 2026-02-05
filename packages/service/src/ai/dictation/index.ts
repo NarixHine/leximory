@@ -28,5 +28,8 @@ export async function generateChunksForSection({ quizData }: GenerateChunksParam
         schema: ChunkGenerationResponseSchema,
     })
 
-    return object
+    return {
+        sectionType: quizData.type,
+        entries: object.entries,
+    }
 }

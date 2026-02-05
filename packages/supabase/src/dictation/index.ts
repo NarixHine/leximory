@@ -13,7 +13,7 @@ export async function getDictation({ paperId }: { paperId: number }): Promise<{ 
         .select('id, content, created_at')
         .eq('paper', paperId)
         .single()
-    
+
     if (error) {
         if (error.code === 'PGRST116') {
             // No dictation found
@@ -21,7 +21,7 @@ export async function getDictation({ paperId }: { paperId: number }): Promise<{ 
         }
         throw error
     }
-    
+
     return {
         id: data.id,
         content: DictationContentSchema.parse(data.content),
@@ -33,7 +33,7 @@ export async function getDictation({ paperId }: { paperId: number }): Promise<{ 
  * Creates a new dictation for a paper.
  */
 export async function createDictation({ paperId, content }: { paperId: number; content: DictationContent }) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('dictations')
         .insert({
             paper: paperId,
@@ -41,8 +41,8 @@ export async function createDictation({ paperId, content }: { paperId: number; c
         })
         .select()
         .single()
-    
-    if (error) throw error
+        .throwOnError()
+
     return data
 }
 
@@ -50,10 +50,9 @@ export async function createDictation({ paperId, content }: { paperId: number; c
  * Deletes a dictation by ID.
  */
 export async function deleteDictation({ id }: { id: number }) {
-    const { error } = await supabase
+    await supabase
         .from('dictations')
         .delete()
         .eq('id', id)
-    
-    if (error) throw error
+        .throwOnError()
 }

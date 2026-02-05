@@ -143,6 +143,7 @@ const DataSchemas = [
 export const QuizDataSchema = z.discriminatedUnion('type', DataSchemas)
 export type QuizData = z.infer<typeof QuizDataSchema>
 export type QuizDataType = QuizData['type']
+export const QuizDataTypeSchema = z.union(DataSchemas.map(schema => schema.shape.type))
 export const QuizItemsSchema = z.array(QuizDataSchema)
 export type QuizItems = z.infer<typeof QuizItemsSchema>
 

@@ -1,4 +1,5 @@
 import { z } from '@repo/schema'
+import { QuizDataTypeSchema } from '../paper'
 
 /**
  * A single chunk entry with English and Chinese text.
@@ -14,8 +15,7 @@ export type ChunkEntry = z.infer<typeof ChunkEntrySchema>
  * A section of chunks with a section name and entries.
  */
 export const ChunkSectionSchema = z.object({
-    sectionName: z.string(),
-    sectionType: z.string(),
+    sectionType: QuizDataTypeSchema,
     entries: z.array(ChunkEntrySchema),
 })
 

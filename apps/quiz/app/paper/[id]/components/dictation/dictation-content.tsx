@@ -13,6 +13,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { saveChunkNoteAction, deleteDictationAction, generateDictationAction } from '@repo/service/dictation'
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { useUser } from '@repo/ui/auth'
+import { SECTION_NAME_MAP } from '@repo/env/config'
 
 type DictationContentProps = {
     paperId: number
@@ -27,30 +28,14 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
     const [dictation, setDictation] = useState(initialDictation)
     const [showEnglish, setShowEnglish] = useState(false)
     const [revealedEntries, setRevealedEntries] = useState<Set<string>>(new Set())
-    const [isGenerating, setIsGenerating] = useState(false)
     const queryClient = useQueryClient()
     const { isLoggedIn } = useUser()
 
-    const handleGenerate = async () => {
-        setIsGenerating(true)
-        try {
-            toast.promise(async () => {
-                const { data } = await generateDictationAction({ paperId })
-                if (data)
-                    setDictation(data)
-            },
-                {
-                    loading: '默写纸生成中',
-                    success: '默写纸生成成功',
-                    error: (err) => `生成失败：${err.message}`,
-                }
-            )
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : '生成失败，请稍后重试')
-        } finally {
-            setIsGenerating(false)
-        }
-    }
+    const generateMutation = useMutation({
+        mutationFn: async () => {
+            await generateDictationAction({ paperId })
+        },
+    })
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
@@ -115,7 +100,7 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                         生成默写纸后，你可以练习中英文表达的对照记忆
                     </p>
                 </div>
-                {isGenerating ? (
+                {generateMutation.isPending ? (
                     <div className='flex flex-col items-center gap-3'>
                         <Spinner size='lg' />
                         <p className='text-default-500 text-sm'>
@@ -126,7 +111,7 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                     <ProtectedButton
                         color='primary'
                         size='lg'
-                        onPress={handleGenerate}
+                        onPress={() => generateMutation.mutate()}
                         startContent={<ArrowsClockwiseIcon weight='bold' />}
                         label='登录后生成默写纸'
                     >
@@ -165,67 +150,49 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
 
             {/* Sections */}
             {dictation.content.sections.map((section, sectionIndex) => (
-                <Card key={sectionIndex} shadow='sm'>
-                    <CardHeader className='pb-2'>
-                        <h3 className='text-lg font-semibold'>{section.sectionName}</h3>
+                <Card key={sectionIndex} shadow='none' className='bg-transparent p-0'>
+                    <CardHeader className='px-0'>
+                        <h3 className='text-lg font-semibold'>{SECTION_NAME_MAP[section.sectionType]}</h3>
                     </CardHeader>
-                    <CardBody className='pt-0'>
-                        <Table
-                            removeWrapper
-                            hideHeader
-                            aria-label={section.sectionName}
-                        >
-                            <TableHeader>
-                                <TableColumn>中文</TableColumn>
-                                <TableColumn>操作</TableColumn>
-                            </TableHeader>
-                            <TableBody>
-                                {section.entries.map((entry, entryIndex) => {
-                                    const entryKey = `${sectionIndex}-${entryIndex}`
-                                    const revealed = isEntryRevealed(entryKey)
+                    <CardBody className='px-0'>
+                        {section.entries.map((entry, entryIndex) => {
+                            const entryKey = `${sectionIndex}-${entryIndex}`
+                            const revealed = isEntryRevealed(entryKey)
 
-                                    return (
-                                        <TableRow key={entryIndex}>
-                                            <TableCell>
-                                                <p className='text-default-700'>{entry.chinese}</p>
-                                                {revealed && (
-                                                    <p className='text-primary font-medium mt-1'>
-                                                        {entry.english}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className='text-right'>
-                                                <div className='flex items-center justify-end gap-2'>
-                                                    <Button
-                                                        size='sm'
-                                                        variant='light'
-                                                        onPress={() => toggleReveal(entryKey)}
-                                                        startContent={<EyeIcon weight='duotone' />}
-                                                    >
-                                                        {revealed ? '隐藏' : '显示'}
-                                                    </Button>
-                                                    {isLoggedIn && (
-                                                        <Button
-                                                            size='sm'
-                                                            variant='light'
-                                                            color='primary'
-                                                            onPress={() => saveMutation.mutate({
-                                                                english: entry.english,
-                                                                chinese: entry.chinese
-                                                            })}
-                                                            isLoading={saveMutation.isPending}
-                                                            startContent={<FloppyDiskIcon weight='duotone' />}
-                                                        >
-                                                            保存
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
+                            return (
+                                <div className='flex justify-between gap-1'>
+                                    <p className='text-default-700'>{entry.chinese}</p>
+                                    <div className='flex items-center justify-end gap-2'>
+                                        {revealed && (
+                                            <p className='text-primary font-medium mt-1 text-right'>
+                                                {entry.english}
+                                            </p>
+                                        )}
+                                        <Button
+                                            size='sm'
+                                            variant='light'
+                                            onPress={() => toggleReveal(entryKey)}
+                                            startContent={<EyeIcon weight='duotone' />}
+                                            isIconOnly
+                                        />
+                                        {isLoggedIn && (
+                                            <Button
+                                                size='sm'
+                                                variant='light'
+                                                color='primary'
+                                                onPress={() => saveMutation.mutate({
+                                                    english: entry.english,
+                                                    chinese: entry.chinese
+                                                })}
+                                                isLoading={saveMutation.isPending}
+                                                isIconOnly
+                                                startContent={<FloppyDiskIcon weight='duotone' />}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </CardBody>
                 </Card>
             ))}

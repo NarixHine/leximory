@@ -9,8 +9,7 @@ import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes } from '@repo/supabase/question-note'
 import { releaseDictationLock } from '@repo/kv'
 import { revalidateTag } from 'next/cache'
-import { ChunkSection, DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
-import { SECTION_NAME_MAP } from '@repo/env/config'
+import { DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
 import { generateChunksForSection } from '../ai'
 
 /**
@@ -56,10 +55,10 @@ export const generateDictationAction = actionClient
             const sectionResults = await Promise.all(sectionPromises)
 
             // Filter out null results (sections with no meaningful content)
-            const sections: ChunkSection[] = sectionResults.filter((section): section is ChunkSection => section !== null)
+            const sections = sectionResults.filter(section => section.entries.length > 0)
 
             // Create the dictation content
-            const dictationContent: DictationContent = { sections }
+            const dictationContent: DictationContent = DictationContentSchema.parse({ sections })
 
             // Save to database
             const dictation = await createDictation({
