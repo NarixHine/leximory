@@ -40,13 +40,15 @@ export const ChunkGenerationResponseSchema = z.object({
 export type ChunkGenerationResponse = z.infer<typeof ChunkGenerationResponseSchema>
 
 /**
- * The content structure for a chunk note (stored as JSON string in DB).
+ * Schema for chunk note content (stored as JSON string in DB).
  * Contains the English and Chinese pair.
  */
-export interface ChunkNoteContent {
-    english: string
-    chinese: string
-}
+export const ChunkNoteContentSchema = z.object({
+    english: z.string(),
+    chinese: z.string(),
+})
+
+export type ChunkNoteContent = z.infer<typeof ChunkNoteContentSchema>
 
 /**
  * Serializes the chunk note content to JSON string.
@@ -56,15 +58,13 @@ export function serializeChunkNoteContent(content: ChunkNoteContent): string {
 }
 
 /**
- * Parses a chunk note content from JSON string.
+ * Parses a chunk note content from JSON string using Zod schema validation.
  */
 export function parseChunkNoteContent(content: string): ChunkNoteContent | null {
     try {
         const parsed = JSON.parse(content)
-        if (typeof parsed.english === 'string' && typeof parsed.chinese === 'string') {
-            return parsed as ChunkNoteContent
-        }
-        return null
+        const result = ChunkNoteContentSchema.safeParse(parsed)
+        return result.success ? result.data : null
     } catch {
         return null
     }

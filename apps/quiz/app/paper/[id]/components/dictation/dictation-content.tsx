@@ -70,7 +70,7 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
             return data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recent-chunk-notes'] })
+            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
             toast.success('已保存到笔记本')
         },
         onError: (error) => {
@@ -142,9 +142,10 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                         <h3 className='text-lg font-semibold'>{SECTION_NAME_MAP[section.sectionType]}</h3>
                     </CardHeader>
                     <CardBody className='px-0'>
-                        {section.entries.map((entry) => {
+                        {section.entries.map((entry, entryIndex) => {
+                            const entryKey = `${sectionIndex}-${entryIndex}`
                             return (
-                                <div className='flex justify-between gap-1'>
+                                <div key={entryKey} className='flex justify-between gap-1'>
                                     <p className='text-default-700'>{entry.chinese}</p>
                                     <div className='flex items-center justify-end gap-2'>
                                         <p className={cn(
@@ -179,7 +180,7 @@ function SaveEntryButton({ english, chinese, paperId }: { english: string; chine
             return data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recent-chunk-notes'] })
+            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
             toast.success('已保存到笔记本')
         },
         onError: (error) => {
