@@ -33,7 +33,12 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
 
     const generateMutation = useMutation({
         mutationFn: async () => {
-            await generateDictationAction({ paperId })
+            const { data } = await generateDictationAction({ paperId })
+            if (!data) {
+                toast.error('生成默写纸失败')
+                return
+            }
+            setDictation(data)
         },
     })
 
