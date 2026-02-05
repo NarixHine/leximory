@@ -4,7 +4,7 @@ import { Dock } from '@repo/ui/dock'
 
 export function NavDock() {
     return (
-        <div className='fixed bottom-3 left-1/2 -translate-x-1/2 w-fit'>
+        <div className='fixed bottom-3 left-1/2 -translate-x-1/2 w-fit print:hidden'>
             <Dock
                 items={[
                     { title: '主页', icon: <HouseLineIcon weight='duotone' size={20} />, href: '/' },

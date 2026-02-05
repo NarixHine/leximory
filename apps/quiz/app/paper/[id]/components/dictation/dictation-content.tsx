@@ -5,8 +5,7 @@ import { Button } from '@heroui/button'
 import { Switch } from '@heroui/switch'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
-import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
+import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,6 +13,7 @@ import { saveChunkNoteAction, deleteDictationAction, generateDictationAction } f
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { useUser } from '@repo/ui/auth'
 import { SECTION_NAME_MAP } from '@repo/env/config'
+import { cn } from '@heroui/theme'
 
 type DictationContentProps = {
     paperId: number
@@ -27,7 +27,6 @@ type DictationContentProps = {
 export function DictationContent({ paperId, dictation: initialDictation, isOwner }: DictationContentProps) {
     const [dictation, setDictation] = useState(initialDictation)
     const [showEnglish, setShowEnglish] = useState(false)
-    const [revealedEntries, setRevealedEntries] = useState<Set<string>>(new Set())
     const queryClient = useQueryClient()
     const { isLoggedIn } = useUser()
 
@@ -79,22 +78,6 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
         },
     })
 
-    const toggleReveal = (entryKey: string) => {
-        setRevealedEntries(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(entryKey)) {
-                newSet.delete(entryKey)
-            } else {
-                newSet.add(entryKey)
-            }
-            return newSet
-        })
-    }
-
-    const isEntryRevealed = (entryKey: string) => {
-        return showEnglish || revealedEntries.has(entryKey)
-    }
-
     // No dictation yet - show generate button
     if (!dictation) {
         return (
@@ -127,11 +110,10 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
         )
     }
 
-    // Has dictation - display it
     return (
         <div className='space-y-6'>
             {/* Header with toggle and delete button */}
-            <div className='flex items-center justify-between'>
+            <div className='flex items-center justify-between print:hidden'>
                 <Switch
                     isSelected={showEnglish}
                     onValueChange={setShowEnglish}
@@ -160,40 +142,18 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                         <h3 className='text-lg font-semibold'>{SECTION_NAME_MAP[section.sectionType]}</h3>
                     </CardHeader>
                     <CardBody className='px-0'>
-                        {section.entries.map((entry, entryIndex) => {
-                            const entryKey = `${sectionIndex}-${entryIndex}`
-                            const revealed = isEntryRevealed(entryKey)
-
+                        {section.entries.map((entry) => {
                             return (
                                 <div className='flex justify-between gap-1'>
                                     <p className='text-default-700'>{entry.chinese}</p>
                                     <div className='flex items-center justify-end gap-2'>
-                                        {revealed && (
-                                            <p className='text-primary font-medium mt-1 text-right'>
-                                                {entry.english}
-                                            </p>
-                                        )}
-                                        <Button
-                                            size='sm'
-                                            variant='light'
-                                            onPress={() => toggleReveal(entryKey)}
-                                            startContent={<EyeIcon weight='duotone' />}
-                                            isIconOnly
-                                        />
-                                        {isLoggedIn && (
-                                            <Button
-                                                size='sm'
-                                                variant='light'
-                                                color='primary'
-                                                onPress={() => saveMutation.mutate({
-                                                    english: entry.english,
-                                                    chinese: entry.chinese
-                                                })}
-                                                isLoading={saveMutation.isPending}
-                                                isIconOnly
-                                                startContent={<FloppyDiskIcon weight='duotone' />}
-                                            />
-                                        )}
+                                        <p className={cn(
+                                            showEnglish ? 'text-foreground' : 'text-transparent underline-offset-4 underline decoration-foreground',
+                                            'font-medium mt-1 text-right'
+                                        )}>
+                                            {entry.english}
+                                        </p>
+                                        <SaveEntryButton english={entry.english} chinese={entry.chinese} paperId={paperId} />
                                     </div>
                                 </div>
                             )
@@ -202,5 +162,45 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                 </Card>
             ))}
         </div>
+    )
+}
+
+function SaveEntryButton({ english, chinese, paperId }: { english: string; chinese: string; paperId: number }) {
+    const queryClient = useQueryClient()
+    const { mutate: save, isPending, isSuccess } = useMutation({
+        mutationKey: ['save-chunk-note', english, chinese],
+        mutationFn: async ({ english, chinese }: { english: string; chinese: string }) => {
+            const { data, serverError } = await saveChunkNoteAction({
+                english,
+                chinese,
+                paperId
+            })
+            if (serverError) throw new Error(serverError)
+            return data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['recent-chunk-notes'] })
+            toast.success('已保存到笔记本')
+        },
+        onError: (error) => {
+            toast.error(`保存失败：${error.message}`)
+        },
+    })
+
+    return (
+        <ProtectedButton
+            size='sm'
+            variant='light'
+            color='primary'
+            className='print:hidden'
+            onPress={() => save({
+                english,
+                chinese
+            })}
+            isLoading={isPending}
+            isDisabled={isSuccess}
+            isIconOnly
+            startContent={isSuccess ? <CheckCircleIcon weight='duotone' /> : <FloppyDiskIcon weight='duotone' />}
+        />
     )
 }

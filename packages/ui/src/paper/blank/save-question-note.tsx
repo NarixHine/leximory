@@ -42,7 +42,7 @@ export function SaveQuestionNoteButton({
             action: {
                 label: '查看',
                 onClick: () => {
-                    router.push('/question-notebook')
+                    router.push('/collection')
                 }
             }
         })

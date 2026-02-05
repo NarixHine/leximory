@@ -10,7 +10,7 @@ export interface ChunkNoteCardProps {
 
 export function ChunkNoteCard({ content, className, cardBodyClassName }: ChunkNoteCardProps) {
     const parsed = parseChunkNoteContent(content)
-    
+
     if (!parsed) {
         return (
             <Card fullWidth radius='sm' shadow='none' className={className}>
@@ -20,17 +20,14 @@ export function ChunkNoteCard({ content, className, cardBodyClassName }: ChunkNo
             </Card>
         )
     }
-    
+
     const { english, chinese } = parsed
-    
+
     return (
         <Card fullWidth radius='sm' shadow='none' className={className}>
-            <CardBody className={cn('px-5 py-3 leading-snug gap-2', cardBodyClassName)}>
-                {/* Chinese */}
+            <CardBody className={cn('px-5 py-3 leading-snug gap-3', cardBodyClassName)}>
+                <p className='text-primary text-2xl italic font-medium'>{english}</p>
                 <p className='text-default-700'>{chinese}</p>
-                
-                {/* English */}
-                <p className='text-primary font-medium'>{english}</p>
             </CardBody>
         </Card>
     )

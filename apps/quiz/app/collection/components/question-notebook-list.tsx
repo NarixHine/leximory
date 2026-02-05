@@ -83,8 +83,8 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                     <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
                         <div className='flex items-center gap-2'>
                             <span className='text-xs text-default-500 font-mono'>{date}</span>
-                            <Chip size='sm' variant='flat' color={type === 'question' ? 'warning' : 'primary'}>
-                                {type === 'question' ? '错题' : '表达'}
+                            <Chip size='sm' variant='flat' color={type === 'question' ? 'secondary' : 'warning'}>
+                                {type === 'question' ? '题目' : '表达'}
                             </Chip>
                         </div>
                         <div className='flex items-center gap-2'>

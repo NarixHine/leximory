@@ -19,6 +19,7 @@ export async function CurrentUserAvatar({ quotaModalChildren }: { quotaModalChil
             startContent={image ? <Avatar src={image} isBordered color='primary' className='size-16!' /> : <PiUserCircleDuotone size={30} />}
             radius='full'
             isIconOnly={true}
+            className='print:hidden'
         />} />
 }
 
