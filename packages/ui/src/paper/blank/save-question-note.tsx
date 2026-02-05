@@ -6,6 +6,7 @@ import { saveQuestionNoteAction } from '@repo/service/question-note'
 import { toast } from 'sonner'
 import { useSaveQuestionNoteParams } from './hooks'
 import { useMutation } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 
 export function SaveQuestionNoteButton({
     localNo,
@@ -32,11 +33,18 @@ export function SaveQuestionNoteButton({
         },
     })
 
+    const router = useRouter()
     const handleSave = () => {
         toast.promise(mutateAsync, {
             loading: '正在收录题目……',
             success: '已收录到错题本',
             error: (err) => `收录失败：${err.message}`,
+            action: {
+                label: '查看',
+                onClick: () => {
+                    router.push('/question-notebook')
+                }
+            }
         })
     }
 
