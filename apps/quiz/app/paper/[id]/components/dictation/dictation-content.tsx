@@ -9,7 +9,7 @@ import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon } from '@phosph
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { saveChunkNoteAction, deleteDictationAction } from '@repo/service/dictation'
+import { saveChunkNoteAction, deleteDictationAction, generateDictationAction } from '@repo/service/dictation'
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { useUser } from '@repo/ui/auth'
 
@@ -34,20 +34,16 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
     const handleGenerate = async () => {
         setIsGenerating(true)
         try {
-            const response = await fetch('/api/dictation/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paperId }),
-            })
+            const { data, serverError } = await generateDictationAction({ paperId })
             
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || 'Failed to generate dictation')
+            if (serverError) {
+                throw new Error(serverError)
             }
             
-            const data = await response.json()
-            setDictation(data.dictation)
-            toast.success('默写纸生成完成！')
+            if (data) {
+                setDictation(data)
+                toast.success('默写纸生成完成！')
+            }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : '生成失败，请稍后重试')
         } finally {
