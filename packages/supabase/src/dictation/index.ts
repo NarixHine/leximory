@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabase } from '@repo/supabase'
 import { DictationContentSchema, type DictationContent } from '@repo/schema/chunk-note'
-import type { Json } from './types'
+import type { Json } from '../types'
 
 export type { DictationContent } from '@repo/schema/chunk-note'
 
