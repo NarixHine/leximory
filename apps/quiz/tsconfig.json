@@ -10,6 +10,9 @@
     "plugins": [
       {
         "name": "next"
+      },
+      {
+        "name": "workflow"
       }
     ],
     "paths": {
@@ -25,6 +28,7 @@
     ".next/types/**/*.ts",
     "next.config.ts",
     "postcss.config.mjs",
-    ".next/dev/types/**/*.ts", "../../packages/ui/src/dock/index.tsx",
+    ".next/dev/types/**/*.ts",
+    "../../packages/ui/src/dock/index.tsx",
   ],
 }

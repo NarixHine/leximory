@@ -8,7 +8,7 @@ export { type NextRequest } from 'next/server'
 export async function updateSession(
     request: NextRequest,
     isProtectedRouteChecker: (path: string) => boolean,
-    authedHomepageRedirectPathname: string
+    authedHomepageRedirectPathname?: string
 ) {
     // 1. Create the response object ONCE.
     // We will mutate this object inside setAll to add cookies.
@@ -56,7 +56,7 @@ export async function updateSession(
     const { pathname } = request.nextUrl
 
     // --- Logic: Redirect Authenticated User from Root to Dashboard ---
-    if (user && pathname === '/') {
+    if (user && pathname === '/' && authedHomepageRedirectPathname) {
         const url = request.nextUrl.clone()
         url.pathname = authedHomepageRedirectPathname
 

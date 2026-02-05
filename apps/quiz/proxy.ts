@@ -1,14 +1,15 @@
 import { updateSession, type NextRequest } from '@repo/supabase/proxy'
 
 const PROTECTED_ROUTE_PREFIXES = [
-    '/quiz',
+    '/collection',
+    '/notebook',
 ]
 const isProtectedRouteChecker = (path: string) => {
     return PROTECTED_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix))
 }
 
 export async function proxy(request: NextRequest) {
-    return await updateSession(request, isProtectedRouteChecker, '/')
+    return await updateSession(request, isProtectedRouteChecker)
 }
 
 export const config = {
