@@ -39,6 +39,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      dictations: {
+        Row: {
+          content: Json
+          created_at: string
+          id: number
+          paper: number
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: number
+          paper: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: number
+          paper?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dictations_paper_fkey"
+            columns: ["paper"]
+            isOneToOne: true
+            referencedRelation: "papers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lexicon: {
         Row: {
           created_at: string | null
@@ -186,17 +215,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notes_related_paper_fkey"
-            columns: ["related_paper"]
-            isOneToOne: false
-            referencedRelation: "papers"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "notes_creator_fkey"
             columns: ["creator"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_related_paper_fkey"
+            columns: ["related_paper"]
+            isOneToOne: false
+            referencedRelation: "papers"
             referencedColumns: ["id"]
           },
         ]
