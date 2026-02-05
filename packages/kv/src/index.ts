@@ -49,3 +49,34 @@ export const setAskCache = async ({ hash, cache }: { hash: string, cache: string
     await redis.set(`ask:${hash}`, cache)
     await redis.expire(`ask:${hash}`, seconds('1 week'))
 }
+
+/**
+ * Sets a lock for dictation generation to prevent race conditions.
+ * Returns true if lock was acquired, false if already locked.
+ */
+export const acquireDictationLock = async ({ paperId }: { paperId: number }): Promise<boolean> => {
+    const lockKey = `dictation:lock:${paperId}`
+    const acquired = await redis.setnx(lockKey, 'generating')
+    if (acquired) {
+        await redis.expire(lockKey, seconds('5 minutes'))
+        return true
+    }
+    return false
+}
+
+/**
+ * Releases the dictation generation lock.
+ */
+export const releaseDictationLock = async ({ paperId }: { paperId: number }) => {
+    const lockKey = `dictation:lock:${paperId}`
+    await redis.del(lockKey)
+}
+
+/**
+ * Checks if dictation generation is in progress.
+ */
+export const isDictationGenerating = async ({ paperId }: { paperId: number }): Promise<boolean> => {
+    const lockKey = `dictation:lock:${paperId}`
+    const value = await redis.get(lockKey)
+    return value !== null
+}

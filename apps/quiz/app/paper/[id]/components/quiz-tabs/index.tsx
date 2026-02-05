@@ -4,15 +4,16 @@ import { Tab, Tabs } from '@heroui/tabs'
 import type { ReactNode } from 'react'
 import { ScopeProvider } from 'jotai-scope'
 import { viewModeAtom } from '@repo/ui/paper/atoms'
-import { MagicWandIcon, SpeedometerIcon, TrophyIcon } from '@phosphor-icons/react/ssr'
+import { MagicWandIcon, SpeedometerIcon, TrophyIcon, PencilLineIcon } from '@phosphor-icons/react/ssr'
 
 type QuizTabsUIProps = {
     Paper?: ReactNode,
     Revise?: ReactNode
     leaderboard?: ReactNode
+    dictation?: ReactNode
 }
 
-export function QuizTabsUI({ Paper, Revise, leaderboard }: QuizTabsUIProps) {
+export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUIProps) {
     return (
         <Tabs defaultSelectedKey={'paper'}>
             {Paper && <Tab key='paper' title={<div className='flex items-center space-x-2'>
@@ -32,6 +33,12 @@ export function QuizTabsUI({ Paper, Revise, leaderboard }: QuizTabsUIProps) {
                 <span>排行榜</span>
             </div>}>
                 {leaderboard}
+            </Tab>}
+            {dictation && <Tab key='dictation' title={<div className='flex items-center space-x-2'>
+                <PencilLineIcon weight='bold' />
+                <span>默写纸</span>
+            </div>}>
+                {dictation}
             </Tab>}
         </Tabs>
     )

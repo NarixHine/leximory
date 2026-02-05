@@ -15,6 +15,7 @@ import { SectionAnswers, QuizItems } from '@repo/schema/paper'
 import { KeyIcon } from '@phosphor-icons/react/ssr'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
+import Dictation from './components/dictation'
 import { Define } from '@repo/ui/define'
 import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
@@ -85,6 +86,9 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
                 </>}
                 Revise={answers && <RevisePaper quizData={content} answers={answers} />}
                 leaderboard={<Leaderboard paperId={parseInt(id)} />}
+                dictation={<Suspense fallback={<div className='flex justify-center py-8'><Spinner /></div>}>
+                    <Dictation paperId={parseInt(id)} />
+                </Suspense>}
             />
         </HydrationBoundary>
     )

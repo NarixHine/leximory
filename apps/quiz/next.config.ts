@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import { MAX_FILE_SIZE } from '@repo/env/config'
+import { withWorkflow } from 'workflow/next'
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -14,4 +15,8 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withWorkflow(nextConfig, {
+  workflows: {
+    dirs: ['app/api'],
+  },
+})

@@ -5,7 +5,7 @@ import { z } from '@repo/schema'
 import { QuizDataSchema } from '@repo/schema/paper'
 import { getUserOrThrow } from '@repo/user'
 import { generateQuestionNote } from '../ai'
-import { saveQuestionNote, loadQuestionNotes, deleteQuestionNote } from '@repo/supabase/question-note'
+import { saveQuestionNote, loadQuestionNotes, deleteQuestionNote, loadAllNotes, deleteNote } from '@repo/supabase/question-note'
 import { Kilpi } from '../kilpi'
 import incrCommentaryQuota from '@repo/user/quota'
 
@@ -78,4 +78,28 @@ export const deleteQuestionNoteAction = actionClient
     .action(async ({ parsedInput: { id } }) => {
         const { userId } = await getUserOrThrow()
         return await deleteQuestionNote({ id, creator: userId })
+    })
+
+/**
+ * Retrieves all recent notes (both question and chunk) saved by the user.
+ */
+export const getAllNotesAction = actionClient
+    .inputSchema(z.object({
+        cursor: z.string().optional(),
+    }))
+    .action(async ({ parsedInput: { cursor } }) => {
+        const { userId } = await getUserOrThrow()
+        return await loadAllNotes({ cursor, creator: userId })
+    })
+
+/**
+ * Deletes any note by ID.
+ */
+export const deleteNoteAction = actionClient
+    .inputSchema(z.object({
+        id: z.number(),
+    }))
+    .action(async ({ parsedInput: { id } }) => {
+        const { userId } = await getUserOrThrow()
+        return await deleteNote({ id, creator: userId })
     })

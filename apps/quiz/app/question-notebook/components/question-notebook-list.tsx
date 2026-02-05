@@ -1,27 +1,29 @@
 'use client'
 
 import { QuestionNoteCard } from '@repo/ui/question-note'
-import { getRecentQuestionNotesAction, deleteQuestionNoteAction } from '@repo/service/question-note'
+import { ChunkNoteCard } from '@repo/ui/chunk-note'
+import { getAllNotesAction, deleteNoteAction } from '@repo/service/question-note'
 import { Spinner } from '@heroui/spinner'
 import { Button } from '@heroui/button'
+import { Chip } from '@heroui/chip'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { Logo } from '@/components/logo'
 import { TrashIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
-type QuestionNoteData = {
-    notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null }>
+type NoteData = {
+    notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null, type: 'question' | 'chunk' }>
     cursor: string
     more: boolean
 }
 
-export function QuestionNotebookList({ initialData }: { initialData: QuestionNoteData | undefined }) {
+export function NotebookList({ initialData }: { initialData: NoteData | undefined }) {
     const queryClient = useQueryClient()
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-        queryKey: ['recent-question-notes'],
+        queryKey: ['all-notes'],
         queryFn: async ({ pageParam }) => {
-            const result = await getRecentQuestionNotesAction({ cursor: pageParam })
+            const result = await getAllNotesAction({ cursor: pageParam })
             return result.data
         },
         initialPageParam: '0',
@@ -40,14 +42,14 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const { data, serverError } = await deleteQuestionNoteAction({ id })
+            const { data, serverError } = await deleteNoteAction({ id })
             if (serverError) {
                 throw new Error(serverError)
             }
             return data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recent-question-notes'] })
+            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
         },
     })
 
@@ -68,18 +70,23 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
         return (
             <div className='col-span-full text-center text-default-400 py-12'>
                 <Logo className='mx-auto mb-4 size-20' />
-                <p>还没有收录任何题目</p>
-                <p className='text-sm mt-1'>做完试卷后点击「收录题目」即可添加</p>
+                <p>还没有收录任何笔记</p>
+                <p className='text-sm mt-1'>做完试卷后点击「收录题目」或在默写纸中保存表达</p>
             </div>
         )
     }
 
     return (
         <>
-            {allNotes.map(({ content, id, date }) => (
+            {allNotes.map(({ content, id, date, type }) => (
                 <div key={id} className='rounded-sm border border-divider'>
                     <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
-                        <span className='text-xs text-default-500 font-mono'>{date}</span>
+                        <div className='flex items-center gap-2'>
+                            <span className='text-xs text-default-500 font-mono'>{date}</span>
+                            <Chip size='sm' variant='flat' color={type === 'question' ? 'warning' : 'primary'}>
+                                {type === 'question' ? '错题' : '表达'}
+                            </Chip>
+                        </div>
                         <div className='flex items-center gap-2'>
                             <Button
                                 size='sm'
@@ -93,7 +100,11 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
                             <Logo className='size-5 grayscale-75 opacity-80' />
                         </div>
                     </div>
-                    <QuestionNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                    {type === 'question' ? (
+                        <QuestionNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                    ) : (
+                        <ChunkNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                    )}
                 </div>
             ))}
             {hasNextPage && (
@@ -104,3 +115,6 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
         </>
     )
 }
+
+// Keep the old export for backwards compatibility
+export { NotebookList as QuestionNotebookList }

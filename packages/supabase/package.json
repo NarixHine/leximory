@@ -15,7 +15,8 @@
     "./word": "./src/word/index.ts",
     "./library": "./src/library/index.ts",
     "./user": "./src/user/index.ts",
-    "./question-note": "./src/question-note/index.ts"
+    "./question-note": "./src/question-note/index.ts",
+    "./dictation": "./src/dictation/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
