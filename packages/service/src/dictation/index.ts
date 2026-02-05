@@ -6,7 +6,7 @@ import { getUserOrThrow } from '@repo/user'
 import { Kilpi } from '../kilpi'
 import { getDictation, createDictation, deleteDictation } from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
-import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/question-note'
+import { saveChunkNote, loadChunkNotes } from '@repo/supabase/question-note'
 import { revalidateTag } from 'next/cache'
 
 /**
@@ -72,16 +72,4 @@ export const getRecentChunkNotesAction = actionClient
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         return await loadChunkNotes({ cursor, creator: userId })
-    })
-
-/**
- * Deletes a note by ID.
- */
-export const deleteNoteAction = actionClient
-    .inputSchema(z.object({
-        id: z.number(),
-    }))
-    .action(async ({ parsedInput: { id } }) => {
-        const { userId } = await getUserOrThrow()
-        return await deleteNote({ id, creator: userId })
     })

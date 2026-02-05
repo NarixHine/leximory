@@ -73,6 +73,9 @@ export async function POST(request: Request) {
         })
     } catch (error) {
         await releaseDictationLock({ paperId })
-        throw error
+        console.error('Dictation generation failed:', error)
+        return Response.json({ 
+            error: `Failed to generate dictation: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }, { status: 500 })
     }
 }
