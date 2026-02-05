@@ -11,7 +11,8 @@
     "./user": "./src/user/index.ts",
     "./prompts": "./src/ai/prompts/index.ts",
     "./annotate": "./src/annotate/index.ts",
-    "./word": "./src/word/index.ts"
+    "./word": "./src/word/index.ts",
+    "./question-note": "./src/question-note/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

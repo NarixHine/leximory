@@ -37,7 +37,7 @@ export const getAnnotationCache = async ({ hash }: { hash: string }) => {
 
 export const setAnnotationCache = async ({ hash, cache }: { hash: string, cache: string }) => {
     await redis.set(`annotation:${hash}`, cache)
-    await redis.expire(`annotation:${hash}`, seconds('1 day'))
+    await redis.expire(`annotation:${hash}`, seconds('1 week'))
 }
 
 export const getAskCache = async ({ hash }: { hash: string }) => {
@@ -47,5 +47,5 @@ export const getAskCache = async ({ hash }: { hash: string }) => {
 
 export const setAskCache = async ({ hash, cache }: { hash: string, cache: string }) => {
     await redis.set(`ask:${hash}`, cache)
-    await redis.expire(`ask:${hash}`, seconds('1 day'))
+    await redis.expire(`ask:${hash}`, seconds('1 week'))
 }

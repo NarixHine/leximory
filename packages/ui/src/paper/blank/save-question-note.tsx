@@ -1,0 +1,64 @@
+'use client'
+
+import { Button, ButtonProps } from '@heroui/button'
+import { NotebookIcon } from '@phosphor-icons/react'
+import { saveQuestionNoteAction } from '@repo/service/question-note'
+import { toast } from 'sonner'
+import { useSaveQuestionNoteParams } from './hooks'
+import { useMutation } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
+
+export function SaveQuestionNoteButton({
+    localNo,
+    groupId,
+    ...props
+}: {
+    localNo: number
+    groupId: string
+} & Omit<ButtonProps, 'onPress'>) {
+    const { getSaveParams } = useSaveQuestionNoteParams({ localNo, groupId })
+
+    const { mutateAsync, isPending, isSuccess } = useMutation({
+        mutationKey: ['save-question-note', groupId, localNo],
+        mutationFn: async () => {
+            const params = getSaveParams()
+            if (!params) {
+                throw new Error('无法获取题目信息')
+            }
+            const result = await saveQuestionNoteAction(params)
+            if (result?.serverError) {
+                throw new Error(result.serverError)
+            }
+            return result?.data
+        },
+    })
+
+    const router = useRouter()
+    const handleSave = () => {
+        toast.promise(mutateAsync, {
+            loading: '正在收录题目……',
+            success: '已收录到错题本',
+            error: (err) => `收录失败：${err.message}`,
+            action: {
+                label: '查看',
+                onClick: () => {
+                    router.push('/question-notebook')
+                }
+            }
+        })
+    }
+
+    return (
+        <Button
+            startContent={!isPending && <NotebookIcon weight='duotone' size={20} />}
+            color='secondary'
+            variant='flat'
+            isLoading={isPending}
+            isDisabled={isSuccess}
+            {...props}
+            onPress={handleSave}
+        >
+            {isSuccess ? '已收录' : '收录本题于笔记'}
+        </Button>
+    )
+}

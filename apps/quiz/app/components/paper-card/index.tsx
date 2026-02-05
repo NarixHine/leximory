@@ -6,7 +6,6 @@ import { getUserProfileAction } from '@repo/service/user'
 import Link from 'next/link'
 import { cn } from '@heroui/theme'
 import { Spacer } from '@heroui/spacer'
-import { Logo } from '@/components/logo'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import { CheckCircleIcon } from '@phosphor-icons/react'
 
@@ -59,7 +58,6 @@ export function PaperCard({
                 </Skeleton>}
                 <h3 className='text-3xl font-formal'>
                     {title}
-                    {isPinned && <Logo className='inline size-7 grayscale-75 ml-1.5' />}
                 </h3>
                 <div className='font-mono text-default-400'>{createdAt}</div>
             </CardBody>

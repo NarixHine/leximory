@@ -2,9 +2,10 @@
 
 import { useAtomValue, useSetAtom } from 'jotai'
 import { getClozeOriginalWord, getSectionKey } from '../generators/utils'
-import { editoryItemsAtom, submittedAnswersAtom } from '../atoms'
+import { editoryItemsAtom, submittedAnswersAtom, paperIdAtom } from '../atoms'
 import { askParamsAtom, openAskAtom } from './atoms'
 import { useCallback } from 'react'
+import { questionStrategies } from '../generators/strategies'
 
 /**
  * Identifier for a blank/question using section-based structure.
@@ -110,4 +111,36 @@ export const useScrollToMatch = () => {
     }, [])
 
     return { scrollTo }
+}
+
+/**
+ * Hook to get the parameters needed for saving a question note.
+ */
+export const useSaveQuestionNoteParams = ({ localNo, groupId }: BlankIdentifier) => {
+    const quizData = useAtomValue(editoryItemsAtom)
+    const submittedAnswer = useAtomValue(submittedAnswersAtom)[groupId]?.[localNo]
+    const correctAnswer = useCorrectAnswer({ sectionId: groupId, localNo })
+    const paperId = useAtomValue(paperIdAtom)
+    
+    const getQuestionGroup = () => quizData?.find((item) => item.id === groupId)
+    
+    const getSaveParams = () => {
+        const questionGroup = getQuestionGroup()
+        if (!questionGroup || !correctAnswer) return null
+        
+        const { type } = questionGroup
+        const strategy = questionStrategies[type]
+        const isCorrect = submittedAnswer ? strategy.isCorrect(submittedAnswer, correctAnswer) : false
+        
+        return {
+            quizData: questionGroup,
+            questionNo: localNo,
+            userAnswer: submittedAnswer ?? '',
+            correctAnswer,
+            isCorrect,
+            paperId: paperId ? parseInt(paperId) : undefined,
+        }
+    }
+    
+    return { getSaveParams }
 }
