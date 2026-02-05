@@ -32,9 +32,8 @@ export function MarkedItemsPanel() {
                         clearMarkedItems()
                         toast.success('已清除所有标记')
                     }}
-                >
-                    <TrashIcon weight='duotone' className='size-3' />
-                </Button>
+                    startContent={<TrashIcon weight='duotone' className='size-3' />}
+                />
             </div>
             <div className='flex flex-wrap gap-2'>
                 {markedItems.map((item) => (
@@ -82,9 +81,8 @@ function MarkedItemButton({ item, onRemove }: { item: MarkedItem, onRemove: () =
                 color='danger'
                 className='absolute -top-1 -right-1 size-4 min-w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity'
                 onPress={onRemove}
-            >
-                <XIcon weight='duotone' className='size-2' />
-            </Button>
+                startContent={<XIcon weight='duotone' className='size-2' />}
+            />
         </div>
     )
 }

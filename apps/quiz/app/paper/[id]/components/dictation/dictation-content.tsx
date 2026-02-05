@@ -225,9 +225,8 @@ function DictationEntry({
                         onPress={() => deleteEntry()}
                         isLoading={isDeleting}
                         isIconOnly
-                    >
-                        <TrashIcon weight='duotone' />
-                    </Button>
+                        startContent={<TrashIcon weight='duotone' />}
+                    />
                 )}
             </div>
         </div>
