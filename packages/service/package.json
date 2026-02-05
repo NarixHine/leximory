@@ -14,8 +14,7 @@
     "./annotate": "./src/annotate/index.ts",
     "./word": "./src/word/index.ts",
     "./question-note": "./src/question-note/index.ts",
-    "./dictation": "./src/dictation/index.ts",
-    "./workflow": "./src/workflow/index.ts"
+    "./dictation": "./src/dictation/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

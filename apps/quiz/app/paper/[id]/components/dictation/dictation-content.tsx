@@ -5,11 +5,11 @@ import { Button } from '@heroui/button'
 import { Switch } from '@heroui/switch'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
-import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon, CheckCircleIcon } from '@phosphor-icons/react'
+import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon, CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react'
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { saveChunkNoteAction, deleteDictationAction, generateDictationAction } from '@repo/service/dictation'
+import { saveChunkNoteAction, deleteDictationAction, generateDictationAction, deleteChunkNoteAction } from '@repo/service/dictation'
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { useUser } from '@repo/ui/auth'
 import { SECTION_NAME_MAP } from '@repo/env/config'
@@ -168,7 +168,9 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
 
 function SaveEntryButton({ english, chinese, paperId }: { english: string; chinese: string; paperId: number }) {
     const queryClient = useQueryClient()
-    const { mutate: save, isPending, isSuccess } = useMutation({
+    const [savedNoteId, setSavedNoteId] = useState<number | null>(null)
+    
+    const { mutate: save, isPending: isSaving } = useMutation({
         mutationKey: ['save-chunk-note', english, chinese],
         mutationFn: async ({ english, chinese }: { english: string; chinese: string }) => {
             const { data, serverError } = await saveChunkNoteAction({
@@ -179,8 +181,9 @@ function SaveEntryButton({ english, chinese, paperId }: { english: string; chine
             if (serverError) throw new Error(serverError)
             return data
         },
-        onSuccess: () => {
+        onSuccess: (noteId) => {
             queryClient.invalidateQueries({ queryKey: ['all-notes'] })
+            setSavedNoteId(noteId ?? null)
             toast.success('已保存到笔记本')
         },
         onError: (error) => {
@@ -188,20 +191,54 @@ function SaveEntryButton({ english, chinese, paperId }: { english: string; chine
         },
     })
 
+    const { mutate: remove, isPending: isRemoving } = useMutation({
+        mutationKey: ['delete-chunk-note', savedNoteId],
+        mutationFn: async () => {
+            if (!savedNoteId) return
+            const { serverError } = await deleteChunkNoteAction({ noteId: savedNoteId })
+            if (serverError) throw new Error(serverError)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
+            setSavedNoteId(null)
+            toast.success('已从笔记本移除')
+        },
+        onError: (error) => {
+            toast.error(`移除失败：${error.message}`)
+        },
+    })
+
+    const isSaved = savedNoteId !== null
+
     return (
-        <ProtectedButton
-            size='sm'
-            variant='light'
-            color='primary'
-            className='print:hidden'
-            onPress={() => save({
-                english,
-                chinese
-            })}
-            isLoading={isPending}
-            isDisabled={isSuccess}
-            isIconOnly
-            startContent={isSuccess ? <CheckCircleIcon weight='duotone' /> : <FloppyDiskIcon weight='duotone' />}
-        />
+        <>
+            <ProtectedButton
+                size='sm'
+                variant='light'
+                color='primary'
+                className='print:hidden'
+                onPress={() => save({
+                    english,
+                    chinese
+                })}
+                isLoading={isSaving}
+                isDisabled={isSaved}
+                isIconOnly
+                startContent={isSaved ? <CheckCircleIcon weight='duotone' /> : <FloppyDiskIcon weight='duotone' />}
+            />
+            {isSaved && (
+                <Button
+                    size='sm'
+                    variant='light'
+                    color='danger'
+                    className='print:hidden'
+                    onPress={() => remove()}
+                    isLoading={isRemoving}
+                    isIconOnly
+                >
+                    <XCircleIcon weight='duotone' />
+                </Button>
+            )}
+        </>
     )
 }

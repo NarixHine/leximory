@@ -6,7 +6,7 @@ import { getUserOrThrow } from '@repo/user'
 import { Kilpi } from '../kilpi'
 import { getDictation, deleteDictation, createDictation } from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
-import { saveChunkNote, loadChunkNotes } from '@repo/supabase/question-note'
+import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/question-note'
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
 import { revalidateTag } from 'next/cache'
 import { DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
@@ -135,4 +135,18 @@ export const getRecentChunkNotesAction = actionClient
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         return await loadChunkNotes({ cursor, creator: userId })
+    })
+
+/**
+ * Deletes a chunk note by ID.
+ */
+export const deleteChunkNoteAction = actionClient
+    .inputSchema(z.object({
+        noteId: z.number(),
+    }))
+    .action(async ({ parsedInput: { noteId } }) => {
+        await Kilpi.authed().authorize().assert()
+        const { userId } = await getUserOrThrow()
+        
+        await deleteNote({ id: noteId, creator: userId })
     })
