@@ -5,6 +5,7 @@ import { Button } from '@heroui/button'
 import { Switch } from '@heroui/switch'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
 import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
@@ -169,56 +170,62 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                         <h3 className='text-lg font-semibold'>{section.sectionName}</h3>
                     </CardHeader>
                     <CardBody className='pt-0'>
-                        <div className='space-y-3'>
-                            {section.entries.map((entry, entryIndex) => {
-                                const entryKey = `${sectionIndex}-${entryIndex}`
-                                const revealed = isEntryRevealed(entryKey)
+                        <Table
+                            removeWrapper
+                            hideHeader
+                            aria-label={section.sectionName}
+                        >
+                            <TableHeader>
+                                <TableColumn>中文</TableColumn>
+                                <TableColumn>操作</TableColumn>
+                            </TableHeader>
+                            <TableBody>
+                                {section.entries.map((entry, entryIndex) => {
+                                    const entryKey = `${sectionIndex}-${entryIndex}`
+                                    const revealed = isEntryRevealed(entryKey)
 
-                                return (
-                                    <div
-                                        key={entryIndex}
-                                        className='flex items-center justify-between gap-4 py-2 border-b border-divider last:border-b-0'
-                                    >
-                                        {/* Left side: Chinese */}
-                                        <div className='flex-1'>
-                                            <p className='text-default-700'>{entry.chinese}</p>
-                                            {revealed && (
-                                                <p className='text-primary font-medium mt-1'>
-                                                    {entry.english}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Right side: Buttons */}
-                                        <div className='flex items-center gap-2 shrink-0'>
-                                            <Button
-                                                size='sm'
-                                                variant={revealed ? 'flat' : 'bordered'}
-                                                onPress={() => toggleReveal(entryKey)}
-                                                startContent={<EyeIcon weight='duotone' />}
-                                            >
-                                                {revealed ? '隐藏' : '显示'}
-                                            </Button>
-                                            {isLoggedIn && (
-                                                <Button
-                                                    size='sm'
-                                                    variant='flat'
-                                                    color='primary'
-                                                    onPress={() => saveMutation.mutate({
-                                                        english: entry.english,
-                                                        chinese: entry.chinese
-                                                    })}
-                                                    isLoading={saveMutation.isPending}
-                                                    startContent={<FloppyDiskIcon weight='duotone' />}
-                                                >
-                                                    保存
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                                    return (
+                                        <TableRow key={entryIndex}>
+                                            <TableCell>
+                                                <p className='text-default-700'>{entry.chinese}</p>
+                                                {revealed && (
+                                                    <p className='text-primary font-medium mt-1'>
+                                                        {entry.english}
+                                                    </p>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className='text-right'>
+                                                <div className='flex items-center justify-end gap-2'>
+                                                    <Button
+                                                        size='sm'
+                                                        variant='light'
+                                                        onPress={() => toggleReveal(entryKey)}
+                                                        startContent={<EyeIcon weight='duotone' />}
+                                                    >
+                                                        {revealed ? '隐藏' : '显示'}
+                                                    </Button>
+                                                    {isLoggedIn && (
+                                                        <Button
+                                                            size='sm'
+                                                            variant='light'
+                                                            color='primary'
+                                                            onPress={() => saveMutation.mutate({
+                                                                english: entry.english,
+                                                                chinese: entry.chinese
+                                                            })}
+                                                            isLoading={saveMutation.isPending}
+                                                            startContent={<FloppyDiskIcon weight='duotone' />}
+                                                        >
+                                                            保存
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
                     </CardBody>
                 </Card>
             ))}
