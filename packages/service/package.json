@@ -14,7 +14,8 @@
     "./annotate": "./src/annotate/index.ts",
     "./word": "./src/word/index.ts",
     "./question-note": "./src/question-note/index.ts",
-    "./dictation": "./src/dictation/index.ts"
+    "./dictation": "./src/dictation/index.ts",
+    "./workflow": "./src/workflow/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -33,7 +34,8 @@
     "@repo/utils": "workspace:^",
     "next-safe-action": "8.0.10",
     "ai": "^6.0.26",
-    "@ai-sdk/gateway": "3.0.10"
+    "@ai-sdk/gateway": "3.0.10",
+    "workflow": "4.1.0-beta.52"
   },
   "peerDependencies": {
     "next": "^16.0.0"

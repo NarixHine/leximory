@@ -4,14 +4,13 @@ import { actionClient } from '../safe-action-client'
 import { z } from '@repo/schema'
 import { getUserOrThrow } from '@repo/user'
 import { Kilpi } from '../kilpi'
-import { getDictation, createDictation, deleteDictation } from '@repo/supabase/dictation'
+import { getDictation, deleteDictation } from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes } from '@repo/supabase/question-note'
-import { generateChunksForSection } from '../ai/dictation'
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
-import { SECTION_NAME_MAP } from '@repo/env/config'
 import { revalidateTag } from 'next/cache'
-import type { ChunkSection, DictationContent } from '@repo/schema/chunk-note'
+import { start } from 'workflow/api'
+import { generateDictationWorkflow } from '../workflow/dictation'
 
 /**
  * Gets a dictation for a paper.
@@ -29,6 +28,7 @@ export const getDictationAction = actionClient
 
 /**
  * Generates a dictation for a paper (authenticated users only).
+ * Uses workflow for durable execution with parallel section processing.
  */
 export const generateDictationAction = actionClient
     .inputSchema(z.object({
@@ -51,43 +51,10 @@ export const generateDictationAction = actionClient
                 return existingDictation
             }
             
-            // Get the paper content
-            const paper = await getPaper({ id: paperId })
-            const quizItems = paper.content
+            // Start the workflow for durable execution
+            const result = await start(generateDictationWorkflow, [paperId])
             
-            // Generate chunks for each section sequentially
-            const sections: ChunkSection[] = []
-            
-            for (const item of quizItems) {
-                const sectionName = SECTION_NAME_MAP[item.type as keyof typeof SECTION_NAME_MAP] ?? item.type
-                
-                const result = await generateChunksForSection({ quizData: item })
-                
-                if (result.entries.length > 0) {
-                    sections.push({
-                        sectionName,
-                        sectionType: item.type,
-                        entries: result.entries,
-                    })
-                }
-            }
-            
-            // Create the dictation content
-            const dictationContent: DictationContent = { sections }
-            
-            // Save to database
-            const dictation = await createDictation({
-                paperId,
-                content: dictationContent,
-            })
-            
-            await releaseDictationLock({ paperId })
-            
-            return {
-                id: dictation.id,
-                content: dictationContent,
-                createdAt: dictation.created_at,
-            }
+            return result
         } catch (error) {
             await releaseDictationLock({ paperId })
             throw error
