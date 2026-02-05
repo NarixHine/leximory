@@ -1,11 +1,14 @@
 'use client'
 
 import { QuestionNoteCard } from '@repo/ui/question-note'
-import { getRecentQuestionNotesAction } from '@repo/service/question-note'
+import { getRecentQuestionNotesAction, deleteQuestionNoteAction } from '@repo/service/question-note'
 import { Spinner } from '@heroui/spinner'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { Button } from '@heroui/button'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { Logo } from '@/components/logo'
+import { TrashIcon } from '@phosphor-icons/react'
+import { toast } from 'sonner'
 
 type QuestionNoteData = {
     notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null }>
@@ -14,6 +17,7 @@ type QuestionNoteData = {
 }
 
 export function QuestionNotebookList({ initialData }: { initialData: QuestionNoteData | undefined }) {
+    const queryClient = useQueryClient()
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
         queryKey: ['recent-question-notes'],
         queryFn: async ({ pageParam }) => {
@@ -34,6 +38,30 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
         },
     })
 
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
+            const result = await deleteQuestionNoteAction({ id })
+            if (result?.serverError) {
+                throw new Error(result.serverError)
+            }
+            return result?.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['recent-question-notes'] })
+        },
+    })
+
+    const handleDelete = (id: number) => {
+        toast.promise(
+            deleteMutation.mutateAsync(id),
+            {
+                loading: '正在删除……',
+                success: '已删除',
+                error: (err) => `删除失败：${err.message}`,
+            }
+        )
+    }
+
     const allNotes = data?.pages.flatMap(page => page?.notes ?? []) ?? []
 
     if (allNotes.length === 0) {
@@ -51,7 +79,19 @@ export function QuestionNotebookList({ initialData }: { initialData: QuestionNot
                 <div key={id} className='rounded-sm border border-divider'>
                     <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
                         <span className='text-xs text-default-500 font-mono'>{date}</span>
-                        <Logo className='size-5 grayscale-75 opacity-80' />
+                        <div className='flex items-center gap-2'>
+                            <Button
+                                size='sm'
+                                variant='light'
+                                color='danger'
+                                isIconOnly
+                                onPress={() => handleDelete(id)}
+                                isLoading={deleteMutation.isPending && deleteMutation.variables === id}
+                            >
+                                <TrashIcon size={16} />
+                            </Button>
+                            <Logo className='size-5 grayscale-75 opacity-80' />
+                        </div>
                     </div>
                     <QuestionNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
                 </div>

@@ -16,12 +16,14 @@ export async function saveQuestionNote({
     wrongAnswer,
     keyPoints,
     relatedPaper,
+    creator,
 }: {
     sentence: string
     correctAnswer: string
     wrongAnswer?: string
     keyPoints: string
     relatedPaper?: number
+    creator: string
 }) {
     const content = serializeQuestionNoteContent({ sentence, correctAnswer, wrongAnswer, keyPoints })
     
@@ -31,6 +33,7 @@ export async function saveQuestionNote({
             content,
             type: 'question',
             related_paper: relatedPaper ?? null,
+            creator,
         })
         .select()
         .single()
@@ -40,13 +43,14 @@ export async function saveQuestionNote({
 }
 
 /**
- * Loads question notes with pagination.
+ * Loads question notes with pagination for a specific user.
  */
-export async function loadQuestionNotes({ cursor }: { cursor?: string }) {
+export async function loadQuestionNotes({ cursor, creator }: { cursor?: string, creator: string }) {
     const { data } = await supabase
         .from('notes')
         .select('content, id, created_at, related_paper')
         .eq('type', 'question')
+        .eq('creator', creator)
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
         .throwOnError()
@@ -65,12 +69,14 @@ export async function loadQuestionNotes({ cursor }: { cursor?: string }) {
 
 /**
  * Deletes a question note by ID.
+ * Only deletes if the note belongs to the specified creator.
  */
-export async function deleteQuestionNote({ id }: { id: number }) {
+export async function deleteQuestionNote({ id, creator }: { id: number, creator: string }) {
     const { data } = await supabase
         .from('notes')
         .delete()
         .eq('id', id)
+        .eq('creator', creator)
         .select()
         .single()
         .throwOnError()
