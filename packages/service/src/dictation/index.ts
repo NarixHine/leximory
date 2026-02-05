@@ -4,7 +4,7 @@ import { actionClient } from '../safe-action-client'
 import { z } from '@repo/schema'
 import { getUserOrThrow } from '@repo/user'
 import { Kilpi } from '../kilpi'
-import { getDictation, deleteDictation, createDictation } from '@repo/supabase/dictation'
+import { getDictation, deleteDictation, createDictation, updateDictationContent } from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/question-note'
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
@@ -149,4 +149,45 @@ export const deleteChunkNoteAction = actionClient
         const { userId } = await getUserOrThrow()
         
         await deleteNote({ id: noteId, creator: userId })
+    })
+
+/**
+ * Deletes an entry from a dictation (owner only).
+ * Removes the entry at the specified section and entry index.
+ */
+export const deleteDictationEntryAction = actionClient
+    .inputSchema(z.object({
+        paperId: z.number(),
+        dictationId: z.number(),
+        sectionIndex: z.number(),
+        entryIndex: z.number(),
+    }))
+    .action(async ({ parsedInput: { paperId, dictationId, sectionIndex, entryIndex } }) => {
+        const paper = await getPaper({ id: paperId })
+        await Kilpi.papers.update(paper).authorize().assert()
+
+        // Get current dictation
+        const dictation = await getDictation({ paperId })
+        if (!dictation || dictation.id !== dictationId) {
+            throw new Error('Dictation not found')
+        }
+
+        // Remove the entry from the section
+        const newSections = dictation.content.sections.map((section, sIdx) => {
+            if (sIdx === sectionIndex) {
+                return {
+                    ...section,
+                    entries: section.entries.filter((_, eIdx) => eIdx !== entryIndex)
+                }
+            }
+            return section
+        }).filter(section => section.entries.length > 0) // Remove empty sections
+
+        // Update the dictation content
+        const newContent: DictationContent = { sections: newSections }
+        await updateDictationContent({ id: dictationId, content: newContent })
+        
+        revalidateTag(`dictation:${paperId}`, 'max')
+        
+        return newContent
     })

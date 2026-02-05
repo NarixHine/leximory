@@ -56,3 +56,18 @@ export async function deleteDictation({ id }: { id: number }) {
         .eq('id', id)
         .throwOnError()
 }
+
+/**
+ * Updates a dictation's content (e.g., to remove an entry).
+ */
+export async function updateDictationContent({ id, content }: { id: number; content: DictationContent }) {
+    const { data } = await supabase
+        .from('dictations')
+        .update({ content })
+        .eq('id', id)
+        .select()
+        .single()
+        .throwOnError()
+
+    return data
+}

@@ -9,7 +9,7 @@ import { TrashIcon, EyeIcon, FloppyDiskIcon, ArrowsClockwiseIcon, CheckCircleIco
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { saveChunkNoteAction, deleteDictationAction, generateDictationAction, deleteChunkNoteAction } from '@repo/service/dictation'
+import { saveChunkNoteAction, deleteDictationAction, generateDictationAction, deleteChunkNoteAction, deleteDictationEntryAction } from '@repo/service/dictation'
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { useUser } from '@repo/ui/auth'
 import { SECTION_NAME_MAP } from '@repo/env/config'
@@ -145,23 +145,96 @@ export function DictationContent({ paperId, dictation: initialDictation, isOwner
                         {section.entries.map((entry, entryIndex) => {
                             const entryKey = `${sectionIndex}-${entryIndex}`
                             return (
-                                <div key={entryKey} className='flex justify-between gap-1'>
-                                    <p className='text-default-700'>{entry.chinese}</p>
-                                    <div className='flex items-center justify-end gap-2'>
-                                        <p className={cn(
-                                            showEnglish ? 'text-foreground' : 'text-transparent underline-offset-4 underline decoration-foreground',
-                                            'font-medium mt-1 text-right'
-                                        )}>
-                                            {entry.english}
-                                        </p>
-                                        <SaveEntryButton english={entry.english} chinese={entry.chinese} paperId={paperId} />
-                                    </div>
-                                </div>
+                                <DictationEntry
+                                    key={entryKey}
+                                    entry={entry}
+                                    showEnglish={showEnglish}
+                                    paperId={paperId}
+                                    dictationId={dictation.id}
+                                    sectionIndex={sectionIndex}
+                                    entryIndex={entryIndex}
+                                    isOwner={isOwner}
+                                    onEntryDeleted={(newContent) => {
+                                        setDictation(prev => prev ? { ...prev, content: newContent } : null)
+                                    }}
+                                />
                             )
                         })}
                     </CardBody>
                 </Card>
             ))}
+        </div>
+    )
+}
+
+type DictationEntryProps = {
+    entry: { english: string; chinese: string }
+    showEnglish: boolean
+    paperId: number
+    dictationId: number
+    sectionIndex: number
+    entryIndex: number
+    isOwner: boolean
+    onEntryDeleted: (newContent: DictationContentType) => void
+}
+
+function DictationEntry({ 
+    entry, 
+    showEnglish, 
+    paperId, 
+    dictationId, 
+    sectionIndex, 
+    entryIndex, 
+    isOwner,
+    onEntryDeleted 
+}: DictationEntryProps) {
+    const { mutate: deleteEntry, isPending: isDeleting } = useMutation({
+        mutationFn: async () => {
+            const { data, serverError } = await deleteDictationEntryAction({
+                paperId,
+                dictationId,
+                sectionIndex,
+                entryIndex,
+            })
+            if (serverError) throw new Error(serverError)
+            return data
+        },
+        onSuccess: (newContent) => {
+            if (newContent) {
+                onEntryDeleted(newContent)
+            }
+            toast.success('已删除词条')
+        },
+        onError: (error) => {
+            toast.error(`删除失败：${error.message}`)
+        },
+    })
+
+    return (
+        <div className='flex justify-between gap-1'>
+            <p className='text-default-700'>{entry.chinese}</p>
+            <div className='flex items-center justify-end gap-2'>
+                <p className={cn(
+                    showEnglish ? 'text-foreground' : 'text-transparent underline-offset-4 underline decoration-foreground',
+                    'font-medium mt-1 text-right'
+                )}>
+                    {entry.english}
+                </p>
+                <SaveEntryButton english={entry.english} chinese={entry.chinese} paperId={paperId} />
+                {isOwner && (
+                    <Button
+                        size='sm'
+                        variant='light'
+                        color='danger'
+                        className='print:hidden'
+                        onPress={() => deleteEntry()}
+                        isLoading={isDeleting}
+                        isIconOnly
+                    >
+                        <TrashIcon weight='duotone' />
+                    </Button>
+                )}
+            </div>
         </div>
     )
 }
