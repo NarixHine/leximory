@@ -163,6 +163,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          creator: string
           id: number
           related_paper: number | null
           type: string
@@ -170,6 +171,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          creator: string
           id?: number
           related_paper?: number | null
           type: string
@@ -177,11 +179,19 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          creator?: string
           id?: number
           related_paper?: number | null
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notes_creator_fkey"
+            columns: ["creator"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notes_related_paper_fkey"
             columns: ["related_paper"]
