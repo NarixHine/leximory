@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabase } from '@repo/supabase'
 import { DictationContentSchema, type DictationContent } from '@repo/schema/chunk-note'
+import type { Json } from './types'
 
 export type { DictationContent } from '@repo/schema/chunk-note'
 
@@ -37,7 +38,7 @@ export async function createDictation({ paperId, content }: { paperId: number; c
         .from('dictations')
         .insert({
             paper: paperId,
-            content: content as unknown as Record<string, unknown>,
+            content: content as Json,
         })
         .select()
         .single()
