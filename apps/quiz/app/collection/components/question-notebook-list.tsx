@@ -10,7 +10,6 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useIntersectionObserver } from 'usehooks-ts'
 import { Logo } from '@/components/logo'
 import { TrashIcon } from '@phosphor-icons/react'
-import { toast } from 'sonner'
 
 type NoteData = {
     notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null, type: 'question' | 'chunk' }>
@@ -42,27 +41,12 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const { data, serverError } = await deleteNoteAction({ id })
-            if (serverError) {
-                throw new Error(serverError)
-            }
-            return data
+            await deleteNoteAction({ id })
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['all-notes'] })
         },
     })
-
-    const handleDelete = (id: number) => {
-        toast.promise(
-            deleteMutation.mutateAsync(id),
-            {
-                loading: '正在删除……',
-                success: '已删除',
-                error: (err) => `删除失败：${err.message}`,
-            }
-        )
-    }
 
     const allNotes = data.pages.flatMap(page => page?.notes ?? []) ?? []
 
@@ -93,7 +77,7 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                                 className='size-5'
                                 variant='light'
                                 isIconOnly
-                                onPress={() => handleDelete(id)}
+                                onPress={() => deleteMutation.mutate(id)}
                                 isLoading={deleteMutation.isPending && deleteMutation.variables === id}
                                 startContent={<TrashIcon weight='duotone' size={16} />}
                             />

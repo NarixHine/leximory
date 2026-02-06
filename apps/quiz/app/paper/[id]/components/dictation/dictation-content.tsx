@@ -13,6 +13,7 @@ import { saveChunkNoteAction, deleteDictationAction, generateDictationAction, de
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { SECTION_NAME_MAP } from '@repo/env/config'
 import { cn } from '@heroui/theme'
+import { useRouter } from 'next/navigation'
 
 type DictationContentProps = {
     paperId: number
@@ -23,56 +24,36 @@ type DictationContentProps = {
     hasWriteAccess: boolean
 }
 
-export function DictationContent({ paperId, dictation: initialDictation, hasWriteAccess }: DictationContentProps) {
-    const [dictation, setDictation] = useState(initialDictation)
+export function DictationContent({ paperId, dictation, hasWriteAccess }: DictationContentProps) {
     const [showEnglish, setShowEnglish] = useState(false)
-    const queryClient = useQueryClient()
+    const router = useRouter()
 
     const generateMutation = useMutation({
         mutationFn: async () => {
-            const { data } = await generateDictationAction({ paperId })
-            if (!data) {
-                toast.error('生成默写纸失败')
-                return
-            }
-            setDictation(data)
+            await generateDictationAction({ paperId })
         },
+        onSuccess: () => {
+            router.refresh()
+        },
+        onError: () => {
+            toast.error('生成失败')
+        }
     })
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
             if (!dictation) return
-            const { serverError } = await deleteDictationAction({
+            await deleteDictationAction({
                 paperId,
                 dictationId: dictation.id
             })
-            if (serverError) throw new Error(serverError)
         },
         onSuccess: () => {
-            setDictation(null)
+            router.refresh()
             toast.success('已删除默写纸')
         },
-        onError: (error) => {
-            toast.error(`删除失败：${error.message}`)
-        },
-    })
-
-    const saveMutation = useMutation({
-        mutationFn: async ({ english, chinese }: { english: string; chinese: string }) => {
-            const { data, serverError } = await saveChunkNoteAction({
-                english,
-                chinese,
-                paperId
-            })
-            if (serverError) throw new Error(serverError)
-            return data
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
-            toast.success('已保存到笔记本')
-        },
-        onError: (error) => {
-            toast.error(`保存失败：${error.message}`)
+        onError: () => {
+            toast.error('删除失败')
         },
     })
 
@@ -151,9 +132,6 @@ export function DictationContent({ paperId, dictation: initialDictation, hasWrit
                                     dictationId={dictation.id}
                                     sectionIndex={sectionIndex}
                                     hasWriteAccess={hasWriteAccess}
-                                    onEntryDeleted={(newContent) => {
-                                        setDictation(prev => prev ? { ...prev, content: newContent } : null)
-                                    }}
                                 />
                             )
                         })}
@@ -170,7 +148,6 @@ type DictationEntryProps = {
     paperId: number
     dictationId: number
     sectionIndex: number
-    onEntryDeleted: (newContent: DictationContentType) => void
     hasWriteAccess: boolean
 }
 
@@ -180,25 +157,17 @@ function DictationEntry({
     paperId,
     dictationId,
     sectionIndex,
-    onEntryDeleted,
     hasWriteAccess
 }: DictationEntryProps) {
-    const { mutate: deleteEntry, isPending: isDeleting } = useMutation({
+    const { mutate: deleteEntry, isPending: isDeleting, isSuccess: isDeleted } = useMutation({
         mutationFn: async () => {
-            const { data, serverError } = await deleteDictationEntryAction({
+            const { data } = await deleteDictationEntryAction({
                 paperId,
                 dictationId,
                 sectionIndex,
                 entryEnglish: entry.english,
             })
-            if (serverError) throw new Error(serverError)
             return data
-        },
-        onSuccess: (newContent) => {
-            if (newContent) {
-                onEntryDeleted(newContent)
-            }
-            toast.success('已删除词条')
         },
         onError: (error) => {
             toast.error(`删除失败：${error.message}`)
@@ -210,7 +179,7 @@ function DictationEntry({
             <p className='text-default-700'>{entry.chinese}</p>
             <div className='flex items-center justify-end'>
                 <p className={cn(
-                    showEnglish ? 'text-foreground' : 'text-transparent underline-offset-4 underline decoration-foreground',
+                    showEnglish ? 'text-foreground' : 'text-transparent underline-offset-6 underline decoration-foreground',
                     'font-medium mt-1 mr-2 text-right'
                 )}>
                     {entry.english}
@@ -225,6 +194,7 @@ function DictationEntry({
                         onPress={() => deleteEntry()}
                         isLoading={isDeleting}
                         isIconOnly
+                        isDisabled={isDeleted}
                         startContent={<TrashIcon weight='duotone' />}
                     />
                 )}

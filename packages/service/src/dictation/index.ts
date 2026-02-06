@@ -8,7 +8,6 @@ import { getDictation, deleteDictation, createDictation, updateDictationContent 
 import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/question-note'
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
-import { revalidateTag } from 'next/cache'
 import { DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
 import { generateChunksForSection } from '../ai'
 
@@ -99,7 +98,6 @@ export const deleteDictationAction = actionClient
         await Kilpi.papers.update(paper).authorize().assert()
 
         await deleteDictation({ id: dictationId })
-        revalidateTag(`dictation:${paperId}`, 'max')
     })
 
 /**
@@ -186,8 +184,6 @@ export const deleteDictationEntryAction = actionClient
         // Update the dictation content
         const newContent: DictationContent = { sections: newSections }
         await updateDictationContent({ id: dictationId, content: newContent })
-
-        revalidateTag(`dictation:${paperId}`, 'max')
 
         return newContent
     })
