@@ -59,6 +59,17 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
 
     // No dictation yet - show generate button
     if (!dictation) {
+        if (generateMutation.isSuccess) {
+            return (
+                <div className='flex flex-col items-center justify-center py-16 gap-6'>
+                    <Spinner size='lg' color='success' />
+                    <div className='text-center'>
+                        <h3 className='text-xl font-semibold mb-2'>默写纸已生成</h3>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className='flex flex-col items-center justify-center py-16 gap-6'>
                 <div className='text-center'>
@@ -71,7 +82,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
                     <div className='flex flex-col items-center gap-3'>
                         <Spinner size='lg' />
                         <p className='text-default-500 text-sm'>
-                            正在生成默写纸，可能需要一分钟左右……
+                            正在生成默写纸，可能需要半分钟……
                         </p>
                     </div>
                 ) : (
@@ -120,7 +131,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
                     <CardHeader className='px-0'>
                         <h3 className='text-lg font-semibold'>{SECTION_NAME_MAP[section.sectionType]}</h3>
                     </CardHeader>
-                    <CardBody className='px-0'>
+                    <CardBody className='px-0 print:gap-2'>
                         {section.entries.map((entry) => {
                             const entryKey = `${sectionIndex}-${entry.chinese}-${entry.english}`
                             return (
@@ -180,7 +191,7 @@ function DictationEntry({
             <div className='flex items-center justify-end'>
                 <p className={cn(
                     showEnglish ? 'text-foreground' : 'text-transparent underline-offset-6 underline decoration-foreground',
-                    'font-medium mt-1 mr-2 text-right'
+                    'font-medium mr-2 text-right'
                 )}>
                     {entry.english}
                 </p>
@@ -195,7 +206,7 @@ function DictationEntry({
                         isLoading={isDeleting}
                         isIconOnly
                         isDisabled={isDeleted}
-                        startContent={<TrashIcon weight='duotone' />}
+                        startContent={isDeleted ? <CheckCircleIcon weight='duotone' /> : <TrashIcon weight='duotone' />}
                     />
                 )}
             </div>
