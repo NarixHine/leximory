@@ -4,7 +4,7 @@ import { actionClient } from '@repo/service'
 import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
 import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions } from '@repo/supabase/paper'
-import { getUserOrThrow } from '@repo/user'
+import { getUser, getUserOrThrow } from '@repo/user'
 import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
 import { SECTION_NAME_MAP } from '@repo/env/config'
@@ -163,9 +163,11 @@ export const deletePaperAction = actionClient
 export const getPaperSubmissionAction = actionClient
   .inputSchema(getPaperSubmissionSchema)
   .action(async ({ parsedInput: { paperId } }) => {
-    const user = await getUserOrThrow()
+    const user = await getUser()
+    if (!user) {
+      return null
+    }
     await Kilpi.authed().authorize().assert()
-
     return getPaperSubmission({ paperId, userId: user.userId })
   })
 
