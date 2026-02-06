@@ -1,7 +1,7 @@
 'use client'
 
 import { Drawer } from 'vaul'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { cn } from '@heroui/theme'
 import { getBracketedSelection, useSelection } from './utils'
 import { useSelectionPosition } from '../utils/hooks'
@@ -66,8 +66,11 @@ export function Define() {
     const { left, width, selection } = selectionContext
     const { buttonTop, rect } = useSelectionPosition(selection)
 
-    // State to hold the prompt persistently while the drawer is open
-    const [activePrompt, setActivePrompt] = useState('')
+    // freeze the selection so it persists during the click
+    const lastValidSelection = useRef<string>('')
+    if (selection && selection.toString()) {
+        lastValidSelection.current = getBracketedSelection(selection)
+    }
 
     return (
         <Drawer.Root
@@ -87,12 +90,6 @@ export function Define() {
                         color='primary'
                         startContent={<MagnifyingGlassIcon weight='duotone' />}
                         variant='shadow'
-                        onPress={(e) => {
-                            // capture the selection text when opening the drawer
-                            if (selection && selection.toString()) 
-                                setActivePrompt(getBracketedSelection(selection))
-                            e.continuePropagation()
-                        }}
                     >
                         Define
                     </Button>
@@ -101,11 +98,11 @@ export function Define() {
             <Drawer.Portal>
                 <Drawer.Overlay className={cn(
                     'fixed inset-0 z-60',
-                    'bg-linear-to-b to-transparent from-default-900/40 dark:from-stone-950/60',
+                    'bg-linear-to-b to-transparent from-default-600/50 dark:from-stone-950/70',
                 )} />
                 <Drawer.Content className='h-fit px-2 fixed rounded-t-xl top-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    {activePrompt && <Annotation prompt={activePrompt} />}
+                    {lastValidSelection.current && <Annotation prompt={lastValidSelection.current} />}
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>

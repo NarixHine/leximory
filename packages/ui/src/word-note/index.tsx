@@ -14,11 +14,11 @@ export function WordNote({ portions, isPending, showSaveButton, className, cardB
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='overflow-hidden'>
                     {
-                        isPending && portions.length === 0
-                            ? <div className='flex font-mono items-center gap-1.5 -mt-2.5'>
+                        isPending && portions.length === 0 && (
+                            <div className='flex font-mono items-center gap-1.5 -mt-2.5'>
                                 Generating <Spinner variant='dots' color='default' />
                             </div>
-                            : <></>
+                        )
                     }
                     {portions[2] && <div>
                         <div className='text-default-600 text-sm'>释义</div>
