@@ -8,11 +8,12 @@ import { MagicWandIcon, SpeedometerIcon, TrophyIcon, PencilLineIcon } from '@pho
 import { useQueryState, parseAsString } from 'nuqs'
 
 type QuizTabsUIProps = {
-    Paper?: ReactNode,
-    Revise?: ReactNode
     leaderboard?: ReactNode
     dictation?: ReactNode
-}
+} & (
+        | { Paper: ReactNode; Revise?: never }
+        | { Revise: ReactNode; Paper?: never }
+    )
 
 export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUIProps) {
     const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('paper'))
@@ -34,7 +35,7 @@ export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUI
             </div>}>
                 {Paper}
             </Tab>}
-            {Revise && <Tab key='revise' title={<div className='flex items-center space-x-2'>
+            {Revise && <Tab key='paper' title={<div className='flex items-center space-x-2'>
                 <MagicWandIcon weight='bold' />
                 <span>解惑</span>
             </div>}>
