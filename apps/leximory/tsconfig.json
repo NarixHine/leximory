@@ -1,7 +1,6 @@
 {
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
     "lib": [
       "dom",
       "dom.iterable",
@@ -31,5 +30,5 @@
     "next.config.ts",
     "postcss.config.mjs",
     ".next/dev/types/**/*.ts"
-, "../../packages/ui/src/define/utils.tsx"  ],
+  ],
 }

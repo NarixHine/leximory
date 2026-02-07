@@ -26,6 +26,5 @@
     "next.config.ts",
     "postcss.config.mjs",
     ".next/dev/types/**/*.ts",
-    "../../packages/ui/src/dock/index.tsx",
   ],
 }
