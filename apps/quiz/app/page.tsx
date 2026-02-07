@@ -8,6 +8,7 @@ import { Logo } from '@/components/logo'
 import { Spacer } from '@heroui/spacer'
 import { Skeleton } from '@heroui/skeleton'
 import { WorkingPapers } from './components/working-paper'
+import { cacheTag } from 'next/cache'
 
 export const metadata: Metadata = {
     title: '猫谜',
@@ -37,6 +38,7 @@ export default function Page() {
 
 async function Content() {
     'use cache'
+    cacheTag('paper:public')
     const papers = await getPublicPapers()
     return (<>
         <WorkingPapers />
