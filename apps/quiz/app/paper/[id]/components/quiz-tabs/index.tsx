@@ -5,7 +5,6 @@ import type { ReactNode } from 'react'
 import { ScopeProvider } from 'jotai-scope'
 import { viewModeAtom } from '@repo/ui/paper/atoms'
 import { MagicWandIcon, SpeedometerIcon, TrophyIcon, PencilLineIcon } from '@phosphor-icons/react/ssr'
-import { parseAsString, useQueryState } from 'nuqs'
 
 type QuizTabsUIProps = {
     Paper?: ReactNode,
@@ -15,14 +14,14 @@ type QuizTabsUIProps = {
 }
 
 export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUIProps) {
-    const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('paper'))
     return (
-        <Tabs selectedKey={tab} onSelectionChange={(key) => {
-            setTab(key as string)
-        }} classNames={{
-            tabList: 'print:hidden',
-            panel: 'print:-mt-5'
-        }}>
+        <Tabs
+            defaultSelectedKey={'paper'}
+            classNames={{
+                tabList: 'print:hidden',
+                panel: 'print:-mt-5'
+            }}
+        >
             {Paper && <Tab key='paper' title={<div className='flex items-center space-x-2'>
                 <SpeedometerIcon weight='bold' />
                 <span>解谜</span>
