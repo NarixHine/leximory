@@ -27,7 +27,8 @@
     "./logo": "./src/logo/index.tsx",
     "./mark-for-later": "./src/mark-for-later/index.tsx",
     "./mark-for-later/panel": "./src/mark-for-later/panel.tsx",
-    "./confirm-popover": "./src/confirm-popover/index.tsx"
+    "./confirm-popover": "./src/confirm-popover/index.tsx",
+    "./file-upload": "./src/file-upload/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -45,8 +46,8 @@
     "@repo/schema": "workspace:^",
     "@repo/service": "workspace:^",
     "@repo/supabase": "workspace:^",
-    "@repo/utils": "workspace:^",
     "@repo/user": "workspace:^",
+    "@repo/utils": "workspace:^",
     "class-variance-authority": "^0.7.1",
     "es-toolkit": "^1.44.0",
     "fast-shuffle": "^6.1.1",
@@ -56,6 +57,7 @@
     "moment": "^2.30.1",
     "nanoid": "^5.1.6",
     "rand-seed": "^3.0.0",
+    "react-dropzone": "^14.3.5",
     "react-icons": "^5.5.0",
     "streamdown": "^2.1.0",
     "supabase": "^2.72.4",

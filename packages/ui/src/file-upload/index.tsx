@@ -1,11 +1,11 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { useRef, useState } from 'react'
+import { cn } from '@heroui/theme'
+import { type HTMLAttributes, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import { PiBoxArrowUp } from 'react-icons/pi'
-import FlatCard from './flat-card'
+import { Card } from '@heroui/card'
 
 const mainVariant = {
     initial: {
@@ -31,9 +31,11 @@ const secondaryVariant = {
 export const FileUpload = ({
     onChange,
     acceptableTypes,
+    disabled
 }: {
     onChange?: (files: File[]) => void
     acceptableTypes?: string[]
+    disabled?: boolean
 }) => {
     const [files, setFiles] = useState<File[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -54,7 +56,7 @@ export const FileUpload = ({
         maxFiles: 1,
     })
 
-    const MotionCard = motion.create(FlatCard)
+    const MotionCard = motion.create(Card)
 
     return (
         <div className='w-full' {...getRootProps()}>
@@ -70,6 +72,7 @@ export const FileUpload = ({
                     accept={acceptableTypes?.join(',')}
                     onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
                     className='hidden'
+                    disabled={disabled}
                 />
                 <div className='flex flex-col items-center justify-center'>
                     <div className='relative w-full mt-10 max-w-xl mx-auto'>

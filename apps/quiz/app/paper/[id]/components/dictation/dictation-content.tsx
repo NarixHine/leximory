@@ -51,6 +51,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
         onSuccess: () => {
             router.refresh()
             toast.success('已删除默写纸')
+            generateMutation.reset()
         },
         onError: () => {
             toast.error('删除失败')

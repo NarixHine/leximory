@@ -40,7 +40,7 @@ export const buildChunkGenerationSystemPrompt = () => `
 3. 中文翻译应准确、地道，符合中文表达习惯
 4. 少而精，数量上少提取而多取复杂结构
 
-语块提取和微调示例：
+语块提取和时态语态微调示例：
 - 介词性表达
     - 如“beneath the crass, striving materialism of American life”
     - 如“Nothing which is true or beautiful or good makes complete sense in any immediate context of history”提取为“in the immediate context of history”
@@ -50,8 +50,8 @@ export const buildChunkGenerationSystemPrompt = () => `
     - 如“atomization and a slow descent toward nihilism”
 
 - 动宾搭配：
-    - 如原文“nurturing empathy and orienting the soul”必须修改为“nurture empathy and orient the soul”
-    - 如原文“recoverd a smidgen of our earlier audacity”必须修改为“recover a smidgen of our earlier audacity”
+    - 如原文“nurturing empathy and orienting the soul”必须修改为“nurture empathy and orient the soul”（必须将进行时形式变为动词原形）
+    - 如原文“recoverd a smidgen of our earlier audacity”必须修改为“recover a smidgen of our earlier audacity”（必须将过去式形式变为动词原形）
 
 - 富有表现力的复杂表达：
     - 如原文“True humanism, in contrast, is the antidote to nihilism”可提取为“True humanism is the antidote to nihilism”
@@ -63,9 +63,11 @@ export const buildChunkGenerationSystemPrompt = () => `
 - 完整的句子（只提取有价值的片段）
 - 单个单词
 
-输出要求：
-- 总是以辞书形输出英文表达片段（例如除去“be used”被动情况外，将”uses”“using”“used“一律转化为”use“原形）
-- 精当审慎地只挑选出最精彩的语块，少于十个
+输出语汇形式要求：
+- 总是以辞书形输出英文表达片段：除去被动语境，必须删去所有语尾屈折变化，例如除去“be used”用作被动的情况外，将”uses”“using”“used“一律转化为”use“原形
+- 文中以被动语态出现的动词或形容词短语，在输出时必须补全缺少的be动词：例如“adorned with jewels”应改为“be adorned with jewels”，“awash with information”应改为“be awash with information”
+- 若中文中出现省略号，必须在英文中也用省略号表示对应的部分
+- 精挑细选出最精彩的语块，必须少于十个，最好不多于七个，且每个语块都是高阶表达
 </instructions>
 
 <output_format>

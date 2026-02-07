@@ -1,9 +1,8 @@
 'use client'
 
-import { Button } from '@heroui/button'
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal'
 import { useDisclosure } from '@heroui/use-disclosure'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { smartImport } from './actions'
 import { useSetAtom } from 'jotai'
 import { ArrowSquareInIcon, MagicWandIcon } from '@phosphor-icons/react'
@@ -12,17 +11,15 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { editoryItemsAtom } from '@repo/ui/paper/atoms'
+import { FileUpload } from '@repo/ui/file-upload'
+import { Button } from '@heroui/react'
 
 export function ImportButton() {
     const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure()
     const setEditoryItems = useSetAtom(editoryItemsAtom)
-    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [file, setFile] = useState<File | null>(null)
 
-    function handleAIImportClick() {
-        fileInputRef.current?.click()
-    }
-
-    const { execute, isPending, } = useAction(smartImport, {
+    const { execute, isPending } = useAction(smartImport, {
         onSuccess: ({ data }) => {
             if (data) {
                 setEditoryItems(data)
@@ -34,13 +31,11 @@ export function ImportButton() {
         }
     })
 
-    async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0]
+    async function handleAIImportClick() {
         if (!file) return
         if (file.size > MAX_FILE_SIZE) toast.error(`File size exceeds the limit of ${MAX_FILE_SIZE / 1024 / 1024}MB`)
         execute(file)
     }
-
 
     return (
         <>
@@ -53,14 +48,14 @@ export function ImportButton() {
             >
                 AI 导入
             </ProtectedButton>
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop='opaque'>
                 <ModalContent>
                     <ModalHeader className='flex flex-col gap-1'>AI 导入</ModalHeader>
-                    <ModalBody>
+                    <ModalBody className='gap-0'>
                         <p>
                             <b>智能导入</b> PDF 试卷（须含答案），转换为 PouncePen 格式以便使用编辑器进行操作。
                         </p>
-                        <input type='file' ref={fileInputRef} onChange={handleFileChange} className='hidden' accept='.pdf' />
+                        <FileUpload onChange={(files) => { setFile(files[0]) }} disabled={isPending} />
                     </ModalBody>
                     <ModalFooter>
                         <Button startContent={!isPending && <MagicWandIcon size={20} />} color='secondary' onPress={handleAIImportClick} isLoading={isPending}>

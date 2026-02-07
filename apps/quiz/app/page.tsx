@@ -36,6 +36,7 @@ export default function Page() {
 }
 
 async function Content() {
+    'use cache'
     const papers = await getPublicPapers()
     return (<>
         <WorkingPapers />
@@ -48,7 +49,7 @@ async function Content() {
         <Spacer y={1} />
         <h2 className='font-formal text-4xl block'>浏览所有</h2>
         <section className='grid sm:grid-cols-2 gap-3'>
-            {papers.map(paper => (
+            {papers.filter(({ is_pinned }) => !is_pinned).map(paper => (
                 <PaperCard key={paper.id} uid={paper.creator} id={paper.id} title={paper.title} tags={paper.tags} createdAt={moment(paper.created_at).format('ll')} isPinned={false} />
             ))}
         </section>
