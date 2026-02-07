@@ -12,6 +12,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
+import { NuqsAdapter } from 'nuqs/adapters/next'
 
 export interface ProvidersProps {
   children: ReactNode
@@ -26,22 +27,24 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <HeroUIProvider navigate={router.push}>
-          <ThemeProvider {...themeProps}>
-            <JotaiProvider>
-              <Toaster toastOptions={{
-                classNames: {
-                  toast: cn(
-                    'font-ui! pl-5! text-default-900! bg-default-100/80!',
-                    'border-0! shadow-none!',
-                    'backdrop-blur-lg! backdrop-saturate-150!',
-                  )
-                },
-              }}></Toaster>
-              {children}
-            </JotaiProvider>
-          </ThemeProvider>
-        </HeroUIProvider>
+        <NuqsAdapter>
+          <HeroUIProvider navigate={router.push}>
+            <ThemeProvider {...themeProps}>
+              <JotaiProvider>
+                <Toaster toastOptions={{
+                  classNames: {
+                    toast: cn(
+                      'font-ui! pl-5! text-default-900! bg-default-100/80!',
+                      'border-0! shadow-none!',
+                      'backdrop-blur-lg! backdrop-saturate-150!',
+                    )
+                  },
+                }}></Toaster>
+                {children}
+              </JotaiProvider>
+            </ThemeProvider>
+          </HeroUIProvider>
+        </NuqsAdapter>
       </QueryClientProvider>
     </AuthProvider>
   )
