@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { SIGN_IN_URL } from '@repo/env/config'
+import { prefixUrl, SIGN_IN_URL } from '@repo/env/config'
 import env from '@repo/env'
 import { cookiesFactory } from './utils'
 export { type NextRequest } from 'next/server'
@@ -72,8 +72,9 @@ export async function updateSession(
     // --- Logic: Redirect Unauthenticated User from Protected Routes ---
     if (!user && isProtectedRouteChecker(pathname)) {
         const url = request.nextUrl.clone()
+        url.searchParams.set('next', url.href)
+        url.host = new URL(prefixUrl('')).host
         url.pathname = SIGN_IN_URL
-        url.searchParams.set('next', pathname)
 
         const redirectResponse = NextResponse.redirect(url)
 
