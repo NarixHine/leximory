@@ -27,6 +27,9 @@ function QuotaProgress({ quotaPromise }: { quotaPromise: QuotaPromise }) {
             showValueLabel
             label={<div>词点 <span className='font-mono'>{quota}/{max}</span></div>}
             value={quota}
+            classNames={{
+                value: 'font-mono'
+            }}
         />
     )
 }
@@ -41,6 +44,9 @@ function QuotaProgressDetail({ quotaPromise }: { quotaPromise: QuotaPromise }) {
             showValueLabel
             label={<div><span className='font-mono'>{max}</span> 词点已使用 <span className='font-mono'>{quota}</span>（离重置还有：{moment.duration(ttl, 'seconds').locale('zh-cn').humanize()}）</div>}
             value={quota}
+            classNames={{
+                value: 'font-mono'
+            }}
         />
     )
 }

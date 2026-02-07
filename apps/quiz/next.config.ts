@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: true,
     taint: true
   },
-  transpilePackages: ['nuqs'],
 }
 
 export default nextConfig

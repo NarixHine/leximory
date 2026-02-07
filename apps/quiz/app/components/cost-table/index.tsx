@@ -12,25 +12,25 @@ export function CostTable() {
                 <TableColumn className='font-medium'>描述</TableColumn>
             </TableHeader>
             <TableBody>
+                <TableRow key='import'>
+                    <TableCell>智能查询</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.quiz.annotation}</TableCell>
+                    <TableCell>词汇语境化注释</TableCell>
+                </TableRow>
                 <TableRow key='review'>
                     <TableCell className='whitespace-nowrap'>猫谜解惑</TableCell>
                     <TableCell>{ACTION_QUOTA_COST.quiz.ask}</TableCell>
                     <TableCell>解释练习中的题目及答案</TableCell>
                 </TableRow>
-                <TableRow key='import'>
-                    <TableCell>智能查询</TableCell>
-                    <TableCell>{ACTION_QUOTA_COST.wordAnnotation}</TableCell>
-                    <TableCell>让 AI 给出词汇语境化注释</TableCell>
-                </TableRow>
                 <TableRow key='gen-quiz'>
                     <TableCell>生成默写纸</TableCell>
                     <TableCell>{ACTION_QUOTA_COST.quiz.dictation}</TableCell>
-                    <TableCell>根据试卷内容生成中英对照语块整理</TableCell>
+                    <TableCell>根据试卷生成语块整理</TableCell>
                 </TableRow>
                 <TableRow key='review'>
                     <TableCell>错题收录</TableCell>
                     <TableCell>{ACTION_QUOTA_COST.quiz.genNote}</TableCell>
-                    <TableCell>将错题整理成条目收入笔记</TableCell>
+                    <TableCell>将错题整理成条目</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

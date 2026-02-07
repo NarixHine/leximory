@@ -77,6 +77,7 @@ export const ACTION_QUOTA_COST = {
         ask: 1,
         dictation: 1,
         genNote: 1,
+        annotation: 0.5,
     }
 } as const
 

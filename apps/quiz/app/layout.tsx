@@ -5,6 +5,7 @@ import './globals.css'
 import { Providers } from './providers'
 import UserAvatar from '@repo/ui/user'
 import { NavDock } from './components/nav-dock'
+import { CostTable } from './components/cost-table'
 
 export const metadata: Metadata = {
   title: {
@@ -52,7 +53,7 @@ export default function RootLayout({
         <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
           {children}
           <div className='fixed top-3 right-3'>
-            <UserAvatar />
+            <UserAvatar quotaModalChildren={<CostTable />} />
           </div>
           <NavDock />
         </Providers>
