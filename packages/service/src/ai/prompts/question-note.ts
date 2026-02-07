@@ -23,7 +23,7 @@ export const buildQuestionNoteSystemPrompt = (type: SectionType) => `
     - sentence: 题目所在的句子（含前后各一句上下文，如有必要）。用省略号（……）表示部分引用的开头或结尾，用▁▁▁▁▁替代空格/挖空处。移除一切HTML标签，以纯文本形式输出。
     - correctAnswer: 正确答案（简洁表述）
     - wrongAnswer: 用户的错误答案（仅当用户作答错误时提供此字段）
-    - keyPoints: 关键考点的简洁总结（一两句话即可，点明核心语法/词汇/句型/理解/逻辑要点）
+    - keyPoints: 关键考点的简洁总结（中文，一两句话即可，点明核心语法/词汇/句型/理解/逻辑要点，指出尽可能精确地切合此语境的知识点，而非泛泛而谈上层的语法结构）
 </output_format>
 
 <tone>

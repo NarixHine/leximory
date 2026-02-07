@@ -19,7 +19,6 @@ type NoteData = {
 }
 
 export function NotebookList({ initialData }: { initialData: NoteData | undefined }) {
-    const queryClient = useQueryClient()
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
         queryKey: ['all-notes'],
         queryFn: async ({ pageParam }) => {
@@ -40,18 +39,7 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
         },
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            await deleteNoteAction({ id })
-        },
-        onSuccess: () => {
-            startTransition(() => {
-                queryClient.invalidateQueries({ queryKey: ['all-notes'] })
-            })
-        },
-    })
-
-    const allNotes = data.pages.flatMap(page => page?.notes ?? []) ?? []
+    const allNotes = data.pages.flatMap(page => page?.notes ?? [])
 
     if (allNotes.length === 0) {
         return (
@@ -75,16 +63,7 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                             </Chip>
                         </div>
                         <div className='flex items-center gap-2'>
-                            <Button
-                                size='sm'
-                                className='size-5'
-                                variant='light'
-                                isIconOnly
-                                onPress={() => deleteMutation.mutate(id)}
-                                isLoading={deleteMutation.isPending && deleteMutation.variables === id}
-                                isDisabled={deleteMutation.isSuccess}
-                                startContent={deleteMutation.isSuccess ? <CheckCircleIcon weight='duotone' size={16} /> : <TrashIcon weight='duotone' size={16} />}
-                            />
+                            <DeleteButton noteId={id} />
                             <Logo className='size-5 grayscale-75 opacity-80' />
                         </div>
                     </div>
@@ -104,5 +83,30 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
     )
 }
 
-// Keep the old export for backwards compatibility
-export { NotebookList as QuestionNotebookList }
+function DeleteButton({ noteId }: { noteId: number }) {
+    const queryClient = useQueryClient()
+    const deleteMutation = useMutation({
+        mutationKey: ['delete-note', noteId],
+        mutationFn: async (id: number) => {
+            await deleteNoteAction({ id })
+        },
+        onSuccess: () => {
+            startTransition(() => {
+                queryClient.invalidateQueries({ queryKey: ['all-notes'] })
+            })
+        },
+    })
+
+    return (
+        <Button
+            size='sm'
+            className='size-5'
+            variant='light'
+            isIconOnly
+            onPress={() => deleteMutation.mutate(noteId)}
+            isLoading={deleteMutation.isPending && deleteMutation.variables === noteId}
+            isDisabled={deleteMutation.isSuccess}
+            startContent={deleteMutation.isSuccess ? <CheckCircleIcon weight='duotone' size={16} /> : <TrashIcon weight='duotone' size={16} />}
+        />
+    )
+}   
