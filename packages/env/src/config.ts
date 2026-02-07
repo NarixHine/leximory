@@ -72,6 +72,11 @@ export const ACTION_QUOTA_COST = {
         genQuiz: 2,
         ask: 0.25,
         agent: 0.5,
+    },
+    quiz: {
+        ask: 1,
+        dictation: 1,
+        genNote: 1,
     }
 } as const
 

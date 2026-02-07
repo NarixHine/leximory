@@ -9,7 +9,8 @@ import { Chip } from '@heroui/chip'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { Logo } from '@/components/logo'
-import { TrashIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, TrashIcon } from '@phosphor-icons/react'
+import { startTransition } from 'react'
 
 type NoteData = {
     notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null, type: 'question' | 'chunk' }>
@@ -44,7 +45,9 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
             await deleteNoteAction({ id })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['all-notes'] })
+            startTransition(() => {
+                queryClient.invalidateQueries({ queryKey: ['all-notes'] })
+            })
         },
     })
 
@@ -52,10 +55,10 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
 
     if (allNotes.length === 0) {
         return (
-            <div className='col-span-full text-center text-default-400 py-12'>
+            <div className='col-span-full text-center py-12'>
                 <Logo className='mx-auto mb-4 size-20' />
-                <p>还没有收录任何笔记</p>
-                <p className='text-sm mt-1'>做完试卷后点击「收录题目」或在默写纸中保存表达</p>
+                <p className='text-primary'>还没有收录任何笔记</p>
+                <p className='text-sm mt-1 text-default-400'>做完试卷后点击「收录题目」或在默写纸中保存表达</p>
             </div>
         )
     }
@@ -79,7 +82,8 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                                 isIconOnly
                                 onPress={() => deleteMutation.mutate(id)}
                                 isLoading={deleteMutation.isPending && deleteMutation.variables === id}
-                                startContent={<TrashIcon weight='duotone' size={16} />}
+                                isDisabled={deleteMutation.isSuccess}
+                                startContent={deleteMutation.isSuccess ? <CheckCircleIcon weight='duotone' size={16} /> : <TrashIcon weight='duotone' size={16} />}
                             />
                             <Logo className='size-5 grayscale-75 opacity-80' />
                         </div>

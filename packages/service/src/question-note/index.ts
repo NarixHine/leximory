@@ -8,6 +8,7 @@ import { generateQuestionNote } from '../ai'
 import { saveQuestionNote, loadQuestionNotes, deleteQuestionNote, loadAllNotes, deleteNote } from '@repo/supabase/question-note'
 import { Kilpi } from '../kilpi'
 import incrCommentaryQuota from '@repo/user/quota'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 
 const saveQuestionNoteSchema = z.object({
     quizData: QuizDataSchema,
@@ -28,12 +29,12 @@ export const saveQuestionNoteAction = actionClient
     .action(async ({ parsedInput: { quizData, questionNo, userAnswer, correctAnswer, isCorrect, paperId } }) => {
         await Kilpi.authed().authorize().assert()
         const { userId } = await getUserOrThrow()
-        
+
         // Use AI quota for generating the note
-        if (await incrCommentaryQuota(1, userId)) {
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.genNote, userId)) {
             throw new Error('Quota exceeded')
         }
-        
+
         // Generate the question note using AI
         const noteData = await generateQuestionNote({
             quizData,
@@ -42,7 +43,7 @@ export const saveQuestionNoteAction = actionClient
             correctAnswer,
             isCorrect,
         })
-        
+
         // Save to database with creator
         const result = await saveQuestionNote({
             sentence: noteData.sentence,
@@ -52,7 +53,7 @@ export const saveQuestionNoteAction = actionClient
             relatedPaper: paperId,
             creator: userId,
         })
-        
+
         return result.id
     })
 

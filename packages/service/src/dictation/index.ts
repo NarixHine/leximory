@@ -10,6 +10,8 @@ import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/questi
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
 import { DictationContent, DictationContentSchema } from '@repo/schema/chunk-note'
 import { generateChunksForSection } from '../ai'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
+import incrCommentaryQuota from '@repo/user/quota'
 
 /**
  * Gets a dictation for a paper.
@@ -35,6 +37,9 @@ export const generateDictationAction = actionClient
     .action(async ({ parsedInput: { paperId } }) => {
         await Kilpi.authed().authorize().assert()
 
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.dictation)) {
+            throw new Error('You have reached your dictation generation quota limit.')
+        }
         // Try to acquire lock to prevent concurrent generation
         const lockAcquired = await acquireDictationLock({ paperId })
         if (!lockAcquired) {

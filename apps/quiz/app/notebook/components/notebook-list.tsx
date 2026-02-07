@@ -31,6 +31,16 @@ export function NotebookList({ initialData }: { initialData: { words: Array<{ wo
 
     const allWords = data.pages.flatMap(page => page?.words ?? []) ?? []
 
+    if (allWords.length === 0) {
+        return (
+            <div className='col-span-full text-center py-12'>
+                <Logo className='mx-auto mb-4 size-20' />
+                <p className='text-primary'>还没有收录任何生词</p>
+                <p className='text-sm mt-1 text-default-400'>做完试卷后选中词汇点击「Define」按钮进行释义</p>
+            </div>
+        )
+    }
+
     return (
         <>
             {allWords.map(({ word, id, date }) => {

@@ -7,7 +7,7 @@ import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper
 import { getUser, getUserOrThrow } from '@repo/user'
 import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
-import { SECTION_NAME_MAP } from '@repo/env/config'
+import { ACTION_QUOTA_COST, SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
 import { getAskCache } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
@@ -228,7 +228,7 @@ export async function streamExplanationAction({ quizData, questionNo, userAnswer
       return data
     }
   }
-  if (await incrCommentaryQuota(1, subject.userId)) {
+  if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.ask, subject.userId)) {
     throw new Error('Quota exceeded')
   }
 
