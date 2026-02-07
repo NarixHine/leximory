@@ -72,6 +72,7 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
     const { id } = await params
     const { content, answers, title } = await getData({ id: parseInt(id) })
     const questionCount = content.reduce((count, item) => count + applyStrategy(item, (strategy, data) => strategy.getQuestionCount(data)), 0)
+
     return (
         <HydrationBoundary hydrateAtoms={[
             [paperIdAtom, id],
@@ -79,12 +80,15 @@ async function Content({ params }: { params: PaperPageProps['params'] }) {
             <AddWorkingPaper id={parseInt(id)} title={title} />
             <h2 className='text-4xl mb-2 font-formal'>{title}</h2>
             <QuizTabs
-                Paper={!answers && <>
-                    <Paper data={content} />
-                    <SubmitAnswers questionCount={questionCount} />
-                    <MarkForLater />
-                </>}
-                Revise={answers && <RevisePaper quizData={content} answers={answers} />}
+                {...(!!answers ? {
+                    Revise: <RevisePaper quizData={content} answers={answers} />
+                } : {
+                    Paper: <>
+                        <Paper data={content} />
+                        <SubmitAnswers questionCount={questionCount} />
+                        <MarkForLater />
+                    </>
+                })}
                 leaderboard={<Leaderboard paperId={parseInt(id)} />}
                 dictation={<Suspense fallback={<div className='flex justify-center py-8'><Spinner /></div>}>
                     <Dictation paperId={parseInt(id)} />
