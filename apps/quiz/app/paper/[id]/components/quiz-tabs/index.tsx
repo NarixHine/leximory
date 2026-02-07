@@ -16,6 +16,7 @@ type QuizTabsUIProps = {
 
 export function QuizTabsUI({ Paper, Revise, leaderboard, dictation }: QuizTabsUIProps) {
     const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('paper'))
+
     return (
         <Tabs
             selectedKey={tab}

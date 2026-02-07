@@ -48,7 +48,7 @@ export function PaperCard({
             )}
             isPressable
             as={Link}
-            href={`/paper/${id}`}>
+            href={`/paper/${id}?tab=paper`}>
             <CardBody className='flex flex-col items-start pt-4'>
                 {isPinned ? <Spacer y={1} /> : <Skeleton isLoaded={isSuccess} className={cn(!isSuccess && 'opacity-50', 'h-5 rounded-2xl min-w-20 mb-2')}>
                     <div className='flex gap-3 text-default-600 text-lg items-center'>
