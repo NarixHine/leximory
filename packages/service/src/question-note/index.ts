@@ -3,7 +3,7 @@
 import { actionClient } from '../safe-action-client'
 import { z } from '@repo/schema'
 import { QuizDataSchema } from '@repo/schema/paper'
-import { getUserOrThrow } from '@repo/user'
+import { getUser, getUserOrThrow } from '@repo/user'
 import { generateQuestionNote } from '../ai'
 import { saveQuestionNote, loadQuestionNotes, deleteQuestionNote, loadAllNotes, deleteNote } from '@repo/supabase/question-note'
 import { Kilpi } from '../kilpi'
@@ -89,8 +89,11 @@ export const getAllNotesAction = actionClient
         cursor: z.string().optional(),
     }))
     .action(async ({ parsedInput: { cursor } }) => {
-        const { userId } = await getUserOrThrow()
-        return await loadAllNotes({ cursor, creator: userId })
+        const user = await getUser()
+        if (!user) {
+            return { notes: [], cursor: '0', more: false }
+        }
+        return await loadAllNotes({ cursor, creator: user.userId })
     })
 
 /**

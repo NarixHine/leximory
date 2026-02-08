@@ -1,7 +1,7 @@
 'use server'
 import { shadowSaveWord, loadWords } from '@repo/supabase/word'
 import { getShadowLib } from '@repo/supabase/library'
-import { getUserOrThrow } from '@repo/user'
+import { getUser, getUserOrThrow } from '@repo/user'
 import { extractSaveForm } from '@repo/utils'
 import { actionClient } from '../safe-action-client'
 import { z } from '@repo/schema'
@@ -31,7 +31,10 @@ export const getRecentWordsAction = actionClient
         cursor: z.string().optional(),
     }))
     .action(async ({ parsedInput: { cursor } }) => {
-        const { userId } = await getUserOrThrow()
-        const shadowLib = await getShadowLib({ owner: userId, lang: 'en' })
+        const user = await getUser()
+        if (!user) {
+            return { words: [], cursor: '0', more: false }
+        }
+        const shadowLib = await getShadowLib({ owner: user.userId, lang: 'en' })
         return await loadWords({ lib: shadowLib.id, cursor })
     })
