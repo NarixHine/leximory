@@ -6,8 +6,6 @@ import { getUserProfileAction } from '@repo/service/user'
 import Link from 'next/link'
 import { cn } from '@heroui/theme'
 import { Spacer } from '@heroui/spacer'
-import { getPaperSubmissionAction } from '@repo/service/paper'
-import { CheckCircleIcon } from '@phosphor-icons/react'
 
 export function PaperCard({
     id,
@@ -30,13 +28,7 @@ export function PaperCard({
             const { data } = await getUserProfileAction({ id: uid })
             return data
         },
-    })
-    const { data: hasCompleted } = useQuery({
-        queryKey: ['paperSubmission', id],
-        queryFn: async () => {
-            const { data } = await getPaperSubmissionAction({ paperId: id })
-            return !!(data?.id)
-        },
+        staleTime: Infinity,
     })
 
     return (
@@ -68,7 +60,6 @@ export function PaperCard({
                             {tag}
                         </span>
                     ))}
-                    {!isPinned && hasCompleted && <CheckCircleIcon className='size-5' />}
                 </div>
             </CardFooter>
         </Card>
