@@ -1,4 +1,3 @@
-import { ReactNode } from 'react'
 import { Text, View } from 'react-native'
 import { QuizData, QuestionStrategy } from '@repo/schema/paper'
 import { extractCodeContent } from '../../shared/utils'

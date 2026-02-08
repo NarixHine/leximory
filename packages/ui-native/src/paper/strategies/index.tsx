@@ -70,12 +70,7 @@ const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrateg
     ),
     getDefaultValue: () => ({
         id: nanoid(8),
-        questions: [{
-            transcript: 'W: Aren't you cold? Why aren't you wearing a coat?\nM: I overslept this morning, so I ran out of the house without listening to the forecast.',
-            q: 'What does the man mean?',
-            a: ['He didn't know it would be cold.', 'He misunderstood the weather report.', 'He didn't have time to look for the coat.', 'He forgot to bring the coat.'],
-            correct: 0,
-        }],
+        questions: [],
         type: 'listening',
     }),
 })

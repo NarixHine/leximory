@@ -1,8 +1,17 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
-  "compilerOptions": {
-    "jsx": "react-native"
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+    "extends": "@repo/typescript-config/base.json",
+    "include": [
+        "src"
+    ],
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist",
+        "noEmit": false,
+        "jsx": "react-jsx",
+        "lib": [
+            "ESNext",
+            "DOM",
+            "DOM.Iterable"
+        ]
+    }
 }

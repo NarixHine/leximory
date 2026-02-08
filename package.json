@@ -4,7 +4,7 @@
 	"private": true,
 	"packageManager": "pnpm@10.8.1",
 	"scripts": {
-		"dev": "turbo dev --concurrency=15"
+		"dev": "turbo dev --concurrency=20"
 	},
 	"devDependencies": {
 		"turbo": "^2.7.3"
