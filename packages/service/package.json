@@ -15,7 +15,8 @@
     "./annotate": "./src/annotate/index.ts",
     "./word": "./src/word/index.ts",
     "./question-note": "./src/question-note/index.ts",
-    "./dictation": "./src/dictation/index.ts"
+    "./dictation": "./src/dictation/index.ts",
+    "./trpc": "./src/trpc/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -23,18 +24,19 @@
     "typescript": "latest"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "3.0.10",
     "@kilpi/core": "^1.1.3",
     "@kilpi/react-client": "^1.0.6",
     "@kilpi/react-server": "^1.0.4",
-    "@repo/supabase": "workspace:^",
-    "@repo/user": "workspace:^",
-    "@repo/schema": "workspace:^",
     "@repo/env": "workspace:^",
     "@repo/kv": "workspace:^",
+    "@repo/schema": "workspace:^",
+    "@repo/supabase": "workspace:^",
+    "@repo/user": "workspace:^",
     "@repo/utils": "workspace:^",
-    "next-safe-action": "8.0.10",
+    "@trpc/server": "^11",
     "ai": "^6.0.26",
-    "@ai-sdk/gateway": "3.0.10",
+    "next-safe-action": "8.0.10",
     "workflow": "4.1.0-beta.52"
   },
   "peerDependencies": {
