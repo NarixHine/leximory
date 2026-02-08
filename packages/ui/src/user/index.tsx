@@ -11,7 +11,7 @@ export async function CurrentUserAvatar({ quotaModalChildren }: { quotaModalChil
     const { image } = user ?? {}
     return <AvatarDropdown
         quotaModalChildren={quotaModalChildren}
-        quotaPromise={getCommentaryQuota()}
+        quotaPromise={user ? getCommentaryQuota() : undefined}
         isLoggedIn={!!user}
         trigger={<Button
             variant={'light'}

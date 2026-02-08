@@ -62,7 +62,7 @@ function QuotaFallback() {
     )
 }
 
-export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalChildren }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise, quotaModalChildren?: React.ReactNode }) {
+export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalChildren }: { trigger: React.ReactNode, isLoggedIn: boolean, quotaPromise: QuotaPromise | undefined, quotaModalChildren?: React.ReactNode }) {
     const router = useRouter()
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const handleLogin = () => {
@@ -85,7 +85,7 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalCh
                         <DropdownSection showDivider title='本月额度'>
                             <DropdownItem key='quota' onPress={onOpen}>
                                 <Suspense fallback={<QuotaFallback />}>
-                                    <QuotaProgress quotaPromise={quotaPromise} />
+                                    {quotaPromise ? <QuotaProgress quotaPromise={quotaPromise} /> : null}
                                 </Suspense>
                             </DropdownItem>
                         </DropdownSection>
@@ -106,7 +106,7 @@ export function AvatarDropdown({ trigger, isLoggedIn, quotaPromise, quotaModalCh
                             <ModalHeader className='flex flex-col gap-1'>词点消耗详情</ModalHeader>
                             <ModalBody>
                                 <Suspense fallback={<QuotaFallback />}>
-                                    <QuotaProgressDetail quotaPromise={quotaPromise} />
+                                    {quotaPromise ? <QuotaProgressDetail quotaPromise={quotaPromise} /> : null}
                                 </Suspense>
                                 {quotaModalChildren}
                             </ModalBody>
