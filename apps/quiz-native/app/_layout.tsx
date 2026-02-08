@@ -14,8 +14,6 @@ const heroUIConfig: HeroUINativeConfig = {
     maxFontSizeMultiplier: 1.5,
   },
   toast: {
-    placement: 'top',
-    variant: 'default',
     maxVisibleToasts: 3,
   },
 }
@@ -25,7 +23,7 @@ export default function RootLayout() {
   const [trpcClient] = useState(() => trpc.createClient(trpcConfig))
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <JotaiProvider>
