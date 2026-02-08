@@ -1,4 +1,4 @@
-import '../../global.css'
+import '../global.css'
 import { HeroUINativeProvider } from 'heroui-native'
 import type { HeroUINativeConfig } from 'heroui-native'
 import { Stack } from 'expo-router'
