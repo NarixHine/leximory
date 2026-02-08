@@ -10,6 +10,7 @@
     "./auth": "./src/auth/index.tsx",
     "./protected-button": "./src/protected-button/index.tsx",
     "./utils": "./src/utils/index.ts",
+    "./hooks": "./src/utils/hooks.ts",
     "./shiny-text": "./src/shiny-text/index.tsx",
     "./paper": "./src/paper/index.tsx",
     "./paper/strategies": "./src/paper/generators/strategies.tsx",
