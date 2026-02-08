@@ -12,6 +12,7 @@
             "ESNext",
             "DOM",
             "DOM.Iterable"
-        ]
+        ],
+        "types": ["react", "react-native"]
     }
 }
