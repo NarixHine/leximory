@@ -1,0 +1,33 @@
+{
+  "name": "@repo/ui-native",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./paper": "./src/paper/index.tsx",
+    "./paper/atoms": "./src/paper/atoms.ts",
+    "./paper/utils": "./src/paper/utils.ts",
+    "./shared": "./src/shared/index.ts"
+  },
+  "scripts": {
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@repo/schema": "workspace:^",
+    "@repo/utils": "workspace:^",
+    "fast-shuffle": "^6.1.1",
+    "jotai": "^2.16.2",
+    "jotai-family": "^1.0.1",
+    "nanoid": "^5.1.6",
+    "rand-seed": "^3.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:^",
+    "@types/react": "19.2.7",
+    "typescript": "latest"
+  }
+}
