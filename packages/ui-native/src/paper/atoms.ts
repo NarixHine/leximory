@@ -47,11 +47,12 @@ export const setAnswerAtom = atom(
   null,
   (get, set, { sectionId, localQuestionNo, option }: { sectionId: string, localQuestionNo: number, option: string | null }) => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
-    const current = get(answersAtomFamily(paperId))
+    const current = get(answersAtomFamily(paperId)) as SectionAnswers
+    const currentSection = current[sectionId]
     set(answersAtomFamily(paperId), {
       ...current,
       [sectionId]: {
-        ...(current[sectionId] || {}),
+        ...(currentSection || {}),
         [localQuestionNo]: option
       }
     })
@@ -77,7 +78,7 @@ export const addMarkedItemAtom = atom(
   null,
   (get, set, { text }: { text: string }) => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
-    const current = get(markedItemsAtomFamily(paperId))
+    const current = get(markedItemsAtomFamily(paperId)) as MarkedItem[]
     const newItem: MarkedItem = {
       id: nanoid(),
       text,
@@ -91,7 +92,7 @@ export const removeMarkedItemAtom = atom(
   null,
   (get, set, { id }: { id: string }) => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
-    const current = get(markedItemsAtomFamily(paperId))
+    const current = get(markedItemsAtomFamily(paperId)) as MarkedItem[]
     set(markedItemsAtomFamily(paperId), current.filter(item => item.id !== id))
   }
 )
