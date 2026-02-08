@@ -12,7 +12,7 @@ export function CostTable() {
                 <TableColumn className='font-medium'>描述</TableColumn>
             </TableHeader>
             <TableBody>
-                <TableRow key='review'>
+                <TableRow key='agent'>
                     <TableCell className='whitespace-nowrap'>AI Agent</TableCell>
                     <TableCell>{ACTION_QUOTA_COST.pouncepen.agent}</TableCell>
                     <TableCell>全自动高质量出题</TableCell>
