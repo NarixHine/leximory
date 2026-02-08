@@ -24,8 +24,8 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
           <JotaiProvider>
             <HeroUINativeProvider config={heroUIConfig}>
               <Stack>
@@ -34,8 +34,8 @@ export default function RootLayout() {
               </Stack>
             </HeroUINativeProvider>
           </JotaiProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
+        </trpc.Provider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   )
 }
