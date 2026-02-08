@@ -15,7 +15,7 @@ export default function Page() {
         <Main>
             <div className='mb-6 mt-4 grid grid-cols-[auto_1fr] gap-x-1'>
                 <NotebookIcon size={60} weight='thin' className='text-default-foreground row-span-2' />
-                <h1 className='text-2xl font-bold'>问题集与语块集</h1>
+                <h1 className='text-2xl font-semibold'>问题集与语块集</h1>
                 <p className='text-default-500'>收录的练习问题及语块条目</p>
             </div>
             <section className='grid grid-cols-1 md:grid-cols-2 gap-5'>

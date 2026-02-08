@@ -9,8 +9,9 @@ import { Chip } from '@heroui/chip'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useIntersectionObserver } from 'usehooks-ts'
 import { Logo } from '@/components/logo'
-import { CheckCircleIcon, TrashIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, LinkIcon, TrashIcon } from '@phosphor-icons/react'
 import { startTransition } from 'react'
+import Link from 'next/link'
 
 type NoteData = {
     notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null, type: 'question' | 'chunk' }>
@@ -53,7 +54,7 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
 
     return (
         <>
-            {allNotes.map(({ content, id, date, type }) => (
+            {allNotes.map(({ content, id, date, type, relatedPaper }) => (
                 <div key={id} className='rounded-sm border border-divider'>
                     <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
                         <div className='flex items-center gap-2'>
@@ -62,9 +63,18 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                                 {type === 'question' ? '题目' : '表达'}
                             </Chip>
                         </div>
-                        <div className='flex items-center gap-2'>
+                        <div className='flex items-center'>
+                            {relatedPaper && <Button
+                                size='sm'
+                                className='size-5'
+                                variant='light'
+                                isIconOnly
+                                as={Link}
+                                href={`/paper/${relatedPaper}`}
+                                startContent={<LinkIcon size={16} />}
+                            />}
                             <DeleteButton noteId={id} />
-                            <Logo className='size-5 grayscale-75 opacity-80' />
+                            <Logo className='size-5 grayscale-75 opacity-80 ml-2' />
                         </div>
                     </div>
                     {type === 'question' ? (
@@ -106,7 +116,7 @@ function DeleteButton({ noteId }: { noteId: number }) {
             onPress={() => deleteMutation.mutate(noteId)}
             isLoading={deleteMutation.isPending && deleteMutation.variables === noteId}
             isDisabled={deleteMutation.isSuccess}
-            startContent={deleteMutation.isSuccess ? <CheckCircleIcon weight='duotone' size={16} /> : <TrashIcon weight='duotone' size={16} />}
+            startContent={deleteMutation.isSuccess ? <CheckCircleIcon size={16} /> : <TrashIcon size={16} />}
         />
     )
 }   

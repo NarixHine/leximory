@@ -25,7 +25,7 @@ export function ChunkNoteCard({ content, className, cardBodyClassName }: ChunkNo
 
     return (
         <Card fullWidth radius='sm' shadow='none' className={className}>
-            <CardBody className={cn('px-5 py-3 leading-snug gap-3', cardBodyClassName)}>
+            <CardBody className={cn('px-5 py-3 leading-snug gap-2', cardBodyClassName)}>
                 <p className='text-primary text-2xl italic font-medium'>{english}</p>
                 <p className='text-default-700'>{chinese}</p>
             </CardBody>

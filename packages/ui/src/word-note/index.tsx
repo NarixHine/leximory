@@ -51,7 +51,7 @@ function Save({ portions }: { portions: string[] }) {
         <Button
             color='secondary'
             isLoading={isPending}
-            startContent={<BookmarkIcon weight='duotone' />}
+            startContent={<BookmarkIcon />}
             isDisabled={isSuccess}
             onPress={() => {
                 mutate()
