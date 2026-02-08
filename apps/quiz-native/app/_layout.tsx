@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { trpc, trpcConfig } from '@/lib/trpc'
 import { useState } from 'react'
+import { Provider as JotaiProvider } from 'jotai'
 
 const heroUIConfig: HeroUINativeConfig = {
   textProps: {
@@ -27,12 +28,14 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <HeroUINativeProvider config={heroUIConfig}>
-            <Stack>
-              <Stack.Screen name="index" options={{ title: '猫谜' }} />
-              <Stack.Screen name="paper/[id]" options={{ title: 'Paper' }} />
-            </Stack>
-          </HeroUINativeProvider>
+          <JotaiProvider>
+            <HeroUINativeProvider config={heroUIConfig}>
+              <Stack>
+                <Stack.Screen name="index" options={{ title: '猫谜' }} />
+                <Stack.Screen name="paper/[id]" options={{ title: 'Paper' }} />
+              </Stack>
+            </HeroUINativeProvider>
+          </JotaiProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
