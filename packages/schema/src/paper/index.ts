@@ -44,6 +44,7 @@ export interface StrategyRenderProps<T extends QuizData = QuizData, O = unknown>
     options: O
     correctAnswers: string[]
     isCorrect: (userAnswer: string, correctAnswer: string) => boolean
+    quizData: QuizData[]
 }
 
 /**
