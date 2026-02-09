@@ -4,6 +4,24 @@ import { Link } from 'expo-router'
 import moment from 'moment'
 
 export default function HomeScreen() {
+
+  return (
+    <ScrollView className="flex-1 bg-white">
+      <View className="p-6">
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-4xl font-bold mb-2">猫谜</Text>
+          <Text className="text-sm text-gray-600">陪你一起解开英语之谜</Text>
+        </View>
+
+        {/* Content */}
+        <Content />
+      </View>
+    </ScrollView>
+  )
+}
+
+function Content() {
   const { data: papers, isLoading } = trpc.paper.getPublic.useQuery()
 
   if (isLoading) {
@@ -17,35 +35,25 @@ export default function HomeScreen() {
   const pinnedPapers = papers?.filter(p => p.is_pinned) || []
   const otherPapers = papers?.filter(p => !p.is_pinned) || []
 
-  return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="p-6">
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-4xl font-bold mb-2">猫谜</Text>
-          <Text className="text-sm text-gray-600">陪你一起解开英语之谜</Text>
-        </View>
-
-        {/* Pinned Papers Section */}
-        {pinnedPapers.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-3xl font-bold mb-3">从这些练习开始</Text>
-            {pinnedPapers.map((paper) => (
-              <PaperCard key={paper.id} paper={paper} />
-            ))}
-          </View>
-        )}
-
-        {/* All Papers Section */}
-        <View>
-          <Text className="text-3xl font-bold mb-3">浏览所有</Text>
-          {otherPapers.map((paper) => (
-            <PaperCard key={paper.id} paper={paper} />
-          ))}
-        </View>
+  return <>
+    {/* Pinned Papers Section */}
+    {pinnedPapers.length > 0 && (
+      <View className="mb-6">
+        <Text className="text-3xl font-bold mb-3">从这些练习开始</Text>
+        {pinnedPapers.map((paper) => (
+          <PaperCard key={paper.id} paper={paper} />
+        ))}
       </View>
-    </ScrollView>
-  )
+    )}
+
+    {/* All Papers Section */}
+    <View>
+      <Text className="text-3xl font-bold mb-3">浏览所有</Text>
+      {otherPapers.map((paper) => (
+        <PaperCard key={paper.id} paper={paper} />
+      ))}
+    </View>
+  </>
 }
 
 function PaperCard({ paper }: { paper: any }) {
