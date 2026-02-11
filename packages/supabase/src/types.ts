@@ -235,9 +235,9 @@ export type Database = {
           content: Json
           created_at: string
           creator: string
-          dictation: Json | null
           id: number
           is_pinned: boolean
+          passcode: string | null
           public: boolean
           tags: string[]
           title: string
@@ -246,9 +246,9 @@ export type Database = {
           content?: Json
           created_at?: string
           creator: string
-          dictation?: Json | null
           id?: number
           is_pinned?: boolean
+          passcode?: string | null
           public?: boolean
           tags?: string[]
           title?: string
@@ -257,9 +257,9 @@ export type Database = {
           content?: Json
           created_at?: string
           creator?: string
-          dictation?: Json | null
           id?: number
           is_pinned?: boolean
+          passcode?: string | null
           public?: boolean
           tags?: string[]
           title?: string

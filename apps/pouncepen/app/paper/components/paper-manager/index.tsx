@@ -234,7 +234,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
             <Card
               key={paper.id}
               shadow='none'
-              className='border border-content2/30 backdrop-blur-sm'
+              className='border border-content2 bg-default-50'
               isPressable
               as={'div'}
               onPress={() => {
