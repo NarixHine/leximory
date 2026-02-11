@@ -29,15 +29,17 @@ function sanitizeAnswers(answers: SectionAnswers): SectionAnswers {
 export const submitAnswersAction = actionClient
     .inputSchema(z.object({
         answers: SectionAnswersSchema,
-        id: z.number()
+        id: z.number(),
+        passcode: z.string().optional(),
     }))
-    .action(async ({ parsedInput: { answers, id } }) => {
+    .action(async ({ parsedInput: { answers, id, passcode } }) => {
         const { content } = await getPaper({ id })
         const sanitizedAnswers = sanitizeAnswers(answers)
         await submitPaperAction({
             paperId: id,
             score: computeTotalScore(content, sanitizedAnswers),
             perfectScore: computePerfectScore(content),
-            answers: sanitizedAnswers
+            answers: sanitizedAnswers,
+            passcode,
         })
     })

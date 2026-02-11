@@ -13,16 +13,21 @@ import {
   PopoverContent,
   PopoverTrigger,
   Switch,
+  Tooltip,
 } from '@heroui/react'
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon, WarningOctagonIcon } from '@phosphor-icons/react'
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon, WarningOctagonIcon, LinkIcon, ShareNetworkIcon } from '@phosphor-icons/react'
 import {
   createPaperAction,
   updatePaperAction,
   deletePaperAction,
   togglePaperVisibilityAction,
+  togglePaperPasscodeAction,
 } from '@repo/service/paper'
 import { PaperOverview } from '@repo/supabase/paper'
 import { useAction } from '@repo/service'
+import { QUIZ_HOSTNAME, IS_PROD } from '@repo/env/config'
+import { useCopyToClipboard } from 'usehooks-ts'
+import { toast } from 'sonner'
 
 export function PaperManagerHeader({ isCreating, handleCreate }: { isCreating?: boolean, handleCreate?: () => void }) {
   const router = useRouter()
@@ -92,6 +97,19 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
       setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
     },
   })
+
+  const { execute: executeTogglePasscode, isPending: isTogglingPasscode } = useAction(togglePaperPasscodeAction, {
+    onSuccess: (result) => {
+      setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
+    },
+  })
+
+  const [, copy] = useCopyToClipboard()
+
+  const getShareUrl = (paper: PaperOverview) => {
+    const protocol = IS_PROD ? 'https' : 'http'
+    return `${protocol}://${QUIZ_HOSTNAME}/paper/${paper.id}?passcode=${paper.passcode}`
+  }
 
   const resetForm = () => {
     setFormData({
@@ -284,6 +302,37 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                             <EyeIcon size={16} />
                           )}
                         </Button>
+                        {!paper.public && (
+                          paper.passcode ? (
+                            <Tooltip content='复制分享链接'>
+                              <Button
+                                isIconOnly
+                                variant='light'
+                                size='sm'
+                                color='secondary'
+                                onPress={async () => {
+                                  await copy(getShareUrl(paper))
+                                  toast.success('分享链接已复制')
+                                }}
+                              >
+                                <ShareNetworkIcon size={16} />
+                              </Button>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip content='开启学生访问'>
+                              <Button
+                                isIconOnly
+                                variant='light'
+                                size='sm'
+                                color='default'
+                                onPress={() => executeTogglePasscode({ id: paper.id })}
+                                isDisabled={isTogglingPasscode}
+                              >
+                                <LinkIcon size={16} />
+                              </Button>
+                            </Tooltip>
+                          )
+                        )}
                         <Button
                           isIconOnly
                           variant='light'

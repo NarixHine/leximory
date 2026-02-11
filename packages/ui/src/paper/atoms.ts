@@ -10,6 +10,8 @@ export { highlightsAtom } from './blank/atoms'
 
 export const paperIdAtom = atom<string | null>(null)
 
+export const passcodeAtom = atom<string | null>(null)
+
 export const viewModeAtom = atom<'normal' | 'revise'>('normal')
 
 export const DEFAULT_PAPER_ID = 'DEFAULT-PAPER' as const
