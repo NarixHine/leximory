@@ -140,7 +140,7 @@ export async function setPaperPasscode({ id, passcode }: { id: number; passcode:
     .from('papers')
     .update({ passcode })
     .eq('id', id)
-    .select()
+    .select('id, public, title, tags, created_at, passcode')
     .single()
 
   if (error) throw error
