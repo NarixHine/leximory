@@ -3,6 +3,7 @@ import { createKilpi, Grant, Deny } from '@kilpi/core'
 import { getUser } from '@repo/user'
 import type { Tables } from '@repo/supabase/types'
 import { ReactServerPlugin } from '@kilpi/react-server'
+import { unauthorized } from 'next/navigation'
 
 type Paper = Tables<'papers'>
 type PaperWithPasscode = Paper & { providedPasscode?: string }
@@ -96,7 +97,7 @@ export const Kilpi = createKilpi({
     },
   },
 
-  onUnauthorizedAssert(decision) {
-    throw new Error(`Unauthorized: ${decision.message}`)
+  onUnauthorizedAssert() {
+    unauthorized()
   }
 })
