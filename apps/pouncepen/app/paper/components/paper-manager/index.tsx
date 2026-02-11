@@ -297,7 +297,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                       </Chip>
                       {paper.tags?.slice(0, 3).map((tag, idx) => (
                         <Chip
-                          key={idx}
+                          key={`${tag}-${idx}`}
                           size='sm'
                           variant='flat'
                           className='bg-primary/10 text-primary border-primary/20'
