@@ -19,7 +19,6 @@ import Dictation from './components/dictation'
 import { Define } from '@repo/ui/define'
 import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
-import { getUser } from '@repo/user'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
 
