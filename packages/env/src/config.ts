@@ -15,6 +15,7 @@ export const ALLOWED_IMAGE_REMOTE_PATTERNS = [
 ] as const
 
 export const SIGN_IN_URL = env.NEXT_PUBLIC_SIGN_IN_URL! as string
+export const QUIZ_HOSTNAME = IS_PROD ? 'quiz.leximory.com' : 'localhost:3002'
 export const MARKETPLACE_PAGE_SIZE = 9 as const
 
 export const EXAMPLE_SHARED_LIB = {
