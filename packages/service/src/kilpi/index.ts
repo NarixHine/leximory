@@ -5,8 +5,13 @@ import type { Tables } from '@repo/supabase/types'
 import { ReactServerPlugin } from '@kilpi/react-server'
 
 type Paper = Tables<'papers'>
+type PaperWithPasscode = Paper & { providedPasscode?: string }
 
 type Library = Tables<'libraries'>
+
+function hasValidPasscode(paper: PaperWithPasscode): boolean {
+  return !!paper.passcode && paper.providedPasscode === paper.passcode
+}
 
 export const Kilpi = createKilpi({
   plugins: [ReactServerPlugin()],
@@ -23,11 +28,12 @@ export const Kilpi = createKilpi({
     },
 
     papers: {
-      read(subject, paper: Paper) {
+      read(subject, paper: PaperWithPasscode) {
         if (paper.public) return Grant(subject)
 
         if (!subject) return Deny({ message: 'Not authenticated' })
         if (subject.userId === paper.creator) return Grant(subject)
+        if (hasValidPasscode(paper)) return Grant(subject)
 
         return Deny({ message: 'Not authorized to read this paper' })
       },
@@ -61,17 +67,19 @@ export const Kilpi = createKilpi({
         return Grant(subject)
       },
 
-      submit(subject, paper: Paper) {
+      submit(subject, paper: PaperWithPasscode) {
         if (!subject) return Deny({ message: 'Not authenticated' })
         if (paper.public) return Grant(subject)
         if (subject.userId === paper.creator) return Grant(subject)
+        if (hasValidPasscode(paper)) return Grant(subject)
         return Deny({ message: 'Not authorized to submit this paper' })
       },
 
-      readSubmissions(subject, paper: Paper) {
+      readSubmissions(subject, paper: PaperWithPasscode) {
         if (!subject) return Deny({ message: 'Not authenticated' })
         if (paper.public) return Grant(subject)
         if (subject.userId === paper.creator) return Grant(subject)
+        if (hasValidPasscode(paper)) return Grant(subject)
         return Deny({ message: 'Not authorized to read submissions of this paper' })
       },
     },
