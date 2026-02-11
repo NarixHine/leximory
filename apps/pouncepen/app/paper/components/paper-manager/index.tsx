@@ -25,7 +25,7 @@ import {
 } from '@repo/service/paper'
 import { PaperOverview } from '@repo/supabase/paper'
 import { useAction } from '@repo/service'
-import { QUIZ_HOSTNAME, IS_PROD } from '@repo/env/config'
+import { QUIZ_HOSTNAME } from '@repo/env/config'
 import { useCopyToClipboard } from 'usehooks-ts'
 import { toast } from 'sonner'
 
@@ -107,8 +107,8 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
   const [, copy] = useCopyToClipboard()
 
   const getShareUrl = (paper: PaperOverview) => {
-    const protocol = IS_PROD ? 'https' : 'http'
-    return `${protocol}://${QUIZ_HOSTNAME}/paper/${paper.id}?passcode=${paper.passcode}`
+    const protocol = window.location.protocol
+    return `${protocol}//${QUIZ_HOSTNAME}/paper/${paper.id}?passcode=${paper.passcode}`
   }
 
   const resetForm = () => {
@@ -271,9 +271,9 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                       >
                         {paper.public ? '公开' : '私有'}
                       </Chip>
-                      {paper.tags?.slice(0, 3).map((tag) => (
+                      {paper.tags?.slice(0, 3).map((tag, idx) => (
                         <Chip
-                          key={tag}
+                          key={idx}
                           size='sm'
                           variant='flat'
                           className='bg-primary/10 text-primary border-primary/20'

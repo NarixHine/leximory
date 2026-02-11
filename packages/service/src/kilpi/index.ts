@@ -31,8 +31,8 @@ export const Kilpi = createKilpi({
       read(subject, paper: PaperWithPasscode) {
         if (paper.public) return Grant(subject)
 
-        if (!subject) return Deny({ message: 'Not authenticated' })
-        if (subject.userId === paper.creator) return Grant(subject)
+        if (subject && subject.userId === paper.creator) return Grant(subject)
+
         if (hasValidPasscode(paper)) return Grant(subject)
 
         return Deny({ message: 'Not authorized to read this paper' })
