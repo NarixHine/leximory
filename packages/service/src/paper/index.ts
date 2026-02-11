@@ -48,7 +48,6 @@ const deletePaperSchema = z.object({
 
 const getPaperSubmissionSchema = z.object({
   paperId: z.number(),
-  passcode: z.string().optional(),
 })
 
 const submitPaperSchema = z.object({
@@ -215,13 +214,19 @@ export const deletePaperAction = actionClient
  */
 export const getPaperSubmissionAction = actionClient
   .inputSchema(getPaperSubmissionSchema)
-  .action(async ({ parsedInput: { paperId, passcode } }) => {
-    const user = await getUser()
-    if (!user) {
-      return null
+  .action(async ({ parsedInput: { paperId } }) => {
+    const decision = await Kilpi.authed().authorize()
+    if (decision.granted) {
+      const submission = await getPaperSubmission({ paperId, userId: decision.subject.userId })
+      return {
+        submission
+      }
     }
-    await Kilpi.authed().authorize().assert()
-    return getPaperSubmission({ paperId, userId: user.userId })
+    else {
+      return {
+        submission: null
+      }
+    }
   })
 
 /**

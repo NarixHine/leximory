@@ -41,21 +41,25 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
 }
 
 async function getData({ id, passcode }: { id: number, passcode?: string }) {
-    const paper = await getPaper({ id })
+    const [{ data }, paper] = await Promise.all([
+        getPaperSubmissionAction({ paperId: id }),
+        (async () => {
+            const paper = await getPaper({ id })
+            await Kilpi.papers.read({ ...paper, providedPasscode: passcode }).authorize().assert()
+            return paper
+        })()
+    ])
+    const submission = data?.submission
 
-    await Kilpi.papers.read({ ...paper, providedPasscode: passcode }).authorize().assert()
-
-    if (await getUser()) {
-        const { data: submission } = await getPaperSubmissionAction({ paperId: id, passcode })
-        if (!submission) // only taint when the user hasn't submitted yet
-            taintObjectReference('Do not pass raw paper data to the client', paper.content)
+    if (submission) {
         return {
             content: paper.content,
             title: paper.title,
-            answers: submission?.answers
+            answers: submission.answers
         }
     }
     else {
+        taintObjectReference('Do not pass raw paper data to the client', paper.content)
         return {
             content: paper.content,
             title: paper.title,

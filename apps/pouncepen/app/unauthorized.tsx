@@ -1,3 +1,5 @@
+'use client'
+
 import Hero from '@/components/ui/hero'
 import { Button } from '@heroui/button'
 import { SignInIcon } from '@phosphor-icons/react/ssr'
