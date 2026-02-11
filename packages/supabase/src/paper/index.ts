@@ -52,7 +52,7 @@ export async function getPaper({ id }: { id: number }) {
 export async function getPapersByCreator({ creator }: { creator: string }) {
   const { data: papers, error } = await supabase
     .from('papers')
-    .select('id, public, title, tags, created_at')
+    .select('id, public, title, tags, created_at, passcode')
     .eq('creator', creator)
     .order('created_at', { ascending: false })
 
@@ -121,6 +121,26 @@ export async function togglePaperVisibility({ id }: { id: number }) {
     .update({ public: newVisibility })
     .eq('id', id)
     .select()
+    .single()
+
+  if (error) throw error
+  return paper
+}
+
+/**
+ * Sets or clears the passcode of a paper.
+ * @param props - The parameters object
+ * @param props.id - The paper ID
+ * @param props.passcode - The passcode to set, or null to clear
+ * @returns The updated paper record
+ * @throws Error if the operation fails
+ */
+export async function setPaperPasscode({ id, passcode }: { id: number; passcode: string | null }) {
+  const { data: paper, error } = await supabase
+    .from('papers')
+    .update({ passcode })
+    .eq('id', id)
+    .select('id, public, title, tags, created_at, passcode')
     .single()
 
   if (error) throw error

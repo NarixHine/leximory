@@ -14,15 +14,23 @@ import {
   PopoverTrigger,
   Switch,
 } from '@heroui/react'
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon, WarningOctagonIcon } from '@phosphor-icons/react'
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal'
+import { useDisclosure } from '@heroui/use-disclosure'
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, FileTextIcon, WarningOctagonIcon, LinkIcon, ShareNetworkIcon, ArrowsClockwiseIcon, XCircleIcon, CopyIcon } from '@phosphor-icons/react'
 import {
   createPaperAction,
   updatePaperAction,
   deletePaperAction,
   togglePaperVisibilityAction,
+  generatePaperPasscodeAction,
+  revokePaperPasscodeAction,
+  rotatePaperPasscodeAction,
 } from '@repo/service/paper'
 import { PaperOverview } from '@repo/supabase/paper'
 import { useAction } from '@repo/service'
+import { QUIZ_HOSTNAME } from '@repo/env/config'
+import { useCopyToClipboard } from 'usehooks-ts'
+import { toast } from 'sonner'
 
 export function PaperManagerHeader({ isCreating, handleCreate }: { isCreating?: boolean, handleCreate?: () => void }) {
   const router = useRouter()
@@ -92,6 +100,40 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
       setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
     },
   })
+
+  const { execute: executeGeneratePasscode, isPending: isGeneratingPasscode } = useAction(generatePaperPasscodeAction, {
+    onSuccess: (result) => {
+      setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
+      setSharePaper(result.data)
+    },
+  })
+
+  const { execute: executeRevokePasscode, isPending: isRevokingPasscode } = useAction(revokePaperPasscodeAction, {
+    onSuccess: (result) => {
+      setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
+      setSharePaper(null)
+      shareModal.onClose()
+      toast.success('私有链接已失效')
+    },
+  })
+
+  const { execute: executeRotatePasscode, isPending: isRotatingPasscode } = useAction(rotatePaperPasscodeAction, {
+    onSuccess: (result) => {
+      setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
+      setSharePaper(result.data)
+      toast.success('已生成新链接，旧链接已失效')
+    },
+  })
+
+  const shareModal = useDisclosure()
+  const [sharePaper, setSharePaper] = useState<PaperOverview | null>(null)
+
+  const [, copy] = useCopyToClipboard()
+
+  const getShareUrl = (paper: PaperOverview) => {
+    const protocol = window.location.protocol
+    return `${protocol}//${QUIZ_HOSTNAME}/paper/${paper.id}?passcode=${paper.passcode}`
+  }
 
   const resetForm = () => {
     setFormData({
@@ -253,9 +295,9 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                       >
                         {paper.public ? '公开' : '私有'}
                       </Chip>
-                      {paper.tags?.slice(0, 3).map((tag) => (
+                      {paper.tags?.slice(0, 3).map((tag, idx) => (
                         <Chip
-                          key={tag}
+                          key={`${tag}-${idx}`}
                           size='sm'
                           variant='flat'
                           className='bg-primary/10 text-primary border-primary/20'
@@ -284,6 +326,20 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                             <EyeIcon size={16} />
                           )}
                         </Button>
+                        {!paper.public && (
+                          <Button
+                            isIconOnly
+                            variant='light'
+                            size='sm'
+                            color={paper.passcode ? 'secondary' : 'default'}
+                            onPress={() => {
+                              setSharePaper(paper)
+                              shareModal.onOpen()
+                            }}
+                          >
+                            {paper.passcode ? <ShareNetworkIcon size={16} /> : <LinkIcon size={16} />}
+                          </Button>
+                        )}
                         <Button
                           isIconOnly
                           variant='light'
@@ -340,6 +396,98 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
           ))
         )}
       </div>
+
+      {/* Share Link Modal */}
+      <Modal isOpen={shareModal.isOpen} onOpenChange={shareModal.onOpenChange} backdrop='opaque'>
+        <ModalContent>
+          {sharePaper && (
+            sharePaper.passcode ? (
+              <>
+                <ModalHeader>私有分享链接</ModalHeader>
+                <ModalBody>
+                  <p>
+                    此试卷已开启私有分享。持有链接者可以直接访问、作答并查看排行榜。
+                  </p>
+                  <div className='flex items-center gap-2 p-3 rounded-lg bg-content2/30 border border-content2/50'>
+                    <code className='text-xs flex-1 break-all text-foreground/60'>
+                      {getShareUrl(sharePaper)}
+                    </code>
+                    <Button
+                      isIconOnly
+                      size='sm'
+                      variant='light'
+                      onPress={async () => {
+                        await copy(getShareUrl(sharePaper))
+                        toast.success('链接已复制')
+                      }}
+                    >
+                      <CopyIcon size={16} />
+                    </Button>
+                  </div>
+                </ModalBody>
+                <ModalFooter className='flex-col sm:flex-row gap-2'>
+                  <Button
+                    color='danger'
+                    variant='flat'
+                    startContent={!isRevokingPasscode && <XCircleIcon size={20} />}
+                    onPress={() => executeRevokePasscode({ id: sharePaper.id })}
+                    isLoading={isRevokingPasscode}
+                    className='w-full sm:w-auto'
+                  >
+                    关闭分享
+                  </Button>
+                  <Button
+                    color='warning'
+                    variant='flat'
+                    startContent={!isRotatingPasscode && <ArrowsClockwiseIcon size={20} />}
+                    onPress={() => executeRotatePasscode({ id: sharePaper.id })}
+                    isLoading={isRotatingPasscode}
+                    className='w-full sm:w-auto'
+                  >
+                    重新生成链接
+                  </Button>
+                  <Button
+                    color='primary'
+                    startContent={<CopyIcon size={20} />}
+                    onPress={async () => {
+                      await copy(getShareUrl(sharePaper))
+                      toast.success('链接已复制')
+                    }}
+                    className='w-full sm:w-auto'
+                  >
+                    复制链接
+                  </Button>
+                </ModalFooter>
+              </>
+            ) : (
+              <>
+                <ModalHeader>开启私有分享</ModalHeader>
+                <ModalBody>
+                  <p>
+                    为此试卷生成一个<b>私有分享链接</b>。任何持有链接者可以直接访问、作答并查看排行榜。
+                  </p>
+                  <p>
+                    试卷本身依旧<b>不会出现</b>在公开列表中，且你可以<b>随时关闭</b>分享或重新生成链接使旧链接失效。
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant='flat' onPress={shareModal.onClose}>
+                    取消
+                  </Button>
+                  <Button
+                    color='primary'
+                    startContent={!isGeneratingPasscode && <LinkIcon size={20} />}
+                    onPress={() => executeGeneratePasscode({ id: sharePaper.id })}
+                    isLoading={isGeneratingPasscode}
+                  >
+                    生成链接
+                  </Button>
+                </ModalFooter>
+              </>
+            )
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   )
 }

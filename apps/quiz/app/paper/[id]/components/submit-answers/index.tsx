@@ -4,7 +4,7 @@ import { Button } from '@heroui/button'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { submitAnswersAction } from './actions'
 import { useAction } from '@repo/service'
-import { answersAtom, paperIdAtom } from '@repo/ui/paper/atoms'
+import { answersAtom, paperIdAtom, passcodeAtom } from '@repo/ui/paper/atoms'
 import { BoxArrowUpIcon } from '@phosphor-icons/react/ssr'
 import { useRouter } from 'next/navigation'
 import { ConfirmPopover } from '@repo/ui/confirm-popover'
@@ -16,6 +16,7 @@ import { setWorkingPaperCompletedAtom } from '@/app/components/working-paper/ato
 export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const answers = useAtomValue(answersAtom)
     const paperId = useAtomValue(paperIdAtom)
+    const passcode = useAtomValue(passcodeAtom)
     const setWorkingPaperCompleted = useSetAtom(setWorkingPaperCompletedAtom)
     const router = useRouter()
     const { isPending, execute, hasSucceeded } = useAction(submitAnswersAction, {
@@ -38,7 +39,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
                 actionButton={(
                     <ProtectedButton
                         label='登录一下即可查看答案，并且荣登排行榜喵～'
-                        onPress={() => execute({ answers, id: parseInt(paperId!) })}
+                        onPress={() => execute({ answers, id: parseInt(paperId!), passcode: passcode ?? undefined })}
                         fullWidth
                         startContent={!isPending && <BoxArrowUpIcon weight='duotone' />}
                         color='primary'

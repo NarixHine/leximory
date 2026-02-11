@@ -3,7 +3,7 @@
 import { actionClient } from '@repo/service'
 import { z } from '@repo/schema'
 import { Kilpi } from '../kilpi'
-import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions } from '@repo/supabase/paper'
+import { createPaper, getPaper, getPapersByCreator, getPublicPapers, updatePaper, togglePaperVisibility, deletePaper, getPaperSubmission, submitPaper, getAllPaperSubmissions, setPaperPasscode } from '@repo/supabase/paper'
 import { getUser, getUserOrThrow } from '@repo/user'
 import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 import { streamExplanation } from '../ai'
@@ -12,6 +12,7 @@ import incrCommentaryQuota from '@repo/user/quota'
 import { getAskCache } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
 import { revalidateTag } from 'next/cache'
+import { nanoid } from 'nanoid'
 
 const createPaperSchema = z.object({
   content: QuizItemsSchema.optional(),
@@ -21,6 +22,7 @@ const createPaperSchema = z.object({
 
 const getPaperSchema = z.object({
   id: z.number(),
+  passcode: z.string().optional(),
 })
 
 const updatePaperSchema = z.object({
@@ -33,6 +35,10 @@ const updatePaperSchema = z.object({
 })
 
 const togglePaperVisibilitySchema = z.object({
+  id: z.number(),
+})
+
+const paperPasscodeSchema = z.object({
   id: z.number(),
 })
 
@@ -49,10 +55,12 @@ const submitPaperSchema = z.object({
   answers: SectionAnswersSchema,
   score: z.number(),
   perfectScore: z.number(),
+  passcode: z.string().optional(),
 })
 
 const fetchLeaderboardSchema = z.object({
   paperId: z.number(),
+  passcode: z.string().optional(),
 })
 
 /**
@@ -76,10 +84,10 @@ export const createPaperAction = actionClient
  */
 export const getPaperAction = actionClient
   .inputSchema(getPaperSchema)
-  .action(async ({ parsedInput: { id } }) => {
+  .action(async ({ parsedInput: { id, passcode } }) => {
     const paper = await getPaper({ id })
 
-    await Kilpi.papers.read(paper).authorize().assert()
+    await Kilpi.papers.read({ ...paper, providedPasscode: passcode }).authorize().assert()
 
     return paper
   })
@@ -143,6 +151,50 @@ export const togglePaperVisibilityAction = actionClient
   })
 
 /**
+ * Generates a passcode on a paper if none exists.
+ * Only the creator can manage passcodes.
+ */
+export const generatePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+
+    await Kilpi.papers.update(paper).authorize().assert()
+
+    if (paper.passcode) return paper
+    return setPaperPasscode({ id, passcode: nanoid(12) })
+  })
+
+/**
+ * Revokes (clears) the passcode on a paper.
+ * Only the creator can manage passcodes.
+ */
+export const revokePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+
+    await Kilpi.papers.update(paper).authorize().assert()
+
+    return setPaperPasscode({ id, passcode: null })
+  })
+
+/**
+ * Rotates the passcode on a paper (generates a new one).
+ * Old share links will stop working.
+ * Only the creator can manage passcodes.
+ */
+export const rotatePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+
+    await Kilpi.papers.update(paper).authorize().assert()
+
+    return setPaperPasscode({ id, passcode: nanoid(12) })
+  })
+
+/**
  * Deletes a paper with authorization check.
  * Only the creator can delete their papers.
  */
@@ -163,12 +215,18 @@ export const deletePaperAction = actionClient
 export const getPaperSubmissionAction = actionClient
   .inputSchema(getPaperSubmissionSchema)
   .action(async ({ parsedInput: { paperId } }) => {
-    const user = await getUser()
-    if (!user) {
-      return null
+    const decision = await Kilpi.authed().authorize()
+    if (decision.granted) {
+      const submission = await getPaperSubmission({ paperId, userId: decision.subject.userId })
+      return {
+        submission
+      }
     }
-    await Kilpi.authed().authorize().assert()
-    return getPaperSubmission({ paperId, userId: user.userId })
+    else {
+      return {
+        submission: null
+      }
+    }
   })
 
 /**
@@ -177,11 +235,11 @@ export const getPaperSubmissionAction = actionClient
  */
 export const submitPaperAction = actionClient
   .inputSchema(submitPaperSchema)
-  .action(async ({ parsedInput: { paperId, answers, score, perfectScore } }) => {
+  .action(async ({ parsedInput: { paperId, answers, score, perfectScore, passcode } }) => {
     const user = await getUserOrThrow()
     const paper = await getPaper({ id: paperId })
 
-    await Kilpi.papers.submit(paper).authorize().assert()
+    await Kilpi.papers.submit({ ...paper, providedPasscode: passcode }).authorize().assert()
 
     return submitPaper({
       paperId,
@@ -198,10 +256,10 @@ export const submitPaperAction = actionClient
 */
 export const fetchLeaderboardAction = actionClient
   .inputSchema(fetchLeaderboardSchema)
-  .action(async ({ parsedInput: { paperId } }) => {
+  .action(async ({ parsedInput: { paperId, passcode } }) => {
     const paper = await getPaper({ id: paperId })
 
-    await Kilpi.papers.readSubmissions(paper).authorize().assert()
+    await Kilpi.papers.readSubmissions({ ...paper, providedPasscode: passcode }).authorize().assert()
 
     const submissions = await getAllPaperSubmissions({ paperId })
     return submissions.map(submission => ({

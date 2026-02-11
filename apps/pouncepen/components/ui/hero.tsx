@@ -28,13 +28,13 @@ export default function Hero({
             </header>
             <div
                 className={cn(
-                    'rounded-2xl p-5 bg-[#7fa8aa] bg-cover bg-top flex-1 flex justify-center items-center max-h-[50vh]',
+                    'rounded-2xl p-5 bg-[#e5fffe] bg-cover bg-top flex-1 flex justify-center items-center max-h-[50vh]',
                     className
                 )}
                 style={{ backgroundImage: `url(${imgSrc})` }}
             >
                 <div className='flex flex-col gap-2 items-center'>
-                    <h1 className='text-default-50 sm:text-9xl text-8xl font-extrabold text-center'>
+                    <h1 className='text-default-50/80 sm:text-9xl text-8xl font-extrabold text-center'>
                         {title}
                     </h1>
                     {description && <p className='text-white text-shadow-lg rounded px-1 text-2xl font-semibold'>
