@@ -38,7 +38,7 @@ const togglePaperVisibilitySchema = z.object({
   id: z.number(),
 })
 
-const togglePaperPasscodeSchema = z.object({
+const paperPasscodeSchema = z.object({
   id: z.number(),
 })
 
@@ -152,19 +152,47 @@ export const togglePaperVisibilityAction = actionClient
   })
 
 /**
- * Toggles passcode on a paper.
- * Generates a new passcode if none exists, clears it otherwise.
+ * Generates a passcode on a paper if none exists.
  * Only the creator can manage passcodes.
  */
-export const togglePaperPasscodeAction = actionClient
-  .inputSchema(togglePaperPasscodeSchema)
+export const generatePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
   .action(async ({ parsedInput: { id } }) => {
     const paper = await getPaper({ id })
 
     await Kilpi.papers.update(paper).authorize().assert()
 
-    const newPasscode = paper.passcode ? null : nanoid(12)
-    return setPaperPasscode({ id, passcode: newPasscode })
+    if (paper.passcode) return paper
+    return setPaperPasscode({ id, passcode: nanoid(12) })
+  })
+
+/**
+ * Revokes (clears) the passcode on a paper.
+ * Only the creator can manage passcodes.
+ */
+export const revokePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+
+    await Kilpi.papers.update(paper).authorize().assert()
+
+    return setPaperPasscode({ id, passcode: null })
+  })
+
+/**
+ * Rotates the passcode on a paper (generates a new one).
+ * Old share links will stop working.
+ * Only the creator can manage passcodes.
+ */
+export const rotatePaperPasscodeAction = actionClient
+  .inputSchema(paperPasscodeSchema)
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+
+    await Kilpi.papers.update(paper).authorize().assert()
+
+    return setPaperPasscode({ id, passcode: nanoid(12) })
   })
 
 /**
