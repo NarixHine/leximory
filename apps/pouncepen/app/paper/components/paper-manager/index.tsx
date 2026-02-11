@@ -405,8 +405,8 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
               <>
                 <ModalHeader>私有分享链接</ModalHeader>
                 <ModalBody>
-                  <p className='text-sm text-foreground/70'>
-                    此试卷已开启私有分享。持有链接的学生可以直接访问、作答并查看排行榜，无需其他权限。
+                  <p>
+                    此试卷已开启私有分享。持有链接者可以直接访问、作答并查看排行榜。
                   </p>
                   <div className='flex items-center gap-2 p-3 rounded-lg bg-content2/30 border border-content2/50'>
                     <code className='text-xs flex-1 break-all text-foreground/60'>
@@ -429,7 +429,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                   <Button
                     color='danger'
                     variant='flat'
-                    startContent={!isRevokingPasscode && <XCircleIcon size={18} />}
+                    startContent={!isRevokingPasscode && <XCircleIcon size={20} />}
                     onPress={() => executeRevokePasscode({ id: sharePaper.id })}
                     isLoading={isRevokingPasscode}
                     className='w-full sm:w-auto'
@@ -439,7 +439,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                   <Button
                     color='warning'
                     variant='flat'
-                    startContent={!isRotatingPasscode && <ArrowsClockwiseIcon size={18} />}
+                    startContent={!isRotatingPasscode && <ArrowsClockwiseIcon size={20} />}
                     onPress={() => executeRotatePasscode({ id: sharePaper.id })}
                     isLoading={isRotatingPasscode}
                     className='w-full sm:w-auto'
@@ -448,7 +448,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                   </Button>
                   <Button
                     color='primary'
-                    startContent={<CopyIcon size={18} />}
+                    startContent={<CopyIcon size={20} />}
                     onPress={async () => {
                       await copy(getShareUrl(sharePaper))
                       toast.success('链接已复制')
@@ -463,11 +463,11 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
               <>
                 <ModalHeader>开启私有分享</ModalHeader>
                 <ModalBody>
-                  <p className='text-sm text-foreground/70'>
-                    为此试卷生成一个<b>私有分享链接</b>。持有链接的学生可以直接访问、作答并查看排行榜，无需其他权限。
+                  <p>
+                    为此试卷生成一个<b>私有分享链接</b>。任何持有链接者可以直接访问、作答并查看排行榜。
                   </p>
-                  <p className='text-sm text-foreground/70'>
-                    试卷本身仍然保持私有，不会出现在公开列表中。你可以随时关闭分享或重新生成链接使旧链接失效。
+                  <p>
+                    试卷本身依旧<b>不会出现</b>在公开列表中，且你可以<b>随时关闭</b>分享或重新生成链接使旧链接失效。
                   </p>
                 </ModalBody>
                 <ModalFooter>
@@ -476,7 +476,7 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
                   </Button>
                   <Button
                     color='primary'
-                    startContent={!isGeneratingPasscode && <LinkIcon size={18} />}
+                    startContent={!isGeneratingPasscode && <LinkIcon size={20} />}
                     onPress={() => executeGeneratePasscode({ id: sharePaper.id })}
                     isLoading={isGeneratingPasscode}
                   >
