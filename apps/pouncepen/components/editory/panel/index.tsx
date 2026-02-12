@@ -67,6 +67,11 @@ export default function Editory({ id }: { id?: string }) {
         baseVersionRef.current = result.version
       }
     },
+    onError: () => {
+      // If version fetch fails, fall back to saving without OCC
+      // rather than silently blocking all saves.
+      baseVersionRef.current = -1
+    },
   })
 
   // Seed baseVersion from Redis when the editor page opens.
@@ -87,7 +92,9 @@ export default function Editory({ id }: { id?: string }) {
     sync({
       id: parseInt(id),
       data: { content: latestDataRef.current },
-      baseVersion: baseVersionRef.current,
+      // Pass baseVersion only if it was successfully fetched (>= 0).
+      // A value of -1 means the initial fetch failed; save without OCC.
+      ...(baseVersionRef.current >= 0 ? { baseVersion: baseVersionRef.current } : {}),
     })
   }, [id, sync])
   executeSyncRef.current = executeSync
