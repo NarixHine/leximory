@@ -7,6 +7,7 @@ import { ALPHABET_SET } from './generators/config'
 import { useAsk, useCorrectAnswer } from './blank/hooks'
 import { matchColor } from './blank/utils'
 import { AskButton } from './blank/ask'
+import { safeParseHTML } from './utils'
 
 /**
  * Choice component for rendering multiple choice questions.
@@ -51,7 +52,7 @@ const Choice = ({ localNo, options, groupId }: { localNo: number, options: strin
                             startContent={<span>{ALPHABET_SET[index]}</span>}
                         ></Button>
                         <span className='leading-tight'>
-                            {option}
+                            {safeParseHTML(option)}
                         </span>
                     </div>
                 default:
@@ -70,7 +71,7 @@ const Choice = ({ localNo, options, groupId }: { localNo: number, options: strin
                         ></Button>
                         <span className='print:inline hidden'>{ALPHABET_SET[index]}.</span>
                         <span className='leading-tight'>
-                            {option}
+                            {safeParseHTML(option)}
                         </span>
                     </div>
             }

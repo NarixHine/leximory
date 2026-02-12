@@ -51,7 +51,7 @@ export function PaperCard({
                 <h3 className='text-3xl font-formal'>
                     {title}
                 </h3>
-                <div className='font-mono text-default-400'>{createdAt}</div>
+                {!isPinned && <div className='font-mono text-default-400'>{createdAt}</div>}
             </CardBody>
             <CardFooter className='px-3 pb-4 pt-0'>
                 <div className='font-mono text-sm text-default-400 flex flex-wrap items-center'>

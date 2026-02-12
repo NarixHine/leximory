@@ -53,6 +53,7 @@
     "es-toolkit": "^1.44.0",
     "fast-shuffle": "^6.1.1",
     "html-react-parser": "^5.2.5",
+    "isomorphic-dompurify": "3.0.0-rc.2",
     "jotai-family": "^1.0.1",
     "kv": "^1.1.1",
     "moment": "^2.30.1",

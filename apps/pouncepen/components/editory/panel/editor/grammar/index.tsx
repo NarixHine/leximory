@@ -35,11 +35,12 @@ export default function GrammarEditor({
                                 [blankedWord]: hint
                             }
                         })
-                        
+
                         // clean up questions that are no longer in the text
+                        // or have an empty hint
                         const blanks = extractCodeContent(newData.text)
                         newData.hints = Object.fromEntries(
-                            Object.entries(newData.hints).filter(([key]) => blanks.includes(key))
+                            Object.entries(newData.hints).filter(([key, value]) => blanks.includes(key) && value)
                         )
 
                         setData(newData)

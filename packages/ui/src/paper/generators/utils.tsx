@@ -2,12 +2,25 @@ import { JSX } from 'react'
 import fastShuffle from 'fast-shuffle'
 import { questionStrategies } from './strategies'
 import Rand from 'rand-seed'
-import parse, { DOMNode } from 'html-react-parser'
+import parse, { DOMNode, type HTMLReactParserOptions } from 'html-react-parser'
 import { ReactNode } from 'react'
-import { merge } from 'es-toolkit'
 import { ALPHABET_SET } from './config'
 import { z } from '@repo/schema'
+import DOMPurify from 'isomorphic-dompurify'
 import { QuizData, QuestionStrategy, ClozeData, SectionAnswers } from '@repo/schema/paper'
+
+/**
+ * Safely parses and sanitizes HTML content to prevent XSS attacks.
+ * Uses DOMPurify to sanitize the input HTML string before parsing it into React nodes.
+ *
+ * @param html - The HTML string to parse and sanitize.
+ * @param options - Optional parsing options for html-react-parser.
+ * @returns The parsed and sanitized React nodes.
+ */
+export const safeParseHTML = (html: string, options?: HTMLReactParserOptions): ReturnType<typeof parse> => {
+    const sanitizedHtml = DOMPurify.sanitize(html)
+    return parse(sanitizedHtml, options)
+}
 
 /**
  * A reusable helper to extract the content from all <code> tags in a string.
@@ -150,7 +163,7 @@ export const extractBlanks = (
 ): ReactNode[] => {
     const blanks: ReactNode[] = []
     let i = 0
-    parse(text, {
+    safeParseHTML(text, {
         replace: (node: DOMNode) => {
             if ('name' in node && node.name === 'code' && 'children' in node && node.children[0]?.type === 'text') {
                 i++
@@ -190,7 +203,7 @@ export const getQuestionStarts = (quizData: QuizData[]): number[] => {
  */
 export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers): Record<string, Record<number, boolean>> => {
     const results: Record<string, Record<number, boolean>> = {}
-    
+
     // Pre-compute section keys to avoid repeated linear searches
     const sectionKeyMap = getSectionBasedKey(quizData)
 
