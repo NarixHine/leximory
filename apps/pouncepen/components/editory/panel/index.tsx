@@ -18,24 +18,43 @@ import { useAction } from '@repo/service'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Spinner } from '@heroui/react'
 import { editoryItemsAtom } from '@repo/ui/paper/atoms'
+import { useRef, useCallback } from 'react'
 
 
 export default function Editory({ id }: { id?: string }) {
   const data = useAtomValue(editoryItemsAtom)
 
   const { execute: sync, isPending } = useAction(updatePaperAction)
-  const debouncedSync = useDebounceCallback(() => {
-    if (!id) {
-      return
-    }
+
+  // --- Sync hardening: version-based latest-wins ---
+  // Monotonically increasing version counter to order writes.
+  const versionRef = useRef(0)
+  // Track the version of the last sync that was dispatched.
+  const lastDispatchedVersionRef = useRef(0)
+  // Always hold the latest data in a ref so callbacks never read stale closures.
+  const latestDataRef = useRef(data)
+  latestDataRef.current = data
+
+  const executeSync = useCallback(() => {
+    if (!id) return
+
+    const currentVersion = versionRef.current
+    // Skip if this version was already dispatched or superseded.
+    if (currentVersion <= lastDispatchedVersionRef.current) return
+    lastDispatchedVersionRef.current = currentVersion
+
     sync({
       id: parseInt(id),
-      data: {
-        content: data,
-      },
+      data: { content: latestDataRef.current },
+      clientVersion: currentVersion,
     })
-  }, 1000)
+  }, [id, sync])
+
+  const debouncedSync = useDebounceCallback(executeSync, 1000)
+
   useUpdateEffect(() => {
+    // Increment version on every data change so only the latest write wins.
+    versionRef.current += 1
     debouncedSync()
   }, [data])
 

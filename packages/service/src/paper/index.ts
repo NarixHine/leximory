@@ -9,7 +9,7 @@ import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } fr
 import { streamExplanation } from '../ai'
 import { ACTION_QUOTA_COST, SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
-import { getAskCache } from '@repo/kv'
+import { getAskCache, incrementPaperVersion } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from 'nanoid'
@@ -32,6 +32,7 @@ const updatePaperSchema = z.object({
     public: z.boolean().optional(),
     title: z.string().optional(),
   }),
+  clientVersion: z.number().optional(),
 })
 
 const togglePaperVisibilitySchema = z.object({
@@ -114,15 +115,25 @@ export const getPublicPapersAction = actionClient
   })
 
 /**
- * Updates a paper with authorization check.
+ * Updates a paper with authorization check and version-gated concurrency control.
  * Only the creator can update their papers.
+ * Uses Redis-backed version counter to prevent lost updates from concurrent/out-of-order saves.
  */
 export const updatePaperAction = actionClient
   .inputSchema(updatePaperSchema)
-  .action(async ({ parsedInput: { id, data } }) => {
+  .action(async ({ parsedInput: { id, data, clientVersion } }) => {
     const paper = await getPaper({ id })
 
     await Kilpi.papers.update(paper).authorize().assert()
+
+    // Atomically increment the server-side version counter.
+    // If the client provided a version, reject stale writes where a newer version
+    // has already been committed (i.e., another request already incremented past it).
+    const serverVersion = await incrementPaperVersion({ paperId: id })
+    if (clientVersion !== undefined && clientVersion < serverVersion - 1) {
+      // A newer write has already been applied; silently skip this stale update.
+      return paper
+    }
 
     return updatePaper({
       id,

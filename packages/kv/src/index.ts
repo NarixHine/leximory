@@ -80,3 +80,28 @@ export const isDictationGenerating = async ({ paperId }: { paperId: number }): P
     const value = await redis.get(lockKey)
     return value !== null
 }
+
+/**
+ * Atomically increments the paper edit version and returns the new version.
+ * Used to enforce write ordering and prevent lost updates / race conditions.
+ * The version key has a TTL to avoid unbounded growth for inactive papers.
+ */
+export const incrementPaperVersion = async ({ paperId }: { paperId: number }): Promise<number> => {
+    const key = paperVersionKey(paperId)
+    const version = await redis.incr(key)
+    await redis.expire(key, seconds('7 days'))
+    return version
+}
+
+/**
+ * Gets the current paper edit version from Redis.
+ * Returns 0 if no version has been set yet.
+ */
+export const getPaperVersion = async ({ paperId }: { paperId: number }): Promise<number> => {
+    const version = await redis.get(paperVersionKey(paperId))
+    return typeof version === 'number' ? version : 0
+}
+
+function paperVersionKey(paperId: number) {
+    return `paper:version:${paperId}`
+}
