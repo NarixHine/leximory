@@ -1,13 +1,13 @@
 import fastShuffle from 'fast-shuffle'
-import { safeParseHTML as parse } from './utils'
 import { MultipleChoice, FillInTheBlank } from '../blank'
-import { createQuestionStrategy, extractCodeContent, getSeed, toTableRows, replaceBlanks, extractBlanks, safeParseHTML } from './utils'
+import { createQuestionStrategy, extractCodeContent, getSeed, toTableRows, replaceBlanks, extractBlanks } from './utils'
 import { ALPHABET_ELEMENTS, ALPHABET_SET } from './config'
 import { GrammarData, ReadingData, ListeningData, ClozeData, FishingData, SentenceChoiceData, CustomData, QuestionStrategy } from '@repo/schema/paper'
 import Choice from '../choice'
 import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
+import { safeParseHTML } from './parse'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -542,7 +542,7 @@ const customStrategy: QuestionStrategy<CustomData> = createQuestionStrategy<Cust
             return 0
     },
     getCorrectAnswers: () => [],
-    renderPaper: ({ data }) => <>{parse(data.paper)}</>,
+    renderPaper: ({ data }) => <>{safeParseHTML(data.paper)}</>,
     renderAnswerSheet: () => <></>,
     renderRubric: () => (<> </>),
     getDefaultValue: () => ({
