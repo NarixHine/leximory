@@ -9,7 +9,7 @@ import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } fr
 import { streamExplanation } from '../ai'
 import { ACTION_QUOTA_COST, SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
-import { getAskCache, incrementPaperVersion } from '@repo/kv'
+import { getAskCache, tryAdvancePaperVersion } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from 'nanoid'
@@ -117,7 +117,7 @@ export const getPublicPapersAction = actionClient
 /**
  * Updates a paper with authorization check and version-gated concurrency control.
  * Only the creator can update their papers.
- * Uses Redis-backed version counter to prevent lost updates from concurrent/out-of-order saves.
+ * Uses Redis-backed compare-and-set to prevent lost updates from out-of-order saves.
  */
 export const updatePaperAction = actionClient
   .inputSchema(updatePaperSchema)
@@ -126,13 +126,14 @@ export const updatePaperAction = actionClient
 
     await Kilpi.papers.update(paper).authorize().assert()
 
-    // Atomically increment the server-side version counter.
-    // If the client provided a version, reject stale writes where a newer version
-    // has already been committed (i.e., another request already incremented past it).
-    const serverVersion = await incrementPaperVersion({ paperId: id })
-    if (clientVersion !== undefined && clientVersion < serverVersion - 1) {
-      // A newer write has already been applied; silently skip this stale update.
-      return paper
+    // If the client provided a version, atomically check whether this version
+    // is newer than the last applied version. If a higher version has already
+    // been written, this request is stale and should be silently skipped.
+    if (clientVersion !== undefined) {
+      const applied = await tryAdvancePaperVersion({ paperId: id, clientVersion })
+      if (!applied) {
+        return paper
+      }
     }
 
     return updatePaper({

@@ -82,15 +82,27 @@ export const isDictationGenerating = async ({ paperId }: { paperId: number }): P
 }
 
 /**
- * Atomically increments the paper edit version and returns the new version.
- * Used to enforce write ordering and prevent lost updates / race conditions.
- * The version key has a TTL to avoid unbounded growth for inactive papers.
+ * Atomically updates the last-applied client version for a paper if the new
+ * version is higher. Returns true if the update was applied (i.e., the new
+ * version is strictly greater), false if a newer version has already been written.
+ * Uses atomic Redis WATCH-less compare-and-set via Lua script.
  */
-export const incrementPaperVersion = async ({ paperId }: { paperId: number }): Promise<number> => {
+export const tryAdvancePaperVersion = async ({ paperId, clientVersion }: { paperId: number, clientVersion: number }): Promise<boolean> => {
     const key = paperVersionKey(paperId)
-    const version = await redis.incr(key)
-    await redis.expire(key, seconds('7 days'))
-    return version
+    // Lua script: set the version only if the new value is strictly greater.
+    // Returns 1 if set, 0 if not.
+    const result = await redis.eval<[number, number], number>(
+        `local cur = tonumber(redis.call('GET', KEYS[1]) or '0')
+         if tonumber(ARGV[1]) > cur then
+           redis.call('SET', KEYS[1], ARGV[1])
+           redis.call('EXPIRE', KEYS[1], ARGV[2])
+           return 1
+         end
+         return 0`,
+        [key],
+        [clientVersion, seconds('7 days')]
+    )
+    return result === 1
 }
 
 /**
