@@ -132,7 +132,9 @@ export const updatePaperAction = actionClient
     if (clientVersion !== undefined) {
       const applied = await tryAdvancePaperVersion({ paperId: id, clientVersion })
       if (!applied) {
-        return paper
+        // Another update has already been applied with a higher clientVersion.
+        // Refetch and return the latest persisted paper to avoid returning stale data.
+        return getPaper({ id })
       }
     }
 

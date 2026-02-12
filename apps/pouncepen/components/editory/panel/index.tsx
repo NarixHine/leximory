@@ -26,10 +26,8 @@ export default function Editory({ id }: { id?: string }) {
 
   const { execute: sync, isPending } = useAction(updatePaperAction)
 
-  // --- Sync hardening: version-based latest-wins ---
-  // Monotonically increasing version counter to order writes.
-  const versionRef = useRef(0)
-  // Track the version of the last sync that was dispatched.
+  // --- Sync hardening: timestamp-based latest-wins ---
+  // Track the timestamp of the last sync that was dispatched to skip duplicates.
   const lastDispatchedVersionRef = useRef(0)
   // Always hold the latest data in a ref so callbacks never read stale closures.
   const latestDataRef = useRef(data)
@@ -38,8 +36,10 @@ export default function Editory({ id }: { id?: string }) {
   const executeSync = useCallback(() => {
     if (!id) return
 
-    const currentVersion = versionRef.current
-    // Skip if this version was already dispatched or superseded.
+    // Use Date.now() as a globally increasing version that survives remounts,
+    // tab refreshes, and always advances past any previously stored Redis version.
+    const currentVersion = Date.now()
+    // Skip if an equal-or-newer version was already dispatched in this session.
     if (currentVersion <= lastDispatchedVersionRef.current) return
     lastDispatchedVersionRef.current = currentVersion
 
@@ -53,8 +53,6 @@ export default function Editory({ id }: { id?: string }) {
   const debouncedSync = useDebounceCallback(executeSync, 1000)
 
   useUpdateEffect(() => {
-    // Increment version on every data change so only the latest write wins.
-    versionRef.current += 1
     debouncedSync()
   }, [data])
 

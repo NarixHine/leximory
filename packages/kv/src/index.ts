@@ -111,7 +111,12 @@ export const tryAdvancePaperVersion = async ({ paperId, clientVersion }: { paper
  */
 export const getPaperVersion = async ({ paperId }: { paperId: number }): Promise<number> => {
     const version = await redis.get(paperVersionKey(paperId))
-    return typeof version === 'number' ? version : 0
+    if (version == null) {
+        return 0
+    }
+
+    const numericVersion = typeof version === 'number' ? version : Number(version)
+    return Number.isFinite(numericVersion) ? numericVersion : 0
 }
 
 function paperVersionKey(paperId: number) {
