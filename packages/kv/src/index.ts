@@ -82,27 +82,27 @@ export const isDictationGenerating = async ({ paperId }: { paperId: number }): P
 }
 
 /**
- * Atomically updates the last-applied client version for a paper if the new
- * version is higher. Returns true if the update was applied (i.e., the new
- * version is strictly greater), false if a newer version has already been written.
- * Uses atomic Redis WATCH-less compare-and-set via Lua script.
+ * Atomically increments the paper edit version if the current version matches
+ * the expected `baseVersion` (optimistic concurrency control).
+ * Returns the new version on success, or `null` on conflict.
  */
-export const tryAdvancePaperVersion = async ({ paperId, clientVersion }: { paperId: number, clientVersion: number }): Promise<boolean> => {
+export const advancePaperVersion = async ({ paperId, baseVersion }: { paperId: number, baseVersion: number }): Promise<number | null> => {
     const key = paperVersionKey(paperId)
-    // Lua script: set the version only if the new value is strictly greater.
-    // Returns 1 if set, 0 if not.
+    // Lua script: increment version only if current matches baseVersion.
+    // Returns new version on success, -1 on conflict.
     const result = await redis.eval<[number, number], number>(
         `local cur = tonumber(redis.call('GET', KEYS[1]) or '0')
-         if tonumber(ARGV[1]) > cur then
-           redis.call('SET', KEYS[1], ARGV[1])
+         if cur == tonumber(ARGV[1]) then
+           local nxt = cur + 1
+           redis.call('SET', KEYS[1], nxt)
            redis.call('EXPIRE', KEYS[1], ARGV[2])
-           return 1
+           return nxt
          end
-         return 0`,
+         return -1`,
         [key],
-        [clientVersion, seconds('7 days')]
+        [baseVersion, seconds('7 days')]
     )
-    return result === 1
+    return result === -1 ? null : result
 }
 
 /**
@@ -114,7 +114,6 @@ export const getPaperVersion = async ({ paperId }: { paperId: number }): Promise
     if (version == null) {
         return 0
     }
-
     const numericVersion = typeof version === 'number' ? version : Number(version)
     return Number.isFinite(numericVersion) ? numericVersion : 0
 }

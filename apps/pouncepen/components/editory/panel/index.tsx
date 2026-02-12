@@ -13,42 +13,84 @@ import { EditModeSwitch } from './edit-mode-switch'
 import { PouncePenIcon } from '@/components/ui/logo'
 import { useUpdateEffect } from 'ahooks'
 import { useDebounceCallback } from 'usehooks-ts'
-import { updatePaperAction } from '@repo/service/paper'
+import { updatePaperAction, getPaperVersionAction } from '@repo/service/paper'
 import { useAction } from '@repo/service'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Spinner } from '@heroui/react'
 import { editoryItemsAtom } from '@repo/ui/paper/atoms'
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 
 
 export default function Editory({ id }: { id?: string }) {
   const data = useAtomValue(editoryItemsAtom)
 
-  const { execute: sync, isPending } = useAction(updatePaperAction)
-
-  // --- Sync hardening: timestamp-based latest-wins ---
-  // Track the timestamp of the last sync that was dispatched to skip duplicates.
-  const lastDispatchedVersionRef = useRef(0)
+  // --- Sync hardening: optimistic concurrency control ---
+  // The server-side version this client's state is based on.
+  // Loaded on mount, advanced on each successful save.
+  const baseVersionRef = useRef<number | null>(null)
   // Always hold the latest data in a ref so callbacks never read stale closures.
   const latestDataRef = useRef(data)
   latestDataRef.current = data
+  // Guards against concurrent in-flight saves within the same tab.
+  const syncInFlightRef = useRef(false)
+  // Tracks whether data changed while a save was in-flight.
+  const pendingRetryRef = useRef(false)
+  // Ref to executeSync for use in callbacks without circular deps.
+  const executeSyncRef = useRef<() => void>(() => {})
+
+  const { execute: sync, isPending } = useAction(updatePaperAction, {
+    onSuccess: ({ data: result }) => {
+      syncInFlightRef.current = false
+      // Advance baseVersion so the next save uses the new version.
+      if (result?.version !== undefined) {
+        baseVersionRef.current = result.version
+      }
+      // If data changed while this save was in-flight, trigger another sync.
+      if (pendingRetryRef.current) {
+        pendingRetryRef.current = false
+        executeSyncRef.current()
+      }
+    },
+    onError: ({ error }) => {
+      syncInFlightRef.current = false
+      if (error.serverError === 'VERSION_CONFLICT') {
+        // Another window/tab already saved a newer version.
+        toast.error('此试卷已在其他窗口中被修改，即将刷新以加载最新版本。')
+        setTimeout(() => window.location.reload(), 1500)
+      }
+    },
+  })
+  const { execute: fetchVersion } = useAction(getPaperVersionAction, {
+    onSuccess: ({ data: result }) => {
+      if (result) {
+        baseVersionRef.current = result.version
+      }
+    },
+  })
+
+  // Seed baseVersion from Redis when the editor page opens.
+  useEffect(() => {
+    if (!id) return
+    fetchVersion({ id: parseInt(id) })
+  }, [id, fetchVersion])
 
   const executeSync = useCallback(() => {
-    if (!id) return
-
-    // Use Date.now() as a globally increasing version that survives remounts,
-    // tab refreshes, and always advances past any previously stored Redis version.
-    const currentVersion = Date.now()
-    // Skip if an equal-or-newer version was already dispatched in this session.
-    if (currentVersion <= lastDispatchedVersionRef.current) return
-    lastDispatchedVersionRef.current = currentVersion
+    if (!id || baseVersionRef.current === null) return
+    // If a previous save is still in-flight, mark for retry after it completes.
+    if (syncInFlightRef.current) {
+      pendingRetryRef.current = true
+      return
+    }
+    syncInFlightRef.current = true
 
     sync({
       id: parseInt(id),
       data: { content: latestDataRef.current },
-      clientVersion: currentVersion,
+      baseVersion: baseVersionRef.current,
     })
   }, [id, sync])
+  executeSyncRef.current = executeSync
 
   const debouncedSync = useDebounceCallback(executeSync, 1000)
 
