@@ -95,12 +95,12 @@ export default async function Home() {
 					<div>
 						<BentoCard
 							title='一键分享'
-							description='将导入的外刊分享给好友。无需登录。'
+							description='将导入的文本分享给好友。无需登录。'
 						>
-							<LinkCard isPressable href='/read/SfuLVs7SqDJk' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
+							<LinkCard isPressable href='/read/F8hienQLmpDX' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
 								<CardBody>
-									<h2 className='font-bold opacity-50 text-xs'>The Economist</h2>
-									<p className='opacity-60 font-bold'>The Flying Car Promise</p>
+									<h2 className='font-bold opacity-50 text-xs'>James Joyce</h2>
+									<p className='opacity-60 font-bold'>The Dead (An Excerpt)</p>
 									<div className='absolute bottom-0 right-0 p-2'>
 										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
 									</div>
