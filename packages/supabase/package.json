@@ -33,6 +33,7 @@
     "itty-time": "^2.0.2",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.45",
+    "nanoid": "^5.1.6",
     "server-only": "^0.0.1"
   },
   "peerDependencies": {

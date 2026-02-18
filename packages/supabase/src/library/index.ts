@@ -4,7 +4,7 @@ import { supabase } from '@repo/supabase'
 import { ensureUserExists } from '../user'
 import { getLanguageName } from '@repo/languages'
 import type { Tables, TablesInsert, TablesUpdate } from '../types'
-import { randomUUID } from 'crypto'
+import { nanoid } from 'nanoid'
 
 export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
     const { data: rec } = await supabase
@@ -71,7 +71,7 @@ export async function createLibraryRecord({
     prompt?: string | null
     access?: TablesInsert<'libraries'>['access']
 }) {
-    const id = randomUUID().replace(/-/g, '')
+    const id = nanoid()
 
     const { data, error } = await supabase
         .from('libraries')
