@@ -148,8 +148,8 @@ export async function generate({ article, textId, onlyComments, delayRevalidate 
     const { userId } = await getUserOrThrow()
     const text = await getTextWithLib(textId)
     await Kilpi.texts.write(text).authorize().assert()
-    const libId = text.lib!.id
-    const lib = await getLib({ id: libId })
+    if (!text.lib) throw new Error('Text has no associated library')
+    const lib = await getLib({ id: text.lib.id })
     const lang = lib.lang as Lang
 
     const length = article.length
