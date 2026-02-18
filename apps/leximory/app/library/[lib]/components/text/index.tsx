@@ -1,7 +1,7 @@
 'use client'
 
 import { CardBody, CardFooter } from "@heroui/card"
-import { add, addAndGenerate } from './actions'
+import { addTextAction, addAndGenerateTextAction } from './actions'
 import { motion } from 'framer-motion'
 import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiCheckSquare, PiSquare } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
@@ -18,6 +18,7 @@ import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import FlatCard from '@/components/ui/flat-card'
 import { scrapeArticle } from '@/server/ai/scrape'
+import { useAction } from '@repo/service'
 
 function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation, visitStatus }: {
     id: string,
@@ -84,6 +85,12 @@ export function AddTextButton() {
         }
     })
     const lang = useAtomValue(langAtom)
+    const { execute: addText, isPending: isAdding } = useAction(addTextAction, {
+        onError: ({ error }) => toast.error(error.serverError ?? '创建失败')
+    })
+    const { execute: addAndGenerateText, isPending: isAddingAndGenerating } = useAction(addAndGenerateTextAction, {
+        onError: ({ error }) => toast.error(error.serverError ?? '创建失败')
+    })
 
     return <>
         <FlatCard className='w-full bg-stone-50/20 dark:bg-stone-800/20 border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
@@ -102,7 +109,7 @@ export function AddTextButton() {
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             title='创建文章'
-            isLoading={formState.isSubmitting}
+            isLoading={formState.isSubmitting || isAdding || isAddingAndGenerating}
             onSubmit={handleSubmit(async (data) => {
                 if (data.url) {
                     try {
@@ -111,12 +118,12 @@ export function AddTextButton() {
                             toast.error('识别内容过长，请手动录入')
                             return
                         }
-                        addAndGenerate({ title, content, lib })
+                        addAndGenerateText({ title, content, lib })
                     } catch {
                         toast.error('文章解析失败，请手动录入')
                     }
                 } else if (data.title) {
-                    await add({ title: data.title, lib })
+                    await addText({ title: data.title, lib })
                 }
             })}
         >

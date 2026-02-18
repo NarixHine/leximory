@@ -19,167 +19,219 @@ import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { updateTag } from 'next/cache'
 import { visitText } from '@/server/db/visited'
 import { miniAI, nanoAI } from '@/server/ai/configs'
+import { actionClient } from '@repo/service'
 
-export async function markAsVisited(textId: string) {
-    const { userId } = await getUserOrThrow()
-    await authReadToText(textId)
-    await visitText({ textId, userId })
-    // Get libId from text
-    const { lib } = await getTextContent({ id: textId })
-    updateTag(`reads:${lib.id}`)
-}
+const idSchema = z.object({ id: z.string() })
+const textIdSchema = z.object({ textId: z.string() })
+const extractSchema = z.object({
+    file: z.instanceof(File),
+})
+const storySchema = z.object({
+    comments: z.array(z.string()),
+    textId: z.string(),
+    storyStyle: z.string().optional(),
+})
+const generateSchema = z.object({
+    article: z.string(),
+    textId: z.string(),
+    onlyComments: z.boolean(),
+    delayRevalidate: z.boolean().optional(),
+})
+const singleCommentSchema = z.object({
+    prompt: z.string(),
+    lang: z.custom<Lang>(),
+})
+const setProgressSchema = z.object({
+    id: z.string(),
+    progress: z.custom<AnnotationProgress>(),
+})
 
-export async function extractWords(form: FormData) {
-    const { userId } = await getUserOrThrow()
-    const file = form.get('file') as File
-
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
-        throw new Error('Quota exceeded')
-    }
-
-    const { object } = await generateObject({
-        messages: [{
-            role: 'system',
-            content: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
-        }, {
-            role: 'user',
-            content: [{
-                type: 'file',
-                data: await file.arrayBuffer(),
-                mediaType: file.type
-            }]
-        }],
-        schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
-        maxOutputTokens: 8000,
-        ...nanoAI
+export const markAsVisitedAction = actionClient
+    .inputSchema(textIdSchema)
+    .action(async ({ parsedInput: { textId } }) => {
+        const { userId } = await getUserOrThrow()
+        await authReadToText(textId)
+        await visitText({ textId, userId })
+        const { lib } = await getTextContent({ id: textId })
+        updateTag(`reads:${lib.id}`)
     })
 
-    return object
-}
+export const extractWordsAction = actionClient
+    .action(async ({ input }) => {
+        const form = input?.get?.('file') ? input : null
+        if (!(form instanceof FormData)) {
+            throw new Error('Invalid form data')
+        }
+        const { userId } = await getUserOrThrow()
+        const file = form.get('file') as File
 
-export async function generateStory({ comments, textId, storyStyle }: { comments: string[], textId: string, storyStyle?: string }) {
-    const { userId } = await getUserOrThrow()
-    await authWriteToText(textId)
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
+            throw new Error('Quota exceeded')
+        }
 
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId)) {
+        const { object } = await generateObject({
+            messages: [{
+                role: 'system',
+                content: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
+            }, {
+                role: 'user',
+                content: [{
+                    type: 'file',
+                    data: await file.arrayBuffer(),
+                    mediaType: file.type
+                }]
+            }],
+            schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
+            maxOutputTokens: 8000,
+            ...nanoAI
+        })
+
+        return object
+    })
+
+export const generateStoryForTextAction = actionClient
+    .inputSchema(storySchema)
+    .action(async ({ parsedInput: { comments, textId, storyStyle } }) => {
+        const { userId } = await getUserOrThrow()
+        await authWriteToText(textId)
+
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId)) {
+            return {
+                success: false,
+                message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
+            }
+        }
+
+        await inngest.send({
+            name: 'app/story.requested',
+            data: {
+                comments,
+                userId,
+                storyStyle,
+                textId
+            }
+        })
+
         return {
-            success: false,
-            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
-        }
-    }
-
-    await inngest.send({
-        name: 'app/story.requested',
-        data: {
-            comments,
-            userId,
-            storyStyle,
-            textId
+            success: true,
+            message: '生成中……'
         }
     })
 
-    return {
-        success: true,
-        message: '生成中……'
-    }
-}
-
-export async function getNewText(id: string) {
-    const { content, topics } = await getTextContent({ id })
-    return { content, topics }
-}
-
-export async function save({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
-    await authWriteToText(id)
-    await updateText({ id, ...updateData })
-}
-
-export async function remove({ id }: { id: string }) {
-    await authWriteToText(id)
-    await deleteText({ id })
-}
-
-export async function saveEbook(id: string, form: FormData) {
-    const ebook = form.get('ebook') as File
-    if (!['application/epub+zip'].includes(ebook.type)) {
-        throw new Error('Not an epub file')
-    }
-    if (ebook.size > MAX_FILE_SIZE) {
-        throw new Error('File too large')
-    }
-    await authWriteToText(id)
-
-    const url = await uploadEbook({ id, ebook })
-    return url
-}
-
-export async function generate({ article, textId, onlyComments, delayRevalidate }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean }) {
-    const { userId } = await getUserOrThrow()
-    const { lib } = await authWriteToText(textId)
-    const libId = lib!.id
-    const { lang } = await authWriteToLib(libId)
-
-    const length = article.length
-    const { maxArticleLength } = getLanguageStrategy(lang)
-    if (length > maxArticleLength) {
-        throw new Error('Text too long')
-    }
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId, delayRevalidate)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
-    }
-
-    await inngest.send({
-        name: 'app/article.imported',
-        data: {
-            article,
-            userId,
-            textId,
-            onlyComments
-        }
+export const getNewTextAction = actionClient
+    .inputSchema(idSchema)
+    .action(async ({ parsedInput: { id } }) => {
+        const { content, topics } = await getTextContent({ id })
+        return { content, topics }
     })
-}
 
-export async function generateSingleComment({ prompt, lang }: { prompt: string, lang: Lang }) {
-    const { userId } = await getUserOrThrow()
-    const hash = crypto.createHash('sha256').update(prompt).digest('hex')
-    const cache = await getAnnotationCache({ hash })
-    if (cache) {
-        return { text: cache }
-    }
+export const saveTextAction = actionClient
+    .action(async ({ input }) => {
+        const data = input as any
+        if (!data?.id) throw new Error('Missing id')
+        await authWriteToText(data.id)
+        await updateText({ id: data.id, ...data })
+    })
 
-    const { maxArticleLength, exampleSentencePrompt } = getLanguageStrategy(lang)
-    const { getAccentPrompt } = getLanguageServerStrategy(lang)
-    if (prompt.length > maxArticleLength) {
-        throw new Error('Text too long')
-    }
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
-    }
+export const deleteTextAction = actionClient
+    .inputSchema(idSchema)
+    .action(async ({ parsedInput: { id } }) => {
+        await authWriteToText(id)
+        await deleteText({ id })
+    })
 
-    const { textStream } = streamText({
-        system: `
+export const saveEbookAction = actionClient
+    .action(async ({ input }) => {
+        const { id, form } = (input ?? {}) as { id?: string, form?: FormData }
+        if (!id || !(form instanceof FormData)) throw new Error('Invalid input')
+        const ebook = form.get('ebook') as File
+        if (!ebook || !['application/epub+zip'].includes(ebook.type)) {
+            throw new Error('Not an epub file')
+        }
+        if (ebook.size > MAX_FILE_SIZE) {
+            throw new Error('File too large')
+        }
+        await authWriteToText(id)
+
+        const url = await uploadEbook({ id, ebook })
+        return url
+    })
+
+export const generateAction = actionClient
+    .inputSchema(generateSchema)
+    .action(async ({ parsedInput: { article, textId, onlyComments, delayRevalidate } }) => {
+        const { userId } = await getUserOrThrow()
+        const { lib } = await authWriteToText(textId)
+        const libId = lib!.id
+        const { lang } = await authWriteToLib(libId)
+
+        const length = article.length
+        const { maxArticleLength } = getLanguageStrategy(lang)
+        if (length > maxArticleLength) {
+            throw new Error('Text too long')
+        }
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.articleAnnotation, userId, delayRevalidate)) {
+            return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
+        }
+
+        await inngest.send({
+            name: 'app/article.imported',
+            data: {
+                article,
+                userId,
+                textId,
+                onlyComments
+            }
+        })
+    })
+
+export const generateSingleCommentAction = actionClient
+    .inputSchema(singleCommentSchema)
+    .action(async ({ parsedInput: { prompt, lang } }) => {
+        const { userId } = await getUserOrThrow()
+        const hash = crypto.createHash('sha256').update(prompt).digest('hex')
+        const cache = await getAnnotationCache({ hash })
+        if (cache) {
+            return { text: cache }
+        }
+
+        const { maxArticleLength, exampleSentencePrompt } = getLanguageStrategy(lang)
+        const { getAccentPrompt } = getLanguageServerStrategy(lang)
+        if (prompt.length > maxArticleLength) {
+            throw new Error('Text too long')
+        }
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation)) {
+            return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
+        }
+
+        const { textStream } = streamText({
+            system: `
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
             `,
-        prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
-        maxOutputTokens: 500,
-        onFinish: async ({ text }) => {
-            await setAnnotationCache({ hash, cache: text })
-        },
-        experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
-        ...miniAI
+            prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为“wrap my head around”，则对“wrap one\'s head around”进行注解；如果是“dip suddenly down"，则对“dip down”进行注解）' : (lang === 'zh' ? '（例如对于“天子[[并命]]”，注释“并命”在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
+            maxOutputTokens: 500,
+            onFinish: async ({ text }) => {
+                await setAnnotationCache({ hash, cache: text })
+            },
+            experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
+            ...miniAI
+        })
+
+        return { text: textStream }
     })
 
-    return { text: textStream }
-}
+export const getAnnotationProgressAction = actionClient
+    .inputSchema(idSchema)
+    .action(async ({ parsedInput: { id } }) => {
+        await authReadToText(id)
+        const annotationProgress = await getTextAnnotationProgress({ id })
+        return annotationProgress
+    })
 
-export async function getAnnotationProgress(id: string) {
-    await authReadToText(id)
-    const annotationProgress = await getTextAnnotationProgress({ id })
-    return annotationProgress
-}
-
-export async function setAnnotationProgress({ id, progress }: { id: string, progress: AnnotationProgress }) {
-    await authWriteToText(id)
-    await setTextAnnotationProgress({ id, progress })
-}
+export const setAnnotationProgressAction = actionClient
+    .inputSchema(setProgressSchema)
+    .action(async ({ parsedInput: { id, progress } }) => {
+        await authWriteToText(id)
+        await setTextAnnotationProgress({ id, progress })
+    })

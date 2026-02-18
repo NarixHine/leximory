@@ -5,8 +5,8 @@ import { languageStrategies } from '@/lib/languages'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import { Button } from "@heroui/button"
 import { DateRangePicker } from "@heroui/date-picker"
-import { Suspense, useActionState, useState, useTransition } from 'react'
-import { draw, generateStory, getWithin } from '../actions'
+import { Suspense, useState, useTransition } from 'react'
+import { drawCorpusAction, generateStoryAction, getWithinCorpusAction } from '../actions'
 import { luxon } from '@/lib/luxon'
 import { PiListMagnifyingGlassDuotone, PiMagicWandDuotone } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
@@ -15,6 +15,7 @@ import { I18nProvider } from '@react-aria/i18n'
 import { ConfirmStory } from './confirm-story'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useAction } from '@repo/service'
 
 function ConfigDependent({ start, end, lib, isReadOnly }: {
     start: any
@@ -27,9 +28,15 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
         start: luxon(start.toDate(getLocalTimeZone())).startOf('day').toJSDate(),
         end: luxon(end.toDate(getLocalTimeZone())).plus({ days: 1 }).startOf('day').toJSDate()
     }
-    const [words, drawWords, isDrawing] = useActionState(() => {
-        return draw(retrieveConfig)
-    }, [])
+    const [words, setWords] = useState<{ word: string, id: string }[]>([])
+    const { execute: drawWordsAction, isPending: isDrawing } = useAction(drawCorpusAction, {
+        onSuccess: ({ data }) => setWords(data ?? []),
+        onError: ({ error }) => toast.error(error.serverError ?? '加载失败'),
+    })
+    const { execute: getWithinAction } = useAction(getWithinCorpusAction)
+    const { execute: generateStoryActionExecute } = useAction(generateStoryAction, {
+        onError: ({ error }) => toast.error(error.serverError ?? '生成失败'),
+    })
     const [isGettingWithin, startGettingWithin] = useTransition()
     const router = useRouter()
 
@@ -40,14 +47,19 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave></Markdown>
             ))}
         </div>
-        <form action={drawWords} className='flex flex-col gap-2'>
+        <form
+            className='flex flex-col gap-2'
+            onSubmit={(e) => {
+                e.preventDefault()
+                drawWordsAction(retrieveConfig)
+            }}>
             <Button
                 size='sm'
                 variant='flat'
                 isLoading={isDrawing}
                 startContent={!isDrawing && <PiListMagnifyingGlassDuotone className='text-xl' />}
                 color='primary'
-                type='submit'
+                onPress={() => drawWordsAction(retrieveConfig)}
             >
                 所有
             </Button>
@@ -59,23 +71,22 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 color='secondary'
                 onPress={() => {
                     startGettingWithin(async () => {
-                        const comments = await getWithin(retrieveConfig)
+                        const result = await getWithinAction(retrieveConfig)
+                        const comments = result?.data ?? []
                         if (await ConfirmStory.call({ comments })) {
-                            generateStory({ comments, lib })
-                                .then(async ({ success, message }) => {
-                                    if (success) {
-                                        toast.success(message, {
-                                            action: {
-                                                label: '设置提醒',
-                                                onClick: () => {
-                                                    router.push(`/daily`)
-                                                }
-                                            }
-                                        })
-                                    } else {
-                                        toast.error(message)
+                            const storyResult = await generateStoryActionExecute({ comments, lib })
+                            if (storyResult?.data?.success) {
+                                toast.success(storyResult.data.message, {
+                                    action: {
+                                        label: '设置提醒',
+                                        onClick: () => {
+                                            router.push(`/daily`)
+                                        }
                                     }
                                 })
+                            } else {
+                                toast.error(storyResult?.data?.message ?? storyResult?.serverError ?? '生成失败')
+                            }
                         }
                     })
                 }}
