@@ -80,3 +80,44 @@ export const isDictationGenerating = async ({ paperId }: { paperId: number }): P
     const value = await redis.get(lockKey)
     return value !== null
 }
+
+/**
+ * Atomically increments the paper edit version if the current version matches
+ * the expected `baseVersion` (optimistic concurrency control).
+ * Returns the new version on success, or `null` on conflict.
+ */
+export const advancePaperVersion = async ({ paperId, baseVersion }: { paperId: number, baseVersion: number }): Promise<number | null> => {
+    const key = paperVersionKey(paperId)
+    // Lua script: increment version only if current matches baseVersion.
+    // Returns new version on success, -1 on conflict.
+    const result = await redis.eval<[number, number], number>(
+        `local cur = tonumber(redis.call('GET', KEYS[1]) or '0')
+         if cur == tonumber(ARGV[1]) then
+           local nxt = cur + 1
+           redis.call('SET', KEYS[1], nxt)
+           redis.call('EXPIRE', KEYS[1], ARGV[2])
+           return nxt
+         end
+         return -1`,
+        [key],
+        [baseVersion, seconds('7 days')]
+    )
+    return result === -1 ? null : result
+}
+
+/**
+ * Gets the current paper edit version from Redis.
+ * Returns 0 if no version has been set yet.
+ */
+export const getPaperVersion = async ({ paperId }: { paperId: number }): Promise<number> => {
+    const version = await redis.get(paperVersionKey(paperId))
+    if (version == null) {
+        return 0
+    }
+    const numericVersion = typeof version === 'number' ? version : Number(version)
+    return Number.isFinite(numericVersion) ? numericVersion : 0
+}
+
+function paperVersionKey(paperId: number) {
+    return `paper:version:${paperId}`
+}

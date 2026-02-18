@@ -9,7 +9,7 @@ import { AskResponseSchema, QuizData, QuizItemsSchema, SectionAnswersSchema } fr
 import { streamExplanation } from '../ai'
 import { ACTION_QUOTA_COST, SECTION_NAME_MAP } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
-import { getAskCache } from '@repo/kv'
+import { getAskCache, advancePaperVersion, getPaperVersion } from '@repo/kv'
 import { hashAskParams } from '@repo/utils/paper'
 import { revalidateTag } from 'next/cache'
 import { nanoid } from 'nanoid'
@@ -32,6 +32,7 @@ const updatePaperSchema = z.object({
     public: z.boolean().optional(),
     title: z.string().optional(),
   }),
+  baseVersion: z.number().optional(),
 })
 
 const togglePaperVisibilitySchema = z.object({
@@ -93,6 +94,18 @@ export const getPaperAction = actionClient
   })
 
 /**
+ * Retrieves the current edit version of a paper from Redis.
+ * Used by the editor to seed its baseVersion for optimistic concurrency control.
+ */
+export const getPaperVersionAction = actionClient
+  .inputSchema(z.object({ id: z.number() }))
+  .action(async ({ parsedInput: { id } }) => {
+    const paper = await getPaper({ id })
+    await Kilpi.papers.update(paper).authorize().assert()
+    return { version: await getPaperVersion({ paperId: id }) }
+  })
+
+/**
  * Retrieves all papers created by the current user.
  * Only the creator can see their own papers.
  */
@@ -114,23 +127,39 @@ export const getPublicPapersAction = actionClient
   })
 
 /**
- * Updates a paper with authorization check.
+ * Updates a paper with authorization check and optimistic concurrency control.
  * Only the creator can update their papers.
+ * When `baseVersion` is provided, the update only proceeds if the server version
+ * matches — preventing lost updates across multiple browser windows.
+ * Throws on version conflict so the client can reload.
  */
 export const updatePaperAction = actionClient
   .inputSchema(updatePaperSchema)
-  .action(async ({ parsedInput: { id, data } }) => {
+  .action(async ({ parsedInput: { id, data, baseVersion } }) => {
     const paper = await getPaper({ id })
 
     await Kilpi.papers.update(paper).authorize().assert()
 
-    return updatePaper({
+    // Optimistic concurrency control: if the client provides a baseVersion,
+    // only apply the update if no other write has advanced the version.
+    let newVersion: number | undefined
+    if (baseVersion !== undefined) {
+      const result = await advancePaperVersion({ paperId: id, baseVersion })
+      if (result === null) {
+        // Another tab/window already wrote — signal conflict to the client.
+        throw new Error('VERSION_CONFLICT')
+      }
+      newVersion = result
+    }
+
+    const updated = await updatePaper({
       id,
       data: {
         ...data,
         tags: data.content ? data.content.map(item => SECTION_NAME_MAP[item.type]) : undefined,
       }
     })
+    return { ...updated, version: newVersion }
   })
 
 /**
