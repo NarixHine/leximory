@@ -4,11 +4,16 @@ import { getUser } from '@repo/user'
 import type { Tables } from '@repo/supabase/types'
 import { ReactServerPlugin } from '@kilpi/react-server'
 import { unauthorized } from 'next/navigation'
+import { LIB_ACCESS_STATUS } from '@repo/env/config'
 
 type Paper = Tables<'papers'>
 type PaperWithPasscode = Paper & { providedPasscode?: string }
 
 type Library = Tables<'libraries'>
+type Text = Tables<'texts'>
+
+/** A text with its parent library attached for authorization checks. */
+type TextWithLib = Omit<Text, 'lib'> & { lib: Pick<Library, 'owner' | 'access'> | null }
 
 function hasValidPasscode(paper: PaperWithPasscode): boolean {
   return !!paper.passcode && paper.providedPasscode === paper.passcode
@@ -86,13 +91,35 @@ export const Kilpi = createKilpi({
     },
 
     libraries: {
-      async write(subject, lib: Library) {
+      async write(subject, lib: Pick<Library, 'owner'>) {
         if (!subject) return Deny({ message: 'Not authenticated' })
-        const isOwner = lib.owner === subject.userId
-        if (isOwner) {
-          return Grant(subject)
-        }
+        if (lib.owner === subject.userId) return Grant(subject)
         return Deny({ message: 'Not authorized to write to this library' })
+      },
+
+      /** Grants access to library owner or users who starred a public library. */
+      read(subject, lib: Pick<Library, 'owner' | 'access' | 'starred_by'>) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        if (lib.owner === subject.userId) return Grant(subject)
+        if (lib.access === LIB_ACCESS_STATUS.public && lib.starred_by?.includes(subject.userId)) return Grant(subject)
+        return Deny({ message: 'Not authorized to read this library' })
+      },
+    },
+
+    texts: {
+      /** Grants write access when the subject owns the parent library. */
+      write(subject, text: TextWithLib) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        if (text.lib && text.lib.owner === subject.userId) return Grant(subject)
+        return Deny({ message: 'Not authorized to write to this text' })
+      },
+
+      /** Grants read access to the library owner or when the library is public. */
+      read(subject, text: TextWithLib) {
+        if (!subject) return Deny({ message: 'Not authenticated' })
+        if (text.lib && text.lib.owner === subject.userId) return Grant(subject)
+        if (text.lib && text.lib.access === LIB_ACCESS_STATUS.public) return Grant(subject)
+        return Deny({ message: 'Not authorized to read this text' })
       },
     },
   },

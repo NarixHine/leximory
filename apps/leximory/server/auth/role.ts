@@ -36,14 +36,11 @@ export async function requireAdmin() {
  * Authorizes write access to a library and returns library metadata.
  * Only the library owner can perform write operations.
  * 
+ * @deprecated Use `Kilpi.libraries.write()` from `@repo/service/kilpi` instead.
  * @param lib - The library ID to check access for
  * @param explicitUserId - Optional user ID to check (defaults to current user)
  * @returns Promise resolving to library language configuration
  * @throws {Error} If library not found or user lacks write access
- * @example
- * ```typescript
- * const { lang } = await authWriteToLib('lib-123');
- * ```
  */
 export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
     const { userId } = explicitUserId ? { userId: explicitUserId } : await getUserOrThrow()
@@ -68,13 +65,10 @@ export const authWriteToLib = async (lib: string, explicitUserId?: string) => {
  * - Library owner (full access)
  * - Users who have starred public libraries (read-only)
  * 
+ * @deprecated Use `Kilpi.libraries.read()` from `@repo/service/kilpi` instead.
  * @param lib - The library ID to check access for
  * @returns Promise resolving to library metadata with access information
  * @throws {Error} If library not found or user lacks read access
- * @example
- * ```typescript
- * const { isReadOnly, lang, name } = await authReadToLib('lib-123');
- * ```
  */
 export const authReadToLib = async (lib: string) => {
     const { userId } = await getUserOrThrow()
@@ -110,13 +104,10 @@ export const authReadToLib = async (lib: string) => {
  * This is a non-throwing variant that returns data even if user lacks access.
  * Useful for displaying library information in UI contexts.
  * 
+ * @deprecated Use `Kilpi.libraries.read()` from `@repo/service/kilpi` instead.
  * @param lib - The library ID to retrieve data for
  * @returns Promise resolving to library metadata with star status
  * @throws {Error} Only on database errors, not access issues
- * @example
- * ```typescript
- * const { isStarred, name } = await authReadToLibWithoutThrowing('lib-123');
- * ```
  */
 export const authReadToLibWithoutThrowing = async (lib: string) => {
     const { userId } = await getUserOrThrow()
@@ -152,13 +143,10 @@ export const authReadToLibWithoutThrowing = async (lib: string) => {
  * Authorizes write access to a text item and returns full text data.
  * Only the owner of the parent library can modify text content.
  * 
+ * @deprecated Use `Kilpi.texts.write()` from `@repo/service/kilpi` instead.
  * @param text - The text ID to check access for
  * @returns Promise resolving to text record with library information
  * @throws {Error} If text not found or user lacks write access
- * @example
- * ```typescript
- * const textData = await authWriteToText('text-456');
- * ```
  */
 export const authWriteToText = async (text: string) => {
     const { userId } = await getUserOrThrow()
@@ -190,13 +178,10 @@ export const authWriteToText = async (text: string) => {
  * - Library owner (full access)
  * - Any user if the parent library is public
  * 
+ * @deprecated Use `Kilpi.texts.read()` from `@repo/service/kilpi` instead.
  * @param text - The text ID to check access for
  * @returns Promise resolving to text record with library information
  * @throws {Error} If text not found or user lacks read access
- * @example
- * ```typescript
- * const textData = await authReadToText('text-456');
- * ```
  */
 export const authReadToText = async (text: string) => {
     const { userId } = await getUserOrThrow()
