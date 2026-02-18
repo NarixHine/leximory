@@ -12,13 +12,20 @@ import Form from '../../../../components/form'
 import { Input, Textarea } from '@heroui/input'
 import { Checkbox } from '@heroui/checkbox'
 import { Select, SelectItem } from '@heroui/select'
-import { create, remove, save, archive, unarchive, unstar } from './actions'
+import {
+    archiveLibraryAction,
+    createLibraryAction,
+    deleteLibraryAction,
+    unarchiveLibraryAction,
+    unstarLibraryAction,
+    updateLibraryAction,
+} from './actions'
 import { useForm, Controller } from 'react-hook-form'
 import { useDisclosure } from '@heroui/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
@@ -27,6 +34,7 @@ import Topics from '../../[lib]/[text]/components/topics'
 import FlatCard from '@/components/ui/flat-card'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
 import LinkButton from '@repo/ui/link-button'
+import { useAction } from '@repo/service'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -102,8 +110,32 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
-    const [isTogglingArchive, startTogglingArchive] = useTransition()
-    const [isUnstarring, startUnstarring] = useTransition()
+    const { execute: executeUpdateLibrary, isPending: isSaving } = useAction(updateLibraryAction, {
+        onSuccess: () => toast.success('已更新文库'),
+        onError: ({ error }) => toast.error(error.serverError ?? '更新失败'),
+    })
+
+    const { execute: executeArchiveLibrary, isPending: isArchiving } = useAction(archiveLibraryAction, {
+        onSuccess: () => toast.success('已归档文库'),
+        onError: ({ error }) => toast.error(error.serverError ?? '操作失败'),
+    })
+
+    const { execute: executeUnarchiveLibrary, isPending: isUnarchiving } = useAction(unarchiveLibraryAction, {
+        onSuccess: () => toast.success('已取消归档'),
+        onError: ({ error }) => toast.error(error.serverError ?? '操作失败'),
+    })
+
+    const { execute: executeUnstarLibrary, isPending: isUnstarring } = useAction(unstarLibraryAction, {
+        onError: ({ error }) => toast.error(error.serverError ?? '操作失败'),
+    })
+
+    const { execute: executeDeleteLibrary, isPending: isDeleting } = useAction(deleteLibraryAction, {
+        onSuccess: () => {
+            setIsDeleted(true)
+            toast.success('删除成功')
+        },
+        onError: ({ error }) => toast.error(error.serverError ?? '删除失败'),
+    })
     const MotionCard = motion.create(FlatCard)
 
     return (<>
@@ -136,18 +168,13 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                             : <Button
                                 size={'sm'}
                                 as={'span'}
-                                isLoading={isTogglingArchive}
-                                startContent={!isTogglingArchive && <PiBoxArrowUpDuotone className='text-lg' />}
+                                isLoading={isUnarchiving}
+                                startContent={!isUnarchiving && <PiBoxArrowUpDuotone className='text-lg' />}
                                 color='primary'
                                 variant='light'
                                 isIconOnly
                                 radius='md'
-                                onPress={() => {
-                                    startTogglingArchive(async () => {
-                                        await unarchive({ id })
-                                        toast.success('已取消归档')
-                                    })
-                                }}
+                                onPress={() => executeUnarchiveLibrary({ id })}
                             />
                     }
                     {
@@ -163,9 +190,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                 radius='md'
                                 onPress={async () => {
                                     if (await ConfirmUnstar.call()) {
-                                        startUnstarring(async () => {
-                                            await unstar({ id })
-                                        })
+                                        executeUnstarLibrary({ id })
                                     }
                                 }}
                             />
@@ -190,17 +215,12 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 </LinkButton>}
                 <Button
                     as={'span'}
-                    isLoading={isTogglingArchive}
-                    startContent={!isTogglingArchive && <PiBoxArrowDownDuotone />}
+                    isLoading={isArchiving}
+                    startContent={!isArchiving && <PiBoxArrowDownDuotone />}
                     variant='flat'
                     color='primary'
                     isIconOnly
-                    onPress={() => {
-                        startTogglingArchive(async () => {
-                            await archive({ id })
-                            toast.success('已归档文库')
-                        })
-                    }}
+                    onPress={() => executeArchiveLibrary({ id })}
                 ></Button>
             </CardFooter>}
         </MotionCard>
@@ -208,14 +228,12 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         <Form
             actionButton={<Popover>
                 <PopoverTrigger>
-                    <Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} />
+                    <Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} isLoading={isDeleting} />
                 </PopoverTrigger>
                 <PopoverContent className='p-0'>
                     <Button color='danger' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
                         const timer = setTimeout(() => {
-                            remove({ id })
-                            setIsDeleted(true)
-                            toast.success('删除成功')
+                            executeDeleteLibrary({ id })
                         }, 5000)
                         onOpenChange()
                         toast('五秒后删除……', {
@@ -234,8 +252,8 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             </Popover>}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            isLoading={formState.isSubmitting}
-            onSubmit={handleSubmit(save)}
+            isLoading={formState.isSubmitting || isSaving}
+            onSubmit={handleSubmit(data => executeUpdateLibrary(data))}
             title='编辑文库'
         >
             <input type='hidden' {...register('id')} />
@@ -277,6 +295,14 @@ export function LibraryAddButton() {
         }
     })
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
+    const router = useRouter()
+    const { execute: executeCreateLibrary, isPending: isCreating } = useAction(createLibraryAction, {
+        onSuccess: ({ data }) => {
+            onOpenChange()
+            router.push(`/library/${data.id}`)
+        },
+        onError: ({ error }) => toast.error(error.serverError ?? '创建失败'),
+    })
     return <>
         <FlatCard className='w-full opacity-60 bg-transparent border-none' isPressable onPress={onOpen}>
             <CardBody className='px-6 pt-5 overflow-hidden'>
@@ -291,8 +317,8 @@ export function LibraryAddButton() {
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            isLoading={formState.isSubmitting}
-            onSubmit={handleSubmit(create)}
+            isLoading={formState.isSubmitting || isCreating}
+            onSubmit={handleSubmit(data => executeCreateLibrary(data))}
             title='创建文库'
         >
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto'>
