@@ -33,11 +33,11 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
     const [isGettingWithin, startGettingWithin] = useTransition()
     const router = useRouter()
 
-    return <div className='flex space-x-2'>
-        <div className='flex flex-col items-center justify-center flex-1 border-x border-x-default-200 text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
+    return <div className='flex gap-2'>
+        <div className='flex flex-col items-center justify-center flex-1 rounded-2xl bg-default-50 text-nowrap min-h-36 px-3 h-36 overflow-y-auto'>
             {words.map(({ word, id }) => (
                 !languageStrategies.map(s => s.welcome).includes(word) &&
-                <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave></Markdown>
+                <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave />
             ))}
         </div>
         <form action={drawWords} className='flex flex-col gap-2'>
@@ -46,7 +46,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 variant='flat'
                 isLoading={isDrawing}
                 startContent={!isDrawing && <PiListMagnifyingGlassDuotone className='text-xl' />}
-                color='primary'
+                color='default'
                 type='submit'
             >
                 所有
@@ -56,7 +56,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 variant='flat'
                 isLoading={isGettingWithin}
                 startContent={!isGettingWithin && <PiMagicWandDuotone className='text-xl' />}
-                color='secondary'
+                color='default'
                 onPress={() => {
                     startGettingWithin(async () => {
                         const comments = await getWithin(retrieveConfig)
@@ -95,11 +95,11 @@ export default function Test({ latestTime }: {
     const [end, setEnd] = useState(parseDate(latestTime))
 
     return <div>
-        <ConfirmStory.Root></ConfirmStory.Root>
+        <ConfirmStory.Root />
         <Suspense>
             <I18nProvider locale='zh-CN'>
             <DateRangePicker
-                className='my-2'
+                className='my-3'
                 label='词汇选取范围'
                 granularity='day'
                 value={{ start, end }}
@@ -111,17 +111,17 @@ export default function Test({ latestTime }: {
                     }
                 }}
                 variant='underlined'
-                color='primary'
-            ></DateRangePicker>
+                color='default'
+            />
         </I18nProvider>
         </Suspense>
-        <Suspense fallback={<div className='flex space-x-2'>
-            <div className='flex flex-col items-center justify-center flex-1 border-x border-x-default-200 text-nowrap min-h-36 px-2 h-36 overflow-y-auto'>
-                Loading words...
+        <Suspense fallback={<div className='flex gap-2'>
+            <div className='flex flex-col items-center justify-center flex-1 rounded-2xl bg-default-50 text-nowrap min-h-36 px-3 h-36'>
+                <span className='text-default-300 text-sm'>加载中…</span>
             </div>
             <div className='flex flex-col gap-2'>
-                <Button size='sm' variant='flat' color='primary' isLoading>所有</Button>
-                {!isReadOnly && <Button size='sm' variant='flat' color='secondary' isLoading>故事</Button>}
+                <Button size='sm' variant='flat' color='default' isLoading>所有</Button>
+                {!isReadOnly && <Button size='sm' variant='flat' color='default' isLoading>故事</Button>}
             </div>
         </div>}>
             <ConfigDependent start={start} end={end} lib={lib} isReadOnly={isReadOnly} />

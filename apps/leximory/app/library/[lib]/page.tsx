@@ -5,7 +5,6 @@ import { LibProps } from '@/lib/types'
 import { Suspense } from 'react'
 import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
 import Link from 'next/link'
-import StoneSkeleton from '@/components/ui/stone-skeleton'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
 async function getData(lib: string) {
@@ -51,21 +50,95 @@ async function PageContent({ params }: LibProps) {
     </>
 }
 
+/** Pulse placeholder block. */
+function Bone({ className }: { className?: string }) {
+    return <div className={`animate-pulse rounded-3xl bg-default-100 ${className ?? ''}`} />
+}
+
+/** Skeleton matching the TextList responsive layout. */
 function PageSkeleton() {
     return (
-        <div className='mx-auto max-w-6xl'>
-            <header className='mb-10'>
+        <>
+            {/* Header skeleton */}
+            <header className='mx-auto mb-10 max-w-6xl'>
                 <div className='flex items-center gap-3'>
-                    <StoneSkeleton className='w-8 h-8 rounded-full' />
-                    <StoneSkeleton className='w-48 h-7 rounded-lg' />
+                    <Bone className='w-8 h-8 rounded-full' />
+                    <Bone className='w-8 h-8 rounded-full' />
+                    <Bone className='w-48 h-7 rounded-lg ml-3' />
                 </div>
             </header>
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                <StoneSkeleton className='aspect-4/3 rounded-sm' />
-                <StoneSkeleton className='aspect-4/3 rounded-sm' />
-                <StoneSkeleton className='aspect-4/3 rounded-sm' />
+
+            {/* Mobile: single column */}
+            <div className='mx-auto max-w-md md:hidden flex flex-col gap-8'>
+                <Bone className='aspect-2/1 w-full' />
+                {[1, 2, 3].map(i => (
+                    <div key={i}>
+                        <Bone className='aspect-4/3 w-full mb-3' />
+                        <Bone className='w-3/4 h-6 rounded-lg mb-2' />
+                        <Bone className='w-1/3 h-4 rounded-full' />
+                    </div>
+                ))}
             </div>
-        </div>
+
+            {/* Tablet: 2-column */}
+            <div className='mx-auto hidden max-w-4xl md:block lg:hidden'>
+                <div className='grid grid-cols-[1.2fr_1fr] gap-8'>
+                    <div>
+                        <Bone className='aspect-4/3 w-full mb-3' />
+                        <Bone className='w-3/4 h-8 rounded-lg mx-auto mb-3' />
+                        <Bone className='w-1/3 h-4 rounded-full mx-auto' />
+                    </div>
+                    <div className='flex flex-col gap-6'>
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className='flex gap-4'>
+                                <div className='flex-1 flex flex-col justify-center gap-2'>
+                                    <Bone className='w-full h-4 rounded-lg' />
+                                    <Bone className='w-2/3 h-4 rounded-lg' />
+                                    <Bone className='w-1/3 h-3 rounded-full' />
+                                </div>
+                                <Bone className='h-22 w-22 shrink-0' />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop: 3-column Atlantic grid */}
+            <div className='mx-auto hidden max-w-6xl lg:block'>
+                <div className='grid grid-cols-[1fr_2fr_1fr] gap-8 xl:gap-10'>
+                    {/* Left column */}
+                    <div className='flex flex-col gap-10'>
+                        {[1, 2].map(i => (
+                            <div key={i}>
+                                <Bone className='aspect-4/3 w-full mb-3' />
+                                <Bone className='w-3/4 h-5 rounded-lg mb-2' />
+                                <Bone className='w-1/3 h-3 rounded-full' />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Center column */}
+                    <div className='border-default-200/80 border-x px-8 xl:px-10'>
+                        <Bone className='aspect-4/3 w-full mb-8' />
+                        <Bone className='w-3/4 h-10 rounded-lg mx-auto mb-3' />
+                        <Bone className='w-1/3 h-5 rounded-lg mx-auto mb-4' />
+                        <Bone className='w-1/4 h-4 rounded-full mx-auto' />
+                    </div>
+                    {/* Right column */}
+                    <div className='flex flex-col gap-6'>
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className='flex gap-4'>
+                                <div className='flex-1 flex flex-col justify-center gap-2'>
+                                    <Bone className='w-full h-4 rounded-lg' />
+                                    <Bone className='w-2/3 h-4 rounded-lg' />
+                                    <Bone className='w-1/3 h-3 rounded-full' />
+                                </div>
+                                <Bone className='h-22 w-22 shrink-0' />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </>
     )
 }
 

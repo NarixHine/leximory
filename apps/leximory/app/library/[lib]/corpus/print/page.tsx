@@ -1,5 +1,4 @@
 import { LibProps } from '@/lib/types'
-import H from '@/components/ui/h'
 import Markdown from '@/components/markdown'
 import { getAllWordsInLib } from '@/server/db/word'
 import ReaderToggle from './reader-toggle'
@@ -20,11 +19,11 @@ export default async function PrintPage({ params }: LibProps) {
 
     return (
         <div className='p-8 print:p-0'>
-            <div>
-                <H>语料汇总</H>
-                <div className='flex items-center gap-2 print:hidden pt-1'>
+            <div className='mb-6'>
+                <h1 className='font-formal text-2xl tracking-tight text-foreground'>语料汇总</h1>
+                <div className='flex items-center gap-2 print:hidden pt-2 text-default-400 text-sm'>
                     <ReaderToggle />
-                    <p className='opacity-60'>按 Ctrl + P 打印词卡</p>
+                    <span>按 Ctrl + P 打印词卡</span>
                 </div>
             </div>
 

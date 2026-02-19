@@ -4,7 +4,6 @@ import { LibAndTextProps } from '@/lib/types'
 import { getArticleData } from './data'
 import { Article } from './article'
 import { Suspense } from 'react'
-import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
@@ -20,14 +19,59 @@ async function PageContent({ params }: LibAndTextProps) {
     return <Article {...data} text={text} />
 }
 
+/** Pulse placeholder block. */
+function Bone({ className }: { className?: string }) {
+    return <div className={`animate-pulse rounded-3xl bg-default-100 ${className ?? ''}`} />
+}
+
+/** Skeleton matching the ArticleHero responsive layout. */
 function PageSkeleton() {
     return (
-        <div className='flex flex-col gap-6 pt-8'>
-            <StoneSkeleton className='w-8 h-8 rounded-full' />
-            <StoneSkeleton className='aspect-square w-full max-w-xs rounded-2xl' />
-            <StoneSkeleton className='w-3/4 h-10 rounded-lg' />
-            <StoneSkeleton className='w-1/3 h-4 rounded-lg' />
-        </div>
+        <>
+            {/* Mobile skeleton: vertical stack */}
+            <div className='flex flex-col gap-4 pt-8 px-5 md:hidden'>
+                <Bone className='w-8 h-8 rounded-full' />
+                <Bone className='w-24 h-4 rounded-lg' />
+                <Bone className='w-full h-10 rounded-lg' />
+                <Bone className='w-3/4 h-10 rounded-lg' />
+                <div className='flex gap-2'>
+                    <Bone className='w-16 h-5 rounded-full' />
+                    <Bone className='w-16 h-5 rounded-full' />
+                </div>
+                <Bone className='w-full h-px rounded-none mt-4' />
+                <Bone className='w-full h-5 rounded-lg' />
+                <Bone className='w-full h-5 rounded-lg' />
+                <Bone className='w-5/6 h-5 rounded-lg' />
+                <Bone className='w-full h-5 rounded-lg' />
+                <Bone className='w-2/3 h-5 rounded-lg' />
+            </div>
+
+            {/* md+ skeleton: side-by-side hero */}
+            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center md:mb-12'>
+                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto place-self-end pb-15'>
+                    <Bone className='w-8 h-8 rounded-full mb-5' />
+                    <Bone className='w-32 h-5 rounded-lg mb-4' />
+                    <Bone className='w-full h-10 rounded-lg mb-2' />
+                    <Bone className='w-3/4 h-10 rounded-lg mb-4' />
+                    <Bone className='w-24 h-4 rounded-lg mb-4' />
+                    <div className='flex gap-2'>
+                        <Bone className='w-16 h-5 rounded-full' />
+                        <Bone className='w-16 h-5 rounded-full' />
+                        <Bone className='w-16 h-5 rounded-full' />
+                    </div>
+                </div>
+                <Bone className='w-full h-full rounded-2xl min-h-[60dvh]' />
+            </div>
+
+            {/* Content area skeleton (both breakpoints) */}
+            <div className='hidden md:block px-5 md:w-5/6 mx-auto'>
+                <Bone className='w-full h-6 rounded-lg mb-3' />
+                <Bone className='w-full h-6 rounded-lg mb-3' />
+                <Bone className='w-5/6 h-6 rounded-lg mb-3' />
+                <Bone className='w-full h-6 rounded-lg mb-3' />
+                <Bone className='w-2/3 h-6 rounded-lg' />
+            </div>
+        </>
     )
 }
 
