@@ -1,4 +1,4 @@
-import { Ma_Shan_Zheng, Montserrat, Libre_Baskerville, Instrument_Serif, Source_Code_Pro } from 'next/font/google'
+import { Ma_Shan_Zheng, Montserrat, Libre_Baskerville, Instrument_Serif, Source_Code_Pro, Raleway } from 'next/font/google'
 import localFont from 'next/font/local'
 
 export const MINCHO = localFont({
@@ -12,10 +12,10 @@ export const CHINESE_CALLIGRAPHY = Ma_Shan_Zheng({
     variable: '--font-chinese-calligraphy',
 })
 
-export const ENGLISH = Montserrat({
+export const ENGLISH = Raleway({
     subsets: ['latin'],
     weight: 'variable',
-    style: ['italic', 'normal'],
+    style: ['normal'],
     variable: '--font-english',
 })
 

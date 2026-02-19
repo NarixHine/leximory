@@ -98,7 +98,7 @@ async function LibraryList({ userId, orFilter }: {
             {/* Archived section */}
             {compactLibs.length > 0 && (
                 <section className='mt-20 w-full max-w-150' aria-label='Archived libraries'>
-                    <h2 className='mb-4 px-1 font-bold text-lg tracking-widest text-default-400'>
+                    <h2 className='mb-4 px-1 font-bold text-lg tracking-widest text-secondary-400'>
                         已归档
                     </h2>
                     <div className='flex flex-wrap gap-2'>

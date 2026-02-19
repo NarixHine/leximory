@@ -21,6 +21,7 @@ import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -96,96 +97,107 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     const [isTogglingArchive, startTogglingArchive] = useTransition()
     const [isUnstarring, startUnstarring] = useTransition()
 
+    const router = useRouter()
+
     if (isDeleted) return null
 
     // Archived / shadow compact pill variant
     if (compact) {
         return (
-            <motion.div
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className='flex items-center rounded-full bg-default-50 py-1.5 pr-1.5 pl-5'
+            <Card
+                onPress={() => {
+                    router.push(`/library/${id}`)
+                }}
+                shadow='none'
+                className='p-0 bg-transparent'
             >
-                <div className='text-sm font-formal font-medium text-default-500'>{name}</div>
-                <div className='ml-3 flex items-center'>
-                    {archived && !shadow && (
-                        <Button
-                            size='sm'
-                            isIconOnly
-                            variant='light'
-                            isLoading={isTogglingArchive}
-                            onPress={() => {
-                                startTogglingArchive(async () => {
-                                    await unarchive({ id })
-                                })
-                            }}
-                            aria-label={`取消归档 ${name}`}
-                        >
-                            {!isTogglingArchive && <PiBoxArrowUp className='text-sm' />}
-                        </Button>
-                    )}
-                    {isStarred && (
-                        <Button
-                            size='sm'
-                            isIconOnly
-                            variant='light'
-                            isLoading={isUnstarring}
-                            onPress={async () => {
-                                if (await ConfirmUnstar.call()) {
-                                    startUnstarring(async () => {
-                                        await unstar({ id })
-                                    })
-                                }
-                            }}
-                            aria-label={`移除收藏 ${name}`}
-                        >
-                            {!isUnstarring && <PiStackMinus className='text-sm' />}
-                        </Button>
-                    )}
-                    {isOwner && !shadow && (
-                        <>
-                            <div className='mx-0.5 h-4 w-px bg-default-200' />
-                            <Popover placement='bottom'>
-                                <PopoverTrigger>
+                <CardBody className='p-0'>
+                    <div className='flex items-center flex-nowrap rounded-full bg-secondary-50 py-1.5 pr-1.5 pl-5'>
+                        <div className='text-sm font-formal font-medium text-secondary-500'>{name}</div>
+                        <div className='ml-3 flex items-center'>
+                            {archived && !shadow && (
+                                <Button
+                                    color='secondary'
+                                    size='sm'
+                                    isIconOnly
+                                    variant='light'
+                                    isLoading={isTogglingArchive}
+                                    onPress={() => {
+                                        startTogglingArchive(async () => {
+                                            await unarchive({ id })
+                                        })
+                                    }}
+                                    aria-label={`取消归档 ${name}`}
+                                >
+                                    {!isTogglingArchive && <PiBoxArrowUp className='text-sm' />}
+                                </Button>
+                            )}
+                            {isStarred && (
+                                <Button
+                                    color='secondary'
+                                    size='sm'
+                                    isIconOnly
+                                    variant='light'
+                                    isLoading={isUnstarring}
+                                    onPress={async () => {
+                                        if (await ConfirmUnstar.call()) {
+                                            startUnstarring(async () => {
+                                                await unstar({ id })
+                                            })
+                                        }
+                                    }}
+                                    aria-label={`移除收藏 ${name}`}
+                                >
+                                    {!isUnstarring && <PiStackMinus className='text-sm' />}
+                                </Button>
+                            )}
+                            {isOwner && !shadow && (
+                                <>
+                                    <div className='mx-0.5 h-4 w-px bg-default-200' />
+                                    <Popover placement='bottom'>
+                                        <PopoverTrigger>
+                                            <Button
+                                                color='secondary'
+                                                size='sm'
+                                                isIconOnly
+                                                variant='light'
+                                                aria-label={`删除 ${name}`}
+                                            >
+                                                <PiTrash className='text-sm' />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className='p-0'>
+                                            <Button
+                                                color='danger'
+                                                startContent={<PiWarningOctagonFill size={16} />}
+                                                size='sm'
+                                                onPress={() => {
+                                                    remove({ id })
+                                                    setIsDeleted(true)
+                                                }}
+                                            >确认删除</Button>
+                                        </PopoverContent>
+                                    </Popover>
+                                </>
+                            )}
+                            {shadow && (
+                                <>
+                                    <div className='mx-0.5 h-4 w-px bg-default-200' />
                                     <Button
-                                        size='sm'
                                         isIconOnly
+                                        color='secondary'
                                         variant='light'
-                                        aria-label={`删除 ${name}`}
-                                    >
-                                        <PiTrash className='text-sm' />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className='p-0'>
-                                    <Button
-                                        color='primary'
-                                        startContent={<PiWarningOctagonFill size={16} />}
+                                        startContent={<PiBookBookmark size={16} />}
                                         size='sm'
-                                        onPress={() => {
-                                            remove({ id })
-                                            setIsDeleted(true)
-                                        }}
-                                    >确认删除</Button>
-                                </PopoverContent>
-                            </Popover>
-                        </>
-                    )}
-                    {shadow && (
-                        <>
-                            <div className='mx-0.5 h-4 w-px bg-default-200' />
-                            <Button
-                                isIconOnly
-                                variant='light'
-                                startContent={<PiBookBookmark size={16} />}
-                                size='sm'
-                                as={Link}
-                                href={`/library/${id}/corpus`}
-
-                            />
-                        </>
-                    )}
-                </div>
-            </motion.div>
+                                        as={Link}
+                                        href={`/library/${id}/corpus`}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </CardBody>
+            </Card>
         )
     }
 
@@ -199,16 +211,16 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 isPressable
                 shadow='none'
                 href={`/library/${id}`}
-                 className='p-0 bg-transparent'
+                className='p-0 bg-transparent'
             >
                 <CardBody className='p-0 bg-default-100 rounded-2xl px-6 pb-7 pt-6'>
                     {/* Inner title block */}
-                        <span className='mb-2 inline-block text-sm text-default-400'>
-                            {getLanguageStrategy(lang as Lang).name}
-                        </span>
-                        <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
-                            {name}
-                        </h2>
+                    <span className='mb-2 inline-block text-sm text-default-400'>
+                        {getLanguageStrategy(lang as Lang).name}
+                    </span>
+                    <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
+                        {name}
+                    </h2>
                 </CardBody>
             </Card>
 
@@ -301,7 +313,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             </div>
             <p className='text-xs text-center opacity-80 prose prose-sm dark:prose-invert'>你会获得销售额 ⅕ 的 LexiCoin。</p>
             <Textarea label='Talk to Your Library 默认提示词' placeholder='在文本界面唤起 AI 对话时的初始提示词。'  {...register('prompt')} />
-        </Form >
+        </Form>
     </>)
 }
 
