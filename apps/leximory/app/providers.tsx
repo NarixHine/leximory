@@ -28,7 +28,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 						<Toaster toastOptions={{
 							classNames: {
 								toast: cn(
-									'text-foreground! bg-default-50/40!',
+									'text-foreground! bg-secondary-200/40!',
 									'border-none! shadow-none!',
 									'backdrop-blur-lg! backdrop-saturate-150!',
 									MINCHO.className

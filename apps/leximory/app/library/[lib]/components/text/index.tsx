@@ -6,13 +6,15 @@ import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
 import { langAtom, libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
-import { Card, CardBody, Chip, useDisclosure } from '@heroui/react'
+import { Card, CardBody, Chip, ChipProps, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
 import Link from "next/link"
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import { scrapeArticle } from '@/server/ai/scrape'
+import { cn, resolveEmoji } from '@/lib/utils'
+import { DateTime } from 'luxon'
 
 /** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
 function hashString(str: string): number {
@@ -26,28 +28,30 @@ function hashString(str: string): number {
 
 /**
  * OKLCH background tuned to Morandi green range.
- * Hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
+ * Light mode: hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
  * Returns both light and dark mode variants.
  */
 export function emojiBackground(id: string): { light: string, dark: string } {
     const h = hashString(id)
+
+    // Shared calculations
     const hue = 130 + (h % 36)
     const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
     const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
+
+    // Dark mode specific lightness logic
     const darkLightness = 0.18 + (((h >> 16) % 10) / 10) * 0.06
+
     return {
+        // Light: Uses the calculated green hue and low chroma
         light: `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`,
-        dark: `oklch(${darkLightness.toFixed(3)} ${(chroma + 0.005).toFixed(3)} ${hue})`
+
+        // Dark: Chroma set to 0 and Hue set to 0 for a neutral grey
+        dark: `oklch(${darkLightness.toFixed(3)} 0 0)`
     }
 }
 
-/** Returns the display emoji: DB emoji, or 📖 for ebooks, 📰 for articles. */
-export function resolveEmoji(emoji: string | null, hasEbook: boolean): string {
-    if (emoji) return emoji
-    return hasEbook ? '📖' : '📰'
-}
-
-export function TagPills({ tags }: { tags: string[] }) {
+export function TagPills({ tags, ...props }: { tags: string[] } & ChipProps) {
     if (!tags.length) return null
     return (
         <div className='flex flex-wrap gap-1.5'>
@@ -58,6 +62,7 @@ export function TagPills({ tags }: { tags: string[] }) {
                     size='sm'
                     className='text-default-400 border-1 text-[10px]'
                     key={tag}
+                    {...props}
                 >
                     {tag}
                 </Chip>
@@ -71,7 +76,7 @@ export function EmojiCover({ emoji, articleId, className = '' }: { emoji: string
     const bg = emojiBackground(articleId)
     return (
         <div
-            className={`flex items-center justify-center ${className}`}
+            className={cn('flex items-center justify-center rounded-3xl overflow-clip', className)}
             style={{ containerType: 'size' }}
         >
             <div
@@ -105,7 +110,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
-                className='mb-3 aspect-4/3 w-full rounded-sm'
+                className='mb-3 aspect-4/3 w-full'
             />
             <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-pretty'>
                 {title}
@@ -116,8 +121,8 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
 }
 
 /** Center hero card — large emoji, centered title + optional subtitle. */
-export function HeroCard({ id, title, topics, hasEbook, emoji }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null, createdAt: string
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -126,11 +131,14 @@ export function HeroCard({ id, title, topics, hasEbook, emoji }: {
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
-                className='mb-8 aspect-4/3 w-full rounded-sm'
+                className='mb-8 aspect-4/3 w-full'
             />
             <h2 className='mb-3 text-center font-formal text-[2rem] leading-[1.2] tracking-tight text-foreground text-balance sm:text-[2.4rem]'>
                 {title}
             </h2>
+            <time className='block text-center text-xl text-secondary-500 mb-4'>
+                {DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy')}
+            </time>
             <div className='flex justify-center'>
                 <TagPills tags={allTopics} />
             </div>
@@ -155,7 +163,7 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
-                className='h-22 w-22 shrink-0 rounded-sm'
+                className='h-22 w-22 shrink-0'
             />
         </Link>
     )
@@ -178,7 +186,7 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
-                className='h-16 w-16 shrink-0 rounded-sm'
+                className='h-16 w-16 shrink-0'
             />
         </Link>
     )
@@ -198,8 +206,7 @@ export function AddTextButton() {
             isPressable
             onPress={onOpen}
             shadow='none'
-            className='p-0'
-            style={{ backgroundColor: 'oklch(0.965 0.008 150)' }}
+            className='p-0 bg-default-100'
         >
             <CardBody
                 className='group p-0 flex aspect-2/1 w-full cursor-pointer items-center justify-center rounded-xl transition-colors'

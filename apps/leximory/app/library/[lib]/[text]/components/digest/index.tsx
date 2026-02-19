@@ -341,7 +341,7 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
 
   return (
     <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
-      <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>
+      <div className='sm:mt-2 sm:flex sm:justify-center sm:items-center mb-4 sm:mb-3 opacity-75'>
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
             <ReaderModeToggle />

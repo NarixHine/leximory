@@ -3,6 +3,12 @@ import { twMerge } from 'tailwind-merge'
 import { z } from '@repo/schema'
 import { customAlphabet } from 'nanoid'
 
+/** Returns the display emoji: DB emoji, or 📖 for ebooks, 📰 for articles. */
+export function resolveEmoji(emoji: string | null, hasEbook: boolean): string {
+    if (emoji) return emoji
+    return hasEbook ? '📖' : '📰'
+}
+
 /**
  * Generates a random ID using NanoID.
  * 

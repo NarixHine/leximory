@@ -11,7 +11,7 @@ export const englishStrategy = createLanguageStrategy({
     maxArticleLength: 30000,
     FormattedReadingTime: (text: string) => {
         const wordCount = text.split(/\s+/).length
-        return <span className={ENGLISH_SERIF.className}>{wordCount} words&nbsp;&nbsp;·&nbsp;&nbsp;{Math.ceil(wordCount / 120)}-min read</span>
+        return <span className='text-secondary-500 italic font-formal text-lg'>{wordCount} Words, {Math.ceil(wordCount / 120)}-Minute Read</span>
     },
     exampleSentencePrompt: '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽“升腾”: ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
     dictionaryLink: (word: string) => `https://www.etymonline.com/word/${word}`

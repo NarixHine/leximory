@@ -8,7 +8,7 @@ import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { PiTrashDuotone, PiBookBookmarkDuotone, PiCheckCircleDuotone, PiArrowSquareOutDuotone, PiPencilDuotone, PiXCircleDuotone, PiEyesFill, PiEyeSlashDuotone } from 'react-icons/pi'
+import { PiTrash, PiBookBookmark, PiCheckCircle, PiArrowSquareOut, PiPencil, PiXCircle, PiEyesFill, PiEyeSlash } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
@@ -132,12 +132,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const Save = () => <div className='flex gap-2'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
-            size='sm'
             isIconOnly={!isReadOnly}
             isLoading={status === 'loading'}
-            startContent={status !== 'loading' && <PiBookBookmarkDuotone size={isReadOnly ? 20 : undefined} />}
+            startContent={status !== 'loading' && <PiBookBookmark className='size-5' />}
             color={'primary'}
-            variant='flat'
+            variant='solid'
+            className='rounded-4xl'
             onPress={async () => {
                 setStatus('loading')
                 try {
@@ -153,12 +153,11 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         {editId && !explicitDisableSave && !prompt && <>
             <Button
                 isDisabled={status === 'deleted'}
-                size='sm'
                 isIconOnly
+                className='rounded-4xl'
                 isLoading={status === 'loading'}
-                startContent={status !== 'loading' && (isEditing ? <PiCheckCircleDuotone /> : <PiPencilDuotone />)}
+                startContent={status !== 'loading' && (isEditing ? <PiCheckCircle className='size-5' /> : <PiPencil className='size-5' />)}
                 color='primary'
-                variant='flat'
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
@@ -183,10 +182,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             ></Button>
             {isEditing && (
                 <Button
-                    size='sm'
-                    color='warning'
-                    variant='flat'
-                    startContent={<PiXCircleDuotone />}
+                    color='secondary'
+                    variant='light'
+                    className='rounded-4xl'
+                    startContent={<PiXCircle className='size-5' />}
                     isIconOnly
                     onPress={() => {
                         setIsEditing(false)
@@ -196,12 +195,12 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             )}
             {editId && !isEditing && <Button
                 isDisabled={status === 'deleted'}
-                size='sm'
                 isIconOnly
                 isLoading={status === 'loading' && !isEditing}
-                startContent={status !== 'loading' && <PiTrashDuotone />}
+                startContent={status !== 'loading' && <PiTrash className='size-5' />}
                 color='danger'
-                variant='flat'
+                className='rounded-4xl'
+                variant='light'
                 onPress={async () => {
                     setStatus('loading')
                     try {
@@ -218,7 +217,14 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             (() => {
                 const strategy = getLanguageStrategy(lang)
                 if (strategy.dictionaryLink) {
-                    return <LinkButton href={strategy.dictionaryLink(portions[1])} target='_blank' size='sm' startContent={<PiArrowSquareOutDuotone />} variant='flat' color='secondary' isIconOnly />
+                    return <LinkButton
+                        href={strategy.dictionaryLink(portions[1])}
+                        target='_blank'
+                        startContent={<PiArrowSquareOut className='size-5' />}
+                        className='rounded-4xl'
+                        variant='light'
+                        color='secondary'
+                        isIconOnly />
                 }
                 return null
             })()
@@ -230,7 +236,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <FlatCard fullWidth background='solid' radius='sm' shadow='none' className={className}>
+        ? <FlatCard fullWidth background='solid' shadow='none' className={cn('rounded-4xl', className)}>
             <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='relative'>
@@ -333,7 +339,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         onPress={() => setPortions([portions[0]])}
                         className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     >
-                        <PiEyeSlashDuotone />
+                        <PiEyeSlash />
                     </Button>
                     <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
                 </span>

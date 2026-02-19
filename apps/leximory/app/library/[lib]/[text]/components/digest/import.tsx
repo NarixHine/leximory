@@ -61,7 +61,6 @@ export default function ImportModal() {
             isDisabled={isReadOnly}
             onPress={onOpen}
             className='flex-1'
-            variant='flat'
             radius='full'
             color='primary'
             startContent={<PiMagicWandDuotone className='text-lg' />}
@@ -186,8 +185,7 @@ function StoryModal() {
             isDisabled={isReadOnly}
             isLoading={isLoading}
             radius='full'
-            variant='flat'
-            color='secondary'
+            color='default'
             startContent={<PiTornadoDuotone className='text-lg' />}
             onPress={onOpen}
         >
@@ -198,7 +196,7 @@ function StoryModal() {
                 {(onClose) => (
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
-                        <DrawerBody className='flex flex-col gap-4 max-w-(--breakpoint-sm) mx-auto'>
+                        <DrawerBody className='flex flex-col gap-4 max-w-md mx-auto'>
                             <div className='prose dark:prose-invert'>
                                 <blockquote className='not-italic border-l-secondary-300'>
                                     连词成文通过将目标单词串联为故事辅助深度记忆。

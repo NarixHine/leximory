@@ -3,9 +3,10 @@ import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
 import { Suspense } from 'react'
-import { PiArrowLeft } from 'react-icons/pi'
+import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
 import Link from 'next/link'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
 async function getData(lib: string) {
     const [{ name, isReadOnly, isOwner, access }, texts] = await Promise.all([
@@ -21,15 +22,26 @@ async function PageContent({ params }: LibProps) {
     return <>
         {/* Header */}
         <header className='mx-auto mb-10 max-w-6xl'>
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-2'>
                 <Link
                     href='/library'
                     className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
                     aria-label='返回文库'
                 >
-                    <PiArrowLeft className='h-4 w-4' />
+                    <LoadingIndicatorWrapper variant='spinner'>
+                        <PiArrowLeft className='size-6' />
+                    </LoadingIndicatorWrapper>
                 </Link>
-                <h1 className='font-formal text-2xl tracking-tight text-foreground'>
+                <Link
+                    href={`/library/${lib}/corpus`}
+                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                    aria-label='语块本'
+                >
+                    <LoadingIndicatorWrapper variant='spinner'>
+                        <PiBookBookmark className='size-6' />
+                    </LoadingIndicatorWrapper>
+                </Link>
+                <h1 className='font-formal text-2xl tracking-tight text-foreground ml-3'>
                     {name}
                 </h1>
             </div>

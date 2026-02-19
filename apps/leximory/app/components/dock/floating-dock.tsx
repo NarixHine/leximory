@@ -61,7 +61,7 @@ const FloatingDockHorizontal = ({
             onMouseMove={(e) => mouseX.set(e.clientX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
-                'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-primary-50/80 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
+                'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-2xl backdrop:blur-sm bg-primary-50/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
                 className
             )}
         >

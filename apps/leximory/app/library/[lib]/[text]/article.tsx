@@ -8,87 +8,52 @@ import Digest from './components/digest'
 import EditableH from './components/editable-h'
 import QuoteInAgent from './components/quote-in-agent'
 import ShareButton from './components/share-button'
-import Topics from './components/topics'
 import { getLanguageStrategy } from '@/lib/languages'
-import { EmojiCover, resolveEmoji, TagPills } from '../components/text'
-import { Button } from '@heroui/button'
-import { PiArrowLeft } from 'react-icons/pi'
-import Link from 'next/link'
+import { EmojiCover, TagPills } from '../components/text'
+import { resolveEmoji } from '@/lib/utils'
+import { BackwardButton } from './components/backward-button'
+import { DateTime } from 'luxon'
+import { Lang } from '@repo/env/config'
 
 /** Magazine-style article hero header. */
-function ArticleHero({ title, emoji, hasEbook, topics, createdAt, textId, libId }: {
-    title: string, emoji: string | null, hasEbook: boolean, topics: string[] | null, createdAt: string | null, textId: string, libId: string
+function ArticleHero({ title, emoji, topics, createdAt, textId, libId, lang, content }: {
+    title: string, emoji: string | null, topics: string[], createdAt: string | null, textId: string, libId: string, lang: Lang, content: string
 }) {
-    const displayEmoji = resolveEmoji(emoji, hasEbook)
-    const allTopics = (topics ?? []).concat(hasEbook ? ['电子书'] : [])
-    const dateStr = createdAt ? new Date(createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) : null
+    const { FormattedReadingTime } = getLanguageStrategy(lang)
+    const displayEmoji = resolveEmoji(emoji, false)
+    const dateStr = createdAt ? DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy') : null
 
     return (
-        <div className='print:hidden'>
-            {/* Mobile layout: vertical stack */}
-            <div className='md:hidden mb-8'>
-                <div className='flex items-center gap-3 mb-6'>
-                    <Button
-                        as={Link}
-                        href={`/library/${libId}`}
-                        variant='light'
-                        isIconOnly
-                        radius='full'
-                        size='sm'
-                        className='text-default-400'
-                        aria-label='返回'
-                    >
-                        <PiArrowLeft className='h-4 w-4' />
-                    </Button>
-                </div>
-                <EmojiCover
-                    emoji={displayEmoji}
-                    articleId={textId}
-                    className='aspect-square w-full max-w-xs mx-auto rounded-2xl mb-8'
-                />
-                <h1 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance mb-4'>
-                    {title}
-                </h1>
-                {dateStr && <time className='block font-mono text-xs text-default-400 mb-3'>{dateStr}</time>}
-                <TagPills tags={allTopics} />
-            </div>
-
+        <div className='print:hidden hidden md:block w-full'>
             {/* md+ layout: side-by-side, emoji on right, text on left */}
-            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-[70dvh] md:items-center mb-12'>
-                <div className='flex flex-col justify-center'>
-                    <Button
-                        as={Link}
-                        href={`/library/${libId}`}
-                        variant='light'
-                        isIconOnly
-                        radius='full'
-                        size='sm'
-                        className='text-default-400 mb-8'
-                        aria-label='返回'
-                    >
-                        <PiArrowLeft className='h-4 w-4' />
-                    </Button>
-                    {dateStr && <time className='block font-mono text-xs text-default-400 mb-4'>{dateStr}</time>}
-                    <h1 className='font-formal text-4xl lg:text-5xl leading-tight tracking-tight text-foreground text-balance mb-6'>
+            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center md:mb-12'>
+                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto place-self-end pb-15'>
+                    <BackwardButton libId={libId} />
+                    {dateStr && <time className='block text-lg text-secondary-400 mb-4'>{dateStr}</time>}
+                    <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-3'>
                         {title}
                     </h1>
-                    <TagPills tags={allTopics} />
+                    {FormattedReadingTime && (
+                        <div className='text-sm mb-4'>
+                            {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
+                        </div>
+                    )}
+                    <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' />
                 </div>
                 <EmojiCover
                     emoji={displayEmoji}
                     articleId={textId}
-                    className='aspect-square w-full rounded-2xl'
+                    className='w-full h-full rounded-2xl'
                 />
             </div>
         </div>
     )
 }
 
-export const Article = ({ title, text, content, topics, ebook, emoji, createdAt, lib, annotating, prompt, hideControls, isPublicAndFree }: Awaited<ReturnType<typeof getArticleData>> & { 
-    text: string, 
+export const Article = ({ title, text, content, topics, ebook, emoji, createdAt, lib, annotating, prompt, hideControls, isPublicAndFree }: Awaited<ReturnType<typeof getArticleData>> & {
+    text: string,
     hideControls?: boolean
- }) => {
-    const { FormattedReadingTime } = getLanguageStrategy(lib.lang)
+}) => {
     return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('>', '>')],
@@ -100,29 +65,24 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
             [isLoadingAtom, annotating === 'annotating' || annotating === 'saving'],
             [promptAtom, prompt]
         ]}>
-            <ArticleHero
+            {!ebook && <ArticleHero
                 title={title}
                 emoji={emoji}
-                hasEbook={!!ebook}
-                topics={topics}
+                topics={topics ?? []}
+                lang={lib.lang}
+                content={content}
                 createdAt={createdAt}
                 textId={text}
                 libId={lib.id}
-            />
-            <div className='flex items-center justify-center gap-3 print:mt-0'>
+            />}
+            <div className='flex items-center justify-center gap-3 print:mt-0 px-5 md:w-5/6 mx-auto'>
                 {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2 print:invisible' />}
                 <EditableH />
                 <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2 print:invisible' />
             </div>
-            <div className='flex flex-wrap gap-2 justify-center items-center'>
-                {FormattedReadingTime && (
-                    <div className='text-sm text-center mt-1'>
-                        {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
-                    </div>
-                )}
-                <Topics topics={topics} className='justify-center print:flex hidden'></Topics>
+            <div className='px-5 md:w-5/6 mx-auto'>
+                <Digest hideImportControls={hideControls}></Digest>
             </div>
-            <Digest hideImportControls={hideControls}></Digest>
         </HydrationBoundary>
     </ScopeProvider>)
 }

@@ -15,7 +15,12 @@ export function validateOrThrow(word: string) {
 export function parseCommentParams(word: string) {
     try {
         const purifiedParams = decodeURIComponent(word).replaceAll('{{', '').replaceAll('}}', '').replaceAll('<must>', '').replaceAll('</must>', '')
-        const parsedParams = purifiedParams.split('}')[0].split(',') as string[]
+        let parsedParams: string[]
+        try {
+            parsedParams = JSON.parse(purifiedParams.split('}')[0])
+        } catch {
+            parsedParams = purifiedParams.split('}')[0].split(',') as string[]
+        }
         return parsedParams
     } catch (e) {
         return ['ERROR', 'ERROR', `在解析注解\`${word}\`时发生错误，请检查注解格式或联系开发者。`]

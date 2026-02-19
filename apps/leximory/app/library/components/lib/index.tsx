@@ -22,6 +22,7 @@ import { ConfirmUnstar } from './confirm-unstar'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -112,7 +113,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 className='p-0 bg-transparent'
             >
                 <CardBody className='p-0'>
-                    <div className='flex items-center flex-nowrap rounded-full bg-secondary-50 py-1.5 pr-1.5 pl-5'>
+                    <div className='flex items-center flex-nowrap rounded-3xl bg-secondary-50 py-1.5 pr-1.5 pl-5'>
                         <div className='text-sm font-formal font-medium text-secondary-500'>{name}</div>
                         <div className='ml-3 flex items-center'>
                             {archived && !shadow && (
@@ -231,7 +232,13 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         href={`/library/${id}/${recentAccessItem.id}`}
                         className='group/link flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-default-400'
                     >
-                        <PiClock className='size-4' />
+                        <LoadingIndicatorWrapper size='sm' color='secondary' classNames={{
+                            wrapper: 'size-4',
+                            circle1: 'size-4',
+                            circle2: 'size-4'
+                        }}>
+                            <PiClock className='size-4' />
+                        </LoadingIndicatorWrapper>
                         <span className='max-w-[15ch] truncate'>{recentAccessItem.title}</span>
                     </Link>
                 ) : (

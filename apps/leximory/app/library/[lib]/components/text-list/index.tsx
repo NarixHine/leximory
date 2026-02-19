@@ -76,7 +76,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                 {(leftArticles.length > 0 || moreArticles.length > 0) && (
                     <div className='mt-12 grid grid-cols-2 gap-x-8 gap-y-8'>
                         {[...leftArticles, ...moreArticles].map((article, i, arr) => (
-                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 2 === 1 || i === arr.length - 1} />
+                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 2 === 1} />
                         ))}
                     </div>
                 )}
@@ -112,7 +112,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                 {moreArticles.length > 0 && (
                     <div className='mt-16 grid grid-cols-3 gap-x-6 gap-y-10'>
                         {moreArticles.map((article, i, arr) => (
-                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 3 === 2 || i === arr.length - 1} />
+                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 3 === 2} />
                         ))}
                     </div>
                 )}

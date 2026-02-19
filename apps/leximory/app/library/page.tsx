@@ -7,6 +7,7 @@ import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
+import { Divider } from '@heroui/divider'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -40,6 +41,7 @@ export default function Page() {
             <Suspense fallback={
                 <section className='w-full max-w-125 sm:max-w-150'>
                     <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
+                        <LibrarySkeleton />
                         <LibrarySkeleton />
                         <LibrarySkeleton />
                         <LibrarySkeleton />
@@ -97,10 +99,15 @@ async function LibraryList({ userId, orFilter }: {
 
             {/* Archived section */}
             {compactLibs.length > 0 && (
-                <section className='mt-20 w-full max-w-150' aria-label='Archived libraries'>
-                    <h2 className='mb-4 px-1 font-bold text-lg tracking-widest text-secondary-400'>
-                        已归档
-                    </h2>
+                <section className='mt-20 w-full max-w-200' aria-label='Archived libraries'>
+                    <div className='flex flex-row items-center mb-4'>
+                        <div className='flex-1 h-px bg-secondary-300/70' />
+                        <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133 shrink-0'>
+                            <span className='mx-2'>已归档</span>
+                            <div className='flex-1 h-px bg-secondary-300/70' />
+                        </h2>
+                        <div className='flex-1 h-px bg-secondary-300/70' />
+                    </div>
                     <div className='flex flex-wrap gap-2'>
                         {compactLibs.map(({ lib, isStarred }) => lib && (
                             <Library

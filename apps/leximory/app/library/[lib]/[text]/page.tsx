@@ -32,7 +32,7 @@ function PageSkeleton() {
 }
 
 export default async function Page(props: LibAndTextProps) {
-    return (<Main className='max-w-(--breakpoint-lg) [counter-reset:sidenote-counter] md:pb-4'>
+    return (<Main className='max-w-none md:w-full md:pt-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
         <Suspense fallback={<PageSkeleton />}>
             <PageContent params={props.params} />
         </Suspense>
