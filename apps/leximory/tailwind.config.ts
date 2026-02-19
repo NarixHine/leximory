@@ -109,7 +109,6 @@ const config: Config = {
               900: '#282726',
             },
 
-            // Morandi green
             default: {
               "DEFAULT": "#e7ece7",
               "foreground": "#5a715a",
@@ -125,7 +124,6 @@ const config: Config = {
               "900": "#202c20"
             },
 
-            // Neutral
             primary: {
               DEFAULT: '#1f2937',
               50: '#f9fafb',
@@ -162,36 +160,6 @@ const config: Config = {
             foreground: '#CECDC3',
 
             focus: {
-              DEFAULT: '#878580',
-              50: '#282726',
-              100: '#403E3C',
-              200: '#575653',
-              300: '#6F6E69',
-              400: '#878580',
-              500: '#9F9D96',
-              600: '#B7B5AC',
-              700: '#CECDC3',
-              800: '#E6E4D9',
-              900: '#F2F0E5',
-            },
-
-            // Morandi green (dark mode — reversed scale)
-            default: {
-              DEFAULT: 'oklch(0.55 0.05 150)',
-              50: 'oklch(0.18 0.03 150)',
-              100: 'oklch(0.25 0.04 150)',
-              200: 'oklch(0.35 0.05 150)',
-              300: 'oklch(0.45 0.06 150)',
-              400: 'oklch(0.55 0.05 150)',
-              500: 'oklch(0.70 0.04 150)',
-              600: 'oklch(0.90 0.025 150)',
-              700: 'oklch(0.94 0.015 150)',
-              800: 'oklch(0.965 0.008 150)',
-              900: 'oklch(0.98 0.005 150)',
-            },
-
-            // Neutral (dark mode — reversed scale)
-            primary: {
               DEFAULT: '#9F9D96',
               50: '#282726',
               100: '#403E3C',
@@ -205,21 +173,49 @@ const config: Config = {
               900: '#F2F0E5',
             },
 
-            // Faded neutral (dark mode — reversed scale)
-            secondary: {
-              DEFAULT: '#85837D',
-              50: '#393836',
-              100: '#52514D',
-              200: '#6B6A65',
-              300: '#85837D',
-              400: '#9F9D96',
-              500: '#B0AEA6',
-              600: '#C8C6BF',
-              700: '#DDDCD7',
-              800: '#EEEDEA',
-              900: '#F8F7F2',
+            default: {
+              DEFAULT: '#71717A',
+              foreground: '#FAFAFA',
+              50: '#18181B',
+              100: '#27272A',
+              200: '#3F3F46',
+              300: '#52525B',
+              400: '#71717A',
+              500: '#A1A1AA',
+              600: '#D4D4D8',
+              700: '#E4E4E7',
+              800: '#F4F4F5',
+              900: '#FAFAFA',
             },
-          },
+
+            primary: {
+              DEFAULT: '#6B7280',
+              50: '#030712',
+              100: '#1F2937',
+              200: '#374151',
+              300: '#4B5563',
+              400: '#6B7280',
+              500: '#9CA3AF',
+              600: '#D1D5DB',
+              700: '#E5E7EB',
+              800: '#F3F4F6',
+              900: '#F9FAFB',
+            },
+
+            secondary: {
+              DEFAULT: '#67787C',
+              50: '#161B1D',
+              100: '#22292B',
+              200: '#394447',
+              300: '#4B585B',
+              400: '#67787C',
+              500: '#9CA8AB',
+              600: '#D0D6D8',
+              700: '#E3E7E8',
+              800: '#F1F3F3',
+              900: '#F9FBFB',
+            },
+          }
         }
       },
     }),

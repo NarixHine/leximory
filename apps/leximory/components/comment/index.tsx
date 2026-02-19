@@ -292,7 +292,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     !isReaderMode && [
                                         'box-decoration-clone',
                                         '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
-                                        isOnDemand ? 'shadow-default-300/40 dark:shadow-default-400/40' : 'shadow-primary-200/40 dark:shadow-primary-600/40',
+                                        isOnDemand ? 'shadow-default-300/60' : 'shadow-emerald-300/30',
                                     ]
                                 )}>
                                     {portions[0]}

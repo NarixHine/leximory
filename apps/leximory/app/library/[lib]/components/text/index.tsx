@@ -177,6 +177,7 @@ export function AddTextButton() {
 
     return <>
         <Card
+            isPressable
             onPress={onOpen}
             shadow='none'
             className='p-0'

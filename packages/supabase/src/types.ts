@@ -104,6 +104,7 @@ export type Database = {
         Row: {
           access: number
           created_at: string | null
+          emoji: string | null
           id: string
           lang: string
           name: string
@@ -118,6 +119,7 @@ export type Database = {
         Insert: {
           access?: number
           created_at?: string | null
+          emoji?: string | null
           id?: string
           lang?: string
           name?: string
@@ -132,6 +134,7 @@ export type Database = {
         Update: {
           access?: number
           created_at?: string | null
+          emoji?: string | null
           id?: string
           lang?: string
           name?: string
