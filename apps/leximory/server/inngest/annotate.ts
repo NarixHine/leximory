@@ -18,6 +18,13 @@ const topicsPrompt = (input: string) => ({
     ...nanoAI
 })
 
+const emojiPrompt = (input: string) => ({
+    system: `你是一个emoji选择器。根据文章的主题和氛围，选择一个最能代表这篇文章的emoji。只输出一个emoji，不要输出任何其他内容。`,
+    prompt: `为以下文章选择一个最合适的emoji：\n\n${input.slice(0, 500)}`,
+    maxOutputTokens: 10,
+    ...nanoAI
+})
+
 const chunkText = (text: string, maxLength: number): string[] => {
     // Handle edge cases
     if (!text) return []
@@ -96,14 +103,16 @@ export const annotateFullArticle = inngest.createFunction(
 
         const chunks = chunkText(article, getLanguageStrategy(lang).maxChunkSize)
 
-        const { topicsConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
+        const { topicsConfig, emojiConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
             const topicsConfig = topicsPrompt(article)
+            const emojiConfig = emojiPrompt(article)
             const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
-            return { topicsConfig, annotationConfigs }
+            return { topicsConfig, emojiConfig, annotationConfigs }
         })
 
-        const [topics, ...annotatedChunks] = await Promise.all([
+        const [topics, emoji, ...annotatedChunks] = await Promise.all([
             step.ai.wrap('annotate-topics', generateText, topicsConfig),
+            step.ai.wrap('generate-emoji', generateText, emojiConfig),
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
         ])
 
@@ -115,7 +124,13 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            await updateText({ id: textId, content, topics: topics.steps[0].content[0].type==='text' ? topics.steps[0].content[0].text.split('||') : [] })
+            const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
+            await updateText({
+                id: textId,
+                content,
+                topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
+                emoji: generatedEmoji
+            })
         })
 
         await step.run('set-annotation-progress-completed', async () => {

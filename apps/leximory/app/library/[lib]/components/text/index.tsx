@@ -1,7 +1,7 @@
 'use client'
 
 import { add, addAndGenerate } from './actions'
-import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
+import { PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
 import { langAtom, libAtom } from '../../atoms'
@@ -27,26 +27,31 @@ function hashString(str: string): number {
 /**
  * OKLCH background tuned to Morandi green range.
  * Hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
+ * Returns both light and dark mode variants.
  */
-export function emojiBackground(id: string): string {
+export function emojiBackground(id: string): { light: string, dark: string } {
     const h = hashString(id)
     const hue = 130 + (h % 36)
     const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
     const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
-    return `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`
+    const darkLightness = 0.18 + (((h >> 16) % 10) / 10) * 0.06
+    return {
+        light: `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`,
+        dark: `oklch(${darkLightness.toFixed(3)} ${(chroma + 0.005).toFixed(3)} ${hue})`
+    }
 }
 
-/** Picks a deterministic emoji from the article title. */
-const ARTICLE_EMOJIS = ['📖', '🗂️', '🌍', '🎵', '📝', '🔀', '🤌', '🏛️', '🎧', '🎭', '📺', '💬', '✨', '🤝', '⚖️', '🧩', '📚', '🔎', '🧠', '🎯']
-export function pickEmoji(id: string): string {
-    return ARTICLE_EMOJIS[hashString(id) % ARTICLE_EMOJIS.length]!
+/** Returns the display emoji: DB emoji, or 📖 for ebooks, 📰 for articles. */
+export function resolveEmoji(emoji: string | null, hasEbook: boolean): string {
+    if (emoji) return emoji
+    return hasEbook ? '📖' : '📰'
 }
 
 export function TagPills({ tags }: { tags: string[] }) {
     if (!tags.length) return null
     return (
         <div className='flex flex-wrap gap-1.5'>
-            {tags.slice(0, 3).map((tag, i) => (
+            {tags.slice(0, 3).map((tag) => (
                 <Chip
                     variant='bordered'
                     color='default'
@@ -61,31 +66,44 @@ export function TagPills({ tags }: { tags: string[] }) {
     )
 }
 
-/** Emoji cover in a rounded container with hash-seeded background. */
+/** Emoji cover in a rounded container with hash-seeded background (supports dark mode). */
 export function EmojiCover({ emoji, articleId, className = '' }: { emoji: string, articleId: string, className?: string }) {
     const bg = emojiBackground(articleId)
     return (
         <div
             className={`flex items-center justify-center ${className}`}
-            style={{ backgroundColor: bg, containerType: 'size' }}
+            style={{ containerType: 'size' }}
         >
-            <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
-                {emoji}
-            </span>
+            <div
+                className='w-full h-full flex items-center justify-center dark:hidden'
+                style={{ backgroundColor: bg.light }}
+            >
+                <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+                    {emoji}
+                </span>
+            </div>
+            <div
+                className='w-full h-full hidden items-center justify-center dark:flex'
+                style={{ backgroundColor: bg.dark }}
+            >
+                <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+                    {emoji}
+                </span>
+            </div>
         </div>
     )
 }
 
 /** Large article card with emoji above, title below. */
-export function LeftCard({ id, title, topics, hasEbook }: {
-    id: string, title: string, topics: string[], hasEbook: boolean
+export function LeftCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
     return (
         <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
             <EmojiCover
-                emoji={pickEmoji(id)}
+                emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='mb-3 aspect-4/3 w-full rounded-sm'
             />
@@ -98,15 +116,15 @@ export function LeftCard({ id, title, topics, hasEbook }: {
 }
 
 /** Center hero card — large emoji, centered title + optional subtitle. */
-export function HeroCard({ id, title, topics, hasEbook }: {
-    id: string, title: string, topics: string[], hasEbook: boolean
+export function HeroCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
     return (
         <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
             <EmojiCover
-                emoji={pickEmoji(id)}
+                emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='mb-8 aspect-4/3 w-full rounded-sm'
             />
@@ -121,8 +139,8 @@ export function HeroCard({ id, title, topics, hasEbook }: {
 }
 
 /** Right-side compact card — title left, emoji right. */
-export function RightCard({ id, title, topics, hasEbook }: {
-    id: string, title: string, topics: string[], hasEbook: boolean
+export function RightCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -135,7 +153,7 @@ export function RightCard({ id, title, topics, hasEbook }: {
                 <TagPills tags={allTopics} />
             </div>
             <EmojiCover
-                emoji={pickEmoji(id)}
+                emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='h-22 w-22 shrink-0 rounded-sm'
             />
@@ -144,8 +162,8 @@ export function RightCard({ id, title, topics, hasEbook }: {
 }
 
 /** Compact card for additional articles below hero. */
-export function CompactCard({ id, title, topics, hasEbook }: {
-    id: string, title: string, topics: string[], hasEbook: boolean
+export function CompactCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -158,7 +176,7 @@ export function CompactCard({ id, title, topics, hasEbook }: {
                 <TagPills tags={allTopics} />
             </div>
             <EmojiCover
-                emoji={pickEmoji(id)}
+                emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='h-16 w-16 shrink-0 rounded-sm'
             />
@@ -243,10 +261,10 @@ export function AddTextButton() {
 }
 
 /** Backward-compatible default export — extra props kept for consumers outside /library. */
-export default function Text({ id, title, topics, hasEbook, ...rest }: {
-    id: string, title: string, topics: string[], hasEbook: boolean,
+export default function Text({ id, title, topics, hasEbook, emoji, ...rest }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji?: string | null,
     createdAt?: string, disablePrefetch?: boolean, disableNavigation?: boolean,
     visitStatus?: 'loading' | 'visited' | 'not-visited',
 }) {
-    return <CompactCard id={id} title={title} topics={topics} hasEbook={hasEbook} />
+    return <CompactCard id={id} title={title} topics={topics} hasEbook={hasEbook} emoji={emoji ?? null} />
 }

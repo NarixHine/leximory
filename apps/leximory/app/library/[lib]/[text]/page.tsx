@@ -1,11 +1,10 @@
 import Main from '@/components/ui/main'
-import Nav from '@/components/nav'
 import { getTextContent } from '@/server/db/text'
 import { LibAndTextProps } from '@/lib/types'
 import { getArticleData } from './data'
 import { Article } from './article'
 import { Suspense } from 'react'
-import NavBreadcrumbs from '@/components/nav/breadcrumbs'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
@@ -18,15 +17,23 @@ export async function generateMetadata(props: LibAndTextProps) {
 async function PageContent({ params }: LibAndTextProps) {
     const { text } = await params
     const data = await getArticleData(text)
-    return <>
-        <Nav lib={{ id: data.lib.id, name: data.lib.name }} text={{ id: text, name: data.title }}></Nav>
-        <Article {...data} text={text} />
-    </>
+    return <Article {...data} text={text} />
+}
+
+function PageSkeleton() {
+    return (
+        <div className='flex flex-col gap-6 pt-8'>
+            <StoneSkeleton className='w-8 h-8 rounded-full' />
+            <StoneSkeleton className='aspect-square w-full max-w-xs rounded-2xl' />
+            <StoneSkeleton className='w-3/4 h-10 rounded-lg' />
+            <StoneSkeleton className='w-1/3 h-4 rounded-lg' />
+        </div>
+    )
 }
 
 export default async function Page(props: LibAndTextProps) {
     return (<Main className='max-w-(--breakpoint-lg) [counter-reset:sidenote-counter] md:pb-4'>
-        <Suspense fallback={<NavBreadcrumbs loading />}>
+        <Suspense fallback={<PageSkeleton />}>
             <PageContent params={props.params} />
         </Suspense>
     </Main>)

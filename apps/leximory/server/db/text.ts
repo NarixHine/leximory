@@ -39,10 +39,10 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
     return data
 }
 
-export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
+export async function updateText({ id, title, content, topics, emoji }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
     const { data: rec } = await supabase
         .from('texts')
-        .update({ title, content, topics })
+        .update({ title, content, topics, emoji })
         .eq('id', id)
         .select('lib')
         .single()
@@ -74,6 +74,7 @@ export async function getTexts({ lib }: { lib: string }) {
             id,
             title,
             topics,
+            emoji,
             has_ebook,
             created_at,
             no,
@@ -86,10 +87,11 @@ export async function getTexts({ lib }: { lib: string }) {
         .order('created_at', { ascending: false })
         .throwOnError()
 
-    return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
+    return texts.map(({ id, title, topics, emoji, has_ebook, created_at, lib }) => ({
         id,
         title,
         topics,
+        emoji,
         hasEbook: has_ebook,
         createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
         libName: lib?.name ?? 'Unknown Library',
@@ -106,6 +108,8 @@ export async function getTextContent({ id }: { id: string }) {
             has_ebook,
             title,
             topics,
+            emoji,
+            created_at,
             lib:libraries (
                 id,
                 name,
@@ -124,7 +128,7 @@ export async function getTextContent({ id }: { id: string }) {
         notFound()
     }
 
-    const { content, has_ebook, title, topics, lib } = text[0]
+    const { content, has_ebook, title, topics, emoji, created_at, lib } = text[0]
     const isPublicAndFree = lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0
     const prompt = lib?.prompt ?? ''
     if (!lib) {
@@ -135,9 +139,9 @@ export async function getTextContent({ id }: { id: string }) {
             .from('user-files')
             .createSignedUrl(`ebooks/${id}.epub`, seconds('3 days'))
         if (error) throw error
-        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
+        return { content, ebook: data.signedUrl, title, topics, emoji, createdAt: created_at, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
+    return { content, ebook: null, title, topics, emoji, createdAt: created_at, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
