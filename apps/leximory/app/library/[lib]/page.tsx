@@ -62,9 +62,9 @@ function PageSkeleton() {
             {/* Header skeleton */}
             <header className='mx-auto mb-10 max-w-6xl'>
                 <div className='flex items-center gap-3'>
-                    <Bone className='w-8 h-8 rounded-full' />
-                    <Bone className='w-8 h-8 rounded-full' />
-                    <Bone className='w-48 h-7 rounded-lg ml-3' />
+                    <Bone className='w-8 h-8 rounded-full' /> {/* Back button */}
+                    <Bone className='w-8 h-8 rounded-full' /> {/* Corpus link */}
+                    <Bone className='w-48 h-7 rounded-lg ml-3' /> {/* Library name */}
                 </div>
             </header>
 

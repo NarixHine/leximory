@@ -43,7 +43,7 @@ export default function Recollection({ words, cursor, more }: {
                     <div className='w-full min-h-20 h-full flex flex-col justify-center items-center rounded-2xl bg-default-50 p-3 transition-colors hover:bg-default-100/50'>
                         <Markdown md={word} disableSave={welcomes.includes(word)} deleteId={isReadOnly || welcomes.includes(word) ? undefined : id} />
                     </div>
-                    {anotherDay && <div className='w-full min-h-10 h-full flex flex-col justify-center items-center col-span-full'>
+                    {anotherDay && <div className='w-full py-4 flex flex-col justify-center items-center col-span-full'>
                         <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
                             {momentSH(array[index + 1].date).startOf('day').format('ll')}
                         </span>
