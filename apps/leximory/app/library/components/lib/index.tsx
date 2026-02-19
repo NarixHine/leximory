@@ -152,20 +152,31 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     {isOwner && (
                         <>
                             <div className='mx-0.5 h-4 w-px bg-default-200' />
-                            <Button
-                                size='sm'
-                                isIconOnly
-                                variant='light'
-                                radius='full'
-                                className='text-default-400 hover:bg-default-200 h-8 w-8 min-w-8'
-                                onPress={() => {
-                                    remove({ id })
-                                    setIsDeleted(true)
-                                }}
-                                aria-label={`删除 ${name}`}
-                            >
-                                <PiTrashDuotone className='text-sm' />
-                            </Button>
+                            <Popover placement='bottom'>
+                                <PopoverTrigger>
+                                    <Button
+                                        size='sm'
+                                        isIconOnly
+                                        variant='light'
+                                        radius='full'
+                                        className='text-default-400 hover:bg-default-200 h-8 w-8 min-w-8'
+                                        aria-label={`删除 ${name}`}
+                                    >
+                                        <PiTrashDuotone className='text-sm' />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className='p-0'>
+                                    <Button
+                                        color='primary'
+                                        startContent={<PiWarningOctagonFill size={16} />}
+                                        size='sm'
+                                        onPress={() => {
+                                            remove({ id })
+                                            setIsDeleted(true)
+                                        }}
+                                    >确认删除</Button>
+                                </PopoverContent>
+                            </Popover>
                         </>
                     )}
                 </div>

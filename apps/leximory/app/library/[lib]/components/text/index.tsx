@@ -14,7 +14,7 @@ import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import { scrapeArticle } from '@/server/ai/scrape'
 
-/** Stable hash for seeding emoji background colors. */
+/** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
 function hashString(str: string): number {
     let hash = 0
     for (let i = 0; i < str.length; i++) {
@@ -24,7 +24,10 @@ function hashString(str: string): number {
     return Math.abs(hash)
 }
 
-/** Generates an extremely light Morandi-green background from article id. */
+/**
+ * OKLCH background tuned to Morandi green range.
+ * Hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
+ */
 export function emojiBackground(id: string): string {
     const h = hashString(id)
     const hue = 130 + (h % 36)
@@ -249,6 +252,7 @@ export function AddTextButton({ variant = 'card' }: { variant?: 'card' | 'inline
     </>
 }
 
+/** Backward-compatible default export — extra props kept for consumers outside /library. */
 export default function Text({ id, title, topics, hasEbook, ...rest }: {
     id: string, title: string, topics: string[], hasEbook: boolean,
     createdAt?: string, disablePrefetch?: boolean, disableNavigation?: boolean,
