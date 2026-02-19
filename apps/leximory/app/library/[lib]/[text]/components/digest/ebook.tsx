@@ -34,6 +34,11 @@ const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
 
+const EBOOK_DARK_FG = '#CECDC3'
+const EBOOK_DARK_BG = '#100F0F'
+const EBOOK_LIGHT_FG = '#100F0F'
+const EBOOK_LIGHT_BG = '#FFFCF0'
+
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean) {
     const doc = contents.document
@@ -45,7 +50,7 @@ function injectThemeCSS(contents: Contents, isDark: boolean) {
         doc.head.appendChild(style)
     }
     style.textContent = isDark
-        ? `* { color: #CECDC3 !important; } body { background-color: #100F0F !important; }`
+        ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
         : ``
 }
 
@@ -53,11 +58,11 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean) {
     const themes = rendition.themes
     themes.override('direction', 'ltr')
     if (isDarkMode) {
-        themes.override('color', '#CECDC3')
-        themes.override('background', '#100F0F')
+        themes.override('color', EBOOK_DARK_FG)
+        themes.override('background', EBOOK_DARK_BG)
     } else {
-        themes.override('color', '#100F0F')
-        themes.override('background', '#FFFCF0')
+        themes.override('color', EBOOK_LIGHT_FG)
+        themes.override('background', EBOOK_LIGHT_BG)
     }
     ;(rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
 }
@@ -293,12 +298,12 @@ const lightReaderTheme: IReactReaderStyle = {
     ...ReactReaderStyle,
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#FFFCF0',
+        backgroundColor: EBOOK_LIGHT_BG,
         transition: undefined,
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#FFFCF0',
+        background: EBOOK_LIGHT_BG,
     },
     titleArea: {
         ...ReactReaderStyle.titleArea,
@@ -324,7 +329,7 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#100F0F',
+        backgroundColor: EBOOK_DARK_BG,
         transition: undefined,
         color: '#ccc !important',
     },
@@ -340,11 +345,11 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#100F0F',
+        background: EBOOK_DARK_BG,
     },
     container: {
         ...ReactReaderStyle.container,
-        background: '#100F0F',
+        background: EBOOK_DARK_BG,
     },
     tocButtonExpanded: {
         ...ReactReaderStyle.tocButtonExpanded,
