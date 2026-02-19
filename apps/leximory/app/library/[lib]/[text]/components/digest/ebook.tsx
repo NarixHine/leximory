@@ -34,6 +34,21 @@ const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
 
+/** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
+function injectThemeCSS(contents: Contents, isDark: boolean) {
+    const doc = contents.document
+    if (!doc?.head) return
+    let style = doc.getElementById('leximory-theme-override')
+    if (!style) {
+        style = doc.createElement('style')
+        style.id = 'leximory-theme-override'
+        doc.head.appendChild(style)
+    }
+    style.textContent = isDark
+        ? `* { color: #CECDC3 !important; } body { background-color: #100F0F !important; }`
+        : ``
+}
+
 function updateTheme(rendition: Rendition, isDarkMode: boolean) {
     const themes = rendition.themes
     themes.override('direction', 'ltr')
@@ -44,6 +59,7 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean) {
         themes.override('color', '#100F0F')
         themes.override('background', '#FFFCF0')
     }
+    ;(rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
 }
 
 export default function Ebook() {
@@ -76,6 +92,8 @@ export default function Ebook() {
     const themeRendition = useRef<Rendition | null>(null)
 
     const { isDarkMode } = useDarkMode()
+    const isDarkModeRef = useRef(isDarkMode)
+    isDarkModeRef.current = isDarkMode
     useEffect(() => {
         if (themeRendition.current) {
             updateTheme(themeRendition.current, isDarkMode)
@@ -251,6 +269,7 @@ export default function Ebook() {
                             setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
                         })
                         rendition.on('rendered', (_: Rendition, contents: Contents) => {
+                            injectThemeCSS(contents, isDarkModeRef.current)
                             contents.document.addEventListener('selectionchange', () => {
                                 if (selection && selection.toString()) {
                                     return
