@@ -25,7 +25,7 @@ export async function WordStats({ uid, color }: { uid: string, color?: Available
     return <WordChart data={formatChartData(countMap, 30)} color={color} />
 }
 
-export async function UserWordStats({ color = 'warning' }: { color?: AvailableChartColorsKeys }) {
+export async function UserWordStats({ color = 'secondary' }: { color?: AvailableChartColorsKeys }) {
     const { userId } = await getUserOrThrow()
     return <WordStats uid={userId} color={color} />
 }

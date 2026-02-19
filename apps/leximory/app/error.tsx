@@ -59,7 +59,7 @@ export default function Error({
                     <div className='flex items-center justify-center gap-2 mt-10 opacity-70'>
                         <div className='h-2 w-2 rounded-full bg-primary'></div>
                         <div className='h-2 w-2 rounded-full bg-secondary'></div>
-                        <div className='h-2 w-2 rounded-full bg-warning'></div>
+                        <div className='h-2 w-2 rounded-full bg-default'></div>
                     </div>
                     <p className='text-center text-sm opacity-50'>
                         Digest: {error.digest ?? 'Unknown'}

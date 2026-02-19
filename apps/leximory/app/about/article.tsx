@@ -52,7 +52,7 @@ export function Article() {
             Leximory 为阅读提供必要辅助：<span
                 className='bg-secondary-50/50 dark:bg-secondary-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >智能注解</span>、<span
-                className='bg-warning-50/50 dark:bg-warning-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-default-50/50 dark:bg-default-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >生词记录</span>、<span
                 className='bg-success-50/50 dark:bg-success-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >复习提醒</span>等。
@@ -92,7 +92,7 @@ export function Article() {
                     title='iOS Shortcuts'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
-                    className='bg-linear-to-bl from-warning-50/50 to-secondary-100/50'
+                    className='bg-linear-to-bl from-default-50/50 to-secondary-100/50'
                 >
                     <PiAppleLogoDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -108,7 +108,7 @@ export function Article() {
                     to='/blog/reading-while-listening'
                     title='边听边读'
                     text='语言认知的另一个维度'
-                    className='bg-linear-to-tr from-warning-50/50 to-danger-100/50'
+                    className='bg-linear-to-tr from-default-50/50 to-danger-100/50'
                 >
                     <PiHeadphonesDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -123,7 +123,7 @@ export function Article() {
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
                     to='/blog/install-pwa'
-                    className='bg-linear-to-tl from-primary-50/50 to-warning-100/50'
+                    className='bg-linear-to-tl from-primary-50/50 to-default-100/50'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>

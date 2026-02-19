@@ -15,13 +15,13 @@ export default async function Report({ day }: {
     const words = await getForgetCurve({ day, userId })
     return words.length > 0 ? (
         <div className='my-8'>
-            <div className='flex gap-3 items-start'>
-                <H disableCenter className='text-xl font-bold opacity-80 -mb-2'>{day}</H>
+            <div className='flex gap-3 items-start px-4.5 mb-3'>
+                <h2 className='text-xl font-bold opacity-80 -mb-2'>{day}</h2>
                 {SUPPORTED_LANGS.filter((lang) => words.some((word) => word.lang === lang)).map((lang) => (
                     <StoryGen key={lang} comments={words.filter((word) => word.lang === lang).map(({ word }) => word)} lang={lang} />
                 ))}
             </div>
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            <div className='columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4'>
                 {words.map(({ word, id, lang, lib }) => (
                     <ScopeProvider key={id} atoms={[langAtom, libAtom]}>
                         <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>

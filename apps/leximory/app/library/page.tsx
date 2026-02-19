@@ -7,7 +7,6 @@ import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
-import { Divider } from '@heroui/divider'
 
 export const metadata: Metadata = {
     title: '文库'

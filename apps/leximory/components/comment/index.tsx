@@ -129,7 +129,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }, [isOnDemand, isLoaded, prompt])
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
-    const Save = () => <div className='flex gap-2'>
+    const Save = () => <div className='flex gap-1'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
             isIconOnly={!isReadOnly}
@@ -157,7 +157,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 className='rounded-4xl'
                 isLoading={status === 'loading'}
                 startContent={status !== 'loading' && (isEditing ? <PiCheckCircle className='size-5' /> : <PiPencil className='size-5' />)}
-                color='primary'
+                color='secondary'
+                variant='light'
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
@@ -198,7 +199,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isIconOnly
                 isLoading={status === 'loading' && !isEditing}
                 startContent={status !== 'loading' && <PiTrash className='size-5' />}
-                color='danger'
+                color='secondary'
                 className='rounded-4xl'
                 variant='light'
                 onPress={async () => {
@@ -263,7 +264,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                         >
                             {
                                 isPending && portions.length === 0
-                                    ? <div className='flex font-mono items-center gap-1.5'>
+                                    ? <div className='flex font-mono items-center gap-1.5 px-2'>
                                         Generating <Spinner variant='dots' color='default' />
                                     </div>
                                     : <Note
@@ -310,7 +311,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             </button>
                     }
                 </PopoverTrigger>
-                <PopoverContent className={cn('max-w-80')}>
+                <PopoverContent className={cn('max-w-80 bg-default-50 shadow-none border-7 border-default-200 rounded-4xl')}>
                     <div className='py-3 px-2 space-y-5'>
                         {
                             isLoaded
@@ -379,7 +380,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                 : <div className={isCompact ? 'font-bold text-medium' : 'font-extrabold text-large'}>{portions[1]}</div>
         )}
         {portions[2] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '意味' : '释义'}</div>}
+            {!isCompact && <div className='text-default-400'>{lang === 'ja' ? '意味' : '释义'}</div>}
             {isEditing
                 ? <Textarea
                     size='sm'
@@ -391,7 +392,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
             }
         </div>}
         {portions[3] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>{lang === 'ja' ? '語源' : '语源'}</div>}
+            {!isCompact && <div className='text-default-400'>{lang === 'ja' ? '語源' : '语源'}</div>}
             {
                 isEditing
                     ? <Textarea
@@ -404,7 +405,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
             }
         </div>}
         {portions[4] && <div className={margin}>
-            {!isCompact && <div className='font-bold'>同源词</div>}
+            {!isCompact && <div className='text-default-400'>同源词</div>}
             {isEditing
                 ? <Textarea
                     size='sm'

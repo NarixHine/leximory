@@ -50,7 +50,7 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
                 }}
                 size='lg'
                 radius='full'
-                color='warning'
+                color='default'
                 startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
             >
                 {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}

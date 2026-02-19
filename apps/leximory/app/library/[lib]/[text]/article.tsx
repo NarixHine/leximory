@@ -30,7 +30,7 @@ function ArticleHero({ title, emoji, topics, createdAt, textId, libId, lang, con
                 <div className='flex flex-col max-w-[calc(40dvw)] mx-auto place-self-end pb-15'>
                     <BackwardButton libId={libId} />
                     {dateStr && <time className='block text-lg text-secondary-400 mb-4'>{dateStr}</time>}
-                    <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-3'>
+                    <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>
                         {title}
                     </h1>
                     {FormattedReadingTime && (

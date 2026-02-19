@@ -50,7 +50,7 @@ export default function Define(props: { left: number | null, width: number | nul
     })
 
     return (
-        <Drawer.Root repositionInputs={false} container={container}>
+        <Drawer.Root repositionInputs={false} direction='top' container={container}>
             {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
                 <Drawer.Trigger
                     ref={buttonRef}
@@ -71,9 +71,9 @@ export default function Define(props: { left: number | null, width: number | nul
             <Drawer.Portal>
                 <Drawer.Overlay className={cn(
                     'fixed inset-0 z-60',
-                    'bg-linear-to-t to-transparent from-default-900/40 dark:from-stone-950/60',
+                    'bg-linear-to-b to-transparent from-default-900/40 dark:from-stone-950/60',
                 )} />
-                <Drawer.Content className='h-fit px-2 fixed bottom-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
+                <Drawer.Content className='h-fit px-2 fixed top-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
                     <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='[]'></Comment>
                 </Drawer.Content>

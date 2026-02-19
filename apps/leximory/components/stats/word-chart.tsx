@@ -15,6 +15,7 @@ export default function WordChart({ data, color }: { data: WordData[], color?: A
         categories={['记忆单词数']}
         showLegend
         startEndOnly
+        showGridLines={false}
         allowDecimals={false}
     />
 }

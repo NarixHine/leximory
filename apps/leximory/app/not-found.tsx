@@ -11,7 +11,7 @@ export default function NotFound() {
             <Card className={cn('max-w-lg', ENGLISH_SERIF.className)} isBlurred shadow='none'>
                 <CardHeader className='flex flex-col items-center gap-3'>
                     <div className='flex items-center justify-center rounded-full'>
-                        <PiImageBrokenDuotone className='text-5xl text-warning' />
+                        <PiImageBrokenDuotone className='text-5xl text-default' />
                     </div>
                     <h2 className='text-3xl font-medium tracking-tight text-foreground/90'>
                         Page Not Found
@@ -31,7 +31,7 @@ export default function NotFound() {
                     <div className='flex items-center justify-center gap-2 mt-5 opacity-70'>
                         <div className='h-2 w-2 rounded-full bg-primary'></div>
                         <div className='h-2 w-2 rounded-full bg-secondary'></div>
-                        <div className='h-2 w-2 rounded-full bg-warning'></div>
+                        <div className='h-2 w-2 rounded-full bg-default'></div>
                     </div>
                     <p className='text-center text-sm opacity-50'>
                         Error Code: 404
