@@ -551,7 +551,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                             key={index}
                             isPressable
                             onPress={() => handlePromptClick(prompt.prompt)}
-                            className={cn(index === 0 && 'border border-primary-100', 'bg-primary-50/20 hover:bg-primary-50/30', 'transition-colors')}
+                            className={cn(index === 0 && 'border border-primary-100', 'bg-secondary-50 hover:bg-secondary-100/50 transition-all')}
                             shadow='none'
                         >
                             <CardBody>
@@ -561,7 +561,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                                     </div>
                                     <div>
                                         <h3 className='text-lg font-medium'>{prompt.title}</h3>
-                                        <p className='text-sm text-default-500'>{prompt.prompt}</p>
+                                        <p className='text-sm text-secondary-500'>{prompt.prompt}</p>
                                     </div>
                                 </div>
                             </CardBody>

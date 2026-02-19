@@ -237,7 +237,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <FlatCard fullWidth background='solid' shadow='none' className={cn('rounded-4xl', className)}>
+        ? <FlatCard fullWidth background='solid' shadow='none' className={cn('rounded-4xl px-4 pt-3', className)}>
             <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='relative'>
@@ -299,7 +299,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     !isReaderMode && [
                                         'box-decoration-clone',
                                         '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
-                                        isOnDemand ? 'shadow-default-300/60' : 'shadow-emerald-300/30',
+                                        isOnDemand ? 'shadow-emerald-300/30' : 'shadow-default-300/70',
                                     ]
                                 )}>
                                     {portions[0]}

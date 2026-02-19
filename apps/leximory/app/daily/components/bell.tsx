@@ -48,7 +48,6 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
                         }
                     })
                 }}
-                size='lg'
                 radius='full'
                 color='default'
                 startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}

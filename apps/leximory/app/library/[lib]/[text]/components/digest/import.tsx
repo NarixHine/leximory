@@ -103,14 +103,15 @@ export default function ImportModal() {
                                 {!ebook && <Tab key='text' title='导入文章' className='flex flex-col gap-2'>
                                     <div className='flex mb-2 gap-0.5 items-end'>
                                         <Input
-                                            color='primary'
+                                            color='secondary'
                                             className='flex-1'
                                             label='网址'
                                             placeholder='https://example.com/'
                                             value={url}
                                             onValueChange={(value) => setUrl(value.trim())}
-                                            variant='underlined' />
-                                        <Button isLoading={isPopulating} color='primary' radius='full' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                            variant='underlined'
+                                        />
+                                        <Button isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength} 字符` : undefined}

@@ -8,7 +8,7 @@ import Main from '@/components/ui/main'
 import Preference from './components/preference'
 import CopyToken from './components/copy'
 import { getLexicoinBalance, getLastDailyClaim } from '@/server/db/lexicoin'
-import GradientCard from '../library/components/cards/card'
+import GradientCard from './components/cards/card'
 import { PLAN_LABELS } from '@repo/env/config'
 import { ClaimDailyLexicoin } from './components/claim-daily-lexicoin'
 import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
@@ -21,6 +21,7 @@ import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profil
 import { momentSH } from '@/lib/moment'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
 import Streak from '@/components/streak'
+import { CommentaryQuotaUI, AudioQuotaUI } from './components/cards'
 
 export const metadata: Metadata = { title: '设置' }
 
@@ -79,6 +80,12 @@ export default async function Settings() {
                 </Suspense>
                 <Suspense fallback={<PlanCard />}>
                     <Plan />
+                </Suspense>
+                <Suspense fallback={<CommentaryQuotaUI.Skeleton />}>
+                    <CommentaryQuotaUI.Card />
+                </Suspense>
+                <Suspense fallback={<AudioQuotaUI.Skeleton />}>
+                    <AudioQuotaUI.Card />
                 </Suspense>
             </div>
         </section>

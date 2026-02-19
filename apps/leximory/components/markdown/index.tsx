@@ -45,7 +45,6 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         // replace all instances of {{...}} with the Comment component
         .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
-            console.log('["' + portions.join('","') + '"]') // Debug log to check the matched parameters
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments

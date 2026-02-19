@@ -17,18 +17,17 @@ export const metadata: Metadata = {
 
 export default async function Daily() {
     return (<Main className='max-w-(--breakpoint-lg) pt-12'>
-        <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133'>
+        <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-center gap-6'>
             <h1 className='text-3xl flex items-center gap-1 font-bold text-default-500'><PiRewindDuotone />每日汇总</h1>
+            <Suspense fallback={<BellSkeleton></BellSkeleton>}>
+                <Bell />
+            </Suspense>
         </header>
         <div className='mb-4 h-80'>
             <Suspense fallback={<WordChartSkeleton />}>
                 <UserWordStats />
             </Suspense>
         </div>
-        <Spacer y={6}></Spacer>
-        <Suspense fallback={<BellSkeleton></BellSkeleton>}>
-            <Bell />
-        </Suspense>
         <Suspense fallback={<Loading></Loading>}>
             <Report day='今天记忆'></Report>
         </Suspense>

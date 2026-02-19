@@ -57,7 +57,7 @@ function ReaderModeToggle() {
           }}
           className='mx-auto'
           variant={'light'}
-          color={'default'}
+          color={'secondary'}
           radius='sm'
           startContent={<PiPrinterDuotone />}
         >
@@ -124,7 +124,7 @@ function EditingView() {
 
   return (
     <>
-      <div className='flex space-x-3'>
+      <div className='flex space-x-3 items-baseline'>
         {memoizedTopics}
         <div className='flex-1'>
           <Input
@@ -136,7 +136,7 @@ function EditingView() {
           />
         </div>
         <Button
-          variant='flat'
+          variant='light'
           color='secondary'
           startContent={<PiPlusCircleDuotone />}
           onPress={handleAddTopic}
@@ -168,7 +168,6 @@ function EditingView() {
           className='flex-1'
           isLoading={isUpdating}
           isDisabled={isDeleting}
-          variant='flat'
           color='primary'
           startContent={<PiPencilCircleDuotone />}
           onPress={handleSaveChanges}

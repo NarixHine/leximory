@@ -100,10 +100,10 @@ async function LibraryList({ userId, orFilter }: {
             {compactLibs.length > 0 && (
                 <section className='mt-20 w-full max-w-200' aria-label='Archived libraries'>
                     <div className='flex flex-row items-center mb-4'>
-                        <div className='flex-1 h-px bg-secondary-300/70' />
+                        <div className='flex-1 h-px bg-secondary-300/70 mr-3' />
                         <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133 shrink-0'>
-                            <span className='mx-2'>已归档</span>
-                            <div className='flex-1 h-px bg-secondary-300/70' />
+                            <span>已归档</span>
+                            <div className='flex-1 h-px bg-secondary-300/70 ml-3' />
                         </h2>
                         <div className='flex-1 h-px bg-secondary-300/70' />
                     </div>

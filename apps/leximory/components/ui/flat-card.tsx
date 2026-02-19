@@ -19,7 +19,7 @@ const FlatCard = extendVariants(Card, {
                 active: 'bg-transparent',
             },
             solid: {
-                base: 'bg-default-50 dark:bg-default-50 border-none',
+                base: 'bg-default-50 border-none',
             },
         }
     },
