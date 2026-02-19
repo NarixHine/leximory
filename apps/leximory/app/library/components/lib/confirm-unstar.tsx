@@ -30,7 +30,7 @@ export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
             <Button
                 variant='solid'
                 startContent={<PiTrashDuotone className='text-xl' />}
-                color='danger'
+                color='primary'
                 onPress={() => call.end(true)}
             >
                 移除收藏

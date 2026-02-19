@@ -1,14 +1,13 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { CardBody, CardFooter } from '@heroui/card'
-import { Spacer } from '@heroui/spacer'
-import { PiBookBookmarkDuotone, PiClockCounterClockwiseDuotone, PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiStackMinusDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone, PiWarningOctagonFill } from 'react-icons/pi'
+import { CardBody } from '@heroui/card'
+import { PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone, PiWarningOctagonFill, PiClockDuotone, PiStackMinusDuotone, PiSparkle } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS, Lang } from '@repo/env/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
-import Form from '../../../../components/form'
+import Form from '@/components/form'
 import { Input, Textarea } from '@heroui/input'
 import { Checkbox } from '@heroui/checkbox'
 import { Select, SelectItem } from '@heroui/select'
@@ -17,16 +16,13 @@ import { useForm, Controller } from 'react-hook-form'
 import { useDisclosure } from '@heroui/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
-import Topics from '../../[lib]/[text]/components/topics'
-import FlatCard from '@/components/ui/flat-card'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
-import LinkButton from '@repo/ui/link-button'
+import Link from 'next/link'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -34,19 +30,19 @@ export function ConfirmUnstarRoot() {
 
 export function LibrarySkeleton() {
     return (
-        <FlatCard className='w-full opacity-60' background='solid'>
-            <CardBody className='px-6 pt-6'>
-                <StoneSkeleton className='w-48 h-10 rounded-lg' />
-                <Spacer y={2} />
-                <div className='flex space-x-2'>
-                    <StoneSkeleton className='w-16 h-4 rounded-lg' />
-                    <StoneSkeleton className='w-16 h-4 rounded-lg' />
+        <div className='break-inside-avoid rounded-3xl bg-default-50 p-3.5'>
+            <div className='rounded-2xl bg-default-100 px-6 py-7'>
+                <StoneSkeleton className='w-12 h-4 rounded-lg mb-3' />
+                <StoneSkeleton className='w-full h-7 rounded-lg' />
+            </div>
+            <div className='flex items-center justify-between px-2 pt-2'>
+                <StoneSkeleton className='w-24 h-6 rounded-lg' />
+                <div className='flex gap-1'>
+                    <StoneSkeleton className='w-8 h-8 rounded-xl' />
+                    <StoneSkeleton className='w-8 h-8 rounded-xl' />
                 </div>
-            </CardBody>
-            <CardFooter className='px-4 pb-4 flex'>
-                <StoneSkeleton className='w-24 h-9 rounded-lg' />
-            </CardFooter>
-        </FlatCard>
+            </div>
+        </div>
     )
 }
 
@@ -78,8 +74,6 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     const compact = shadow || archived
 
     const router = useRouter()
-    const topics = ([] as string[])
-        .concat(access === LIB_ACCESS_STATUS.public ? ['共享'] : [])
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
     const [isDeleted, setIsDeleted] = useState(false)
@@ -104,131 +98,152 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 
     const [isTogglingArchive, startTogglingArchive] = useTransition()
     const [isUnstarring, startUnstarring] = useTransition()
-    const MotionCard = motion.create(FlatCard)
 
-    return (<>
-        <MotionCard
-            className={cn('relative', compact && 'w-fit rounded-3xl tracking-tighter')}
-            animate={{ opacity: isDeleted ? 0 : 1, scale: isDeleted ? 0 : 1 }}
-            transition={{ duration: 1 }}
-            fullWidth
-            background='solid'
-            as={'div'}
-            isPressable
-            onPress={() => {
-                router.push(`/library/${id}`)
-            }}>
-            {!compact && isOwner && <Button isIconOnly color='primary' variant='light' startContent={<PiFadersDuotone />} className='absolute top-2 right-2 z-1' onPress={onOpen}></Button>}
-            {compact
-                ? <CardBody className='pr-2 pl-3 py-2 flex flex-row items-center gap-2 relative'>
-                    <div className='text-2xl font-formal'>{name}</div>
-                    {
-                        shadow
-                            ? <LinkButton
-                                href={`/library/${id}/corpus`}
-                                size='sm'
-                                startContent={<PiBookBookmarkDuotone className='text-lg' />}
-                                color='primary'
-                                variant='light'
-                                radius='md'
-                                isIconOnly
-                            />
-                            : <Button
-                                size={'sm'}
-                                as={'span'}
-                                isLoading={isTogglingArchive}
-                                startContent={!isTogglingArchive && <PiBoxArrowUpDuotone className='text-lg' />}
-                                color='primary'
-                                variant='light'
-                                isIconOnly
-                                radius='md'
-                                onPress={() => {
-                                    startTogglingArchive(async () => {
-                                        await unarchive({ id })
-                                        toast.success('已取消归档')
+    if (isDeleted) return null
+
+    // Archived / shadow compact pill variant
+    if (compact) {
+        return (
+            <motion.div
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className='flex items-center rounded-full bg-default-50 py-1.5 pr-1.5 pl-5 transition-colors hover:bg-default-100/50'
+            >
+                <span className='text-sm font-medium text-default-500'>{name}</span>
+                <div className='ml-3 flex items-center'>
+                    {archived && !shadow && (
+                        <Button
+                            size='sm'
+                            isIconOnly
+                            variant='light'
+                            radius='full'
+                            isLoading={isTogglingArchive}
+                            className='text-default-400 hover:bg-default-200 hover:text-default-600 h-8 w-8 min-w-8'
+                            onPress={() => {
+                                startTogglingArchive(async () => {
+                                    await unarchive({ id })
+                                })
+                            }}
+                            aria-label={`取消归档 ${name}`}
+                        >
+                            {!isTogglingArchive && <PiBoxArrowUpDuotone className='text-sm' />}
+                        </Button>
+                    )}
+                    {isStarred && (
+                        <Button
+                            size='sm'
+                            isIconOnly
+                            variant='light'
+                            radius='full'
+                            isLoading={isUnstarring}
+                            className='text-default-400 hover:bg-default-200 hover:text-default-600 h-8 w-8 min-w-8'
+                            onPress={async () => {
+                                if (await ConfirmUnstar.call()) {
+                                    startUnstarring(async () => {
+                                        await unstar({ id })
                                     })
-                                }}
-                            />
-                    }
-                    {
-                        isStarred && <>
+                                }
+                            }}
+                            aria-label={`移除收藏 ${name}`}
+                        >
+                            {!isUnstarring && <PiStackMinusDuotone className='text-sm' />}
+                        </Button>
+                    )}
+                    {isOwner && (
+                        <>
+                            <div className='mx-0.5 h-4 w-px bg-default-200' />
                             <Button
-                                size={'sm'}
-                                as={'span'}
-                                isLoading={isUnstarring}
-                                startContent={!isUnstarring && <PiStackMinusDuotone className='text-lg' />}
-                                color='danger'
+                                size='sm'
                                 isIconOnly
                                 variant='light'
-                                radius='md'
-                                onPress={async () => {
-                                    if (await ConfirmUnstar.call()) {
-                                        startUnstarring(async () => {
-                                            await unstar({ id })
-                                        })
-                                    }
+                                radius='full'
+                                className='text-default-400 hover:bg-default-200 h-8 w-8 min-w-8'
+                                onPress={() => {
+                                    remove({ id })
+                                    setIsDeleted(true)
                                 }}
-                            />
+                                aria-label={`删除 ${name}`}
+                            >
+                                <PiTrashDuotone className='text-sm' />
+                            </Button>
                         </>
-                    }
-                </CardBody>
-                : <CardBody className='px-6 pt-5 flex flex-col justify-start'>
-                    <a className='text-4xl font-formal'>{name}</a>
-                    <Topics topics={topics.concat([getLanguageStrategy(lang as Lang).name])}></Topics>
-                </CardBody>}
-            {!compact && <CardFooter className='px-4 pb-4 flex gap-4'>
-                <LinkButton
-                    size={'md'}
-                    href={`/library/${id}/corpus`}
-                    startContent={<PiBookBookmarkDuotone />}
-                    variant='flat'
-                    className='bg-default/20'
-                >语料本</LinkButton>
-                <div className='flex-1'></div>
-                {recentAccessItem && <LinkButton className='-mr-2' size={'md'} color={'secondary'} startContent={<PiClockCounterClockwiseDuotone />} variant='light' prefetch href={`/library/${id}/${recentAccessItem.id}`}>
-                    <span className='inline-block text-ellipsis overflow-hidden whitespace-nowrap max-w-[20vw]'>{recentAccessItem.title}</span>
-                </LinkButton>}
-                <Button
-                    as={'span'}
-                    isLoading={isTogglingArchive}
-                    startContent={!isTogglingArchive && <PiBoxArrowDownDuotone />}
-                    variant='flat'
-                    color='primary'
-                    isIconOnly
-                    onPress={() => {
-                        startTogglingArchive(async () => {
-                            await archive({ id })
-                            toast.success('已归档文库')
-                        })
-                    }}
-                ></Button>
-            </CardFooter>}
-        </MotionCard>
+                    )}
+                </div>
+            </motion.div>
+        )
+    }
+
+    // Normal library card — neo-minimalist design
+    return (<>
+        <Link
+            href={`/library/${id}`}
+            className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5 transition-all duration-300 hover:bg-default-100/50'
+        >
+            {/* Inner title block */}
+            <div className='rounded-2xl bg-default-100 px-6 py-7'>
+                <span className='mb-3 inline-block font-mono text-xs tracking-wider text-default-400'>
+                    {getLanguageStrategy(lang as Lang).name}
+                </span>
+                <h2 className='font-formal text-2xl leading-snug tracking-tight text-foreground text-balance'>
+                    {name}
+                </h2>
+            </div>
+
+            {/* Footer area */}
+            <div className='flex items-center justify-between px-2 pt-2'>
+                {recentAccessItem ? (
+                    <span
+                        className='group/link flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                    >
+                        <PiClockDuotone className='h-3.5 w-3.5' />
+                        <span className='max-w-[15ch] truncate'>{recentAccessItem.title}</span>
+                    </span>
+                ) : (
+                    <div />
+                )}
+                <div className='flex items-center gap-1'>
+                    {isOwner && (
+                        <button
+                            type='button'
+                            className='flex h-8 w-8 items-center justify-center rounded-xl text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                            aria-label={`${name} 设置`}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                onOpen()
+                            }}
+                        >
+                            <PiFadersDuotone className='h-4 w-4' />
+                        </button>
+                    )}
+                    <button
+                        type='button'
+                        className='flex h-8 w-8 items-center justify-center rounded-xl text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                        aria-label={`归档 ${name}`}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            startTogglingArchive(async () => {
+                                await archive({ id })
+                            })
+                        }}
+                    >
+                        <PiBoxArrowDownDuotone className='h-4 w-4' />
+                    </button>
+                </div>
+            </div>
+        </Link>
 
         <Form
             actionButton={<Popover>
                 <PopoverTrigger>
-                    <Button isIconOnly color='danger' variant='flat' startContent={<PiTrashDuotone />} />
+                    <Button isIconOnly color='primary' variant='flat' startContent={<PiTrashDuotone />} />
                 </PopoverTrigger>
                 <PopoverContent className='p-0'>
-                    <Button color='danger' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
-                        const timer = setTimeout(() => {
-                            remove({ id })
-                            setIsDeleted(true)
-                            toast.success('删除成功')
-                        }, 5000)
+                    <Button color='primary' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
+                        remove({ id })
+                        setIsDeleted(true)
                         onOpenChange()
-                        toast('五秒后删除……', {
-                            duration: 5000,
-                            icon: <PiHourglassMediumDuotone />,
-                            cancel: {
-                                label: '撤销',
-                                onClick: () => {
-                                    clearTimeout(timer)
-                                    toast.dismiss()
-                                },
-                            },
-                        })
                     }}>确认删除</Button>
                 </PopoverContent>
             </Popover>}
@@ -278,16 +293,14 @@ export function LibraryAddButton() {
     })
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     return <>
-        <FlatCard className='w-full opacity-60 bg-transparent border-none' isPressable onPress={onOpen}>
-            <CardBody className='px-6 pt-5 overflow-hidden'>
-                <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ scale: 1.1, rotate: 10 }}
-                    className='text-7xl h-20 text-slate-700 dark:text-slate-200 flex items-center justify-center rounded-lg'><PiFolderPlusDuotone /></motion.div>
-            </CardBody>
-        </FlatCard>
+        <button
+            type='button'
+            onClick={onOpen}
+            className='flex h-10 items-center gap-2 rounded-2xl bg-default-600 dark:bg-default-400 px-5 text-sm font-medium text-white dark:text-default-900 transition-colors hover:bg-default-700 dark:hover:bg-default-300'
+        >
+            <PiSparkle className='h-4 w-4' />
+            <span>新建文库</span>
+        </button>
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}

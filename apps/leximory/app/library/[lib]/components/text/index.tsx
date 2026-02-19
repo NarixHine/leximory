@@ -1,103 +1,201 @@
 'use client'
 
-import { CardBody, CardFooter } from "@heroui/card"
 import { add, addAndGenerate } from './actions'
-import { motion } from 'framer-motion'
-import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiCheckSquare, PiSquare } from 'react-icons/pi'
+import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
 import { langAtom, libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
-import { Spinner, useDisclosure } from '@heroui/react'
+import { useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
-import Topics from '../../[text]/components/topics'
 import Link from "next/link"
-import { momentSH } from '@/lib/moment'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import FlatCard from '@/components/ui/flat-card'
 import { scrapeArticle } from '@/server/ai/scrape'
 
-function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation, visitStatus }: {
-    id: string,
-    title: string,
-    topics: string[],
-    disablePrefetch?: boolean,
-    disableNavigation?: boolean,
-    hasEbook: boolean,
-    createdAt: string,
-    visitStatus?: 'loading' | 'visited' | 'not-visited',
-}) {
-    const lib = useAtomValue(libAtom)
-    const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
-    const visitElement = {
-        loading: <Spinner size='sm' color='default' variant='wave' />,
-        'visited': <PiCheckSquare className='text-lg' />,
-        'not-visited': <PiSquare className='text-lg' />
+/** Stable hash for seeding emoji background colors. */
+function hashString(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i)
+        hash = ((hash << 5) - hash + char) | 0
     }
-
-    const CardInnerContent = () => (
-        <>
-            <CardBody className='flex flex-col gap-1 px-5 py-4'>
-                <h2 className={'text-2xl text-balance font-formal'}>{title}</h2>
-                {topics.length > 0 && (
-                    <div className='gap-0.5 flex flex-wrap align-middle items-center'>
-                        <Topics topics={topics}></Topics>
-                    </div>
-                )}
-            </CardBody>
-            <CardFooter className='px-7 pb-4 pt-2 flex flex-col gap-1 items-end'>
-                <div className='flex items-center w-full gap-2 text-default-500'>
-                    {typeof visitStatus !== 'undefined' && (visitElement[visitStatus])}
-                    <div className='flex-1' />
-                    <time className='text-sm font-mono'>Created: {momentSH(createdAt).format('ll')}</time>
-                </div>
-            </CardFooter>
-        </>
-    )
-
-    return (<div className='w-full h-full relative'>
-        {disableNavigation
-            ? <FlatCard background='solid' fullWidth className={'h-full'}><CardInnerContent /></FlatCard>
-            : <FlatCard
-                as={Link}
-                href={`/library/${lib}/${id}`}
-                prefetch={!disablePrefetch}
-                background='solid'
-                fullWidth
-                className={'h-full'}
-                isPressable>
-                <CardInnerContent />
-            </FlatCard>
-        }
-    </div >)
+    return Math.abs(hash)
 }
 
-export function AddTextButton() {
+/** Generates an extremely light Morandi-green background from article id. */
+export function emojiBackground(id: string): string {
+    const h = hashString(id)
+    const hue = 130 + (h % 36)
+    const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
+    const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
+    return `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`
+}
+
+/** Picks a deterministic emoji from the article title. */
+const ARTICLE_EMOJIS = ['📖', '🗂️', '🌍', '🎵', '📝', '🔀', '🤌', '🏛️', '🎧', '🎭', '📺', '💬', '✨', '🤝', '⚖️', '🧩', '📚', '🔎', '🧠', '🎯']
+export function pickEmoji(id: string): string {
+    return ARTICLE_EMOJIS[hashString(id) % ARTICLE_EMOJIS.length]!
+}
+
+/** Tag pill colors, matching mock UI. */
+const tagColors = [
+    'bg-default-100 text-default-500',
+    'bg-default-50 text-default-400',
+    'bg-default-200/50 text-default-500',
+]
+
+export function TagPills({ tags }: { tags: string[] }) {
+    if (!tags.length) return null
+    return (
+        <div className='flex flex-wrap gap-1.5'>
+            {tags.slice(0, 3).map((tag, i) => (
+                <span
+                    key={tag}
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-wide ${tagColors[i % tagColors.length]}`}
+                >
+                    {tag}
+                </span>
+            ))}
+        </div>
+    )
+}
+
+/** Emoji cover in a rounded container with hash-seeded background. */
+export function EmojiCover({ emoji, articleId, className = '' }: { emoji: string, articleId: string, className?: string }) {
+    const bg = emojiBackground(articleId)
+    return (
+        <div
+            className={`flex items-center justify-center ${className}`}
+            style={{ backgroundColor: bg, containerType: 'size' }}
+        >
+            <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+                {emoji}
+            </span>
+        </div>
+    )
+}
+
+/** Large article card with emoji above, title below. */
+export function LeftCard({ id, title, topics, hasEbook }: {
+    id: string, title: string, topics: string[], hasEbook: boolean
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
+            <EmojiCover
+                emoji={pickEmoji(id)}
+                articleId={id}
+                className='mb-3 aspect-[4/3] w-full rounded-sm'
+            />
+            <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-pretty group-hover:underline group-hover:decoration-default-300 group-hover:underline-offset-2'>
+                {title}
+            </h2>
+            <TagPills tags={allTopics} />
+        </Link>
+    )
+}
+
+/** Center hero card — large emoji, centered title + optional subtitle. */
+export function HeroCard({ id, title, topics, hasEbook }: {
+    id: string, title: string, topics: string[], hasEbook: boolean
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
+            <EmojiCover
+                emoji={pickEmoji(id)}
+                articleId={id}
+                className='mb-3 aspect-[4/3] w-full rounded-sm'
+            />
+            <h2 className='mb-3 text-center font-formal text-[2rem] leading-[1.2] tracking-tight text-foreground text-balance group-hover:underline group-hover:decoration-default-300 group-hover:underline-offset-2 sm:text-[2.4rem]'>
+                {title}
+            </h2>
+            <div className='flex justify-center'>
+                <TagPills tags={allTopics} />
+            </div>
+        </Link>
+    )
+}
+
+/** Right-side compact card — title left, emoji right. */
+export function RightCard({ id, title, topics, hasEbook }: {
+    id: string, title: string, topics: string[], hasEbook: boolean
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-4'>
+            <div className='flex min-w-0 flex-1 flex-col justify-center'>
+                <h2 className='mb-2 font-formal text-[0.95rem] leading-snug tracking-tight text-foreground text-pretty group-hover:underline group-hover:decoration-default-300 group-hover:underline-offset-2'>
+                    {title}
+                </h2>
+                <TagPills tags={allTopics} />
+            </div>
+            <EmojiCover
+                emoji={pickEmoji(id)}
+                articleId={id}
+                className='h-[5.5rem] w-[5.5rem] flex-shrink-0 rounded-sm'
+            />
+        </Link>
+    )
+}
+
+/** Compact card for additional articles below hero. */
+export function CompactCard({ id, title, topics, hasEbook }: {
+    id: string, title: string, topics: string[], hasEbook: boolean
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-3'>
+            <div className='flex min-w-0 flex-1 flex-col justify-center'>
+                <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-pretty group-hover:underline group-hover:decoration-default-300 group-hover:underline-offset-2'>
+                    {title}
+                </h3>
+                <TagPills tags={allTopics} />
+            </div>
+            <EmojiCover
+                emoji={pickEmoji(id)}
+                articleId={id}
+                className='h-16 w-16 flex-shrink-0 rounded-sm'
+            />
+        </Link>
+    )
+}
+
+/** 新建文章 add button — appears as a plus icon in grid or standalone button on mobile. */
+export function AddTextButton({ variant = 'card' }: { variant?: 'card' | 'inline' }) {
     const lib = useAtomValue(libAtom)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const { register, handleSubmit, setValue, formState } = useForm<{ url: string, title: string }>({
-        defaultValues: {
-            url: '',
-            title: ''
-        }
+        defaultValues: { url: '', title: '' }
     })
     const lang = useAtomValue(langAtom)
 
     return <>
-        <FlatCard className='w-full bg-stone-50/20 dark:bg-stone-800/20 border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
-            <CardBody className='px-6 pt-5 flex items-center justify-center overflow-hidden'>
-                <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ scale: 1.1, rotate: 10 }}
-                    className='text-7xl h-20 text-stone-700/60 dark:text-stone-200/60 rounded-lg flex items-center justify-center'>
-                    <PiFilePlusDuotone />
-                </motion.div>
-            </CardBody>
-        </FlatCard>
+        {variant === 'inline' ? (
+            <button
+                type='button'
+                onClick={onOpen}
+                className='flex items-center gap-2 rounded-2xl bg-default-100 px-5 py-2.5 text-sm font-medium text-default-500 transition-colors hover:bg-default-200 hover:text-default-600'
+            >
+                <PiPlusBold className='h-4 w-4' />
+                <span>新建文章</span>
+            </button>
+        ) : (
+            <button
+                type='button'
+                onClick={onOpen}
+                className='group flex aspect-[4/3] w-full cursor-pointer items-center justify-center rounded-sm transition-colors'
+                style={{ backgroundColor: 'oklch(0.965 0.008 150)' }}
+            >
+                <PiPlusBold className='h-8 w-8 text-default-400 transition-transform group-hover:scale-110' />
+            </button>
+        )}
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -151,4 +249,10 @@ export function AddTextButton() {
     </>
 }
 
-export default Text
+export default function Text({ id, title, topics, hasEbook, ...rest }: {
+    id: string, title: string, topics: string[], hasEbook: boolean,
+    createdAt?: string, disablePrefetch?: boolean, disableNavigation?: boolean,
+    visitStatus?: 'loading' | 'visited' | 'not-visited',
+}) {
+    return <CompactCard id={id} title={title} topics={topics} hasEbook={hasEbook} />
+}

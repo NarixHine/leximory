@@ -14,7 +14,7 @@ const GradientCard = ({ text, className, title, children, caption }: {
     return (
         <div className={cn(
             'h-24',
-            className ?? 'bg-linear-to-br from-secondary-50 to-warning-50 dark:from-stone-900 dark:to-stone-700',
+            className ?? 'bg-linear-to-br from-default-50 to-default-100',
             'p-3.5 relative rounded-xl'
         )}>
             {

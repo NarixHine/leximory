@@ -38,7 +38,7 @@ function createQuotaUI({
 export const CommentaryQuotaUI = createQuotaUI({
     name: 'AI 词点额度',
     getQuota: getCommentaryQuota,
-    className: 'bg-linear-to-br from-primary-50 to-secondary-50 dark:bg-linear-to-bl dark:from-stone-900 dark:to-default-200'
+    className: 'bg-linear-to-br from-default-50 to-default-100'
 })
 
 export const AudioQuotaUI = createQuotaUI({

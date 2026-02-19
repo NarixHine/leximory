@@ -1,15 +1,11 @@
-import Main from '@/components/ui/main'
-import Nav from '@/components/nav'
-import H from '@/components/ui/h'
 import TextList from './components/text-list'
 import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
-import { PiUsers, PiSortAscending, PiPrinter } from 'react-icons/pi'
-import { LIB_ACCESS_STATUS } from '@repo/env/config'
-import LinkButton from '@repo/ui/link-button'
 import { Suspense } from 'react'
-import NavBreadcrumbs from '@/components/nav/breadcrumbs'
+import { PiArrowLeft } from 'react-icons/pi'
+import Link from 'next/link'
+import StoneSkeleton from '@/components/ui/stone-skeleton'
 
 async function getData(lib: string) {
     const [{ name, isReadOnly, isOwner, access }, texts] = await Promise.all([
@@ -21,29 +17,52 @@ async function getData(lib: string) {
 
 async function PageContent({ params }: LibProps) {
     const { lib } = await params
-    const { texts, name, isReadOnly, isOwner, access } = await getData(lib)
+    const { texts, name, isReadOnly } = await getData(lib)
     return <>
-        <Nav lib={{ id: lib, name }}></Nav>
-        <H fancy className='mb-4 text-5xl'>{name}</H>
-        <div className='flex justify-center mb-5 gap-1 flex-wrap'>
-            <LinkButton variant='light' startContent={<PiPrinter />} href={`/library/${lib}/all-of-it`}>
-                打印文库
-            </LinkButton>
-            {isOwner && access === LIB_ACCESS_STATUS.public && <LinkButton variant='light' startContent={<PiUsers />} href={`/library/${lib}/readers`}>
-                查看读者
-            </LinkButton>}
-            {isOwner && <LinkButton variant='light' startContent={<PiSortAscending />} href={`/library/${lib}/order`}>
-                文本排序
-            </LinkButton>}
-        </div>
+        {/* Header */}
+        <header className='mx-auto mb-10 max-w-6xl'>
+            <div className='flex items-center gap-3'>
+                <Link
+                    href='/library'
+                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                    aria-label='返回文库'
+                >
+                    <PiArrowLeft className='h-4 w-4' />
+                </Link>
+                <h1 className='font-formal text-2xl tracking-tight text-foreground'>
+                    {name}
+                </h1>
+            </div>
+        </header>
+
         <TextList texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))} isReadOnly={isReadOnly} />
     </>
 }
 
+function PageSkeleton() {
+    return (
+        <div className='mx-auto max-w-6xl'>
+            <header className='mb-10'>
+                <div className='flex items-center gap-3'>
+                    <StoneSkeleton className='w-8 h-8 rounded-full' />
+                    <StoneSkeleton className='w-48 h-7 rounded-lg' />
+                </div>
+            </header>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                <StoneSkeleton className='aspect-[4/3] rounded-sm' />
+                <StoneSkeleton className='aspect-[4/3] rounded-sm' />
+                <StoneSkeleton className='aspect-[4/3] rounded-sm' />
+            </div>
+        </div>
+    )
+}
+
 export default async function Page(props: LibProps) {
-    return <Main>
-        <Suspense fallback={<NavBreadcrumbs loading />}>
-            <PageContent params={props.params} />
-        </Suspense>
-    </Main>
+    return (
+        <main className='min-h-screen px-4 py-8 sm:px-6 lg:px-8'>
+            <Suspense fallback={<PageSkeleton />}>
+                <PageContent params={props.params} />
+            </Suspense>
+        </main>
+    )
 }
