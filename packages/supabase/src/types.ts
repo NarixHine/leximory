@@ -104,7 +104,6 @@ export type Database = {
         Row: {
           access: number
           created_at: string | null
-          emoji: string | null
           id: string
           lang: string
           name: string
@@ -119,7 +118,6 @@ export type Database = {
         Insert: {
           access?: number
           created_at?: string | null
-          emoji?: string | null
           id?: string
           lang?: string
           name?: string
@@ -134,7 +132,6 @@ export type Database = {
         Update: {
           access?: number
           created_at?: string | null
-          emoji?: string | null
           id?: string
           lang?: string
           name?: string
@@ -397,6 +394,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          emoji: string | null
           has_ebook: boolean
           id: string
           lib: string | null
@@ -408,6 +406,7 @@ export type Database = {
         Insert: {
           content?: string
           created_at?: string | null
+          emoji?: string | null
           has_ebook?: boolean
           id?: string
           lib?: string | null
@@ -419,6 +418,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          emoji?: string | null
           has_ebook?: boolean
           id?: string
           lib?: string | null
