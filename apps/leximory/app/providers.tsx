@@ -8,7 +8,7 @@ import { Provider as JotaiProvider } from 'jotai'
 import { Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ThemeProviderProps } from 'next-themes/dist/types'
-import { CHINESE } from '@/lib/fonts'
+import { MINCHO } from '@/lib/fonts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SerwistProvider } from '@serwist/next/react'
 
@@ -31,7 +31,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 									'text-foreground! bg-default-50/40!',
 									'border-none! shadow-none!',
 									'backdrop-blur-lg! backdrop-saturate-150!',
-									CHINESE.className
+									MINCHO.className
 								)
 							},
 						}}></Toaster>

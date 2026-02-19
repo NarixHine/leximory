@@ -5,19 +5,10 @@
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @theme {
-    --font-ui: var(--font-english), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-ui: var(--font-english), var(--font-mincho), serif;
     --font-mono: var(--font-english-mono), monospace;
-    --font-formal: var(--font-english-serif), var(--font-chinese), var(--font-japanese-mincho), serif;
-    --font-fancy: var(--font-english-fancy), var(--font-chinese), var(--font-japanese-mincho), serif;
-    --font-ja: var(--font-english-serif), var(--font-japanese-mincho), var(--font-chinese), serif;
+    --font-formal: var(--font-english-serif), var(--font-mincho), serif;
+    --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
+    --font-ja: var(--font-english-serif), var(--font-mincho), serif;
     --breakpoint-laptop: 950px;
-
-    --color-morandi-50: oklch(0.98 0.005 150);
-    --color-morandi-100: oklch(0.965 0.008 150);
-    --color-morandi-200: oklch(0.94 0.015 150);
-    --color-morandi-300: oklch(0.90 0.025 150);
-    --color-morandi-400: oklch(0.70 0.04 150);
-    --color-morandi-500: oklch(0.55 0.05 150);
-    --color-morandi-600: oklch(0.45 0.06 150);
-    --color-morandi-700: oklch(0.35 0.05 150);
 }

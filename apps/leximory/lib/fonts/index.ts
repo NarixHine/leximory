@@ -1,9 +1,9 @@
-import { Ma_Shan_Zheng, Montserrat, Libre_Baskerville, Hina_Mincho, Noto_Serif_SC, Instrument_Serif, Source_Code_Pro } from 'next/font/google'
+import { Ma_Shan_Zheng, Montserrat, Libre_Baskerville, Instrument_Serif, Source_Code_Pro } from 'next/font/google'
+import localFont from 'next/font/local'
 
-export const CHINESE = Noto_Serif_SC({
-    subsets: ['latin'],
-    weight: ['500', '600', '700'],
-    variable: '--font-chinese',
+export const MINCHO = localFont({
+    src: './mincho.woff2',
+    variable: '--font-mincho',
 })
 
 export const CHINESE_CALLIGRAPHY = Ma_Shan_Zheng({
@@ -28,7 +28,7 @@ export const ENGLISH_MONO = Source_Code_Pro({
 
 export const ENGLISH_SERIF = Libre_Baskerville({
     subsets: ['latin'],
-    weight: ['400', '700'],
+    weight: 'variable',
     style: ['italic', 'normal'],
     variable: '--font-english-serif',
 })
@@ -39,10 +39,3 @@ export const ENGLISH_FANCY = Instrument_Serif({
     weight: ['400'],
     variable: '--font-english-fancy',
 })
-
-export const JAPANESE_MINCHO = Hina_Mincho({
-    subsets: ['latin'],
-    weight: ['400'],
-    variable: '--font-japanese-mincho',
-})
-

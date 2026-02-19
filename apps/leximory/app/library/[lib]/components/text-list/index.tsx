@@ -14,7 +14,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
     if (texts.length === 0) {
         return (
             <div className='flex flex-col items-center gap-6 py-16'>
-                {!isReadOnly && <AddTextButton variant='inline' />}
+                {!isReadOnly && <AddTextButton />}
                 <p className='text-default-400 text-sm'>暂无文章</p>
             </div>
         )
@@ -31,7 +31,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
             {/* Mobile layout: single column */}
             <div className='mx-auto max-w-md md:hidden'>
                 <div className='flex flex-col gap-8'>
-                    {!isReadOnly && <AddTextButton variant='inline' />}
+                    {!isReadOnly && <AddTextButton />}
                     <LeftCard {...heroArticle} />
                     {leftArticles.map((a) => (
                         <LeftCard key={a.id} {...a} />
@@ -50,7 +50,6 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                 <div className='grid grid-cols-[1.2fr_1fr] gap-8'>
                     {/* Left: Hero article */}
                     <div className='flex flex-col gap-6'>
-                        {!isReadOnly && <AddTextButton />}
                         <HeroCard {...heroArticle} />
                     </div>
 
@@ -59,6 +58,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                         {rightArticles.map((article) => (
                             <RightCard key={article.id} {...article} />
                         ))}
+                        {!isReadOnly && <AddTextButton />}
                     </div>
                 </div>
 
@@ -74,10 +74,9 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
 
             {/* Desktop layout (lg+): 3-column Atlantic grid */}
             <div className='mx-auto hidden max-w-6xl lg:block'>
-                <div className='grid grid-cols-[1fr_1.4fr_1fr] gap-8 xl:gap-10'>
+                <div className='grid grid-cols-[1fr_2fr_1fr] gap-8 xl:gap-10'>
                     {/* Left column */}
                     <div className='flex flex-col gap-10'>
-                        {!isReadOnly && <AddTextButton />}
                         {leftArticles.map((article) => (
                             <LeftCard key={article.id} {...article} />
                         ))}
@@ -89,19 +88,19 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     </div>
 
                     {/* Right column */}
-                    <div className='flex flex-col'>
+                    <div className='flex flex-col gap-6'>
                         {rightArticles.map((article, i) => (
                             <div key={article.id}>
-                                {i > 0 && <div className='my-5 h-px bg-default-200/80' />}
                                 <RightCard {...article} />
                             </div>
                         ))}
+                        {!isReadOnly && <AddTextButton />}
                     </div>
                 </div>
 
                 {/* Additional articles below in 4 columns */}
                 {moreArticles.length > 0 && (
-                    <div className='mt-16 grid grid-cols-4 gap-x-6 gap-y-10'>
+                    <div className='mt-16 grid grid-cols-3 gap-x-6 gap-y-10'>
                         {moreArticles.map((article) => (
                             <CompactCard key={article.id} {...article} />
                         ))}

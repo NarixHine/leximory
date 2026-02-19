@@ -1,8 +1,8 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { CardBody } from '@heroui/card'
-import { PiFadersDuotone, PiLockSimpleOpenDuotone, PiFolderPlusDuotone, PiTranslateDuotone, PiTrashDuotone, PiHourglassMediumDuotone, PiPackageDuotone, PiBoxArrowDownDuotone, PiBoxArrowUpDuotone, PiWarningOctagonFill, PiClockDuotone, PiStackMinusDuotone, PiSparkle } from 'react-icons/pi'
+import { Card, CardBody } from '@heroui/card'
+import { PiFaders, PiLockSimpleOpen, PiFolderPlus, PiTranslate, PiTrash, PiPackage, PiBoxArrowDown, PiBoxArrowUp, PiWarningOctagonFill, PiClock, PiStackMinus, PiNotebook, PiBookBookmark } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS, Lang } from '@repo/env/config'
 import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
 import { atomWithStorage } from 'jotai/utils'
@@ -17,8 +17,6 @@ import { useDisclosure } from '@heroui/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
 import { motion } from 'framer-motion'
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
 import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
 import StoneSkeleton from '@/components/ui/stone-skeleton'
@@ -73,7 +71,6 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 }) {
     const compact = shadow || archived
 
-    const router = useRouter()
     const recentAccess = useAtomValue(recentAccessAtom)
     const recentAccessItem = recentAccess[id]
     const [isDeleted, setIsDeleted] = useState(false)
@@ -107,18 +104,16 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             <motion.div
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className='flex items-center rounded-full bg-default-50 py-1.5 pr-1.5 pl-5 transition-colors hover:bg-default-100/50'
+                className='flex items-center rounded-full bg-default-50 py-1.5 pr-1.5 pl-5'
             >
-                <span className='text-sm font-medium text-default-500'>{name}</span>
+                <div className='text-sm font-formal font-medium text-default-500'>{name}</div>
                 <div className='ml-3 flex items-center'>
                     {archived && !shadow && (
                         <Button
                             size='sm'
                             isIconOnly
                             variant='light'
-                            radius='full'
                             isLoading={isTogglingArchive}
-                            className='text-default-400 hover:bg-default-200 hover:text-default-600 h-8 w-8 min-w-8'
                             onPress={() => {
                                 startTogglingArchive(async () => {
                                     await unarchive({ id })
@@ -126,7 +121,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                             }}
                             aria-label={`取消归档 ${name}`}
                         >
-                            {!isTogglingArchive && <PiBoxArrowUpDuotone className='text-sm' />}
+                            {!isTogglingArchive && <PiBoxArrowUp className='text-sm' />}
                         </Button>
                     )}
                     {isStarred && (
@@ -134,9 +129,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                             size='sm'
                             isIconOnly
                             variant='light'
-                            radius='full'
                             isLoading={isUnstarring}
-                            className='text-default-400 hover:bg-default-200 hover:text-default-600 h-8 w-8 min-w-8'
                             onPress={async () => {
                                 if (await ConfirmUnstar.call()) {
                                     startUnstarring(async () => {
@@ -146,10 +139,10 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                             }}
                             aria-label={`移除收藏 ${name}`}
                         >
-                            {!isUnstarring && <PiStackMinusDuotone className='text-sm' />}
+                            {!isUnstarring && <PiStackMinus className='text-sm' />}
                         </Button>
                     )}
-                    {isOwner && (
+                    {isOwner && !shadow && (
                         <>
                             <div className='mx-0.5 h-4 w-px bg-default-200' />
                             <Popover placement='bottom'>
@@ -158,11 +151,9 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                                         size='sm'
                                         isIconOnly
                                         variant='light'
-                                        radius='full'
-                                        className='text-default-400 hover:bg-default-200 h-8 w-8 min-w-8'
                                         aria-label={`删除 ${name}`}
                                     >
-                                        <PiTrashDuotone className='text-sm' />
+                                        <PiTrash className='text-sm' />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className='p-0'>
@@ -179,6 +170,20 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                             </Popover>
                         </>
                     )}
+                    {shadow && (
+                        <>
+                            <div className='mx-0.5 h-4 w-px bg-default-200' />
+                            <Button
+                                isIconOnly
+                                variant='light'
+                                startContent={<PiBookBookmark size={16} />}
+                                size='sm'
+                                as={Link}
+                                href={`/library/${id}/corpus`}
+
+                            />
+                        </>
+                    )}
                 </div>
             </motion.div>
         )
@@ -186,69 +191,77 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
 
     // Normal library card — neo-minimalist design
     return (<>
-        <Link
-            href={`/library/${id}`}
-            className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5 transition-all duration-300 hover:bg-default-100/50'
+        <div
+            className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5'
         >
-            {/* Inner title block */}
-            <div className='rounded-2xl bg-default-100 px-6 py-7'>
-                <span className='mb-3 inline-block font-mono text-xs tracking-wider text-default-400'>
-                    {getLanguageStrategy(lang as Lang).name}
-                </span>
-                <h2 className='font-formal text-2xl leading-snug tracking-tight text-foreground text-balance'>
-                    {name}
-                </h2>
-            </div>
+            <Card
+                as={Link}
+                isPressable
+                shadow='none'
+                href={`/library/${id}`}
+                 className='p-0 bg-transparent'
+            >
+                <CardBody className='p-0 bg-default-100 rounded-2xl px-6 pb-7 pt-6'>
+                    {/* Inner title block */}
+                        <span className='mb-2 inline-block text-sm text-default-400'>
+                            {getLanguageStrategy(lang as Lang).name}
+                        </span>
+                        <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
+                            {name}
+                        </h2>
+                </CardBody>
+            </Card>
 
             {/* Footer area */}
             <div className='flex items-center justify-between px-2 pt-2'>
                 {recentAccessItem ? (
-                    <span
-                        className='group/link flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                    <Link
+                        href={`/library/${id}/${recentAccessItem.id}`}
+                        className='group/link flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-default-400'
                     >
-                        <PiClockDuotone className='h-3.5 w-3.5' />
+                        <PiClock className='size-4' />
                         <span className='max-w-[15ch] truncate'>{recentAccessItem.title}</span>
-                    </span>
+                    </Link>
                 ) : (
                     <div />
                 )}
                 <div className='flex items-center gap-1'>
                     {isOwner && (
-                        <button
+                        <Button
                             type='button'
-                            className='flex h-8 w-8 items-center justify-center rounded-xl text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                            variant='light'
+                            className='flex h-8 w-8 items-center justify-center rounded-xl'
                             aria-label={`${name} 设置`}
-                            onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
+                            onPress={() => {
                                 onOpen()
                             }}
-                        >
-                            <PiFadersDuotone className='h-4 w-4' />
-                        </button>
+                            isIconOnly
+                            size='sm'
+                            startContent={<PiFaders className='size-4' />}
+                        />
                     )}
-                    <button
+                    <Button
+                        variant='light'
                         type='button'
-                        className='flex h-8 w-8 items-center justify-center rounded-xl text-default-400 transition-colors hover:bg-default-200 hover:text-default-600'
+                        className='flex h-8 w-8 items-center justify-center rounded-xl'
                         aria-label={`归档 ${name}`}
-                        onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
+                        onPress={() => {
                             startTogglingArchive(async () => {
                                 await archive({ id })
                             })
                         }}
-                    >
-                        <PiBoxArrowDownDuotone className='h-4 w-4' />
-                    </button>
+                        size='sm'
+                        isIconOnly
+                        startContent={<PiBoxArrowDown className='size-4' />}
+                    />
                 </div>
             </div>
-        </Link>
+        </div>
 
         <Form
             actionButton={<Popover>
                 <PopoverTrigger>
-                    <Button isIconOnly color='primary' variant='flat' startContent={<PiTrashDuotone />} />
+                    <Button isIconOnly color='primary' variant='flat' startContent={<PiTrash />} />
                 </PopoverTrigger>
                 <PopoverContent className='p-0'>
                     <Button color='primary' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
@@ -267,7 +280,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             <input type='hidden' {...register('id')} />
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto place-items-center'>
                 <Input className='col-span-2' label='文库名' {...register('name')} />
-                <Checkbox color='primary' {...register('access')} icon={<PiLockSimpleOpenDuotone />}>
+                <Checkbox color='primary' {...register('access')} icon={<PiLockSimpleOpen />}>
                     设为公开并上架集市
                 </Checkbox>
                 <Controller
@@ -304,14 +317,14 @@ export function LibraryAddButton() {
     })
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     return <>
-        <button
+        <Button
             type='button'
-            onClick={onOpen}
-            className='flex h-10 items-center gap-2 rounded-2xl bg-default-600 dark:bg-default-400 px-5 text-sm font-medium text-white dark:text-default-900 transition-colors hover:bg-default-700 dark:hover:bg-default-300'
+            radius='full'
+            onPress={onOpen}
+            startContent={<PiFolderPlus />}
         >
-            <PiSparkle className='h-4 w-4' />
-            <span>新建文库</span>
-        </button>
+            新建文库
+        </Button>
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -320,8 +333,8 @@ export function LibraryAddButton() {
             title='创建文库'
         >
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mx-auto'>
-                <Input isRequired startContent={<PiPackageDuotone />} label='文库名' {...register('name')} />
-                <Select isRequired startContent={<PiTranslateDuotone />} label='语言' {...register('lang')} validate={value => {
+                <Input isRequired startContent={<PiPackage />} label='文库名' {...register('name')} />
+                <Select isRequired startContent={<PiTranslate />} label='语言' {...register('lang')} validate={value => {
                     if (!value) return '请选择语言'
                     return true
                 }}>

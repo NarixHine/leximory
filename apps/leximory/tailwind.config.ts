@@ -95,9 +95,6 @@ const config: Config = {
       themes: {
         light: {
           colors: {
-            background: '#FFFCF0',
-            foreground: '#100F0F',
-
             focus: {
               DEFAULT: '#9F9D96',
               50: '#F2F0E5',
@@ -114,17 +111,18 @@ const config: Config = {
 
             // Morandi green
             default: {
-              DEFAULT: 'oklch(0.55 0.05 150)',
-              50: 'oklch(0.98 0.005 150)',
-              100: 'oklch(0.965 0.008 150)',
-              200: 'oklch(0.94 0.015 150)',
-              300: 'oklch(0.90 0.025 150)',
-              400: 'oklch(0.70 0.04 150)',
-              500: 'oklch(0.55 0.05 150)',
-              600: 'oklch(0.45 0.06 150)',
-              700: 'oklch(0.35 0.05 150)',
-              800: 'oklch(0.25 0.04 150)',
-              900: 'oklch(0.18 0.03 150)',
+              "DEFAULT": "#e7ece7",
+              "foreground": "#5a715a",
+              "50": "#f8faf8",
+              "100": "#f1f5f1",
+              "200": "#e7ece7",
+              "300": "#d6dbd6",
+              "400": "#9caea1",
+              "500": "#768c75",
+              "600": "#5a715a",
+              "700": "#455745",
+              "800": "#2f3e2f",
+              "900": "#202c20"
             },
 
             // Neutral

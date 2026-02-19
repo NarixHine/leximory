@@ -21,16 +21,16 @@ export default function Page() {
     return (
         <main className='flex min-h-screen flex-col items-center px-4 py-12 sm:py-16'>
             {/* Header */}
-            <header className='mb-10 mx-auto w-full max-w-[430px] sm:max-w-[530px]'>
+            <header className='mb-10 mx-auto w-full max-w-108 sm:max-w-133'>
                 <div className='mb-1 flex items-center gap-2.5'>
                     <PiBooksDuotone className='h-5 w-5 text-default-500' />
                     <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
-                        Lingua
+                        Libraries
                     </span>
                 </div>
                 <div className='flex items-end justify-between'>
                     <h1 className='font-formal text-3xl tracking-tight text-foreground'>
-                        文库
+                        我的文库
                     </h1>
                     <LibraryAddButton />
                 </div>
@@ -38,7 +38,7 @@ export default function Page() {
 
             {/* Libraries */}
             <Suspense fallback={
-                <section className='w-full max-w-[500px] sm:max-w-[600px]'>
+                <section className='w-full max-w-125 sm:max-w-150'>
                     <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
                         <LibrarySkeleton />
                         <LibrarySkeleton />
@@ -75,7 +75,7 @@ async function LibraryList({ userId, orFilter }: {
             <ConfirmUnstarRoot />
 
             {/* Active libraries — CSS columns masonry */}
-            <section className='w-full max-w-[500px] sm:max-w-[600px]' aria-label='Your libraries'>
+            <section className='w-full max-w-125 sm:max-w-150' aria-label='Your libraries'>
                 <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
                     {normalLibs.map(({ lib, isStarred }) => lib && (
                         <Library
@@ -97,8 +97,8 @@ async function LibraryList({ userId, orFilter }: {
 
             {/* Archived section */}
             {compactLibs.length > 0 && (
-                <section className='mt-12 w-full max-w-[420px] sm:max-w-[480px]' aria-label='Archived libraries'>
-                    <h2 className='mb-4 px-1 text-xs font-semibold uppercase tracking-widest text-default-400'>
+                <section className='mt-20 w-full max-w-150' aria-label='Archived libraries'>
+                    <h2 className='mb-4 px-1 font-bold text-lg tracking-widest text-default-400'>
                         已归档
                     </h2>
                     <div className='flex flex-wrap gap-2'>
