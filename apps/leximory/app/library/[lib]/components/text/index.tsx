@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { scrapeArticle } from '@/server/ai/scrape'
 import { cn, resolveEmoji } from '@/lib/utils'
 import { DateTime } from 'luxon'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
 /** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
 function hashString(str: string): number {
@@ -72,8 +73,16 @@ export function TagPills({ tags, ...props }: { tags: string[] } & ChipProps) {
 }
 
 /** Emoji cover in a rounded container with hash-seeded background (supports dark mode). */
-export function EmojiCover({ emoji, articleId, className = '' }: { emoji: string, articleId: string, className?: string }) {
+export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
     const bg = emojiBackground(articleId)
+    const emojiSpan = (
+        <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+            {emoji}
+        </span>
+    )
+    const emojiContent = isLink
+        ? <LoadingIndicatorWrapper variant='spinner' classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}>{emojiSpan}</LoadingIndicatorWrapper>
+        : emojiSpan
     return (
         <div
             className={cn('flex items-center justify-center rounded-3xl overflow-clip', className)}
@@ -83,17 +92,13 @@ export function EmojiCover({ emoji, articleId, className = '' }: { emoji: string
                 className='w-full h-full flex items-center justify-center dark:hidden'
                 style={{ backgroundColor: bg.light }}
             >
-                <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
-                    {emoji}
-                </span>
+                {emojiContent}
             </div>
             <div
                 className='w-full h-full hidden items-center justify-center dark:flex'
                 style={{ backgroundColor: bg.dark }}
             >
-                <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
-                    {emoji}
-                </span>
+                {emojiContent}
             </div>
         </div>
     )
@@ -111,6 +116,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='mb-3 aspect-4/3 w-full'
+                isLink
             />
             <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-pretty'>
                 {title}
@@ -132,6 +138,7 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='mb-8 aspect-4/3 w-full'
+                isLink
             />
             <h2 className='mb-3 text-center font-formal text-[2rem] leading-[1.2] tracking-tight text-foreground text-balance sm:text-[2.4rem]'>
                 {title}
@@ -164,6 +171,7 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='h-22 w-22 shrink-0'
+                isLink
             />
         </Link>
     )
@@ -187,6 +195,7 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='h-16 w-16 shrink-0'
+                isLink
             />
         </Link>
     )

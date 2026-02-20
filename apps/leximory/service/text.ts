@@ -118,6 +118,7 @@ export async function saveText({ id, ...updateData }: { id: string } & Partial<{
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
     await updateText({ id, ...updateData })
+    updateTag(`texts:${text.lib.id}`)
 }
 
 /** Deletes a text after verifying write access. */

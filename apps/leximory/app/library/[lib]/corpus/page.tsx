@@ -33,7 +33,7 @@ export default async function Page(props: LibProps) {
             <div className='flex items-center gap-2 mb-1'>
                 <Link
                     href={`/library/${lib}`}
-                    className='flex h-8 w-8 -ml-1 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
                     aria-label='返回文库'
                 >
                     <LoadingIndicatorWrapper variant='spinner'>

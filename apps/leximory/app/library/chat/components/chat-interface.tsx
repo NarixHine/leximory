@@ -281,8 +281,8 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 <div className={cn(
                     'px-4 py-3 mt-4 rounded-2xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
                     isUser
-                        ? 'bg-secondary-50/50 text-default-900 dark:bg-stone-900'
-                        : 'bg-primary-50/50 text-default-900 dark:bg-neutral-900',
+                        ? 'bg-default-50'
+                        : 'bg-secondary-50',
                 )}>
                     {part.text ? <Markdown
                         md={part.text}
@@ -515,7 +515,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-400 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-0.5'>
@@ -551,7 +551,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                             key={index}
                             isPressable
                             onPress={() => handlePromptClick(prompt.prompt)}
-                            className={cn(index === 0 && 'border border-primary-100', 'bg-secondary-50 hover:bg-secondary-100/50 transition-all')}
+                            className={cn(index === 0 && 'border border-default-300', 'bg-default-50 hover:bg-default-100/50 transition-all')}
                             shadow='none'
                         >
                             <CardBody>
