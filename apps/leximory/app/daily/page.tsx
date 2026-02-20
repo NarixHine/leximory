@@ -44,15 +44,20 @@ export default async function Daily() {
 function ReportSkeleton() {
     return (
         <div className='my-10'>
-            <div className='flex items-center mb-4'>
-                <div className='flex-1 h-px bg-default-200' />
-                <div className='mx-4 h-5 w-28 animate-pulse rounded-full bg-default-100' />
-                <div className='flex-1 h-px bg-default-200' />
+            <div className='flex flex-row items-center mb-4'>
+                <div className='flex-1 h-px bg-secondary-300/70 mr-5' />
+                <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133'>
+                    <div className='flex gap-1 items-center'>
+                        <div className='mx-4 h-5 w-28 animate-pulse rounded-full bg-default-100' />
+                    </div>
+                    <div className='flex-1 ml-3 h-px bg-secondary-300/70' />
+                </h2>
+                <div className='flex-1 h-px bg-secondary-300/70' />
             </div>
             <div className='columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4'>
-                <div className='break-inside-avoid h-32 animate-pulse rounded-2xl bg-default-100' />
-                <div className='break-inside-avoid h-24 animate-pulse rounded-2xl bg-default-100 hidden md:block' />
-                <div className='break-inside-avoid h-28 animate-pulse rounded-2xl bg-default-100 hidden lg:block' />
+                <div className='break-inside-avoid h-50 animate-pulse rounded-2xl bg-default-100' />
+                <div className='break-inside-avoid h-50 animate-pulse rounded-2xl bg-default-100 hidden md:block' />
+                <div className='break-inside-avoid h-50 animate-pulse rounded-2xl bg-default-100 hidden lg:block' />
             </div>
         </div>
     )

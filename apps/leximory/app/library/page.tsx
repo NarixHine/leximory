@@ -8,6 +8,7 @@ import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
 import Main from '@/components/ui/main'
+import AdminDashboardLink from './components/dashboard-link'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -49,6 +50,12 @@ export default function Page() {
                 </section>
             }>
                 <UserLibraryList />
+            </Suspense>
+
+            <Suspense>
+                <div className='flex justify-center mt-7'>
+                    <AdminDashboardLink />
+                </div>
             </Suspense>
         </Main>
     )

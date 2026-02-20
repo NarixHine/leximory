@@ -75,7 +75,7 @@ export function CopyProfileLink({ userId }: { userId: string }) {
         variant='flat'
         fullWidth
         startContent={<PiShareDuotone />}
-        color='primary'
+        color='default'
         radius='lg'
         onPress={async () => {
             const data: ShareData = {

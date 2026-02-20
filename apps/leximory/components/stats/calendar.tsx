@@ -13,17 +13,16 @@ interface VocabularyCalendarProps {
 
 // Color palette for heatmap cells
 const colorPalette = {
-    0: 'bg-default-100/60',
-    1: 'bg-primary-50',
-    5: 'bg-primary-100',
-    10: 'bg-primary-200',
-    15: 'bg-primary-300',
-    20: 'bg-primary-400',
-    25: 'bg-primary-500',
-    30: 'bg-primary-600',
-    35: 'bg-primary-700',
-    40: 'bg-primary-800',
-    45: 'bg-primary-900'
+    0: 'bg-secondary-100/60',
+    1: 'bg-default-100',
+    5: 'bg-default-200',
+    10: 'bg-default-300',
+    15: 'bg-default-400',
+    20: 'bg-default-500',
+    25: 'bg-default-600',
+    30: 'bg-default-700',
+    35: 'bg-default-800',
+    45: 'bg-default-900'
 }
 
 // Function to determine cell color based on word count
@@ -86,7 +85,7 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
 
     return (
         <FlatCard background='solid' className={cn(
-            'border-none bg-primary-100/20 dark:bg-default-100/30',
+            'border-none bg-secondary-50',
             isLoading && 'animate-pulse'
         )}>
             <CardBody className='p-6 pt-4'>

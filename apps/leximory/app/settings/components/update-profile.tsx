@@ -31,7 +31,7 @@ function UsernameSection({ username: currentUsername, onSuccess }: { username?: 
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='用户名' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiUser size={20} />}>
+        <SectionCard title='用户名' footer={<Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiUser size={20} />}>
             {isLoading ? '更新中...' : '更新用户名'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
@@ -114,7 +114,7 @@ export function AvatarSection({ image }: { image?: string }) {
                 <Button
                     type='button'
                     className='w-full h-10'
-                    color='secondary'
+                    color='default'
                     variant='flat'
                     onPress={() => fileInputRef.current?.click()}
                     isLoading={isLoading}
@@ -125,7 +125,7 @@ export function AvatarSection({ image }: { image?: string }) {
                 <Button
                     type='button'
                     className='w-full h-10'
-                    color='primary'
+                    color='default'
                     onPress={handleUpload}
                     isLoading={isLoading}
                     startContent={<PiImage size={20} />}
@@ -142,7 +142,7 @@ function EmailSection({ onSuccess }: { onSuccess?: () => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='邮箱' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
+        <SectionCard title='邮箱' footer={<Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
             {isLoading ? '更新中...' : '更新邮箱'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
@@ -202,7 +202,7 @@ function PasswordSection({ onSuccess }: { onSuccess?: () => void }) {
                 <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>确认密码</label>
                 <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='确认密码' className='h-10' />
             </div>
-            <Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiLock size={20} />}>
+            <Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiLock size={20} />}>
                 {isLoading ? '更新中...' : '更新密码'}
             </Button>
         </SectionCard>
@@ -219,7 +219,7 @@ function LogoutSection() {
                 setIsLoading(true)
                 await supabase.auth.signOut()
                 router.push(SIGN_IN_URL)
-            }} className='w-full h-10' color='primary' variant='flat' isLoading={isLoading} startContent={<PiSignOut size={20} />}>
+            }} className='w-full h-10' color='default' variant='flat' isLoading={isLoading} startContent={<PiSignOut size={20} />}>
                 退出登录
             </Button>
         </SectionCard>

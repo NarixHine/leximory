@@ -162,7 +162,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }, [isOnDemand, isLoaded, prompt])
 
     const editId = deleteId && deleteId !== 'undefined' ? deleteId : savedId
-    const Save = () => <div className='flex gap-1'>
+    const Save = () => <div className='flex gap-1 mb-1'>
         {/* save button: show when user is on the library page / corpus page */}
         {!explicitDisableSave && !isDeleteable && !isEditing && status !== 'saved' && <Button
             isIconOnly={!isReadOnly}
@@ -191,7 +191,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isLoading={status === 'loading'}
                 startContent={status !== 'loading' && (isEditing ? <PiCheckCircle className='size-5' /> : <PiPencil className='size-5' />)}
                 color='secondary'
-                variant={isEditing ? 'solid' : 'light'}
+                variant={isEditing ? 'solid' : 'flat'}
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
