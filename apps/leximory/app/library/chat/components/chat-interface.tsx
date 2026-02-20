@@ -133,6 +133,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                         id={lib.id}
                         name={lib.name}
                         lang={lib.lang}
+                        owner={lib.owner}
                         isOwner={false}
                         access={lib.access}
                         shadow={lib.shadow}

@@ -2,9 +2,9 @@
 
 import { Button } from '@heroui/button'
 import { Card, CardBody } from '@heroui/card'
-import { PiFaders, PiLockSimpleOpen, PiFolderPlus, PiTranslate, PiTrash, PiPackage, PiBoxArrowDown, PiBoxArrowUp, PiWarningOctagonFill, PiClock, PiStackMinus, PiNotebook, PiBookBookmark } from 'react-icons/pi'
+import { PiFaders, PiLockSimpleOpen, PiFolderPlus, PiTranslate, PiTrash, PiPackage, PiBoxArrowDown, PiBoxArrowUp, PiWarningOctagonFill, PiClock, PiStackMinus, PiBookBookmark } from 'react-icons/pi'
 import { LIB_ACCESS_STATUS, Lang } from '@repo/env/config'
-import { getLanguageStrategy, languageStrategies } from '@/lib/languages'
+import { languageStrategies } from '@/lib/languages'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtomValue } from 'jotai'
 import Form from '@/components/form'
@@ -21,6 +21,7 @@ import { ConfirmUnstar } from './confirm-unstar'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import LibraryCardBase from '@/components/library-card'
 
 export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
@@ -29,17 +30,22 @@ export function ConfirmUnstarRoot() {
 export function LibrarySkeleton({ rowCount }: { rowCount?: number }) {
     return (
         <div className={('break-inside-avoid rounded-3xl bg-default-50 p-3.5 animate-pulse')}>
-            <div className='rounded-2xl bg-default-100 px-6 py-7'>
-                <div className='w-12 h-4 rounded-xl mb-3' />
+            <div className='rounded-2xl bg-default-100 px-6 pb-7 pt-5'>
+                {/* Avatar + username placeholder */}
+                <div className='flex items-center gap-2 mb-3'>
+                    <div className='size-8 rounded-full bg-default-200' />
+                    <div className='w-20 h-4 rounded bg-default-200' />
+                </div>
+                <div className='w-12 h-4 rounded-xl mb-2 bg-default-200' />
                 {new Array(rowCount || 1).fill(0).map((_, i) => (
-                    <div key={i} className='w-full h-7 rounded-xl' />
+                    <div key={i} className='w-full h-7 rounded-xl bg-default-200' />
                 ))}
             </div>
             <div className='flex items-center justify-between px-2 pt-2'>
-                <div className='w-24 h-6 rounded-xl' />
+                <div className='w-24 h-6 rounded-xl bg-default-200' />
                 <div className='flex gap-1'>
-                    <div className='w-8 h-8 rounded-xl' />
-                    <div className='w-8 h-8 rounded-xl' />
+                    <div className='w-8 h-8 rounded-xl bg-default-200' />
+                    <div className='w-8 h-8 rounded-xl bg-default-200' />
                 </div>
             </div>
         </div>
@@ -59,12 +65,13 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred, prompt }: {
+function Library({ id, name, lang, owner, isOwner, access, shadow, price, archived, isStarred, prompt }: {
     id: string,
     name: string,
     access: number,
     isStarred: boolean,
     lang: string,
+    owner: string,
     isOwner: boolean,
     shadow: boolean,
     price: number,
@@ -204,31 +211,14 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         )
     }
 
-    // Normal library card — neo-minimalist design
+    // Normal library card — unified design with avatar
     return (<>
-        <div
-            className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5'
-        >
-            <Card
-                as={Link}
-                isPressable
-                shadow='none'
-                href={`/library/${id}`}
-                className='p-0 bg-transparent'
-            >
-                <CardBody className='p-0 bg-default-100 rounded-2xl px-6 pb-7 pt-6'>
-                    {/* Inner title block */}
-                    <span className='mb-2 inline-block text-sm text-default-400'>
-                        {getLanguageStrategy(lang as Lang).name}
-                    </span>
-                    <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
-                        {name}
-                    </h2>
-                </CardBody>
-            </Card>
-
-            {/* Footer area */}
-            <div className='flex items-center justify-between px-2 pt-2'>
+        <LibraryCardBase
+            id={id}
+            name={name}
+            lang={lang}
+            owner={owner}
+            footer={<>
                 {recentAccessItem ? (
                     <Link
                         href={`/library/${id}/${recentAccessItem.id}`}
@@ -276,8 +266,8 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         startContent={<PiBoxArrowDown className='size-4' />}
                     />
                 </div>
-            </div>
-        </div>
+            </>}
+        />
 
         <Form
             actionButton={<Popover>

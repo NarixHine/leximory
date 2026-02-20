@@ -88,6 +88,7 @@ async function LibraryList({ userId, orFilter }: {
                             key={lib.id}
                             name={lib.name}
                             lang={lib.lang}
+                            owner={lib.owner}
                             isOwner={lib.owner === userId}
                             archived={false}
                             prompt={lib.prompt}
@@ -118,6 +119,7 @@ async function LibraryList({ userId, orFilter }: {
                                 key={lib.id}
                                 name={lib.name}
                                 lang={lib.lang}
+                                owner={lib.owner}
                                 isOwner={lib.owner === userId}
                                 archived={archives.includes(lib.id)}
                                 prompt={lib.prompt}
