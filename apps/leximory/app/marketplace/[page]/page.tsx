@@ -4,8 +4,7 @@ import { MARKETPLACE_PAGE_SIZE } from '@repo/env/config'
 import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
-import H from '@/components/ui/h'
-import { PiStorefrontDuotone } from 'react-icons/pi'
+import { PiStorefront } from 'react-icons/pi'
 import UserAvatar from '@repo/ui/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
@@ -46,7 +45,14 @@ export default async function MarketplacePage({ params }: {
 
     return (
         <Main className='max-w-(--breakpoint-lg) flex flex-col mx-auto'>
-            <H className='text-5xl font-bold dark:text-amber-500 text-amber-600'><PiStorefrontDuotone />文库集市</H>
+            <header className='mx-auto w-full max-w-108 sm:max-w-133'>
+                <div className='flex items-center gap-2'>
+                    <PiStorefront className='size-7 text-foreground' />
+                    <h1 className='font-formal text-3xl text-foreground'>
+                        我的文库
+                    </h1>
+                </div>
+            </header>
             <Spacer y={10} />
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />

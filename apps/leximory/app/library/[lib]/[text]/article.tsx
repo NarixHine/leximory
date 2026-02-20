@@ -9,18 +9,17 @@ import EditableH from './components/editable-h'
 import QuoteInAgent from './components/quote-in-agent'
 import ShareButton from './components/share-button'
 import { getLanguageStrategy } from '@/lib/languages'
-import { EmojiCover, TagPills } from '../components/text'
-import { resolveEmoji } from '@/lib/utils'
+import { TagPills } from '../components/text'
 import { BackwardButton } from './components/backward-button'
 import { DateTime } from 'luxon'
 import { Lang } from '@repo/env/config'
+import { FullEmojiCover } from './components/full-emoji-cover'
 
 /** Magazine-style article hero header. */
-function ArticleHero({ title, emoji, topics, createdAt, textId, libId, lang, content }: {
-    title: string, emoji: string | null, topics: string[], createdAt: string | null, textId: string, libId: string, lang: Lang, content: string
+function ArticleHero({ title, topics, createdAt, libId, lang, content }: {
+    title: string, topics: string[], createdAt: string | null, libId: string, lang: Lang, content: string
 }) {
     const { FormattedReadingTime } = getLanguageStrategy(lang)
-    const displayEmoji = resolveEmoji(emoji, false)
     const dateStr = createdAt ? DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy') : null
 
     return (
@@ -40,11 +39,7 @@ function ArticleHero({ title, emoji, topics, createdAt, textId, libId, lang, con
                     )}
                     <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />
                 </div>
-                <EmojiCover
-                    emoji={displayEmoji}
-                    articleId={textId}
-                    className='w-full h-full rounded-2xl'
-                />
+                <FullEmojiCover />
             </div>
         </div>
     )
@@ -66,16 +61,14 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
             [promptAtom, prompt],
             [emojiAtom, emoji]
         ]}>
-            {!ebook && <ArticleHero
+            <ArticleHero
                 title={title}
-                emoji={emoji}
                 topics={topics ?? []}
                 lang={lib.lang}
                 content={content}
                 createdAt={createdAt}
-                textId={text}
                 libId={lib.id}
-            />}
+            />
             <div className='flex items-center justify-center gap-3 print:mt-0 px-5 md:w-5/6 mx-auto'>
                 {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2 print:invisible' />}
                 <EditableH />

@@ -30,7 +30,8 @@ export default function EditableH() {
 
     return (
         <div className='flex flex-col items-center gap-3 w-full'>
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-1'>
+                <div className='shrink-0'>选取</div>
                 <Popover placement='bottom'>
                     <PopoverTrigger>
                         <button
@@ -44,22 +45,24 @@ export default function EditableH() {
                     <PopoverContent className='p-0 border-none bg-transparent shadow-none'>
                         <EmojiPicker
                             theme={resolvedTheme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                            onEmojiClick={(emojiData) => {
-                                setEmoji(emojiData.emoji)
-                                setManualInput('')
+                            onEmojiClick={({ emoji }) => {
+                                setEmoji(emoji)
+                                setManualInput(emoji)
                             }}
                             lazyLoadEmojis
+                            className='font-ui!'
                         />
                     </PopoverContent>
                 </Popover>
+                <div className='text-secondary-400 ml-2 mr-4'>
+                    或
+                </div>
                 <Input
                     value={manualInput}
                     onValueChange={handleManualInput}
-                    placeholder='Paste emoji'
-                    size='sm'
-                    maxLength={16}
-                    className='w-24'
-                    classNames={{ input: 'text-center text-lg' }}
+                    placeholder='粘贴 emoji'
+                    maxLength={12}
+                    classNames={{ input: 'text-center text-lg max-w-28' }}
                     isInvalid={manualInput.length > 0 && !isValidEmoji(manualInput)}
                     aria-label='Manual emoji input'
                 />

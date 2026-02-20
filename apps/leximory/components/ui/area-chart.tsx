@@ -64,7 +64,7 @@ export function AreaChart({
 
     return (
         <ChartContainer config={chartConfig} className={cn("w-full min-h-20 max-h-32", className)}>
-            <RechartsAreaChart data={data} margin={{ left: 0, right: 0, bottom: 20 }}>
+            <RechartsAreaChart data={data} margin={{ left: 0, right: 0 }}>
                 <defs>
                     {categories.map((cat, i) => {
                         const colorKey = colors[i % colors.length]
@@ -116,7 +116,7 @@ export function AreaChart({
                         type="natural"
                         fill={`url(#fill-${cat})`}
                         stroke={`var(--color-${cat})`}
-                        strokeWidth={2}
+                        strokeWidth={1}
                     />
                 ))}
                 {showLegend && <ChartLegend content={<ChartLegendContent />} />}

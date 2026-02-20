@@ -256,7 +256,6 @@ function GeneratingView() {
   const setContent = useSetAtom(contentAtom)
   const setTopics = useSetAtom(topicsAtom)
   const text = useAtomValue(textAtom)
-  const router = useRouter()
   const [currentProgress, setCurrentProgress] = useState(0)
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
@@ -293,7 +292,6 @@ function GeneratingView() {
             setContent(content)
             setTopics(topics ?? [])
             setIsLoading(false)
-            router.refresh()
           })
         }
         setAnnotationProgress(newProgress)

@@ -191,7 +191,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 isLoading={status === 'loading'}
                 startContent={status !== 'loading' && (isEditing ? <PiCheckCircle className='size-5' /> : <PiPencil className='size-5' />)}
                 color='secondary'
-                variant='light'
+                variant={isEditing ? 'solid' : 'light'}
                 onPress={() => {
                     if (isEditing) {
                         setStatus('loading')
