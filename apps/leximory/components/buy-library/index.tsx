@@ -9,6 +9,7 @@ import { useState, useTransition } from 'react'
 import { PiCheckCircle, PiCoins } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 /** Purchase button with an overlapping owner avatar. */
 export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner, ...props }: {
@@ -57,10 +58,17 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                         : <span><span className='font-mono text-base'>{price}</span> LexiCoin</span>
             }
         </Button>
-        <Avatar
-            src={isSuccess ? user?.imageUrl ?? undefined : undefined}
-            size='sm'
-            className={!isSuccess ? 'animate-pulse' : ''}
+        <Button
+            startContent={
+                <Avatar
+                    src={isSuccess ? user?.imageUrl ?? undefined : undefined}
+                    size='sm'
+                    className={!isSuccess ? 'animate-pulse' : ''}
+                />}
+            as={Link}
+            href={`/profile/${uid}`}
+            isIconOnly
+            radius='full'
         />
     </div>
 }   

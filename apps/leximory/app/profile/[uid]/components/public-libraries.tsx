@@ -25,7 +25,7 @@ export default async function PublicLibraries({ uid }: { uid: string }) {
         </div>)
     }
 
-    return (<div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
+    return (<div className='columns-1 lg:columns-2 gap-4 space-y-4'>
         {publicLibraries.map((lib) => (
             <LibraryCard
                 hideFooter

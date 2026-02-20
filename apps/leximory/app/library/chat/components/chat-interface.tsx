@@ -534,7 +534,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
             {storedMessages.length > 0 && messages.length === 0 && <Button
                 className='mb-4'
                 fullWidth
-                color='primary'
+                color='default'
                 variant='flat'
                 radius='lg'
                 startContent={<PiFolderOpen />}

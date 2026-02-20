@@ -40,10 +40,10 @@ export default function Page() {
             <Suspense fallback={
                 <section className='w-full max-w-125 sm:max-w-150'>
                     <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
-                        <LibrarySkeleton rowCount={6} />
+                        <LibrarySkeleton rowCount={4} />
                         <LibrarySkeleton rowCount={1} />
                         <LibrarySkeleton rowCount={2} />
-                        <LibrarySkeleton rowCount={5} />
+                        <LibrarySkeleton rowCount={2} />
                     </div>
                 </section>
             }>
