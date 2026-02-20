@@ -82,5 +82,6 @@ export async function star(lib: string) {
     await starLib({ lib, userId: subject.userId })
     const libData = await getLib({ id: lib })
     await addLexicoinBalance(libData.owner, price / 5)
+    updateTag('libraries')
     return { success: true, message: 'success' }
 }

@@ -1,12 +1,13 @@
 import Main from '@/components/ui/main'
 import Pagination from './pagination'
 import { MARKETPLACE_PAGE_SIZE } from '@repo/env/config'
-import LibraryCard, { LibraryCardSkeleton } from './components/card'
+import LibraryCard from './components/card'
 import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
 import { PiStorefrontDuotone } from 'react-icons/pi'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
+import { LibrarySkeleton } from '@/app/library/components/lib'
 
 async function LibraryList({ page }: {
     page: number
@@ -14,7 +15,7 @@ async function LibraryList({ page }: {
     const { userId } = await getUserOrThrow()
     const libs = await getPaginatedPublicLibs({ page, size: MARKETPLACE_PAGE_SIZE })
     return (
-        <div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+        <div className='columns-1 gap-4 md:columns-2 space-y-4 max-w-125 sm:max-w-150 mx-auto'>
             {libs.map((lib) => (
                 <LibraryCard
                     library={{
@@ -47,11 +48,11 @@ export default async function MarketplacePage({ params }: {
                 <div className='flex items-center gap-2 text-default-500'>
                     <PiStorefrontDuotone className='size-8' />
                     <h1 className='font-formal text-3xl'>
-                        我的文库
+                        文库集市
                     </h1>
                 </div>
             </header>
-            <Spacer y={10} />
+            <Spacer y={5} />
             <Suspense fallback={<SuspenseLibraryList />}>
                 <LibraryList page={page} />
             </Suspense>
@@ -62,9 +63,12 @@ export default async function MarketplacePage({ params }: {
 }
 
 const SuspenseLibraryList = () => (
-    <div className='grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3'>
-        {Array.from({ length: 9 }).map((_, i) => (
-            <LibraryCardSkeleton key={i} />
-        ))}
-    </div>
+    <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
+        <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
+            <LibrarySkeleton rowCount={6} />
+            <LibrarySkeleton rowCount={1} />
+            <LibrarySkeleton rowCount={2} />
+            <LibrarySkeleton rowCount={5} />
+        </div>
+    </section>
 )

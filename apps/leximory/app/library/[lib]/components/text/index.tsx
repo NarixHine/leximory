@@ -122,7 +122,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
                 className='mb-3 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-pretty'>
+            <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <TagPills tags={allTopics} />
@@ -166,7 +166,7 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
     return (
         <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-4'>
             <div className='flex min-w-0 flex-1 flex-col justify-center'>
-                <h2 className='mb-2 font-formal text-[0.95rem] leading-snug tracking-tight text-foreground text-pretty'>
+                <h2 className='mb-2 font-formal text-[0.95rem] leading-snug tracking-tight text-foreground text-balance'>
                     {title}
                 </h2>
                 <TagPills tags={allTopics} />
@@ -190,7 +190,7 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
     return (
         <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-3'>
             <div className='flex min-w-0 flex-1 flex-col justify-center'>
-                <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-pretty'>
+                <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-balance'>
                     {title}
                 </h3>
                 <TagPills tags={allTopics} />

@@ -3,15 +3,15 @@
 import { star } from '@/app/library/[lib]/components/actions'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@heroui/avatar'
-import { Button } from '@heroui/react'
+import { Button, ButtonProps } from '@heroui/react'
 import { useUserProfile } from '@/lib/hooks/use-user-profile'
-import { useTransition } from 'react'
-import { PiCoinsDuotone } from 'react-icons/pi'
+import { useState, useTransition } from 'react'
+import { PiCheckCircle, PiCoins } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 /** Purchase button with an overlapping owner avatar. */
-export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner }: {
+export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner, ...props }: {
     price: number
     id: string
     isStarred: boolean
@@ -19,7 +19,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
     /** Owner user ID — used to fetch avatar client-side. */
     uid: string
     isOwner?: boolean
-}) {
+} & ButtonProps) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
     const { data: user, isSuccess } = useUserProfile(uid)
@@ -30,14 +30,14 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
             size='sm'
             isDisabled={isStarred || isOwner}
             isLoading={isTransitioning}
-            startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
+            startContent={isTransitioning ? null : (isStarred ? <PiCheckCircle className='size-5' /> : <PiCoins className='size-5' />)}
             color='primary'
             className={cn('-mr-5 pr-7')}
             onPress={() => {
                 startTransition(async () => {
                     const { success, message } = await star(id)
                     if (success) {
-                        toast.success('钉选成功')
+                        toast.success('购入成功')
                         if (navigateAfterPurchase) {
                             router.push(`/library/${id}`)
                         }
@@ -47,6 +47,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                     }
                 })
             }}
+            {...props}
         >
             {
                 isStarred

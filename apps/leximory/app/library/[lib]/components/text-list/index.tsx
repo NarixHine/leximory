@@ -84,7 +84,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
 
             {/* Desktop layout (lg+): 3-column Atlantic grid */}
             <div className='mx-auto hidden max-w-6xl lg:block'>
-                <div className='grid grid-cols-[1fr_2fr_1fr] gap-8 xl:gap-10'>
+                <div className='grid grid-cols-[3fr_6fr_4fr] gap-8 xl:gap-10'>
                     {/* Left column */}
                     <div className='flex flex-col gap-10'>
                         {leftArticles.map((article) => (

@@ -38,7 +38,7 @@ export function LibrarySkeleton({ rowCount }: { rowCount?: number }) {
                 </div>
                 <div className='w-12 h-4 rounded-xl mb-2 bg-default-200' />
                 {new Array(rowCount || 1).fill(0).map((_, i) => (
-                    <div key={i} className='w-full h-7 rounded-xl bg-default-200' />
+                    <div key={i} className='w-full h-7 my-2 rounded-xl bg-default-200' />
                 ))}
             </div>
             <div className='flex items-center justify-between px-2 pt-2'>

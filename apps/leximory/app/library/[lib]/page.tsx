@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
 import Link from 'next/link'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import Main from '@/components/ui/main'
 
 async function getData(lib: string) {
     const [{ name, isReadOnly, isOwner, access }, texts] = await Promise.all([
@@ -105,7 +106,7 @@ function PageSkeleton() {
 
             {/* Desktop: 3-column Atlantic grid */}
             <div className='mx-auto hidden max-w-6xl lg:block'>
-                <div className='grid grid-cols-[1fr_2fr_1fr] gap-8 xl:gap-10'>
+                <div className='grid grid-cols-[3fr_6fr_4fr] gap-8 xl:gap-10'>
                     {/* Left column */}
                     <div className='flex flex-col gap-10'>
                         {[1, 2].map(i => (
@@ -144,10 +145,10 @@ function PageSkeleton() {
 
 export default async function Page(props: LibProps) {
     return (
-        <main className='min-h-screen px-4 py-8 sm:px-6 lg:px-8'>
+        <Main className='max-w-none md:w-11/12'>
             <Suspense fallback={<PageSkeleton />}>
                 <PageContent params={props.params} />
             </Suspense>
-        </main>
+        </Main>
     )
 }

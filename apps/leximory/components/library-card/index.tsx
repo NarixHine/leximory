@@ -3,7 +3,6 @@ import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import Link from 'next/link'
 import { ReactNode } from 'react'
-import UserBadge from './user-badge'
 
 /** Props for the unified library card layout. */
 export interface LibraryCardBaseProps {
@@ -20,7 +19,7 @@ export interface LibraryCardBaseProps {
 }
 
 /** Shared layout for library cards across Libraries, Marketplace & Profile screens. */
-export default function LibraryCardBase({ id, name, lang, owner, footer }: LibraryCardBaseProps) {
+export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardBaseProps) {
     return (
         <div className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5'>
             <Card
@@ -31,10 +30,7 @@ export default function LibraryCardBase({ id, name, lang, owner, footer }: Libra
                 className='p-0 bg-transparent'
             >
                 <CardBody className='p-0 bg-default-100 rounded-2xl px-6 pb-7 pt-5'>
-                    <div className='mb-3'>
-                        <UserBadge uid={owner} />
-                    </div>
-                    <span className='mb-2 inline-block text-sm text-default-400'>
+                    <span className='mb-2 inline-block font-semibold text-default-400'>
                         {getLanguageStrategy(lang as Lang).name}
                     </span>
                     <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
