@@ -13,6 +13,7 @@ import crypto from 'crypto'
 import { getUserOrThrow } from '@repo/user'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
+import { isValidEmoji } from '@/lib/utils'
 import { updateTag } from 'next/cache'
 import { visitText, getVisitedTextIds } from '@/server/db/visited'
 import { miniAI, nanoAI } from '@/server/ai/configs'
@@ -115,6 +116,9 @@ export async function getNewText(id: string) {
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
 export async function saveText({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
+    if (updateData.emoji !== undefined && !isValidEmoji(updateData.emoji)) {
+        throw new Error('Invalid emoji: must be a single emoji character')
+    }
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
     await updateText({ id, ...updateData })
