@@ -3,7 +3,7 @@
 import { Button } from '@heroui/button'
 import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
-import { PiBookmarkDuotone, PiFrameCornersDuotone } from 'react-icons/pi'
+import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
@@ -38,7 +38,7 @@ const locationAtomFamily = atomFamily((text: string) =>
 const EBOOK_DARK_FG = '#CECDC3'
 const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
-const EBOOK_LIGHT_BG = '#FFFCF0'
+const EBOOK_LIGHT_BG = '#ffffff'
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean) {
@@ -156,7 +156,7 @@ export default function Ebook() {
                 <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-60'>
                     <Button
                         isIconOnly
-                        startContent={<PiFrameCornersDuotone className='text-lg' />}
+                        startContent={<PiFrameCorners className='text-lg' />}
                         className='z-10'
                         color='primary'
                         variant='light'
@@ -175,7 +175,7 @@ export default function Ebook() {
                     />
                     {hasZoomed && <>
                         <Button
-                            startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
+                            startContent={!savingBookmark && <PiBookmark className='text-lg' />}
                             isLoading={savingBookmark}
                             isDisabled={!bookmark || isReadOnly}
                             className='z-10'

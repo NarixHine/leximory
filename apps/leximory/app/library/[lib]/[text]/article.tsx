@@ -16,8 +16,8 @@ import { Lang } from '@repo/env/config'
 import { FullEmojiCover } from './components/full-emoji-cover'
 
 /** Magazine-style article hero header. */
-function ArticleHero({ title, topics, createdAt, libId, lang, content }: {
-    title: string, topics: string[], createdAt: string | null, libId: string, lang: Lang, content: string
+function ArticleHero({ title, topics, createdAt, libId, lang, content, hasEbook }: {
+    title: string, topics: string[], createdAt: string | null, libId: string, lang: Lang, content: string, hasEbook: boolean
 }) {
     const { FormattedReadingTime } = getLanguageStrategy(lang)
     const dateStr = createdAt ? DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy') : null
@@ -32,7 +32,7 @@ function ArticleHero({ title, topics, createdAt, libId, lang, content }: {
                     <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>
                         {title}
                     </h1>
-                    {FormattedReadingTime && (
+                    {FormattedReadingTime && !hasEbook && (
                         <div className='text-sm mb-4'>
                             {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
                         </div>
@@ -62,6 +62,7 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
             [emojiAtom, emoji]
         ]}>
             <ArticleHero
+                hasEbook={!!ebook}
                 title={title}
                 topics={topics ?? []}
                 lang={lib.lang}
@@ -69,11 +70,11 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
                 createdAt={createdAt}
                 libId={lib.id}
             />
-            <div className='flex items-center justify-center gap-3 print:mt-0 px-5 md:w-5/6 mx-auto'>
+            {!ebook && <div className='flex items-center justify-center gap-3 print:mt-0 px-5 md:w-5/6 mx-auto'>
                 {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2 print:invisible' />}
                 <EditableH />
                 <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2 print:invisible' />
-            </div>
+            </div>}
             <div className='px-5 md:w-5/6 mx-auto'>
                 <Digest hideImportControls={hideControls}></Digest>
             </div>

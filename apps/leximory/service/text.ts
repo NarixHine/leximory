@@ -110,8 +110,8 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
 
 /** Returns the latest content and topics of a text. */
 export async function getNewText(id: string) {
-    const { content, topics } = await getTextContent({ id })
-    return { content, topics }
+    const { content, topics, emoji } = await getTextContent({ id })
+    return { content, topics, emoji }
 }
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
