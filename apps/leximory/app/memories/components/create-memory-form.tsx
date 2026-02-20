@@ -24,7 +24,7 @@ export function CreateMemoryForm({ className }: { className?: CardProps['classNa
     }
 
     return (
-        <FlatCard className={cn('p-5 w-full', className)}>
+        <FlatCard background={'solid'} className={cn('p-5 w-full', className)}>
             <MemoryEditor
                 onSave={handleSave}
                 isSaving={isPending}

@@ -54,7 +54,6 @@ export function MemoryEditor({
                     type='submit'
                     isLoading={isSaving}
                     color='primary'
-                    variant='flat'
                     startContent={<PiPaperPlaneTilt />}
                     isIconOnly
                 />
