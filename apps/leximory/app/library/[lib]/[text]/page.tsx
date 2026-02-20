@@ -62,21 +62,12 @@ function PageSkeleton() {
                 </div>
                 <Bone className='w-full h-full rounded-2xl min-h-[60dvh]' />
             </div>
-
-            {/* Content area skeleton */}
-            <div className='px-5 md:hidden mx-auto'>
-                <Bone className='w-full h-6 rounded-lg mb-3' />
-                <Bone className='w-full h-6 rounded-lg mb-3' />
-                <Bone className='w-5/6 h-6 rounded-lg mb-3' />
-                <Bone className='w-full h-6 rounded-lg mb-3' />
-                <Bone className='w-2/3 h-6 rounded-lg' />
-            </div>
         </>
     )
 }
 
 export default async function Page(props: LibAndTextProps) {
-    return (<Main className='max-w-none md:w-full md:pt-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
+    return (<Main className='max-w-none sm:w-full pt-3 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
         <Suspense fallback={<PageSkeleton />}>
             <PageContent params={props.params} />
         </Suspense>

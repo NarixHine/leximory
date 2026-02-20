@@ -3,15 +3,15 @@
 import { useAtomValue } from 'jotai'
 import { EmojiCover } from '../../components/text'
 import { ebookAtom, emojiAtom, textAtom } from '../atoms'
-import { resolveEmoji } from '@/lib/utils'
+import { cn, resolveEmoji } from '@/lib/utils'
 
-export function FullEmojiCover() {
+export function TextEmojiCover({ className }: { className?: string }) {
     const emoji = useAtomValue(emojiAtom)
     const textId = useAtomValue(textAtom)
     const ebook = useAtomValue(ebookAtom)
     return (<EmojiCover
         emoji={resolveEmoji(emoji, !!ebook)}
         articleId={textId}
-        className='w-full h-full rounded-2xl'
+        className={cn('rounded-none', className)}
     />)
 }

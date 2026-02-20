@@ -7,6 +7,7 @@ import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
+import Main from '@/components/ui/main'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -19,9 +20,9 @@ async function getData(orFilter: OrFilter, userId: string) {
 
 export default function Page() {
     return (
-        <main className='flex min-h-screen flex-col items-center px-4 py-12 sm:py-16'>
+        <Main>
             {/* Header */}
-            <header className='mb-10 mx-auto w-full max-w-108 sm:max-w-133'>
+            <header className='mb-10 mx-auto w-full px-7 max-w-125 sm:max-w-150'>
                 <div className='mb-1 flex items-center gap-2.5'>
                     <PiBooksDuotone className='h-5 w-5 text-default-500' />
                     <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
@@ -38,7 +39,7 @@ export default function Page() {
 
             {/* Libraries */}
             <Suspense fallback={
-                <section className='w-full max-w-125 sm:max-w-150'>
+                <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
                     <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
                         <LibrarySkeleton rowCount={4} />
                         <LibrarySkeleton rowCount={1} />
@@ -49,7 +50,7 @@ export default function Page() {
             }>
                 <UserLibraryList />
             </Suspense>
-        </main>
+        </Main>
     )
 }
 
@@ -76,7 +77,7 @@ async function LibraryList({ userId, orFilter }: {
             <ConfirmUnstarRoot />
 
             {/* Active libraries — CSS columns masonry */}
-            <section className='w-full max-w-125 sm:max-w-150' aria-label='Your libraries'>
+            <section className='w-full max-w-125 sm:max-w-150 mx-auto' aria-label='Your libraries'>
                 <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
                     {normalLibs.map(({ lib, isStarred }) => lib && (
                         <Library
