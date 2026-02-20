@@ -1,5 +1,4 @@
 import Main from '@/components/ui/main'
-import Nav from '@/components/nav'
 import { getAllTextsInLib } from '@/server/db/lib'
 import { getLib } from '@/server/db/lib'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -25,7 +24,6 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
 
     return (
         <Main className='max-w-(--breakpoint-xl)'>
-            <Nav lib={{ id: lib.id, name: lib.name }}></Nav>
             {texts.map((text, index) => (
                 <div key={text.id} className='space-y-4 print:break-inside-avoid [counter-reset:sidenote-counter]'>
                     <ScopeProvider atoms={[titleAtom, contentAtom, topicsAtom, textAtom, allOfItAtom]}>
