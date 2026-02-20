@@ -26,7 +26,7 @@ function ArticleHero({ title, topics, createdAt, libId, lang, content, hasEbook 
         <div className='print:hidden hidden md:block w-full'>
             {/* md+ layout: side-by-side, emoji on right, text on left */}
             <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center md:mb-12'>
-                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto place-self-end pb-15'>
+                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-15'>
                     <BackwardButton libId={libId} className='mb-5 -ml-3' />
                     {dateStr && <time className='block text-lg text-secondary-400 mb-4'>{dateStr}</time>}
                     <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>

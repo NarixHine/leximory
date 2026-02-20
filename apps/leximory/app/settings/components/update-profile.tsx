@@ -11,7 +11,7 @@ import { CopyProfileLink } from './copy'
 import { MAX_FILE_SIZE, SIGN_IN_URL } from '@repo/env/config'
 import { uploadAvatar } from '../actions'
 import { toast } from 'sonner'
-import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icons/pi'
+import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut, PiUpload } from 'react-icons/pi'
 
 export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
@@ -128,7 +128,7 @@ export function AvatarSection({ image }: { image?: string }) {
                     color='default'
                     onPress={handleUpload}
                     isLoading={isLoading}
-                    startContent={<PiImage size={20} />}
+                    startContent={<PiUpload size={20} />}
                 >
                     {isLoading ? '上传中...' : '上传头像'}
                 </Button>

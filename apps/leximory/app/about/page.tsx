@@ -27,7 +27,7 @@ export default function About() {
                         href={BILIBILI_LINK}
                         isIconOnly
                         startContent={<PiTelevisionDuotone />}
-                        className='text-xl text-pink-400'
+                        className='text-xl text-pink-300'
                     ></LinkButton>
                     <LinkButton
                         size='sm'
@@ -36,7 +36,7 @@ export default function About() {
                         href='/home'
                         isIconOnly
                         startContent={<PiHouseDuotone />}
-                        className='text-xl opacity-50'
+                        className='text-xl'
                     ></LinkButton>
                     <LinkButton
                         size='sm'
@@ -45,7 +45,7 @@ export default function About() {
                         href='/blog'
                         isIconOnly
                         startContent={<PiPenNibDuotone />}
-                        className='text-xl opacity-50'
+                        className='text-xl'
                     ></LinkButton>
                     <LinkButton
                         size='sm'
@@ -54,7 +54,7 @@ export default function About() {
                         href='https://github.com/narixhine/leximory'
                         isIconOnly
                         startContent={<PiGithubLogoDuotone />}
-                        className='text-xl opacity-50'
+                        className='text-xl'
                     ></LinkButton>
                     <LinkButton
                         size='sm'
@@ -63,7 +63,7 @@ export default function About() {
                         href='mailto:hi@leximory.com'
                         isIconOnly
                         startContent={<PiMailboxDuotone />}
-                        className='text-xl opacity-50'
+                        className='text-xl'
                     ></LinkButton>
                 </div>
                 <Article />

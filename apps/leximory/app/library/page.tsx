@@ -127,7 +127,7 @@ async function LibraryList({ userId, orFilter }: {
                         </h2>
                         <div className='flex-1 h-px bg-secondary-300/70' />
                     </div>
-                    <div className='flex flex-wrap gap-2 justify-center'>
+                    <div className='flex flex-wrap gap-2 lg:mx-auto lg:w-170 lg:pl-15'>
                         {compactLibs.map(({ lib, isStarred }) => lib && (
                             <Library
                                 price={lib.price}
