@@ -1,5 +1,4 @@
 import { AvailableChartColorsKeys } from '@/components/stats/chart-utils'
-import { formatChartData } from '.'
 import { AreaChart } from '../ui/area-chart'
 
 type WordData = {

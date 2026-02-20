@@ -6,8 +6,9 @@ import { ReactNode, Suspense } from 'react'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
 import { redirect } from 'next/navigation'
-import NavBreadcrumbs from '@/components/nav/breadcrumbs'
 import Main from '@/components/ui/main'
+import { Spinner } from '@heroui/spinner'
+import Center from '@/components/ui/center'
 
 export async function generateMetadata(props: LibProps) {
     const params = await props.params
@@ -59,7 +60,7 @@ export default function LibLayout(
     }
 ) {
     return (
-        <Suspense fallback={<Main><NavBreadcrumbs loading /></Main>}>
+        <Suspense fallback={<Center><Spinner variant='wave' color='default' /></Center>}>
             <LibLayoutContent params={props.params} children={props.children} />
         </Suspense>
     )

@@ -15,11 +15,11 @@ export const ConfirmStory = createCallable<{ comments: string[] }, Response>(({ 
         </CardHeader>
 
         <CardBody className='prose dark:prose-invert prose-p:my-2 prose-ul:my-2 text-sm'>
-            <p className='text-default-500'>
+            <p>
                 通过<b className='text-foreground'>阅读辅助语言习得</b>是最有效记忆词汇的方式。
             </p>
-            <p className='text-default-500'>
-                点击继续则会根据在该日期内记忆的单词生成一个故事：
+            <p>
+                点击继续，根据在该日期内记忆的单词生成一个故事：
             </p>
             <ul className='max-h-60 overflow-y-auto'>
                 {comments.map((comment) => (
