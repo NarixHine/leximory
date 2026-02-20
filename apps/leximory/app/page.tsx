@@ -17,7 +17,6 @@ import { Card, CardBody } from "@heroui/card"
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
-import UserAvatar from '@repo/ui/avatar'
 import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { TextHoverEffect } from '@/components/ui/text-hover-effect'
@@ -148,7 +147,6 @@ export default async function Home() {
 					<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
 						<LibraryCard
 							isOwner={false}
-							avatar={<UserAvatar uid={EXAMPLE_SHARED_LIB.owner} />}
 							library={EXAMPLE_SHARED_LIB}
 							isStarred={false}
 						/>

@@ -5,7 +5,6 @@ import { LibProps } from '@/lib/types'
 import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { getLib } from '@/server/db/lib'
 import { redirect } from 'next/navigation'
-import UserAvatar from '@repo/ui/avatar'
 import { LIB_ACCESS_STATUS } from '@repo/env/config'
 import { Suspense } from 'react'
 
@@ -53,7 +52,7 @@ async function UnauthorizedPageContent(
                     id={params.lib}
                     price={price}
                     navigateAfterPurchase={true}
-                    avatar={<UserAvatar uid={owner} />}
+                    uid={owner}
                 />
             </div>
         </Center>

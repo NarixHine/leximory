@@ -1,7 +1,6 @@
 'use client'
 
 import { Lang } from '@repo/env/config'
-import { ReactNode } from 'react'
 import BuyLibrary from '@/components/buy-library'
 import LibraryCardBase from '@/components/library-card'
 
@@ -15,12 +14,11 @@ interface LibraryCardProps {
         readers?: number
     }
     isStarred: boolean
-    avatar: ReactNode
     hideFooter?: boolean
     isOwner: boolean
 }
 
-export default function LibraryCard({ library, isStarred, avatar, hideFooter, isOwner }: LibraryCardProps) {
+export default function LibraryCard({ library, isStarred, hideFooter, isOwner }: LibraryCardProps) {
     return (
         <LibraryCardBase
             id={library.id}
@@ -37,7 +35,7 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter, is
                     isStarred={isStarred}
                     id={library.id}
                     price={library.price}
-                    avatar={avatar}
+                    uid={library.owner}
                     isOwner={isOwner}
                 />
             </> : undefined}

@@ -5,7 +5,6 @@ import LibraryCard, { LibraryCardSkeleton } from './components/card'
 import { Spacer } from "@heroui/spacer"
 import { Suspense } from 'react'
 import { PiStorefrontDuotone } from 'react-icons/pi'
-import UserAvatar from '@repo/ui/avatar'
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
 
@@ -18,7 +17,6 @@ async function LibraryList({ page }: {
         <div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
             {libs.map((lib) => (
                 <LibraryCard
-                    avatar={<UserAvatar uid={lib.owner} />}
                     library={{
                         id: lib.id,
                         name: lib.name,

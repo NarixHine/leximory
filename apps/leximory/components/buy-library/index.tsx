@@ -2,22 +2,36 @@
 
 import { star } from '@/app/library/[lib]/components/actions'
 import { cn } from '@/lib/utils'
+import { Avatar } from '@heroui/avatar'
 import { Button } from '@heroui/react'
-import { useTransition, ReactNode } from 'react'
+import { getUserProfileAction } from '@repo/service/user'
+import { useQuery } from '@tanstack/react-query'
+import { useTransition } from 'react'
 import { PiCoinsDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, avatar, isOwner }: {
+/** Purchase button with an overlapping owner avatar. */
+export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner }: {
     price: number
     id: string
-    isStarred: boolean,
+    isStarred: boolean
     navigateAfterPurchase?: boolean
-    avatar: ReactNode,
+    /** Owner user ID — used to fetch avatar client-side. */
+    uid: string
     isOwner?: boolean
 }) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
+
+    const { data: user, isSuccess } = useQuery({
+        queryKey: ['user', uid],
+        queryFn: async () => {
+            const { data } = await getUserProfileAction({ id: uid })
+            return data
+        },
+        staleTime: Infinity,
+    })
 
     return <div className={'flex items-center'}>
         <Button
@@ -51,6 +65,10 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                         : <span><span className='font-mono text-base'>{price}</span> LexiCoin</span>
             }
         </Button>
-        {avatar}
+        <Avatar
+            src={isSuccess ? user?.imageUrl ?? undefined : undefined}
+            size='sm'
+            className={!isSuccess ? 'animate-pulse' : ''}
+        />
     </div>
 }   
