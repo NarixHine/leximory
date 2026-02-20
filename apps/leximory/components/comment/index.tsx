@@ -7,7 +7,7 @@ import { CardBody } from "@heroui/card"
 import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, queryOptions, experimental_streamedQuery as streamedQuery } from '@tanstack/react-query'
 import { PiTrash, PiBookBookmark, PiCheckCircle, PiArrowSquareOut, PiPencil, PiXCircle, PiEyesFill, PiEyeSlash } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { generateSingleComment } from '@/app/library/[lib]/[text]/actions'
@@ -20,6 +20,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/comment'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
+import { Lang } from '@repo/env/config'
 import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { getClickedChunk } from './utils'
@@ -47,6 +48,44 @@ interface CommentState {
     error?: string
     savedId: string | null
 }
+
+async function* commentWordStream({
+    prompt,
+    lang,
+    onError,
+}: {
+    prompt: string
+    lang: Lang
+    onError: (error: string) => void
+}) {
+    const { text, error } = await generateSingleComment({ prompt, lang })
+    if (error) {
+        onError(error)
+        throw new Error(error)
+    }
+    if (text) {
+        try {
+            let commentary = ''
+            for await (const delta of readStreamableValue(text)) {
+                commentary += delta
+                yield commentary.replaceAll('{', '').replaceAll('}', '').split('||')
+            }
+        } catch (err) {
+            console.error(err)
+            toast.error('生成中止')
+        }
+    }
+}
+
+const commentQueryOptions = (prompt: string, lang: Lang, onError: (error: string) => void) =>
+    queryOptions({
+        queryKey: ['comment-word', prompt, lang],
+        queryFn: streamedQuery({
+            streamFn: () => commentWordStream({ prompt, lang, onError }),
+        }),
+        staleTime: Infinity,
+        enabled: prompt.length > 0,
+    })
 
 function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className }: CommentProps) {
     const router = useRouter()
@@ -78,41 +117,35 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     const [isVisible, setIsVisible] = useState(prompt ? true : onlyComments)
 
-    const { mutate: commentWord, isPending } = useMutation({
-        mutationFn: async (prompt: string) => {
-            const { text, error } = await generateSingleComment({ prompt, lang })
-            if (error) {
-                toast.error(error, {
-                    duration: 10000,
-                    action: {
-                        label: '升级',
-                        onClick: () => router.push('/settings')
-                    }
-                })
-                throw new Error(error)
+    const [activePrompt, setActivePrompt] = useState(prompt ?? '')
+
+    const { data: streamData = [], isPending } = useQuery(
+        commentQueryOptions(
+            activePrompt,
+            lang,
+            (error) => toast.error(error, {
+                duration: 10000,
+                action: {
+                    label: '升级',
+                    onClick: () => router.push('/settings'),
+                },
+            })
+        )
+    )
+
+    useEffect(() => {
+        if (streamData.length > 0) {
+            const latest = streamData[streamData.length - 1]
+            setPortions(latest)
+            if (isOnDemand && !isLoaded) {
+                setIsLoaded(true)
             }
-            if (text) {
-                try {
-                    let commentary = ''
-                    for await (const delta of readStreamableValue(text)) {
-                        commentary += delta
-                        setPortions(commentary.replaceAll('{', '').replaceAll('}', '').split('||'))
-                        if (isOnDemand && !isLoaded) {
-                            setIsLoaded(true)
-                        }
-                    }
-                } catch (error) {
-                    console.error(error)
-                    toast.error('生成中止')
-                }
-            }
-        },
-        retry: 1
-    })
+        }
+    }, [streamData])
 
     useEffect(() => {
         if (prompt && prompt !== '') {
-            commentWord(prompt)
+            setActivePrompt(prompt)
             setStatus('idle')
             setUid(nanoid())
             setSavedId(null)
@@ -124,7 +157,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     const init = useCallback(() => {
         const element = wordElement.current
         if (isOnDemand && !isLoaded && element) {
-            commentWord(getClickedChunk(element))
+            setActivePrompt(getClickedChunk(element))
         }
     }, [isOnDemand, isLoaded, prompt])
 
