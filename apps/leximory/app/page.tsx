@@ -94,12 +94,12 @@ export default async function Home() {
 							title='一键分享'
 							description='将导入的文本分享给好友。无需登录。'
 						>
-							<LinkCard isPressable href='/read/F8hienQLmpDX' shadow='none' className='h-28 w-full bg-linear-to-br from-secondary-100 to-default-200 p-2 relative rounded-lg'>
+							<LinkCard isPressable href='/read/ec50a3f1' shadow='none' className='h-32 w-full bg-linear-to-br from-secondary-100 to-default-200 p-2 relative rounded-2xl'>
 								<CardBody>
-									<h2 className='font-bold opacity-50 text-xs'>James Joyce</h2>
-									<p className='opacity-60 font-bold'>Dubliners</p>
-									<div className='absolute bottom-0 right-0 p-2'>
-										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
+									<h2 className='text-default-500 text-sm tracking-wider'>The New York Times</h2>
+									<p className='text-base text-default-700 text-balance font-formal my-1'>Signature of Life on a Distant Planet</p>
+									<div className='absolute bottom-0 right-0 p-0'>
+										<PiNewspaperDuotone className='w-10 h-10 text-default-300' />
 									</div>
 								</CardBody>
 							</LinkCard>
@@ -188,7 +188,7 @@ const BentoCard = ({ title, children, description, }: {
 	children: ReactNode,
 	description?: string,
 }) => {
-	return <Card shadow='none' className={'w-full h-full bg-default-50/50 border-6 border-default-100 rounded-2xl'}>
+	return <Card shadow='none' className={'w-full h-full bg-default-50/50 border-6 border-default-100 rounded-3xl'}>
 		<CardBody className='p-5'>
 			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}

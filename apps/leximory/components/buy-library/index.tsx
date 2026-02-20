@@ -55,7 +55,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                     ? '已购买'
                     : price === 0
                         ? '免费'
-                        : <span><span className='font-mono text-base'>{price}</span> LexiCoin</span>
+                        : <span><span className='font-mono text-base'>{price}</span> LexiCoin 购入</span>
             }
         </Button>
         <Button

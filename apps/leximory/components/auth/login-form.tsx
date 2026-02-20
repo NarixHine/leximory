@@ -58,6 +58,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         <Input
           name='email'
           type='email'
+          color='primary'
           placeholder='yourname@example.com'
           required
           value={email}
@@ -85,6 +86,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           name='password'
           type='password'
           required
+          color='primary'
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className='h-10'

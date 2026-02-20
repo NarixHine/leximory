@@ -29,23 +29,18 @@ export function ConfirmUnstarRoot() {
 
 export function LibrarySkeleton({ rowCount }: { rowCount?: number }) {
     return (
-        <div className={('break-inside-avoid rounded-3xl bg-default-50 p-3.5 animate-pulse')}>
+        <div className={('break-inside-avoid rounded-3xl bg-default-50 p-3.5 animate-pulse duration-3000')}>
             <div className='rounded-2xl bg-default-100 px-6 pb-7 pt-5'>
-                {/* Avatar + username placeholder */}
-                <div className='flex items-center gap-2 mb-3'>
-                    <div className='size-8 rounded-full bg-default-200' />
-                    <div className='w-20 h-4 rounded bg-default-200' />
-                </div>
-                <div className='w-12 h-4 rounded-xl mb-2 bg-default-200' />
+                <div className='w-12 h-4 rounded-xl mb-4 bg-default-200 opacity-30' />
                 {new Array(rowCount || 1).fill(0).map((_, i) => (
-                    <div key={i} className='w-full h-7 my-2 rounded-xl bg-default-200' />
+                    <div key={i} className='w-full h-7 my-2 rounded-xl bg-default-200 opacity-30' />
                 ))}
             </div>
             <div className='flex items-center justify-between px-2 pt-2'>
-                <div className='w-24 h-6 rounded-xl bg-default-200' />
+                <div className='w-24 h-6 rounded-xl bg-default-200 opacity-30' />
                 <div className='flex gap-1'>
-                    <div className='w-8 h-8 rounded-xl bg-default-200' />
-                    <div className='w-8 h-8 rounded-xl bg-default-200' />
+                    <div className='w-8 h-8 rounded-xl bg-default-200 opacity-30' />
+                    <div className='w-8 h-8 rounded-xl bg-default-200 opacity-30' />
                 </div>
             </div>
         </div>
