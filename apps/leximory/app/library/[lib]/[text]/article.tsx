@@ -38,7 +38,7 @@ function ArticleHero({ title, emoji, topics, createdAt, textId, libId, lang, con
                             {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
                         </div>
                     )}
-                    <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' />
+                    <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />
                 </div>
                 <EmojiCover
                     emoji={displayEmoji}

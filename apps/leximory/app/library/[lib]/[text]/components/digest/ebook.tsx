@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import { save } from '../../actions'
 import { getChapterName } from '@/lib/epub'
 import Define from '@/components/define'
+import { useRouter } from 'next/navigation'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
@@ -64,7 +65,7 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean) {
         themes.override('color', EBOOK_LIGHT_FG)
         themes.override('background', EBOOK_LIGHT_BG)
     }
-    ;(rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
+    ; (rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
 }
 
 export default function Ebook() {
@@ -120,6 +121,8 @@ export default function Ebook() {
         }
         return unlock
     }, [hasZoomed, lock, unlock])
+
+    const router = useRouter()
 
     return src && (
         <motion.div
@@ -187,6 +190,7 @@ export default function Ebook() {
                                         try {
                                             const newContent = content.concat(bookmark)
                                             await save({ id: text, content: newContent })
+                                            router.refresh()
                                             setContent(newContent)
                                             toast.success('文摘已保存')
                                         } catch {

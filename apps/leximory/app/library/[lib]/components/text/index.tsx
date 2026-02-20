@@ -61,7 +61,11 @@ export function TagPills({ tags, ...props }: { tags: string[] } & ChipProps) {
                     variant='bordered'
                     color='default'
                     size='sm'
-                    className='text-default-400 border-1 text-[10px]'
+                    classNames={{
+                        ...props.classNames,
+                        base: cn('text-default-400 border-1 text-[10px]', props.classNames?.base),
+                        content: cn('px-0.75', props.classNames?.content)
+                    }}
                     key={tag}
                     {...props}
                 >
