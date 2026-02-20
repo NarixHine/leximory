@@ -28,22 +28,22 @@ function Bone({ className }: { className?: string }) {
 function PageSkeleton() {
     return (
         <>
-            {/* Mobile skeleton: vertical stack */}
-            <div className='flex flex-col gap-4 pt-8 px-5 md:hidden'>
-                <Bone className='w-8 h-8 rounded-full' />
-                <Bone className='w-24 h-4 rounded-lg' />
-                <Bone className='w-full h-10 rounded-lg' />
-                <Bone className='w-3/4 h-10 rounded-lg' />
-                <div className='flex gap-2'>
+            {/* Mobile skeleton: back → emoji cover → tags → title → content */}
+            <div className='flex flex-col md:hidden'>
+                <Bone className='w-8 h-8 rounded-full ml-5 mt-8 mb-5' />
+                <Bone className='w-full h-64 rounded-none' />
+                <div className='flex justify-center gap-2 my-3'>
                     <Bone className='w-16 h-5 rounded-full' />
                     <Bone className='w-16 h-5 rounded-full' />
                 </div>
-                <Bone className='w-full h-px rounded-none mt-4' />
-                <Bone className='w-full h-5 rounded-lg' />
-                <Bone className='w-full h-5 rounded-lg' />
-                <Bone className='w-5/6 h-5 rounded-lg' />
-                <Bone className='w-full h-5 rounded-lg' />
-                <Bone className='w-2/3 h-5 rounded-lg' />
+                <div className='flex flex-col gap-3 px-5 sm:w-5/6 mx-auto w-full mt-4'>
+                    <Bone className='w-3/4 h-8 rounded-lg' />
+                    <Bone className='w-full h-5 rounded-lg' />
+                    <Bone className='w-full h-5 rounded-lg' />
+                    <Bone className='w-5/6 h-5 rounded-lg' />
+                    <Bone className='w-full h-5 rounded-lg' />
+                    <Bone className='w-2/3 h-5 rounded-lg' />
+                </div>
             </div>
 
             {/* md+ skeleton: side-by-side hero */}
