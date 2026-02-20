@@ -1,6 +1,7 @@
 import TextList from './components/text-list'
-import { authReadToLib } from '@/server/auth/role'
+import { getLib } from '@/server/db/lib'
 import { getTexts } from '@/server/db/text'
+import { getUserOrThrow } from '@repo/user'
 import { LibProps } from '@/lib/types'
 import { Suspense } from 'react'
 import { PiArrowLeft, PiBookBookmark, PiPrinter } from 'react-icons/pi'
@@ -9,11 +10,13 @@ import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 import Main from '@/components/ui/main'
 
 async function getData(lib: string) {
-    const [{ name, isReadOnly, isOwner, access }, texts] = await Promise.all([
-        authReadToLib(lib),
+    const [{ userId }, libData, texts] = await Promise.all([
+        getUserOrThrow(),
+        getLib({ id: lib }),
         getTexts({ lib })
     ])
-    return { texts, name, isReadOnly, isOwner, access }
+    const isReadOnly = libData.owner !== userId
+    return { texts, name: libData.name, isReadOnly }
 }
 
 async function PageContent({ params }: LibProps) {

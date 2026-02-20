@@ -1,9 +1,10 @@
-import { authReadToLibWithoutThrowing } from '@/server/auth/role'
+import { getLib } from '@/server/db/lib'
+import { Kilpi } from '@repo/service/kilpi'
+import { getUserOrThrow } from '@repo/user'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
 import { Lang, LIB_ACCESS_STATUS } from '@repo/env/config'
 import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode, Suspense } from 'react'
-import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
 import { redirect } from 'next/navigation'
 import Main from '@/components/ui/main'
@@ -30,7 +31,14 @@ async function LibLayoutContent({
 }) {
     const p = await params
 
-    const { isReadOnly, isOwner, lang, price, access, isStarred } = await authReadToLibWithoutThrowing(p.lib)
+    const { userId } = await getUserOrThrow()
+    const libData = await getLib({ id: p.lib })
+    const isOwner = libData.owner === userId
+    const isReadOnly = !isOwner
+    const isStarred = Boolean(libData.starred_by?.includes(userId))
+    const lang = libData.lang as Lang
+    const price = libData.price
+    const access = libData.access
 
     // Redirect to unauthorized page if user is not owner and hasn't starred the library
     if (!isOwner && !isStarred) {

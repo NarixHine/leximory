@@ -2,8 +2,8 @@ import Center from '@/components/ui/center'
 import Link from 'next/link'
 import BuyLibrary from '@/components/buy-library'
 import { LibProps } from '@/lib/types'
-import { authReadToLibWithoutThrowing } from '@/server/auth/role'
 import { getLib } from '@/server/db/lib'
+import { getUserOrThrow } from '@repo/user'
 import { redirect } from 'next/navigation'
 import { LIB_ACCESS_STATUS } from '@repo/env/config'
 import { Suspense } from 'react'
@@ -30,9 +30,12 @@ async function UnauthorizedPageContent(
 ) {
     const params = await props.params
 
-    const { isOwner, isStarred, price, owner, access } = await authReadToLibWithoutThrowing(params.lib)
+    const libData = await getLib({ id: params.lib })
+    const { userId } = await getUserOrThrow()
+    const isOwner = libData.owner === userId
+    const isStarred = Boolean(libData.starred_by?.includes(userId))
 
-    if (access !== LIB_ACCESS_STATUS.public && !isOwner) {
+    if (libData.access !== LIB_ACCESS_STATUS.public && !isOwner) {
         throw new Error('Access denied to this library')
     }
     else if (isOwner || isStarred) {
@@ -50,9 +53,9 @@ async function UnauthorizedPageContent(
                 <BuyLibrary
                     isStarred={false}
                     id={params.lib}
-                    price={price}
+                    price={libData.price}
                     navigateAfterPurchase={true}
-                    uid={owner}
+                    uid={libData.owner}
                 />
             </div>
         </Center>

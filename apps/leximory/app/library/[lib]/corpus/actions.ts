@@ -1,49 +1,23 @@
 'use server'
 
-import { authReadToLib, authWriteToLib } from '@/server/auth/role'
-import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
-import { getUserOrThrow } from '@repo/user'
-import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
-import { inngest } from '@/server/inngest/client'
-import { ACTION_QUOTA_COST } from '@repo/env/config'
+import * as corpusService from '@/service/corpus'
 
+/** @deprecated Use `load` from `@/service/corpus` directly. */
 export default async function load(lib: string, cursor?: string) {
-    await authReadToLib(lib)
-    return await loadWords({ lib, cursor })
+    return corpusService.load(lib, cursor)
 }
 
-export async function draw({ lib, start, end }: { lib: string, start: Date, end: Date }) {
-    const words = await retrieveWordsWithRange({ lib, start, end })
-    return words.map(({ word, id }) => ({ word, id }))
+/** @deprecated Use `draw` from `@/service/corpus` directly. */
+export async function draw(args: Parameters<typeof corpusService.draw>[0]) {
+    return corpusService.draw(args)
 }
 
-export async function getWithin({ lib, start, end }: { lib: string, start: Date, end: Date }) {
-    const words = await retrieveWordsWithRange({ lib, start, end, size: 50 })
-    return words.map(({ word }) => (word))
+/** @deprecated Use `getWithin` from `@/service/corpus` directly. */
+export async function getWithin(args: Parameters<typeof corpusService.getWithin>[0]) {
+    return corpusService.getWithin(args)
 }
 
-export async function generateStory({ comments, lib, isShadow = false }: { comments: string[], lib: string, isShadow?: boolean }) {
-    const { userId } = await getUserOrThrow()
-    await authWriteToLib(lib)
-
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.story)) {
-        return {
-            success: false,
-            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
-        }
-    }
-
-    await inngest.send({
-        name: 'app/story.requested',
-        data: {
-            comments,
-            userId,
-            libId: lib
-        }
-    })
-
-    return {
-        success: true,
-        message: `生成后故事会出现在${isShadow ? '词汇仓库' : '本文库'}文本内`
-    }
+/** @deprecated Use `generateCorpusStory` from `@/service/corpus` directly. */
+export async function generateStory(args: Parameters<typeof corpusService.generateCorpusStory>[0]) {
+    return corpusService.generateCorpusStory(args)
 }

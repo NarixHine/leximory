@@ -5,7 +5,7 @@ import saveSubs, { delSubs } from '@/server/db/subs'
 import { PushSubscription } from 'web-push'
 import { Lang } from '@repo/env/config'
 import { getShadowLib } from '@/server/db/lib'
-import { generateStory } from '../library/[lib]/corpus/actions'
+import { generateCorpusStory } from '@/service/corpus'
 
 export async function save({ subs, hour }: { subs: PushSubscription, hour: number }) {
     const { userId } = await getUserOrThrow()
@@ -23,6 +23,6 @@ export async function genStoryInShadowLib({ comments, lang }: {
 }) {
     const { userId } = await getUserOrThrow()
     const lib = await getShadowLib({ owner: userId, lang })
-    return await generateStory({ comments, lib: lib.id, isShadow: true })
+    return await generateCorpusStory({ comments, lib: lib.id, isShadow: true })
 }
 

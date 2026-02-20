@@ -5,7 +5,9 @@ import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { ACTION_QUOTA_COST, Lang } from '@repo/env/config'
 import { toolSchemas } from '@/app/library/chat/types'
-import { authReadToLib, authReadToText, authWriteToLib, isListedFilter } from '@/server/auth/role'
+import { isListedFilter } from '@/server/auth/role'
+import { Kilpi } from '@repo/service/kilpi'
+import { supabase } from '@repo/supabase'
 import incrCommentaryQuota from '@repo/user/quota'
 import { generate } from '@/app/library/[lib]/[text]/actions'
 import { getUserOrThrow } from '@repo/user'
@@ -14,20 +16,40 @@ import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 import { extractArticleFromUrl } from '@repo/scrape'
 
+/** Fetches a text record with its parent library for authorization. */
+async function getTextWithLib(textId: string) {
+    const { data, error } = await supabase
+        .from('texts')
+        .select(`
+            *,
+            lib:libraries!inner (
+                id,
+                owner,
+                access
+            )
+        `)
+        .eq('id', textId)
+        .single()
+    if (error || !data) throw new Error('Text not found')
+    return data as typeof data & { lib: { id: string, owner: string, access: number } }
+}
+
 const tools: ToolSet = {
     getLib: {
         description: 'Get details about a library by its id.',
         inputSchema: toolSchemas.getLib,
         execute: async ({ id }: { id: string }) => {
-            await authReadToLib(id)
-            return getLib({ id })
+            const libData = await getLib({ id })
+            await Kilpi.libraries.read(libData).authorize().assert()
+            return libData
         }
     },
     getAllWordsInLib: {
         description: 'Get all words in a library by library id.',
         inputSchema: toolSchemas.getAllWordsInLib,
         execute: async ({ lib }: { lib: string }) => {
-            await authReadToLib(lib)
+            const libData = await getLib({ id: lib })
+            await Kilpi.libraries.read(libData).authorize().assert()
             return getAllWordsInLib({ lib })
         }
     },
@@ -35,7 +57,8 @@ const tools: ToolSet = {
         description: 'Get all texts in a library by library id. Use this over getAllTextsInLib wherever possible.',
         inputSchema: toolSchemas.getTexts,
         execute: async ({ lib }: { lib: string }) => {
-            await authReadToLib(lib)
+            const libData = await getLib({ id: lib })
+            await Kilpi.libraries.read(libData).authorize().assert()
             return getTexts({ lib })
         }
     },
@@ -43,7 +66,8 @@ const tools: ToolSet = {
         description: 'Get the content and metadata of a text by its id.',
         inputSchema: toolSchemas.getTextContent,
         execute: async ({ id }: { id: string }) => {
-            await authReadToText(id)
+            const textWithLib = await getTextWithLib(id)
+            await Kilpi.texts.read(textWithLib).authorize().assert()
             const text = await getTextContent({ id })
             return text
         }
@@ -52,7 +76,8 @@ const tools: ToolSet = {
         description: 'Get all texts with their full content in a library. Use getTexts instead if you only need the list of texts.',
         inputSchema: toolSchemas.getAllTextsInLib,
         execute: async ({ libId }: { libId: string }) => {
-            await authReadToLib(libId)
+            const libData = await getLib({ id: libId })
+            await Kilpi.libraries.read(libData).authorize().assert()
             return getAllTextsInLib({ libId })
         }
     },
@@ -80,7 +105,8 @@ const tools: ToolSet = {
         description: 'Generate annotations for an article. The results will be available a few minutes after the text is created and returned.',
         inputSchema: toolSchemas.annotateArticle,
         execute: async ({ content, lib, title }: { content: string, lib: string, title: string }) => {
-            await authWriteToLib(lib)
+            const libData = await getLib({ id: lib })
+            await Kilpi.libraries.write(libData).authorize().assert()
             const id = await createText({ lib, title, content })
             await generate({ article: content, textId: id, onlyComments: false, delayRevalidate: true })
             return { id, libId: lib, title, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() }
