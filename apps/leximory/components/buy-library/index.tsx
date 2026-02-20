@@ -33,7 +33,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
             isLoading={isTransitioning}
             startContent={isTransitioning ? null : (isStarred ? <PiCheckCircle className='size-5' /> : <PiCoins className='size-5' />)}
             color='primary'
-            className={cn('-mr-5 pr-7')}
+            className={cn('-mr-5 pr-7 rounded-l-3xl')}
             onPress={() => {
                 startTransition(async () => {
                     const { success, message } = await star(id)

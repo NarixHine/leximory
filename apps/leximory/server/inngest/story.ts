@@ -4,9 +4,9 @@ import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
 import moment from 'moment'
-import { parseComment } from '@/lib/comment'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { miniAI } from '../ai/configs'
+import { parseCommentParams } from '@/lib/comment'
 
 const storyPrompt = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
@@ -26,7 +26,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
         ${await getLanguageServerStrategy(lang).getAccentPrompt(userId)}
         请使用以下关键词创作一个短故事，全文使用${getLanguageStrategy(lang).name}。关键词在文中用<must></must>包裹来表示。
         关键词：
-        ${comments.map(comment => `${parseComment(comment)[1]}（义项：${parseComment(comment)[2]}）`).join('\n')}
+        ${comments.map(comment => `${parseCommentParams(comment)[1]}（义项：${parseCommentParams(comment)[2]}）`).join('\n')}
     `,
     maxOutputTokens: 6000,
     ...miniAI,

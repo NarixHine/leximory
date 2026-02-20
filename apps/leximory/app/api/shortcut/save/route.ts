@@ -1,4 +1,4 @@
-import { originals, parseComment, removeRubyFurigana } from '@/lib/comment'
+import { originals, parseCommentParams, removeRubyFurigana } from '@/lib/comment'
 import { parseBody } from '@/lib/utils'
 import { saveWord } from '@/server/db/word'
 import { after, NextResponse } from 'next/server'
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const word = `<must>${lang === 'en' ? originals(rawWord)[0] : rawWord}</must>`
     const comment = await generateSingleCommentFromShortcut(word, lang, sub)
 
-    const portions = parseComment(comment)
+    const portions = parseCommentParams(comment)
     after(async () => {
         const word = `{{${portions[1]}||${portions.slice(1).join('||')}}}`
         const { id: lib } = await getShadowLib({ owner: sub, lang })

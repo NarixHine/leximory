@@ -7,6 +7,7 @@ import { pick } from 'es-toolkit'
 import { supabase } from '@repo/supabase'
 import { OrFilter } from '../auth/role'
 import { ensureUserExists } from '@repo/supabase/user'
+import { LangSchema } from '@repo/schema/library'
 
 export * from '@repo/supabase/library'
 
@@ -104,7 +105,7 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
     return data.map(({ id, name, lang, owner, starred_by, price }) => ({
         id,
         name,
-        lang: lang as Lang,
+        lang: LangSchema.parse(lang),
         owner,
         starredBy: starred_by,
         price
@@ -118,7 +119,10 @@ export async function getLib({ id }: { id: string }) {
         .eq('id', id)
         .single()
         .throwOnError()
-    return data
+    return {
+        ...data,
+        lang: LangSchema.parse(data.lang),
+    }
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {

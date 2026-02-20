@@ -33,8 +33,9 @@ export const BILIBILI_LINK = 'https://space.bilibili.com/3494376432994441/' as c
 export const FYP_GITHUB_LINK = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
 export const FYP_BLOG_LINK = 'https://hello.leximory.com/blog/fix-your-paper' as const
 
-export const SUPPORTED_LANGS = ['zh', 'en', 'ja', 'nl'] as const
-export type Lang = typeof SUPPORTED_LANGS[number]
+export { SUPPORTED_LANGS } from '@repo/schema/library'
+import type { Lang } from '@repo/schema/library'
+export type { Lang }
 
 export const PLAN_LABELS: Record<Plan, string> = {
     'beginner': 'Beginner—初学者',

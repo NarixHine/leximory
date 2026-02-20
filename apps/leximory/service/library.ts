@@ -8,6 +8,7 @@ import { subtractLexicoinBalance, getLibPrice, addLexicoinBalance } from '@/serv
 import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from '@repo/schema'
+import { LangSchema } from '@repo/schema/library'
 
 const saveValidator = z.object({
     id: z.string(),
@@ -30,7 +31,7 @@ export async function save(data: z.infer<typeof saveValidator>) {
 
 const createValidator = z.object({
     name: z.string(),
-    lang: z.enum(SUPPORTED_LANGS),
+    lang: LangSchema,
 })
 
 /** Creates a new library owned by the current user and redirects to it. */
