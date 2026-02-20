@@ -1,5 +1,4 @@
 import { getLib } from '@/server/db/lib'
-import { Kilpi } from '@repo/service/kilpi'
 import { getUserOrThrow } from '@repo/user'
 import { libAtom, isReadOnlyAtom, isStarredAtom, langAtom, priceAtom } from './atoms'
 import { Lang, LIB_ACCESS_STATUS } from '@repo/env/config'

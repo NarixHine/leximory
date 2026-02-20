@@ -18,13 +18,14 @@ export async function getTextWithLib(textId: string) {
             lib:libraries!inner (
                 id,
                 owner,
-                access
+                access,
+                starred_by
             )
         `)
         .eq('id', textId)
         .single()
     if (error || !data) throw new Error('Text not found')
-    return data as typeof data & { lib: { id: string, owner: string, access: number } }
+    return data as typeof data & { lib: { id: string, owner: string, access: number, starred_by: string[] | null } }
 }
 
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
@@ -57,7 +58,7 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
     return data
 }
 
-export async function updateText({ id, title, content, topics, emoji }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
+export async function updateText({ id, title, content, topics, emoji }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string | null }>) {
     const { data: rec } = await supabase
         .from('texts')
         .update({ title, content, topics, emoji })

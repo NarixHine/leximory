@@ -134,7 +134,7 @@ export const annotateFullArticle = inngest.createFunction(
                 topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
                 emoji: generatedEmoji
             })
-            revalidateTag(`texts:${textId}`, 'max')
+            revalidateTag(`texts:${libId}`, 'max')
         })
 
         await step.run('set-annotation-progress-completed', async () => {

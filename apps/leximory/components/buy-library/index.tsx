@@ -69,6 +69,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
             href={`/profile/${uid}`}
             isIconOnly
             radius='full'
+            aria-label='View owner profile'
         />
     </div>
 }   

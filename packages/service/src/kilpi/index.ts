@@ -13,7 +13,7 @@ type Library = Tables<'libraries'>
 type Text = Tables<'texts'>
 
 /** A text with its parent library attached for authorization checks. */
-type TextWithLib = Omit<Text, 'lib'> & { lib: Pick<Library, 'owner' | 'access'> | null }
+type TextWithLib = Omit<Text, 'lib'> & { lib: Pick<Library, 'owner' | 'access' | 'starred_by'> | null }
 
 function hasValidPasscode(paper: PaperWithPasscode): boolean {
   return !!paper.passcode && paper.providedPasscode === paper.passcode
@@ -114,11 +114,11 @@ export const Kilpi = createKilpi({
         return Deny({ message: 'Not authorized to write to this text' })
       },
 
-      /** Grants read access to the library owner or when the library is public. */
+      /** Grants read access to the library owner or starred users of a public library. */
       read(subject, text: TextWithLib) {
         if (!subject) return Deny({ message: 'Not authenticated' })
         if (text.lib && text.lib.owner === subject.userId) return Grant(subject)
-        if (text.lib && text.lib.access === LIB_ACCESS_STATUS.public) return Grant(subject)
+        if (text.lib && text.lib.access === LIB_ACCESS_STATUS.public && text.lib.starred_by?.includes(subject.userId)) return Grant(subject)
         return Deny({ message: 'Not authorized to read this text' })
       },
     },
