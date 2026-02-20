@@ -27,7 +27,6 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
             isLoading={isTransitioning}
             startContent={isTransitioning ? null : <PiCoinsDuotone className='size-5' />}
             color='primary'
-            variant={'flat'}
             className={cn('-mr-5 pr-7')}
             onPress={() => {
                 startTransition(async () => {
@@ -49,7 +48,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
                     ? '已购买'
                     : price === 0
                         ? '免费'
-                        : `${price} LexiCoin`
+                        : <span><span className='font-mono text-base'>{price}</span> LexiCoin</span>
             }
         </Button>
         {avatar}
