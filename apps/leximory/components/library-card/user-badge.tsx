@@ -1,19 +1,11 @@
 'use client'
 
 import { Avatar } from '@heroui/avatar'
-import { useQuery } from '@tanstack/react-query'
-import { getUserProfileAction } from '@repo/service/user'
+import { useUserProfile } from '@/lib/hooks/use-user-profile'
 
 /** Client-side user badge that fetches profile data via TanStack Query. */
 export default function UserBadge({ uid }: { uid: string }) {
-    const { data: user, isSuccess } = useQuery({
-        queryKey: ['user', uid],
-        queryFn: async () => {
-            const { data } = await getUserProfileAction({ id: uid })
-            return data
-        },
-        staleTime: Infinity,
-    })
+    const { data: user, isSuccess } = useUserProfile(uid)
 
     return (
         <div className='flex items-center gap-2'>
@@ -22,9 +14,13 @@ export default function UserBadge({ uid }: { uid: string }) {
                 size='sm'
                 className={!isSuccess ? 'animate-pulse' : ''}
             />
-            <span className='font-mono text-sm text-default-500 truncate max-w-[16ch]'>
-                {isSuccess ? (user?.name ?? 'User') : ''}
-            </span>
+            {isSuccess ? (
+                <span className='font-mono text-sm text-default-500 truncate max-w-[16ch]'>
+                    {user?.name ?? 'User'}
+                </span>
+            ) : (
+                <span className='inline-block h-4 w-20 animate-pulse rounded bg-default-200' />
+            )}
         </div>
     )
 }

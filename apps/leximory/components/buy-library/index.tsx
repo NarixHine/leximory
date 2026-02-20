@@ -4,8 +4,7 @@ import { star } from '@/app/library/[lib]/components/actions'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@heroui/avatar'
 import { Button } from '@heroui/react'
-import { getUserProfileAction } from '@repo/service/user'
-import { useQuery } from '@tanstack/react-query'
+import { useUserProfile } from '@/lib/hooks/use-user-profile'
 import { useTransition } from 'react'
 import { PiCoinsDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
@@ -23,15 +22,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
 }) {
     const router = useRouter()
     const [isTransitioning, startTransition] = useTransition()
-
-    const { data: user, isSuccess } = useQuery({
-        queryKey: ['user', uid],
-        queryFn: async () => {
-            const { data } = await getUserProfileAction({ id: uid })
-            return data
-        },
-        staleTime: Infinity,
-    })
+    const { data: user, isSuccess } = useUserProfile(uid)
 
     return <div className={'flex items-center'}>
         <Button
