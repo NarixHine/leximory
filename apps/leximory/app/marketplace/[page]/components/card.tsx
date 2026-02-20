@@ -28,12 +28,11 @@ export default function LibraryCard({ library, isStarred, avatar, hideFooter, is
             lang={library.lang}
             owner={library.owner}
             footer={!hideFooter ? <>
-                {typeof library.readers === 'number' && (
+                {typeof library.readers === 'number' ? (
                     <div className='text-default-400 text-xs'>
                         <span className='font-mono text-sm'>{library.readers}</span> 个读者
                     </div>
-                )}
-                {!library.readers && <div />}
+                ) : <div />}
                 <BuyLibrary
                     isStarred={isStarred}
                     id={library.id}

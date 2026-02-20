@@ -5,14 +5,17 @@ import Link from 'next/link'
 import { ReactNode } from 'react'
 import UserAvatar from '@repo/ui/avatar'
 
-/** Shared layout for library cards across Libraries, Marketplace & Profile screens. */
-export default function LibraryCardBase({ id, name, lang, owner, footer }: {
+/** Props for the unified library card layout. */
+export interface LibraryCardBaseProps {
     id: string
     name: string
     lang: string
     owner: string
     footer?: ReactNode
-}) {
+}
+
+/** Shared layout for library cards across Libraries, Marketplace & Profile screens. */
+export default function LibraryCardBase({ id, name, lang, owner, footer }: LibraryCardBaseProps) {
     return (
         <div className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5'>
             <Card
