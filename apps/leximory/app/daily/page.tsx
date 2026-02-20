@@ -3,7 +3,6 @@ import H from '@/components/ui/h'
 import { Suspense } from 'react'
 import Report from './components/report'
 import Bell from './components/bell-server'
-import { Spacer } from "@heroui/spacer"
 import { Metadata } from 'next'
 import { WordChartSkeleton } from '@/components/stats/word-chart'
 import { UserWordStats } from '@/components/stats'

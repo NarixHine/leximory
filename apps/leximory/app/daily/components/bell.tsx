@@ -32,7 +32,7 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
     return (
         <div className='flex gap-2 items-center justify-center'>
             <Button
-                variant={hasSubs ? 'flat' : 'ghost'}
+                variant={hasSubs ? 'flat' : 'light'}
                 isLoading={isUpdating}
                 isDisabled={isDisabled}
                 onPress={() => {

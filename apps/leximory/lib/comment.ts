@@ -2,7 +2,7 @@ import LEXICON from './lexicon'
 import { CustomLexicon } from './types'
 const lemmatize = require('wink-lemmatizer')
 
-export const commentSyntaxRegex = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
+export const commentSyntaxRegex = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
 
 export function validateOrThrow(word: string) {
     const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
