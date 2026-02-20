@@ -4,7 +4,7 @@ import Markdown from '@/components/markdown'
 import { Button } from '@heroui/button'
 import { Card, CardBody, CardFooter, CardHeader } from '@heroui/card'
 import { createCallable } from 'react-call'
-import { PiMagicWandDuotone } from 'react-icons/pi'
+import { PiMagicWand } from 'react-icons/pi'
 
 type Response = boolean
 
@@ -40,7 +40,7 @@ export const ConfirmStory = createCallable<{ comments: string[] }, Response>(({ 
             </Button>
             <Button
                 variant='flat'
-                startContent={<PiMagicWandDuotone className='text-lg' />}
+                startContent={<PiMagicWand className='text-lg' />}
                 color='default'
                 onPress={() => call.end(true)}
             >

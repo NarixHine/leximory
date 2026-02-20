@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { FormProps, Form as HeroUIForm } from "@heroui/form"
 import { Button } from "@heroui/button"
 import { DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, Drawer } from "@heroui/drawer"
-import { PiFloppyDiskDuotone } from 'react-icons/pi'
+import { PiFloppyDisk } from 'react-icons/pi'
 
 export default function Form({ isOpen, onOpenChange, children, className, isLoading, onSubmit, title, actionButton, ...props }: { isOpen: boolean, onOpenChange: (open: boolean) => void, title: string, children: ReactNode, isLoading: boolean, actionButton?: ReactNode } & FormProps) {
     return <Drawer placement='bottom' motionProps={{
@@ -41,7 +41,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
                     <DrawerFooter className='flex gap-2 w-full pt-0'>
                         <div className='flex-1'></div>
                         {actionButton}
-                        <Button type='submit' color='primary' startContent={isLoading ? null : <PiFloppyDiskDuotone />} isLoading={isLoading}>确认</Button>
+                        <Button type='submit' color='primary' startContent={isLoading ? null : <PiFloppyDisk />} isLoading={isLoading}>确认</Button>
                     </DrawerFooter>
                 </HeroUIForm>
             )}

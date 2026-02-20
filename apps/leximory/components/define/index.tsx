@@ -59,7 +59,7 @@ export default function Define(props: { left: number | null, width: number | nul
                         top: buttonTop // Applied the conditional top here
                     }}
                     className={cn(
-                        'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-2 border-secondary-200 hover:cursor-pointer transition-all ease-in-out text-foreground',
+                        'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-1 border-primary-300 hover:cursor-pointer transition-all ease-in-out text-foreground',
                         isEbookMode && 'opacity-90',
                         defineClassName
                     )}

@@ -11,7 +11,7 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
-import { PiAirplaneInFlightDuotone, PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
+import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
@@ -49,7 +49,7 @@ export default function ImportModal() {
         <Switch
             size='lg'
             startContent={<PiKanbanFill />}
-            endContent={<PiKanbanDuotone />}
+            endContent={<PiKanban />}
             isDisabled={isLoading}
             isSelected={hideText}
             onValueChange={setHideText}
@@ -64,7 +64,7 @@ export default function ImportModal() {
             radius='full'
             variant={'solid'}
             color={editing ? 'default' : 'primary'}
-            startContent={<PiMagicWandDuotone className='text-lg' />}
+            startContent={<PiMagicWand className='text-lg' />}
             isLoading={isLoading}
         >
             导入{!ebook ? '材料' : '电子书'}
@@ -74,7 +74,7 @@ export default function ImportModal() {
     const EditSwitch = () => (
         <Switch
             startContent={<PiOptionFill />}
-            endContent={<PiOptionDuotone />}
+            endContent={<PiOption />}
             isDisabled={isReadOnly || isLoading}
             isSelected={editing}
             onValueChange={setEditing}
@@ -112,7 +112,7 @@ export default function ImportModal() {
                                             onValueChange={(value) => setUrl(value.trim())}
                                             variant='underlined'
                                         />
-                                        <Button isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                        <Button isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontal />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength} 字符` : undefined}
@@ -130,7 +130,7 @@ export default function ImportModal() {
                                         className='mt-2'
                                         color='primary'
                                         fullWidth
-                                        startContent={<PiAirplaneInFlightDuotone className='text-xl' />}
+                                        startContent={<PiAirplaneInFlight className='text-xl' />}
                                         isDisabled={isLoading || exceeded || isGenerating}
                                         onPress={() => {
                                             startGenerating(async () => {
@@ -188,7 +188,7 @@ function StoryModal() {
             isLoading={isLoading}
             radius='full'
             color='default'
-            startContent={<PiTornadoDuotone className='text-lg' />}
+            startContent={<PiTornado className='text-lg' />}
             onPress={onOpen}
         >
             连词成文
@@ -235,7 +235,7 @@ function StoryModal() {
                                         />
                                     ))
                                 }
-                                <Button variant='flat' startContent={<PiPlusCircleDuotone />} onPress={() => {
+                                <Button variant='flat' startContent={<PiPlusCircle />} onPress={() => {
                                     setWords([...words, ''])
                                 }}>
                                     手动录入
@@ -253,7 +253,7 @@ function StoryModal() {
                                 fullWidth
                                 isLoading={isGenerating}
                                 color='secondary'
-                                startContent={<PiTornadoDuotone />}
+                                startContent={<PiTornado />}
                                 onPress={() => {
                                     startGenerating(async () => {
                                         setIsLoading(true)

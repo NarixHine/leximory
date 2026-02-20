@@ -4,7 +4,7 @@ import Markdown, { MarkdownProps } from '@/components/markdown'
 import { useRef, useState } from 'react'
 import { Button } from '@heroui/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PiPlayCircleDuotone } from 'react-icons/pi'
+import { PiPlayCircle } from 'react-icons/pi'
 import { generate, retrieve } from './actions'
 import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
@@ -76,11 +76,10 @@ export default function Audio({ id, md, ...props }: {
                 <Button
                     isLoading={status === 'loading' || status === 'generating'}
                     isDisabled={status === 'lengthy'}
-                    variant='flat'
                     radius='full'
-                    color='primary'
+                    color='default'
                     size='lg'
-                    startContent={<PiPlayCircleDuotone />}
+                    startContent={<PiPlayCircle />}
                     onPress={action}
                 >
                     {

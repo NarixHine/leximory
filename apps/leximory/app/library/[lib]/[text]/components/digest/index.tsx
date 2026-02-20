@@ -5,16 +5,14 @@ import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom,
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
-import { Button } from "@heroui/button"
-import { Alert } from "@heroui/alert"
-import { Spacer } from "@heroui/spacer"
-import { Input } from "@heroui/input"
-import { Tooltip } from "@heroui/tooltip"
-import { Snippet } from "@heroui/snippet"
+import { Button } from '@heroui/button'
+import { Alert } from '@heroui/alert'
+import { Spacer } from '@heroui/spacer'
+import { Input } from '@heroui/input'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
+import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -40,30 +38,22 @@ function ReaderModeToggle() {
       isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
       'print:hidden'
     )}>
-      <Tooltip content={
-        <div>
-          按 <Snippet hideCopyButton symbol='' className='bg-transparent'>
-            Ctrl + P
-          </Snippet> 打印
-        </div>
-      }>
-        <Button
-          onPress={() => {
-            if (!isReaderMode) {
-              setTimeout(print, 500)
-            }
-            toggleReaderMode()
-            setIsEditing(false)
-          }}
-          className='mx-auto'
-          variant={'light'}
-          color={'secondary'}
-          radius='sm'
-          startContent={<PiPrinterDuotone />}
-        >
-          印刷模式
-        </Button>
-      </Tooltip>
+      <Button
+        onPress={() => {
+          if (!isReaderMode) {
+            setTimeout(print, 500)
+          }
+          toggleReaderMode()
+          setIsEditing(false)
+        }}
+        className='mx-auto'
+        variant={'light'}
+        color={'secondary'}
+        radius='sm'
+        startContent={<PiPrinter />}
+      >
+        印刷模式
+      </Button>
     </div>
   )
 }
@@ -139,7 +129,7 @@ function EditingView() {
         <Button
           variant='light'
           color='secondary'
-          startContent={<PiPlusCircleDuotone />}
+          startContent={<PiPlusCircle />}
           onPress={handleAddTopic}
         >
           添加
@@ -151,7 +141,7 @@ function EditingView() {
           value={modifiedMd}
           className='h-full'
           view={{ menu: true, md: true, html: false }}
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
+          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -159,7 +149,7 @@ function EditingView() {
         <Editor
           value={modifiedMd}
           className='h-full'
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
+          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -170,7 +160,7 @@ function EditingView() {
           isLoading={isUpdating}
           isDisabled={isDeleting}
           color='primary'
-          startContent={<PiPencilCircleDuotone />}
+          startContent={<PiPencilCircle />}
           onPress={handleSaveChanges}
         >
           保存更改
@@ -181,7 +171,7 @@ function EditingView() {
           variant='flat'
           color='danger'
           onPress={handleDeleteText}
-          startContent={<PiTrashDuotone />}
+          startContent={<PiTrash />}
           isIconOnly
         ></Button>
       </div>
@@ -223,12 +213,12 @@ function ReadingView() {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmark />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>
-            <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
-            <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
-            <li className='flex items-center gap-2'><PiHeadphonesDuotone /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
-            <li className='flex items-center gap-2'><PiMagnifyingGlassDuotone /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
+            <li className='flex items-center gap-2'><PiNotePencil /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
+            <li className='flex items-center gap-2'><PiPrinter /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
+            <li className='flex items-center gap-2'><PiHeadphones /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
+            <li className='flex items-center gap-2'><PiMagnifyingGlass /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
           </div>}
       </ul>
     )
@@ -240,6 +230,7 @@ function ReadingView() {
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
           'text-pretty',
+          'dropcap',
           getLanguageStrategy(lang).proseClassName,
         )}
         md={`<article>\n${content}\n</article>`}
@@ -319,8 +310,8 @@ function GeneratingView() {
         label={progressLabel[annotationProgress]}
       />
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', 'text-md')}>
-        <li className='flex items-center gap-2'><PiChatDotsDuotone /><span>生成完成后注解版会自动出现</span></li>
-        <li className='flex items-center gap-2'><PiBellDuotone /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
+        <li className='flex items-center gap-2'><PiChatDots /><span>生成完成后注解版会自动出现</span></li>
+        <li className='flex items-center gap-2'><PiBell /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
       </ul>
     </div>
   )

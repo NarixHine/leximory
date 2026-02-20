@@ -4,6 +4,15 @@
 @plugin '@tailwindcss/typography';
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+.dropcap.has-dropcap-first article div:first-of-type::first-letter {
+    float: left;
+    font-size: 3.6em;
+    line-height: 0.82;
+    padding-right: 0.08em;
+    margin-top: 0.12em;
+    font-family: var(--font-fancy);
+}
+
 @theme {
     --font-ui: var(--font-english), var(--font-mincho), serif;
     --font-mono: var(--font-english-mono), monospace;

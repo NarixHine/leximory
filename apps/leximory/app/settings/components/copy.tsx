@@ -2,7 +2,7 @@
 
 import { revokeUserToken, getUserToken } from '../actions'
 import { toast } from 'sonner'
-import { PiKeyDuotone, PiShareDuotone, PiTrashDuotone } from 'react-icons/pi'
+import { PiKey, PiShare, PiTrash } from 'react-icons/pi'
 import { Button } from "@heroui/button"
 import { prefixUrl } from '@repo/env/config'
 import { Drawer } from 'vaul'
@@ -35,7 +35,7 @@ export default function CopyToken() {
             className={cn('relative flex h-8 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 text-sm font-medium shadow transition-all hover:bg-[#FAFAFA] dark:bg-[#161615] dark:hover:bg-[#1A1A19] dark:text-white')}
             onClick={() => refetch()}
         >
-            <PiKeyDuotone />
+            <PiKey />
             拷贝
         </Drawer.Trigger>
         <Drawer.Portal>
@@ -44,7 +44,7 @@ export default function CopyToken() {
                 <Drawer.Title className='sr-only'>通行密钥</Drawer.Title>
                 <div className='p-4 pb-20 md:pb-6 prose prose-sm w-full relative'>
                     {isFetching && <Progress isIndeterminate color='primary' size='sm' className='absolute top-4 left-0 px-6 w-full' />}
-                    <Snippet symbol={<PiKeyDuotone className='inline-block mr-3' />} classNames={{
+                    <Snippet symbol={<PiKey className='inline-block mr-3' />} classNames={{
                         base: 'w-full not-prose',
                         pre: 'my-0',
                     }}>{token ? token : 'Loading ...'}</Snippet>
@@ -52,7 +52,7 @@ export default function CopyToken() {
                         <Button
                             color='danger'
                             variant='flat'
-                            startContent={!isRevoking && <PiTrashDuotone className='size-5' />}
+                            startContent={!isRevoking && <PiTrash className='size-5' />}
                             isLoading={isRevoking}
                             onPress={() => revoke()}
                         >
@@ -74,7 +74,7 @@ export function CopyProfileLink({ userId }: { userId: string }) {
     return <Button
         variant='flat'
         fullWidth
-        startContent={<PiShareDuotone />}
+        startContent={<PiShare />}
         color='default'
         radius='lg'
         onPress={async () => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@heroui/react'
-import { PiChatsDuotone } from 'react-icons/pi'
+import { PiChats } from 'react-icons/pi'
 import ChatInterface from '@/app/library/chat/components/chat-interface'
 import { useAtomValue } from 'jotai'
 import { textAtom, promptAtom, isEditingAtom } from '../../atoms'
@@ -18,7 +18,7 @@ export default function QuoteInAgentButton({ className }: { className?: string }
                     isIconOnly
                     variant='light'
                     className={className}
-                    startContent={<PiChatsDuotone />}
+                    startContent={<PiChats />}
                 />
             </Drawer.Trigger>
             <Drawer.Portal>

@@ -39,7 +39,7 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
                                 className={cn(
                                     'w-3/5 block',
                                     'prose-lg! text-pretty',
-                                    'print:first-letter:[initial-letter:2] print:first-letter:pr-2'
+                                    'print:first-letter:[initial-letter:2] print:first-letter:pr-2',
                                 )}
                                 md={`<article>${text.content}</article>`}
                             />

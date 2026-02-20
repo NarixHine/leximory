@@ -54,8 +54,16 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
 
+    // Pure computation from result — no render-time mutation, StrictMode-safe.
+    // After stripping the <article> wrapper and any leading zero-width/nbsp chars,
+    // the first paragraph starts with a dropcap-eligible letter only when it begins
+    // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
+    const firstParaDropcap = /^\p{L}/u.test(
+        result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
+    )
+
     return (
-        <article
+        <section
             className={cn(
                 'prose dark:prose-invert',
                 'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
@@ -64,6 +72,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 'prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
                 '[&_pre_code]:before:content-none [&_pre_code]:after:content-none prose-pre:bg-stone-600 prose-pre:border-stone-600',
                 'font-formal',
+                firstParaDropcap && 'has-dropcap-first',
                 className
             )}
         >
@@ -80,7 +89,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                             component: ({ children }) => <span className='whitespace-nowrap'>{children}</span>,
                         },
                         img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
-                        p: (props) => (<div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />),
+                        p: (props) => <div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />,
                         a: (props) => (<Link {...props} className='underline underline-offset-4' />),
                         hr: () => (<div className={cn('text-center text-2xl', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
                     },
@@ -94,7 +103,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             >
                 {result}
             </MarkdownToJSX>
-        </article>
+        </section>
     )
 }
 

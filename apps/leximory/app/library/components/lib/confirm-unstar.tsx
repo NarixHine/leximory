@@ -4,7 +4,7 @@ import { Button } from '@heroui/button'
 import { CardBody, CardFooter, CardHeader } from '@heroui/card'
 import { createCallable } from 'react-call'
 import { Card } from '@heroui/card'
-import { PiTrashDuotone } from 'react-icons/pi'
+import { PiTrash } from 'react-icons/pi'
 import H from '@/components/ui/h'
 
 export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
@@ -29,7 +29,7 @@ export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
             </Button>
             <Button
                 variant='solid'
-                startContent={<PiTrashDuotone className='text-xl' />}
+                startContent={<PiTrash className='text-xl' />}
                 color='primary'
                 onPress={() => call.end(true)}
             >

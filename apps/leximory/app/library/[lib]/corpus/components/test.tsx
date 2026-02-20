@@ -8,7 +8,7 @@ import { DateRangePicker } from "@heroui/date-picker"
 import { Suspense, useActionState, useState, useTransition } from 'react'
 import { draw, generateStory, getWithin } from '../actions'
 import { luxon } from '@/lib/luxon'
-import { PiListMagnifyingGlassDuotone, PiMagicWandDuotone } from 'react-icons/pi'
+import { PiListMagnifyingGlass, PiMagicWand } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { isReadOnlyAtom, libAtom } from '../../atoms'
 import { I18nProvider } from '@react-aria/i18n'
@@ -45,7 +45,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 size='sm'
                 variant='flat'
                 isLoading={isDrawing}
-                startContent={!isDrawing && <PiListMagnifyingGlassDuotone className='text-xl' />}
+                startContent={!isDrawing && <PiListMagnifyingGlass className='text-xl' />}
                 color='default'
                 type='submit'
             >
@@ -55,7 +55,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                 size='sm'
                 variant='flat'
                 isLoading={isGettingWithin}
-                startContent={!isGettingWithin && <PiMagicWandDuotone className='text-xl' />}
+                startContent={!isGettingWithin && <PiMagicWand className='text-xl' />}
                 color='default'
                 onPress={() => {
                     startGettingWithin(async () => {

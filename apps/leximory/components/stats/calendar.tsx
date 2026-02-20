@@ -1,4 +1,4 @@
-import { PiBookBookmarkDuotone } from 'react-icons/pi'
+import { PiBookBookmark } from 'react-icons/pi'
 import { CardBody } from '@heroui/card'
 import { cn } from '@/lib/utils'
 import { momentSH } from '@/lib/moment'
@@ -125,7 +125,7 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
                             >
                                 {wordCount > 0 ? (
                                     <div className='flex items-center gap-0.5'>
-                                        <PiBookBookmarkDuotone />
+                                        <PiBookBookmark />
                                         {wordCount}
                                     </div>
                                 ) : (
