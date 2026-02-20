@@ -37,13 +37,18 @@ export default function Editory({ id }: { id?: string }) {
   // Tracks whether data changed while a save was in-flight.
   const pendingRetryRef = useRef(false)
   // Ref to executeSync for use in callbacks without circular deps.
-  const executeSyncRef = useRef<() => void>(() => {})
+  const executeSyncRef = useRef<() => void>(() => { })
 
   const { execute: sync, isPending } = useAction(updatePaperAction, {
     onSuccess: ({ data: result }) => {
       syncInFlightRef.current = false
+      if (result.message === 'VERSION_CONFLICT') {
+        toast.error('版本冲突，正在加载最新版本...')
+        // Refresh to get the latest version and data from the server.
+        window.location.reload()
+      }
       // Advance baseVersion so the next save uses the new version.
-      if (result?.version !== undefined) {
+      if ('version' in result && !!result.version) {
         baseVersionRef.current = result.version
       }
       // If data changed while this save was in-flight, trigger another sync.
@@ -52,13 +57,8 @@ export default function Editory({ id }: { id?: string }) {
         executeSyncRef.current()
       }
     },
-    onError: ({ error }) => {
+    onError: ({ }) => {
       syncInFlightRef.current = false
-      if (error.serverError === 'VERSION_CONFLICT') {
-        // Another window/tab already saved a newer version.
-        toast.error('此试卷已在其他窗口中被修改，即将刷新以加载最新版本。')
-        setTimeout(() => window.location.reload(), 1500)
-      }
     },
   })
   const { execute: fetchVersion } = useAction(getPaperVersionAction, {

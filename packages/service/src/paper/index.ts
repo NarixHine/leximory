@@ -147,7 +147,7 @@ export const updatePaperAction = actionClient
       const result = await advancePaperVersion({ paperId: id, baseVersion })
       if (result === null) {
         // Another tab/window already wrote — signal conflict to the client.
-        throw new Error('VERSION_CONFLICT')
+        return { message: 'VERSION_CONFLICT' }
       }
       newVersion = result
     }
@@ -159,7 +159,7 @@ export const updatePaperAction = actionClient
         tags: data.content ? data.content.map(item => SECTION_NAME_MAP[item.type]) : undefined,
       }
     })
-    return { ...updated, version: newVersion }
+    return { ...updated, version: newVersion, message: 'OK' }
   })
 
 /**
