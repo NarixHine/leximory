@@ -3,7 +3,7 @@ import { isReaderModeAtom } from '@/app/atoms'
 import { commentSyntaxRegex } from '@/lib/comment'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom, promptAtom } from './atoms'
+import { contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom, promptAtom, emojiAtom } from './atoms'
 import Digest from './components/digest'
 import EditableH from './components/editable-h'
 import QuoteInAgent from './components/quote-in-agent'
@@ -54,7 +54,7 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
     text: string,
     hideControls?: boolean
 }) => {
-    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom]}>
+    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom, emojiAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('>', '>')],
             [topicsAtom, topics ?? []],
@@ -63,7 +63,8 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
             [titleAtom, title],
             [inputAtom, ''],
             [isLoadingAtom, annotating === 'annotating' || annotating === 'saving'],
-            [promptAtom, prompt]
+            [promptAtom, prompt],
+            [emojiAtom, emoji]
         ]}>
             {!ebook && <ArticleHero
                 title={title}

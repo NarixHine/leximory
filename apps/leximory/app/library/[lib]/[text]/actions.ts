@@ -25,7 +25,7 @@ export async function getNewText(id: string) {
     return textService.getNewText(id)
 }
 
-export async function save({ id, ...rest }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
+export async function save({ id, ...rest }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
     return textService.saveText({ id, ...rest })
 }
 

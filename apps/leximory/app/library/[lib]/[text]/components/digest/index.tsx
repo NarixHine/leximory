@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom } from '../../atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom, emojiAtom } from '../../atoms'
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -75,6 +75,7 @@ function EditingView() {
   const [content, setContent] = useAtom(contentAtom)
   const setIsEditing = useSetAtom(isEditingAtom)
   const title = useAtomValue(titleAtom)
+  const emoji = useAtomValue(emojiAtom)
 
   const [modifiedMd, setModifiedMd] = useState(content)
   const [modifiedTopics, setModifiedTopics] = useState(topics)
@@ -99,7 +100,7 @@ function EditingView() {
   const handleSaveChanges = useCallback(async () => {
     startUpdating(async () => {
       try {
-        await save({ id: text, content: modifiedMd, topics: modifiedTopics, title: title })
+        await save({ id: text, content: modifiedMd, topics: modifiedTopics, title, emoji: emoji ?? undefined })
         setIsEditing(false)
         setContent(modifiedMd)
         setTopics(modifiedTopics)
@@ -107,7 +108,7 @@ function EditingView() {
         toast.error('保存失败，请重试')
       }
     })
-  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title])
+  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title, emoji])
 
   const memoizedTopics = useMemo(() => (
     <Topics topics={modifiedTopics} remove={handleTopicRemove} />

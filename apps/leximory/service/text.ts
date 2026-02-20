@@ -113,8 +113,8 @@ export async function getNewText(id: string) {
     return { content, topics }
 }
 
-/** Saves partial updates (content, topics, title) to a text. */
-export async function saveText({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
+/** Saves partial updates (content, topics, title, emoji) to a text. */
+export async function saveText({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
     await updateText({ id, ...updateData })
