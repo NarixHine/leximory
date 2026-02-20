@@ -1,13 +1,12 @@
 import { convertToModelMessages, generateText, smoothStream, stepCountIs, streamText, ToolSet } from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
-import { getTexts, getTextContent, createText } from '@/server/db/text'
+import { getTexts, getTextContent, createText, getTextWithLib } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
 import { NextRequest } from 'next/server'
 import { ACTION_QUOTA_COST, Lang } from '@repo/env/config'
 import { toolSchemas } from '@/app/library/chat/types'
 import { isListedFilter } from '@/server/auth/role'
 import { Kilpi } from '@repo/service/kilpi'
-import { supabase } from '@repo/supabase'
 import incrCommentaryQuota from '@repo/user/quota'
 import { generate } from '@/app/library/[lib]/[text]/actions'
 import { getUserOrThrow } from '@repo/user'
@@ -15,24 +14,6 @@ import { annotateParagraph } from '@/server/ai/annotate'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 import { extractArticleFromUrl } from '@repo/scrape'
-
-/** Fetches a text record with its parent library for authorization. */
-async function getTextWithLib(textId: string) {
-    const { data, error } = await supabase
-        .from('texts')
-        .select(`
-            *,
-            lib:libraries!inner (
-                id,
-                owner,
-                access
-            )
-        `)
-        .eq('id', textId)
-        .single()
-    if (error || !data) throw new Error('Text not found')
-    return data as typeof data & { lib: { id: string, owner: string, access: number } }
-}
 
 const tools: ToolSet = {
     getLib: {

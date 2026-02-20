@@ -1,24 +1,5 @@
 import { Kilpi } from '@repo/service/kilpi'
-import { getTextContent, getTextAnnotationProgress } from '@/server/db/text'
-import { supabase } from '@repo/supabase'
-
-/** Fetches a text record with its parent library for authorization. */
-async function getTextWithLib(textId: string) {
-    const { data, error } = await supabase
-        .from('texts')
-        .select(`
-            *,
-            lib:libraries!inner (
-                id,
-                owner,
-                access
-            )
-        `)
-        .eq('id', textId)
-        .single()
-    if (error || !data) throw new Error('Text not found')
-    return data as typeof data & { lib: { id: string, owner: string, access: number } }
-}
+import { getTextContent, getTextAnnotationProgress, getTextWithLib } from '@/server/db/text'
 
 export const getArticleData = async (text: string, throwOnUnauthorized = true) => {
     if (throwOnUnauthorized) {

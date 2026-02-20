@@ -15,14 +15,18 @@ export async function load(lib: string, cursor?: string) {
     return await loadWords({ lib, cursor })
 }
 
-/** Draws vocabulary from a library within a date range. */
+/** Draws vocabulary from a library within a date range after verifying read access. */
 export async function draw({ lib, start, end }: { lib: string, start: Date, end: Date }) {
+    const libData = await getLib({ id: lib })
+    await Kilpi.libraries.read(libData).authorize().assert()
     const words = await retrieveWordsWithRange({ lib, start, end })
     return words.map(({ word, id }) => ({ word, id }))
 }
 
-/** Retrieves words within a date range (up to 50). */
+/** Retrieves words within a date range (up to 50) after verifying read access. */
 export async function getWithin({ lib, start, end }: { lib: string, start: Date, end: Date }) {
+    const libData = await getLib({ id: lib })
+    await Kilpi.libraries.read(libData).authorize().assert()
     const words = await retrieveWordsWithRange({ lib, start, end, size: 50 })
     return words.map(({ word }) => (word))
 }

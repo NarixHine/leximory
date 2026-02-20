@@ -2,31 +2,12 @@
 
 import { Kilpi } from '@repo/service/kilpi'
 import { extractSaveForm } from '@repo/utils'
-import { updateText } from '@/server/db/text'
+import { updateText, getTextWithLib } from '@/server/db/text'
 import { deleteWord, getWord, saveWord, shadowSaveWord, updateWord } from '@/server/db/word'
 import { after } from 'next/server'
 import { updateTag } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
 import { getLib } from '@/server/db/lib'
-import { supabase } from '@repo/supabase'
-
-/** Fetches a text record with its parent library for authorization. */
-async function getTextWithLib(textId: string) {
-    const { data, error } = await supabase
-        .from('texts')
-        .select(`
-            *,
-            lib:libraries!inner (
-                id,
-                owner,
-                access
-            )
-        `)
-        .eq('id', textId)
-        .single()
-    if (error || !data) throw new Error('Text not found')
-    return data as typeof data & { lib: { id: string, owner: string, access: number } }
-}
 
 /** Deletes a vocabulary comment after verifying library write access via Kilpi. */
 export async function delComment(id: string) {

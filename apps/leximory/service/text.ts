@@ -3,7 +3,7 @@
 import { Kilpi } from '@repo/service/kilpi'
 import { generateObject, smoothStream, streamText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
-import { createText, getTextAnnotationProgress, getTextContent, setTextAnnotationProgress, updateText, deleteText, uploadEbook } from '@/server/db/text'
+import { createText, getTextAnnotationProgress, getTextContent, getTextWithLib, setTextAnnotationProgress, updateText, deleteText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
@@ -25,24 +25,6 @@ import { redirect } from 'next/navigation'
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Fetches a text record with its parent library for authorization. */
-async function getTextWithLib(textId: string) {
-    const { data, error } = await supabase
-        .from('texts')
-        .select(`
-            *,
-            lib:libraries!inner (
-                id,
-                owner,
-                access
-            )
-        `)
-        .eq('id', textId)
-        .single()
-    if (error || !data) throw new Error('Text not found')
-    return data as typeof data & { lib: { id: string, owner: string, access: number } }
-}
 
 // ---------------------------------------------------------------------------
 // Text actions

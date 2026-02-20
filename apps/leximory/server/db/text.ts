@@ -9,6 +9,24 @@ import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
 import { seconds } from 'itty-time'
 
+/** Fetches a text record with its parent library attached for authorization checks. */
+export async function getTextWithLib(textId: string) {
+    const { data, error } = await supabase
+        .from('texts')
+        .select(`
+            *,
+            lib:libraries!inner (
+                id,
+                owner,
+                access
+            )
+        `)
+        .eq('id', textId)
+        .single()
+    if (error || !data) throw new Error('Text not found')
+    return data as typeof data & { lib: { id: string, owner: string, access: number } }
+}
+
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const id = nanoid()
     await supabase
