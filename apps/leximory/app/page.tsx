@@ -1,6 +1,5 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
-import { CHINESE_CALLIGRAPHY } from '@/lib/fonts'
 import Markdown from '@/components/markdown'
 import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
 import { PiLinkSimpleHorizontalDuotone, PiShootingStarDuotone, PiNewspaperDuotone } from 'react-icons/pi'
@@ -25,8 +24,8 @@ import LinkCard from '@/components/ui/link-card'
 
 export default async function Home() {
 	return <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
-		<H className={'text-[#a49393] dark:text-default text-8xl lg:text-9xl italic'} fancy>
-			<span className='[text-shadow:5px_5px_5px_rgb(238_214_211/80%)] dark:text-shadow-none'>Leximory</span>
+		<H className={'text-default-400 text-8xl lg:text-9xl italic'} fancy>
+			Leximory
 		</H>
 
 		<Spacer y={5}></Spacer>
@@ -41,13 +40,13 @@ export default async function Home() {
 				</H>
 			</div>
 			<div className='flex justify-center items-center'>
-				<LinkButton startContent={<PiShootingStarDuotone />} color='primary' href={SIGN_IN_URL} variant='flat' size='lg' className='animate-bounce font-semibold'>开始学习</LinkButton>
+				<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='animate-bounce font-semibold'>开始学习</LinkButton>
 			</div>
 		</div>
 
 		<Spacer y={10}></Spacer>
 
-		<div className={cn(CHINESE_CALLIGRAPHY.className, 'text-5xl sm:text-6xl mb-4 text-center text-balance')}>
+		<div className={cn('text-4xl mb-4 text-center font-semibold text-balance')}>
 			助力<FlipWords words={['外刊', '文摘', '书籍', '古文']} />阅读
 		</div>
 		<div className='grid w-full gap-3'>
@@ -60,14 +59,13 @@ export default async function Home() {
 								label='网址'
 								placeholder='https://example.com/'
 								variant='underlined'
-								color='primary'
+								color='default'
 							/>
 							<div className='flex flex-col-reverse'>
 								<Button
-									color='primary'
+									color='default'
 									radius='full'
 									endContent={<PiLinkSimpleHorizontalDuotone />}
-									variant='flat'
 								>
 									读取
 								</Button>
@@ -96,10 +94,10 @@ export default async function Home() {
 							title='一键分享'
 							description='将导入的文本分享给好友。无需登录。'
 						>
-							<LinkCard isPressable href='/read/F8hienQLmpDX' shadow='none' className='h-28 w-full bg-linear-to-br from-zinc-100 to-neutral-50 dark:from-stone-900 dark:to-stone-700 p-2 relative rounded-lg'>
+							<LinkCard isPressable href='/read/F8hienQLmpDX' shadow='none' className='h-28 w-full bg-linear-to-br from-secondary-100 to-default-200 p-2 relative rounded-lg'>
 								<CardBody>
 									<h2 className='font-bold opacity-50 text-xs'>James Joyce</h2>
-									<p className='opacity-60 font-bold'>The Dead (An Excerpt)</p>
+									<p className='opacity-60 font-bold'>Dubliners</p>
 									<div className='absolute bottom-0 right-0 p-2'>
 										<PiNewspaperDuotone className='w-10 h-10 opacity-30' />
 									</div>
@@ -190,7 +188,7 @@ const BentoCard = ({ title, children, description, }: {
 	children: ReactNode,
 	description?: string,
 }) => {
-	return <Card shadow='sm' className={'w-full h-full'}>
+	return <Card shadow='none' className={'w-full h-full bg-default-50/50 border-6 border-default-100 rounded-2xl'}>
 		<CardBody className='p-5'>
 			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}

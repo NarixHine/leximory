@@ -332,7 +332,7 @@ export function LibraryAddButton() {
             type='button'
             radius='full'
             onPress={onOpen}
-            startContent={<PiFolderPlus />}
+            startContent={<PiFolderPlus className='size-6' />}
         >
             新建文库
         </Button>

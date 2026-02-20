@@ -6,12 +6,6 @@ export const MINCHO = localFont({
     variable: '--font-mincho',
 })
 
-export const CHINESE_CALLIGRAPHY = Ma_Shan_Zheng({
-    subsets: ['latin'],
-    weight: ['400'],
-    variable: '--font-chinese-calligraphy',
-})
-
 export const ENGLISH = Raleway({
     subsets: ['latin'],
     weight: 'variable',

@@ -32,7 +32,7 @@ export function Article() {
             transition={{ duration: 0.5 }}
         >
             Leximory 是一个<span
-                className='bg-danger-50/50 dark:bg-danger-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-default-200 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >以大量阅读为宗</span>的语言学习平台。
         </motion.p>
         <motion.p
@@ -41,7 +41,7 @@ export function Article() {
             transition={{ duration: 0.5, delay: 0.2 }}
         >
             科学研究表明，只有通过大量的阅读，才能<span
-                className='bg-primary-50/50 dark:bg-primary-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-primary-50 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >真正习得词汇与文法</span>。
         </motion.p>
         <motion.p
@@ -50,11 +50,11 @@ export function Article() {
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             Leximory 为阅读提供必要辅助：<span
-                className='bg-secondary-50/50 dark:bg-secondary-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-secondary-100 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >智能注解</span>、<span
-                className='bg-default-50/50 dark:bg-default-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-secondary-100 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >生词记录</span>、<span
-                className='bg-success-50/50 dark:bg-success-900/20 px-1 rounded-md box-decoration-clone leading-[1.8]'
+                className='bg-secondary-100 px-1 rounded-md box-decoration-clone leading-[1.8]'
             >复习提醒</span>等。
         </motion.p>
 
@@ -76,7 +76,7 @@ export function Article() {
                 <GradientCard
                     title='导入电子书'
                     text='能注解文章，还能边读书边注解'
-                    className='bg-linear-to-br from-primary-50/50 to-secondary-100/50'
+                    className='bg-linear-to-br from-primary-50 to-primary-100'
                     to={EXAMPLE_EBOOK_LINK}
                 >
                     <PiBookOpenDuotone className='text-2xl opacity-60' />
@@ -92,7 +92,7 @@ export function Article() {
                     title='iOS Shortcuts'
                     text='在苹果设备上快速保存单词'
                     to='/blog/ios-shortcuts'
-                    className='bg-linear-to-bl from-default-50/50 to-secondary-100/50'
+                    className='bg-linear-to-bl from-secondary-50 to-secondary-100'
                 >
                     <PiAppleLogoDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -108,7 +108,7 @@ export function Article() {
                     to='/blog/reading-while-listening'
                     title='边听边读'
                     text='语言认知的另一个维度'
-                    className='bg-linear-to-tr from-default-50/50 to-danger-100/50'
+                    className='bg-linear-to-tr from-default-50 to-default-100'
                 >
                     <PiHeadphonesDuotone className='text-2xl opacity-60' />
                 </GradientCard>
@@ -123,7 +123,7 @@ export function Article() {
                     title='PWA 支持'
                     text='享受原生应用体验：全屏访问、离线支持、桌面快捷方式……'
                     to='/blog/install-pwa'
-                    className='bg-linear-to-tl from-primary-50/50 to-default-100/50'
+                    className='bg-linear-to-tl from-secondary-50 to-default-100'
                 >
                     <PiSpeakerHifiDuotone className='text-2xl opacity-60' />
                 </GradientCard>

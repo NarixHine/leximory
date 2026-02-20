@@ -17,10 +17,7 @@ export const metadata: Metadata = {
 
 export default async function AllOfItPage({ params }: { params: Promise<{ lib: string }> }) {
     const p = await params
-    const [lib, texts] = await Promise.all([
-        getLib({ id: p.lib }),
-        getAllTextsInLib({ libId: p.lib })
-    ])
+    const texts = await getAllTextsInLib({ libId: p.lib })
 
     return (
         <Main className='max-w-(--breakpoint-xl)'>

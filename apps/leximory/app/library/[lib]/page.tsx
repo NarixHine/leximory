@@ -3,7 +3,7 @@ import { authReadToLib } from '@/server/auth/role'
 import { getTexts } from '@/server/db/text'
 import { LibProps } from '@/lib/types'
 import { Suspense } from 'react'
-import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
+import { PiArrowLeft, PiBookBookmark, PiPrinter } from 'react-icons/pi'
 import Link from 'next/link'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 import Main from '@/components/ui/main'
@@ -22,7 +22,7 @@ async function PageContent({ params }: LibProps) {
     return <>
         {/* Header */}
         <header className='mx-auto mb-10 max-w-6xl'>
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 flex-wrap'>
                 <Link
                     href='/library'
                     className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
@@ -41,7 +41,16 @@ async function PageContent({ params }: LibProps) {
                         <PiBookBookmark className='size-6' />
                     </LoadingIndicatorWrapper>
                 </Link>
-                <h1 className='font-formal text-2xl tracking-tight text-foreground ml-3'>
+                <Link
+                    href={`/library/${lib}/print`}
+                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                    aria-label='打印全部'
+                >
+                    <LoadingIndicatorWrapper variant='spinner'>
+                        <PiPrinter className='size-6' />
+                    </LoadingIndicatorWrapper>
+                </Link>
+                <h1 className='font-formal text-balance text-2xl tracking-tight ml-1 text-default-600'>
                     {name}
                 </h1>
             </div>

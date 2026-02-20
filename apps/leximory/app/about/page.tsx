@@ -5,8 +5,6 @@ import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuo
 import { Metadata } from 'next'
 import { Article } from './article'
 import { BILIBILI_LINK } from '@repo/env/config'
-import Pricing from '@/components/pricing'
-import H from '@/components/ui/h'
 import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
@@ -18,7 +16,7 @@ export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
             <section className='max-w-(--breakpoint-sm) mx-auto'>
-                <h1 className={cn('text-5xl', ENGLISH_FANCY.className)}>
+                <h1 className={cn('text-5xl text-default-700', ENGLISH_FANCY.className)}>
                     About Leximory
                 </h1 >
                 <div className='flex w-fit mt-1 mb-6'>
@@ -69,10 +67,6 @@ export default function About() {
                     ></LinkButton>
                 </div>
                 <Article />
-            </section>
-            <section className='max-w-7xl mx-auto mt-5'>
-                <H disableCenter className='text-2xl pl-4'>订价</H>
-                <Pricing hideUpgradeButton />
             </section>
         </Main >
     )

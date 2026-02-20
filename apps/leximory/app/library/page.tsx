@@ -2,13 +2,15 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import { isListedFilter, OrFilter } from '@/server/auth/role'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PiBooksDuotone } from 'react-icons/pi'
+import { PiBooksDuotone, PiInfo } from 'react-icons/pi'
 import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
 import { getUserOrThrow } from '@repo/user'
 import Main from '@/components/ui/main'
 import AdminDashboardLink from './components/dashboard-link'
+import LinkButton from '@/components/ui/link-button'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -30,10 +32,19 @@ export default function Page() {
                         My Libraries
                     </span>
                 </div>
-                <div className='flex items-end justify-between'>
+                <div className='flex items-end gap-1'>
                     <h1 className='font-formal text-3xl text-foreground'>
                         我的文库
                     </h1>
+                    <div className='flex-1' />
+                    <LinkButton
+                        href='/about'
+                        radius='full'
+                        isIconOnly
+                        variant='light'
+                        color='default'
+                        startContent={<LoadingIndicatorWrapper><PiInfo className='size-5' /></LoadingIndicatorWrapper>}
+                    />
                     <LibraryAddButton />
                 </div>
             </header>
@@ -116,7 +127,7 @@ async function LibraryList({ userId, orFilter }: {
                         </h2>
                         <div className='flex-1 h-px bg-secondary-300/70' />
                     </div>
-                    <div className='flex flex-wrap gap-2'>
+                    <div className='flex flex-wrap gap-2 justify-center'>
                         {compactLibs.map(({ lib, isStarred }) => lib && (
                             <Library
                                 price={lib.price}

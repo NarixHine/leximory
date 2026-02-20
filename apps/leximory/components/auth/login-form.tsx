@@ -119,8 +119,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     </div>
 
     <Button
-      variant='flat'
-      color='primary'
+      color='default'
       fullWidth
       startContent={<PiGithubLogoFill className='text-xl' />}
       isLoading={isLoading}

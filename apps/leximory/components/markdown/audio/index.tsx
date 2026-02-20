@@ -93,7 +93,7 @@ export default function Audio({ id, md, ...props }: {
                 </Button>
             </div>}
         </div>
-        <div ref={ref} className='mt-5 mb-3'>
+        <div ref={ref} className='my-3'>
             {MarkdownComponent}
         </div>
     </div>
