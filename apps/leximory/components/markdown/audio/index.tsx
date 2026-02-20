@@ -68,7 +68,7 @@ export default function Audio({ id, md, ...props }: {
 
     const MarkdownComponent = <Markdown hasWrapped md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
-    return isReaderMode ? MarkdownComponent : <div className={'relative before:absolute before:-left-5 before:top-0 before:bottom-0 before:w-px before:bg-foreground'}>
+    return isReaderMode ? MarkdownComponent : <div>
         <div className='mt-2'>
             {url || !audioQuery.isSuccess ? <AudioPlayer
                 src={url}

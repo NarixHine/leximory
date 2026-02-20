@@ -23,7 +23,7 @@ export default async function Daily() {
                 <Bell />
             </Suspense>
         </header>
-        <div className='mb-4 h-80'>
+        <div className='mb-4'>
             <Suspense fallback={<WordChartSkeleton />}>
                 <UserWordStats />
             </Suspense>

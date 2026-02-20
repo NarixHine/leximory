@@ -63,8 +63,8 @@ function PageSkeleton() {
                 <Bone className='w-full h-full rounded-2xl min-h-[60dvh]' />
             </div>
 
-            {/* Content area skeleton (both breakpoints) */}
-            <div className='hidden md:block px-5 md:w-5/6 mx-auto'>
+            {/* Content area skeleton */}
+            <div className='px-5 md:hidden mx-auto'>
                 <Bone className='w-full h-6 rounded-lg mb-3' />
                 <Bone className='w-full h-6 rounded-lg mb-3' />
                 <Bone className='w-5/6 h-6 rounded-lg mb-3' />

@@ -17,7 +17,7 @@ import { AnimatePresence } from 'framer-motion'
 
 // Shared color classes for dock items
 const colorClasses = [
-    'bg-primary-200/70 text-primary-500',
+    'bg-primary-200/70 text-primary-600',
 ]
 
 type FloatingDockProps = {

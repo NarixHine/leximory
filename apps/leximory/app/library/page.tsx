@@ -25,11 +25,11 @@ export default function Page() {
                 <div className='mb-1 flex items-center gap-2.5'>
                     <PiBooksDuotone className='h-5 w-5 text-default-500' />
                     <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
-                        Libraries
+                        My Libraries
                     </span>
                 </div>
                 <div className='flex items-end justify-between'>
-                    <h1 className='font-formal text-3xl tracking-tight text-foreground'>
+                    <h1 className='font-formal text-3xl text-foreground'>
                         我的文库
                     </h1>
                     <LibraryAddButton />
@@ -40,10 +40,10 @@ export default function Page() {
             <Suspense fallback={
                 <section className='w-full max-w-125 sm:max-w-150'>
                     <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
-                        <LibrarySkeleton />
-                        <LibrarySkeleton />
-                        <LibrarySkeleton />
-                        <LibrarySkeleton />
+                        <LibrarySkeleton rowCount={6} />
+                        <LibrarySkeleton rowCount={1} />
+                        <LibrarySkeleton rowCount={2} />
+                        <LibrarySkeleton rowCount={5} />
                     </div>
                 </section>
             }>
@@ -101,7 +101,7 @@ async function LibraryList({ userId, orFilter }: {
                 <section className='mt-20 w-full max-w-200' aria-label='Archived libraries'>
                     <div className='flex flex-row items-center mb-4'>
                         <div className='flex-1 h-px bg-secondary-300/70 mr-3' />
-                        <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133 shrink-0'>
+                        <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133'>
                             <span>已归档</span>
                             <div className='flex-1 h-px bg-secondary-300/70 ml-3' />
                         </h2>

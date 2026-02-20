@@ -15,11 +15,9 @@ import { create, remove, save, archive, unarchive, unstar } from './actions'
 import { useForm, Controller } from 'react-hook-form'
 import { useDisclosure } from '@heroui/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@heroui/popover'
-import { motion } from 'framer-motion'
 import { useState, useTransition } from 'react'
 import { NumberInput } from '@heroui/number-input'
 import { ConfirmUnstar } from './confirm-unstar'
-import StoneSkeleton from '@/components/ui/stone-skeleton'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
@@ -28,18 +26,20 @@ export function ConfirmUnstarRoot() {
     return <ConfirmUnstar.Root></ConfirmUnstar.Root>
 }
 
-export function LibrarySkeleton() {
+export function LibrarySkeleton({ rowCount }: { rowCount?: number }) {
     return (
-        <div className='break-inside-avoid rounded-3xl bg-default-50 p-3.5'>
+        <div className={('break-inside-avoid rounded-3xl bg-default-50 p-3.5 animate-pulse')}>
             <div className='rounded-2xl bg-default-100 px-6 py-7'>
-                <StoneSkeleton className='w-12 h-4 rounded-lg mb-3' />
-                <StoneSkeleton className='w-full h-7 rounded-lg' />
+                <div className='w-12 h-4 rounded-xl mb-3' />
+                {new Array(rowCount || 1).fill(0).map((_, i) => (
+                    <div key={i} className='w-full h-7 rounded-xl' />
+                ))}
             </div>
             <div className='flex items-center justify-between px-2 pt-2'>
-                <StoneSkeleton className='w-24 h-6 rounded-lg' />
+                <div className='w-24 h-6 rounded-xl' />
                 <div className='flex gap-1'>
-                    <StoneSkeleton className='w-8 h-8 rounded-xl' />
-                    <StoneSkeleton className='w-8 h-8 rounded-xl' />
+                    <div className='w-8 h-8 rounded-xl' />
+                    <div className='w-8 h-8 rounded-xl' />
                 </div>
             </div>
         </div>
@@ -106,6 +106,8 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     if (compact) {
         return (
             <Card
+                isPressable
+                as={'div'}
                 onPress={() => {
                     router.push(`/library/${id}`)
                 }}

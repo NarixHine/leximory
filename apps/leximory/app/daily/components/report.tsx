@@ -17,7 +17,7 @@ export default async function Report({ day }: {
         <div className='my-10'>
             <div className='flex flex-row items-center mb-4'>
                 <div className='flex-1 h-px bg-secondary-300/70 mr-5' />
-                <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133 shrink-0'>
+                <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133'>
                     <div className='flex gap-1 items-center'>
                         <div className='text-xl font-bold opacity-80'>{day}</div>
                         {SUPPORTED_LANGS.filter((lang) => words.some((word) => word.lang === lang)).map((lang) => (

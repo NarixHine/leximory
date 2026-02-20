@@ -22,7 +22,6 @@ export default function NotFound() {
                         <LinkButton
                             href='/'
                             color='primary'
-                            variant='flat'
                             className='min-w-30'
                         >
                             Return to Library

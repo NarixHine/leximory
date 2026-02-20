@@ -62,7 +62,8 @@ export default function ImportModal() {
             onPress={onOpen}
             className='flex-1'
             radius='full'
-            color='primary'
+            variant={'solid'}
+            color={editing ? 'default' : 'primary'}
             startContent={<PiMagicWandDuotone className='text-lg' />}
             isLoading={isLoading}
         >
