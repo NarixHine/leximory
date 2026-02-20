@@ -19,18 +19,7 @@ export default function WordChart({ data, color = 'default' }: { data: WordData[
     />
 }
 
+/** Skeleton placeholder matching the chart area dimensions */
 export function WordChartSkeleton() {
-    return <AreaChart
-        className='opacity-30 animate-pulse'
-        data={new Array(30).fill(0).map((_, i) => ({
-            date: `Day ${i + 1}`,
-            '保存词汇': 0
-        }))}
-        index='date'
-        categories={['保存词汇']}
-        showLegend={false}
-        startEndOnly
-        showGridLines={false}
-        allowDecimals={false}
-    />
+    return <div className='h-64 w-full animate-pulse rounded-2xl bg-default-100' />
 } 

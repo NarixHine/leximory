@@ -20,10 +20,10 @@ function createQuotaUI({
             <CircularProgress
                 size='lg'
                 value={percentage}
-                color='primary'
+                color='default'
                 showValueLabel={true}
                 classNames={{
-                    track: 'stroke-white/50',
+                    track: 'stroke-default-200/50',
                 }}
             />
         </GradientCard>
@@ -38,7 +38,7 @@ function createQuotaUI({
 export const CommentaryQuotaUI = createQuotaUI({
     name: 'AI 词点额度',
     getQuota: getCommentaryQuota,
-    className: 'bg-linear-to-br from-default-100 to-default-200'
+    className: 'bg-linear-to-br from-default-100 to-default-200/60 dark:from-default-100/30 dark:to-default-200/20'
 })
 
 export const AudioQuotaUI = createQuotaUI({

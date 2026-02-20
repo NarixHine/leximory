@@ -86,7 +86,7 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
 
     return (
         <FlatCard background='solid' className={cn(
-            'border-none bg-primary-100/20 dark:bg-stone-800',
+            'border-none bg-primary-100/20 dark:bg-default-100/30',
             isLoading && 'animate-pulse'
         )}>
             <CardBody className='p-6 pt-4'>

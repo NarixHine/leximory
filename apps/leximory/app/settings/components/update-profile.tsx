@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { CopyProfileLink } from './copy'
 import { MAX_FILE_SIZE, SIGN_IN_URL } from '@repo/env/config'
-import { Skeleton } from '@heroui/skeleton'
 import { uploadAvatar } from '../actions'
 import { toast } from 'sonner'
 import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icons/pi'
@@ -17,11 +16,11 @@ import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icon
 export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
         <Card shadow='none' className='rounded-2xl bg-default-50/50 p-0 w-full h-full'>
-            <CardHeader className='px-6 pt-6 pb-2'>
-                <h2 className='text-lg tracking-tight'>{title}</h2>
+            <CardHeader className='px-6 pt-5 pb-1'>
+                <h2 className='text-sm font-formal tracking-tight text-default-500'>{title}</h2>
             </CardHeader>
-            <CardBody className='px-6 pb-6 pt-2'>{children}</CardBody>
-            {footer && <CardFooter className='px-6 pb-6 pt-2'>{footer}</CardFooter>}
+            <CardBody className='px-6 pb-5 pt-2'>{children}</CardBody>
+            {footer && <CardFooter className='px-6 pb-5 pt-2'>{footer}</CardFooter>}
         </Card>
     </form>
     )
@@ -250,22 +249,22 @@ export function UpdateProfileSkeleton({ className, ...props }: React.ComponentPr
     return (
         <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[60vh] w-full items-center justify-center bg-background', className)} {...props}>
             <SectionCard title='用户名'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='头像'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='邮箱'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='密码'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='登出'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='分享链接'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
         </div>
     )

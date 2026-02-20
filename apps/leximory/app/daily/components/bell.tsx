@@ -71,9 +71,12 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
     )
 }
 
-export function BellSkeleton() {    
-    return <BellButton 
-        hasSubs={false} 
-        isDisabled={true} 
-    />
+/** Skeleton placeholder while subscription status loads */
+export function BellSkeleton() {
+    return (
+        <div className='flex gap-2 items-center justify-center'>
+            <div className='h-10 w-48 animate-pulse rounded-full bg-default-100' />
+            <div className='h-10 w-28 animate-pulse rounded-full bg-default-100' />
+        </div>
+    )
 }

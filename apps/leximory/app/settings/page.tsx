@@ -1,7 +1,5 @@
 import { Metadata } from 'next'
-import H from '@/components/ui/h'
 import { Avatar } from '@heroui/avatar'
-import { Chip } from '@heroui/chip'
 import { PiCalendarBlankDuotone, PiCoinsDuotone, PiPlanetDuotone } from 'react-icons/pi'
 import { Suspense } from 'react'
 import Main from '@/components/ui/main'
@@ -19,7 +17,6 @@ import 'moment/locale/zh-cn'
 import { getPlan, getUserOrThrow } from '@repo/user'
 import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
 import { momentSH } from '@/lib/moment'
-import StoneSkeleton from '@/components/ui/stone-skeleton'
 import Streak from '@/components/streak'
 import { CommentaryQuotaUI, AudioQuotaUI } from './components/cards'
 
@@ -27,32 +24,35 @@ export const metadata: Metadata = { title: '设置' }
 
 async function HeroSection() {
     const { username, image, createdAt } = await getUserOrThrow()
-    return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar src={image} isBordered color={'primary'} className='size-16! ml-2 sm:ml-0' />
-        <div className='flex flex-col gap-2'>
-            <span className='text-3xl ml-1'>{username ? username : '👋Hi.'}</span>
-            <div className='flex gap-3 w-full'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' />{momentSH(createdAt).locale('zh-cn').calendar()} 加入</div></Chip>
+    return (
+        <section className='flex items-center gap-5 px-2'>
+            <Avatar src={image} isBordered color='default' className='size-16! shrink-0' />
+            <div className='flex flex-col gap-1 min-w-0'>
+                <h1 className='text-2xl font-formal tracking-tight text-foreground truncate'>{username ?? '你好 👋'}</h1>
+                <span className='text-xs tracking-wider text-default-400 font-mono flex items-center gap-1.5'>
+                    <PiCalendarBlankDuotone className='size-3.5' />
+                    {momentSH(createdAt).locale('zh-cn').calendar()} 加入
+                </span>
             </div>
-        </div>
-    </section>
+        </section>
+    )
+}
+
+function HeroSectionSkeleton() {
+    return (
+        <section className='flex items-center gap-5 px-2'>
+            <div className='size-16 shrink-0 animate-pulse rounded-full bg-default-100' />
+            <div className='flex flex-col gap-2 min-w-0'>
+                <div className='h-6 w-32 animate-pulse rounded-full bg-default-100' />
+                <div className='h-3 w-24 animate-pulse rounded-full bg-default-100' />
+            </div>
+        </section>
+    )
 }
 
 async function UserSection() {
     const { userId, username, image } = await getUserOrThrow()
     return <UpdateProfile userId={userId} username={username} image={image} />
-}
-
-function HeroSectionSkeleton() {
-    return <section className='flex flex-col sm:flex-row sm:items-center gap-4 p-4'>
-        <Avatar isBordered color={'primary'} className='size-16!' />
-        <div className='flex flex-col gap-2'>
-            <span className='text-3xl ml-1'>Loading...</span>
-            <div className='flex gap-3 w-full'>
-                <Chip color={'primary'} variant='flat'><div className='flex items-center gap-2'><PiCalendarBlankDuotone className='size-4' /><StoneSkeleton className='w-5 h-2 opacity-50 rounded-full' /> 加入</div></Chip>
-            </div>
-        </div>
-    </section>
 }
 
 async function UpgradeServer() {
@@ -61,20 +61,25 @@ async function UpgradeServer() {
 }
 
 export default async function Settings() {
-    return <Main className='flex flex-col gap-4 max-w-(--breakpoint-sm)'>
-        <Suspense fallback={<HeroSectionSkeleton />}>
-            <HeroSection />
-        </Suspense>
-        <section className='flex flex-col gap-4 w-full justify-center items-center'>
-            <div className='flex gap-4 w-full'>
-                <Suspense fallback={<StoneSkeleton className='h-12 rounded-full'><Upgrade isOnFreeTier /></StoneSkeleton>}>
+    return (
+        <Main className='flex flex-col gap-6 max-w-(--breakpoint-sm)'>
+            {/* Hero — avatar & name */}
+            <Suspense fallback={<HeroSectionSkeleton />}>
+                <HeroSection />
+            </Suspense>
+
+            {/* Actions — upgrade & daily claim */}
+            <section className='flex gap-3 w-full'>
+                <Suspense fallback={<div className='h-12 w-28 animate-pulse rounded-full bg-default-100' />}>
                     <UpgradeServer />
                 </Suspense>
-                <Suspense fallback={<StoneSkeleton className='flex-1 h-12 rounded-full'><ClaimDailyLexicoin hasClaimed /></StoneSkeleton>}>
+                <Suspense fallback={<div className='h-12 flex-1 animate-pulse rounded-full bg-default-100' />}>
                     <ClaimDailyLexicoinServer />
                 </Suspense>
-            </div>
-            <div className='grid grid-cols-2 gap-4 w-full'>
+            </section>
+
+            {/* Stats grid */}
+            <section className='grid grid-cols-2 gap-3 w-full'>
                 <Suspense fallback={<LexicoinBalanceCard />}>
                     <LexicoinBalance />
                 </Suspense>
@@ -87,42 +92,50 @@ export default async function Settings() {
                 <Suspense fallback={<AudioQuotaUI.Skeleton />}>
                     <AudioQuotaUI.Card />
                 </Suspense>
-            </div>
-        </section>
-        <section className='grid grid-cols-2 gap-4'>
-            <div className='col-span-2'>
+            </section>
+
+            {/* Activity */}
+            <section className='flex flex-col gap-3'>
                 <Streak />
-            </div>
-            <div className='col-span-2'>
                 <Suspense fallback={<HeatmapSkeleton />}>
                     <UserWordHeatmap />
                 </Suspense>
-            </div>
-            <div className='bg-default-50 rounded-2xl p-4 flex flex-col gap-2'>
-                <H disableCenter className=''>英语偏好</H>
-                <Suspense fallback={<StoneSkeleton className='w-full h-8 rounded-full' />}>
-                    <Preference />
-                </Suspense>
-            </div>
-            <div className='bg-default-50 rounded-2xl p-4 flex flex-col gap-2'>
-                <H disableCenter className=''>通行密钥</H>
-                <CopyToken />
-            </div>
-            <div className='col-span-2 flex flex-col gap-2'>
+            </section>
+
+            {/* Preferences */}
+            <section className='grid grid-cols-2 gap-3'>
+                <div className='bg-default-50 rounded-2xl p-5 flex flex-col gap-3'>
+                    <h2 className='text-sm font-formal tracking-tight text-default-500'>英语偏好</h2>
+                    <Suspense fallback={<div className='h-8 w-full animate-pulse rounded-full bg-default-100' />}>
+                        <Preference />
+                    </Suspense>
+                </div>
+                <div className='bg-default-50 rounded-2xl p-5 flex flex-col gap-3'>
+                    <h2 className='text-sm font-formal tracking-tight text-default-500'>通行密钥</h2>
+                    <CopyToken />
+                </div>
+            </section>
+
+            {/* Account management */}
+            <section>
                 <Suspense fallback={<UpdateProfileSkeleton />}>
                     <UserSection />
                 </Suspense>
-            </div>
-        </section>
-    </Main>
+            </section>
+        </Main>
+    )
 }
 
-
-
 function LexicoinBalanceCard({ balance }: { balance?: number }) {
-    return <GradientCard title='LexiCoin 余额' text={balance ? <ContinuousNumberFlow value={balance} /> : null} className='bg-linear-to-bl from-teal-100/80 to-lime-100/80 dark:from-gray-900 dark:to-gray-600'>
-        <PiCoinsDuotone className='size-7' />
-    </GradientCard>
+    return (
+        <GradientCard
+            title='LexiCoin 余额'
+            text={balance ? <ContinuousNumberFlow value={balance} /> : null}
+            className='bg-linear-to-bl from-default-100 to-default-200/60 dark:from-default-100/30 dark:to-default-200/20'
+        >
+            <PiCoinsDuotone className='size-7' />
+        </GradientCard>
+    )
 }
 
 async function LexicoinBalance() {
@@ -132,9 +145,15 @@ async function LexicoinBalance() {
 }
 
 function PlanCard({ text }: { text?: string }) {
-    return <GradientCard title='订阅计划' text={text} className='bg-linear-to-br to-rose-100/80 from-teal-100/80 dark:from-gray-900 dark:to-gray-600'>
-        <PiPlanetDuotone className='size-7' />
-    </GradientCard>
+    return (
+        <GradientCard
+            title='订阅计划'
+            text={text}
+            className='bg-linear-to-br from-default-200/60 to-default-100 dark:from-default-200/20 dark:to-default-100/30'
+        >
+            <PiPlanetDuotone className='size-7' />
+        </GradientCard>
+    )
 }
 
 async function Plan() {
