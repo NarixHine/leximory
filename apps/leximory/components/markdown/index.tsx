@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
 import { CustomLexicon } from '@/lib/types'
-import { langAtom } from '@/app/library/[lib]/atoms'
 import { memo } from 'react'
 import sanitize from 'sanitize-html'
 import Equation from './equation'
@@ -31,7 +30,6 @@ export type MarkdownProps = {
 
 function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
-    const lang = useAtomValue(langAtom)
 
     const result = hasWrapped ? md.trim() : sanitize(wrap(md.trim(), lexicon))
         // double space after list markers
@@ -56,41 +54,57 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
 
-    return (<MarkdownToJSX
-        options={{
-            overrides: {
-                Comment: {
-                    component: Comment,
-                },
-                Audio: {
-                    component: Audio
-                },
-                Nobr: {
-                    component: ({ children }) => <span className='whitespace-nowrap'>{children}</span>,
-                },
-                img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
-                p: (props) => (<div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />),
-                a: (props) => (<Link {...props} className='underline underline-offset-4' />),
-                hr: () => (<div className={cn('text-center text-2xl', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
-            },
-            renderRule(next, node, _, state) {
-                if (node.type === RuleType.codeBlock && node.lang === 'latex') {
-                    return <Equation text={node.text} key={state.key} />
-                }
-                return next()
-            }
-        }}
-        className={cn(
-            'prose dark:prose-invert',
-            'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
-            'prose-hr:my-8',
-            'prose-em:font-light',
-            'prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
-            '[&_pre_code]:before:content-none [&_pre_code]:after:content-none prose-pre:bg-stone-600 prose-pre:border-stone-600',
-            lang === 'ja' ? 'font-ja' : 'font-formal',
-            className
-        )}
-    >{result}</MarkdownToJSX>)
+    // Pure computation from result — no render-time mutation, StrictMode-safe.
+    // After stripping the <article> wrapper and any leading zero-width/nbsp chars,
+    // the first paragraph starts with a dropcap-eligible letter only when it begins
+    // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
+    const firstParaDropcap = /^\p{L}/u.test(
+        result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
+    )
+
+    return (
+        <section
+            className={cn(
+                'prose dark:prose-invert',
+                'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
+                'prose-hr:my-8',
+                'prose-em:font-light',
+                'prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
+                '[&_pre_code]:before:content-none [&_pre_code]:after:content-none prose-pre:bg-stone-600 prose-pre:border-stone-600',
+                'font-formal',
+                firstParaDropcap && 'has-dropcap-first',
+                className
+            )}
+        >
+            <MarkdownToJSX
+                options={{
+                    overrides: {
+                        Comment: {
+                            component: Comment,
+                        },
+                        Audio: {
+                            component: Audio
+                        },
+                        Nobr: {
+                            component: ({ children }) => <span className='whitespace-nowrap'>{children}</span>,
+                        },
+                        img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
+                        p: (props) => <div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />,
+                        a: (props) => (<Link {...props} className='underline underline-offset-4' />),
+                        hr: () => (<div className={cn('text-center text-2xl', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
+                    },
+                    renderRule(next, node, _, state) {
+                        if (node.type === RuleType.codeBlock && node.lang === 'latex') {
+                            return <Equation text={node.text} key={state.key} />
+                        }
+                        return next()
+                    }
+                }}
+            >
+                {result}
+            </MarkdownToJSX>
+        </section>
+    )
 }
 
 export default memo(Markdown)

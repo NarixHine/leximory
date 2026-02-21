@@ -6,6 +6,7 @@ import { getSubsStatus } from '../db/subs'
 import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/configs'
 import { generateText } from 'ai'
+import { revalidateTag } from 'next/cache'
 
 const topicsPrompt = (input: string) => ({
     system: `
@@ -15,6 +16,13 @@ const topicsPrompt = (input: string) => ({
     
     ${input}`,
     maxOutputTokens: 100,
+    ...nanoAI
+})
+
+const emojiPrompt = (input: string) => ({
+    system: `你是一个emoji选择器。根据文章的主题和氛围，选择一个最能代表这篇文章的emoji且新颖不落俗套。只输出一个emoji，不要输出任何其他内容。禁止选取可能引起强烈视觉不适的emoji，即禁止选取任何昆虫emoji。`,
+    prompt: `为以下文章选择一个有表现力的emoji：\n\n${input.slice(0, 500)}`,
+    maxOutputTokens: 20,
     ...nanoAI
 })
 
@@ -94,16 +102,20 @@ export const annotateFullArticle = inngest.createFunction(
             return await getLibIdAndLangOfText({ id: textId })
         })
 
-        const chunks = chunkText(article, getLanguageStrategy(lang).maxChunkSize)
-
-        const { topicsConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
-            const topicsConfig = topicsPrompt(article)
-            const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
-            return { topicsConfig, annotationConfigs }
+        const chunks = await step.run('chunk-text', async () => {
+            return chunkText(article, getLanguageStrategy(lang).maxChunkSize)
         })
 
-        const [topics, ...annotatedChunks] = await Promise.all([
+        const { topicsConfig, emojiConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
+            const topicsConfig = topicsPrompt(article)
+            const emojiConfig = emojiPrompt(article)
+            const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
+            return { topicsConfig, emojiConfig, annotationConfigs }
+        })
+
+        const [topics, emoji, ...annotatedChunks] = await Promise.all([
             step.ai.wrap('annotate-topics', generateText, topicsConfig),
+            step.ai.wrap('generate-emoji', generateText, emojiConfig),
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
         ])
 
@@ -115,7 +127,14 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            await updateText({ id: textId, content, topics: topics.steps[0].content[0].type==='text' ? topics.steps[0].content[0].text.split('||') : [] })
+            const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
+            await updateText({
+                id: textId,
+                content,
+                topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
+                emoji: generatedEmoji
+            })
+            revalidateTag(`texts:${libId}`, 'max')
         })
 
         await step.run('set-annotation-progress-completed', async () => {

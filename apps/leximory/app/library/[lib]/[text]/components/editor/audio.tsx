@@ -1,5 +1,5 @@
 import { nanoid } from '@/lib/utils'
-import { PiFileAudioDuotone } from 'react-icons/pi'
+import { PiFileAudio } from 'react-icons/pi'
 import { PluginProps } from 'react-markdown-editor-lite'
 
 const Reader = (props: PluginProps) => {
@@ -14,7 +14,7 @@ const Reader = (props: PluginProps) => {
             title='Audio'
             onClick={handleClick}
         >
-            <PiFileAudioDuotone />
+            <PiFileAudio />
         </span>
     )
 }

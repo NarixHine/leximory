@@ -4,7 +4,7 @@ import { UIMessage as Message, useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useAtom } from 'jotai'
 import { messagesAtom } from '../atoms'
-import { PiPaperPlaneRightFill, PiChatCircleDotsDuotone, PiPlusCircleDuotone, PiStopCircleDuotone, PiSparkleDuotone, PiPencilCircleDuotone, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclipDuotone, PiNewspaperClippingDuotone, PiNewspaperDuotone, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimpleDuotone, PiLockSimpleDuotone, PiGameControllerDuotone, PiBookmarksDuotone, PiNewspaper, PiArrowCounterClockwiseDuotone, PiFolderOpenDuotone } from 'react-icons/pi'
+import { PiPaperPlaneRightFill, PiChatCircleDots, PiPlusCircle, PiStopCircle, PiSparkle, PiPencilCircle, PiCopy, PiCheck, PiPackage, PiBooks, PiPaperclipFill, PiPaperclip, PiNewspaperClipping, PiNewspaper, PiLightbulb, PiEmpty, PiBookmark, PiLinkSimple, PiLockSimple, PiBookmarks, PiArrowCounterClockwise, PiFolderOpen } from 'react-icons/pi'
 import { memo, ReactNode, Suspense, useEffect, useRef, useState } from 'react'
 import Markdown from '@/components/markdown'
 import { cn } from '@/lib/utils'
@@ -30,27 +30,27 @@ import { StreakMemoryDraft } from './streak-memory-draft'
 const initialPrompts = [{
     title: '近日造句巩固',
     prompt: '针对［近两日］学习的［英语］单词，选出几个语块，总共出三道翻译题，考察并巩固我的掌握。',
-    icon: PiPencilCircleDuotone
+    icon: PiPencilCircle
 }, {
     title: '本周造句巩固',
     prompt: '针对［本周］学习的［英语］单词，选出几个语块，总共出六道翻译题，考察并巩固我的掌握。',
-    icon: PiBookmarksDuotone
+    icon: PiBookmarks
 }, {
     title: '金句提取',
     prompt: '提取［文库名称］中的［所有］文章里可借鉴于作文中的高分金句。',
-    icon: PiSparkleDuotone
+    icon: PiSparkle
 }, {
     title: '导入网页',
     prompt: '提取以下网页中的文章，并导入［词汇仓库］文库。',
-    icon: PiLinkSimpleDuotone
+    icon: PiLinkSimple
 }, {
     title: '注解段落',
     prompt: '注解以下段落，无需保存。',
-    icon: PiNewspaperClippingDuotone
+    icon: PiNewspaperClipping
 }, {
     title: '注解文章',
     prompt: '注解下文并存入［词汇仓库］文库。',
-    icon: PiNewspaperDuotone
+    icon: PiNewspaper
 }] as const
 
 type MessagePart = {
@@ -171,7 +171,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'extractArticleFromWebpage':
             const { title: articleTitle, content: articleContent } = result as Awaited<ToolResult['extractArticleFromWebpage']> | Awaited<ToolResult['getTextContent']>
             return (
-                <ToolAccordian title={articleTitle} icon={<PiNewspaperDuotone />}>
+                <ToolAccordian title={articleTitle} icon={<PiNewspaper />}>
                     <Card className='bg-primary-50/20 dark:bg-default-50/40' shadow='none' isBlurred>
                         <CardBody className='p-6'>
                             <div className='text-default-600 dark:text-default-400'>
@@ -201,7 +201,7 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
         case 'annotateArticle':
             const { id, title, createdAt, libId } = result as ToolResult['annotateArticle']
             return (
-                <ToolAccordian defaultExpanded title={`Article Created`} icon={<PiNewspaperDuotone />}>
+                <ToolAccordian defaultExpanded title={`Article Created`} icon={<PiNewspaper />}>
                     <div className='flex flex-col gap-2 mb-1'>
                         <span className='text-sm font-semibold text-default-400'>注解完成后会显示在文本中</span>
                         <ScopeProvider atoms={[libAtom]}>
@@ -281,8 +281,8 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                 <div className={cn(
                     'px-4 py-3 mt-4 rounded-2xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
                     isUser
-                        ? 'bg-secondary-50/50 text-default-900 dark:bg-stone-900'
-                        : 'bg-primary-50/50 text-default-900 dark:bg-neutral-900',
+                        ? 'bg-default-50'
+                        : 'bg-secondary-50',
                 )}>
                     {part.text ? <Markdown
                         md={part.text}
@@ -374,7 +374,7 @@ export function ChatMessage({
                         className='text-default-500 shrink-0'
                         onPress={() => regenerate()}
                     >
-                        <PiArrowCounterClockwiseDuotone className='text-secondary-300' size={16} />
+                        <PiArrowCounterClockwise className='text-secondary-300' size={16} />
                     </Button>
                     {Parts}
                 </div>
@@ -515,7 +515,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-300 bg-clip-text text-transparent'}>
+                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-400 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-0.5'>
@@ -523,7 +523,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                         radius='full'
                         color='primary'
                         variant='light'
-                        startContent={<PiPlusCircleDuotone />}
+                        startContent={<PiPlusCircle />}
                         onPress={() => startNewConversation()}
                     >
                         新建对话
@@ -533,10 +533,10 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
             {storedMessages.length > 0 && messages.length === 0 && <Button
                 className='mb-4'
                 fullWidth
-                color='primary'
+                color='default'
                 variant='flat'
                 radius='lg'
-                startContent={<PiFolderOpenDuotone />}
+                startContent={<PiFolderOpen />}
                 onPress={() => {
                     setMessages(storedMessages)
                 }}
@@ -551,7 +551,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                             key={index}
                             isPressable
                             onPress={() => handlePromptClick(prompt.prompt)}
-                            className={cn(index === 0 && 'border border-primary-100', 'bg-primary-50/20 hover:bg-primary-50/30', 'transition-colors')}
+                            className={cn(index === 0 && 'border border-default-300', 'bg-default-50 hover:bg-default-100/50 transition-all')}
                             shadow='none'
                         >
                             <CardBody>
@@ -561,7 +561,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                                     </div>
                                     <div>
                                         <h3 className='text-lg font-medium'>{prompt.title}</h3>
-                                        <p className='text-sm text-default-500'>{prompt.prompt}</p>
+                                        <p className='text-sm text-secondary-500'>{prompt.prompt}</p>
                                     </div>
                                 </div>
                             </CardBody>
@@ -589,7 +589,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                     variant='flat'
                     onChange={e => setInput(e.target.value)}
                     autoComplete='off'
-                    startContent={<PiChatCircleDotsDuotone className='text-default-500' />}
+                    startContent={<PiChatCircleDots className='text-default-500' />}
                 />
                 <Button
                     type='button'
@@ -598,7 +598,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                     isIconOnly
                     className='self-start'
                     startContent={
-                        files && files.length > 0 ? <PiPaperclipFill size={22} /> : <PiPaperclipDuotone size={22} />
+                        files && files.length > 0 ? <PiPaperclipFill size={22} /> : <PiPaperclip size={22} />
                     }
                     onPress={() => fileInputRef.current?.click()}
                 ></Button>
@@ -610,12 +610,12 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                     isDisabled={status === 'ready' && !input.trim()}
                     aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
-                    startContent={isLoading ? <PiStopCircleDuotone size={22} /> : <PiPaperPlaneRightFill size={22} />}
+                    startContent={isLoading ? <PiStopCircle size={22} /> : <PiPaperPlaneRightFill size={22} />}
                 ></Button>
             </form>
-            <footer className='pt-4 text-sm text-default-500 flex justify-center w-full'>
+            <footer className='pt-4 text-sm text-secondary flex justify-center w-full'>
                 <span className='flex items-center gap-2 font-mono'>
-                    <PiLockSimpleDuotone />
+                    <PiLockSimple />
                     <span>Conversations are stored locally.</span>
                 </span>
             </footer>

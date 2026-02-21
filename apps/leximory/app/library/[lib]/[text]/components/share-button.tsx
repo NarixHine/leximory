@@ -8,10 +8,14 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { prefixUrl } from '@repo/env/config'
 import { LibAndTextProps } from '@/lib/types'
+import { useAtomValue } from 'jotai'
+import { isEditingAtom } from '../atoms'
 
 export default function ShareButton({ isPublicAndFree, ...props }: ButtonProps & { isPublicAndFree: boolean }) {
     const { lib, text } = useParams() as Awaited<LibAndTextProps['params']>
     const [, copy] = useCopyToClipboard()
+
+    const isEditing = useAtomValue(isEditingAtom)
 
     const handlePublicShare = async () => {
         await copy(prefixUrl(`/read/${text}`))
@@ -25,7 +29,7 @@ export default function ShareButton({ isPublicAndFree, ...props }: ButtonProps &
 
     const iconClasses = 'text-xl text-default-500 pointer-events-none shrink-0'
 
-    return (
+    return isEditing ? null : (
         <Dropdown>
             <DropdownTrigger>
                 <Button

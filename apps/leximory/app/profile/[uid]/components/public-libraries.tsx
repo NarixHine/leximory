@@ -1,7 +1,6 @@
 import { getPaginatedPublicLibs } from '@/server/db/lib'
 import { getUserOrThrow } from '@repo/user'
 import LibraryCard from '@/app/marketplace/[page]/components/card'
-import UserAvatar from '@repo/ui/avatar'
 import { cacheLife } from 'next/cache'
 import { PiEmptyThin } from 'react-icons/pi'
 
@@ -26,7 +25,7 @@ export default async function PublicLibraries({ uid }: { uid: string }) {
         </div>)
     }
 
-    return (<div className='grid grid-cols-1 gap-5 lg:grid-cols-2'>
+    return (<div className='columns-1 lg:columns-2 gap-4 space-y-4'>
         {publicLibraries.map((lib) => (
             <LibraryCard
                 hideFooter
@@ -41,7 +40,6 @@ export default async function PublicLibraries({ uid }: { uid: string }) {
                 }}
                 isOwner={lib.owner === userId}
                 isStarred={lib.isStarred}
-                avatar={<UserAvatar uid={lib.owner} />}
             />
         ))}
     </div>)

@@ -9,6 +9,25 @@ import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
 import { seconds } from 'itty-time'
 
+/** Fetches a text record with its parent library attached for authorization checks. */
+export async function getTextWithLib(textId: string) {
+    const { data, error } = await supabase
+        .from('texts')
+        .select(`
+            *,
+            lib:libraries!inner (
+                id,
+                owner,
+                access,
+                starred_by
+            )
+        `)
+        .eq('id', textId)
+        .single()
+    if (error || !data) throw new Error('Text not found')
+    return data as typeof data & { lib: { id: string, owner: string, access: number, starred_by: string[] | null } }
+}
+
 export async function createText({ lib, title, content, topics }: { lib: string } & Partial<{ content: string; topics: string[]; title: string }>) {
     const id = nanoid()
     await supabase
@@ -39,10 +58,10 @@ export async function createTextWithData({ lib, title, content, topics }: { lib:
     return data
 }
 
-export async function updateText({ id, title, content, topics }: { id: string } & Partial<{ content: string; topics: string[]; title: string }>) {
+export async function updateText({ id, title, content, topics, emoji }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string | null }>) {
     const { data: rec } = await supabase
         .from('texts')
-        .update({ title, content, topics })
+        .update({ title, content, topics, emoji })
         .eq('id', id)
         .select('lib')
         .single()
@@ -74,6 +93,7 @@ export async function getTexts({ lib }: { lib: string }) {
             id,
             title,
             topics,
+            emoji,
             has_ebook,
             created_at,
             no,
@@ -86,10 +106,11 @@ export async function getTexts({ lib }: { lib: string }) {
         .order('created_at', { ascending: false })
         .throwOnError()
 
-    return texts.map(({ id, title, topics, has_ebook, created_at, lib }) => ({
+    return texts.map(({ id, title, topics, emoji, has_ebook, created_at, lib }) => ({
         id,
         title,
         topics,
+        emoji,
         hasEbook: has_ebook,
         createdAt: created_at ? new Date(created_at).toISOString() : new Date().toISOString(),
         libName: lib?.name ?? 'Unknown Library',
@@ -98,7 +119,6 @@ export async function getTexts({ lib }: { lib: string }) {
 
 export async function getTextContent({ id }: { id: string }) {
     'use cache'
-    cacheTag(`texts:${id}`)
     const { data: text, error } = await supabase
         .from('texts')
         .select(`
@@ -106,6 +126,8 @@ export async function getTextContent({ id }: { id: string }) {
             has_ebook,
             title,
             topics,
+            emoji,
+            created_at,
             lib:libraries (
                 id,
                 name,
@@ -124,7 +146,9 @@ export async function getTextContent({ id }: { id: string }) {
         notFound()
     }
 
-    const { content, has_ebook, title, topics, lib } = text[0]
+    cacheTag(`texts:${text[0].lib!.id}`)
+
+    const { content, has_ebook, title, topics, emoji, created_at, lib } = text[0]
     const isPublicAndFree = lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0
     const prompt = lib?.prompt ?? ''
     if (!lib) {
@@ -135,9 +159,9 @@ export async function getTextContent({ id }: { id: string }) {
             .from('user-files')
             .createSignedUrl(`ebooks/${id}.epub`, seconds('3 days'))
         if (error) throw error
-        return { content, ebook: data.signedUrl, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
+        return { content, ebook: data.signedUrl, title, topics, emoji, createdAt: created_at, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
     }
-    return { content, ebook: null, title, topics, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
+    return { content, ebook: null, title, topics, emoji, createdAt: created_at, lib: pick(lib, ['id', 'name', 'lang']) as { id: string, name: string, lang: Lang }, prompt, isPublicAndFree }
 }
 
 export async function uploadEbook({ id, ebook }: { id: string, ebook: File }) {
@@ -181,7 +205,6 @@ export async function setTextAnnotationProgress({ id, progress }: { id: string, 
 
 export async function getLibIdAndLangOfText({ id }: { id: string }) {
     'use cache'
-    cacheTag(`texts:${id}`)
     const { data: text } = await supabase
         .from('texts')
         .select(`
@@ -194,6 +217,7 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
         .single()
         .throwOnError()
 
+    cacheTag(`texts:${text.lib!.id}`)
     return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
 }
 

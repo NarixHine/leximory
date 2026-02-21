@@ -9,19 +9,18 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { CopyProfileLink } from './copy'
 import { MAX_FILE_SIZE, SIGN_IN_URL } from '@repo/env/config'
-import { Skeleton } from '@heroui/skeleton'
 import { uploadAvatar } from '../actions'
 import { toast } from 'sonner'
-import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut } from 'react-icons/pi'
+import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut, PiUpload } from 'react-icons/pi'
 
 export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
         <Card shadow='none' className='rounded-2xl bg-default-50/50 p-0 w-full h-full'>
-            <CardHeader className='px-6 pt-6 pb-2'>
-                <h2 className='text-lg tracking-tight'>{title}</h2>
+            <CardHeader className='px-6 pt-5 pb-1'>
+                <h2 className='text-sm font-formal tracking-tight text-default-500'>{title}</h2>
             </CardHeader>
-            <CardBody className='px-6 pb-6 pt-2'>{children}</CardBody>
-            {footer && <CardFooter className='px-6 pb-6 pt-2'>{footer}</CardFooter>}
+            <CardBody className='px-6 pb-5 pt-2'>{children}</CardBody>
+            {footer && <CardFooter className='px-6 pb-5 pt-2'>{footer}</CardFooter>}
         </Card>
     </form>
     )
@@ -32,7 +31,7 @@ function UsernameSection({ username: currentUsername, onSuccess }: { username?: 
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='用户名' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiUser size={20} />}>
+        <SectionCard title='用户名' footer={<Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiUser size={20} />}>
             {isLoading ? '更新中...' : '更新用户名'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
@@ -115,7 +114,7 @@ export function AvatarSection({ image }: { image?: string }) {
                 <Button
                     type='button'
                     className='w-full h-10'
-                    color='secondary'
+                    color='default'
                     variant='flat'
                     onPress={() => fileInputRef.current?.click()}
                     isLoading={isLoading}
@@ -126,10 +125,10 @@ export function AvatarSection({ image }: { image?: string }) {
                 <Button
                     type='button'
                     className='w-full h-10'
-                    color='primary'
+                    color='default'
                     onPress={handleUpload}
                     isLoading={isLoading}
-                    startContent={<PiImage size={20} />}
+                    startContent={<PiUpload size={20} />}
                 >
                     {isLoading ? '上传中...' : '上传头像'}
                 </Button>
@@ -143,7 +142,7 @@ function EmailSection({ onSuccess }: { onSuccess?: () => void }) {
     const [isLoading, setIsLoading] = useState(false)
     const supabase = createClient()
     return (
-        <SectionCard title='邮箱' footer={<Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
+        <SectionCard title='邮箱' footer={<Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiEnvelopeSimple size={20} />}>
             {isLoading ? '更新中...' : '更新邮箱'}
         </Button>} onSubmit={async e => {
             e.preventDefault()
@@ -203,7 +202,7 @@ function PasswordSection({ onSuccess }: { onSuccess?: () => void }) {
                 <label htmlFor='confirm-password' className='text-sm font-medium leading-none'>确认密码</label>
                 <Input id='confirm-password' type='password' value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder='确认密码' className='h-10' />
             </div>
-            <Button type='submit' className='w-full h-10' variant='flat' color='primary' isLoading={isLoading} startContent={<PiLock size={20} />}>
+            <Button type='submit' className='w-full h-10' variant='flat' color='default' isLoading={isLoading} startContent={<PiLock size={20} />}>
                 {isLoading ? '更新中...' : '更新密码'}
             </Button>
         </SectionCard>
@@ -220,7 +219,7 @@ function LogoutSection() {
                 setIsLoading(true)
                 await supabase.auth.signOut()
                 router.push(SIGN_IN_URL)
-            }} className='w-full h-10' color='primary' variant='flat' isLoading={isLoading} startContent={<PiSignOut size={20} />}>
+            }} className='w-full h-10' color='default' variant='flat' isLoading={isLoading} startContent={<PiSignOut size={20} />}>
                 退出登录
             </Button>
         </SectionCard>
@@ -250,22 +249,22 @@ export function UpdateProfileSkeleton({ className, ...props }: React.ComponentPr
     return (
         <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[60vh] w-full items-center justify-center bg-background', className)} {...props}>
             <SectionCard title='用户名'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='头像'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='邮箱'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='密码'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='登出'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
             <SectionCard title='分享链接'>
-                <Skeleton className='w-full h-10 rounded-full' />
+                <div className='w-full h-10 animate-pulse rounded-xl bg-default-100' />
             </SectionCard>
         </div>
     )

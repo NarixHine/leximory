@@ -3,7 +3,7 @@
 import { Button } from '@heroui/button'
 import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
-import { PiBookmarkDuotone, PiFrameCornersDuotone } from 'react-icons/pi'
+import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
@@ -17,9 +17,10 @@ import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { useDarkMode, useScrollLock } from 'usehooks-ts'
 import { toast } from 'sonner'
-import { save } from '../../actions'
 import { getChapterName } from '@/lib/epub'
 import Define from '@/components/define'
+import { useRouter } from 'next/navigation'
+import { saveText } from '@/service/text'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
@@ -34,16 +35,37 @@ const locationAtomFamily = atomFamily((text: string) =>
     atomWithStorage<string | number>(`persist-location-${text}`, 0)
 )
 
+const EBOOK_DARK_FG = '#CECDC3'
+const EBOOK_DARK_BG = '#100F0F'
+const EBOOK_LIGHT_FG = '#100F0F'
+const EBOOK_LIGHT_BG = '#ffffff'
+
+/** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
+function injectThemeCSS(contents: Contents, isDark: boolean) {
+    const doc = contents.document
+    if (!doc?.head) return
+    let style = doc.getElementById('leximory-theme-override')
+    if (!style) {
+        style = doc.createElement('style')
+        style.id = 'leximory-theme-override'
+        doc.head.appendChild(style)
+    }
+    style.textContent = isDark
+        ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
+        : ``
+}
+
 function updateTheme(rendition: Rendition, isDarkMode: boolean) {
     const themes = rendition.themes
     themes.override('direction', 'ltr')
     if (isDarkMode) {
-        themes.override('color', '#CECDC3')
-        themes.override('background', '#100F0F')
+        themes.override('color', EBOOK_DARK_FG)
+        themes.override('background', EBOOK_DARK_BG)
     } else {
-        themes.override('color', '#100F0F')
-        themes.override('background', '#FFFCF0')
+        themes.override('color', EBOOK_LIGHT_FG)
+        themes.override('background', EBOOK_LIGHT_BG)
     }
+    ; (rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
 }
 
 export default function Ebook() {
@@ -76,6 +98,8 @@ export default function Ebook() {
     const themeRendition = useRef<Rendition | null>(null)
 
     const { isDarkMode } = useDarkMode()
+    const isDarkModeRef = useRef(isDarkMode)
+    isDarkModeRef.current = isDarkMode
     useEffect(() => {
         if (themeRendition.current) {
             updateTheme(themeRendition.current, isDarkMode)
@@ -97,6 +121,8 @@ export default function Ebook() {
         }
         return unlock
     }, [hasZoomed, lock, unlock])
+
+    const router = useRouter()
 
     return src && (
         <motion.div
@@ -130,7 +156,7 @@ export default function Ebook() {
                 <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-60'>
                     <Button
                         isIconOnly
-                        startContent={<PiFrameCornersDuotone className='text-lg' />}
+                        startContent={<PiFrameCorners className='text-lg' />}
                         className='z-10'
                         color='primary'
                         variant='light'
@@ -149,7 +175,7 @@ export default function Ebook() {
                     />
                     {hasZoomed && <>
                         <Button
-                            startContent={!savingBookmark && <PiBookmarkDuotone className='text-lg' />}
+                            startContent={!savingBookmark && <PiBookmark className='text-lg' />}
                             isLoading={savingBookmark}
                             isDisabled={!bookmark || isReadOnly}
                             className='z-10'
@@ -163,7 +189,8 @@ export default function Ebook() {
                                     startSavingBookmark(async () => {
                                         try {
                                             const newContent = content.concat(bookmark)
-                                            await save({ id: text, content: newContent })
+                                            await saveText({ id: text, content: newContent })
+                                            router.refresh()
                                             setContent(newContent)
                                             toast.success('文摘已保存')
                                         } catch {
@@ -251,6 +278,7 @@ export default function Ebook() {
                             setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
                         })
                         rendition.on('rendered', (_: Rendition, contents: Contents) => {
+                            injectThemeCSS(contents, isDarkModeRef.current)
                             contents.document.addEventListener('selectionchange', () => {
                                 if (selection && selection.toString()) {
                                     return
@@ -274,12 +302,12 @@ const lightReaderTheme: IReactReaderStyle = {
     ...ReactReaderStyle,
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#FFFCF0',
+        backgroundColor: EBOOK_LIGHT_BG,
         transition: undefined,
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#FFFCF0',
+        background: EBOOK_LIGHT_BG,
     },
     titleArea: {
         ...ReactReaderStyle.titleArea,
@@ -305,7 +333,7 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     readerArea: {
         ...ReactReaderStyle.readerArea,
-        backgroundColor: '#100F0F',
+        backgroundColor: EBOOK_DARK_BG,
         transition: undefined,
         color: '#ccc !important',
     },
@@ -321,11 +349,11 @@ const darkReaderTheme: IReactReaderStyle = {
     },
     tocArea: {
         ...ReactReaderStyle.tocArea,
-        background: '#100F0F',
+        background: EBOOK_DARK_BG,
     },
     container: {
         ...ReactReaderStyle.container,
-        background: '#100F0F',
+        background: EBOOK_DARK_BG,
     },
     tocButtonExpanded: {
         ...ReactReaderStyle.tocButtonExpanded,

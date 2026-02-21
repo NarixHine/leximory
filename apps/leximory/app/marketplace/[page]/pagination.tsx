@@ -16,6 +16,7 @@ export default function Pagination({ page }: { page: number }) {
     return (
         <div className='flex justify-center mt-auto'>
             <HeroUIPagination
+                color='secondary'
                 variant='flat'
                 total={totalPages}
                 page={page}

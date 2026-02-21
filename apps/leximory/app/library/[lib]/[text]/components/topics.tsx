@@ -11,8 +11,8 @@ export default function Topics({ topics, remove, className }: { topics: string[]
         size='sm'
         variant={'light'}
         classNames={{
-          base: cn('border-none underline decoration-1 underline-offset-4 decoration-default-700 text-default-700'),
-          content: 'px-0'
+          base: cn('border-none text-default-700'),
+          content: 'pr-1'
         }}
         onClose={remove && (() => {
           remove(topic)

@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { PiPiggyBankDuotone } from 'react-icons/pi'
+import { PiPiggyBank } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { getDailyLexicoin } from '../actions'
 import { useTransition } from 'react'
@@ -10,7 +10,7 @@ export const ClaimDailyLexicoin = ({ hasClaimed }: { hasClaimed: boolean }) => {
     const [isPending, startTransition] = useTransition()
     return <Button
         isLoading={isPending}
-        startContent={<PiPiggyBankDuotone />}
+        startContent={<PiPiggyBank />}
         onPress={async () => {
             startTransition(async () => {
                 const { message } = await getDailyLexicoin()

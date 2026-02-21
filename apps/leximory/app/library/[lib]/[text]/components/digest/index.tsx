@@ -1,20 +1,18 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom } from '../../atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom, emojiAtom } from '../../atoms'
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
-import { Button } from "@heroui/button"
-import { Alert } from "@heroui/alert"
-import { Spacer } from "@heroui/spacer"
-import { Input } from "@heroui/input"
-import { Tooltip } from "@heroui/tooltip"
-import { Snippet } from "@heroui/snippet"
+import { Button } from '@heroui/button'
+import { Alert } from '@heroui/alert'
+import { Spacer } from '@heroui/spacer'
+import { Input } from '@heroui/input'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinterDuotone, PiPlusCircleDuotone, PiNotePencilDuotone, PiHeadphonesDuotone, PiMagnifyingGlassDuotone, PiPencilCircleDuotone, PiBookBookmarkDuotone, PiTrashDuotone, PiChatDotsDuotone, PiBellDuotone } from 'react-icons/pi'
+import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell, PiPrinterBold } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -22,7 +20,7 @@ import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgress, getNewText, remove, save, markAsVisited } from '../../actions'
+import { getAnnotationProgressAction, getNewText, removeText, saveText, markAsVisited } from '@/service/text'
 import { useRouter } from 'next/navigation'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -40,30 +38,22 @@ function ReaderModeToggle() {
       isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
       'print:hidden'
     )}>
-      <Tooltip content={
-        <div>
-          按 <Snippet hideCopyButton symbol='' className='bg-transparent'>
-            Ctrl + P
-          </Snippet> 打印
-        </div>
-      }>
-        <Button
-          onPress={() => {
-            if (!isReaderMode) {
-              setTimeout(print, 500)
-            }
-            toggleReaderMode()
-            setIsEditing(false)
-          }}
-          className='mx-auto'
-          variant={'light'}
-          color={'default'}
-          radius='sm'
-          startContent={<PiPrinterDuotone />}
-        >
-          印刷模式
-        </Button>
-      </Tooltip>
+      <Button
+        onPress={() => {
+          if (!isReaderMode) {
+            setTimeout(print, 500)
+          }
+          toggleReaderMode()
+          setIsEditing(false)
+        }}
+        className='mx-auto font-semibold'
+        variant={'light'}
+        color={'secondary'}
+        radius='full'
+        startContent={<PiPrinterBold className='size-5' />}
+      >
+        印刷模式
+      </Button>
     </div>
   )
 }
@@ -75,6 +65,7 @@ function EditingView() {
   const [content, setContent] = useAtom(contentAtom)
   const setIsEditing = useSetAtom(isEditingAtom)
   const title = useAtomValue(titleAtom)
+  const emoji = useAtomValue(emojiAtom)
 
   const [modifiedMd, setModifiedMd] = useState(content)
   const [modifiedTopics, setModifiedTopics] = useState(topics)
@@ -99,7 +90,7 @@ function EditingView() {
   const handleSaveChanges = useCallback(async () => {
     startUpdating(async () => {
       try {
-        await save({ id: text, content: modifiedMd, topics: modifiedTopics, title: title })
+        await saveText({ id: text, content: modifiedMd, topics: modifiedTopics, title, emoji: emoji ?? undefined })
         setIsEditing(false)
         setContent(modifiedMd)
         setTopics(modifiedTopics)
@@ -107,7 +98,7 @@ function EditingView() {
         toast.error('保存失败，请重试')
       }
     })
-  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title])
+  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title, emoji])
 
   const memoizedTopics = useMemo(() => (
     <Topics topics={modifiedTopics} remove={handleTopicRemove} />
@@ -117,14 +108,14 @@ function EditingView() {
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)
-    await remove({ id: text })
+    await removeText({ id: text })
     router.push(`/library/${lib}`)
     setIsDeleting(false)
   }, [text, lib])
 
   return (
     <>
-      <div className='flex space-x-3'>
+      <div className='flex space-x-3 items-baseline'>
         {memoizedTopics}
         <div className='flex-1'>
           <Input
@@ -136,9 +127,9 @@ function EditingView() {
           />
         </div>
         <Button
-          variant='flat'
+          variant='light'
           color='secondary'
-          startContent={<PiPlusCircleDuotone />}
+          startContent={<PiPlusCircle />}
           onPress={handleAddTopic}
         >
           添加
@@ -150,7 +141,7 @@ function EditingView() {
           value={modifiedMd}
           className='h-full'
           view={{ menu: true, md: true, html: false }}
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
+          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -158,7 +149,7 @@ function EditingView() {
         <Editor
           value={modifiedMd}
           className='h-full'
-          renderHTML={(md) => <Markdown md={`<article>\n${md}\n\n</article>`} />}
+          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
           onChange={(e) => setModifiedMd(e.text)}
         />
       </div>
@@ -168,9 +159,8 @@ function EditingView() {
           className='flex-1'
           isLoading={isUpdating}
           isDisabled={isDeleting}
-          variant='flat'
           color='primary'
-          startContent={<PiPencilCircleDuotone />}
+          startContent={<PiPencilCircle />}
           onPress={handleSaveChanges}
         >
           保存更改
@@ -181,7 +171,7 @@ function EditingView() {
           variant='flat'
           color='danger'
           onPress={handleDeleteText}
-          startContent={<PiTrashDuotone />}
+          startContent={<PiTrash />}
           isIconOnly
         ></Button>
       </div>
@@ -223,12 +213,12 @@ function ReadingView() {
     return (
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
         {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmarkDuotone />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
+          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmark />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
           : <div>
-            <li className='flex items-center gap-2'><PiNotePencilDuotone /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
-            <li className='flex items-center gap-2'><PiPrinterDuotone /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
-            <li className='flex items-center gap-2'><PiHeadphonesDuotone /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
-            <li className='flex items-center gap-2'><PiMagnifyingGlassDuotone /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
+            <li className='flex items-center gap-2'><PiNotePencil /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
+            <li className='flex items-center gap-2'><PiPrinter /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
+            <li className='flex items-center gap-2'><PiHeadphones /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
+            <li className='flex items-center gap-2'><PiMagnifyingGlass /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
           </div>}
       </ul>
     )
@@ -240,6 +230,7 @@ function ReadingView() {
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
           'text-pretty',
+          'dropcap',
           getLanguageStrategy(lang).proseClassName,
         )}
         md={`<article>\n${content}\n</article>`}
@@ -256,8 +247,9 @@ function GeneratingView() {
   const setContent = useSetAtom(contentAtom)
   const setTopics = useSetAtom(topicsAtom)
   const text = useAtomValue(textAtom)
-  const router = useRouter()
   const [currentProgress, setCurrentProgress] = useState(0)
+  const setEmoji = useSetAtom(emojiAtom)
+  const router = useRouter()
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
     'annotating': 60,
@@ -281,7 +273,7 @@ function GeneratingView() {
   }, 1000)
 
   useInterval(() => {
-    getAnnotationProgress(text).then(newProgress => {
+    getAnnotationProgressAction(text).then(newProgress => {
       if (!newProgress) {
         setAnnotationProgress('annotating')
         return
@@ -289,10 +281,11 @@ function GeneratingView() {
       if (annotationProgress !== newProgress) {
         setCurrentProgress(startProgressRecord[newProgress])
         if (newProgress === 'completed') {
-          getNewText(text).then(({ content, topics }) => {
+          getNewText(text).then(({ content, topics, emoji }) => {
             setContent(content)
             setTopics(topics ?? [])
             setIsLoading(false)
+            setEmoji(emoji)
             router.refresh()
           })
         }
@@ -317,8 +310,8 @@ function GeneratingView() {
         label={progressLabel[annotationProgress]}
       />
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', 'text-md')}>
-        <li className='flex items-center gap-2'><PiChatDotsDuotone /><span>生成完成后注解版会自动出现</span></li>
-        <li className='flex items-center gap-2'><PiBellDuotone /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
+        <li className='flex items-center gap-2'><PiChatDots /><span>生成完成后注解版会自动出现</span></li>
+        <li className='flex items-center gap-2'><PiBell /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
       </ul>
     </div>
   )
@@ -341,7 +334,7 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
 
   return (
     <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
-      <div className='sm:mt-4 sm:flex sm:justify-center sm:items-center mb-2.5 opacity-75'>
+      <div className='sm:mt-2 sm:flex sm:justify-center sm:items-center mb-4 sm:mb-3 opacity-75'>
         {!ebook && (
           <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
             <ReaderModeToggle />

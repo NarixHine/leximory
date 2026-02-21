@@ -4,11 +4,11 @@ import { Button } from '@heroui/button'
 import { CardBody, CardFooter, CardHeader } from '@heroui/card'
 import { createCallable } from 'react-call'
 import { Card } from '@heroui/card'
-import { PiTrashDuotone } from 'react-icons/pi'
+import { PiTrash } from 'react-icons/pi'
 import H from '@/components/ui/h'
 
 export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
-    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 p-6'>
+    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 p-6'>
         <CardHeader>
             <H className='text-2xl'>移除收藏</H>
         </CardHeader>
@@ -29,8 +29,8 @@ export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
             </Button>
             <Button
                 variant='solid'
-                startContent={<PiTrashDuotone className='text-xl' />}
-                color='danger'
+                startContent={<PiTrash className='text-xl' />}
+                color='primary'
                 onPress={() => call.end(true)}
             >
                 移除收藏
