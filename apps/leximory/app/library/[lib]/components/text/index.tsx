@@ -188,19 +188,19 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
     return (
-        <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-3'>
-            <div className='flex min-w-0 flex-1 flex-col justify-center'>
+        <Link href={`/library/${lib}/${id}`} className='group flex flex-row-reverse sm:flex-col cursor-pointer gap-3'>
+            <EmojiCover
+                emoji={resolveEmoji(emoji, hasEbook)}
+                articleId={id}
+                className='h-16 w-16 shrink-0 sm:h-auto sm:w-full sm:aspect-4/3'
+                isLink
+            />
+            <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start'>
                 <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-balance'>
                     {title}
                 </h3>
                 <TagPills tags={allTopics} />
             </div>
-            <EmojiCover
-                emoji={resolveEmoji(emoji, hasEbook)}
-                articleId={id}
-                className='h-16 w-16 shrink-0'
-                isLink
-            />
         </Link>
     )
 }

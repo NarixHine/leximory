@@ -11,15 +11,6 @@ type TextData = {
     createdAt: string
 }
 
-/** Renders a vertical rule between grid columns using CSS column separators. */
-function CompactCardWithDivider({ article, isLast }: { article: TextData, isLast: boolean }) {
-    return (
-        <div className={isLast ? '' : 'border-r border-default-200/60 pr-6'}>
-            <CompactCard {...article} />
-        </div>
-    )
-}
-
 export default function TextList({ texts, isReadOnly }: { texts: TextData[], isReadOnly: boolean }) {
     if (texts.length === 0) {
         return (
@@ -49,9 +40,11 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     {rightArticles.map((a) => (
                         <LeftCard key={a.id} {...a} />
                     ))}
-                    {moreArticles.map((a) => (
-                        <CompactCard key={a.id} {...a} />
-                    ))}
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8'>
+                        {moreArticles.map((a) => (
+                            <CompactCard key={a.id} {...a} />
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -74,9 +67,9 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
 
                 {/* Additional articles below in 2 columns with vertical rules */}
                 {(leftArticles.length > 0 || moreArticles.length > 0) && (
-                    <div className='mt-12 grid grid-cols-2 gap-x-8 gap-y-8'>
-                        {[...leftArticles, ...moreArticles].map((article, i, arr) => (
-                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 2 === 1} />
+                    <div className='mt-12 grid grid-cols-3 gap-x-8 gap-y-8'>
+                        {[...leftArticles, ...moreArticles].map((article) => (
+                            <CompactCard key={article.id} {...article} />
                         ))}
                     </div>
                 )}
@@ -110,9 +103,9 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
 
                 {/* Additional articles below in 3 columns with vertical rules */}
                 {moreArticles.length > 0 && (
-                    <div className='mt-16 grid grid-cols-3 gap-x-6 gap-y-10'>
-                        {moreArticles.map((article, i) => (
-                            <CompactCardWithDivider key={article.id} article={article} isLast={i % 3 === 2} />
+                    <div className='mt-16 grid grid-cols-5 gap-x-10 gap-y-10 xl:grid-cols-6'>
+                        {moreArticles.map((article) => (
+                            <CompactCard key={article.id} {...article} />
                         ))}
                     </div>
                 )}
