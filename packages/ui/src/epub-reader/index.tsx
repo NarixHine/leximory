@@ -19,6 +19,7 @@ export interface EpubReaderProps {
     getRendition?: (rendition: Rendition) => void
     isRTL?: boolean
     title?: string
+    tocTitle?: string
     loadingView?: ReactNode
     actions?: ReactNode
     epubOptions?: Record<string, boolean>
@@ -31,6 +32,7 @@ export default function EpubReader({
     getRendition: onRendition,
     isRTL = false,
     title = '',
+    tocTitle = '目录',
     loadingView,
     actions,
     epubOptions,
@@ -41,6 +43,11 @@ export default function EpubReader({
     const [toc, setToc] = useState<NavItem[]>([])
     const [currentHref, setCurrentHref] = useState('')
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
+
+    const onLocationChangeRef = useRef(onLocationChange)
+    onLocationChangeRef.current = onLocationChange
+    const onRenditionRef = useRef(onRendition)
+    onRenditionRef.current = onRendition
 
     useEffect(() => {
         if (!viewerRef.current) return
@@ -67,10 +74,10 @@ export default function EpubReader({
         rendition.on('relocated', (loc: { start: { cfi: string; href: string } }) => {
             setIsLoaded(true)
             setCurrentHref(loc.start.href)
-            onLocationChange(loc.start.cfi)
+            onLocationChangeRef.current(loc.start.cfi)
         })
 
-        onRendition?.(rendition)
+        onRenditionRef.current?.(rendition)
 
         return () => {
             renditionRef.current = null
@@ -156,7 +163,7 @@ export default function EpubReader({
                     {(onClose) => (
                         <>
                             <DrawerHeader className="font-medium text-base">
-                                目录
+                                {tocTitle}
                             </DrawerHeader>
                             <DrawerBody className="px-0 pb-8">
                                 <TocTree
@@ -192,7 +199,7 @@ function TocTree({
             {items.map((item) => {
                 const itemBase = item.href.split('#')[0]
                 const currentBase = currentHref.split('#')[0]
-                const isActive = !!(itemBase && currentBase && currentBase.endsWith(itemBase))
+                const isActive = !!(itemBase && currentBase && (currentBase === itemBase || currentBase.endsWith('/' + itemBase)))
                 return (
                     <li key={item.id}>
                         <button
