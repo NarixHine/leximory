@@ -63,7 +63,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     )
 
     return (
-        <section
+        <div
             className={cn(
                 'prose dark:prose-invert',
                 'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
@@ -103,7 +103,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             >
                 {result}
             </MarkdownToJSX>
-        </section>
+        </div>
     )
 }
 

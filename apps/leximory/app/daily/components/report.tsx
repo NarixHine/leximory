@@ -28,13 +28,15 @@ export default async function Report({ day }: {
                 <div className='flex-1 h-px bg-secondary-300/70' />
             </div>
 
-            <div className='columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4'>
+            <div className='columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4 safari:-space-y-2'>
                 {words.map(({ word, id, lang, lib }) => (
-                    <ScopeProvider key={id} atoms={[langAtom, libAtom]}>
-                        <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
-                            <Markdown md={word} asCard deleteId={id}></Markdown>
-                        </HydrationBoundary>
-                    </ScopeProvider>
+                    <div key={id} className='break-inside-avoid'>
+                        <ScopeProvider atoms={[langAtom, libAtom]}>
+                            <HydrationBoundary hydrateAtoms={[[langAtom, lang], [libAtom, lib]]}>
+                                <Markdown md={word} asCard deleteId={id}></Markdown>
+                            </HydrationBoundary>
+                        </ScopeProvider>
+                    </div>
                 ))}
             </div>
         </div>

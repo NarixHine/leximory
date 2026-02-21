@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 	].join(' ')
 
 	return (
-		<html lang='zh-CN' className={`${fontVariables} antialiased`} suppressHydrationWarning>
+		<html lang='zh-CN' className={`${fontVariables} antialiased`}>
 			<body className='font-ui'>
 				<SpeedInsights />
 				<Analytics />

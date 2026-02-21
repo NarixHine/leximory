@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, cn } from '@heroui/react'
 import Center from '@/components/ui/center'
-import { PiWarningCircleDuotone } from 'react-icons/pi'
+import { PiWarningCircle } from 'react-icons/pi'
 import { ENGLISH_SERIF } from '@/lib/fonts'
 import LinkButton from '@repo/ui/link-button'
 
@@ -18,7 +18,7 @@ export default function Error({
             <Card className={cn('max-w-lg not-prose', ENGLISH_SERIF.className)} isBlurred shadow='none'>
                 <CardHeader className='flex flex-col items-center'>
                     <div className='flex items-center justify-center rounded-full'>
-                        <PiWarningCircleDuotone className='text-5xl text-danger' />
+                        <PiWarningCircle className='text-5xl text-danger' />
                     </div>
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-6 pt-0'>

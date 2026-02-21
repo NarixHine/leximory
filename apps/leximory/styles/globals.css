@@ -13,6 +13,13 @@
     font-family: var(--font-fancy);
 }
 
+/* Safari only */
+@custom-variant safari {
+    @supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
+        @slot;
+    }
+}
+
 @theme {
     --font-ui: var(--font-english), var(--font-mincho), serif;
     --font-mono: var(--font-english-mono), monospace;
