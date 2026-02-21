@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { useLinkStatus } from 'next/link'
 import { Spinner, SpinnerProps } from '@heroui/spinner'
 import { AnimatePresence, motion, Transition } from 'framer-motion'
@@ -19,9 +19,19 @@ const variants = {
 
 export default function LoadingIndicatorWrapper({ children, ...props }: { children: ReactNode } & SpinnerProps) {
     const { pending } = useLinkStatus()
+    const [currentState, setCurrentState] = useState(pending ? 'spinner' : 'children')
+
+    useEffect(() => {
+        // Defensive state management to prevent coexistence
+        const newState = pending ? 'spinner' : 'children'
+        if (newState !== currentState) {
+            setCurrentState(newState)
+        }
+    }, [pending, currentState])
+
     return (
         <AnimatePresence mode='popLayout' initial={false}>
-            {pending ? (
+            {currentState === 'spinner' ? (
                 <motion.span
                     key='spinner'
                     variants={variants}
