@@ -1,7 +1,7 @@
 'use server'
 
 import { Kilpi } from '@repo/service/kilpi'
-import { LIB_ACCESS_STATUS, Lang, SUPPORTED_LANGS } from '@repo/env/config'
+import { LIB_ACCESS_STATUS, Lang } from '@repo/env/config'
 import { createLib, deleteLib, updateLib, unstarLib, getLib, starLib } from '@/server/db/lib'
 import { addToArchive, removeFromArchive } from '@/server/db/lib'
 import { subtractLexicoinBalance, getLibPrice, addLexicoinBalance } from '@/server/db/lexicoin'

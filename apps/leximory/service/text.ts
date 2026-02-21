@@ -19,7 +19,6 @@ import { visitText, getVisitedTextIds } from '@/server/db/visited'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 import { getLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
-import { supabase } from '@repo/supabase'
 import { redirect } from 'next/navigation'
 
 // ---------------------------------------------------------------------------
