@@ -89,8 +89,10 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
     return { success: true, message: '生成中……' }
 }
 
-/** Returns the latest content and topics of a text. */
+/** Returns the latest content and topics of a text, with read authorization. */
 export async function getNewText(id: string) {
+    const textWithLib = await getTextWithLib(id)
+    await Kilpi.texts.read(textWithLib).authorize().assert()
     const { content, topics, emoji } = await getTextContent({ id })
     return { content, topics, emoji }
 }
