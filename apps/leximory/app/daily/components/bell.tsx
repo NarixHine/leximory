@@ -5,13 +5,31 @@ import { PiClockClockwiseDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import env from '@repo/env'
 import { save, remove } from '../actions'
-import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
 import { isIos, urlB64ToUint8Array } from '@/lib/utils'
 
+// Helper to ensure the SW is actually active before subscribing
+const waitForServiceWorkerActive = (registration: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> => {
+    return new Promise((resolve) => {
+        if (registration.active) {
+            return resolve(registration)
+        }
+
+        const sw = registration.installing || registration.waiting
+        if (sw) {
+            sw.addEventListener('statechange', (e) => {
+                if ((e.target as ServiceWorker).state === 'activated') {
+                    resolve(registration)
+                }
+            })
+        }
+    })
+}
+
 export const subscribe = async (hour: number) => {
+    toast.info('检查浏览器支持中...')
     if (!('serviceWorker' in navigator)) {
         throw new Error('当前浏览器不支持，请使用 Chrome 或 Safari')
     }
@@ -19,20 +37,28 @@ export const subscribe = async (hour: number) => {
         throw new Error(`当前浏览器不支持推送通知${isIos() ? '，iOS 用户请将 Leximory 添加至主界面' : ''}`)
     }
 
+    toast.info('正在请求通知权限...')
     const permission = await Notification.requestPermission()
     if (permission !== 'granted') {
         throw new Error('未获得通知权限，请在系统设置中允许')
     }
 
-    const registration = await navigator.serviceWorker.register('/sw.js')
+    toast.info('正在注册服务工作线程...')
+    // Register and then FORCIBLY wait for the 'active' state
+    let registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+
+    toast.info('正在等待服务工作线程激活...')
+    registration = await waitForServiceWorkerActive(registration)
 
     const applicationServerKey = urlB64ToUint8Array(env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
 
+    toast.info('正在订阅推送通知...')
     const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey
     })
 
+    toast.success('订阅成功！')
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 
