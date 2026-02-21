@@ -9,12 +9,9 @@ import { MAX_TTS_LENGTH } from '@repo/env/config'
 import { speak } from '@/server/ai/speak'
 import { nanoAI } from '@/server/ai/configs'
 import { getLib } from '@/server/db/lib'
-import { getTextWithLib } from '@/server/db/text'
 
-/** Retrieves a signed audio URL for the given text id, with read authorization. */
+/** Retrieves a signed audio URL for the given audio id (NO authorization). */
 export async function retrieve(id: string) {
-    const textWithLib = await getTextWithLib(id)
-    await Kilpi.texts.read(textWithLib).authorize().assert()
     const url = await retrieveAudioUrl({ id })
     return url
 }
