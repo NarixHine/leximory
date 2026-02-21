@@ -9,13 +9,14 @@ import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
+import { isIos } from '@/lib/utils'
 
 export const subscribe = async (hour: number) => {
     if (!('serviceWorker' in navigator)) {
-        throw new Error('当前浏览器不支持 Service Worker')
+        throw new Error('当前浏览器不支持，请使用 Chrome 或 Safari')
     }
     if (!('PushManager' in window) || !('Notification' in window)) {
-        throw new Error('当前浏览器不支持推送通知，iOS 用户请将 Leximory 添加至主界面')
+        throw new Error(`当前浏览器不支持推送通知${isIos() ? '，iOS 用户请将 Leximory 添加至主界面' : ''}`)
     }
 
     const permission = await Notification.requestPermission()
@@ -39,31 +40,34 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
     hour?: number | null
     isDisabled?: boolean
 }) {
-    const [isUpdating, startUpdating] = useTransition()
+    const [isLoading, setIsLoading] = useState(false)
     const [selectedHour, setSelectedHour] = useState(hour ?? 22)
+
+    const handleToggle = async () => {
+        setIsLoading(true)
+        try {
+            if (hasSubs) {
+                await remove()
+            } else {
+                await subscribe(selectedHour)
+            }
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : '开启失败，iOS 用户请将 Leximory 添加至主界面')
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className='flex gap-2 items-center justify-center'>
             <Button
                 variant={hasSubs ? 'flat' : 'light'}
-                isLoading={isUpdating}
+                isLoading={isLoading}
                 isDisabled={isDisabled}
-                onPress={() => {
-                    startUpdating(async () => {
-                        if (hasSubs) {
-                            await remove()
-                        } else {
-                            try {
-                                await subscribe(selectedHour)
-                            } catch (e) {
-                                toast.error(e instanceof Error ? e.message : '开启失败，iOS 用户请将 Leximory 添加至主界面')
-                            }
-                        }
-                    })
-                }}
+                onPress={handleToggle} // Direct call
                 radius='full'
                 color='default'
-                startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
+                startContent={isLoading ? null : <PiClockClockwiseDuotone size={32} />}
             >
                 {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
             </Button>

@@ -3,6 +3,27 @@ import { twMerge } from 'tailwind-merge'
 import { z } from '@repo/schema'
 import { customAlphabet } from 'nanoid'
 
+/**
+* A sophisticated check for iOS and iPadOS.
+* Covers iPhone, iPod, and the tricky iPad "Desktop Mode".
+*/
+export const isIos = () => {
+    // 1. Standard check for iPhone/iPod/iPad via userAgent
+    const userAgentCheck = /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+    // 2. The "iPadOS" desktop-class Safari check
+    // iPads now claim to be 'MacIntel', so we check for touch capabilities.
+    const isiPadOS = (
+        navigator.platform === 'MacIntel' &&
+        navigator.maxTouchPoints > 1
+    )
+
+    // 3. SSR Safety
+    if (typeof window === 'undefined') return false
+
+    return userAgentCheck || isiPadOS
+}
+
 /** Returns the display emoji: DB emoji, or 📖 for ebooks, 📰 for articles. */
 export function resolveEmoji(emoji: string | null, hasEbook: boolean): string {
     if (emoji) return emoji
