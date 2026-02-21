@@ -4,7 +4,7 @@ import { Button } from '@heroui/button'
 import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
-import { IReactReaderStyle, ReactReader, ReactReaderStyle } from 'react-reader'
+import EpubReader from '@repo/ui/epub-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
@@ -147,223 +147,156 @@ export default function Ebook() {
             layout='preserve-aspect'
         >
             <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                {hasZoomed && <Define
-                    {...rect}
-                    reset={reset}
-                    container={containerRef.current}
-                    selection={selection}
-                />}
-                <div ref={containerRef} className='flex absolute top-2 right-2 gap-1 bg-background z-60'>
-                    <Button
-                        isIconOnly
-                        startContent={<PiFrameCorners className='text-lg' />}
-                        className='z-10'
-                        color='primary'
-                        variant='light'
-                        size='lg'
-                        radius='lg'
-                        onPress={async () => {
-                            try {
-                                if (isFullScreen)
-                                    await handleFullScreen.exit()
-                                else
-                                    await handleFullScreen.enter()
-                            } catch {
-                                setIsFullViewport(!isFullViewport)
+                <div ref={containerRef} className="relative h-full">
+                    {hasZoomed && <Define
+                        {...rect}
+                        reset={reset}
+                        container={containerRef.current}
+                        selection={selection}
+                    />}
+                    <EpubReader
+                        key={isFullViewport ? 'full' : 'normal'}
+                        title={`${title}${page ? ` — ${page}` : ''}`}
+                        loadingView={
+                            <CircularProgress color='primary' size='lg' />
+                        }
+                        isRTL={strategy.isRTL}
+                        location={location}
+                        onLocationChange={epubcifi => {
+                            setLocation(epubcifi)
+                            const { current: rendition } = themeRendition
+                            if (rendition) {
+                                const { displayed } = rendition.location.start
+                                setPage(strategy.pageFormat(displayed.page, displayed.total, getChapterName(rendition.book, rendition.location)))
                             }
                         }}
-                    />
-                    {hasZoomed && <>
-                        <Button
-                            startContent={!savingBookmark && <PiBookmark className='text-lg' />}
-                            isLoading={savingBookmark}
-                            isDisabled={!bookmark || isReadOnly}
-                            className='z-10'
-                            color='primary'
-                            variant='light'
-                            size='lg'
-                            radius='lg'
-                            isIconOnly
-                            onPress={() => {
-                                if (bookmark) {
-                                    startSavingBookmark(async () => {
-                                        try {
-                                            const newContent = content.concat(bookmark)
-                                            await saveText({ id: text, content: newContent })
-                                            router.refresh()
-                                            setContent(newContent)
-                                            toast.success('文摘已保存')
-                                        } catch {
-                                            toast.error('文摘保存失败，请重试')
-                                        }
-                                    })
-                                }
-                            }}>
-                        </Button>
-                    </>}
-                </div>
-                <ReactReader
-                    key={isFullViewport ? 'full' : 'normal'}
-                    title={`${title}${page ? ` — ${page}` : ''}`}
-                    loadingView={
-                        <CircularProgress color='primary' size='lg' className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' />
-                    }
-                    isRTL={strategy.isRTL}
-                    readerStyles={isDarkMode ? darkReaderTheme : lightReaderTheme}
-                    location={location}
-                    locationChanged={epubcifi => {
-                        setLocation(epubcifi)
-                        const { current: rendition } = themeRendition
-                        if (rendition) {
-                            const { displayed } = rendition.location.start
-                            setPage(strategy.pageFormat(displayed.page, displayed.total, getChapterName(rendition.book, rendition.location)))
-                        }
-                    }}
-                    getRendition={rendition => {
-                        updateTheme(rendition, isDarkMode)
-                        rendition.themes.default({
-                            p: {
-                                'margin-top': '0.6em',
-                                'margin-bottom': '0.6em',
-                                'font-size': '24px !important',
-                                'font-family': '"Athelas", Georgia, serif !important',
-                                'line-height': strategy.lineHeight,
-                                'text-rendering': 'optimizeLegibility',
-                            },
-                            div: {
-                                'font-size': '24px !important',
-                                'font-family': '"Athelas", Georgia, serif !important',
-                                'line-height': strategy.lineHeight,
-                                'text-rendering': 'optimizeLegibility',
-                            },
-                            h1: {
-                                'font-family': '"Baskerville", Georgia, serif !important',
-                            },
-                            h2: {
-                                'font-family': '"Baskerville", Georgia, serif !important',
-                            },
-                            h3: {
-                                'font-family': '"Baskerville", Georgia, serif !important',
-                            },
-                            '.codeline': {
-                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                'font-size': '1rem !important',
-                                'line-height': '1.5 !important',
-                            },
-                            'code': {
-                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                'font-size': '0.9em !important',
-                            },
-                            'pre': {
-                                'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                'font-size': '0.9em !important',
-                                'overflow-x': 'auto !important',
-                                'line-height': '1.5 !important',
-                            },
-                        })
-                        themeRendition.current = rendition
-                        rendition.on('selected', (_: Rendition, contents: Contents) => {
-                            const selection = contents.window.getSelection()!
-                            setSelection(selection)
-                            const rect = selection.getRangeAt(0).getBoundingClientRect()
-                            const epubView = document.getElementsByClassName('epub-view')[0]
-                            const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
-                            setRect({
-                                left: rect.left + offset.left,
-                                width: rect.width,
-                                bottom: rect.bottom + offset.top
+                        getRendition={rendition => {
+                            updateTheme(rendition, isDarkMode)
+                            rendition.themes.default({
+                                p: {
+                                    'margin-top': '0.6em',
+                                    'margin-bottom': '0.6em',
+                                    'font-size': '24px !important',
+                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'line-height': strategy.lineHeight,
+                                    'text-rendering': 'optimizeLegibility',
+                                },
+                                div: {
+                                    'font-size': '24px !important',
+                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'line-height': strategy.lineHeight,
+                                    'text-rendering': 'optimizeLegibility',
+                                },
+                                h1: {
+                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                },
+                                h2: {
+                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                },
+                                h3: {
+                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                },
+                                '.codeline': {
+                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                    'font-size': '1rem !important',
+                                    'line-height': '1.5 !important',
+                                },
+                                'code': {
+                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                    'font-size': '0.9em !important',
+                                },
+                                'pre': {
+                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                    'font-size': '0.9em !important',
+                                    'overflow-x': 'auto !important',
+                                    'line-height': '1.5 !important',
+                                },
                             })
+                            themeRendition.current = rendition
+                            rendition.on('selected', (_: Rendition, contents: Contents) => {
+                                const selection = contents.window.getSelection()!
+                                setSelection(selection)
+                                const rect = selection.getRangeAt(0).getBoundingClientRect()
+                                const epubView = document.getElementsByClassName('epub-view')[0]
+                                const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
+                                setRect({
+                                    left: rect.left + offset.left,
+                                    width: rect.width,
+                                    bottom: rect.bottom + offset.top
+                                })
 
-                            const chapter = getChapterName(rendition.book, rendition.location)
-                            setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
-                        })
-                        rendition.on('rendered', (_: Rendition, contents: Contents) => {
-                            injectThemeCSS(contents, isDarkModeRef.current)
-                            contents.document.addEventListener('selectionchange', () => {
-                                if (selection && selection.toString()) {
-                                    return
-                                }
-                                reset()
+                                const chapter = getChapterName(rendition.book, rendition.location)
+                                setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
                             })
-                        })
-                    }}
-                    epubOptions={{
-                        allowPopups: true,
-                        allowScriptedContent: true,
-                    }}
-                    url={transformEbookUrl(src)}
-                />
+                            rendition.on('rendered', (_: Rendition, contents: Contents) => {
+                                injectThemeCSS(contents, isDarkModeRef.current)
+                                contents.document.addEventListener('selectionchange', () => {
+                                    if (selection && selection.toString()) {
+                                        return
+                                    }
+                                    reset()
+                                })
+                            })
+                        }}
+                        epubOptions={{
+                            allowPopups: true,
+                            allowScriptedContent: true,
+                        }}
+                        url={transformEbookUrl(src)}
+                        actions={
+                            <>
+                                <Button
+                                    isIconOnly
+                                    startContent={<PiFrameCorners className='text-lg' />}
+                                    className='z-10'
+                                    color='primary'
+                                    variant='light'
+                                    size='lg'
+                                    radius='lg'
+                                    onPress={async () => {
+                                        try {
+                                            if (isFullScreen)
+                                                await handleFullScreen.exit()
+                                            else
+                                                await handleFullScreen.enter()
+                                        } catch {
+                                            setIsFullViewport(!isFullViewport)
+                                        }
+                                    }}
+                                />
+                                {hasZoomed && <>
+                                    <Button
+                                        startContent={!savingBookmark && <PiBookmark className='text-lg' />}
+                                        isLoading={savingBookmark}
+                                        isDisabled={!bookmark || isReadOnly}
+                                        className='z-10'
+                                        color='primary'
+                                        variant='light'
+                                        size='lg'
+                                        radius='lg'
+                                        isIconOnly
+                                        onPress={() => {
+                                            if (bookmark) {
+                                                startSavingBookmark(async () => {
+                                                    try {
+                                                        const newContent = content.concat(bookmark)
+                                                        await saveText({ id: text, content: newContent })
+                                                        router.refresh()
+                                                        setContent(newContent)
+                                                        toast.success('文摘已保存')
+                                                    } catch {
+                                                        toast.error('文摘保存失败，请重试')
+                                                    }
+                                                })
+                                            }
+                                        }}>
+                                    </Button>
+                                </>}
+                            </>
+                        }
+                    />
+                </div>
             </FullScreen>
         </motion.div>
     )
-}
-
-const lightReaderTheme: IReactReaderStyle = {
-    ...ReactReaderStyle,
-    readerArea: {
-        ...ReactReaderStyle.readerArea,
-        backgroundColor: EBOOK_LIGHT_BG,
-        transition: undefined,
-    },
-    tocArea: {
-        ...ReactReaderStyle.tocArea,
-        background: EBOOK_LIGHT_BG,
-    },
-    titleArea: {
-        ...ReactReaderStyle.titleArea,
-        color: 'hsl(var(--heroui-default-400) / 1)',
-        textWrap: 'nowrap',
-        maxWidth: '60%',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        margin: '0 auto',
-    }
-}
-
-const darkReaderTheme: IReactReaderStyle = {
-    ...ReactReaderStyle,
-    arrow: {
-        ...ReactReaderStyle.arrow,
-        color: 'white',
-    },
-    arrowHover: {
-        ...ReactReaderStyle.arrowHover,
-        color: '#ccc',
-    },
-    readerArea: {
-        ...ReactReaderStyle.readerArea,
-        backgroundColor: EBOOK_DARK_BG,
-        transition: undefined,
-        color: '#ccc !important',
-    },
-    titleArea: {
-        ...ReactReaderStyle.titleArea,
-        color: 'hsl(var(--heroui-default-700) / 1)',
-        textWrap: 'nowrap',
-        maxWidth: '60%',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        margin: '0 auto'
-    },
-    tocArea: {
-        ...ReactReaderStyle.tocArea,
-        background: EBOOK_DARK_BG,
-    },
-    container: {
-        ...ReactReaderStyle.container,
-        background: EBOOK_DARK_BG,
-    },
-    tocButtonExpanded: {
-        ...ReactReaderStyle.tocButtonExpanded,
-        background: '#222',
-    },
-    tocButtonBar: {
-        ...ReactReaderStyle.tocButtonBar,
-    },
-    tocButton: {
-        ...ReactReaderStyle.tocButton,
-        color: 'white',
-    },
 }
