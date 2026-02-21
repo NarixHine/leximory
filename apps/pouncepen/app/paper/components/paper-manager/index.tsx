@@ -86,10 +86,22 @@ export function PaperManager({ papers: initialPapers }: { papers: PaperOverview[
   })
 
   const { execute: executeUpdatePaper, isPending: isUpdating } = useAction(updatePaperAction, {
-    onSuccess: (result) => {
-      setPapers(prev => prev.map(p => p.id === result.data.id ? result.data : p))
-      resetForm()
-      setEditingPaper(null)
+    onSuccess: ({ data }) => {
+      if ('id' in data) {
+        setPapers(prev => prev.map(p => p.id === data.id ? {
+          id: data.id,
+          title: data.title,
+          public: data.public,
+          tags: data.tags,
+          created_at: data.created_at,
+          passcode: data.passcode,
+        } : p))
+        resetForm()
+        setEditingPaper(null)
+      }
+      else {
+        toast.error('更新失败')
+      }
     },
   })
 
