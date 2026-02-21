@@ -163,16 +163,19 @@ export function Article() {
         >
             附录
         </motion.h2>
-        <Spacer y={2}></Spacer>
+        <Spacer y={1}></Spacer>
         <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 1.1 }}
+            className='text-secondary-400 text-sm'
         >
-            各项操作所消耗的每月 AI 配额：
+            各操作消耗的 AI 配额
         </motion.p>
-        <Spacer y={4}></Spacer>
-        <Table>
+        <Spacer y={2}></Spacer>
+        <Table shadow='none' classNames={{
+            wrapper: 'px-0'
+        }}>
             <TableHeader>
                 <TableColumn className='font-medium'>操作</TableColumn>
                 <TableColumn className='font-medium'>消耗「词点」</TableColumn>

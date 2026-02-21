@@ -53,7 +53,7 @@ async function PageContent({ params }: LibProps) {
                         <PiPrinter className='size-6' />
                     </LoadingIndicatorWrapper>
                 </Link>
-                <h1 className='font-formal text-balance text-2xl tracking-tight ml-1 text-default-600'>
+                <h1 className='font-formal text-balance text-2xl tracking-tight ml-1 text-default-500'>
                     {name}
                 </h1>
             </div>

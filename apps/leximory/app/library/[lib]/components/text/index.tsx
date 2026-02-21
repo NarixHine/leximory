@@ -122,7 +122,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
                 className='mb-3 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-2.5 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
+            <h2 className='mb-2 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <TagPills tags={allTopics} />

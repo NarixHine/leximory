@@ -93,7 +93,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     </div>
 
                     {/* Center column */}
-                    <div className='border-default-200/80 border-x px-8 xl:px-10'>
+                    <div className='px-4 xl:px-10'>
                         <HeroCard {...heroArticle} />
                     </div>
 
@@ -111,7 +111,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                 {/* Additional articles below in 3 columns with vertical rules */}
                 {moreArticles.length > 0 && (
                     <div className='mt-16 grid grid-cols-3 gap-x-6 gap-y-10'>
-                        {moreArticles.map((article, i, arr) => (
+                        {moreArticles.map((article, i) => (
                             <CompactCardWithDivider key={article.id} article={article} isLast={i % 3 === 2} />
                         ))}
                     </div>
