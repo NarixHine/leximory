@@ -117,7 +117,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             >
                 <CardBody className='p-0'>
                     <div className='flex items-center flex-nowrap rounded-3xl bg-secondary-50 py-1.5 pr-1.5 pl-5'>
-                        <div className='text-base font-formal font-medium text-secondary-500'>{name}</div>
+                        <div className='text-base text-secondary-500'>{name}</div>
                         <div className='ml-3 flex items-center'>
                             {archived && !shadow && (
                                 <Button
@@ -327,6 +327,7 @@ export function LibraryAddButton() {
         <Button
             type='button'
             radius='full'
+            variant='flat'
             onPress={onOpen}
             startContent={<PiFolderPlus className='size-6' />}
         >

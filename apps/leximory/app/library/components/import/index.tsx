@@ -167,7 +167,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                         }}
                                     >
                                         {activeLibs.length > 0 ? (
-                                            <SelectSection title='文库'>
+                                            <SelectSection>
                                                 {activeLibs.map(renderLibraryItem)}
                                             </SelectSection>
                                         ) : null}
@@ -202,7 +202,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                 isLoading={formState.isSubmitting || formState.isSubmitSuccessful}
                                 radius='full'
                                 color='primary'
-                                aria-label='导入'
+                                className='font-semibold'
                                 endContent={formState.isSubmitSuccessful ? <PiAirplaneTakeoffDuotone className='size-5' /> : <PiAirplaneInFlightDuotone className='size-5' />}
                             >
                                 {formState.isSubmitSuccessful ? '跳转中' : '导入'}

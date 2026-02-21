@@ -34,7 +34,7 @@ export default function Page() {
                     </span>
                 </div>
                 <div className='flex items-end'>
-                    <h1 className='font-formal text-3xl text-foreground'>
+                    <h1 className='font-formal text-3xl text-foreground font-bold'>
                         我的文库
                     </h1>
                     <div className='flex-1' />

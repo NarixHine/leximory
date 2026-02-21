@@ -45,7 +45,7 @@ function ArticleHero({ title, topics, createdAt, libId, lang, content, hasEbook 
 
         {/* Mobile layout: vertical stack */}
         <div className='print:hidden md:hidden w-full mb-8'>
-            <BackwardButton libId={libId} className='mb-5 ml-5' />
+            <BackwardButton libId={libId} className='mb-3 ml-5' />
             <TextEmojiCover className='w-full h-64' />
             <div className='flex justify-center my-3'>
                 <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />

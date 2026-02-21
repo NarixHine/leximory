@@ -5,7 +5,7 @@ import { Avatar } from '@heroui/avatar'
 import { Button, ButtonProps } from '@heroui/react'
 import { useUserProfile } from '@/lib/hooks/use-user-profile'
 import { useTransition } from 'react'
-import { PiCheckCircle, PiCoins } from 'react-icons/pi'
+import { PiCheckCircle, PiCoins, PiUserCircleDuotone } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -61,6 +61,7 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
         <Button
             startContent={
                 <Avatar
+                    icon={<PiUserCircleDuotone className='size-10' />}
                     src={isSuccess ? user?.imageUrl ?? undefined : undefined}
                     size='sm'
                     className={!isSuccess ? 'animate-pulse' : ''}

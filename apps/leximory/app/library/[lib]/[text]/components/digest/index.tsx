@@ -12,7 +12,7 @@ import { Input } from '@heroui/input'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell } from 'react-icons/pi'
+import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell, PiPrinterBold } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -46,11 +46,11 @@ function ReaderModeToggle() {
           toggleReaderMode()
           setIsEditing(false)
         }}
-        className='mx-auto'
+        className='mx-auto font-semibold'
         variant={'light'}
         color={'secondary'}
-        radius='sm'
-        startContent={<PiPrinter />}
+        radius='full'
+        startContent={<PiPrinterBold className='size-5' />}
       >
         印刷模式
       </Button>

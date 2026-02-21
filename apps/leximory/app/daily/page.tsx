@@ -16,7 +16,9 @@ export default async function Daily() {
     return (<Main className='pt-12 w-full! px-0! max-w-none mx-auto'>
         <div className='max-w-4xl px-5 sm:w-10/12 mx-auto'>
             <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-start gap-3 sm:items-center flex-col sm:flex-row sm:gap-6'>
-                <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0'><PiRewindDuotone />每日汇总</h1>
+                <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0 font-bold'>
+                    <PiRewindDuotone /> 每日汇总
+                </h1>
                 <Suspense fallback={<BellSkeleton />}>
                     <Bell />
                 </Suspense>
