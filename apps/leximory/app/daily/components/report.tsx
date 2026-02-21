@@ -1,5 +1,4 @@
 import Markdown from '@/components/markdown'
-import H from '@/components/ui/h'
 import { getForgetCurve } from '@/server/db/word'
 import StoryGen from './story-gen'
 import { ForgetCurvePoint, SUPPORTED_LANGS } from '@repo/env/config'
