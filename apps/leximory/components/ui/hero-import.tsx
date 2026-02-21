@@ -36,7 +36,7 @@ function getStreamSafeCharacters(text: string): string[] {
             // Find the complete annotation
             let annotationEnd = i + 2
             let braceCount = 1
-            
+
             while (annotationEnd < text.length && braceCount > 0) {
                 if (text[annotationEnd] === '{' && text[annotationEnd + 1] === '{') {
                     braceCount++
@@ -51,20 +51,20 @@ function getStreamSafeCharacters(text: string): string[] {
 
             // Extract the full annotation
             const fullAnnotation = text.slice(i, annotationEnd)
-            
+
             // Find the word part (before first ||)
             const firstPipeIndex = fullAnnotation.indexOf('||')
             if (firstPipeIndex > 2) { // Make sure it's after the opening {{
                 const wordPart = fullAnnotation.slice(2, firstPipeIndex) // Skip {{, get the word
                 const restPart = fullAnnotation.slice(firstPipeIndex) // Everything from first || including}}
-                
+
                 // Stream the word character by character, building complete text each time
                 for (let j = 1; j <= wordPart.length; j++) {
                     const partialWord = wordPart.slice(0, j)
                     const partialAnnotation = '{{' + partialWord + restPart
                     streamingSteps.push(currentText + partialAnnotation)
                 }
-                
+
                 // Add the complete annotation to current text for future steps
                 currentText += fullAnnotation
             } else {
@@ -186,7 +186,7 @@ export default function HeroImportUI() {
         triggerConfetti()
 
         // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 800))
 
         setIsImporting(false)
         setShowAnnotation(true)
@@ -248,10 +248,22 @@ export default function HeroImportUI() {
                                             popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
                                         }}
                                     >
-                                        <SelectItem key="english-learning" textValue="英语学习">
+                                        <SelectItem key="english-learning" className='rounded-3xl' textValue="🇬🇧 My English World">
                                             <div className="flex flex-row items-baseline gap-3">
-                                                <span className="truncate">🇬🇺🇸 英语学习</span>
-                                                <span className="text-sm text-secondary-400 shrink-0">English</span>
+                                                <span className="truncate font-semibold">{'🇬🇧 My English World'}</span>
+                                                <span className="text-sm text-secondary-400 shrink-0">英语</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem key="japanese-learning" className='rounded-3xl' textValue="🇯🇵 Japanese Ebooks">
+                                            <div className="flex flex-row items-baseline gap-3">
+                                                <span className="truncate font-semibold">{'🇯🇵 Japanese Ebooks'}</span>
+                                                <span className="text-sm text-secondary-400 shrink-0">日语</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem key="chinese-classical" className='rounded-3xl' textValue="🇨🇳 文言文库">
+                                            <div className="flex flex-row items-baseline gap-3">
+                                                <span className="truncate font-semibold">{'🇨🇳 文言文库'}</span>
+                                                <span className="text-sm text-secondary-400 shrink-0">文言文</span>
                                             </div>
                                         </SelectItem>
                                     </Select>
@@ -290,7 +302,7 @@ export default function HeroImportUI() {
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="w-full"
                 >
-                    <Card shadow='none' className="bg-default-50/50 rounded-3xl">
+                    <Card shadow='none' className="bg-default-50 dark:bg-default-100 rounded-3xl">
                         <CardBody className="p-8">
                             <StreamingText
                                 text={HeroAnnotation}

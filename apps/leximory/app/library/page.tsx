@@ -34,7 +34,7 @@ export default function Page() {
                         My Libraries
                     </span>
                 </div>
-                <div className='flex items-end'>
+                <div className='flex items-end gap-0.5'>
                     <h1 className='font-formal text-3xl text-foreground font-bold'>
                         我的文库
                     </h1>
