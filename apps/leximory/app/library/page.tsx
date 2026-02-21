@@ -12,6 +12,7 @@ import AdminDashboardLink from './components/dashboard-link'
 import LinkButton from '@/components/ui/link-button'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 import ImportUI, { ImportUISkeleton } from './components/import'
+import { Spacer } from '@heroui/spacer'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -106,6 +107,8 @@ async function LibraryList({ userId, orFilter }: {
                 shadow: lib.shadow,
                 archived: archives.includes(lib.id),
             }))} />
+
+            <Spacer y={7} />
 
             {/* Active libraries — CSS columns masonry */}
             <section className='w-full max-w-125 sm:max-w-150 mx-auto' aria-label='Your libraries'>

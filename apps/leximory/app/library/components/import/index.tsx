@@ -112,7 +112,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
             })}
             className='mx-auto w-full max-w-125 sm:max-w-150'
         >
-            <div className='px-8 pt-2 pb-10'>
+            <div className='px-8 py-2'>
                 <div className='flex flex-col gap-2'>
                     {/* Row 1: 将链接 [Input] 中的内容 */}
                     <div className='flex flex-wrap items-center gap-x-2.5 gap-y-3 font-semibold'>

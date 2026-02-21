@@ -17,6 +17,10 @@ const config: Config = {
           from: { opacity: "1" },
           to: { opacity: "0" },
         },
+        growShrink: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.15)' },
+        },
         pulse: {
           '0%, 100%': { opacity: '0.7' },
           '50%': { opacity: '0.3' },
@@ -69,6 +73,7 @@ const config: Config = {
       },
     },
     animation: {
+      grow: 'growShrink 0.5s ease-in-out infinite',
       hide: "hide 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       slideDownAndFade: "slideDownAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       slideLeftAndFade: "slideLeftAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)",

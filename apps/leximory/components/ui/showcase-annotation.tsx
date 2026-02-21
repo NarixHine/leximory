@@ -16,17 +16,3 @@ export default function ShowcaseAnnotation() {
         </HydrationBoundary>
     </ScopeProvider>
 }
-
-export function NewYorkProseAnnotation() {
-    return <ScopeProvider atoms={[langAtom, lexiconAtom]}>
-        <HydrationBoundary hydrateAtoms={[
-            [langAtom, 'en'],
-            [lexiconAtom, 'none']
-        ]}>
-            <Markdown
-                disableSave
-                md={'Because New York City is the only place where the {{myth||myth||**n. 神话** `mɪθ` a widely held but false belief or idea||语源“言语、故事”: ***myth*** (speech, story) + ***-os*** (forming n.)||***myth*** (speech, story) → **myth**ology (神话学)}} of greatness still feels within reach—where the {{chaos||chaos||**n. 混沌** `ˈkeɪɒs` complete disorder and confusion||语源“空虚、深渊”: ***cha-*** (gap, abyss) + ***-os*** (forming n.)||***cha-*** (gap, abyss) → **cha**sm (裂缝)}} {{sharpens||sharpen||**v. 磨砺** `ˈʃɑːpən` make or become sharp or sharper||语源“使锋利”: ***sharp*** (sharp) + ***-en*** (forming v.)}} your ambition, and every street corner {{confronts||confront||**v. 使面对** `kənˈfrʌnt` *(confront someone with something)* meet (someone) face to face with hostile or argumentative intent||语源“面对面”: ***con-*** (together) + ***front*** (forehead, front) ||***con-*** (together) → **con**verge (汇聚); ***front*** (forehead, front) → af**front** (冒犯)}} you with a mirror: who are you becoming?\n\nYou love NYC because it gives shape to your hunger. It\'s a place where {{anonymity||anonymity||**n. 匿名** `ˌænəˈnɪmɪti` the condition of being anonymous||语源“无名”: ***an-*** (without) + ***onym*** (name) + ***-ity*** (forming n.)||***an-*** (without) → **an**archy (无政府状态); ***onym*** (name) → syn**onym** (同义词)}} and {{intimacy||intimacy||**n. 亲密** `ˈɪntɪməsi` close familiarity or friendship||语源“最深处”: ***intim*** (inmost) + ***-acy*** (forming n.)||***intim*** (inmost) → **intim**ate (亲密的)}} {{coexist||coexist||**v. 共存** `ˌkəʊɪɡˈzɪst` exist together or at the same time||语源“共同存在”: ***co-*** (together) + ***exist*** (exist)||***co-*** (together) → **co**operate (合作); ***exist*** (exist) → **exist**ence (存在)}}; where you can be completely alone and still feel {{tethered||tether||**v. 束缚** `ˈtɛðə(r)` tie (an animal) with a rope or chain so as to restrict its movement||语源“绳索”: ***tether*** (rope)}} to the {{pulse||pulse||**n. 脉搏** `pʌls` the rhythmic throbbing of the arteries as blood is propelled through them by the heart||语源“跳动”: ***puls*** (push, beat) + ***-us*** (forming n.)||***puls*** (push, beat) → com**puls**ion (强迫)}} of a billion dreams. It matches your {{velocity||velocity||**n. 速度** `vəˈlɒsɪti` the speed of something in a given direction||语源“快速”: ***veloc*** (swift) + ***-ity*** (forming n.)||***veloc*** (swift) → **veloc**ipede (自行车)}}. The people here choose to suffer beautifully: to pay {{exorbitant||exorbitant||**adj. 过高的** `ɪɡˈzɔːbɪtənt` (of a price or amount charged) unreasonably high||语源“超出轨道”: ***ex-*** (out of) + ***orbit*** (track, path) + ***-ant*** (forming adj.)||***ex-*** (out of) → **ex**it (出口); ***orbit*** (track, path) → **orbit**al (轨道的)}} rent for a fifth-floor {{walkup||walkup||**n. 步梯公寓** `ˈwɔːkʌp` an apartment building or apartment above the ground floor that has no elevator}} just to be near that energy, that {{proximity||proximity||**n. 接近** `prɒkˈsɪmɪti` nearness in space, time, or relationship||语源“最近”: ***proxim*** (nearest) + ***-ity*** (forming n.)||***proxim*** (nearest) → ap**proxim**ate (近似的)}} to ambition, art, money, and madness.'}
-            />
-        </HydrationBoundary>
-    </ScopeProvider>
-}
