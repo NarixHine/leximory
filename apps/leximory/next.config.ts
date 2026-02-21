@@ -1,4 +1,5 @@
 import createMDX from '@next/mdx'
+import { withSerwist } from '@serwist/turbopack'
 import { NextConfig } from 'next'
 import { ALLOWED_IMAGE_REMOTE_PATTERNS, FYP_BLOG_LINK } from '@repo/env/config'
 
@@ -39,4 +40,4 @@ const nextConfig: NextConfig = {
 
 const withMDX = createMDX({})
 
-export default withMDX(nextConfig)
+export default withSerwist(withMDX(nextConfig))

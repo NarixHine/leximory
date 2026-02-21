@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import { MINCHO } from '@/lib/fonts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SerwistProvider } from '@serwist/next/react'
+import { SerwistProvider } from '@serwist/turbopack/react'
 
 export interface ProvidersProps {
 	children: ReactNode
@@ -21,7 +21,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 	const router = useRouter()
 
 	return (<Suspense>
-		<SerwistProvider swUrl='/sw.js' options={{ type: 'classic' }}>
+		<SerwistProvider swUrl='/serwist/sw.js'>
 			<HeroUIProvider navigate={router.push}>
 				<ThemeProvider {...themeProps}>
 					<JotaiProvider>

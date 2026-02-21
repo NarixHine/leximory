@@ -18,7 +18,6 @@
       ]
     },
     "types": [
-      "@serwist/next/typings",
       "mdx"
     ]
   },
