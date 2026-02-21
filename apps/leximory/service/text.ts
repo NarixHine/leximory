@@ -98,7 +98,7 @@ export async function getNewText(id: string) {
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
 export async function saveText({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
-    if (updateData.emoji !== undefined && !isValidEmoji(updateData.emoji)) {
+    if (updateData.emoji !== undefined && updateData.emoji !== null && updateData.emoji !== '' && !isValidEmoji(updateData.emoji)) {
         throw new Error('Invalid emoji: must be a single emoji character')
     }
     const text = await getTextWithLib(id)

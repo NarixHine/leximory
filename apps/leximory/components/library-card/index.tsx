@@ -12,8 +12,6 @@ export interface LibraryCardBaseProps {
     name: string
     /** Language code (e.g. 'en', 'ja'). */
     lang: string
-    /** Owner user ID for avatar display. */
-    owner: string
     /** Context-specific footer actions (e.g. recent access, settings, purchase). */
     footer?: ReactNode
 }

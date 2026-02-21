@@ -24,7 +24,6 @@ export default function LibraryCard({ library, isStarred, hideFooter, isOwner }:
             id={library.id}
             name={library.name}
             lang={library.lang}
-            owner={library.owner}
             footer={!hideFooter ? <>
                 {typeof library.readers === 'number' ? (
                     <div className='text-default-400 text-xs'>

@@ -212,7 +212,6 @@ function Library({ id, name, lang, owner, isOwner, access, shadow, price, archiv
             id={id}
             name={name}
             lang={lang}
-            owner={owner}
             footer={<>
                 {recentAccessItem ? (
                     <Link
