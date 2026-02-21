@@ -1,19 +1,17 @@
-import H from '@/components/ui/h'
-import { Spacer } from "@heroui/spacer"
 import Main from '@/components/ui/main'
 import Recollection from './components/recollection'
-import load from './actions'
 import Test from './components/test'
-import Nav from '@/components/nav'
 import { Metadata } from 'next'
 import { getLib } from '@/server/db/lib'
 import { LibProps } from '@/lib/types'
-import { PiPrinterDuotone } from 'react-icons/pi'
+import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
 import { momentSH } from '@/lib/moment'
-import LinkButton from '@repo/ui/link-button'
+import Link from 'next/link'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import { load } from '@/service/corpus'
 
 export const metadata: Metadata = {
-    title: '语料库'
+    title: '语料本'
 }
 
 const getData = async (lib: string) => {
@@ -30,29 +28,30 @@ export default async function Page(props: LibProps) {
     const { words, cursor, more, name } = await getData(lib)
 
     return (<Main className='max-w-(--breakpoint-lg)'>
-        <Nav isAtCorpus lib={{ id: lib, name }}></Nav>
-        <H fancy className='text-5xl'>
-            {name}
-        </H>
-        <Spacer y={5}></Spacer>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            <div className='sm:col-span-1'>
-                <LinkButton
-                    variant='flat'
-                    fullWidth
-                    color='primary'
-                    radius='lg'
-                    size='sm'
-                    className='mt-2'
-                    href={`/library/${lib}/corpus/print`}
-                    startContent={<PiPrinterDuotone />}
+        {/* Header — matches library detail page style */}
+        <header className='mb-8'>
+            <div className='flex items-center gap-2 mb-1'>
+                <Link
+                    href={`/library/${lib}`}
+                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                    aria-label='返回文库'
                 >
-                    打印词卡
-                </LinkButton>
-                <Test latestTime={words[0] ? words[0].date : momentSH().format('YYYY-MM-DD')}></Test>
+                    <LoadingIndicatorWrapper variant='spinner'>
+                        <PiArrowLeft className='size-6' />
+                    </LoadingIndicatorWrapper>
+                </Link>
+                <PiBookBookmark className='size-5 text-default-400' />
+                <span className='text-xs font-semibold tracking-widest text-default-400'>语料本</span>
             </div>
-            <div className='sm:col-span-2'>
-                <Recollection words={words} cursor={cursor} more={more}></Recollection>
+            <h1 className='font-formal text-3xl tracking-tight text-foreground'>{name}</h1>
+        </header>
+
+        <div className='grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8'>
+            <div>
+                <Test latestTime={words[0] ? words[0].date : momentSH().format('YYYY-MM-DD')} />
+            </div>
+            <div>
+                <Recollection words={words} cursor={cursor} more={more} />
             </div>
         </div>
     </Main>)

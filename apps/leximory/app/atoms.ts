@@ -2,7 +2,7 @@
 
 import { atom } from 'jotai'
 import { atomWithHash } from 'jotai-location'
-import { allOfItAtom } from './library/[lib]/all-of-it/atoms'
+import { allOfItAtom } from './library/[lib]/print/atoms'
 
 export const baseReaderModeAtom = atomWithHash('reader', false)
 export const isReaderModeAtom = atom(

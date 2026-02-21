@@ -22,9 +22,8 @@ export default function MemoriesPage() {
                     <div className={cn('italic hidden md:block text-xl lg:text-2xl mb-4 text-default-700', ENGLISH_FANCY.className)}>Record your learnings</div>
                     <div className='flex flex-col items-center gap-4 w-full max-w-md md:sticky md:top-4'>
                         <CreateMemoryForm />
-                        <div className='text-sm text-default-600 text-balance text-center max-w-52 space-y-1.5'>
-                            <p>Memories 是一个日记本功能。</p>
-                            <p>打卡 Memory 会在主界面显示连续打卡天数（Streak）。</p>
+                        <div className='text-sm text-secondary-400 text-balance text-center max-w-52 space-y-1.5'>
+                            <p>打卡 Memory 会计入连续天数。</p>
                             <p>在 <Link href='/library/chat' className='underline'>Talk to Your Library</Link> 界面使用“造句巩固”可自动生成打卡。</p>
                         </div>
                     </div>

@@ -7,6 +7,7 @@ import { pick } from 'es-toolkit'
 import { supabase } from '@repo/supabase'
 import { OrFilter } from '../auth/role'
 import { ensureUserExists } from '@repo/supabase/user'
+import { LangSchema } from '@repo/schema/library'
 
 export * from '@repo/supabase/library'
 
@@ -104,7 +105,7 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
     return data.map(({ id, name, lang, owner, starred_by, price }) => ({
         id,
         name,
-        lang: lang as Lang,
+        lang: LangSchema.parse(lang),
         owner,
         starredBy: starred_by,
         price
@@ -114,11 +115,14 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
 export async function getLib({ id }: { id: string }) {
     const { data } = await supabase
         .from('libraries')
-        .select('id, name, lang, org, access, owner, starred_by, shadow')
+        .select('id, name, lang, org, access, owner, starred_by, shadow, price, prompt')
         .eq('id', id)
         .single()
         .throwOnError()
-    return data
+    return {
+        ...data,
+        lang: LangSchema.parse(data.lang),
+    }
 }
 
 export async function listShortcutLibs({ owner }: { owner: string }) {
@@ -154,10 +158,13 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
         .or(filters)
         .throwOnError()
 
-    return data.map(lib => ({
-        lib: pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt']),
-        isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
-    }))
+    return data.map(lib => {
+        const libInfo = pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt'])
+        return {
+            lib: { ...libInfo, lang: LangSchema.parse(libInfo.lang) },
+            isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
+        }
+    })
 }
 
 export async function getArchivedLibs({ userId }: { userId: string }) {

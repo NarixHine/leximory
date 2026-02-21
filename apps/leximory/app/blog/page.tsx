@@ -31,7 +31,7 @@ export default function BlogHome() {
                         </H>
                     </Link>
                     <H disableCenter className={'text-sm -my-0.5 text-default-400'}>
-                        {luxon(new Date(post.date)).toLocaleString()}
+                        {luxon(new Date(post.date)).toFormat('MMMM dd, yyyy')}
                     </H>
                 </span>)}
             </div>

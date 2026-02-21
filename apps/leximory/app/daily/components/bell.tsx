@@ -32,7 +32,7 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
     return (
         <div className='flex gap-2 items-center justify-center'>
             <Button
-                variant={hasSubs ? 'flat' : 'ghost'}
+                variant={hasSubs ? 'flat' : 'light'}
                 isLoading={isUpdating}
                 isDisabled={isDisabled}
                 onPress={() => {
@@ -48,9 +48,8 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
                         }
                     })
                 }}
-                size='lg'
                 radius='full'
-                color='warning'
+                color='default'
                 startContent={isUpdating ? null : <PiClockClockwiseDuotone size={32} />}
             >
                 {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
@@ -72,9 +71,12 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
     )
 }
 
-export function BellSkeleton() {    
-    return <BellButton 
-        hasSubs={false} 
-        isDisabled={true} 
-    />
+/** Skeleton placeholder while subscription status loads */
+export function BellSkeleton() {
+    return (
+        <div className='flex gap-2 items-center justify-center'>
+            <div className='h-10 w-48 animate-pulse rounded-full bg-default-100' />
+            <div className='h-10 w-28 animate-pulse rounded-full bg-default-100' />
+        </div>
+    )
 }

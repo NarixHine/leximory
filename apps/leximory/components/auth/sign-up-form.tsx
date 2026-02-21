@@ -37,6 +37,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className='h-10'
+          color='primary'
           startContent={<PiEnvelopeSimple className='text-xl' />}
         />
       </div>
@@ -49,6 +50,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className='h-10'
+          color='primary'
           startContent={<PiPassword className='text-xl' />}
         />
       </div>
@@ -61,6 +63,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className='h-10'
+          color='primary'
           startContent={<PiPassword className='text-xl' />}
         />
       </div>

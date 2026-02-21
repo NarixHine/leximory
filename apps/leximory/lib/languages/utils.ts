@@ -8,7 +8,7 @@ export function createLanguageStrategy(
     isRTL: false,
     lineHeight: '1.6 !important',
     pageFormat: (page: number, total: number, chapter?: string) => `At ${page}/${total} in ${chapter ?? 'Chapter'}`,
-    proseClassName: 'prose-lg',
+    proseClassName: 'prose-lg font-formal',
     defineLabel: 'Define',
     defineClassName: 'font-formal',
   }

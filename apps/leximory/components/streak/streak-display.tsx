@@ -1,7 +1,7 @@
 'use client'
 
 import { CardBody } from '@heroui/card'
-import { PiFireFill, PiCheckBold, PiCursorClickDuotone, PiCircle, PiCheckCircle } from 'react-icons/pi'
+import { PiFireFill, PiCheckBold, PiCursorClick, PiCircle, PiCheckCircle } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import moment from 'moment'
@@ -68,7 +68,7 @@ function StreakDisplayContent({ streakData, compact = false }: StreakDisplayProp
     return (
         <LinkCard shadow='none' fullWidth isPressable href='/memories' className={cn(bgColor, 'border-none')}>
             <CardBody className='p-8 pb-4 relative'>
-                <PiCursorClickDuotone className='absolute top-4 right-4 text-orange-500 z-1' />
+                <PiCursorClick className='absolute top-4 right-4 text-orange-500 z-1' />
                 <div className='flex items-center justify-center gap-4'>
                     <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}

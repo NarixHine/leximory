@@ -4,11 +4,20 @@
 @plugin '@tailwindcss/typography';
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+.dropcap.has-dropcap-first article div:first-of-type::first-letter {
+    float: left;
+    font-size: 3.6em;
+    line-height: 0.82;
+    padding-right: 0.08em;
+    margin-top: 0.12em;
+    font-family: var(--font-fancy);
+}
+
 @theme {
-    --font-ui: var(--font-english), var(--font-chinese), var(--font-japanese-mincho), serif;
+    --font-ui: var(--font-english), var(--font-mincho), serif;
     --font-mono: var(--font-english-mono), monospace;
-    --font-formal: var(--font-english-serif), var(--font-chinese), var(--font-japanese-mincho), serif;
-    --font-fancy: var(--font-english-fancy), var(--font-chinese), var(--font-japanese-mincho), serif;
-    --font-ja: var(--font-english-serif), var(--font-japanese-mincho), var(--font-chinese), serif;
+    --font-formal: var(--font-english-serif), var(--font-mincho), serif;
+    --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
+    --font-ja: var(--font-english-serif), var(--font-mincho), serif;
     --breakpoint-laptop: 950px;
 }

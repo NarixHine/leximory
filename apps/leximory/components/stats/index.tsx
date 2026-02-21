@@ -25,7 +25,7 @@ export async function WordStats({ uid, color }: { uid: string, color?: Available
     return <WordChart data={formatChartData(countMap, 30)} color={color} />
 }
 
-export async function UserWordStats({ color = 'warning' }: { color?: AvailableChartColorsKeys }) {
+export async function UserWordStats({ color }: { color?: AvailableChartColorsKeys }) {
     const { userId } = await getUserOrThrow()
     return <WordStats uid={userId} color={color} />
 }
@@ -48,7 +48,7 @@ export function formatChartData(countMap: Map<string, number>, size: number) {
 
     const data = dates.map(date => ({
         date: momentSH(date).format('ll'),
-        '记忆单词数': countMap.get(date) || 0
+        '保存词汇': countMap.get(date) || 0
     }))
 
     return data

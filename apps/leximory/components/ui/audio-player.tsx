@@ -85,7 +85,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
     }
 
     return (
-        <FlatCard className={cn('w-full')}>
+        <FlatCard className={cn('w-full p-0')}>
             {src && <audio
                 ref={audioRef}
                 src={src}
@@ -97,6 +97,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                     isIconOnly
                     aria-label='Play/Pause'
                     variant='light'
+                    radius='full'
                     onPress={togglePlayPause}
                     className={cn('bg-transparent p-0')}
                     startContent={
@@ -117,7 +118,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                         onChange={handleSliderChange}
                         className={cn('w-full')}
                         endContent={
-                            <span className='ml-2 text-tiny text-foreground-400 pb-0.5'>
+                            <span className='ml-2 text-sm text-secondary-500 font-mono pb-0.5'>
                                 {formatTime(duration)}
                             </span>
                         }
@@ -127,6 +128,7 @@ function AudioPlayer({ src }: AudioPlayerProps) {
                     isIconOnly
                     aria-label='Volume'
                     variant='light'
+                    radius='full'
                     onPress={handleVolumeChange}
                     className={cn('bg-transparent p-0')}
                     startContent={

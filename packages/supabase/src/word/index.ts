@@ -84,7 +84,7 @@ export async function loadWords({ lib, cursor }: { lib: string, cursor?: string 
         words: data.map(({ word, id, created_at }) => ({
             word,
             id,
-            date: created_at ? stdMoment(created_at).format('ll') : '',
+            date: created_at ? stdMoment(created_at).format('YYYY-MM-DD') : '',
         })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
         more: data.length === 20

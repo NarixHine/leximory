@@ -1,5 +1,6 @@
 import { Article } from '@/app/library/[lib]/[text]/article'
 import { getArticleData } from '@/app/library/[lib]/[text]/data'
+import { ArticleSkeleton } from '@/app/library/[lib]/[text]/skeleton'
 import Main from '@/components/ui/main'
 import { SIGN_IN_URL } from '@repo/env/config'
 import { getSession } from '@repo/user'
@@ -14,8 +15,8 @@ type PublicTextPageProps = {
 
 export default async function PublicTextPage(props: PublicTextPageProps) {
     return (
-        <Main className='max-w-(--breakpoint-lg) [counter-reset:sidenote-counter] md:pb-4'>
-            <Suspense>
+        <Main className='max-w-none sm:w-full pt-3 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
+            <Suspense fallback={<ArticleSkeleton />}>
                 <PageContent {...props} />
             </Suspense>
         </Main>
@@ -31,12 +32,10 @@ export async function PageContent({ params }: PublicTextPageProps) {
     if (!isPublicAndFree) {
         redirect(SIGN_IN_URL)
     }
-    return <>
-        <Article
-            text={text}
-            hideControls
-            isPublicAndFree={isPublicAndFree}
-            {...data}
-        />
-    </>
+    return <Article
+        text={text}
+        hideControls
+        isPublicAndFree={isPublicAndFree}
+        {...data}
+    />
 }

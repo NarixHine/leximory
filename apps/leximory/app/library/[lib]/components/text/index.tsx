@@ -1,103 +1,230 @@
 'use client'
 
-import { CardBody, CardFooter } from "@heroui/card"
-import { add, addAndGenerate } from './actions'
-import { motion } from 'framer-motion'
-import { PiFilePlusDuotone, PiLinkSimpleHorizontal, PiKeyboard, PiCheckSquare, PiSquare } from 'react-icons/pi'
+import { addText, addAndGenerateText } from '@/service/text'
+import { PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
 import { langAtom, libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
-import { Spinner, useDisclosure } from '@heroui/react'
+import { Card, CardBody, Chip, ChipProps, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
-import Topics from '../../[text]/components/topics'
 import Link from "next/link"
-import { momentSH } from '@/lib/moment'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import FlatCard from '@/components/ui/flat-card'
 import { scrapeArticle } from '@/server/ai/scrape'
+import { cn, resolveEmoji } from '@/lib/utils'
+import { DateTime } from 'luxon'
+import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 
-function Text({ id, title, topics: textTopics, hasEbook, createdAt, disablePrefetch, disableNavigation, visitStatus }: {
-    id: string,
-    title: string,
-    topics: string[],
-    disablePrefetch?: boolean,
-    disableNavigation?: boolean,
-    hasEbook: boolean,
-    createdAt: string,
-    visitStatus?: 'loading' | 'visited' | 'not-visited',
-}) {
-    const lib = useAtomValue(libAtom)
-    const topics = textTopics.concat(hasEbook ? ['电子书'] : [])
-    const visitElement = {
-        loading: <Spinner size='sm' color='default' variant='wave' />,
-        'visited': <PiCheckSquare className='text-lg' />,
-        'not-visited': <PiSquare className='text-lg' />
+/** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
+function hashString(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i)
+        hash = ((hash << 5) - hash + char) | 0
     }
-
-    const CardInnerContent = () => (
-        <>
-            <CardBody className='flex flex-col gap-1 px-5 py-4'>
-                <h2 className={'text-2xl text-balance font-formal'}>{title}</h2>
-                {topics.length > 0 && (
-                    <div className='gap-0.5 flex flex-wrap align-middle items-center'>
-                        <Topics topics={topics}></Topics>
-                    </div>
-                )}
-            </CardBody>
-            <CardFooter className='px-7 pb-4 pt-2 flex flex-col gap-1 items-end'>
-                <div className='flex items-center w-full gap-2 text-default-500'>
-                    {typeof visitStatus !== 'undefined' && (visitElement[visitStatus])}
-                    <div className='flex-1' />
-                    <time className='text-sm font-mono'>Created: {momentSH(createdAt).format('ll')}</time>
-                </div>
-            </CardFooter>
-        </>
-    )
-
-    return (<div className='w-full h-full relative'>
-        {disableNavigation
-            ? <FlatCard background='solid' fullWidth className={'h-full'}><CardInnerContent /></FlatCard>
-            : <FlatCard
-                as={Link}
-                href={`/library/${lib}/${id}`}
-                prefetch={!disablePrefetch}
-                background='solid'
-                fullWidth
-                className={'h-full'}
-                isPressable>
-                <CardInnerContent />
-            </FlatCard>
-        }
-    </div >)
+    return Math.abs(hash)
 }
 
+/**
+ * OKLCH background tuned to Morandi green range.
+ * Light mode: hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
+ * Returns both light and dark mode variants.
+ */
+export function emojiBackground(id: string): { light: string, dark: string } {
+    const h = hashString(id)
+
+    // Shared calculations
+    const hue = 130 + (h % 36)
+    const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
+    const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
+
+    // Dark mode specific lightness logic
+    const darkLightness = 0.18 + (((h >> 16) % 10) / 10) * 0.06
+
+    return {
+        // Light: Uses the calculated green hue and low chroma
+        light: `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`,
+
+        // Dark: Chroma set to 0 and Hue set to 0 for a neutral grey
+        dark: `oklch(${darkLightness.toFixed(3)} 0 0)`
+    }
+}
+
+export function TagPills({ tags, parentClassName, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
+    if (!tags.length) return null
+    return (
+        <div className={cn('flex flex-wrap gap-1.5', parentClassName)}>
+            {tags.slice(0, 3).map((tag) => (
+                <Chip
+                    variant='bordered'
+                    color='default'
+                    size='sm'
+                    classNames={{
+                        ...props.classNames,
+                        base: cn('text-default-400 border-1 text-[10px]', props.classNames?.base),
+                        content: cn('px-0.75', props.classNames?.content)
+                    }}
+                    key={tag}
+                    {...props}
+                >
+                    {tag}
+                </Chip>
+            ))}
+        </div>
+    )
+}
+
+/** Emoji cover in a rounded container with hash-seeded background (supports dark mode). */
+export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
+    const bg = emojiBackground(articleId)
+    const emojiSpan = (
+        <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+            {emoji}
+        </span>
+    )
+    const emojiContent = isLink
+        ? <LoadingIndicatorWrapper variant='spinner' classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}>{emojiSpan}</LoadingIndicatorWrapper>
+        : emojiSpan
+    return (
+        <div
+            className={cn('flex items-center justify-center rounded-3xl overflow-clip', className)}
+            style={{ containerType: 'size' }}
+        >
+            <div
+                className='w-full h-full flex items-center justify-center dark:hidden'
+                style={{ backgroundColor: bg.light }}
+            >
+                {emojiContent}
+            </div>
+            <div
+                className='w-full h-full hidden items-center justify-center dark:flex'
+                style={{ backgroundColor: bg.dark }}
+            >
+                {emojiContent}
+            </div>
+        </div>
+    )
+}
+
+/** Large article card with emoji above, title below. */
+export function LeftCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group text-center cursor-pointer block'>
+            <EmojiCover
+                emoji={resolveEmoji(emoji, hasEbook)}
+                articleId={id}
+                className='mb-3 aspect-4/3 w-full'
+                isLink
+            />
+            <h2 className='mb-2 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
+                {title}
+            </h2>
+            <TagPills tags={allTopics} parentClassName='justify-center' />
+        </Link>
+    )
+}
+
+/** Center hero card — large emoji, centered title + optional subtitle. */
+export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null, createdAt: string
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
+            <EmojiCover
+                emoji={resolveEmoji(emoji, hasEbook)}
+                articleId={id}
+                className='mb-8 aspect-4/3 w-full'
+                isLink
+            />
+            <h2 className='mb-3 text-center font-formal text-4xl leading-[1.2] tracking-tight text-foreground text-balance'>
+                {title}
+            </h2>
+            <time className='block text-center text-xl text-secondary-500 mb-4'>
+                {DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy')}
+            </time>
+            <TagPills tags={allTopics} parentClassName='justify-center' />
+        </Link>
+    )
+}
+
+/** Right-side compact card — title left, emoji right. */
+export function RightCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-4'>
+            <div className='flex min-w-0 flex-1 flex-col justify-center'>
+                <h2 className='mb-2 font-formal text-[0.95rem] leading-snug tracking-tight text-foreground text-balance'>
+                    {title}
+                </h2>
+                <TagPills tags={allTopics} />
+            </div>
+            <EmojiCover
+                emoji={resolveEmoji(emoji, hasEbook)}
+                articleId={id}
+                className='h-22 w-22 shrink-0'
+                isLink
+            />
+        </Link>
+    )
+}
+
+/** Compact card for additional articles below hero. */
+export function CompactCard({ id, title, topics, hasEbook, emoji }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+}) {
+    const lib = useAtomValue(libAtom)
+    const allTopics = hasEbook ? [...topics, '电子书'] : topics
+    return (
+        <Link href={`/library/${lib}/${id}`} className='group flex flex-row-reverse sm:flex-col cursor-pointer gap-3'>
+            <EmojiCover
+                emoji={resolveEmoji(emoji, hasEbook)}
+                articleId={id}
+                className='h-16 w-16 shrink-0 sm:h-auto sm:w-full sm:aspect-4/3'
+                isLink
+            />
+            <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start sm:px-4'>
+                <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-balance'>
+                    {title}
+                </h3>
+                <TagPills tags={allTopics} />
+            </div>
+        </Link>
+    )
+}
+
+/** 新建文章 add button — appears as a plus icon in grid. */
 export function AddTextButton() {
     const lib = useAtomValue(libAtom)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const { register, handleSubmit, setValue, formState } = useForm<{ url: string, title: string }>({
-        defaultValues: {
-            url: '',
-            title: ''
-        }
+        defaultValues: { url: '', title: '' }
     })
     const lang = useAtomValue(langAtom)
 
     return <>
-        <FlatCard className='w-full bg-stone-50/20 dark:bg-stone-800/20 border-stone-200 dark:border-stone-600' isPressable onPress={onOpen}>
-            <CardBody className='px-6 pt-5 flex items-center justify-center overflow-hidden'>
-                <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ scale: 1.1, rotate: 10 }}
-                    className='text-7xl h-20 text-stone-700/60 dark:text-stone-200/60 rounded-lg flex items-center justify-center'>
-                    <PiFilePlusDuotone />
-                </motion.div>
+        <Card
+            isPressable
+            onPress={onOpen}
+            shadow='none'
+            className='p-0 bg-default-100'
+        >
+            <CardBody
+                className='group p-0 flex aspect-2/1 w-full cursor-pointer items-center justify-center rounded-xl transition-colors'
+            >
+                <PiPlusBold className='h-8 w-8 text-default-400 transition-transform group-hover:scale-110' />
             </CardBody>
-        </FlatCard>
+        </Card>
         <Form
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -111,12 +238,12 @@ export function AddTextButton() {
                             toast.error('识别内容过长，请手动录入')
                             return
                         }
-                        addAndGenerate({ title, content, lib })
+                        addAndGenerateText({ title, content, lib })
                     } catch {
                         toast.error('文章解析失败，请手动录入')
                     }
                 } else if (data.title) {
-                    await add({ title: data.title, lib })
+                    await addText({ title: data.title, lib })
                 }
             })}
         >
@@ -130,7 +257,7 @@ export function AddTextButton() {
                         </div>
                     }
                 >
-                    <Input placeholder='https://www.nytimes.com/' variant='bordered' color='primary' {...register('url', {
+                    <Input placeholder='https://www.theatlantic.com/' variant='bordered' color='primary' {...register('url', {
                         onChange: () => setValue('title', '')
                     })} />
                 </Tab>
@@ -151,4 +278,11 @@ export function AddTextButton() {
     </>
 }
 
-export default Text
+/** Backward-compatible default export — extra props kept for consumers outside /library. */
+export default function Text({ id, title, topics, hasEbook, emoji, ...rest }: {
+    id: string, title: string, topics: string[], hasEbook: boolean, emoji?: string | null,
+    createdAt?: string, disablePrefetch?: boolean, disableNavigation?: boolean,
+    visitStatus?: 'loading' | 'visited' | 'not-visited',
+}) {
+    return <CompactCard id={id} title={title} topics={topics} hasEbook={hasEbook} emoji={emoji ?? null} />
+}

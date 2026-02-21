@@ -4,8 +4,8 @@ import Markdown, { MarkdownProps } from '@/components/markdown'
 import { useRef, useState } from 'react'
 import { Button } from '@heroui/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PiPlayCircleDuotone } from 'react-icons/pi'
-import { generate, retrieve } from './actions'
+import { PiPlayCircle } from 'react-icons/pi'
+import { generateAudio, retrieve } from '@/service/audio'
 import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
@@ -31,7 +31,7 @@ export default function Audio({ id, md, ...props }: {
     })
 
     const generateMutation = useMutation({
-        mutationFn: (innerText: string) => generate(id, lib, innerText),
+        mutationFn: (innerText: string) => generateAudio(id, lib, innerText),
         onSuccess: (res) => {
             if (typeof res === 'string') {
                 queryClient.invalidateQueries({ queryKey: ['audio', id] })
@@ -68,7 +68,7 @@ export default function Audio({ id, md, ...props }: {
 
     const MarkdownComponent = <Markdown hasWrapped md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
 
-    return isReaderMode ? MarkdownComponent : <div className={'relative before:absolute before:-left-5 before:top-0 before:bottom-0 before:w-px before:bg-foreground'}>
+    return isReaderMode ? MarkdownComponent : <div>
         <div className='mt-2'>
             {url || !audioQuery.isSuccess ? <AudioPlayer
                 src={url}
@@ -76,11 +76,10 @@ export default function Audio({ id, md, ...props }: {
                 <Button
                     isLoading={status === 'loading' || status === 'generating'}
                     isDisabled={status === 'lengthy'}
-                    variant='flat'
                     radius='full'
-                    color='primary'
+                    color='default'
                     size='lg'
-                    startContent={<PiPlayCircleDuotone />}
+                    startContent={<PiPlayCircle />}
                     onPress={action}
                 >
                     {
@@ -93,7 +92,7 @@ export default function Audio({ id, md, ...props }: {
                 </Button>
             </div>}
         </div>
-        <div ref={ref} className='mt-5 mb-3'>
+        <div ref={ref} className='my-3'>
             {MarkdownComponent}
         </div>
     </div>

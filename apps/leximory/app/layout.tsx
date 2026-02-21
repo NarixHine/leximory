@@ -3,12 +3,11 @@ import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
 import type { ReactNode } from 'react'
 import Dock from './components/dock'
-import env, { IS_PROD } from '@repo/env'
+import env from '@repo/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
-import { CHINESE, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF, JAPANESE_MINCHO } from '@/lib/fonts'
+import { MINCHO, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF } from '@/lib/fonts'
 import InstallLeximory from './install-leximory'
-import { AIDevtools } from '@ai-sdk-tools/devtools'
 
 const TITLE_DEFAULT = 'Leximory'
 const TITLE_TEMPLATE = `%s | ${TITLE_DEFAULT}`
@@ -48,19 +47,17 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
 	const fontVariables = [
 		ENGLISH.variable,
-		CHINESE.variable,
-		JAPANESE_MINCHO.variable,
+		MINCHO.variable,
 		ENGLISH_MONO.variable,
 		ENGLISH_SERIF.variable,
 		ENGLISH_FANCY.variable,
 	].join(' ')
 
 	return (
-		<html lang='zh-CN' className={`${fontVariables} subpixel-antialiased`} suppressHydrationWarning>
+		<html lang='zh-CN' className={`${fontVariables} antialiased`} suppressHydrationWarning>
 			<body className='font-ui'>
 				<SpeedInsights />
 				<Analytics />
-				{!IS_PROD && <AIDevtools />}
 				<Providers themeProps={{ enableSystem: true, attribute: 'class' }}>
 					<div className='relative flex flex-col print:bg-white'>
 						{children}

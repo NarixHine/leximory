@@ -3,6 +3,21 @@ import { twMerge } from 'tailwind-merge'
 import { z } from '@repo/schema'
 import { customAlphabet } from 'nanoid'
 
+/** Returns the display emoji: DB emoji, or 📖 for ebooks, 📰 for articles. */
+export function resolveEmoji(emoji: string | null, hasEbook: boolean): string {
+    if (emoji) return emoji
+    return hasEbook ? '📖' : '📰'
+}
+
+/** Checks whether a string is a single emoji grapheme. */
+const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' })
+export function isValidEmoji(value: string): boolean {
+    if (!value) return false
+    const segments = [...segmenter.segment(value)]
+    if (segments.length !== 1) return false
+    return /\p{Emoji_Presentation}|\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u.test(value)
+}
+
 /**
  * Generates a random ID using NanoID.
  * 

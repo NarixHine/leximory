@@ -10,8 +10,8 @@ import isUrl from 'is-url'
 import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
-import { PiAirplaneInFlightDuotone, PiKanbanDuotone, PiKanbanFill, PiLinkSimpleHorizontalDuotone, PiMagicWandDuotone, PiOptionDuotone, PiOptionFill, PiPlusCircleDuotone, PiTornadoDuotone } from 'react-icons/pi'
+import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
+import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
@@ -37,7 +37,7 @@ export default function ImportModal() {
     const populate = async () => {
         const { title, content } = await scrapeArticle(url)
         setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
-        save({ id: text, title })
+        saveText({ id: text, content })
         setTitle(title)
     }
     const { maxArticleLength } = getLanguageStrategy(lang)
@@ -49,7 +49,7 @@ export default function ImportModal() {
         <Switch
             size='lg'
             startContent={<PiKanbanFill />}
-            endContent={<PiKanbanDuotone />}
+            endContent={<PiKanban />}
             isDisabled={isLoading}
             isSelected={hideText}
             onValueChange={setHideText}
@@ -61,10 +61,10 @@ export default function ImportModal() {
             isDisabled={isReadOnly}
             onPress={onOpen}
             className='flex-1'
-            variant='flat'
             radius='full'
-            color='primary'
-            startContent={<PiMagicWandDuotone className='text-lg' />}
+            variant={'solid'}
+            color={editing ? 'default' : 'primary'}
+            startContent={<PiMagicWand className='text-lg' />}
             isLoading={isLoading}
         >
             导入{!ebook ? '材料' : '电子书'}
@@ -74,7 +74,7 @@ export default function ImportModal() {
     const EditSwitch = () => (
         <Switch
             startContent={<PiOptionFill />}
-            endContent={<PiOptionDuotone />}
+            endContent={<PiOption />}
             isDisabled={isReadOnly || isLoading}
             isSelected={editing}
             onValueChange={setEditing}
@@ -104,14 +104,15 @@ export default function ImportModal() {
                                 {!ebook && <Tab key='text' title='导入文章' className='flex flex-col gap-2'>
                                     <div className='flex mb-2 gap-0.5 items-end'>
                                         <Input
-                                            color='primary'
+                                            color='secondary'
                                             className='flex-1'
                                             label='网址'
                                             placeholder='https://example.com/'
                                             value={url}
                                             onValueChange={(value) => setUrl(value.trim())}
-                                            variant='underlined' />
-                                        <Button isLoading={isPopulating} color='primary' radius='full' startContent={isPopulating ? null : <PiLinkSimpleHorizontalDuotone />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                            variant='underlined'
+                                        />
+                                        <Button isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontal />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength} 字符` : undefined}
@@ -129,11 +130,11 @@ export default function ImportModal() {
                                         className='mt-2'
                                         color='primary'
                                         fullWidth
-                                        startContent={<PiAirplaneInFlightDuotone className='text-xl' />}
+                                        startContent={<PiAirplaneInFlight className='text-xl' />}
                                         isDisabled={isLoading || exceeded || isGenerating}
                                         onPress={() => {
                                             startGenerating(async () => {
-                                                await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                                await setAnnotationProgressAction({ id: text, progress: 'annotating' })
                                                 setIsLoading(true)
                                                 onClose()
                                                 await generate({ article: input, textId: text, onlyComments: hideText })
@@ -186,9 +187,8 @@ function StoryModal() {
             isDisabled={isReadOnly}
             isLoading={isLoading}
             radius='full'
-            variant='flat'
-            color='secondary'
-            startContent={<PiTornadoDuotone className='text-lg' />}
+            color='default'
+            startContent={<PiTornado className='text-lg' />}
             onPress={onOpen}
         >
             连词成文
@@ -198,7 +198,7 @@ function StoryModal() {
                 {(onClose) => (
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
-                        <DrawerBody className='flex flex-col gap-4 max-w-(--breakpoint-sm) mx-auto'>
+                        <DrawerBody className='flex flex-col gap-4 max-w-md mx-auto'>
                             <div className='prose dark:prose-invert'>
                                 <blockquote className='not-italic border-l-secondary-300'>
                                     连词成文通过将目标单词串联为故事辅助深度记忆。
@@ -235,7 +235,7 @@ function StoryModal() {
                                         />
                                     ))
                                 }
-                                <Button variant='flat' startContent={<PiPlusCircleDuotone />} onPress={() => {
+                                <Button variant='flat' startContent={<PiPlusCircle />} onPress={() => {
                                     setWords([...words, ''])
                                 }}>
                                     手动录入
@@ -253,7 +253,7 @@ function StoryModal() {
                                 fullWidth
                                 isLoading={isGenerating}
                                 color='secondary'
-                                startContent={<PiTornadoDuotone />}
+                                startContent={<PiTornado />}
                                 onPress={() => {
                                     startGenerating(async () => {
                                         setIsLoading(true)
@@ -263,7 +263,7 @@ function StoryModal() {
                                             storyStyle
                                         })
                                         if (success) {
-                                            await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                            await setAnnotationProgressAction({ id: text, progress: 'annotating' })
                                             toast.success(message)
                                             onClose()
                                         } else {
