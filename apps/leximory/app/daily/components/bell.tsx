@@ -11,7 +11,20 @@ import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
 
 export const subscribe = async (hour: number) => {
+    if (!('serviceWorker' in navigator)) {
+        throw new Error('当前浏览器不支持 Service Worker')
+    }
+    if (!('PushManager' in window) || !('Notification' in window)) {
+        throw new Error('当前浏览器不支持推送通知，iOS 用户请将 Leximory 添加至主界面')
+    }
+
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+        throw new Error('未获得通知权限，请在系统设置中允许')
+    }
+
     const register = await navigator.serviceWorker.register('/sw.js')
+    await navigator.serviceWorker.ready
 
     const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
@@ -21,7 +34,7 @@ export const subscribe = async (hour: number) => {
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 
-export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
+export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
     hasSubs: boolean
     hour?: number | null
     isDisabled?: boolean
@@ -42,8 +55,8 @@ export default function BellButton({ hasSubs, hour = 22 ,isDisabled}: {
                         } else {
                             try {
                                 await subscribe(selectedHour)
-                            } catch {
-                                toast.error('开启失败，iOS 用户请将 Leximory 添加至主界面')
+                            } catch (e) {
+                                toast.error(e instanceof Error ? e.message : '开启失败，iOS 用户请将 Leximory 添加至主界面')
                             }
                         }
                     })

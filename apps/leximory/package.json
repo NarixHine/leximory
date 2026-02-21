@@ -108,7 +108,6 @@
     "nanoid": "^5.1.5",
     "next": "16.1.6",
     "next-themes": "^0.2.1",
-    "next-view-transitions": "^0.3.4",
     "nuqs": "^2.4.3",
     "react": "19.2.3",
     "react-call": "^1.7.0",
