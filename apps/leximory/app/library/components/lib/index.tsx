@@ -60,13 +60,12 @@ export const recentAccessAtom = atomWithStorage<Record<string, { id: string; tit
     }
 })
 
-function Library({ id, name, lang, owner, isOwner, access, shadow, price, archived, isStarred, prompt }: {
+function Library({ id, name, lang, isOwner, access, shadow, price, archived, isStarred, prompt }: {
     id: string,
     name: string,
     access: number,
     isStarred: boolean,
     lang: string,
-    owner: string,
     isOwner: boolean,
     shadow: boolean,
     price: number,
@@ -166,6 +165,7 @@ function Library({ id, name, lang, owner, isOwner, access, shadow, price, archiv
                                                 size='sm'
                                                 isIconOnly
                                                 variant='light'
+                                                radius='full'
                                                 aria-label={`删除 ${name}`}
                                             >
                                                 <PiTrash className='text-sm' />
@@ -176,6 +176,7 @@ function Library({ id, name, lang, owner, isOwner, access, shadow, price, archiv
                                                 color='danger'
                                                 startContent={<PiWarningOctagonFill size={16} />}
                                                 size='sm'
+                                                radius='full'
                                                 onPress={() => {
                                                     remove({ id })
                                                     setIsDeleted(true)
@@ -192,6 +193,7 @@ function Library({ id, name, lang, owner, isOwner, access, shadow, price, archiv
                                         isIconOnly
                                         color='secondary'
                                         variant='light'
+                                        radius='full'
                                         startContent={<PiBookBookmark size={16} />}
                                         size='sm'
                                         as={Link}

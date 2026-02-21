@@ -14,9 +14,10 @@ type TextData = {
 export default function TextList({ texts, isReadOnly }: { texts: TextData[], isReadOnly: boolean }) {
     if (texts.length === 0) {
         return (
-            <div className='flex flex-col items-center gap-6 py-16'>
-                {!isReadOnly && <AddTextButton />}
-                <p className='text-default-400 text-sm'>暂无文章</p>
+            <div className='mx-auto max-w-md'>
+                <div className='flex flex-col h-[calc(100vh-16rem)] justify-center gap-8'>
+                    {!isReadOnly && <AddTextButton />}
+                </div>
             </div>
         )
     }
