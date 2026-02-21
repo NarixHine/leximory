@@ -224,7 +224,7 @@ export async function addAndGenerateText({ title, content, lib }: { title: strin
     updateTag(`texts:${lib}`)
     await generate({ article: content, textId: id, onlyComments: false })
     await setTextAnnotationProgress({ id, progress: 'annotating' })
-    redirect(`/library/${lib}/${id}`)
+    return id
 }
 
 /** Returns IDs of texts visited by the current user in a library. */

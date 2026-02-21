@@ -8,12 +8,12 @@ import { toolSchemas } from '@/app/library/chat/types'
 import { isListedFilter } from '@/server/auth/role'
 import { Kilpi } from '@repo/service/kilpi'
 import incrCommentaryQuota from '@repo/user/quota'
-import { generate } from '@/app/library/[lib]/[text]/actions'
 import { getUserOrThrow } from '@repo/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
 import { miniAI, nanoAI } from '@/server/ai/configs'
 import { extractArticleFromUrl } from '@repo/scrape'
+import { generate } from '@/service/text'
 
 const tools: ToolSet = {
     getLib: {

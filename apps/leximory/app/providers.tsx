@@ -29,6 +29,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 							classNames: {
 								toast: cn(
 									'text-foreground! bg-secondary-200/40!',
+									'px-6! rounded-3xl!',
 									'border-none! shadow-none!',
 									'backdrop-blur-lg! backdrop-saturate-150!',
 									MINCHO.className

@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { Button } from '@heroui/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PiPlayCircle } from 'react-icons/pi'
-import { generate, retrieve } from './actions'
+import { generateAudio, retrieve } from '@/service/audio'
 import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { libAtom } from '@/app/library/[lib]/atoms'
@@ -31,7 +31,7 @@ export default function Audio({ id, md, ...props }: {
     })
 
     const generateMutation = useMutation({
-        mutationFn: (innerText: string) => generate(id, lib, innerText),
+        mutationFn: (innerText: string) => generateAudio(id, lib, innerText),
         onSuccess: (res) => {
             if (typeof res === 'string') {
                 queryClient.invalidateQueries({ queryKey: ['audio', id] })

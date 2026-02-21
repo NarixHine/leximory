@@ -1,15 +1,15 @@
 'use client'
 
-import { star } from '@/app/library/[lib]/components/actions'
 import { cn } from '@/lib/utils'
 import { Avatar } from '@heroui/avatar'
 import { Button, ButtonProps } from '@heroui/react'
 import { useUserProfile } from '@/lib/hooks/use-user-profile'
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { PiCheckCircle, PiCoins } from 'react-icons/pi'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { star } from '@/service/library'
 
 /** Purchase button with an overlapping owner avatar. */
 export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner, ...props }: {

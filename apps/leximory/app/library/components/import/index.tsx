@@ -4,12 +4,17 @@ import { Input } from '@heroui/input'
 import { Select, SelectItem, SelectSection } from '@heroui/select'
 import { Button } from '@heroui/button'
 import { useForm, Controller } from 'react-hook-form'
-import { PiPackageDuotone, PiLinkDuotone, PiAirplaneInFlightDuotone } from 'react-icons/pi'
+import { PiPackageDuotone, PiLinkDuotone, PiAirplaneInFlightDuotone, PiAirplaneTakeoffDuotone } from 'react-icons/pi'
 import { scrapeArticle } from '@/server/ai/scrape'
 import { addAndGenerateText } from '@/service/text'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
+import { motion, Transition } from 'framer-motion'
+import { useRef } from 'react'
+import confetti from 'canvas-confetti'
 import type { Lang } from '@repo/env/config'
+import isUrl from 'is-url'
+import { useRouter } from 'next/navigation'
 
 type LibOption = {
     id: string
@@ -19,10 +24,17 @@ type LibOption = {
     archived: boolean
 }
 
+const TRANSITION: Transition = {
+    duration: 0.2,
+    ease: [0.3, 0.72, 0, 1]
+}
+
 export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
     const { register, handleSubmit, formState, control } = useForm<{ url: string, lib: string }>({
-        defaultValues: { url: '', lib: '' }
+        defaultValues: { url: '', lib: '' },
+
     })
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     // Group libraries: active, shadow, archived
     const activeLibs = libraries.filter(lib => !lib.shadow && !lib.archived)
@@ -34,9 +46,26 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
         return found?.lang as Lang | undefined
     }
 
+    const triggerConfetti = () => {
+        if (!buttonRef.current) return
+
+        const rect = buttonRef.current.getBoundingClientRect()
+        const x = (rect.left + rect.width / 2) / window.innerWidth
+        const y = (rect.top + rect.height / 2) / window.innerHeight
+
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { x, y },
+            colors: ['#006FEE', '#17C964', '#F5A524', '#F31260'],
+            gravity: 0.8,
+            scalar: 1.2,
+        })
+    }
+
     const renderLibraryItem = (lib: LibOption) => (
         <SelectItem key={lib.id} textValue={lib.name}>
-            <div className='flex flex-row items-baseline gap-2'>
+            <div className='flex flex-row items-baseline gap-3'>
                 <span className='truncate'>
                     {lib.name}
                 </span>
@@ -47,25 +76,39 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
         </SelectItem>
     )
 
+    const router = useRouter()
+
     return (
         <form
-            onSubmit={handleSubmit(async (data) => {
-                if (!data.url || !data.lib) return
-                const lang = selectedLang(data.lib)
+            onSubmit={handleSubmit(async ({ lib, url }) => {
+                if (!url) {
+                    toast.error('请输入链接')
+                    throw new Error('URL is required')
+                }
+                if (!isUrl(url)) {
+                    toast.error('链接格式不正确')
+                    throw new Error('Invalid URL')
+                }
+                if (!lib) {
+                    toast.error('请选择文库')
+                    throw new Error('Library is required')
+                }
+
+                const lang = selectedLang(lib)
                 if (!lang) {
-                    toast.error('请选择目标文库')
-                    return
+                    throw new Error('Invalid library selection')
                 }
-                try {
-                    const { title, content } = await scrapeArticle(data.url)
-                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                        toast.error('识别内容过长，请手动录入')
-                        return
-                    }
-                    addAndGenerateText({ title, content, lib: data.lib })
-                } catch {
-                    toast.error('文章解析失败，请检查链接')
+
+                const { title, content } = await scrapeArticle(url)
+                if (content.length > getLanguageStrategy(lang).maxArticleLength) {
+                    toast.error('识别内容过长，请手动录入')
+                    throw new Error('Content too long')
                 }
+                const textId = await addAndGenerateText({ title, content, lib })
+                triggerConfetti()
+                router.push(`/library/${lib}/${textId}`)
+            }, () => {
+                console.log('Form submission failed', formState.errors)
             })}
             className='mx-auto w-full max-w-125 sm:max-w-150'
         >
@@ -95,58 +138,76 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                         <label htmlFor='lib' className='hidden sm:flex text-default-600 items-center gap-1'>
                             <PiPackageDuotone className='size-6' /> 文库
                         </label>
-                        <Controller
-                            name='lib'
-                            control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                                <Select
-                                    {...field}
-                                    id='lib'
-                                    selectedKeys={field.value ? [field.value] : []}
-                                    onSelectionChange={(keys) => {
-                                        const selected = Array.from(keys)[0] as string
-                                        field.onChange(selected)
-                                    }}
-                                    variant='underlined'
-                                    color='primary'
-                                    size='sm'
-                                    startContent={<PiPackageDuotone className='size-6 sm:hidden text-default-600' />}
-                                    className='flex-1'
-                                    aria-label='目标文库'
-                                    classNames={{
-                                        popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
-                                    }}
-                                >
-                                    {activeLibs.length > 0 ? (
-                                        <SelectSection title='文库'>
-                                            {activeLibs.map(renderLibraryItem)}
-                                        </SelectSection>
-                                    ) : null}
-                                    {shadowLibs.length > 0 ? (
-                                        <SelectSection title='默认文库'>
-                                            {shadowLibs.map(renderLibraryItem)}
-                                        </SelectSection>
-                                    ) : null}
-                                    {archivedLibs.length > 0 ? (
-                                        <SelectSection title='归档文库'>
-                                            {archivedLibs.map(renderLibraryItem)}
-                                        </SelectSection>
-                                    ) : null}
-                                </Select>
-                            )}
-                        />
-                        <span className='text-base text-secondary-300 shrink-0'>中</span>
-                        <Button
-                            type='submit'
-                            isLoading={formState.isSubmitting}
-                            radius='full'
-                            color='primary'
-                            aria-label='导入'
-                            endContent={<PiAirplaneInFlightDuotone className='size-5' />}
+                        <motion.div
+                            layout
+                            className='flex-1'
+                            transition={TRANSITION}
                         >
-                            导入
-                        </Button>
+                            <Controller
+                                name='lib'
+                                control={control}
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <Select
+                                        {...field}
+                                        id='lib'
+                                        selectedKeys={field.value ? [field.value] : []}
+                                        onSelectionChange={(keys) => {
+                                            const selected = Array.from(keys)[0] as string
+                                            field.onChange(selected)
+                                        }}
+                                        variant='underlined'
+                                        color='primary'
+                                        size='sm'
+                                        startContent={<PiPackageDuotone className='size-6 sm:hidden text-default-600' />}
+                                        className='w-full'
+                                        aria-label='目标文库'
+                                        classNames={{
+                                            popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
+                                        }}
+                                    >
+                                        {activeLibs.length > 0 ? (
+                                            <SelectSection title='文库'>
+                                                {activeLibs.map(renderLibraryItem)}
+                                            </SelectSection>
+                                        ) : null}
+                                        {shadowLibs.length > 0 ? (
+                                            <SelectSection title='默认文库'>
+                                                {shadowLibs.map(renderLibraryItem)}
+                                            </SelectSection>
+                                        ) : null}
+                                        {archivedLibs.length > 0 ? (
+                                            <SelectSection title='归档文库'>
+                                                {archivedLibs.map(renderLibraryItem)}
+                                            </SelectSection>
+                                        ) : null}
+                                    </Select>
+                                )}
+                            />
+                        </motion.div>
+                        <motion.span
+                            layout
+                            className='text-base text-secondary-300 shrink-0'
+                            transition={TRANSITION}
+                        >
+                            中
+                        </motion.span>
+                        <motion.div
+                            layout
+                            transition={TRANSITION}
+                        >
+                            <Button
+                                ref={buttonRef}
+                                type='submit'
+                                isLoading={formState.isSubmitting || formState.isSubmitSuccessful}
+                                radius='full'
+                                color='primary'
+                                aria-label='导入'
+                                endContent={formState.isSubmitSuccessful ? <PiAirplaneTakeoffDuotone className='size-5' /> : <PiAirplaneInFlightDuotone className='size-5' />}
+                            >
+                                {formState.isSubmitSuccessful ? '跳转中' : '导入'}
+                            </Button>
+                        </motion.div>
                     </div>
                 </div>
             </div>

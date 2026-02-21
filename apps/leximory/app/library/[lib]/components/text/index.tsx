@@ -1,6 +1,6 @@
 'use client'
 
-import { add, addAndGenerate } from './actions'
+import { addText, addAndGenerateText } from '@/service/text'
 import { PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
@@ -238,12 +238,12 @@ export function AddTextButton() {
                             toast.error('识别内容过长，请手动录入')
                             return
                         }
-                        addAndGenerate({ title, content, lib })
+                        addAndGenerateText({ title, content, lib })
                     } catch {
                         toast.error('文章解析失败，请手动录入')
                     }
                 } else if (data.title) {
-                    await add({ title: data.title, lib })
+                    await addText({ title: data.title, lib })
                 }
             })}
         >
