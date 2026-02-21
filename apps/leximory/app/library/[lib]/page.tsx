@@ -130,7 +130,7 @@ function PageSkeleton() {
                         ))}
                     </div>
                     {/* Center column */}
-                    <div className='border-default-200/80 border-x px-8 xl:px-10'>
+                    <div className='border-default-200/80 px-4 xl:px-10'>
                         <Bone className='aspect-4/3 w-full mb-8' />
                         <Bone className='w-3/4 h-10 rounded-lg mx-auto mb-3' />
                         <Bone className='w-1/3 h-5 rounded-lg mx-auto mb-4' />

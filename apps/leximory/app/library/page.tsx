@@ -11,6 +11,7 @@ import Main from '@/components/ui/main'
 import AdminDashboardLink from './components/dashboard-link'
 import LinkButton from '@/components/ui/link-button'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import ImportUI, { ImportUISkeleton } from './components/import'
 
 export const metadata: Metadata = {
     title: '文库'
@@ -25,14 +26,14 @@ export default function Page() {
     return (
         <Main>
             {/* Header */}
-            <header className='mb-10 mx-auto w-full px-7 max-w-125 sm:max-w-150'>
-                <div className='mb-1 flex items-center gap-2.5'>
+            <header className='mb-6 mx-auto w-full px-7 max-w-125 sm:max-w-150'>
+                <div className='mb-1 flex items-center gap-2'>
                     <PiBooksDuotone className='h-5 w-5 text-default-500' />
                     <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
                         My Libraries
                     </span>
                 </div>
-                <div className='flex items-end gap-1'>
+                <div className='flex items-end'>
                     <h1 className='font-formal text-3xl text-foreground'>
                         我的文库
                     </h1>
@@ -51,14 +52,17 @@ export default function Page() {
 
             {/* Libraries */}
             <Suspense fallback={
-                <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
-                    <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
-                        <LibrarySkeleton rowCount={4} />
-                        <LibrarySkeleton rowCount={1} />
-                        <LibrarySkeleton rowCount={2} />
-                        <LibrarySkeleton rowCount={2} />
-                    </div>
-                </section>
+                <>
+                    <ImportUISkeleton />
+                    <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
+                        <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
+                            <LibrarySkeleton rowCount={4} />
+                            <LibrarySkeleton rowCount={1} />
+                            <LibrarySkeleton rowCount={2} />
+                            <LibrarySkeleton rowCount={2} />
+                        </div>
+                    </section>
+                </>
             }>
                 <UserLibraryList />
             </Suspense>
@@ -93,6 +97,15 @@ async function LibraryList({ userId, orFilter }: {
     return (
         <>
             <ConfirmUnstarRoot />
+
+            {/* Import CTA */}
+            <ImportUI libraries={data.map(({ lib }) => ({
+                id: lib.id,
+                name: lib.name,
+                lang: lib.lang,
+                shadow: lib.shadow,
+                archived: archives.includes(lib.id),
+            }))} />
 
             {/* Active libraries — CSS columns masonry */}
             <section className='w-full max-w-125 sm:max-w-150 mx-auto' aria-label='Your libraries'>

@@ -86,7 +86,7 @@ export default function TextList({ texts, isReadOnly }: { texts: TextData[], isR
                     </div>
 
                     {/* Center column */}
-                    <div className='px-4 xl:px-10'>
+                    <div className='pl-4 pr-2'>
                         <HeroCard {...heroArticle} />
                     </div>
 

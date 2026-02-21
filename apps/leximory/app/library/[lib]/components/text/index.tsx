@@ -52,10 +52,10 @@ export function emojiBackground(id: string): { light: string, dark: string } {
     }
 }
 
-export function TagPills({ tags, ...props }: { tags: string[] } & ChipProps) {
+export function TagPills({ tags, parentClassName, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
     if (!tags.length) return null
     return (
-        <div className='flex flex-wrap gap-1.5'>
+        <div className={cn('flex flex-wrap gap-1.5', parentClassName)}>
             {tags.slice(0, 3).map((tag) => (
                 <Chip
                     variant='bordered'
@@ -115,7 +115,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
     return (
-        <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
+        <Link href={`/library/${lib}/${id}`} className='group text-center cursor-pointer block'>
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
@@ -125,7 +125,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
             <h2 className='mb-2 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
-            <TagPills tags={allTopics} />
+            <TagPills tags={allTopics} parentClassName='justify-center' />
         </Link>
     )
 }
@@ -144,15 +144,13 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
                 className='mb-8 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-3 text-center font-formal text-[2rem] leading-[1.2] tracking-tight text-foreground text-balance sm:text-[2.4rem]'>
+            <h2 className='mb-3 text-center font-formal text-4xl leading-[1.2] tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <time className='block text-center text-xl text-secondary-500 mb-4'>
                 {DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy')}
             </time>
-            <div className='flex justify-center'>
-                <TagPills tags={allTopics} />
-            </div>
+            <TagPills tags={allTopics} parentClassName='justify-center' />
         </Link>
     )
 }
@@ -195,7 +193,7 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
                 className='h-16 w-16 shrink-0 sm:h-auto sm:w-full sm:aspect-4/3'
                 isLink
             />
-            <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start'>
+            <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start sm:px-4'>
                 <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-balance'>
                     {title}
                 </h3>

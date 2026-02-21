@@ -158,10 +158,13 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
         .or(filters)
         .throwOnError()
 
-    return data.map(lib => ({
-        lib: pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt']),
-        isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
-    }))
+    return data.map(lib => {
+        const libInfo = pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt'])
+        return {
+            lib: { ...libInfo, lang: LangSchema.parse(libInfo.lang) },
+            isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
+        }
+    })
 }
 
 export async function getArchivedLibs({ userId }: { userId: string }) {
