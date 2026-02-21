@@ -9,7 +9,7 @@ import { useTransition } from 'react'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
-import { isIos } from '@/lib/utils'
+import { isIos, urlB64ToUint8Array } from '@/lib/utils'
 
 export const subscribe = async (hour: number) => {
     if (!('serviceWorker' in navigator)) {
@@ -24,12 +24,13 @@ export const subscribe = async (hour: number) => {
         throw new Error('未获得通知权限，请在系统设置中允许')
     }
 
-    const register = await navigator.serviceWorker.register('/sw.js')
-    await navigator.serviceWorker.ready
+    const registration = await navigator.serviceWorker.register('/sw.js')
 
-    const subscription = await register.pushManager.subscribe({
+    const applicationServerKey = urlB64ToUint8Array(env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
+
+    const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        applicationServerKey
     })
 
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
