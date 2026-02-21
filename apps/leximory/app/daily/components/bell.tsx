@@ -8,57 +8,41 @@ import { save, remove } from '../actions'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
-import { isIos, urlB64ToUint8Array } from '@/lib/utils'
-
-// Helper to ensure the SW is actually active before subscribing
-const waitForServiceWorkerActive = (registration: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> => {
-    return new Promise((resolve) => {
-        if (registration.active) {
-            return resolve(registration)
-        }
-
-        const sw = registration.installing || registration.waiting
-        if (sw) {
-            sw.addEventListener('statechange', (e) => {
-                if ((e.target as ServiceWorker).state === 'activated') {
-                    resolve(registration)
-                }
-            })
-        }
-    })
-}
+import { urlB64ToUint8Array } from '@/lib/utils'
 
 export const subscribe = async (hour: number) => {
-    toast.info('检查浏览器支持中...')
-    if (!('serviceWorker' in navigator)) {
-        throw new Error('当前浏览器不支持，请使用 Chrome 或 Safari')
-    }
-    if (!('PushManager' in window) || !('Notification' in window)) {
-        throw new Error(`当前浏览器不支持推送通知${isIos() ? '，iOS 用户请将 Leximory 添加至主界面' : ''}`)
+    // 1. Grab existing registration (don't try to register again here)
+    const registration = await navigator.serviceWorker.getRegistration()
+
+    if (!registration) {
+        // Fallback: if it's not there, try one quick registration
+        await navigator.serviceWorker.register('/sw.js')
+        throw new Error('正在初始化服务，请稍后再试一次')
     }
 
-    toast.info('正在请求通知权限...')
+    // 2. Request Permission - MUST be close to the click event
     const permission = await Notification.requestPermission()
-    if (permission !== 'granted') {
-        throw new Error('未获得通知权限，请在系统设置中允许')
+    if (permission !== 'granted') throw new Error('权限被拒绝')
+
+    // 3. Ensure the SW is active before calling pushManager
+    // iOS will fail if you call subscribe on an "installing" worker
+    if (registration.installing) {
+        toast.info('正在安装服务...')
+        await new Promise((resolve) => {
+            registration.installing?.addEventListener('statechange', (e) => {
+                if ((e.target as ServiceWorker).state === 'activated') resolve(null)
+            })
+        })
     }
-
-    toast.info('正在注册服务工作线程...')
-    // Register and then FORCIBLY wait for the 'active' state
-    let registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-
-    toast.info('正在等待服务工作线程激活...')
-    registration = await waitForServiceWorkerActive(registration)
 
     const applicationServerKey = urlB64ToUint8Array(env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
 
-    toast.info('正在订阅推送通知...')
+    // 4. The actual subscription
     const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey
     })
 
-    toast.success('订阅成功！')
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 

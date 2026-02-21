@@ -3,9 +3,9 @@
 import { HeroUIProvider } from '@heroui/system'
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from 'next-themes'
-import { ReactNode, Suspense } from 'react'
+import { ReactNode, Suspense, useEffect } from 'react'
 import { Provider as JotaiProvider } from 'jotai'
-import { Toaster } from 'sonner'
+import { toast, Toaster } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ThemeProviderProps } from 'next-themes/dist/types'
 import { MINCHO } from '@/lib/fonts'
@@ -17,8 +17,19 @@ export interface ProvidersProps {
 	themeProps?: ThemeProviderProps
 }
 
+const useRegisterSW = () => {
+	useEffect(() => {
+		if ('serviceWorker' in navigator && window.matchMedia('(display-mode: standalone)').matches) {
+			navigator.serviceWorker.register('/sw.js', { scope: '/' })
+				.then(reg => console.log('SW registered:', reg))
+				.catch(() => toast.error('SW 注册失败'))
+		}
+	}, [])
+}
+
 export function Providers({ children, themeProps }: ProvidersProps) {
 	const router = useRouter()
+	useRegisterSW()
 
 	return (<Suspense>
 		<SerwistProvider swUrl='/sw.js'>
