@@ -8,8 +8,8 @@ import { PiCaretRight } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
 import { libAtom, isReadOnlyAtom } from '../../atoms'
 import { Button } from "@heroui/button"
-import load from '../actions'
 import { momentSH } from '@/lib/moment'
+import { load } from '@/service/corpus'
 
 export default function Recollection({ words, cursor, more }: {
     words: { word: string, id: string, date: string }[]

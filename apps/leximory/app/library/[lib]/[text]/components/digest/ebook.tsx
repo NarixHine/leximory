@@ -17,10 +17,10 @@ import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { useDarkMode, useScrollLock } from 'usehooks-ts'
 import { toast } from 'sonner'
-import { save } from '../../actions'
 import { getChapterName } from '@/lib/epub'
 import Define from '@/components/define'
 import { useRouter } from 'next/navigation'
+import { saveText } from '@/service/text'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
@@ -189,7 +189,7 @@ export default function Ebook() {
                                     startSavingBookmark(async () => {
                                         try {
                                             const newContent = content.concat(bookmark)
-                                            await save({ id: text, content: newContent })
+                                            await saveText({ id: text, content: newContent })
                                             router.refresh()
                                             setContent(newContent)
                                             toast.success('文摘已保存')

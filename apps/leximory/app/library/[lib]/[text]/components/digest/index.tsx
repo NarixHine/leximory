@@ -20,7 +20,7 @@ import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgress, getNewText, remove, save, markAsVisited } from '../../actions'
+import { getAnnotationProgressAction, getNewText, removeText, saveText, markAsVisited } from '@/service/text'
 import { useRouter } from 'next/navigation'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -90,7 +90,7 @@ function EditingView() {
   const handleSaveChanges = useCallback(async () => {
     startUpdating(async () => {
       try {
-        await save({ id: text, content: modifiedMd, topics: modifiedTopics, title, emoji: emoji ?? undefined })
+        await saveText({ id: text, content: modifiedMd, topics: modifiedTopics, title, emoji: emoji ?? undefined })
         setIsEditing(false)
         setContent(modifiedMd)
         setTopics(modifiedTopics)
@@ -108,7 +108,7 @@ function EditingView() {
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)
-    await remove({ id: text })
+    await removeText({ id: text })
     router.push(`/library/${lib}`)
     setIsDeleting(false)
   }, [text, lib])
@@ -273,7 +273,7 @@ function GeneratingView() {
   }, 1000)
 
   useInterval(() => {
-    getAnnotationProgress(text).then(newProgress => {
+    getAnnotationProgressAction(text).then(newProgress => {
       if (!newProgress) {
         setAnnotationProgress('annotating')
         return

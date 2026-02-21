@@ -2,7 +2,7 @@
 
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/modal'
 import { useDisclosure } from '@heroui/use-disclosure'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { smartImport } from './actions'
 import { useSetAtom } from 'jotai'
 import { ArrowSquareInIcon, MagicWandIcon } from '@phosphor-icons/react'

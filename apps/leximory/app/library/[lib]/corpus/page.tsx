@@ -1,6 +1,5 @@
 import Main from '@/components/ui/main'
 import Recollection from './components/recollection'
-import load from './actions'
 import Test from './components/test'
 import { Metadata } from 'next'
 import { getLib } from '@/server/db/lib'
@@ -9,9 +8,10 @@ import { PiArrowLeft, PiBookBookmark } from 'react-icons/pi'
 import { momentSH } from '@/lib/moment'
 import Link from 'next/link'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import { load } from '@/service/corpus'
 
 export const metadata: Metadata = {
-    title: '语块本'
+    title: '语料本'
 }
 
 const getData = async (lib: string) => {
@@ -41,7 +41,7 @@ export default async function Page(props: LibProps) {
                     </LoadingIndicatorWrapper>
                 </Link>
                 <PiBookBookmark className='size-5 text-default-400' />
-                <span className='text-xs font-semibold tracking-widest text-default-400'>语块本</span>
+                <span className='text-xs font-semibold tracking-widest text-default-400'>语料本</span>
             </div>
             <h1 className='font-formal text-3xl tracking-tight text-foreground'>{name}</h1>
         </header>

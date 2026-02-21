@@ -13,30 +13,34 @@ export const metadata: Metadata = {
 }
 
 export default async function Daily() {
-    return (<Main className='max-w-(--breakpoint-lg) pt-12'>
-        <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-start gap-3 sm:items-center flex-col sm:flex-row sm:gap-6'>
-            <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0'><PiRewindDuotone />每日汇总</h1>
-            <Suspense fallback={<BellSkeleton />}>
-                <Bell />
-            </Suspense>
-        </header>
+    return (<Main className='pt-12 w-full! px-0! max-w-none mx-auto'>
+        <div className='max-w-4xl px-5 sm:w-10/12 mx-auto'>
+            <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-start gap-3 sm:items-center flex-col sm:flex-row sm:gap-6'>
+                <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0'><PiRewindDuotone />每日汇总</h1>
+                <Suspense fallback={<BellSkeleton />}>
+                    <Bell />
+                </Suspense>
+            </header>
+        </div>
         <div className='mb-4'>
             <Suspense fallback={<WordChartSkeleton />}>
                 <UserWordStats />
             </Suspense>
         </div>
-        <Suspense fallback={<ReportSkeleton />}>
-            <Report day='今天记忆' />
-        </Suspense>
-        <Suspense fallback={<ReportSkeleton />}>
-            <Report day='一天前记忆' />
-        </Suspense>
-        <Suspense fallback={<ReportSkeleton />}>
-            <Report day='四天前记忆' />
-        </Suspense>
-        <Suspense fallback={<ReportSkeleton />}>
-            <Report day='七天前记忆' />
-        </Suspense>
+        <div className='max-w-4xl px-5 sm:w-10/12 mx-auto'>
+            <Suspense fallback={<ReportSkeleton />}>
+                <Report day='今天记忆' />
+            </Suspense>
+            <Suspense fallback={<ReportSkeleton />}>
+                <Report day='一天前记忆' />
+            </Suspense>
+            <Suspense fallback={<ReportSkeleton />}>
+                <Report day='四天前记忆' />
+            </Suspense>
+            <Suspense fallback={<ReportSkeleton />}>
+                <Report day='七天前记忆' />
+            </Suspense>
+        </div>
     </Main>)
 }
 

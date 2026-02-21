@@ -38,7 +38,7 @@ async function PageContent({ params }: LibProps) {
                 <Link
                     href={`/library/${lib}/corpus`}
                     className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
-                    aria-label='语块本'
+                    aria-label='语料本'
                 >
                     <LoadingIndicatorWrapper variant='spinner'>
                         <PiBookBookmark className='size-6' />

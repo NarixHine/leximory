@@ -63,7 +63,7 @@ export function AreaChart({
     }, [categories, colors])
 
     return (
-        <ChartContainer config={chartConfig} className={cn("w-full min-h-20 max-h-32", className)}>
+        <ChartContainer config={chartConfig} className={cn("w-full min-h-20 max-h-28", className)}>
             <RechartsAreaChart data={data} margin={{ left: 0, right: 0 }}>
                 <defs>
                     {categories.map((cat, i) => {

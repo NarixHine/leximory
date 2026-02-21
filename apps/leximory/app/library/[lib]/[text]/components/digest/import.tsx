@@ -10,7 +10,7 @@ import isUrl from 'is-url'
 import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, save, setAnnotationProgress, generateStory, extractWords } from '../../actions'
+import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
 import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
@@ -37,7 +37,7 @@ export default function ImportModal() {
     const populate = async () => {
         const { title, content } = await scrapeArticle(url)
         setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
-        save({ id: text, title })
+        saveText({ id: text, content })
         setTitle(title)
     }
     const { maxArticleLength } = getLanguageStrategy(lang)
@@ -134,7 +134,7 @@ export default function ImportModal() {
                                         isDisabled={isLoading || exceeded || isGenerating}
                                         onPress={() => {
                                             startGenerating(async () => {
-                                                await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                                await setAnnotationProgressAction({ id: text, progress: 'annotating' })
                                                 setIsLoading(true)
                                                 onClose()
                                                 await generate({ article: input, textId: text, onlyComments: hideText })
@@ -263,7 +263,7 @@ function StoryModal() {
                                             storyStyle
                                         })
                                         if (success) {
-                                            await setAnnotationProgress({ id: text, progress: 'annotating' })
+                                            await setAnnotationProgressAction({ id: text, progress: 'annotating' })
                                             toast.success(message)
                                             onClose()
                                         } else {

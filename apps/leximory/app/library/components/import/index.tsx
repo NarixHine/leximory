@@ -81,7 +81,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                             {...register('url', { required: true })}
                             id='url'
                             startContent={<PiLinkDuotone className='size-6 sm:hidden text-default-600' />}
-                            placeholder='https://www.nytimes.com/'
+                            placeholder='https://www.theatlantic.com/'
                             variant='underlined'
                             color='primary'
                             size='sm'

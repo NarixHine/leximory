@@ -257,7 +257,7 @@ export function AddTextButton() {
                         </div>
                     }
                 >
-                    <Input placeholder='https://www.nytimes.com/' variant='bordered' color='primary' {...register('url', {
+                    <Input placeholder='https://www.theatlantic.com/' variant='bordered' color='primary' {...register('url', {
                         onChange: () => setValue('title', '')
                     })} />
                 </Tab>

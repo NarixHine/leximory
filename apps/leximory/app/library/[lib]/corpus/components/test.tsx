@@ -6,7 +6,7 @@ import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import { Button } from "@heroui/button"
 import { DateRangePicker } from "@heroui/date-picker"
 import { Suspense, useActionState, useState, useTransition } from 'react'
-import { draw, generateStory, getWithin } from '../actions'
+import { draw, generateCorpusStory, getWithin } from '@/service/corpus'
 import { luxon } from '@/lib/luxon'
 import { PiListMagnifyingGlass, PiMagicWand } from 'react-icons/pi'
 import { useAtomValue } from 'jotai'
@@ -61,7 +61,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                     startGettingWithin(async () => {
                         const comments = await getWithin(retrieveConfig)
                         if (await ConfirmStory.call({ comments })) {
-                            generateStory({ comments, lib })
+                            generateCorpusStory({ comments, lib })
                                 .then(async ({ success, message }) => {
                                     if (success) {
                                         toast.success(message, {
@@ -98,22 +98,22 @@ export default function Test({ latestTime }: {
         <ConfirmStory.Root />
         <Suspense>
             <I18nProvider locale='zh-CN'>
-            <DateRangePicker
-                className='my-3'
-                label='词汇选取范围'
-                granularity='day'
-                value={{ start, end }}
-                onChange={(range) => {
-                    if (range) {
-                        const { start, end } = range
-                        setStart(start)
-                        setEnd(end)
-                    }
-                }}
-                variant='underlined'
-                color='default'
-            />
-        </I18nProvider>
+                <DateRangePicker
+                    className='my-3'
+                    label='词汇选取范围'
+                    granularity='day'
+                    value={{ start, end }}
+                    onChange={(range) => {
+                        if (range) {
+                            const { start, end } = range
+                            setStart(start)
+                            setEnd(end)
+                        }
+                    }}
+                    variant='underlined'
+                    color='default'
+                />
+            </I18nProvider>
         </Suspense>
         <Suspense fallback={<div className='flex gap-2'>
             <div className='flex flex-col items-center justify-center flex-1 rounded-2xl bg-default-50 text-nowrap min-h-36 px-3 h-36'>
