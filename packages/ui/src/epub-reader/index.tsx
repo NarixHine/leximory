@@ -45,6 +45,7 @@ export interface EpubReaderProps {
     actions?: ReactNode
     epubOptions?: Record<string, boolean>
     portalContainer?: Element
+    pageIndicator?: string
 }
 
 export default function EpubReader({
@@ -59,6 +60,7 @@ export default function EpubReader({
     actions,
     epubOptions,
     portalContainer,
+    pageIndicator,
 }: EpubReaderProps) {
     const viewerRef = useRef<HTMLDivElement>(null)
     const renditionRef = useRef<Rendition | null>(null)
@@ -118,7 +120,7 @@ export default function EpubReader({
     const next = useCallback(() => renditionRef.current?.next(), [])
 
     return (
-        <div className='relative flex flex-col w-full h-full'>
+        <div className='group relative flex flex-col w-full h-full'>
             {/* Header */}
             <div className='flex items-center px-1 h-15 shrink-0'>
                 <div className='flex-1'>
@@ -133,7 +135,7 @@ export default function EpubReader({
                         <ListIcon weight='bold' className='text-lg' />
                     </Button>
                 </div>
-                <span className='shrink-0 px-2 text-secondary-400 text-base text-center truncate select-none'>
+                <span className='shrink-0 px-2 text-secondary-500 text-base text-center truncate select-none opacity-0 group-hover:opacity-100 transition-opacity'>
                     {title}
                 </span>
                 <div className='flex flex-1 justify-end items-center gap-0.5 px-2'>
@@ -149,31 +151,30 @@ export default function EpubReader({
                     </div>
                 )}
                 <div ref={viewerRef} className='w-full h-full' />
+
+                {/* Page navigation — full-height side buttons */}
+                <button
+                    aria-label='Previous page'
+                    onClick={isRTL ? next : prev}
+                    className='absolute top-0 left-0 z-20 flex items-center justify-start w-16 h-full pl-1 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                >
+                    <CaretLeftIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
+                </button>
+                <button
+                    aria-label='Next page'
+                    onClick={isRTL ? prev : next}
+                    className='absolute top-0 right-0 z-20 flex items-center justify-end w-16 h-full pr-1 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                >
+                    <CaretRightIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
+                </button>
             </div>
 
-            {/* Page navigation */}
-            <div className='flex justify-between items-center px-2 h-10 shrink-0'>
-                <Button
-                    isIconOnly
-                    variant='light'
-                    size='sm'
-                    radius='full'
-                    onPress={isRTL ? next : prev}
-                    className='text-default-400'
-                >
-                    <CaretLeftIcon weight='bold' className='text-lg' />
-                </Button>
-                <Button
-                    isIconOnly
-                    variant='light'
-                    size='sm'
-                    radius='full'
-                    onPress={isRTL ? prev : next}
-                    className='text-default-400'
-                >
-                    <CaretRightIcon weight='bold' className='text-lg' />
-                </Button>
-            </div>
+            {/* page number indicator */}
+            {isLoaded && (
+                <div className='flex items-center justify-center text-secondary-500 pb-5 w-full opacity-0 group-hover:opacity-100 transition-opacity'>
+                    {pageIndicator}
+                </div>
+            )}
 
             {/* Table of Contents */}
             <Drawer
