@@ -385,27 +385,32 @@ export default function EpubReader({
                 </div>
             </div>
 
-            {/* Epub content */}
-            <div className='relative flex-1 min-h-0'>
-                {!isLoaded && (
-                    <div className='z-10 absolute inset-0 flex justify-center items-center'>
-                        <CircularProgress color='primary' size='lg' />
-                    </div>
-                )}
-                {<div ref={viewerRef} className='w-full h-full' />}
-
-                {/* Page navigation — full-height side buttons */}
+            {/* Epub content + side nav buttons */}
+            <div className='flex flex-1 min-h-0 overflow-hidden items-stretch'>
+                {/* Previous page button */}
                 <button
                     aria-label='Previous page'
                     onClick={isRTL ? next : prev}
-                    className='absolute top-0 left-0 z-20 flex items-center justify-start w-16 h-full pl-1 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                    className='flex items-center justify-start pl-2 w-6 sm:w-14 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
                     <CaretLeftIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
                 </button>
+
+                {/* Epub viewer */}
+                <div className='relative flex-1 min-w-0 min-h-0'>
+                    {!isLoaded && (
+                        <div className='z-10 absolute inset-0 flex justify-center items-center'>
+                            <CircularProgress color='primary' size='lg' />
+                        </div>
+                    )}
+                    <div ref={viewerRef} className='w-full h-full' />
+                </div>
+
+                {/* Next page button */}
                 <button
                     aria-label='Next page'
                     onClick={isRTL ? prev : next}
-                    className='absolute top-0 right-0 z-20 flex items-center justify-end w-16 h-full pr-1 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                    className='flex items-center justify-end pr-2 w-6 sm:w-14 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
                     <CaretRightIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
                 </button>
