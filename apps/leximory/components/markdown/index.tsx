@@ -65,7 +65,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     return (
         <div
             className={cn(
-                'prose dark:prose-invert',
+                'dark:prose-invert prose',
                 'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
                 'prose-hr:my-8',
                 'prose-em:font-light',
@@ -91,7 +91,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                         img: ({ alt, ...props }) => (<MdImg alt={alt ?? 'Image'} {...props} />),
                         p: (props) => <div {...props} className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')} />,
                         a: (props) => (<Link {...props} className='underline underline-offset-4' />),
-                        hr: () => (<div className={cn('text-center text-2xl', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
+                        hr: () => (<div className={cn('text-2xl text-center', compact ? 'mb-2 mt-3' : 'mb-4 mt-5')}>﹡﹡﹡</div>),
                     },
                     renderRule(next, node, _, state) {
                         if (node.type === RuleType.codeBlock && node.lang === 'latex') {

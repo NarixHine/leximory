@@ -147,9 +147,9 @@ export default function Ebook() {
             layout='preserve-aspect'
         >
             {/* Oversized background overlay for iPad PWA: covers content that may slip behind system bars */}
-            {isFullViewport && <div className='fixed bg-background -inset-20 z-[-1]' />}
-            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                <div ref={containerRef} className="relative h-full" style={{ transform: 'translateZ(0)' }}>
+            {isFullViewport && <div className='z-[-1] fixed -inset-20 bg-background' />}
+            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
+                <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
                         {...rect}
                         reset={reset}
@@ -173,6 +173,7 @@ export default function Ebook() {
                             }
                         }}
                         getRendition={rendition => {
+                            console.log('got rendition', rendition)
                             updateTheme(rendition, isDarkMode)
                             rendition.themes.default({
                                 p: {
@@ -218,6 +219,7 @@ export default function Ebook() {
                             rendition.on('selected', (_: Rendition, contents: Contents) => {
                                 const selection = contents.window.getSelection()!
                                 setSelection(selection)
+                         
                                 const rect = selection.getRangeAt(0).getBoundingClientRect()
                                 const epubView = document.getElementsByClassName('epub-view')[0]
                                 const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }

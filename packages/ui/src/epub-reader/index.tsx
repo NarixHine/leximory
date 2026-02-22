@@ -79,7 +79,7 @@ export default function EpubReader({
         const rendition = book.renderTo(viewerRef.current, {
             width: '100%',
             height: '100%',
-            spread: 'none',
+            spread: 'auto',
         })
 
         renditionRef.current = rendition
@@ -120,7 +120,7 @@ export default function EpubReader({
     return (
         <div className="relative flex flex-col w-full h-full">
             {/* Header */}
-            <div className="flex items-center shrink-0 h-10 px-1">
+            <div className="flex items-center px-1 h-10 shrink-0">
                 <Button
                     isIconOnly
                     variant="light"
@@ -131,7 +131,7 @@ export default function EpubReader({
                 >
                     <ListIcon weight="bold" className="text-lg" />
                 </Button>
-                <span className="flex-1 text-center text-sm truncate px-2 text-default-400 select-none">
+                <span className="flex-1 px-2 text-default-400 text-sm text-center truncate select-none">
                     {title}
                 </span>
                 <div className="flex items-center gap-0.5 px-2">
@@ -140,17 +140,17 @@ export default function EpubReader({
             </div>
 
             {/* Epub content */}
-            <div className="flex-1 relative min-h-0">
+            <div className="relative flex-1 min-h-0">
                 {!isLoaded && loadingView && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center">
+                    <div className="z-10 absolute inset-0 flex justify-center items-center">
                         {loadingView}
                     </div>
                 )}
-                <div ref={viewerRef} className="epub-view w-full h-full" />
+                <div ref={viewerRef} className="w-full h-full" />
             </div>
 
             {/* Page navigation */}
-            <div className="flex items-center justify-between shrink-0 h-10 px-2">
+            <div className="flex justify-between items-center px-2 h-10 shrink-0">
                 <Button
                     isIconOnly
                     variant="light"
@@ -219,7 +219,7 @@ function TocTree({
     depth?: number
 }) {
     return (
-        <ul className="list-none m-0 p-0">
+        <ul className="m-0 p-0 list-none">
             {items.map((item) => {
                 const itemBase = item.href.split('#')[0]
                 const currentBase = currentHref.split('#')[0]
@@ -228,7 +228,7 @@ function TocTree({
                     <li key={item.id}>
                         <button
                             className={cn(
-                                'w-full text-left py-2.5 text-sm transition-colors',
+                                'py-2.5 w-full text-sm text-left transition-colors',
                                 isActive
                                     ? 'text-primary font-medium bg-primary-50/50'
                                     : 'text-foreground/80 hover:bg-default-100',
