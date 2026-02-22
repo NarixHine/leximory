@@ -228,10 +228,10 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         href={`/library/${id}/${recentAccessItem.id}`}
                         className='group/link flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium text-default-400 text-sm'
                     >
-                        <LoadingIndicatorWrapper size='sm' color='secondary' classNames={{
-                            wrapper: 'size-4',
-                            circle1: 'size-4',
-                            circle2: 'size-4'
+                        <LoadingIndicatorWrapper variant='spinner' color='secondary' classNames={{
+                            wrapper: 'size-5',
+                            circle1: 'size-5',
+                            circle2: 'size-5'
                         }}>
                             <PiClock className='size-5' />
                         </LoadingIndicatorWrapper>
@@ -267,7 +267,8 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         }}
                         size='sm'
                         isIconOnly
-                        startContent={<PiBoxArrowDown className='size-4' />}
+                        isLoading={isTogglingArchive}
+                        startContent={!isTogglingArchive && <PiBoxArrowDown className='size-4' />}
                     />
                 </div>
             </>}

@@ -14,7 +14,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
-import { useDarkMode, useScrollLock } from 'usehooks-ts'
+import { useDarkMode } from 'usehooks-ts'
 import { toast } from 'sonner'
 import { getChapterName } from '@/lib/epub'
 import Define from '@/components/define'
@@ -109,16 +109,6 @@ export default function Ebook() {
     const [isFullScreen, setIsFullScreen] = useState(true) // flips to false on load
     const hasZoomed = isFullViewport || isFullScreen
     const containerRef = useRef<HTMLDivElement>(null!)
-
-    const { lock, unlock } = useScrollLock({ autoLock: false })
-    useEffect(() => {
-        if (hasZoomed) {
-            lock()
-        } else {
-            unlock()
-        }
-        return unlock
-    }, [hasZoomed, lock, unlock])
 
     const router = useRouter()
 
