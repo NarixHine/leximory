@@ -226,14 +226,14 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 {recentAccessItem ? (
                     <Link
                         href={`/library/${id}/${recentAccessItem.id}`}
-                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium text-default-400 text-xs'
+                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium text-default-400 text-sm'
                     >
                         <LoadingIndicatorWrapper size='sm' color='secondary' classNames={{
                             wrapper: 'size-4',
                             circle1: 'size-4',
                             circle2: 'size-4'
                         }}>
-                            <PiClock className='size-4' />
+                            <PiClock className='size-5' />
                         </LoadingIndicatorWrapper>
                         <span className='max-w-[15ch] truncate'>{recentAccessItem.title}</span>
                     </Link>

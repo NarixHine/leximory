@@ -104,6 +104,7 @@ export default function ImportModal() {
                                 {!ebook && <Tab key='text' title='导入文章' className='flex flex-col gap-2'>
                                     <div className='flex mb-2 gap-0.5 items-end'>
                                         <Input
+                                            type='url'
                                             color='secondary'
                                             className='flex-1'
                                             label='网址'

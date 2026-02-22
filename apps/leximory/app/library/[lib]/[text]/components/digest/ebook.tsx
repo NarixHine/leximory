@@ -210,7 +210,7 @@ export default function Ebook() {
                                 const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
 
                                 setRect({
-                                    left: rect.left + offset.left - (isFullViewport ? 16 : 0),
+                                    left: rect.left + offset.left,
                                     width: rect.width,
                                     bottom: rect.bottom + offset.top
                                 })
