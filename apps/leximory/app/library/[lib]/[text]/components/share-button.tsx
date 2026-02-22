@@ -1,7 +1,7 @@
 'use client'
 
 import { useCopyToClipboard } from 'usehooks-ts'
-import { PiShareNetworkDuotone, PiUsersDuotone, PiClipboardDuotone } from 'react-icons/pi'
+import { PiShareNetwork, PiUsersDuotone, PiClipboardDuotone } from 'react-icons/pi'
 import { Button, type ButtonProps } from '@heroui/button'
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
 import { useParams } from 'next/navigation'
@@ -34,7 +34,7 @@ export default function ShareButton({ isPublicAndFree, ...props }: ButtonProps &
             <DropdownTrigger>
                 <Button
                     variant='light'
-                    startContent={<PiShareNetworkDuotone />}
+                    startContent={<PiShareNetwork />}
                     isIconOnly
                     {...props}
                 />

@@ -106,7 +106,7 @@ export default function Ebook() {
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
-    const [isFullScreen, setIsFullScreen] = useState(true) // flips to false on load
+    const [isFullScreen, setIsFullScreen] = useState(false)
     const hasZoomed = isFullViewport || isFullScreen
     const containerRef = useRef<HTMLDivElement>(null!)
 
@@ -118,7 +118,7 @@ export default function Ebook() {
             style={{
                 position: isFullViewport ? 'fixed' : 'relative',
                 width: isFullViewport ? '100dvw' : 'auto',
-                height: hasZoomed ? '100dvh' : 'auto',
+                height: isFullViewport ? '100dvh' : 'auto',
                 zIndex: isFullViewport ? 999 : 0,
                 left: isFullViewport ? 0 : 'auto',
                 top: isFullViewport ? 0 : 'auto',
@@ -132,7 +132,7 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
-            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-dvh' : 'h-[80dvh]')}>
+            <FullScreen handle={handleFullScreen} onChange={(isFullScreen) => setIsFullScreen(isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-dvh' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
                         {...rect}
@@ -232,10 +232,11 @@ export default function Ebook() {
                                     radius='full'
                                     onPress={async () => {
                                         try {
-                                            if (isFullScreen)
+                                            if (isFullScreen) {
                                                 await handleFullScreen.exit()
-                                            else
+                                            } else {
                                                 await handleFullScreen.enter()
+                                            }
                                         } catch {
                                             setIsFullViewport(!isFullViewport)
                                         }
