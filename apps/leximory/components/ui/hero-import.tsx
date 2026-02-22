@@ -216,6 +216,7 @@ export default function HeroImportUI() {
                                 <Input
                                     id='url'
                                     type='url'
+                                    validationBehavior='aria'
                                     startContent={<PiLinkDuotone className='text-4xl sm:hidden text-default-600' />}
                                     value='https://example.com/learn-english'
                                     variant='underlined'

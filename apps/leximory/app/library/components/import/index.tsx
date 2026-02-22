@@ -123,6 +123,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                         <Input
                             {...register('url', { required: true })}
                             type='url'
+                            validationBehavior='aria'
                             id='url'
                             startContent={<PiLinkDuotone className='size-6 sm:hidden text-default-600' />}
                             placeholder='https://www.theatlantic.com/'

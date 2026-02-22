@@ -8,7 +8,7 @@ import { DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, Drawer } from "@
 import { PiFloppyDisk } from 'react-icons/pi'
 
 export default function Form({ isOpen, onOpenChange, children, className, isLoading, onSubmit, title, actionButton, ...props }: { isOpen: boolean, onOpenChange: (open: boolean) => void, title: string, children: ReactNode, isLoading: boolean, actionButton?: ReactNode } & FormProps) {
-    return <Drawer placement='bottom' motionProps={{
+    return <Drawer hideCloseButton placement='bottom' motionProps={{
         variants: {
             enter: {
                 y: 0,
@@ -28,7 +28,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
             },
         },
     }} className='bg-default-50' isOpen={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent className='max-h-dvh rounded-4xl'>
             {(onClose) => (
                 <HeroUIForm onSubmit={async (props) => {
                     await onSubmit?.(props)

@@ -376,7 +376,7 @@ export default function EpubReader({
                 <div className='flex-1'>
 
                 </div>
-                <span className='min-w-2 px-2 text-secondary-500 text-sm text-center truncate select-none opacity-0 group-hover:opacity-100 transition-opacity'>
+                <span className='min-w-2 px-2 text-primary-400 group-hover:text-primary-500 transition-colors text-sm text-center truncate select-none'>
                     {headerTitle}
                 </span>
                 <div className='flex flex-1 justify-end items-center gap-0.5 px-2 opacity-60 group-hover:opacity-100 transition-opacity'>
@@ -430,8 +430,8 @@ export default function EpubReader({
 
             {/* Page indicator footer */}
             {isLoaded && (
-                <div className='flex items-center justify-center pb-5 w-full text-secondary-500 select-none opacity-0 group-hover:opacity-100 transition-opacity'>
-                    <span>{currentPage}<span className='text-secondary-300'>&nbsp;/&nbsp;</span>{totalPages}</span>
+                <div className='flex items-center justify-center pb-5 w-full text-primary-400 group-hover:text-primary-500 transition-colors select-none'>
+                    <span>{currentPage}<span className='text-primary-300'>&nbsp;/&nbsp;</span>{totalPages}</span>
                 </div>
             )}
 

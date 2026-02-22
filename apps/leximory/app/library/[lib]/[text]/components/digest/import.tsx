@@ -94,8 +94,8 @@ export default function ImportModal() {
                 <StoryModal />
             </div>}
         </div>
-        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} placement='bottom' className='bg-default-50'>
-            <DrawerContent className='max-h-dvh'>
+        <Drawer hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
+            <DrawerContent className='max-h-dvh rounded-4xl'>
                 {(onClose) => (
                     <form className='w-full'>
                         <DrawerHeader className='flex flex-col gap-1'>导入</DrawerHeader>
@@ -105,6 +105,7 @@ export default function ImportModal() {
                                     <div className='flex mb-2 gap-0.5 items-end'>
                                         <Input
                                             type='url'
+                                            validationBehavior='aria'
                                             color='secondary'
                                             className='flex-1'
                                             label='网址'
@@ -113,7 +114,7 @@ export default function ImportModal() {
                                             onValueChange={(value) => setUrl(value.trim())}
                                             variant='underlined'
                                         />
-                                        <Button isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontal />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
+                                        <Button radius='full' isLoading={isPopulating} color='secondary' startContent={isPopulating ? null : <PiLinkSimpleHorizontal />} onPress={() => startPopulating(populate)} variant='flat' isDisabled={!isUrl(url)}>一键读取</Button>
                                     </div>
                                     <Textarea
                                         errorMessage={exceeded ? `文本长度超过 ${maxArticleLength} 字符` : undefined}
@@ -121,7 +122,7 @@ export default function ImportModal() {
                                         value={input}
                                         label='文本'
                                         description='AI 注解可能含有错误'
-                                        rows={15}
+                                        rows={5}
                                         onValueChange={setInput}
                                         disableAutosize />
                                     <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
@@ -194,8 +195,8 @@ function StoryModal() {
         >
             连词成文
         </Button>
-        <Drawer isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} placement='bottom' className='bg-default-50'>
-            <DrawerContent className='max-h-dvh'>
+        <Drawer hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
+            <DrawerContent className='max-h-dvh rounded-4xl'>
                 {(onClose) => (
                     <>
                         <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
