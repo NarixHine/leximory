@@ -11,8 +11,7 @@ import {
     ScrollShadow,
     CircularProgress,
 } from '@heroui/react'
-import { ListIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
-import { PiCheckCircleThin, PiCircleDashedThin } from 'react-icons/pi'
+import { CaretLeftIcon, CaretRightIcon, CaretDownIcon, RowsIcon, CheckCircleIcon, CircleDashedIcon } from '@phosphor-icons/react'
 import { sanitizeHTML } from '../utils/parse'
 
 export type { Book, Rendition, NavItem, Contents, Location } from 'epubjs'
@@ -28,7 +27,7 @@ const DRAWER_MOTION = {
             },
         },
         exit: {
-            x: '-100%',
+            x: '100%',
             opacity: 0,
             transition: {
                 duration: 0.5,
@@ -109,12 +108,12 @@ function TinyProgress({ value }: { value: number }) {
 
     if (value === 0) {
         return (
-            <PiCircleDashedThin />
+            <CircleDashedIcon weight='thin' />
         )
     }
     if (value >= 100) {
         return (
-            <PiCheckCircleThin className='text-foreground/50' />
+            <CheckCircleIcon weight='thin' className='text-foreground/50' />
         )
     }
     return (
@@ -375,17 +374,7 @@ export default function EpubReader({
             {/* Header */}
             <div className='flex items-center px-1 h-15 shrink-0'>
                 <div className='flex-1'>
-                    <Button
-                        isIconOnly
-                        variant='light'
-                        radius='full'
-                        size='lg'
-                        color='secondary'
-                        onPress={onOpen}
-                        className='opacity-60 group-hover:opacity-100 transition-opacity'
-                    >
-                        <ListIcon weight='bold' className='text-lg' />
-                    </Button>
+
                 </div>
                 <span className='min-w-2 px-2 text-secondary-500 text-sm text-center truncate select-none opacity-0 group-hover:opacity-100 transition-opacity'>
                     {headerTitle}
@@ -394,6 +383,19 @@ export default function EpubReader({
                     {actions}
                 </div>
             </div>
+
+            {/* Floating ToC button */}
+            <Button
+                isIconOnly
+                variant='flat'
+                radius='full'
+                size='lg'
+                color='default'
+                onPress={onOpen}
+                className='opacity-60 group-hover:opacity-100 transition-opacity absolute bottom-4 right-4 z-10'
+            >
+                <RowsIcon className='text-lg' />
+            </Button>
 
             {/* Epub content + side nav buttons */}
             <div className='flex flex-1 min-h-0 overflow-hidden items-stretch'>
@@ -437,7 +439,7 @@ export default function EpubReader({
             <Drawer
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                placement='left'
+                placement='right'
                 size='xs'
                 motionProps={DRAWER_MOTION}
                 portalContainer={portalContainer}

@@ -234,7 +234,7 @@ export default function Ebook() {
                             <>
                                 <Button
                                     isIconOnly
-                                    startContent={<PiFrameCorners className='text-lg' />}
+                                    startContent={<PiFrameCorners className='text-xl' />}
                                     className='z-10'
                                     color='primary'
                                     variant='light'
@@ -253,7 +253,7 @@ export default function Ebook() {
                                 />
                                 {hasZoomed && <>
                                     <Button
-                                        startContent={!savingBookmark && <PiBookmark className='text-lg' />}
+                                        startContent={!savingBookmark && <PiBookmark className='text-xl' />}
                                         isLoading={savingBookmark}
                                         isDisabled={!bookmark || isReadOnly}
                                         className='z-10'

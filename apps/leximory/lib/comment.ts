@@ -23,7 +23,7 @@ export function parseCommentParams(word: string | Array<string>) {
         try {
             parsedParams = JSON.parse(purifiedParams.split('}')[0])
         } catch {
-            parsedParams = purifiedParams.split('}')[0].split(',') as string[]
+            parsedParams = purifiedParams.split('}')[0].split('||') as string[]
         }
         return parsedParams
     } catch (e) {
