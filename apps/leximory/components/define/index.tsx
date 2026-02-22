@@ -32,7 +32,7 @@ export default function Define(props: { left: number | null, width: number | nul
     if (rect) {
         const centerY = rect.top + rect.height / 2
         const isUpperHalf = centerY < window.innerHeight / 2
-        const scrollOffset = isEbookMode ? 50 : window.scrollY
+        const scrollOffset = isEbookMode ? 60 : window.scrollY
 
         if (isUpperHalf) {
             // Position ABOVE the selection

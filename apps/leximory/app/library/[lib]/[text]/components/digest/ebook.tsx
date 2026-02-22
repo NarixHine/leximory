@@ -173,7 +173,6 @@ export default function Ebook() {
                             }
                         }}
                         getRendition={rendition => {
-                            console.log('got rendition', rendition)
                             updateTheme(rendition, isDarkMode)
                             rendition.themes.default({
                                 p: {
@@ -219,10 +218,11 @@ export default function Ebook() {
                             rendition.on('selected', (_: Rendition, contents: Contents) => {
                                 const selection = contents.window.getSelection()!
                                 setSelection(selection)
-                         
+
                                 const rect = selection.getRangeAt(0).getBoundingClientRect()
                                 const epubView = document.getElementsByClassName('epub-view')[0]
                                 const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
+
                                 setRect({
                                     left: rect.left + offset.left,
                                     width: rect.width,
@@ -247,7 +247,7 @@ export default function Ebook() {
                             allowScriptedContent: true,
                         }}
                         url={transformEbookUrl(src)}
-                        portalContainer={containerRef.current}
+                        portalContainer={isFullScreen ? containerRef.current : undefined}
                         actions={
                             <>
                                 <Button
@@ -257,7 +257,7 @@ export default function Ebook() {
                                     color='primary'
                                     variant='light'
                                     size='lg'
-                                    radius='lg'
+                                    radius='full'
                                     onPress={async () => {
                                         try {
                                             if (isFullScreen)
@@ -278,7 +278,7 @@ export default function Ebook() {
                                         color='primary'
                                         variant='light'
                                         size='lg'
-                                        radius='lg'
+                                        radius='full'
                                         isIconOnly
                                         onPress={() => {
                                             if (bookmark) {

@@ -118,58 +118,60 @@ export default function EpubReader({
     const next = useCallback(() => renditionRef.current?.next(), [])
 
     return (
-        <div className="relative flex flex-col w-full h-full">
+        <div className='relative flex flex-col w-full h-full'>
             {/* Header */}
-            <div className="flex items-center px-1 h-10 shrink-0">
-                <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    radius="full"
-                    onPress={onOpen}
-                    className="text-default-500"
-                >
-                    <ListIcon weight="bold" className="text-lg" />
-                </Button>
-                <span className="flex-1 px-2 text-default-400 text-sm text-center truncate select-none">
+            <div className='flex items-center px-1 h-15 shrink-0'>
+                <div className='flex-1'>
+                    <Button
+                        isIconOnly
+                        variant='light'
+                        radius='full'
+                        size='lg'
+                        onPress={onOpen}
+                        className='text-default-500'
+                    >
+                        <ListIcon weight='bold' className='text-lg' />
+                    </Button>
+                </div>
+                <span className='shrink-0 px-2 text-secondary-400 text-base text-center truncate select-none'>
                     {title}
                 </span>
-                <div className="flex items-center gap-0.5 px-2">
+                <div className='flex flex-1 justify-end items-center gap-0.5 px-2'>
                     {actions}
                 </div>
             </div>
 
             {/* Epub content */}
-            <div className="relative flex-1 min-h-0">
+            <div className='relative flex-1 min-h-0'>
                 {!isLoaded && loadingView && (
-                    <div className="z-10 absolute inset-0 flex justify-center items-center">
+                    <div className='z-10 absolute inset-0 flex justify-center items-center'>
                         {loadingView}
                     </div>
                 )}
-                <div ref={viewerRef} className="w-full h-full" />
+                <div ref={viewerRef} className='w-full h-full' />
             </div>
 
             {/* Page navigation */}
-            <div className="flex justify-between items-center px-2 h-10 shrink-0">
+            <div className='flex justify-between items-center px-2 h-10 shrink-0'>
                 <Button
                     isIconOnly
-                    variant="light"
-                    size="sm"
-                    radius="full"
+                    variant='light'
+                    size='sm'
+                    radius='full'
                     onPress={isRTL ? next : prev}
-                    className="text-default-400"
+                    className='text-default-400'
                 >
-                    <CaretLeftIcon weight="bold" className="text-lg" />
+                    <CaretLeftIcon weight='bold' className='text-lg' />
                 </Button>
                 <Button
                     isIconOnly
-                    variant="light"
-                    size="sm"
-                    radius="full"
+                    variant='light'
+                    size='sm'
+                    radius='full'
                     onPress={isRTL ? prev : next}
-                    className="text-default-400"
+                    className='text-default-400'
                 >
-                    <CaretRightIcon weight="bold" className="text-lg" />
+                    <CaretRightIcon weight='bold' className='text-lg' />
                 </Button>
             </div>
 
@@ -177,19 +179,18 @@ export default function EpubReader({
             <Drawer
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                placement="left"
-                size="xs"
-                backdrop="blur"
+                placement='left'
+                size='xs'
                 motionProps={DRAWER_MOTION}
                 portalContainer={portalContainer}
             >
                 <DrawerContent>
                     {(onClose) => (
                         <>
-                            <DrawerHeader className="font-medium text-base">
+                            <DrawerHeader className='font-semibold text-base pl-4'>
                                 {tocTitle}
                             </DrawerHeader>
-                            <DrawerBody className="px-0 pb-8">
+                            <DrawerBody className='px-0 pb-8'>
                                 <TocTree
                                     items={toc}
                                     currentHref={currentHref}
@@ -219,7 +220,7 @@ function TocTree({
     depth?: number
 }) {
     return (
-        <ul className="m-0 p-0 list-none">
+        <ul className='m-0 p-0 list-none'>
             {items.map((item) => {
                 const itemBase = item.href.split('#')[0]
                 const currentBase = currentHref.split('#')[0]
