@@ -46,7 +46,6 @@ export interface EpubReaderProps {
     tocTitle?: string
     loadingView?: ReactNode
     actions?: ReactNode
-    epubOptions?: Record<string, boolean>
     portalContainer?: Element
 }
 
@@ -237,7 +236,6 @@ export default function EpubReader({
     tocTitle = '目录',
     loadingView,
     actions,
-    epubOptions,
     portalContainer,
 }: EpubReaderProps) {
     const viewerRef = useRef<HTMLDivElement>(null)
@@ -258,7 +256,7 @@ export default function EpubReader({
     useEffect(() => {
         if (!viewerRef.current) return
 
-        const book = ePub(url, epubOptions)
+        const book = ePub(url)
         const rendition = book.renderTo(viewerRef.current, {
             width: '100%',
             height: '100%',
@@ -425,7 +423,7 @@ export default function EpubReader({
                                     <ul className='m-0 p-0 list-none'>
                                         {toc.map(item => (
                                             <TocEntry
-                                                key={item.id}
+                                                key={item.id || item.href}
                                                 item={item}
                                                 depth={0}
                                                 flatHrefs={flatHrefs}

@@ -236,10 +236,6 @@ export default function Ebook() {
                                 })
                             })
                         }}
-                        epubOptions={{
-                            allowPopups: true,
-                            allowScriptedContent: true,
-                        }}
                         url={transformEbookUrl(src)}
                         portalContainer={isFullScreen ? containerRef.current : undefined}
                         actions={
