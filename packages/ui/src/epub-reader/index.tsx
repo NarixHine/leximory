@@ -1,14 +1,17 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import type { NavItem, Rendition } from 'epubjs'
 import ePub from 'epubjs'
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
     Button, useDisclosure, cn,
+    Progress,
+    ScrollShadow,
 } from '@heroui/react'
-import { ListIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { ListIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
+import { PiCheckCircleThin, PiCircleDashedThin } from 'react-icons/pi'
 
 export type { Book, Rendition, NavItem, Contents, Location } from 'epubjs'
 
@@ -45,8 +48,184 @@ export interface EpubReaderProps {
     actions?: ReactNode
     epubOptions?: Record<string, boolean>
     portalContainer?: Element
-    pageIndicator?: string
 }
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function flattenNavItems(items: NavItem[]): NavItem[] {
+    return items.flatMap(item => [item, ...flattenNavItems(item.subitems ?? [])])
+}
+
+function hrefBase(href: string) {
+    return href.split('#')[0]
+}
+
+function hrefMatch(a: string, b: string) {
+    return a === b || a.endsWith('/' + b) || b.endsWith('/' + a)
+}
+
+function findChapterLabel(items: NavItem[], currentBase: string): string | null {
+    for (const item of items) {
+        const ib = hrefBase(item.href)
+        if (hrefMatch(currentBase, ib)) return item.label.trim()
+        if (item.subitems?.length) {
+            const found = findChapterLabel(item.subitems, currentBase)
+            if (found) return found
+        }
+    }
+    return null
+}
+
+function subtreeContains(item: NavItem, currentBase: string): boolean {
+    const ib = hrefBase(item.href)
+    if (hrefMatch(currentBase, ib)) return true
+    return item.subitems?.some(child => subtreeContains(child, currentBase)) ?? false
+}
+
+function getItemProgress(
+    item: NavItem,
+    flatHrefs: string[],
+    currentBase: string,
+    currentPage: number,
+    totalPages: number,
+): number {
+    const ib = hrefBase(item.href)
+    if (hrefMatch(currentBase, ib)) {
+        return totalPages > 0 ? Math.round((currentPage / Math.max(totalPages, 1)) * 100) : 0
+    }
+    const itemIdx = flatHrefs.findIndex(h => hrefMatch(h, ib))
+    const curIdx = flatHrefs.findIndex(h => hrefMatch(h, currentBase))
+    if (itemIdx < 0 || curIdx < 0) return 0
+    return itemIdx < curIdx ? 100 : 0
+}
+
+// ─── TinyProgress ───────────────────────────────────────────────────────────
+
+function TinyProgress({ value }: { value: number }) {
+    const size = 16
+    const stroke = 1.5
+    const r = (size - stroke) / 2
+    const circ = 2 * Math.PI * r
+
+    if (value === 0) {
+        return (
+            <PiCircleDashedThin />
+        )
+    }
+    if (value >= 100) {
+        return (
+            <PiCheckCircleThin className='text-foreground/50' />
+        )
+    }
+    return (
+        <svg width={size} height={size} className='shrink-0 -rotate-90' style={{ overflow: 'visible' }}>
+            <circle cx={size / 2} cy={size / 2} r={r} fill='none' stroke='currentColor' strokeWidth={stroke} className='text-default-200' />
+            <circle
+                cx={size / 2} cy={size / 2} r={r}
+                fill='none'
+                stroke='currentColor'
+                strokeWidth={stroke}
+                strokeDasharray={circ}
+                strokeDashoffset={circ - (value / 100) * circ}
+                strokeLinecap='round'
+                className='text-primary transition-all duration-700'
+            />
+        </svg>
+    )
+}
+
+// ─── TocEntry ───────────────────────────────────────────────────────────────
+
+function TocEntry({
+    item,
+    depth,
+    flatHrefs,
+    currentBase,
+    currentPage,
+    totalPages,
+    onSelect,
+    expandedIds,
+    toggleExpand,
+}: {
+    item: NavItem
+    depth: number
+    flatHrefs: string[]
+    currentBase: string
+    currentPage: number
+    totalPages: number
+    onSelect: (href: string) => void
+    expandedIds: Set<string>
+    toggleExpand: (id: string) => void
+}) {
+    const hasChildren = (item.subitems?.length ?? 0) > 0
+    const isExpanded = expandedIds.has(item.id)
+    const ib = hrefBase(item.href)
+    const isActive = hrefMatch(currentBase, ib)
+    const progress = getItemProgress(item, flatHrefs, currentBase, currentPage, totalPages)
+    const isDone = progress === 100 && !isActive
+
+    return (
+        <li>
+            <button
+                onClick={() => hasChildren ? toggleExpand(item.id) : onSelect(item.href)}
+                className={cn(
+                    'w-full flex items-center gap-2.5 text-left transition-colors',
+                    depth === 0 ? 'py-2.5' : 'py-2',
+                    isActive
+                        ? 'bg-primary-50/60 dark:bg-primary-900/20'
+                        : 'hover:bg-default-100',
+                )}
+                style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: '16px' }}
+            >
+                <TinyProgress value={progress} />
+                <span className={cn(
+                    'flex-1 leading-snug transition-colors truncate',
+                    depth === 0 ? 'text-sm font-semibold' : 'text-xs font-normal',
+                    isActive && 'text-primary-700',
+                    isDone && !isActive && 'text-foreground/30',
+                    !isDone && !isActive && 'text-foreground/80',
+                )}>
+                    {item.label.trim()}
+                </span>
+                {hasChildren && (
+                    <CaretDownIcon
+                        weight='bold'
+                        className={cn(
+                            'shrink-0 text-foreground-300 transition-transform duration-300 text-xs',
+                            isExpanded && 'rotate-180',
+                        )}
+                    />
+                )}
+            </button>
+
+            {hasChildren && (
+                <ul
+                    className={cn(
+                        'overflow-hidden transition-all duration-300 ease-out list-none p-0 m-0',
+                        isExpanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0',
+                    )}
+                >
+                    {item.subitems!.map(child => (
+                        <TocEntry
+                            key={child.id}
+                            item={child}
+                            depth={depth + 1}
+                            flatHrefs={flatHrefs}
+                            currentBase={currentBase}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onSelect={onSelect}
+                            expandedIds={expandedIds}
+                            toggleExpand={toggleExpand}
+                        />
+                    ))}
+                </ul>
+            )}
+        </li>
+    )
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function EpubReader({
     url,
@@ -60,14 +239,16 @@ export default function EpubReader({
     actions,
     epubOptions,
     portalContainer,
-    pageIndicator,
 }: EpubReaderProps) {
     const viewerRef = useRef<HTMLDivElement>(null)
     const renditionRef = useRef<Rendition | null>(null)
     const [isLoaded, setIsLoaded] = useState(false)
     const [toc, setToc] = useState<NavItem[]>([])
     const [currentHref, setCurrentHref] = useState('')
+    const [currentPage, setCurrentPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
     const onLocationChangeRef = useRef(onLocationChange)
     onLocationChangeRef.current = onLocationChange
@@ -96,9 +277,11 @@ export default function EpubReader({
             rendition.display()
         }
 
-        rendition.on('relocated', (loc: { start: { cfi: string; href: string } }) => {
+        rendition.on('relocated', (loc: { start: { cfi: string; href: string; displayed: { page: number; total: number } } }) => {
             setIsLoaded(true)
             setCurrentHref(loc.start.href)
+            setCurrentPage(loc.start.displayed.page)
+            setTotalPages(loc.start.displayed.total)
             onLocationChangeRef.current(loc.start.cfi)
         })
 
@@ -116,8 +299,51 @@ export default function EpubReader({
         }
     }, [location])
 
+    // Auto-expand ToC parents of the active chapter
+    useEffect(() => {
+        if (!toc.length || !currentHref) return
+        const base = hrefBase(currentHref)
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            toc.forEach(topItem => {
+                if (subtreeContains(topItem, base)) next.add(topItem.id)
+            })
+            return next
+        })
+    }, [currentHref, toc])
+
+    const toggleExpand = useCallback((id: string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }, [])
+
+    const flatHrefs = useMemo(
+        () => flattenNavItems(toc).map(t => hrefBase(t.href)),
+        [toc],
+    )
+
+    const currentBase = hrefBase(currentHref)
+
+    const chapterName = useMemo(
+        () => findChapterLabel(toc, currentBase),
+        [toc, currentBase],
+    )
+
+    const overallProgress = useMemo(() => {
+        if (!flatHrefs.length) return 0
+        const curIdx = flatHrefs.findIndex(h => hrefMatch(h, currentBase))
+        if (curIdx < 0) return 0
+        return Math.round(((curIdx + (currentPage / Math.max(totalPages, 1))) / flatHrefs.length) * 100)
+    }, [flatHrefs, currentBase, currentPage, totalPages])
+
     const prev = useCallback(() => renditionRef.current?.prev(), [])
     const next = useCallback(() => renditionRef.current?.next(), [])
+
+    const headerTitle = title && chapterName ? `${title} — ${chapterName}` : title
 
     return (
         <div className='group relative flex flex-col w-full h-full'>
@@ -129,16 +355,17 @@ export default function EpubReader({
                         variant='light'
                         radius='full'
                         size='lg'
+                        color='secondary'
                         onPress={onOpen}
-                        className='text-default-500'
+                        className='opacity-60 group-hover:opacity-100 transition-opacity'
                     >
                         <ListIcon weight='bold' className='text-lg' />
                     </Button>
                 </div>
-                <span className='shrink-0 px-2 text-secondary-500 text-base text-center truncate select-none opacity-0 group-hover:opacity-100 transition-opacity'>
-                    {title}
+                <span className='min-w-2 px-2 text-secondary-500 text-sm text-center truncate select-none opacity-0 group-hover:opacity-100 transition-opacity'>
+                    {headerTitle}
                 </span>
-                <div className='flex flex-1 justify-end items-center gap-0.5 px-2'>
+                <div className='flex flex-1 justify-end items-center gap-0.5 px-2 opacity-60 group-hover:opacity-100 transition-opacity'>
                     {actions}
                 </div>
             </div>
@@ -169,10 +396,10 @@ export default function EpubReader({
                 </button>
             </div>
 
-            {/* page number indicator */}
+            {/* Page indicator footer */}
             {isLoaded && (
-                <div className='flex items-center justify-center text-secondary-500 pb-5 w-full opacity-0 group-hover:opacity-100 transition-opacity'>
-                    {pageIndicator}
+                <div className='flex items-center justify-center pb-5 w-full text-secondary-500 select-none opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <span>{currentPage}<span className='text-secondary-300'>&nbsp;/&nbsp;</span>{totalPages}</span>
                 </div>
             )}
 
@@ -188,69 +415,38 @@ export default function EpubReader({
                 <DrawerContent>
                     {(onClose) => (
                         <>
-                            <DrawerHeader className='font-semibold text-base pl-4'>
-                                {tocTitle}
+                            <DrawerHeader className='flex flex-col gap-3 px-4 pt-5 pb-3'>
+                                <span className='font-semibold text-base leading-none'>{tocTitle}</span>
+                                <Progress value={overallProgress} size='sm' className='w-full' color='secondary' />
                             </DrawerHeader>
-                            <DrawerBody className='px-0 pb-8'>
-                                <TocTree
-                                    items={toc}
-                                    currentHref={currentHref}
-                                    onSelect={(href) => {
-                                        renditionRef.current?.display(href)
-                                        onClose()
-                                    }}
-                                />
+
+                            <DrawerBody className='px-0 py-2'>
+                                <ScrollShadow>
+                                    <ul className='m-0 p-0 list-none'>
+                                        {toc.map(item => (
+                                            <TocEntry
+                                                key={item.id}
+                                                item={item}
+                                                depth={0}
+                                                flatHrefs={flatHrefs}
+                                                currentBase={currentBase}
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                onSelect={(href) => {
+                                                    renditionRef.current?.display(href)
+                                                    onClose()
+                                                }}
+                                                expandedIds={expandedIds}
+                                                toggleExpand={toggleExpand}
+                                            />
+                                        ))}
+                                    </ul>
+                                </ScrollShadow>
                             </DrawerBody>
                         </>
                     )}
                 </DrawerContent>
             </Drawer>
         </div>
-    )
-}
-
-function TocTree({
-    items,
-    currentHref,
-    onSelect,
-    depth = 0,
-}: {
-    items: NavItem[]
-    currentHref: string
-    onSelect: (href: string) => void
-    depth?: number
-}) {
-    return (
-        <ul className='m-0 p-0 list-none'>
-            {items.map((item) => {
-                const itemBase = item.href.split('#')[0]
-                const currentBase = currentHref.split('#')[0]
-                const isActive = !!(itemBase && currentBase && (currentBase === itemBase || currentBase.endsWith('/' + itemBase)))
-                return (
-                    <li key={item.id}>
-                        <button
-                            className={cn(
-                                'py-2.5 w-full text-sm text-left transition-colors',
-                                isActive
-                                    ? 'text-primary font-medium bg-primary-50/50'
-                                    : 'text-foreground/80 hover:bg-default-100',
-                            )}
-                            style={{ paddingLeft: `${16 + depth * 16}px`, paddingRight: '16px' }}
-                            onClick={() => onSelect(item.href)}
-                        >
-                            {item.label.trim()}
-                        </button>
-                        {item.subitems && item.subitems.length > 0 && (
-                            <TocTree
-                                items={item.subitems}
-                                currentHref={currentHref}
-                                onSelect={onSelect}
-                                depth={depth + 1}
-                            />
-                        )}
-                    </li>
-                )
-            })}
-        </ul>
     )
 }

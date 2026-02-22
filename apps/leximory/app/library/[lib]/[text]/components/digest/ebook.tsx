@@ -94,8 +94,6 @@ export default function Ebook() {
     }
     const [bookmark, setBookmark] = useState<string | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
-    const [chapter, setChapter] = useState('')
-    const [pageIndicator, setPageIndicator] = useState('')
     const themeRendition = useRef<Rendition | null>(null)
 
     const { isDarkMode } = useDarkMode()
@@ -159,8 +157,7 @@ export default function Ebook() {
                     />}
                     <EpubReader
                         key={isFullViewport ? 'full' : 'normal'}
-                        title={`${title}${chapter ? ` — ${chapter}` : ''}`}
-                        pageIndicator={pageIndicator}
+                        title={title}
                         loadingView={
                             <CircularProgress color='primary' size='lg' />
                         }
@@ -168,13 +165,6 @@ export default function Ebook() {
                         location={location}
                         onLocationChange={epubcifi => {
                             setLocation(epubcifi)
-                            const { current: rendition } = themeRendition
-                            if (rendition) {
-                                const { displayed } = rendition.location.start
-                                const chapterName = getChapterName(rendition.book, rendition.location)
-                                setChapter(chapterName ?? '')
-                                setPageIndicator(`${displayed.page} / ${displayed.total}`)
-                            }
                         }}
                         getRendition={rendition => {
                             updateTheme(rendition, isDarkMode)
