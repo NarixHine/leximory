@@ -118,7 +118,7 @@ export default function Ebook() {
             style={{
                 position: isFullViewport ? 'fixed' : 'relative',
                 width: isFullViewport ? '100dvw' : 'auto',
-                height: isFullViewport ? '100dvh' : 'auto',
+                height: hasZoomed ? '100dvh' : 'auto',
                 zIndex: isFullViewport ? 999 : 0,
                 left: isFullViewport ? 0 : 'auto',
                 top: isFullViewport ? 0 : 'auto',
