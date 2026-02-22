@@ -132,7 +132,6 @@ export default function Ebook() {
                 zIndex: isFullViewport ? 999 : 0,
                 left: isFullViewport ? 0 : 'auto',
                 top: isFullViewport ? 0 : 'auto',
-                padding: isFullViewport ? 15 : 0,
                 right: isFullViewport ? 0 : 'auto',
             }}
             transition={{
@@ -143,7 +142,7 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
-            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
+            <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-dvh' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
                         {...rect}

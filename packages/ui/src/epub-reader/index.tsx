@@ -358,6 +358,16 @@ export default function EpubReader({
     const prev = useCallback(() => renditionRef.current?.prev(), [])
     const next = useCallback(() => renditionRef.current?.next(), [])
 
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+            if (e.key === 'ArrowLeft') isRTL ? next() : prev()
+            else if (e.key === 'ArrowRight') isRTL ? prev() : next()
+        }
+        window.addEventListener('keydown', handler)
+        return () => window.removeEventListener('keydown', handler)
+    }, [isRTL, prev, next])
+
     const headerTitle = title && chapterName ? `${title} — ${chapterName}` : title
 
     return (
@@ -391,7 +401,7 @@ export default function EpubReader({
                 <button
                     aria-label='Previous page'
                     onClick={isRTL ? next : prev}
-                    className='flex items-center justify-start pl-2 w-6 sm:w-14 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                    className='flex items-center justify-start pl-2 w-10 sm:w-20 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
                     <CaretLeftIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
                 </button>
@@ -410,7 +420,7 @@ export default function EpubReader({
                 <button
                     aria-label='Next page'
                     onClick={isRTL ? prev : next}
-                    className='flex items-center justify-end pr-2 w-6 sm:w-14 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
+                    className='flex items-center justify-end pr-2 w-10 sm:w-20 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
                     <CaretRightIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
                 </button>
