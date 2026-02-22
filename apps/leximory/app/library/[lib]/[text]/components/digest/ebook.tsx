@@ -146,8 +146,10 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
+            {/* Oversized background overlay for iPad PWA: covers content that may slip behind system bars */}
+            {isFullViewport && <div className='fixed bg-background -inset-20 z-[-1]' />}
             <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('relative dark:opacity-95 block', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
-                <div ref={containerRef} className="relative h-full">
+                <div ref={containerRef} className="relative h-full" style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
                         {...rect}
                         reset={reset}
@@ -243,6 +245,7 @@ export default function Ebook() {
                             allowScriptedContent: true,
                         }}
                         url={transformEbookUrl(src)}
+                        portalContainer={containerRef.current}
                         actions={
                             <>
                                 <Button

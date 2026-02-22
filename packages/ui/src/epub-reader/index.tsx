@@ -12,6 +12,27 @@ import { ListIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 
 export type { Book, Rendition, NavItem, Contents, Location } from 'epubjs'
 
+const DRAWER_MOTION = {
+    variants: {
+        enter: {
+            x: 0,
+            opacity: 1,
+            transition: {
+                duration: 0.5,
+                ease: [0.32, 0.72, 0, 1] as [number, number, number, number],
+            },
+        },
+        exit: {
+            x: '-100%',
+            opacity: 0,
+            transition: {
+                duration: 0.5,
+                ease: [0.32, 0.72, 0, 1] as [number, number, number, number],
+            },
+        },
+    },
+}
+
 export interface EpubReaderProps {
     url: string
     location: string | number
@@ -23,6 +44,7 @@ export interface EpubReaderProps {
     loadingView?: ReactNode
     actions?: ReactNode
     epubOptions?: Record<string, boolean>
+    portalContainer?: Element
 }
 
 export default function EpubReader({
@@ -36,6 +58,7 @@ export default function EpubReader({
     loadingView,
     actions,
     epubOptions,
+    portalContainer,
 }: EpubReaderProps) {
     const viewerRef = useRef<HTMLDivElement>(null)
     const renditionRef = useRef<Rendition | null>(null)
@@ -111,7 +134,7 @@ export default function EpubReader({
                 <span className="flex-1 text-center text-sm truncate px-2 text-default-400 select-none">
                     {title}
                 </span>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5 px-2">
                     {actions}
                 </div>
             </div>
@@ -124,40 +147,41 @@ export default function EpubReader({
                     </div>
                 )}
                 <div ref={viewerRef} className="epub-view w-full h-full" />
+            </div>
 
-                {/* Previous page */}
-                <button
-                    className="absolute top-0 left-0 w-1/5 h-full flex items-center justify-start pl-2 group cursor-default appearance-none bg-transparent border-none outline-none"
-                    onClick={isRTL ? next : prev}
-                    tabIndex={-1}
+            {/* Page navigation */}
+            <div className="flex items-center justify-between shrink-0 h-10 px-2">
+                <Button
+                    isIconOnly
+                    variant="light"
+                    size="sm"
+                    radius="full"
+                    onPress={isRTL ? next : prev}
+                    className="text-default-400"
                 >
-                    <CaretLeftIcon
-                        weight="bold"
-                        className="text-default-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    />
-                </button>
-
-                {/* Next page */}
-                <button
-                    className="absolute top-0 right-0 w-1/5 h-full flex items-center justify-end pr-2 group cursor-default appearance-none bg-transparent border-none outline-none"
-                    onClick={isRTL ? prev : next}
-                    tabIndex={-1}
+                    <CaretLeftIcon weight="bold" className="text-lg" />
+                </Button>
+                <Button
+                    isIconOnly
+                    variant="light"
+                    size="sm"
+                    radius="full"
+                    onPress={isRTL ? prev : next}
+                    className="text-default-400"
                 >
-                    <CaretRightIcon
-                        weight="bold"
-                        className="text-default-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    />
-                </button>
+                    <CaretRightIcon weight="bold" className="text-lg" />
+                </Button>
             </div>
 
             {/* Table of Contents */}
             <Drawer
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                placement="bottom"
-                size="lg"
+                placement="left"
+                size="xs"
                 backdrop="blur"
-                classNames={{ base: 'rounded-t-2xl' }}
+                motionProps={DRAWER_MOTION}
+                portalContainer={portalContainer}
             >
                 <DrawerContent>
                     {(onClose) => (
