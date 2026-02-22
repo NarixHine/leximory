@@ -5,7 +5,7 @@ import { getAccentPreference, setAccentPreference } from '@/server/db/preference
 import { addLexicoinBalance, getLastDailyClaim, setLastClaimDate } from '@/server/db/lexicoin'
 import { momentSH } from '@/lib/moment'
 import { revalidatePath, updateTag } from 'next/cache'
-import { PLAN_DAILY_LEXICOIN } from '@repo/env/config'
+import { MAX_AVATAR_SIZE, PLAN_DAILY_LEXICOIN } from '@repo/env/config'
 import { creem } from '@/server/client/creem'
 import { redirect } from 'next/navigation'
 import { getCustomerId } from '@/server/db/creem'
@@ -62,6 +62,9 @@ export async function manageSubscription() {
 
 export async function uploadAvatar(file: File) {
 	if (!file) throw new Error('No file provided')
+	if (file.size > MAX_AVATAR_SIZE) {
+		throw new Error(`File size exceeds the limit of ${MAX_AVATAR_SIZE / 1024 / 1024}MB`)
+	}
 	const user = await getUserOrThrow()
 	const { error } = await supabase.storage.from('avatars').upload(user.userId, file, {
 		upsert: true,

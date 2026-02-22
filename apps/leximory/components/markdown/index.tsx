@@ -36,7 +36,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replace(/([*-]) \{\{/g, '$1  {{')
         // space handling
         .replaceAll(' {{', '&nbsp;{{')
-        .replaceAll('{{', '‎{{')
+        .replaceAll('{{', asCard ? '{{' : '‎{{') // skip if asCard
         .replaceAll('&gt;', '>')
         // fix erroneous wrapping
         .replaceAll(/\|+}}/g, '}}') // remove trailing pipes

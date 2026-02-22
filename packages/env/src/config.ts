@@ -7,6 +7,7 @@ export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
 export const MAX_TTS_LENGTH = 10000
 export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
+export const MAX_AVATAR_SIZE = 1 * 1024 * 1024
 export const ALLOWED_IMAGE_REMOTE_PATTERNS = [
     {
         protocol: 'https',
