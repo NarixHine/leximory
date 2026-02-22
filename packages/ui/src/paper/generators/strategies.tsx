@@ -7,7 +7,7 @@ import Choice from '../choice'
 import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
-import { safeParseHTML } from './parse'
+import { safeParseHTML } from '../../utils/parse'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,

@@ -2,16 +2,18 @@
 
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import type { NavItem, Rendition } from 'epubjs'
+import type { Contents, NavItem, Rendition } from 'epubjs'
 import ePub from 'epubjs'
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
     Button, useDisclosure, cn,
     Progress,
     ScrollShadow,
+    CircularProgress,
 } from '@heroui/react'
 import { ListIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
 import { PiCheckCircleThin, PiCircleDashedThin } from 'react-icons/pi'
+import { sanitizeHTML } from '../utils/parse'
 
 export type { Book, Rendition, NavItem, Contents, Location } from 'epubjs'
 
@@ -44,7 +46,6 @@ export interface EpubReaderProps {
     isRTL?: boolean
     title?: string
     tocTitle?: string
-    loadingView?: ReactNode
     actions?: ReactNode
     portalContainer?: Element
 }
@@ -165,14 +166,14 @@ function TocEntry({
 
     return (
         <li>
-            <button
-                onClick={() => hasChildren ? toggleExpand(item.id) : onSelect(item.href)}
+            <Button
+                fullWidth
+                disableAnimation
+                variant={isActive ? 'flat' : 'light'}
+                onPress={() => hasChildren ? toggleExpand(item.id) : onSelect(item.href)}
                 className={cn(
-                    'w-full flex items-center gap-2.5 text-left transition-colors',
+                    'flex items-center gap-2.5 text-left transition-colors',
                     depth === 0 ? 'py-2.5' : 'py-2',
-                    isActive
-                        ? 'bg-primary-50/60 dark:bg-primary-900/20'
-                        : 'hover:bg-default-100',
                 )}
                 style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: '16px' }}
             >
@@ -195,12 +196,12 @@ function TocEntry({
                         )}
                     />
                 )}
-            </button>
+            </Button>
 
             {hasChildren && (
                 <ul
                     className={cn(
-                        'overflow-hidden transition-all duration-300 ease-out list-none p-0 m-0',
+                        'overflow-hidden list-none p-0 m-0',
                         isExpanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0',
                     )}
                 >
@@ -234,7 +235,6 @@ export default function EpubReader({
     isRTL = false,
     title = '',
     tocTitle = '目录',
-    loadingView,
     actions,
     portalContainer,
 }: EpubReaderProps) {
@@ -261,6 +261,23 @@ export default function EpubReader({
             width: '100%',
             height: '100%',
             spread: 'auto',
+            allowScriptedContent: true
+        })
+
+        // Intercept and Purify
+        rendition.hooks.content.register((contents: Contents) => {
+            const body = contents.document.body
+
+            // Clean the HTML but keep the structure
+            const cleanHtml = sanitizeHTML(body.innerHTML, {
+                // ESSENTIAL: Allow attributes needed for selection/EPUB styling
+                ADD_ATTR: ['itemprop', 'role'],
+                // FORBID: Scripts and event handlers (onmouseover, etc.)
+                FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
+                FORBID_ATTR: ['onerror', 'onclick', 'onload']
+            })
+
+            body.innerHTML = cleanHtml
         })
 
         renditionRef.current = rendition
@@ -370,12 +387,12 @@ export default function EpubReader({
 
             {/* Epub content */}
             <div className='relative flex-1 min-h-0'>
-                {!isLoaded && loadingView && (
+                {!isLoaded && (
                     <div className='z-10 absolute inset-0 flex justify-center items-center'>
-                        {loadingView}
+                        <CircularProgress color='primary' size='lg' />
                     </div>
                 )}
-                <div ref={viewerRef} className='w-full h-full' />
+                {<div ref={viewerRef} className='w-full h-full' />}
 
                 {/* Page navigation — full-height side buttons */}
                 <button
@@ -418,7 +435,7 @@ export default function EpubReader({
                                 <Progress value={overallProgress} size='sm' className='w-full' color='secondary' />
                             </DrawerHeader>
 
-                            <DrawerBody className='px-0 py-2'>
+                            <DrawerBody className='px-0 pb-8'>
                                 <ScrollShadow>
                                     <ul className='m-0 p-0 list-none'>
                                         {toc.map(item => (

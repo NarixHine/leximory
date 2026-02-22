@@ -7,7 +7,7 @@ import { ReactNode } from 'react'
 import { ALPHABET_SET } from './config'
 import { z } from '@repo/schema'
 import { QuizData, QuestionStrategy, ClozeData, SectionAnswers } from '@repo/schema/paper'
-import { safeParseHTML } from './parse'
+import { safeParseHTML } from '../../utils/parse'
 
 /**
  * A reusable helper to extract the content from all <code> tags in a string.

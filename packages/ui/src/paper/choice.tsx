@@ -7,7 +7,7 @@ import { ALPHABET_SET } from './generators/config'
 import { useAsk, useCorrectAnswer } from './blank/hooks'
 import { matchColor } from './blank/utils'
 import { AskButton } from './blank/ask'
-import { safeParseHTML } from './generators/parse'
+import { safeParseHTML } from '../utils/parse'
 
 /**
  * Choice component for rendering multiple choice questions.

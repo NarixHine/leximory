@@ -1,14 +1,13 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { CircularProgress } from '@heroui/progress'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import { contentAtom, ebookAtom, textAtom, titleAtom } from '../../atoms'
+import { contentAtom, ebookAtom, isFullViewportAtom, textAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { useAtom, useAtomValue } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
@@ -106,7 +105,7 @@ export default function Ebook() {
     }, [lang, isDarkMode])
 
     const handleFullScreen = useFullScreenHandle()
-    const [isFullViewport, setIsFullViewport] = useState(false)
+    const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
     const [isFullScreen, setIsFullScreen] = useState(true) // flips to false on load
     const hasZoomed = isFullViewport || isFullScreen
     const containerRef = useRef<HTMLDivElement>(null!)
@@ -137,16 +136,13 @@ export default function Ebook() {
                 right: isFullViewport ? 0 : 'auto',
             }}
             transition={{
-                duration: 0.5,
-                ease: 'easeInOut',
                 layout: {
-                    duration: 0.5
+                    duration: 0.5,
+                    ease: 'easeInOut'
                 }
             }}
             layout='preserve-aspect'
         >
-            {/* Oversized background overlay for iPad PWA: covers content that may slip behind system bars */}
-            {isFullViewport && <div className='z-[-1] fixed -inset-20 bg-background' />}
             <FullScreen handle={handleFullScreen} onChange={() => setIsFullScreen(!isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-[calc(100dvh-40px)]' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
@@ -158,9 +154,6 @@ export default function Ebook() {
                     <EpubReader
                         key={isFullViewport ? 'full' : 'normal'}
                         title={title}
-                        loadingView={
-                            <CircularProgress color='primary' size='lg' />
-                        }
                         isRTL={strategy.isRTL}
                         location={location}
                         onLocationChange={epubcifi => {
@@ -237,7 +230,7 @@ export default function Ebook() {
                             })
                         }}
                         url={transformEbookUrl(src)}
-                        portalContainer={isFullScreen ? containerRef.current : undefined}
+                        portalContainer={hasZoomed ? containerRef.current : undefined}
                         actions={
                             <>
                                 <Button

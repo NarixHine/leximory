@@ -16,3 +16,4 @@ export const lexiconAtom = atomWithStorage<CustomLexicon>('persist-lexicon', 'no
 export const hideTextAtom = atom(false)
 export const promptAtom = atom('')
 export const emojiAtom = atom<string | null>(null)
+export const isFullViewportAtom = atom(false)

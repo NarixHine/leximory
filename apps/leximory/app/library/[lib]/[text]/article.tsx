@@ -1,58 +1,12 @@
 import { getArticleData } from './data'
 import { isReaderModeAtom } from '@/app/atoms'
-import { commentSyntaxRegex } from '@/lib/comment'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
 import { contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom, promptAtom, emojiAtom } from './atoms'
 import Digest from './components/digest'
-import EditableH from './components/editable-h'
 import QuoteInAgent from './components/quote-in-agent'
-import ShareButton from './components/share-button'
-import { getLanguageStrategy } from '@/lib/languages'
-import { TagPills } from '../components/text'
-import { BackwardButton } from './components/backward-button'
-import { DateTime } from 'luxon'
-import { Lang } from '@repo/env/config'
-import { TextEmojiCover } from './components/full-emoji-cover'
-
-/** Magazine-style article hero header. */
-function ArticleHero({ title, topics, createdAt, libId, lang, content, hasEbook }: {
-    title: string, topics: string[], createdAt: string | null, libId: string, lang: Lang, content: string, hasEbook: boolean
-}) {
-    const { FormattedReadingTime } = getLanguageStrategy(lang)
-    const dateStr = createdAt ? DateTime.fromISO(createdAt).toFormat('MMMM dd, yyyy') : null
-
-    return (<>
-        <div className='print:hidden hidden md:block w-full'>
-            {/* md+ layout: side-by-side, emoji on right, text on left */}
-            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center md:mb-12'>
-                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-15'>
-                    <BackwardButton libId={libId} className='mb-5 -ml-3' />
-                    {dateStr && <time className='block text-lg text-secondary-400 mb-4'>{dateStr}</time>}
-                    <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>
-                        {title}
-                    </h1>
-                    {FormattedReadingTime && !hasEbook && (
-                        <div className='text-sm mb-4'>
-                            {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
-                        </div>
-                    )}
-                    <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />
-                </div>
-                <TextEmojiCover className='w-full h-full' />
-            </div>
-        </div>
-
-        {/* Mobile layout: vertical stack */}
-        <div className='print:hidden md:hidden w-full mb-8'>
-            <BackwardButton libId={libId} className='mb-3 ml-5' />
-            <TextEmojiCover className='w-full h-64' />
-            <div className='flex justify-center my-3'>
-                <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />
-            </div>
-        </div>
-    </>)
-}
+import { ArticleHero } from './components/article-hero'
+import { ArticleHeading } from './components/heading'
 
 export const Article = ({ title, text, content, topics, ebook, emoji, createdAt, lib, annotating, prompt, hideControls, isPublicAndFree }: Awaited<ReturnType<typeof getArticleData>> & {
     text: string,
@@ -79,11 +33,7 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
                 createdAt={createdAt}
                 libId={lib.id}
             />
-            <div className='flex items-center justify-center gap-3 print:mt-0 px-5 sm:w-5/6 mx-auto'>
-                {hideControls ? <div className='invisible'><ShareButton isPublicAndFree={isPublicAndFree} className='mb-2' /></div> : <QuoteInAgent className='mb-2 print:invisible' />}
-                <EditableH />
-                <ShareButton isPublicAndFree={isPublicAndFree} className='mb-2 print:invisible' />
-            </div>
+            <ArticleHeading hideControls={hideControls} isPublicAndFree={isPublicAndFree} quoteInAgent={<QuoteInAgent className='mb-2 print:invisible' />} />
             <div className='px-5 sm:w-5/6 mx-auto'>
                 <Digest hideImportControls={hideControls}></Digest>
             </div>
