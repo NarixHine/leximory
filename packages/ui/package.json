@@ -29,7 +29,8 @@
     "./mark-for-later": "./src/mark-for-later/index.tsx",
     "./mark-for-later/panel": "./src/mark-for-later/panel.tsx",
     "./confirm-popover": "./src/confirm-popover/index.tsx",
-    "./file-upload": "./src/file-upload/index.tsx"
+    "./file-upload": "./src/file-upload/index.tsx",
+    "./epub-reader": "./src/epub-reader/index.tsx"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
@@ -50,6 +51,7 @@
     "@repo/user": "workspace:^",
     "@repo/utils": "workspace:^",
     "class-variance-authority": "^0.7.1",
+    "epubjs": "^0.3.93",
     "es-toolkit": "^1.44.0",
     "fast-shuffle": "^6.1.1",
     "html-react-parser": "^5.2.5",
