@@ -165,7 +165,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                         className='w-full'
                                         aria-label='目标文库'
                                         classNames={{
-                                            popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
+                                            popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-4xl',
                                         }}
                                     >
                                         {activeLibs.length > 0 ? (

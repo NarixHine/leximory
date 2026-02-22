@@ -279,7 +279,7 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
         case 'text':
             return (
                 <div className={cn(
-                    'px-4 py-3 mt-4 rounded-2xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
+                    'px-4 py-3 mt-4 rounded-4xl max-w-4/5 text-base whitespace-pre-wrap overflow-x-hidden',
                     isUser
                         ? 'bg-default-50'
                         : 'bg-secondary-50',
@@ -556,7 +556,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                         >
                             <CardBody>
                                 <div className='flex items-start gap-3'>
-                                    <div className='p-2 rounded-full bg-primary-100/50'>
+                                    <div className='p-2 rounded-full bg-default-100'>
                                         <prompt.icon className='text-primary' size={20} />
                                     </div>
                                     <div>

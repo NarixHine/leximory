@@ -207,28 +207,12 @@ export default async function Home() {
 	)
 }
 
-const HeroCard = ({ children, className }: {
-	children: ReactNode,
-	className?: string,
-}) => {
-	return (
-		<Card
-			shadow='none'
-			className={cn('w-full bg-default-50/50 rounded-3xl', className)}
-		>
-			<CardBody className='p-6'>
-				{children}
-			</CardBody>
-		</Card>
-	)
-}
-
 const BentoCard = ({ title, children, description, }: {
 	title: string,
 	children: ReactNode,
 	description?: string,
 }) => {
-	return <Card shadow='none' className={'w-full h-full bg-default-50/50 rounded-3xl'}>
+	return <Card shadow='none' className={'w-full h-full bg-default-50/50 rounded-4xl'}>
 		<CardBody className='p-5'>
 			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}

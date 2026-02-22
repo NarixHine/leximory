@@ -19,7 +19,7 @@ export interface LibraryCardBaseProps {
 /** Shared layout for library cards across Libraries, Marketplace & Profile screens. */
 export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardBaseProps) {
     return (
-        <div className='block break-inside-avoid rounded-3xl bg-default-50 p-3.5'>
+        <div className='block break-inside-avoid rounded-4xl bg-default-50 p-3.5'>
             <Card
                 as={Link}
                 isPressable
@@ -27,7 +27,7 @@ export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardB
                 href={`/library/${id}`}
                 className='p-0 bg-transparent'
             >
-                <CardBody className='p-0 bg-default-100 rounded-2xl px-6 pb-7 pt-5'>
+                <CardBody className='p-0 bg-default-100 rounded-4xl px-6 pb-7 pt-5'>
                     <span className='mb-2 inline-block font-semibold text-default-400'>
                         {getLanguageStrategy(lang as Lang).name}
                     </span>

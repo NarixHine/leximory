@@ -2,7 +2,7 @@ import { Spinner } from '@heroui/spinner'
 
 /** Pulse placeholder block. */
 export function Bone({ className }: { className?: string }) {
-    return <div className={`animate-pulse rounded-3xl bg-default-100 ${className ?? ''}`} />
+    return <div className={`animate-pulse rounded-4xl bg-default-100 ${className ?? ''}`} />
 }
 
 /** Skeleton matching the ArticleHero responsive layout. */

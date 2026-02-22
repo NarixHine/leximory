@@ -29,7 +29,7 @@ export function ConfirmUnstarRoot() {
 
 export function LibrarySkeleton({ rowCount }: { rowCount?: number }) {
     return (
-        <div className={('break-inside-avoid rounded-3xl bg-default-50 p-3.5 animate-pulse duration-3000')}>
+        <div className={('break-inside-avoid rounded-4xl bg-default-50 p-3.5 animate-pulse duration-3000')}>
             <div className='bg-default-100 px-6 pt-5 pb-7 rounded-2xl'>
                 <div className='bg-default-200 opacity-30 mb-4 rounded-xl w-12 h-4' />
                 {new Array(rowCount || 1).fill(0).map((_, i) => (
@@ -114,7 +114,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
             className='bg-transparent p-0'
         >
             <CardBody className='p-0'>
-                <div className='flex flex-nowrap items-center bg-secondary-50 py-1.5 pr-1.5 pl-5 rounded-3xl'>
+                <div className='flex flex-nowrap items-center bg-secondary-50 py-1.5 pr-1.5 pl-5 rounded-4xl'>
                     <div className='text-secondary-500 text-base'>{name}</div>
                     <div className='flex items-center ml-3'>
                         {archived && !shadow && (<>
@@ -226,7 +226,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 {recentAccessItem ? (
                     <Link
                         href={`/library/${id}/${recentAccessItem.id}`}
-                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium text-default-400 text-sm'
+                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 ml-1.25 rounded-xl font-medium text-default-400 text-sm'
                     >
                         <LoadingIndicatorWrapper variant='spinner' color='secondary' classNames={{
                             wrapper: 'size-5',

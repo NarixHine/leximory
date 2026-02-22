@@ -89,7 +89,7 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false }:
         : emojiSpan
     return (
         <div
-            className={cn('flex items-center justify-center rounded-3xl overflow-clip', className)}
+            className={cn('flex items-center justify-center rounded-4xl overflow-clip', className)}
             style={{ containerType: 'size' }}
         >
             <div

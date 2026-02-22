@@ -13,7 +13,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
                 </LayoutContent>
             </Suspense>
         </div>
-        <Image src='/images/home.webp' alt='Library illustration' className='hidden h-[calc(100dvh-80px)] w-auto rounded-2xl lg:block pointer-events-none' />
+        <Image src='/images/home.webp' alt='Library illustration' className='hidden h-[calc(100dvh-80px)] w-auto rounded-4xl lg:block pointer-events-none' />
     </Center>
 }
 

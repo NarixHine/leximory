@@ -15,7 +15,7 @@ import { PiUser, PiImage, PiEnvelopeSimple, PiLock, PiSignOut, PiUpload } from '
 
 export function SectionCard({ children, footer, title, onSubmit }: { children: React.ReactNode, footer?: React.ReactNode, title: string, onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void }) {
     return (<form onSubmit={onSubmit} className='w-full h-full'>
-        <Card shadow='none' className='bg-default-50/50 p-0 rounded-2xl w-full h-full'>
+        <Card shadow='none' className='bg-default-50/50 p-0 rounded-4xl w-full h-full'>
             <CardHeader className='px-6 pt-5 pb-1'>
                 <h2 className='font-formal text-default-500 text-sm tracking-tight'>{title}</h2>
             </CardHeader>

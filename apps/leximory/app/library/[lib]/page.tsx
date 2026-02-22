@@ -65,7 +65,7 @@ async function PageContent({ params }: LibProps) {
 
 /** Pulse placeholder block. */
 function Bone({ className }: { className?: string }) {
-    return <div className={`animate-pulse rounded-3xl bg-default-100 ${className ?? ''}`} />
+    return <div className={`animate-pulse rounded-4xl bg-default-100 ${className ?? ''}`} />
 }
 
 /** Skeleton matching the TextList responsive layout. */

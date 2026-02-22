@@ -62,7 +62,7 @@ async function UpgradeServer() {
 
 export default async function Settings() {
     return (
-        <Main className='flex flex-col gap-6 max-w-(--breakpoint-sm)'>
+        <Main className='flex flex-col gap-3 max-w-(--breakpoint-sm)'>
             {/* Hero — avatar & name */}
             <Suspense fallback={<HeroSectionSkeleton />}>
                 <HeroSection />
@@ -96,7 +96,6 @@ export default async function Settings() {
 
             {/* Activity */}
             <section className='flex flex-col gap-3'>
-                <Streak />
                 <Suspense fallback={<HeatmapSkeleton />}>
                     <UserWordHeatmap />
                 </Suspense>
@@ -122,6 +121,8 @@ export default async function Settings() {
                     <UserSection />
                 </Suspense>
             </section>
+
+            <Streak />
         </Main>
     )
 }

@@ -40,7 +40,7 @@ export default function Recollection({ words, cursor, more }: {
             {recol.words.map(({ word, id, date }, index, array) => {
                 const anotherDay = array[index + 1] && !moment(date).isSame(array[index + 1].date, 'day')
                 return <Fragment key={id}>
-                    <div className='w-full min-h-20 h-full flex flex-col justify-center items-center rounded-2xl bg-default-50 p-3 transition-colors hover:bg-default-100/50'>
+                    <div className='w-full min-h-20 h-full flex flex-col justify-center items-center rounded-4xl bg-default-50 p-3 transition-colors hover:bg-default-100/50'>
                         <Markdown md={word} disableSave={welcomes.includes(word)} deleteId={isReadOnly || welcomes.includes(word) ? undefined : id} />
                     </div>
                     {anotherDay && <div className='w-full py-3 flex flex-col px-4 col-span-full'>

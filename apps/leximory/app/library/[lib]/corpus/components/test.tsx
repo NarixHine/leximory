@@ -34,7 +34,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
     const router = useRouter()
 
     return <div className='flex gap-2'>
-        <div className='flex flex-col items-center justify-center flex-1 rounded-2xl text-nowrap min-h-36 px-3 h-36 overflow-y-auto'>
+        <div className='flex flex-col items-center justify-center flex-1 rounded-4xl text-nowrap min-h-36 px-3 h-36 overflow-y-auto'>
             {words.map(({ word, id }) => (
                 !languageStrategies.map(s => s.welcome).includes(word) &&
                 <Markdown md={word} deleteId={isReadOnly ? undefined : id} key={id} disableSave />
@@ -116,7 +116,7 @@ export default function Test({ latestTime }: {
             </I18nProvider>
         </Suspense>
         <Suspense fallback={<div className='flex gap-2'>
-            <div className='flex flex-col items-center justify-center flex-1 rounded-2xl bg-default-50 text-nowrap min-h-36 px-3 h-36'>
+            <div className='flex flex-col items-center justify-center flex-1 rounded-4xl bg-default-50 text-nowrap min-h-36 px-3 h-36'>
                 <span className='text-default-300 text-sm'>加载中…</span>
             </div>
             <div className='flex flex-col gap-2'>
