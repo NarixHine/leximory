@@ -28,6 +28,7 @@ import { Progress } from '@heroui/progress'
 import { toast } from 'sonner'
 import { getLanguageStrategy } from '@/lib/languages'
 import { useAuth } from '@/lib/hooks'
+import { commentSyntaxRegex } from '@repo/utils'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -66,6 +67,8 @@ function EditingView() {
   const setIsEditing = useSetAtom(isEditingAtom)
   const title = useAtomValue(titleAtom)
   const emoji = useAtomValue(emojiAtom)
+
+  const setRecentAccess = useSetAtom(recentAccessAtom)
 
   const [modifiedMd, setModifiedMd] = useState(content)
   const [modifiedTopics, setModifiedTopics] = useState(topics)
@@ -109,6 +112,11 @@ function EditingView() {
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)
     await removeText({ id: text })
+    setRecentAccess(prev => {
+      const updated = { ...prev }
+      delete updated[lib]
+      return updated
+    })
     router.push(`/library/${lib}`)
     setIsDeleting(false)
   }, [text, lib])
@@ -136,21 +144,10 @@ function EditingView() {
         </Button>
       </div>
       <Spacer y={2} />
-      <div className='sm:hidden h-125'>
+      <div className='mx-auto max-w-160 px-4 sm:px-0 py-6'>
         <Editor
           value={modifiedMd}
-          className='h-full'
-          view={{ menu: true, md: true, html: false }}
-          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
-          onChange={(e) => setModifiedMd(e.text)}
-        />
-      </div>
-      <div className='hidden sm:block h-125'>
-        <Editor
-          value={modifiedMd}
-          className='h-full'
-          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
-          onChange={(e) => setModifiedMd(e.text)}
+          onChange={setModifiedMd}
         />
       </div>
       <Spacer y={2} />
@@ -197,7 +194,7 @@ function ReadingView() {
   }, [entry?.isIntersecting, text])
 
   if (hideText && content) {
-    const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
+    const matches = content.match(commentSyntaxRegex) || []
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
         {matches.map((match, index) => (

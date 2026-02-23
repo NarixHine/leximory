@@ -280,10 +280,10 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
         <Form
             actionButton={<Popover>
                 <PopoverTrigger>
-                    <Button isIconOnly color='primary' variant='flat' startContent={<PiTrash />} />
+                    <Button radius='full' isIconOnly color='danger' variant='light' startContent={<PiTrash />} />
                 </PopoverTrigger>
                 <PopoverContent className='p-0'>
-                    <Button color='primary' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
+                    <Button radius='full' color='danger' startContent={<PiWarningOctagonFill size={20} />} onPress={() => {
                         remove({ id })
                         setIsDeleted(true)
                         onOpenChange()

@@ -1,7 +1,8 @@
 'use client'
 
 import Comment from '@/components/comment'
-import wrap, { commentSyntaxRegex } from '@/lib/comment'
+import lexiconWrap from '@/lib/comment'
+import { commentSyntaxRegex } from '@repo/utils'
 import MarkdownToJSX, { RuleType } from 'markdown-to-jsx'
 import MdImg from '../ui/mdimg'
 import Audio from './audio'
@@ -31,7 +32,7 @@ export type MarkdownProps = {
 function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
 
-    const result = hasWrapped ? md.trim() : sanitize(wrap(md.trim(), lexicon))
+    const result = hasWrapped ? md.trim() : sanitize(lexiconWrap(md.trim(), lexicon))
         // double space after list markers
         .replace(/([*-]) \{\{/g, '$1  {{')
         // space handling
