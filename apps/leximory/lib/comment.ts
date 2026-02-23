@@ -1,16 +1,9 @@
+import { validateOrThrow } from '@repo/utils/comment'
 import LEXICON from './lexicon'
 import { CustomLexicon } from './types'
 const lemmatize = require('wink-lemmatizer')
 
-export const commentSyntaxRegex = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
-
-export function validateOrThrow(word: string) {
-    const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
-    if (!isValid) {
-        throw new Error('Invalid word', { cause: word })
-    }
-    return word
-}
+export { validateOrThrow }
 
 export function parseCommentParams(word: string | Array<string>) {
     try {
@@ -33,7 +26,7 @@ export function parseCommentParams(word: string | Array<string>) {
 
 export const originals = (word: string): string[] => [...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)])]
 
-export default function wrap(text: string, lexicon?: CustomLexicon): string {
+export default function lexiconWrap(text: string, lexicon?: CustomLexicon): string {
     // Choose lexicon based on the provided argument
     if (!lexicon || lexicon === 'none') {
         return text

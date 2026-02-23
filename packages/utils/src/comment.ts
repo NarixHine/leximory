@@ -1,5 +1,7 @@
 import { drop } from 'es-toolkit'
 
+export const commentSyntaxRegex =  /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
+
 export function validateOrThrow(word: string) {
     const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
     if (!isValid) {

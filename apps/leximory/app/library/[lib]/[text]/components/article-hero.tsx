@@ -1,6 +1,5 @@
 'use client'
 
-import { commentSyntaxRegex } from '@/lib/comment'
 import { getLanguageStrategy } from '@/lib/languages'
 import { Lang } from '@repo/schema/library'
 import { DateTime } from 'luxon'
@@ -10,6 +9,7 @@ import { TextEmojiCover } from './full-emoji-cover'
 import { useAtomValue } from 'jotai'
 import { isFullViewportAtom } from '../atoms'
 import { cn } from '@/lib/utils'
+import { commentSyntaxRegex } from '@repo/utils'
 
 /** Magazine-style article hero header. */
 export function ArticleHero({ title, topics, createdAt, libId, lang, content, hasEbook }: {
