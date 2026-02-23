@@ -7,7 +7,7 @@ import { CommentNode } from './extensions/comment-node'
 import { AudioSection } from './extensions/audio-section'
 import EditorBubbleMenu from './bubble-menu'
 import { markdownToHtml, getMarkdownFromEditor } from './serialization'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 interface LeximoryEditorProps {
@@ -54,12 +54,6 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
             onChange(getMarkdownFromEditor(editor))
         },
     })
-
-    useEffect(() => {
-        return () => {
-            editor?.destroy()
-        }
-    }, [editor])
 
     if (!editor) return null
 

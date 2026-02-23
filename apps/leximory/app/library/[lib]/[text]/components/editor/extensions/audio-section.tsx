@@ -28,7 +28,7 @@ function AudioSectionView({ editor }: NodeViewProps) {
                     color='danger'
                     className='opacity-0 group-hover:opacity-100 transition-opacity ml-auto'
                     onPress={() => {
-                        editor.chain().focus().lift('audioSection').run()
+                        editor.chain().focus().removeAudioSection().run()
                     }}
                 >
                     <PiXCircle className='size-4' />

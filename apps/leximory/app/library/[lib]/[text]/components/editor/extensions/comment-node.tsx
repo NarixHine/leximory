@@ -45,7 +45,7 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                     <div className='py-3 px-2 space-y-2'>
                         {editing.map((portion, i) => (
                             <Textarea
-                                key={i}
+                                key={`portion-${i}-${editing.length}`}
                                 label={LABELS[i] ?? `字段 ${i + 1}`}
                                 size='sm'
                                 minRows={1}

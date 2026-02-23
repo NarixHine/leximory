@@ -43,8 +43,8 @@ export function markdownToHtml(md: string): string {
 }
 
 export function getMarkdownFromEditor(editor: Editor): string {
-    // @ts-expect-error tiptap-markdown storage typing
-    const md = editor.storage.markdown.getMarkdown() as string
+    // tiptap-markdown stores its serializer in editor.storage.markdown
+    const md = (editor.storage as unknown as Record<string, { getMarkdown: () => string }>).markdown.getMarkdown()
 
     let result = md
 
