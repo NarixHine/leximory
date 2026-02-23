@@ -47,7 +47,7 @@ export function formatChartData(countMap: Map<string, number>, size: number) {
     }).reverse()
 
     const data = dates.map(date => ({
-        date: momentSH(date).format('ll'),
+        date: momentSH(date).format('MMM D'),
         '保存词汇': countMap.get(date) || 0
     }))
 
