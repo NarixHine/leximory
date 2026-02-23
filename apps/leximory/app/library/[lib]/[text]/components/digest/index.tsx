@@ -28,6 +28,7 @@ import { Progress } from '@heroui/progress'
 import { toast } from 'sonner'
 import { getLanguageStrategy } from '@/lib/languages'
 import { useAuth } from '@/lib/hooks'
+import { commentSyntaxRegex } from '@repo/utils'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -193,7 +194,7 @@ function ReadingView() {
   }, [entry?.isIntersecting, text])
 
   if (hideText && content) {
-    const matches = content.match(/\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g) || []
+    const matches = content.match(commentSyntaxRegex) || []
     return (
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
         {matches.map((match, index) => (

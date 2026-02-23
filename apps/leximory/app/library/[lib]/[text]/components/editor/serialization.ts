@@ -1,7 +1,6 @@
 import showdown from 'showdown'
 import { Editor } from '@tiptap/react'
-
-const commentRegex = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
+import { commentSyntaxRegex } from '@repo/utils'
 
 function commentToHtml(_: string, ...groups: (string | undefined)[]): string {
     const portions = groups.slice(0, 5).filter(Boolean) as string[]
@@ -27,11 +26,11 @@ export function markdownToHtml(md: string): string {
         }
     )
 
-    processed = processed.replace(commentRegex, commentToHtml)
+    processed = processed.replace(commentSyntaxRegex, commentToHtml)
     let html = converter.makeHtml(processed)
 
     audioSections.forEach((section, idx) => {
-        const innerMd = section.content.replace(commentRegex, commentToHtml)
+        const innerMd = section.content.replace(commentSyntaxRegex, commentToHtml)
         const innerHtml = converter.makeHtml(innerMd)
         html = html.replace(
             new RegExp(`<div data-audio-idx="${idx}"></div>`, 'g'),
