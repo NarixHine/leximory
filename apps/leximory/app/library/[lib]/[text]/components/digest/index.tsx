@@ -136,23 +136,10 @@ function EditingView() {
         </Button>
       </div>
       <Spacer y={2} />
-      <div className='sm:hidden h-125'>
-        <Editor
-          value={modifiedMd}
-          className='h-full'
-          view={{ menu: true, md: true, html: false }}
-          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
-          onChange={(e) => setModifiedMd(e.text)}
-        />
-      </div>
-      <div className='hidden sm:block h-125'>
-        <Editor
-          value={modifiedMd}
-          className='h-full'
-          renderHTML={(md) => <Markdown className='dropcap' md={`<article>\n${md}\n\n</article>`} />}
-          onChange={(e) => setModifiedMd(e.text)}
-        />
-      </div>
+      <Editor
+        value={modifiedMd}
+        onChange={setModifiedMd}
+      />
       <Spacer y={2} />
       <div className='flex gap-2'>
         <Button
