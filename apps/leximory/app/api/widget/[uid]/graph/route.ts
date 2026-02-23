@@ -9,7 +9,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ uid: strin
   const data = formatChartData(new Map(buckets.map((bucket) => [bucket.date, bucket.count])), 7)
 
   const csvRows = ['date,count']
-  data.forEach(({ '保存词汇': count, date }) => {
+  data.forEach(({ '入库词汇': count, date }) => {
     csvRows.push(`${date},${count}`)
   })
   const csvContent = csvRows.join('\n')

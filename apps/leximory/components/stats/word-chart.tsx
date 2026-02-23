@@ -3,7 +3,7 @@ import { AreaChart } from '../ui/area-chart'
 
 type WordData = {
     date: string
-    '保存词汇': number
+    '入库词汇': number
 }
 
 export default function WordChart({ data, color = 'default' }: { data: WordData[], color?: AvailableChartColorsKeys }) {
@@ -11,7 +11,7 @@ export default function WordChart({ data, color = 'default' }: { data: WordData[
         data={data}
         colors={[color]}
         index='date'
-        categories={['保存词汇']}
+        categories={['入库词汇']}
         showLegend={false}
         startEndOnly
         showGridLines={false}
@@ -24,10 +24,10 @@ export function WordChartSkeleton() {
         className='opacity-30 animate-pulse'
         data={new Array(30).fill(0).map((_, i) => ({
             date: `Day ${i + 1}`,
-            '保存词汇': 0
+            '入库词汇': 0
         }))}
         index='date'
-        categories={['保存词汇']}
+        categories={['入库词汇']}
         showLegend={false}
         startEndOnly
         showGridLines={false}

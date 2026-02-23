@@ -226,7 +226,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                 {recentAccessItem ? (
                     <Link
                         href={`/library/${id}/${recentAccessItem.id}`}
-                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 ml-1.25 rounded-xl font-medium text-default-400 text-sm'
+                        className='group/link flex items-center gap-1.5 px-2.5 py-1.5 ml-1 rounded-xl font-medium text-default-400 text-sm'
                     >
                         <LoadingIndicatorWrapper variant='spinner' color='secondary' classNames={{
                             wrapper: 'size-5',
