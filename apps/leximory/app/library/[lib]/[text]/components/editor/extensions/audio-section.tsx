@@ -26,7 +26,7 @@ function AudioSectionView({ editor }: NodeViewProps) {
                     size='sm'
                     variant='light'
                     color='danger'
-                    className='opacity-0 group-hover:opacity-100 transition-opacity ml-auto'
+                    radius='full'
                     onPress={() => {
                         editor.chain().focus().removeAudioSection().run()
                     }}

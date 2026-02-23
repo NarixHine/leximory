@@ -11,7 +11,7 @@ import type { NodeViewProps } from '@tiptap/react'
 import { PiCheckCircle, PiPlusCircle, PiMinusCircle } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 
-const LABELS = ['词条', '释义', '语源', '同源词']
+const LABELS = ['原文形式', '词条', '释义', '语源', '同源词']
 
 function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
     const portions = node.attrs.portions as string[]
@@ -64,6 +64,7 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                                     variant='light'
                                     color='secondary'
                                     isIconOnly
+                                    radius='full'
                                     onPress={() => setEditing([...editing, ''])}
                                 >
                                     <PiPlusCircle className='size-4' />
@@ -75,6 +76,7 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                                     variant='light'
                                     color='secondary'
                                     isIconOnly
+                                    radius='full'
                                     onPress={() => setEditing(editing.slice(0, -1))}
                                 >
                                     <PiMinusCircle className='size-4' />
@@ -93,7 +95,6 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                                 确认
                             </Button>
                         </div>
-                        <Spacer y={0.5} />
                     </div>
                 </PopoverContent>
             </Popover>

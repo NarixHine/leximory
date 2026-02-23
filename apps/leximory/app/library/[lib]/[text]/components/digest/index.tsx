@@ -67,6 +67,8 @@ function EditingView() {
   const title = useAtomValue(titleAtom)
   const emoji = useAtomValue(emojiAtom)
 
+  const setRecentAccess = useSetAtom(recentAccessAtom)
+
   const [modifiedMd, setModifiedMd] = useState(content)
   const [modifiedTopics, setModifiedTopics] = useState(topics)
   const [newTopic, setNewTopic] = useState('')
@@ -109,6 +111,11 @@ function EditingView() {
   const handleDeleteText = useCallback(async () => {
     setIsDeleting(true)
     await removeText({ id: text })
+    setRecentAccess(prev => {
+      const updated = { ...prev }
+      delete updated[lib]
+      return updated
+    })
     router.push(`/library/${lib}`)
     setIsDeleting(false)
   }, [text, lib])
@@ -136,10 +143,12 @@ function EditingView() {
         </Button>
       </div>
       <Spacer y={2} />
-      <Editor
-        value={modifiedMd}
-        onChange={setModifiedMd}
-      />
+      <div className='mx-auto max-w-160 px-4 sm:px-0 py-6'>
+        <Editor
+          value={modifiedMd}
+          onChange={setModifiedMd}
+        />
+      </div>
       <Spacer y={2} />
       <div className='flex gap-2'>
         <Button

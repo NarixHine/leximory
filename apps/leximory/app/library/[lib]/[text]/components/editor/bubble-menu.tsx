@@ -3,19 +3,13 @@
 import { BubbleMenu } from '@tiptap/react/menus'
 import type { Editor } from '@tiptap/react'
 import { Button, ButtonGroup } from '@heroui/button'
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown'
 import {
     PiTextBBold,
     PiTextItalicBold,
-    PiTextHThreeBold,
     PiQuotesBold,
     PiListBulletsBold,
     PiHeadphonesBold,
-    PiDotsThreeCircleBold,
-    PiTextHTwoBold,
-    PiTextStrikethroughBold,
-    PiListNumbersBold,
-    PiCodeBold,
+    PiTextH,
 } from 'react-icons/pi'
 import { nanoid } from '@/lib/utils'
 
@@ -36,12 +30,19 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
             }}
         >
             <div className='flex items-center gap-1'>
-                <ButtonGroup className='bg-background/50 backdrop-blur-md z-10 shadow-medium rounded-xl overflow-clip'>
+                <ButtonGroup radius='full' className='bg-background/80 backdrop-blur-md z-10 border-default-300 border-1 rounded-4xl overflow-clip'>
+                    <Button
+                        onPress={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                        variant={editor.isActive('heading') ? 'shadow' : 'light'}
+                        isIconOnly
+                        aria-label='Heading'
+                    >
+                        <PiTextH />
+                    </Button>
                     <Button
                         onPress={() => editor.chain().focus().toggleBold().run()}
                         variant={editor.isActive('bold') ? 'shadow' : 'light'}
                         isIconOnly
-                        size='sm'
                         aria-label='Bold'
                     >
                         <PiTextBBold />
@@ -50,25 +51,14 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                         onPress={() => editor.chain().focus().toggleItalic().run()}
                         variant={editor.isActive('italic') ? 'shadow' : 'light'}
                         isIconOnly
-                        size='sm'
                         aria-label='Italic'
                     >
                         <PiTextItalicBold />
                     </Button>
                     <Button
-                        onPress={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                        variant={editor.isActive('heading', { level: 3 }) ? 'shadow' : 'light'}
-                        isIconOnly
-                        size='sm'
-                        aria-label='Heading 3'
-                    >
-                        <PiTextHThreeBold />
-                    </Button>
-                    <Button
                         onPress={() => editor.chain().focus().toggleBlockquote().run()}
                         variant={editor.isActive('blockquote') ? 'shadow' : 'light'}
                         isIconOnly
-                        size='sm'
                         aria-label='Blockquote'
                     >
                         <PiQuotesBold />
@@ -77,7 +67,6 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                         onPress={() => editor.chain().focus().toggleBulletList().run()}
                         variant={editor.isActive('bulletList') ? 'shadow' : 'light'}
                         isIconOnly
-                        size='sm'
                         aria-label='Bullet List'
                     >
                         <PiListBulletsBold />
@@ -88,7 +77,6 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                             variant='shadow'
                             color='danger'
                             isIconOnly
-                            size='sm'
                             aria-label='Remove Audio'
                         >
                             <PiHeadphonesBold />
@@ -100,56 +88,12 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                             }
                             variant='light'
                             isIconOnly
-                            size='sm'
                             aria-label='Audio Section'
                         >
                             <PiHeadphonesBold />
                         </Button>
                     )}
                 </ButtonGroup>
-                <Dropdown>
-                    <DropdownTrigger className='bg-transparent'>
-                        <Button
-                            variant='light'
-                            isIconOnly
-                            size='sm'
-                            aria-label='More options'
-                            className='bg-background/50 backdrop-blur shadow-medium rounded-xl'
-                        >
-                            <PiDotsThreeCircleBold />
-                        </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu>
-                        <DropdownItem
-                            key='h2'
-                            startContent={<PiTextHTwoBold />}
-                            onPress={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                        >
-                            Heading 2
-                        </DropdownItem>
-                        <DropdownItem
-                            key='strikethrough'
-                            startContent={<PiTextStrikethroughBold />}
-                            onPress={() => editor.chain().focus().toggleStrike().run()}
-                        >
-                            Strikethrough
-                        </DropdownItem>
-                        <DropdownItem
-                            key='ordered-list'
-                            startContent={<PiListNumbersBold />}
-                            onPress={() => editor.chain().focus().toggleOrderedList().run()}
-                        >
-                            Ordered List
-                        </DropdownItem>
-                        <DropdownItem
-                            key='code-block'
-                            startContent={<PiCodeBold />}
-                            onPress={() => editor.chain().focus().toggleCodeBlock().run()}
-                        >
-                            Code Block
-                        </DropdownItem>
-                    </DropdownMenu>
-                </Dropdown>
             </div>
         </BubbleMenu>
     )
