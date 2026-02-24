@@ -226,7 +226,6 @@ function ReadingView() {
       <Markdown
         className={cn(
           isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
-          'text-pretty',
           'dropcap',
           getLanguageStrategy(lang).proseClassName,
         )}
