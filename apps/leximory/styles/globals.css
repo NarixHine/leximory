@@ -16,7 +16,8 @@
   float: left;
   font-size: 3.7em;
   padding-right: 0.08em;
-  margin-top: 0.12em;
+  margin-top: 0.14em;
+  line-height: 0.6;
   font-family: var(--font-fancy);
 }
 
