@@ -12,7 +12,7 @@ import { Input } from '@heroui/input'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell, PiPrinterBold } from 'react-icons/pi'
+import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell } from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -47,11 +47,11 @@ function ReaderModeToggle() {
           toggleReaderMode()
           setIsEditing(false)
         }}
-        className='mx-auto font-semibold'
+        className='mx-auto'
         variant={'light'}
         color={'secondary'}
         radius='full'
-        startContent={<PiPrinterBold className='size-5' />}
+        startContent={<PiPrinter className='size-5' />}
       >
         印刷模式
       </Button>
@@ -196,7 +196,7 @@ function ReadingView() {
   if (hideText && content) {
     const matches = content.match(commentSyntaxRegex) || []
     return (
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4'>
+      <div className='columns-1 sm:columns-2 md:columns-3 lg:columns-4 space-y-4 gap-4'>
         {matches.map((match, index) => (
           <div key={index} className='flex justify-center'>
             <Markdown md={match} onlyComments />

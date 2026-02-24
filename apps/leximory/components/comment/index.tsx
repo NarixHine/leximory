@@ -433,7 +433,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
         }
     }
 
-    return (<div className={cn(isCompact ? 'leading-tight' : '', lang === 'ja' ? 'font-ja' : 'font-formal')}>
+    return (<div className={cn(isCompact && 'leading-tight', lang === 'ja' ? 'font-ja' : 'font-formal')}>
         {!omitOriginal && (
             isEditing
                 ? <Textarea
@@ -443,7 +443,7 @@ function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
                     className='mb-2'
                     placeholder='词条'
                 />
-                : <div className={isCompact ? 'font-bold text-medium' : 'font-extrabold text-large'}>{portions[1]}</div>
+                : <div className={isCompact ? 'font-bold text-medium not-dropcap' : 'font-extrabold text-large'}>{portions[1]}</div>
         )}
         {portions[2] && <div className={margin}>
             {!isCompact && <div className='text-default-400'>{lang === 'ja' ? '意味' : '释义'}</div>}

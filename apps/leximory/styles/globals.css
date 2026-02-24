@@ -8,7 +8,7 @@
 
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
-.dropcap.has-dropcap-first article div:first-of-type::first-letter {
+.dropcap.has-dropcap-first article div:first-of-type:not(.not-dropcap)::first-letter {
   float: left;
   font-size: 3.6em;
   line-height: 0.82;

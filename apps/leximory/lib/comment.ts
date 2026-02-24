@@ -14,6 +14,10 @@ export const fixDumbPunctuation = (text: string) => (
         .replace(/"/g, "\u201d") // handle remaining double quotes as closing double quotes
         // fix dumb em-dashes
         .replace(/--/g, '—')
+        // fix mixed Chinese punctuation
+        .replaceAll('}}，', '}}, ')
+        // fix asymmetric spaces around emdashes
+        .replace(/ ?— ?/g, ' — ')
 )
 
 export function parseCommentParams(word: string | Array<string>) {
