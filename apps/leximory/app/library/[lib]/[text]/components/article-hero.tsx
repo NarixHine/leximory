@@ -26,12 +26,12 @@ export function ArticleHero({ title, topics, createdAt, libId, lang, content, ha
                 <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-15'>
                     <BackwardButton libId={libId} className='mb-5 -ml-3' />
                     {dateStr && <time className='block text-lg text-secondary-400 mb-4'>{dateStr}</time>}
-                    <h1 className='font-formal text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>
+                    <h1 className='font-fancy uppercase text-4xl leading-tight tracking-tight text-foreground text-balance mb-4'>
                         {title}
                     </h1>
                     {FormattedReadingTime && !hasEbook && (
                         <div className='text-sm mb-4'>
-                            {FormattedReadingTime(content.replace(commentSyntaxRegex, (_, p1) => p1))}
+                            {FormattedReadingTime(content)}
                         </div>
                     )}
                     <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />

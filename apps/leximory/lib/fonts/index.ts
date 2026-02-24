@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Instrument_Serif, Source_Code_Pro, Raleway } from 'next/font/google'
+import { Libre_Baskerville, Instrument_Serif, Source_Code_Pro, Raleway  , EB_Garamond } from 'next/font/google'
 import localFont from 'next/font/local'
 
 export const MINCHO = localFont({
@@ -27,7 +27,7 @@ export const ENGLISH_SERIF = Libre_Baskerville({
     variable: '--font-english-serif',
 })
 
-export const ENGLISH_FANCY = Instrument_Serif({
+export const ENGLISH_FANCY = EB_Garamond({
     subsets: ['latin'],
     style: ['normal', 'italic'],
     weight: ['400'],

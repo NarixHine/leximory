@@ -31,7 +31,7 @@ export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardB
                     <span className='mb-2 inline-block font-semibold text-default-400'>
                         {getLanguageStrategy(lang as Lang).name}
                     </span>
-                    <h2 className='font-formal text-3xl leading-snug tracking-tight text-foreground text-balance'>
+                    <h2 className='font-fancy text-3xl leading-snug text-foreground text-balance'>
                         {name}
                     </h2>
                 </CardBody>

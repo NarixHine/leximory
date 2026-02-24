@@ -123,7 +123,7 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
                 className='mb-3 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-2 font-formal text-[1.35rem] leading-snug tracking-tight text-foreground text-balance'>
+            <h2 className='mb-2 font-fancy text-2xl leading-tight tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <TagPills tags={allTopics} parentClassName='justify-center' />
@@ -145,7 +145,7 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
                 className='mb-8 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-3 text-center font-formal text-4xl leading-[1.2] tracking-tight text-foreground text-balance'>
+            <h2 className='mb-3 text-center font-fancy text-4xl leading-[1] tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <time className='block text-center text-xl text-secondary-500 mb-4'>
@@ -165,7 +165,7 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
     return (
         <Link href={`/library/${lib}/${id}`} className='group flex cursor-pointer gap-4'>
             <div className='flex min-w-0 flex-1 flex-col justify-center'>
-                <h2 className='mb-2 font-formal text-[0.95rem] leading-snug tracking-tight text-foreground text-balance'>
+                <h2 className='mb-2 font-fancy text-xl leading-tight tracking-tight text-foreground text-balance'>
                     {title}
                 </h2>
                 <TagPills tags={allTopics} />
@@ -195,7 +195,7 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
                 isLink
             />
             <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start sm:px-4'>
-                <h3 className='mb-1.5 font-formal text-[0.9rem] leading-snug tracking-tight text-foreground text-balance'>
+                <h3 className='mb-1.5 font-fancy text-xl leading-tight tracking-tight text-foreground text-balance'>
                     {title}
                 </h3>
                 <TagPills tags={allTopics} />

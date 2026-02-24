@@ -24,14 +24,14 @@ export default function BlogHome() {
             </Link>
             <Spacer y={5}></Spacer>
             <div className='space-y-3 flex flex-wrap justify-center'>
-                {postsData.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block font-fancy'>
+                {postsData.map((post, i) => <span key={i} className='border-primary/10 px-3 not-prose inline-block'>
                     <Link href={`/blog/${post.slug}`}>
-                        <H disableCenter className={'text-xl'}>
+                        <H disableCenter className={'text-xl font-fancy!'}>
                             {post.title}
                         </H>
                     </Link>
-                    <H disableCenter className={'text-sm -my-0.5 text-default-400'}>
-                        {luxon(new Date(post.date)).toFormat('MMMM dd, yyyy')}
+                    <H disableCenter className={'text-sm -my-0.5 text-default-400 font-mono!'}>
+                        {luxon(new Date(post.date)).toFormat('MMM dd, yyyy')}
                     </H>
                 </span>)}
             </div>

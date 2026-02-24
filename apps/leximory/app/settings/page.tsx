@@ -29,7 +29,7 @@ async function HeroSection() {
             <Avatar src={image} isBordered color='default' className='size-16! shrink-0' />
             <div className='flex flex-col gap-1 min-w-0'>
                 <h1 className='text-2xl font-formal tracking-tight text-foreground truncate'>{username ?? '你好 👋'}</h1>
-                <span className='text-xs tracking-wider text-default-400 font-mono flex items-center gap-1.5'>
+                <span className='text-xs tracking-wider text-default-500 font-mono flex items-center gap-1.5'>
                     <PiCalendarBlankDuotone className='size-3.5' />
                     {momentSH(createdAt).locale('zh-cn').calendar()} 加入
                 </span>
