@@ -8,12 +8,12 @@ import { Textarea } from "@heroui/input"
 import Markdown from 'markdown-to-jsx'
 import { ComponentProps, useEffect, useState, useCallback, useRef } from 'react'
 import { useQuery, queryOptions, experimental_streamedQuery as streamedQuery } from '@tanstack/react-query'
-import { PiTrash, PiBookBookmark, PiCheckCircle, PiArrowSquareOut, PiPencil, PiXCircle, PiEyesFill, PiEyeSlash } from 'react-icons/pi'
+import { PiTrash, PiBookBookmark, PiCheckCircle, PiArrowSquareOut, PiPencil, PiXCircle, PiEyeSlash, PiHandSwipeLeft } from 'react-icons/pi'
 import { cn, nanoid } from '@/lib/utils'
 import { isReadOnlyAtom, langAtom, libAtom } from '@/app/library/[lib]/atoms'
 import { contentAtom, textAtom } from '@/app/library/[lib]/[text]/atoms'
 import { useAtomValue } from 'jotai'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { isReaderModeAtom } from '@/app/atoms'
 import { toast } from 'sonner'
 import { parseCommentParams } from '@/lib/comment'
@@ -270,45 +270,78 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     return asCard
-        ? <FlatCard fullWidth background='solid' shadow='none' className={cn('rounded-4xl px-4 pt-3', className)}>
-            <CardBody className={cn('px-3 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
-                <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
-                <div className='relative'>
-                    {!isVisible && (
-                        <div className='absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pb-7'>
-                            <Button
-                                variant='ghost'
-                                isIconOnly
-                                startContent={<PiEyesFill />}
-                                color='secondary'
-                                radius='full'
-                                onPress={() => setIsVisible(!isVisible)}
-                            />
-                        </div>
-                    )}
+        ? <FlatCard fullWidth background='solid' shadow='none' className={cn('rounded-4xl px-0 pt-3 bg-default-50', className)}>
+            <CardBody className={cn('px-0 pb-2.5 pt-1.5 leading-snug', lang === 'ja' ? 'font-ja' : 'font-formal')}>
+                <div className={'font-bold text-lg px-7'}>{portions[1] ?? portions[0]}</div>
+                <div className='relative overflow-hidden'>
+                    <AnimatePresence>
+                        {!isVisible && (
+                            <motion.div
+                                className='absolute inset-y-0 -left-full right-0 z-20 flex items-center justify-center bg-default-50 cursor-grab active:cursor-grabbing'
+                                drag="x"
+                                // The "home" position
+                                dragConstraints={{ left: 0, right: 0 }}
+                                // 0.7 - 0.9 is the sweet spot for a "heavy" rubber band feel
+                                dragElastic={{ left: 0.8, right: 0.1 }}
+                                style={{ touchAction: "pan-y" }}
+                                // This adds the "squeeze" visual as they pull
+                                whileDrag={{ scaleX: 0.98, originX: 1 }}
+                                onDragEnd={(_, info) => {
+                                    if (info.offset.x < -80 || info.velocity.x < -400) {
+                                        setIsVisible(true)
+                                    }
+                                }}
+                                exit={{
+                                    x: "-100%",
+                                    transition: {
+                                        type: "spring",
+                                        stiffness: 300, // Slightly snappier exit
+                                        damping: 30,
+                                        mass: 0.8
+                                    }
+                                }}
+                            >
+                                <div className='flex-1' />
+                                <div className='flex-1 flex items-center justify-center'>
+                                    <div className='flex-1' />
+
+                                    {/* The Icon: We can make this fade out as they pull */}
+                                    <motion.div
+                                        style={{ opacity: 1 }}
+                                        className='text-default-400 text-3xl'
+                                    >
+                                        <PiHandSwipeLeft />
+                                    </motion.div>
+
+                                    <div className='flex-1' />
+
+                                    {/* The Handle: Let's make it pulse slightly to invite the interaction */}
+                                    <motion.div
+                                        className="h-10 w-1.5 bg-default-400/80 rounded-full mr-3"
+                                        whileHover={{ scale: 1.2 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     <motion.div
                         transition={{ duration: 0.5 }}
-                        className='overflow-hidden'
+                        className='overflow-hidden px-7'
                     >
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: isVisible ? 1 : 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            {
-                                isPending && portions.length === 0
-                                    ? <div className='flex font-mono items-center gap-1.5 px-2'>
-                                        Generating <Spinner variant='dots' color='default' />
-                                    </div>
-                                    : <Note
-                                        omitOriginal
-                                        portions={portions}
-                                        isEditing={isEditing}
-                                        editedPortions={editedPortions}
-                                        onEdit={setEditedPortions}
-                                    />
-                            }
-                        </motion.div>
+                        {
+                            isPending && portions.length === 0
+                                ? <div className='flex font-mono items-center gap-1.5 px-2'>
+                                    Generating <Spinner variant='dots' color='default' />
+                                </div>
+                                : <Note
+                                    omitOriginal
+                                    portions={portions}
+                                    isEditing={isEditing}
+                                    editedPortions={editedPortions}
+                                    onEdit={setEditedPortions}
+                                />
+                        }
                         {portions[2] && <><Spacer y={3} /><Save /></>}
                     </motion.div>
                 </div>

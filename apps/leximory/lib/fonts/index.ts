@@ -9,14 +9,14 @@ export const MINCHO = localFont({
 export const ENGLISH = Raleway({
     subsets: ['latin'],
     weight: 'variable',
-    style: ['normal'],
+    style: ['normal', 'italic'],
     variable: '--font-english',
 })
 
 export const ENGLISH_MONO = Source_Code_Pro({
     subsets: ['latin'],
     weight: ['400'],
-    style: ['normal', 'italic'],
+    style: ['normal'],
     variable: '--font-english-mono',
 })
 
