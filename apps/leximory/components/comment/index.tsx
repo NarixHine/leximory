@@ -295,7 +295,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                     x: "-100%",
                                     transition: {
                                         type: "spring",
-                                        stiffness: 300, // Slightly snappier exit
+                                        stiffness: 150,
                                         damping: 30,
                                         mass: 0.8
                                     }

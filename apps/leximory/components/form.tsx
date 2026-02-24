@@ -28,7 +28,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
             },
         },
     }} className='bg-default-50' isOpen={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent className='max-h-dvh rounded-4xl'>
+        <DrawerContent className='max-h-dvh rounded-t-4xl'>
             {(onClose) => (
                 <HeroUIForm onSubmit={async (props) => {
                     await onSubmit?.(props)

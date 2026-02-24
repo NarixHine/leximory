@@ -95,7 +95,7 @@ export default function ImportModal() {
             </div>}
         </div>
         <Drawer hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
-            <DrawerContent className='max-h-dvh rounded-4xl'>
+            <DrawerContent className='max-h-dvh rounded-t-4xl'>
                 {(onClose) => (
                     <form className='w-full'>
                         <DrawerHeader className='flex flex-col gap-1'>导入</DrawerHeader>

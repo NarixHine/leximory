@@ -23,7 +23,7 @@ export default function QuoteInAgentButton({ className }: { className?: string }
             </Drawer.Trigger>
             <Drawer.Portal>
                 <Drawer.Overlay className='fixed inset-0 bg-black/40 dark:bg-white/5' />
-                <Drawer.Content className='h-[95dvh] z-999 fixed rounded-t-xl bottom-0 left-0 right-0 outline-none bg-background flex flex-col justify-center items-center'>
+                <Drawer.Content className='h-[95dvh] z-999 fixed rounded-t-4xl bottom-0 left-0 right-0 outline-none bg-background flex flex-col justify-center items-center'>
                     <Drawer.Title className='sr-only'>Talk to Your Library</Drawer.Title>
                     <div className='w-full h-full overflow-y-auto'>
                         <ChatInterface initialInput={`对于文本［ID: ${text}］，${prompt}`} shouldOpenNew />

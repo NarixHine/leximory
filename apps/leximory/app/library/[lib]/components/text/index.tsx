@@ -16,6 +16,7 @@ import { scrapeArticle } from '@/server/ai/scrape'
 import { cn, resolveEmoji } from '@/lib/utils'
 import { DateTime } from 'luxon'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
+import { useRouter } from 'next/navigation'
 
 /** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
 function hashString(str: string): number {
@@ -211,6 +212,7 @@ export function AddTextButton() {
         defaultValues: { url: '', title: '' }
     })
     const lang = useAtomValue(langAtom)
+    const router = useRouter()
 
     return <>
         <Card
@@ -238,7 +240,8 @@ export function AddTextButton() {
                             toast.error('识别内容过长，请手动录入')
                             return
                         }
-                        addAndGenerateText({ title, content, lib })
+                        const textId = await addAndGenerateText({ title, content, lib })
+                        router.push(`/library/${lib}/${textId}`)
                     } catch {
                         toast.error('文章解析失败，请手动录入')
                     }
