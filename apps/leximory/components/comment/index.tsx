@@ -29,6 +29,7 @@ import { Spinner } from '@heroui/spinner'
 import LinkButton from '../ui/link-button'
 import { saveComment, modifyText, delComment } from '@/service/comment'
 import { generateSingleComment } from '@/service/text'
+import { useScrollLock } from 'usehooks-ts'
 
 interface CommentProps {
     params: string
@@ -265,6 +266,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         }
     </div>
 
+    const { lock, unlock } = useScrollLock({
+        autoLock: false
+    })
+
     if (print) {
         return <Note portions={portions}></Note>
     }
@@ -283,19 +288,26 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 dragConstraints={{ left: 0, right: 0 }}
                                 // 0.7 - 0.9 is the sweet spot for a "heavy" rubber band feel
                                 dragElastic={{ left: 0.8, right: 0.1 }}
-                                style={{ touchAction: "pan-y" }}
+                                style={{ touchAction: "none" }}
                                 // This adds the "squeeze" visual as they pull
                                 whileDrag={{ scaleX: 0.98, originX: 1 }}
+                                onDragStart={() => {
+                                    lock()
+                                }}
+                                onClick={() => {
+                                    setIsVisible(true)
+                                }}
                                 onDragEnd={(_, info) => {
                                     if (info.offset.x < -80 || info.velocity.x < -400) {
                                         setIsVisible(true)
                                     }
+                                    unlock()
                                 }}
                                 exit={{
-                                    x: "-100%",
+                                    x: "-50%", // the element is 200% of the width
                                     transition: {
                                         type: "spring",
-                                        stiffness: 150,
+                                        stiffness: 300,
                                         damping: 30,
                                         mass: 0.8
                                     }
@@ -304,8 +316,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                                 <div className='flex-1' />
                                 <div className='flex-1 flex items-center justify-center'>
                                     <div className='flex-1' />
-
-                                    {/* The Icon: We can make this fade out as they pull */}
+                                    {/* The Icon */}
                                     <motion.div
                                         style={{ opacity: 1 }}
                                         className='text-default-400 text-3xl'
@@ -315,7 +326,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
                                     <div className='flex-1' />
 
-                                    {/* The Handle: Let's make it pulse slightly to invite the interaction */}
+                                    {/* The Handle */}
                                     <motion.div
                                         className="h-10 w-1.5 bg-default-400/80 rounded-full mr-3"
                                         whileHover={{ scale: 1.2 }}
