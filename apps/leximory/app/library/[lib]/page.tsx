@@ -24,7 +24,7 @@ async function PageContent({ params }: LibProps) {
     const { texts, name, isReadOnly } = await getData(lib)
     return <>
         {/* Header */}
-        <header className='mx-auto mb-10 max-w-6xl'>
+        <header className='mx-auto max-w-md sm:max-w-6xl mb-10'>
             <div className='flex items-center gap-2 flex-wrap'>
                 <Link
                     href='/library'
@@ -53,7 +53,7 @@ async function PageContent({ params }: LibProps) {
                         <PiPrinter className='size-6' />
                     </LoadingIndicatorWrapper>
                 </Link>
-                <h1 className='font-formal text-balance text-2xl tracking-tight ml-1 text-default-500'>
+                <h1 className='font-formal text-balance text-2xl tracking-tight ml-1'>
                     {name}
                 </h1>
             </div>

@@ -217,7 +217,7 @@ export function AddTextButton() {
             isPressable
             onPress={onOpen}
             shadow='none'
-            className='p-0 bg-default-100'
+            className='p-0 bg-default-50 rounded-4xl'
         >
             <CardBody
                 className='group p-0 flex aspect-2/1 w-full cursor-pointer items-center justify-center rounded-xl transition-colors'

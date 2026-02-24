@@ -6,7 +6,6 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { ReactNode, Suspense } from 'react'
 import { LibProps } from '@/lib/types'
 import { redirect } from 'next/navigation'
-import Main from '@/components/ui/main'
 import { Spinner } from '@heroui/spinner'
 import Center from '@/components/ui/center'
 
