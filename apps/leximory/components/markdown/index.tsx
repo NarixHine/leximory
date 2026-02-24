@@ -42,13 +42,14 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(/\|+}}/g, '}}') // remove trailing pipes
         .replaceAll('|||', '||')
         .replaceAll(')} ', ')}} ')
+        .replaceAll(/\s+([.,!?;:"。，！？；：、”])/g, '$1') // remove intervening space if followed by punctuation
         // replace all instances of {{...}} with the Comment component
         .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments
-        .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?:"。，！？：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')
+        .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?;:"。，！？；：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')
         // replace all instances of :::...::: with the Audio component
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`

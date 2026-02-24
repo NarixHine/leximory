@@ -7,6 +7,7 @@ import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/configs'
 import { generateText } from 'ai'
 import { revalidateTag } from 'next/cache'
+import { fixDumbPunctuation } from '@/lib/comment'
 
 const topicsPrompt = (input: string) => ({
     system: `
@@ -130,7 +131,7 @@ export const annotateFullArticle = inngest.createFunction(
             const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
             await updateText({
                 id: textId,
-                content,
+                content: fixDumbPunctuation(content),
                 topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
                 emoji: generatedEmoji
             })

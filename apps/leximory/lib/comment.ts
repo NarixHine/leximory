@@ -5,6 +5,17 @@ const lemmatize = require('wink-lemmatizer')
 
 export { validateOrThrow }
 
+export const fixDumbPunctuation = (text: string) => (
+    text
+        // convert dumb quotes/apostrophes  to smart ones        
+        .replace(/(^|[-\u2014/(\[{"\s])'/g, "$1\u2018") // handle apostrophes at the start of text or after certain punctuation/whitespace as opening single quote, otherwise as closing
+        .replace(/'/g, "\u2019") // handle remaining single quotes as closing single quotes
+        .replace(/(^|[-\u2014/(\[{"\s])"/g, "$1\u201c") // handle quotes at the start of text or after certain punctuation/whitespace as opening double quote, otherwise as closing
+        .replace(/"/g, "\u201d") // handle remaining double quotes as closing double quotes
+        // fix dumb em-dashes
+        .replace(/--/g, '—')
+)
+
 export function parseCommentParams(word: string | Array<string>) {
     try {
         const decode = (str: string) => decodeURIComponent(str).replaceAll('{{', '').replaceAll('}}', '').replaceAll('<must>', '').replaceAll('</must>', '')
