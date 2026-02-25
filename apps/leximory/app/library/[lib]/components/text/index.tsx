@@ -9,49 +9,14 @@ import { Tabs, Tab } from '@heroui/tabs'
 import { Card, CardBody, Chip, ChipProps, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
-import Link from "next/link"
+import Link from 'next/link'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import { scrapeArticle } from '@/server/ai/scrape'
 import { cn, resolveEmoji } from '@/lib/utils'
 import { DateTime } from 'luxon'
-import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 import { useRouter } from 'next/navigation'
-
-/** Stable hash (djb2 variant). Bitwise OR with 0 converts to 32-bit int to prevent overflow. */
-function hashString(str: string): number {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i)
-        hash = ((hash << 5) - hash + char) | 0
-    }
-    return Math.abs(hash)
-}
-
-/**
- * OKLCH background tuned to Morandi green range.
- * Light mode: hue 130–166 (sage greens), chroma 0.008–0.020 (very muted), lightness 0.94–0.98 (near-white).
- * Returns both light and dark mode variants.
- */
-export function emojiBackground(id: string): { light: string, dark: string } {
-    const h = hashString(id)
-
-    // Shared calculations
-    const hue = 130 + (h % 36)
-    const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
-    const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
-
-    // Dark mode specific lightness logic
-    const darkLightness = 0.18 + (((h >> 16) % 10) / 10) * 0.06
-
-    return {
-        // Light: Uses the calculated green hue and low chroma
-        light: `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`,
-
-        // Dark: Chroma set to 0 and Hue set to 0 for a neutral grey
-        dark: `oklch(${darkLightness.toFixed(3)} 0 0)`
-    }
-}
+import { EmojiCover } from '@/components/emoji-cover'
 
 export function TagPills({ tags, parentClassName, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
     if (!tags.length) return null
@@ -73,38 +38,6 @@ export function TagPills({ tags, parentClassName, ...props }: { tags: string[], 
                     {tag}
                 </Chip>
             ))}
-        </div>
-    )
-}
-
-/** Emoji cover in a rounded container with hash-seeded background (supports dark mode). */
-export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
-    const bg = emojiBackground(articleId)
-    const emojiSpan = (
-        <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
-            {emoji}
-        </span>
-    )
-    const emojiContent = isLink
-        ? <LoadingIndicatorWrapper variant='spinner' classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}>{emojiSpan}</LoadingIndicatorWrapper>
-        : emojiSpan
-    return (
-        <div
-            className={cn('flex items-center justify-center rounded-4xl overflow-clip', className)}
-            style={{ containerType: 'size' }}
-        >
-            <div
-                className='w-full h-full flex items-center justify-center dark:hidden'
-                style={{ backgroundColor: bg.light }}
-            >
-                {emojiContent}
-            </div>
-            <div
-                className='w-full h-full hidden items-center justify-center dark:flex'
-                style={{ backgroundColor: bg.dark }}
-            >
-                {emojiContent}
-            </div>
         </div>
     )
 }
@@ -145,7 +78,7 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
                 className='mb-8 aspect-4/3 w-full'
                 isLink
             />
-            <h2 className='mb-3 text-center font-fancy text-4xl leading-[1] tracking-tight text-foreground text-balance'>
+            <h2 className='mb-3 text-center font-fancy text-4xl leading-none tracking-tight text-foreground text-balance'>
                 {title}
             </h2>
             <time className='block text-center text-xl text-secondary-500 mb-4'>

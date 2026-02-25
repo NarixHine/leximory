@@ -34,7 +34,7 @@ export function ArticleSkeleton() {
                     <Bone className='w-32 h-5 rounded-lg mb-4' />
                     <Bone className='w-full h-10 rounded-lg mb-2' />
                     <Bone className='w-3/4 h-10 rounded-lg mb-7' />
-                    <Bone className='w-24 h-4 rounded-lg mb-4' />
+                    <Bone className='w-24 h-4 rounded-lg mb-2' />
                     <div className='flex gap-2'>
                         <Bone className='w-16 h-5 rounded-full' />
                         <Bone className='w-16 h-5 rounded-full' />

@@ -25,11 +25,11 @@ export function ArticleHero({ title, topics, libId, lang, content, hasEbook }: {
                         {title}
                     </h1>
                     {FormattedReadingTime && !hasEbook && (
-                        <div className='mb-2'>
+                        <div className='font-mono text-primary-500'>
                             {FormattedReadingTime(content)}
                         </div>
                     )}
-                    <TagPills tags={topics} size='md' color='secondary' className='text-sm text-secondary-400 border-1 border-secondary-300' classNames={{ content: 'px-1.25' }} />
+                    <TagPills parentClassName='gap-3' tags={topics} size='md' color='primary' variant='light' className='text-sm text-primary-600 px-0' classNames={{ content: 'px-0' }} />
                 </div>
                 <TextEmojiCover className='w-full h-full' />
             </div>

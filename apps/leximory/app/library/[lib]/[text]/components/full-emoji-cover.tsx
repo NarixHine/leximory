@@ -1,9 +1,9 @@
 'use client'
 
 import { useAtomValue } from 'jotai'
-import { EmojiCover } from '../../components/text'
 import { ebookAtom, emojiAtom, textAtom } from '../atoms'
 import { cn, resolveEmoji } from '@/lib/utils'
+import { EmojiCover } from '@/components/emoji-cover'
 
 export function TextEmojiCover({ className }: { className?: string }) {
     const emoji = useAtomValue(emojiAtom)
