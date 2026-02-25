@@ -28,12 +28,12 @@ export function ArticleSkeleton() {
             </div>
 
             {/* md+ skeleton: side-by-side hero */}
-            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center md:mb-2'>
-                <div className='flex flex-col max-w-[calc(40dvw)] self-end justify-self-start pb-15 pl-10'>
+            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center'>
+                <div className='flex flex-col max-w-[calc(40dvw)] self-end justify-self-start pb-10 pl-10'>
                     <Bone className='w-8 h-8 rounded-full mb-3' />
                     <Bone className='w-32 h-5 rounded-lg mb-4' />
                     <Bone className='w-full h-10 rounded-lg mb-2' />
-                    <Bone className='w-3/4 h-10 rounded-lg mb-4' />
+                    <Bone className='w-3/4 h-10 rounded-lg mb-7' />
                     <Bone className='w-24 h-4 rounded-lg mb-4' />
                     <div className='flex gap-2'>
                         <Bone className='w-16 h-5 rounded-full' />
@@ -43,6 +43,8 @@ export function ArticleSkeleton() {
                 </div>
                 <Bone className='w-full h-full rounded-none min-h-[60dvh]' />
             </div>
+            <div className='w-[calc(50%+24px)] h-px block -mt-px mb-3 bg-divider animate-pulse' />
+
 
             <div className='flex justify-center'>
                 <Spinner color='default' variant='wave' />

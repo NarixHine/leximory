@@ -19,13 +19,13 @@ export function ArticleHero({ title, topics, libId, lang, content, hasEbook }: {
         <div className={cn('print:hidden hidden md:flex md:flex-col w-full opacity-100 transition-opacity duration-500', isFullViewport && 'opacity-0')}>
             {/* md+ layout: side-by-side, emoji on right, text on left */}
             <div className='grid grid-cols-[1fr_1fr] gap-12 min-h-dvh items-center'>
-                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-15'>
+                <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-11'>
                     <BackwardButton libId={libId} className='mb-5 -ml-3' />
-                    <h1 className='font-fancy uppercase text-4xl leading-tighter tracking-wide text-foreground text-balance mb-4'>
+                    <h1 className='font-fancy uppercase text-4xl leading-tighter tracking-wide text-foreground text-balance mb-5'>
                         {title}
                     </h1>
                     {FormattedReadingTime && !hasEbook && (
-                        <div className='text-sm mb-4'>
+                        <div className='mb-2'>
                             {FormattedReadingTime(content)}
                         </div>
                     )}
@@ -33,7 +33,7 @@ export function ArticleHero({ title, topics, libId, lang, content, hasEbook }: {
                 </div>
                 <TextEmojiCover className='w-full h-full' />
             </div>
-            <div className='w-[calc(50%+24px)] h-px block dark:hidden -mt-px mb-12 bg-divider' />
+            <div className='w-[calc(50%+24px)] h-px block -mt-px mb-10 bg-foreground' />
         </div>
 
         {/* Mobile layout: vertical stack */}

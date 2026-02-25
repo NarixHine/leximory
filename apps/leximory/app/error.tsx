@@ -30,6 +30,7 @@ export default function Error({
                         <Button
                             color='secondary'
                             variant='light'
+                            radius='full'
                             onPress={reset}
                             className='min-w-30'
                         >
@@ -37,8 +38,7 @@ export default function Error({
                         </Button>
                         <LinkButton
                             href='/'
-                            color='secondary'
-                            variant='light'
+                            radius='full'
                             className='min-w-30'
                         >
                             Return to Library
@@ -47,6 +47,7 @@ export default function Error({
                             href='/'
                             color='danger'
                             variant='light'
+                            radius='full'
                             onPress={() => {
                                 localStorage.clear()
                                 reset()
