@@ -9,7 +9,8 @@ import {
     PiQuotesBold,
     PiListBulletsBold,
     PiHeadphonesBold,
-    PiTextH,
+    PiTextHBold,
+    PiTextAaBold,
 } from 'react-icons/pi'
 import { nanoid } from '@/lib/utils'
 
@@ -37,7 +38,7 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                         isIconOnly
                         aria-label='Heading'
                     >
-                        <PiTextH />
+                        <PiTextHBold />
                     </Button>
                     <Button
                         onPress={() => editor.chain().focus().toggleBold().run()}
@@ -93,6 +94,14 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                             <PiHeadphonesBold />
                         </Button>
                     )}
+                    <Button
+                        onPress={() => editor.chain().focus().toggleConvening().run()}
+                        variant={editor.isActive('convening') ? 'shadow' : 'light'}
+                        isIconOnly
+                        aria-label='Convening'
+                    >
+                        <PiTextAaBold />
+                    </Button>
                 </ButtonGroup>
             </div>
         </BubbleMenu>

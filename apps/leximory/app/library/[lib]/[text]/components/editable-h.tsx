@@ -18,7 +18,7 @@ export default function EditableH() {
     const [manualInput, setManualInput] = useState('')
 
     if (!isEditing) {
-        return <H fancy className={'sm:text-4xl mb-2 text-3xl tracking-tight print:text-5xl print:leading-none'}>{title}</H>
+        return <H fancy className={'sm:text-4xl mb-2 text-3xl tracking-tight leading-none print:text-5xl print:mb-4 print:leading-none'}>{title}</H>
     }
 
     const handleManualInput = (value: string) => {

@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
 import { CommentNode } from './extensions/comment-node'
 import { AudioSection } from './extensions/audio-section'
+import { Convening } from './extensions/convening'
 import EditorBubbleMenu from './bubble-menu'
 import { markdownToHtml, getMarkdownFromEditor } from './serialization'
 import { useRef } from 'react'
@@ -31,6 +32,7 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
             }),
             CommentNode,
             AudioSection,
+            Convening,
         ],
         content: initialHtml.current,
         editorProps: {
@@ -58,9 +60,11 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
     if (!editor) return null
 
     return (
-        <div className='w-full'>
+        <div className='w-full dropcap has-dropcap-first'>
             <EditorBubbleMenu editor={editor} />
-            <EditorContent editor={editor} />
+            <article>
+                <EditorContent editor={editor} />
+            </article>
         </div>
     )
 }

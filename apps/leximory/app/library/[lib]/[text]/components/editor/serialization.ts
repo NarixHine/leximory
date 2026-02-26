@@ -27,6 +27,7 @@ export function markdownToHtml(md: string): string {
     )
 
     processed = processed.replace(commentSyntaxRegex, commentToHtml)
+    processed = processed.replace(/&&(.*?)&&/g, '<span class="convening">$1</span>')
     let html = converter.makeHtml(processed)
 
     audioSections.forEach((section, idx) => {
@@ -59,6 +60,13 @@ export function getMarkdownFromEditor(editor: Editor): string {
         /<lexi-audio data-id="([^"]*)">([\s\S]*?)<\/lexi-audio>/g,
         (_, id: string, innerContent: string) => {
             return `:::${id}\n${innerContent.trim()}\n:::`
+        }
+    )
+
+    result = result.replace(
+        /<span class="convening">(.*?)<\/span>/g,
+        (_, content: string) => {
+            return `&&${content}&&`
         }
     )
 

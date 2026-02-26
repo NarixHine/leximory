@@ -72,18 +72,21 @@ export default function ImportModal() {
     )
 
     const EditSwitch = () => (
-        <Switch
-            startContent={<PiOptionFill />}
-            endContent={<PiOption />}
-            isDisabled={isReadOnly || isLoading}
-            isSelected={editing}
-            onValueChange={setEditing}
-            color='secondary'
-            size='lg'
-        />
+        <div className='flex items-center gap-2'>
+            <Switch
+                startContent={<PiOptionFill />}
+                endContent={<PiOption />}
+                isDisabled={isReadOnly || isLoading}
+                isSelected={editing}
+                onValueChange={setEditing}
+                color='secondary'
+                size='lg'
+            />
+        </div>
     )
 
     return (<>
+        {editing && <div className='text-base text-secondary-500 mx-auto text-center'>保存按钮固定于右上角</div>}
         <div className='flex flex-col gap-2 mt-2'>
             <div className='flex gap-2'>
                 <ImportButton />

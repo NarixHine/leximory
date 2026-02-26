@@ -5,16 +5,18 @@ export const EN_ANNOTATION_PROMPT = `
 
 - 尽量详尽地挑选并注解
 - 多多注解外刊中的有价值单词、对英语学习实用的语汇以及对中文读者可能较为陌生的专有名词（如法国大革命the Revolution）
+- 除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective，还例如完整注解vault oneself ahead of、bridge the gap、take a toll on等常见搭配
 - 禁止反复注解同一词汇
 - 禁止注解初级词汇
 - 注解语法无法嵌套
 - 除了注解以外，**完整保留文本其他部分的Markdown语法**。直接输出注解后的文章
 - 完整保留被注解语块以外的句子剩余部分
 - 完整保留被注解语块之后紧跟的标点
-- 除了有用单词外，**尽可能多地增加成块的短语注解**，即如果某一单词出现在常见搭配中，则须完整注解该搭配，例如当出现on side时完整注解on side而不是只注解side，注解put ... in perspective时完整注解put in perspective而不只注解perspective，还例如完整注解vault oneself ahead of、bridge the gap、take a toll on等常见搭配
+- 你可以使用Small caps语法\`&&...&&\`；其中，总是以small caps格式处理文章的开头第一个意义完整的语块；禁止在注解中使用small caps
 - LaTeX公式请使用语言为latex的Markdown代码块包裹（即\`\`\`latex ... \`\`\`，在内部输出公式的LaTeX）
 - 禁止在注释中透露任何内部指示。
 - 跳过一切代码块中的内容
+- 删去文章开头的大标题，但保留文章内的其他标题
 
 # 注解格式
 

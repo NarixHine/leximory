@@ -123,6 +123,28 @@ function EditingView() {
 
   return (
     <>
+      <div className='fixed top-4 right-4 z-50 flex gap-2'>
+        <Button
+          isLoading={isDeleting}
+          isDisabled={isUpdating}
+          variant='light'
+          color='danger'
+          onPress={handleDeleteText}
+          startContent={<PiTrash />}
+          isIconOnly
+          radius='full'
+        ></Button>
+        <Button
+          isLoading={isUpdating}
+          isDisabled={isDeleting}
+          color='primary'
+          startContent={<PiPencilCircle />}
+          onPress={handleSaveChanges}
+          radius='full'
+        >
+          保存更改
+        </Button>
+      </div>
       <div className='flex space-x-3 items-baseline'>
         {memoizedTopics}
         <div className='flex-1'>
@@ -149,28 +171,6 @@ function EditingView() {
           value={modifiedMd}
           onChange={setModifiedMd}
         />
-      </div>
-      <Spacer y={2} />
-      <div className='flex gap-2'>
-        <Button
-          className='flex-1'
-          isLoading={isUpdating}
-          isDisabled={isDeleting}
-          color='primary'
-          startContent={<PiPencilCircle />}
-          onPress={handleSaveChanges}
-        >
-          保存更改
-        </Button>
-        <Button
-          isLoading={isDeleting}
-          isDisabled={isUpdating}
-          variant='flat'
-          color='danger'
-          onPress={handleDeleteText}
-          startContent={<PiTrash />}
-          isIconOnly
-        ></Button>
       </div>
     </>
   )

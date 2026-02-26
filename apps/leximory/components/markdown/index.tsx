@@ -54,12 +54,17 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
+        // replace all instances of &&...&& with <span class="convening">
+        .replace(/&amp;&amp;(.+?)&amp;&amp;/g, (_, p1) => {
+            return `<span class="convening">${p1}</span>`
+        })
 
-    // Pure computation from result — no render-time mutation, StrictMode-safe.
     // After stripping the <article> wrapper and any leading zero-width/nbsp chars,
     // the first paragraph starts with a dropcap-eligible letter only when it begins
     // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
     const firstParaDropcap = /^\p{L}/u.test(
+        result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
+    ) || /^<span class="convening">/i.test(
         result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
     )
 

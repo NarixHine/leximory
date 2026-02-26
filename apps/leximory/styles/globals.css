@@ -8,6 +8,16 @@
 
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+
+@theme {
+  --font-ui: var(--font-english), var(--font-mincho), serif;
+  --font-mono: var(--font-english-mono), monospace;
+  --font-formal: var(--font-english-serif), var(--font-mincho), serif;
+  --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
+  --font-ja: var(--font-english-serif), var(--font-mincho), serif;
+  --breakpoint-laptop: 950px;
+}
+
 .dropcap.has-dropcap-first article div:first-of-type:not(.not-dropcap) {
   display: flow-root;
 }
@@ -21,11 +31,10 @@
   font-family: var(--font-fancy);
 }
 
-@theme {
-  --font-ui: var(--font-english), var(--font-mincho), serif;
-  --font-mono: var(--font-english-mono), monospace;
-  --font-formal: var(--font-english-serif), var(--font-mincho), serif;
-  --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
-  --font-ja: var(--font-english-serif), var(--font-mincho), serif;
-  --breakpoint-laptop: 950px;
+span.convening {
+  font-family: var(--font-formal);
+  font-variant-caps: small-caps;
+  font-variant-numeric: oldstyle-nums;
+  letter-spacing: 0.05em;
+  font-weight: 500;
 }
