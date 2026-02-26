@@ -314,6 +314,7 @@ export type Database = {
         Row: {
           answers: Json
           created_at: string
+          feedback: Json | null
           id: number
           paper: number
           perfect_score: number
@@ -323,6 +324,7 @@ export type Database = {
         Insert: {
           answers: Json
           created_at?: string
+          feedback?: Json | null
           id?: number
           paper: number
           perfect_score: number
@@ -332,6 +334,7 @@ export type Database = {
         Update: {
           answers?: Json
           created_at?: string
+          feedback?: Json | null
           id?: number
           paper?: number
           perfect_score?: number

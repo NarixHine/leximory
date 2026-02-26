@@ -25,11 +25,11 @@ export function TagPills({ tags, parentClassName, ...props }: { tags: string[], 
             {tags.slice(0, 3).map((tag) => (
                 <Chip
                     variant='bordered'
-                    color='default'
+                    color='secondary'
                     size='sm'
                     classNames={{
                         ...props.classNames,
-                        base: cn('text-default-500 tracking-wide border-1 text-[10px]', props.classNames?.base),
+                        base: cn('text-secondary-500 tracking-wide border-divider border-1 text-[10px]', props.classNames?.base),
                         content: cn('px-0.75', props.classNames?.content)
                     }}
                     key={tag}
