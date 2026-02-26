@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Instrument_Serif, Source_Code_Pro, Raleway  , EB_Garamond } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond } from 'next/font/google'
 import localFont from 'next/font/local'
 
 export const MINCHO = localFont({

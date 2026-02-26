@@ -245,7 +245,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                         <Button
                             type='button'
                             variant='light'
-                            className='flex justify-center items-center rounded-xl w-8 h-8'
+                            className='flex justify-center items-center rounded-4xl w-8 h-8'
                             aria-label={`${name} 设置`}
                             onPress={() => {
                                 onOpen()
@@ -258,7 +258,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
                     <Button
                         variant='light'
                         type='button'
-                        className='flex justify-center items-center rounded-xl w-8 h-8'
+                        className='flex justify-center items-center rounded-4xl w-8 h-8'
                         aria-label={`归档 ${name}`}
                         onPress={() => {
                             startTogglingArchive(async () => {
@@ -278,6 +278,7 @@ function Library({ id, name, lang, isOwner, access, shadow, price, archived, isS
     return <>
         {card}
         <Form
+            confirmText='保存'
             actionButton={<Popover>
                 <PopoverTrigger>
                     <Button radius='full' isIconOnly color='danger' variant='light' startContent={<PiTrash />} />

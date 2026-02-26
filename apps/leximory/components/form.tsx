@@ -7,7 +7,15 @@ import { Button } from "@heroui/button"
 import { DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, Drawer } from "@heroui/drawer"
 import { PiFloppyDisk } from 'react-icons/pi'
 
-export default function Form({ isOpen, onOpenChange, children, className, isLoading, onSubmit, title, actionButton, ...props }: { isOpen: boolean, onOpenChange: (open: boolean) => void, title: string, children: ReactNode, isLoading: boolean, actionButton?: ReactNode } & FormProps) {
+export default function Form({ isOpen, onOpenChange, children, className, isLoading, onSubmit, title, actionButton, ...props }: {
+    isOpen: boolean,
+    onOpenChange: (open: boolean) => void,
+    title: string,
+    children: ReactNode,
+    isLoading: boolean,
+    actionButton?: ReactNode,
+    confirmText?: string
+} & FormProps) {
     return <Drawer hideCloseButton placement='bottom' motionProps={{
         variants: {
             enter: {
@@ -41,7 +49,7 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
                     <DrawerFooter className='flex gap-2 w-full pt-0'>
                         <div className='flex-1'></div>
                         {actionButton}
-                        <Button type='submit' radius='full' color='primary' startContent={isLoading ? null : <PiFloppyDisk />} isLoading={isLoading}>确认</Button>
+                        <Button type='submit' radius='full' color='primary' startContent={isLoading ? null : <PiFloppyDisk size={20} />} isLoading={isLoading}>{props.confirmText ?? '确认'}</Button>
                     </DrawerFooter>
                 </HeroUIForm>
             )}

@@ -91,9 +91,8 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                                     updateAttributes({ portions: editing.filter(Boolean) })
                                     setIsOpen(false)
                                 }}
-                            >
-                                确认
-                            </Button>
+                                isIconOnly
+                            />
                         </div>
                     </div>
                 </PopoverContent>

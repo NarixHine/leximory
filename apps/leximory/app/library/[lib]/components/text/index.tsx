@@ -164,6 +164,7 @@ export function AddTextButton() {
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             title='创建文章'
+            confirmText='导入'
             isLoading={formState.isSubmitting}
             onSubmit={handleSubmit(async (data) => {
                 if (data.url) {

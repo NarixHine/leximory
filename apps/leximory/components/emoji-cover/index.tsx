@@ -54,6 +54,9 @@ const BAYER_FLAT = new Float32Array([
 ])
 
 function createColorLUT(hue: number, isDarkMode: boolean) {
+    if (typeof document === 'undefined') {
+        return new Uint8ClampedArray(256 * 4)
+    }
     const lut = new Uint8ClampedArray(256 * 4)
     const canvas = document.createElement('canvas')
     canvas.width = 256; canvas.height = 1

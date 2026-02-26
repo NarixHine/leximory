@@ -38,16 +38,19 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
   return <div className={cn('w-full h-full max-w-sm flex flex-col gap-3 prose dark:prose-invert', className)} {...props}>
     <H className='mb-1'>继续语言学习之旅</H>
-    <Form action={() => {
-      startTransition(async () => {
-        const { error } = await login({ email, password, next })
-        if (error) {
-          toast.error(error)
-        } else {
-          toast.success('登录成功')
-        }
-      })
-    }} className='space-y-2 max-w-sm'>
+    <Form
+      action={() => {
+        startTransition(async () => {
+          const { error } = await login({ email, password, next })
+          if (error) {
+            toast.error(error)
+          } else {
+            toast.success('登录成功')
+          }
+        })
+      }}
+      className='space-y-2 max-w-sm'
+    >
       <div className='space-y-1 w-full'>
         <label
           htmlFor='email'
