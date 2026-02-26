@@ -70,7 +70,7 @@ export default function Define(props: { left: number | null, width: number | nul
             )}
             <Drawer.Portal>
                 <Drawer.Overlay className={cn(
-                    'fixed inset-0 z-60',
+                    'fixed -inset-5 bottom-[20dvh] z-60',
                     'bg-linear-to-b to-transparent from-default-900/40 dark:from-stone-950/60',
                 )} />
                 <Drawer.Content className='h-fit px-2 fixed top-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>

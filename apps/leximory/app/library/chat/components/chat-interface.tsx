@@ -515,7 +515,7 @@ function ChatSession({ initialInput, shouldOpenNew, UpgradeMessage }: { initialI
                 'border border-slate-300/50 dark:border-stone-600/30',
                 'backdrop-blur-xl backdrop-saturate-150',
             )}>
-                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-800 to-primary-400 bg-clip-text text-transparent'}>
+                <H fancy className={'text-2xl sm:text-3xl italic bg-linear-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent'}>
                     Talk to Your Library
                 </H>
                 <div className='flex items-center gap-0.5'>

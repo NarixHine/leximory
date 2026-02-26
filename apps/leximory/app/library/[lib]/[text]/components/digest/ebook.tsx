@@ -114,7 +114,7 @@ export default function Ebook() {
 
     return src && (
         <motion.div
-            className='bg-background'
+            className='bg-background pt-5'
             style={{
                 position: isFullViewport ? 'fixed' : 'relative',
                 width: isFullViewport ? '100dvw' : 'auto',
@@ -132,7 +132,7 @@ export default function Ebook() {
             }}
             layout='preserve-aspect'
         >
-            <FullScreen handle={handleFullScreen} onChange={(isFullScreen) => setIsFullScreen(isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-dvh' : 'h-[80dvh]')}>
+            <FullScreen handle={handleFullScreen} onChange={(isFullScreen) => setIsFullScreen(isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-full' : 'h-[80dvh]')}>
                 <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
                     {hasZoomed && <Define
                         {...rect}

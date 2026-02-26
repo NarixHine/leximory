@@ -15,7 +15,7 @@ type PublicTextPageProps = {
 
 export default async function PublicTextPage(props: PublicTextPageProps) {
     return (
-        <Main className='max-w-none sm:w-full pt-3 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
+        <Main className='max-w-none sm:w-full pt-6 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
             <Suspense fallback={<ArticleSkeleton />}>
                 <PageContent {...props} />
             </Suspense>

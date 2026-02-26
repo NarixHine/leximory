@@ -21,7 +21,7 @@ async function PageContent({ params }: LibAndTextProps) {
 }
 
 export default async function Page(props: LibAndTextProps) {
-    return (<Main className='max-w-none sm:w-full pt-3 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
+    return (<Main className='max-w-none sm:w-full pt-6 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
         <Suspense fallback={<ArticleSkeleton />}>
             <PageContent params={props.params} />
         </Suspense>

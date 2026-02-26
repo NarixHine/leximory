@@ -43,7 +43,7 @@ export default async function MarketplacePage({ params }: {
     const page = parseInt((await params).page)
 
     return (
-        <Main className='max-w-(--breakpoint-lg) flex flex-col mx-auto pt-12'>
+        <Main className='max-w-(--breakpoint-lg) flex flex-col mx-auto pt-15'>
             <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-start gap-3 sm:items-center flex-col sm:flex-row sm:gap-6'>
                 <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0 font-bold'>
                     <PiStorefrontDuotone className='size-8' /> 文库集市

@@ -16,26 +16,33 @@ export default function Form({ isOpen, onOpenChange, children, className, isLoad
     actionButton?: ReactNode,
     confirmText?: string
 } & FormProps) {
-    return <Drawer hideCloseButton placement='bottom' motionProps={{
-        variants: {
-            enter: {
-                y: 0,
-                opacity: 1,
-                transition: {
-                    duration: 0.5,
-                    ease: [0.32, 0.72, 0, 1]
+    return <Drawer
+        hideCloseButton
+        placement='bottom'
+        motionProps={{
+            variants: {
+                enter: {
+                    y: 0,
+                    opacity: 1,
+                    transition: {
+                        duration: 0.5,
+                        ease: [0.32, 0.72, 0, 1]
+                    },
+                },
+                exit: {
+                    y: '100%',
+                    opacity: 0,
+                    transition: {
+                        duration: 0.5,
+                        ease: [0.32, 0.72, 0, 1]
+                    },
                 },
             },
-            exit: {
-                y: '100%',
-                opacity: 0,
-                transition: {
-                    duration: 0.5,
-                    ease: [0.32, 0.72, 0, 1]
-                },
-            },
-        },
-    }} className='bg-default-50' isOpen={isOpen} onOpenChange={onOpenChange}>
+        }}
+        className='bg-default-50'
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+    >
         <DrawerContent className='max-h-dvh rounded-t-4xl'>
             {(onClose) => (
                 <HeroUIForm onSubmit={async (props) => {
