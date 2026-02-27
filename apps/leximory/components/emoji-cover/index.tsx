@@ -136,7 +136,6 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
             if (state.startTime === 0) state.startTime = timestamp
 
             const pixelSize = 4
-            // PIXEL FIX: Use floor to ensure square aspect ratio
             const cols = Math.floor(state.w / pixelSize)
             const rows = Math.floor(state.h / pixelSize)
 
@@ -173,29 +172,32 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
                         val += s.strength * Math.max(0, 1 - dist / s.radius)
                     }
                     if (val > 1) val = 1
-                    if (val > BAYER_FLAT[bayerRowStart + (c % 4)] * 0.85) {
-                        const lIdx = ((val * 255) | 0) << 2
+                    
+                    // --- THE SWAP ---
+                    // Previously: val > threshold (Particles appeared in the centers of gradients)
+                    // Now: val < threshold (Particles fill the gaps, leaving the centers as the lighter background)
+                    if (val < BAYER_FLAT[bayerRowStart + (c % 4)] * 0.85) {
+                        const lIdx = (( (1 - val) * 255) | 0) << 2
                         const pIdx = (r * cols + c) << 2
-                        pixels[pIdx] = colorLUT[lIdx]; pixels[pIdx + 1] = colorLUT[lIdx + 1]
-                        pixels[pIdx + 2] = colorLUT[lIdx + 2]; pixels[pIdx + 3] = colorLUT[lIdx + 3]
+                        pixels[pIdx] = colorLUT[lIdx]
+                        pixels[pIdx + 1] = colorLUT[lIdx + 1]
+                        pixels[pIdx + 2] = colorLUT[lIdx + 2]
+                        pixels[pIdx + 3] = colorLUT[lIdx + 3]
                     }
                 }
             }
             ctx.putImageData(imgData, 0, 0)
         }
 
-        // ResizeObserver handles sizing (contentRect is valid here)
         const resizeObserver = new ResizeObserver((entries) => {
             const entry = entries[0]
             if (entry) {
                 stateRef.current.w = entry.contentRect.width
                 stateRef.current.h = entry.contentRect.height
-                // Redraw once on resize if not dynamic
                 if (!dynamic) requestAnimationFrame(() => renderFrame(0))
             }
         })
 
-        // IntersectionObserver handles visibility/ticker subscription
         const intersectionObserver = new IntersectionObserver((entries) => {
             const isVisible = entries[0].isIntersecting
             stateRef.current.isVisible = isVisible
