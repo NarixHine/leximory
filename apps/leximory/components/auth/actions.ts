@@ -8,7 +8,7 @@ import { getAuthErrorMessage } from './error-messages'
 import { isTrustedPathname } from '@/lib/url'
 
 const authSchema = z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(1),
     next: z.string().optional().nullable(),
 })
