@@ -20,6 +20,13 @@ export const ENGLISH_MONO = Source_Code_Pro({
     variable: '--font-english-mono',
 })
 
+export const ENGLISH_IPA = Source_Code_Pro({
+    subsets: ['latin'],
+    weight: ['400'],
+    style: ['normal'],
+    variable: '--font-english-ipa',
+})
+
 export const ENGLISH_SERIF = Libre_Baskerville({
     subsets: ['latin'],
     weight: 'variable',

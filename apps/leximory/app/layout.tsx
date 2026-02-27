@@ -6,7 +6,7 @@ import Dock from './components/dock'
 import env from '@repo/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
-import { MINCHO, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF } from '@/lib/fonts'
+import { MINCHO, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF, ENGLISH_IPA } from '@/lib/fonts'
 import InstallLeximory from './install-leximory'
 
 const TITLE_DEFAULT = 'Leximory'
@@ -52,6 +52,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 		ENGLISH_MONO.variable,
 		ENGLISH_SERIF.variable,
 		ENGLISH_FANCY.variable,
+		ENGLISH_IPA.variable,
 	].join(' ')
 
 	return (

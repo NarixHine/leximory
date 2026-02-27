@@ -75,7 +75,6 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 'prose-blockquote:not-italic prose-blockquote:border-default! prose-blockquote:border-l-2! prose-blockquote:text-foreground',
                 'prose-hr:my-8',
                 'prose-em:font-light',
-                'prose-code:before:content-["["] prose-code:after:content-["]"] prose-code:font-medium',
                 '[&_pre_code]:before:content-none [&_pre_code]:after:content-none',
                 'prose-headings:font-fancy',
                 'font-fancy',

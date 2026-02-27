@@ -15,6 +15,7 @@
   --font-formal: var(--font-english-serif), var(--font-mincho), serif;
   --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
   --font-ja: var(--font-english-serif), var(--font-mincho), serif;
+  --font-ipa: var(--font-english-ipa), var(--font-english-serif), serif;
   --breakpoint-laptop: 950px;
 }
 
