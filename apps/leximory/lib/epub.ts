@@ -7,7 +7,7 @@ function flatten(chapters: any): NavItem[] {
     ])
 }
 
-export function getCfiFromHref(book: Book, href: string) {
+function getCfiFromHref(book: Book, href: string) {
     const [, id] = href.split('#')
     const section = book.spine.get(href)
     const el = (id ? section.document.getElementById(id) : section.document.body) as Element

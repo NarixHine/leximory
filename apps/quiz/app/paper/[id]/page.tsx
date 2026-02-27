@@ -79,8 +79,7 @@ export default function Page({ params, searchParams }: PaperPageProps) {
 }
 
 async function Content({ params, searchParams }: { params: PaperPageProps['params'], searchParams: PaperPageProps['searchParams'] }) {
-    const { id } = await params
-    const { passcode } = await searchParams
+    const [{ id }, { passcode }] = await Promise.all([params, searchParams])
     const { content, answers, title } = await getData({ id: parseInt(id), passcode })
     const questionCount = content.reduce((count, item) => count + applyStrategy(item, (strategy, data) => strategy.getQuestionCount(data)), 0)
 

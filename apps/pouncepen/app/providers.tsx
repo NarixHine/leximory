@@ -13,7 +13,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 
-export interface ProvidersProps {
+interface ProvidersProps {
   children: ReactNode
   themeProps?: ThemeProviderProps
 }

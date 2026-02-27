@@ -12,7 +12,7 @@ import { MINCHO } from '@/lib/fonts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SerwistProvider } from '@serwist/turbopack/react'
 
-export interface ProvidersProps {
+interface ProvidersProps {
 	children: ReactNode
 	themeProps?: ThemeProviderProps
 }

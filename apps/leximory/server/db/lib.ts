@@ -125,17 +125,6 @@ export async function getLib({ id }: { id: string }) {
     }
 }
 
-export async function listShortcutLibs({ owner }: { owner: string }) {
-    'use cache'
-    cacheTag('libraries')
-    const { data } = await supabase
-        .from('libraries')
-        .select('id, name')
-        .eq('owner', owner)
-        .throwOnError()
-    return data.map(({ id, name }) => ({ id, name })) ?? []
-}
-
 export async function listLibs({ owner }: { owner: string }) {
     'use cache'
     cacheTag('libraries')

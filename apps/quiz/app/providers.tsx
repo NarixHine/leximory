@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-query'
 import { NuqsAdapter } from 'nuqs/adapters/next'
 
-export interface ProvidersProps {
+interface ProvidersProps {
   children: ReactNode
   themeProps?: ThemeProviderProps
 }

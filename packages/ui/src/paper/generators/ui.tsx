@@ -1,8 +1,7 @@
-import React, { JSX, useMemo } from 'react'
+import { useMemo } from 'react'
 import { QuizData, QuestionStrategy, SectionAnswers } from '@repo/schema/paper'
-import { toTableRows } from './utils'
 
-export const QuestionSection = ({ children, title }: {
+const QuestionSection = ({ children, title }: {
     children: React.ReactNode
     title?: string
 }) => {

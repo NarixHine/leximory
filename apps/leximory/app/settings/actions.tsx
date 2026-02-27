@@ -36,8 +36,10 @@ export async function getPreference() {
 
 export async function getDailyLexicoin() {
 	const { userId } = await getUserOrThrow()
-	const plan = await getPlan(userId)
-	const lastDailyClaim = await getLastDailyClaim(userId)
+	const [plan, lastDailyClaim] = await Promise.all([
+		getPlan(userId),
+		getLastDailyClaim(userId)
+	])
 	if (lastDailyClaim && momentSH(lastDailyClaim).isSame(momentSH(), 'day')) {
 		throw new Error('今天已领取 LexiCoin')
 	}
