@@ -1,13 +1,8 @@
 @import 'tailwindcss';
-
 @config '../tailwind.config.ts';
-
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-
 @plugin '@tailwindcss/typography';
-
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
-
 
 @theme {
   --font-ui: var(--font-english), var(--font-mincho), serif;
@@ -30,6 +25,11 @@
   margin-top: 0.14em;
   line-height: 0.6;
   font-family: var(--font-fancy);
+}
+
+.dropcap-zh.dropcap.has-dropcap-first article div:first-of-type:not(.not-dropcap)::first-letter {
+  margin-top: 0.05em;
+  font-size: 3.4em;
 }
 
 span.convening {

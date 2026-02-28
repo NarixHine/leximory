@@ -16,7 +16,7 @@ export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
             <section className='max-w-(--breakpoint-sm) mx-auto'>
-                <h1 className={cn('text-5xl text-default-700', ENGLISH_FANCY.className)}>
+                <h1 className={cn('text-5xl text-default-700 tracking-tight', ENGLISH_FANCY.className)}>
                     About Leximory
                 </h1 >
                 <div className='flex w-fit mt-1 mb-6'>
