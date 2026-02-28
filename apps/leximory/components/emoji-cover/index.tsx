@@ -172,12 +172,13 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
                         val += s.strength * Math.max(0, 1 - dist / s.radius)
                     }
                     if (val > 1) val = 1
-                    
-                    // --- THE SWAP ---
-                    // Previously: val > threshold (Particles appeared in the centers of gradients)
-                    // Now: val < threshold (Particles fill the gaps, leaving the centers as the lighter background)
-                    if (val < BAYER_FLAT[bayerRowStart + (c % 4)] * 0.85) {
-                        const lIdx = (( (1 - val) * 255) | 0) << 2
+
+                    const threshold = BAYER_FLAT[bayerRowStart + (c % 4)] * 0.85
+                    const shouldDraw = isDarkMode ? (val > threshold) : (val < threshold)
+
+                    if (shouldDraw) {
+                        const intensity = isDarkMode ? val : (1 - val)
+                        const lIdx = (intensity * 255 | 0) << 2
                         const pIdx = (r * cols + c) << 2
                         pixels[pIdx] = colorLUT[lIdx]
                         pixels[pIdx + 1] = colorLUT[lIdx + 1]
@@ -220,7 +221,7 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
             subscribers.delete(renderFrame)
             if (subscribers.size === 0) stopGlobalTicker()
         }
-    }, [dynamic, sources, colorLUT])
+    }, [dynamic, sources, colorLUT, isDarkMode])
 
     return (
         <canvas
