@@ -43,9 +43,11 @@ const EBOOK_LIGHT_BG = '#ffffff'
 let _minchoFontInfo: { fontFaceCss: string; fontFamily: string } | null = null
 function getMinchoFontInfo(): { fontFaceCss: string; fontFamily: string } {
     if (_minchoFontInfo !== null) return _minchoFontInfo
-    if (typeof document === 'undefined') return (_minchoFontInfo = { fontFaceCss: '', fontFamily: '' })
-    const fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-mincho').trim()
-    if (!fontFamily) return (_minchoFontInfo = { fontFaceCss: '', fontFamily: '' })
+    if (typeof document === 'undefined') return { fontFaceCss: '', fontFamily: '' }
+    const rawFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-mincho').trim()
+    if (!rawFontFamily) return { fontFaceCss: '', fontFamily: '' }
+    // --font-mincho may be a comma-separated list (primary, Next.js fallback); use only the first entry
+    const fontFamily = rawFontFamily.split(',')[0].trim()
     const normalizedFamily = fontFamily.replace(/['"]/g, '').trim()
     let fontFaceCss = ''
     for (const sheet of Array.from(document.styleSheets)) {
@@ -54,13 +56,20 @@ function getMinchoFontInfo(): { fontFaceCss: string; fontFamily: string } {
                 if (rule instanceof CSSFontFaceRule) {
                     const ruleFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim()
                     if (ruleFamily === normalizedFamily) {
-                        fontFaceCss += rule.cssText + '\n'
+                        // Make origin-relative URLs absolute so they resolve inside epub.js iframes
+                        const absoluteCss = rule.cssText.replace(
+                            /url\((['"]?)(\/[^'")\s]+)\1\)/g,
+                            (_, _quote, path) => `url("${window.location.origin}${path}")`
+                        )
+                        fontFaceCss += absoluteCss + '\n'
                     }
                 }
             }
         } catch { /* cross-origin stylesheet */ }
     }
-    return (_minchoFontInfo = { fontFaceCss, fontFamily })
+    // Only cache once the font-face rule is found; if stylesheets haven't loaded yet, retry next call
+    if (fontFaceCss) _minchoFontInfo = { fontFaceCss, fontFamily }
+    return { fontFaceCss, fontFamily }
 }
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */

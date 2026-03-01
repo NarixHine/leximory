@@ -1,7 +1,7 @@
 import { cn } from '@heroui/theme'
 import { useRef, useMemo, useEffect } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
-import { useDarkMode } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
 
 // --- GLOBAL TICKER ---
 type DitherTask = (timestamp: number) => void
@@ -235,7 +235,8 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
-    const { isDarkMode } = useDarkMode()
+    const { resolvedTheme } = useTheme()
+    const isDarkMode = resolvedTheme === 'dark'
 
     return (
         <div
