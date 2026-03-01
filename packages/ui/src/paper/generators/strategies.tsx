@@ -8,6 +8,7 @@ import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
 import { safeParseHTML } from '../../utils/parse'
+import { SubjectiveInput } from '../subjective'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -563,6 +564,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
         <section>
             {safeParseHTML(data.text)}
             <p className='text-default-500 italic mt-4'>Summarize the above passage in no more than 61 words.</p>
+            <SubjectiveInput groupId={data.id} localNo={1} placeholder='Write your summary here…' />
         </section>
     ),
     renderAnswerSheet: () => <></>,
@@ -585,12 +587,18 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
     renderRubric: () => (<h2>Translation</h2>),
     renderPaper: ({ data, config }) => (
         <section>
-            <ol className='list-decimal pl-6'>
-                {data.items.map((item, index) => (
-                    <li key={index} value={(config.start ?? 1) + index}>
-                        {item.chinese}（{item.keyword}）
-                    </li>
-                ))}
+            <ol className='list-none pl-0 flex flex-col gap-4'>
+                {data.items.map((item, index) => {
+                    const displayNo = (config.start ?? 1) + index
+                    const localNo = index + 1
+                    return (
+                        <li key={index}>
+                            <span className='font-bold'>{displayNo}. </span>
+                            {item.chinese}（{item.keyword}）
+                            <SubjectiveInput groupId={data.id} localNo={localNo} placeholder='Translate into English…' />
+                        </li>
+                    )
+                })}
             </ol>
         </section>
     ),
@@ -616,6 +624,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     renderPaper: ({ data }) => (
         <section>
             {safeParseHTML(data.guidance)}
+            <SubjectiveInput groupId={data.id} localNo={1} placeholder='Write your essay here…' />
         </section>
     ),
     renderAnswerSheet: () => <></>,
