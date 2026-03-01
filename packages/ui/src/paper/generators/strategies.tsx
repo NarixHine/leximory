@@ -2,12 +2,13 @@ import fastShuffle from 'fast-shuffle'
 import { MultipleChoice, FillInTheBlank } from '../blank'
 import { createQuestionStrategy, extractCodeContent, getSeed, toTableRows, replaceBlanks, extractBlanks } from './utils'
 import { ALPHABET_ELEMENTS, ALPHABET_SET } from './config'
-import { GrammarData, ReadingData, ListeningData, ClozeData, FishingData, SentenceChoiceData, CustomData, QuestionStrategy } from '@repo/schema/paper'
+import { GrammarData, ReadingData, ListeningData, ClozeData, FishingData, SentenceChoiceData, CustomData, SummaryData, TranslationData, WritingData, QuestionStrategy } from '@repo/schema/paper'
 import Choice from '../choice'
 import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
 import { safeParseHTML } from '../../utils/parse'
+import { SubjectiveInput } from '../subjective'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -553,6 +554,86 @@ const customStrategy: QuestionStrategy<CustomData> = createQuestionStrategy<Cust
     }),
 })
 
+const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<SummaryData>({
+    keyPerLine: 0,
+    scorePerQuestion: 10,
+    getQuestionCount: () => 1,
+    getCorrectAnswers: (data) => [data.referenceSummary],
+    renderRubric: () => (<h2>Summary Writing</h2>),
+    renderPaper: ({ data }) => (
+        <section>
+            {safeParseHTML(data.text)}
+            <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
+        </section>
+    ),
+    renderAnswerSheet: () => <></>,
+    getDefaultValue: () => ({
+        id: nanoid(10),
+        type: 'summary',
+        text: '<p>Enter the passage to be summarized here.</p>',
+        essentialItems: ['Core point 1', 'Core point 2', 'Core point 3'],
+        extraItems: ['Supporting detail 1', 'Supporting detail 2'],
+        referenceSummary: '',
+    }),
+})
+
+const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStrategy<TranslationData>({
+    keyPerLine: 0,
+    scorePerQuestion: 0,
+    getPerfectScore: (data) => data.items.reduce((sum, item) => sum + item.score, 0),
+    getQuestionCount: (data) => data.items.length,
+    getCorrectAnswers: (data) => data.items.map(item => item.references[0] ?? ''),
+    renderRubric: () => (<h2>Translation</h2>),
+    renderPaper: ({ data, config }) => (
+        <section>
+            <ol className='list-none pl-0 flex flex-col gap-4'>
+                {data.items.map((item, index) => {
+                    const displayNo = (config.start ?? 1) + index
+                    const localNo = index + 1
+                    return (
+                        <li key={index}>
+                            <span className='font-bold'>{displayNo}. </span>
+                            {item.chinese}（{item.keyword}）
+                            <SubjectiveInput groupId={data.id} localNo={localNo} />
+                        </li>
+                    )
+                })}
+            </ol>
+        </section>
+    ),
+    renderAnswerSheet: () => <></>,
+    getDefaultValue: () => ({
+        id: nanoid(10),
+        type: 'translation',
+        items: [
+            { chinese: '今年除夕你打算做什么？', keyword: 'plan', references: ['What do you plan to do on New Year\'s Eve this year?'], score: 3 },
+            { chinese: '下届运动会届时将有更多的学生参加比赛。', keyword: 'take part in', references: ['More students will take part in the competition at the next sports meeting.'], score: 4 },
+            { chinese: '我们应该意识到健康对每个人来说才是最重要的。', keyword: 'aware', references: ['We should be aware that health is the most important thing for everyone.'], score: 4 },
+            { chinese: '尽管这个作业的难度超出了他的预期，他还是设法按时完成了。', keyword: 'beyond', references: ['Although the difficulty of this assignment was beyond his expectation, he managed to finish it on time.'], score: 5 },
+        ],
+    }),
+})
+
+const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<WritingData>({
+    keyPerLine: 0,
+    scorePerQuestion: 25,
+    getQuestionCount: () => 1,
+    getCorrectAnswers: () => [],
+    renderRubric: () => (<h2>Guided Writing</h2>),
+    renderPaper: ({ data }) => (
+        <section>
+            {safeParseHTML(data.guidance)}
+            <SubjectiveInput groupId={data.id} localNo={1} />
+        </section>
+    ),
+    renderAnswerSheet: () => <></>,
+    getDefaultValue: () => ({
+        id: nanoid(10),
+        type: 'writing',
+        guidance: '<p>你校英语组打算开展一个名为"经典名著整本阅读"的项目。你作为本校的学生李华，受委托去了解同学们对该项目的想法。</p><p>请给学校英语组写一封邮件，内容包括：</p><ol><li>描述同学们目前存在的顾虑或困难。</li><li>针对上述问题，提出具体的建议并说明理由。</li></ol>',
+    }),
+})
+
 export const questionStrategies = {
     fishing: fishingStrategy,
     cloze: clozeStrategy,
@@ -561,6 +642,9 @@ export const questionStrategies = {
     sentences: sentenceChoiceStrategy,
     listening: listeningStrategy,
     custom: customStrategy,
+    summary: summaryStrategy,
+    translation: translationStrategy,
+    writing: writingStrategy,
 } as const
 
 export const questionStrategiesList = Object.values(questionStrategies)

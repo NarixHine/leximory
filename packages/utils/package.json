@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./comment": "./src/comment.ts",
     "./moment": "./src/moment.ts",
-    "./paper": "./src/paper.ts"
+    "./paper": "./src/paper.ts",
+    "./subjective": "./src/subjective.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",

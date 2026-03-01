@@ -8,6 +8,9 @@ import {
     BookOpenTextIcon,
     ArticleIcon,
     ArticleNyTimesIcon,
+    TextAlignLeftIcon,
+    TranslateIcon,
+    PencilIcon,
 } from '@phosphor-icons/react/ssr'
 import { z } from '@repo/schema'
 
@@ -28,5 +31,8 @@ export const ICON_MAP: Record<QuizDataType, ReactNode> = {
     'cloze': <CheckerboardIcon />,
     'reading': <BookOpenTextIcon />,
     'sentences': <ArticleIcon />,
-    'custom': <ArticleNyTimesIcon />
+    'custom': <ArticleNyTimesIcon />,
+    'summary': <TextAlignLeftIcon />,
+    'translation': <TranslateIcon />,
+    'writing': <PencilIcon />,
 }

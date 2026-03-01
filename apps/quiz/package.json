@@ -61,6 +61,7 @@
     "ai": "^6.0.26",
     "es-toolkit": "^1.44.0",
     "framer-motion": "^12.23.12",
+    "inngest": "^3.43.1",
     "itty-time": "^2.0.2",
     "jotai": "^2.16.2",
     "jotai-scope": "^0.9.3",
