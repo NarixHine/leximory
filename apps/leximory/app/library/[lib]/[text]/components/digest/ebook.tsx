@@ -39,6 +39,30 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
+/** Extracts the mincho `@font-face` CSS text and font family name from the parent document's stylesheets. */
+let _minchoFontInfo: { fontFaceCss: string; fontFamily: string } | null = null
+function getMinchoFontInfo(): { fontFaceCss: string; fontFamily: string } {
+    if (_minchoFontInfo !== null) return _minchoFontInfo
+    if (typeof document === 'undefined') return (_minchoFontInfo = { fontFaceCss: '', fontFamily: '' })
+    const fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-mincho').trim()
+    if (!fontFamily) return (_minchoFontInfo = { fontFaceCss: '', fontFamily: '' })
+    const normalizedFamily = fontFamily.replace(/['"]/g, '').trim()
+    let fontFaceCss = ''
+    for (const sheet of Array.from(document.styleSheets)) {
+        try {
+            for (const rule of Array.from(sheet.cssRules)) {
+                if (rule instanceof CSSFontFaceRule) {
+                    const ruleFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim()
+                    if (ruleFamily === normalizedFamily) {
+                        fontFaceCss += rule.cssText + '\n'
+                    }
+                }
+            }
+        } catch { /* cross-origin stylesheet */ }
+    }
+    return (_minchoFontInfo = { fontFaceCss, fontFamily })
+}
+
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean) {
     const doc = contents.document
@@ -49,9 +73,10 @@ function injectThemeCSS(contents: Contents, isDark: boolean) {
         style.id = 'leximory-theme-override'
         doc.head.appendChild(style)
     }
-    style.textContent = isDark
+    const { fontFaceCss } = getMinchoFontInfo()
+    style.textContent = fontFaceCss + (isDark
         ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
-        : ``
+        : '')
 }
 
 function updateTheme(rendition: Rendition, isDarkMode: boolean) {
@@ -150,29 +175,31 @@ export default function Ebook() {
                         }}
                         getRendition={rendition => {
                             updateTheme(rendition, isDarkMode)
+                            const { fontFamily: minchoFamily } = getMinchoFontInfo()
+                            const minchoFallback = minchoFamily ? `, ${minchoFamily}` : ''
                             rendition.themes.default({
                                 p: {
                                     'margin-top': '0.6em',
                                     'margin-bottom': '0.6em',
                                     'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'font-family': `"Athelas", Georgia${minchoFallback}, serif !important`,
                                     'line-height': strategy.lineHeight,
                                     'text-rendering': 'optimizeLegibility',
                                 },
                                 div: {
                                     'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'font-family': `"Athelas", Georgia${minchoFallback}, serif !important`,
                                     'line-height': strategy.lineHeight,
                                     'text-rendering': 'optimizeLegibility',
                                 },
                                 h1: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 h2: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 h3: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 '.codeline': {
                                     'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
