@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answersAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
 import { Textarea } from '@heroui/react'
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -67,6 +67,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 /**
  * Summary input with an animated SVG ring that traces the border as word count approaches 60,
  * and a word counter at the bottom. Ring color: green → yellow (50 words) → red (60+ words).
+ * Uses a native textarea styled with a default border for the ring to trace.
  */
 function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     groupId: string
@@ -85,19 +86,27 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
 
+    // Auto-resize height based on content
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: e.target.value })
+        const el = e.target
+        el.style.height = 'auto'
+        el.style.height = `${el.scrollHeight}px`
+    }, [setAnswer, groupId, localNo])
+
     return (
         <div className='mt-3 flex flex-col gap-1'>
-            {/* Wrapper that positions the SVG ring around only the textarea */}
             <div className='relative'>
+                {/* SVG ring that traces the border */}
                 <svg
-                    className='absolute inset-0 w-full h-full pointer-events-none z-10 rounded-medium overflow-visible'
+                    className='absolute inset-0 w-full h-full pointer-events-none z-10'
                     preserveAspectRatio='none'
                     fill='none'
                 >
                     <rect
-                        x='0' y='0'
-                        width='100%' height='100%'
-                        rx={12} ry={12}
+                        x='1' y='1'
+                        width='calc(100% - 2px)' height='calc(100% - 2px)'
+                        rx={11} ry={11}
                         stroke={ringColor}
                         strokeWidth={2}
                         pathLength={pathLen}
@@ -109,15 +118,12 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                         }}
                     />
                 </svg>
-                <Textarea
+                <textarea
                     value={currentAnswer}
-                    onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
-                    variant='underlined'
-                    minRows={3}
-                    maxRows={10}
-                    classNames={{
-                        input: 'text-sm',
-                    }}
+                    onChange={handleChange}
+                    rows={3}
+                    aria-label='Summary'
+                    className='w-full resize-none rounded-medium border border-default-200 bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none transition-colors focus:border-default-400'
                 />
             </div>
             {/* Word counter */}
