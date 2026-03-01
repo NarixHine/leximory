@@ -125,7 +125,10 @@ export const SECTION_NAME_MAP = {
     'cloze': '完形填空',
     'reading': '阅读',
     'sentences': '六选四',
-    'custom': '其他'
+    'custom': '其他',
+    'summary': '概要',
+    'translation': '翻译',
+    'writing': '写作',
 } as const
 
 export const FORGET_CURVE = {
