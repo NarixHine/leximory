@@ -39,6 +39,11 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
+/** Font family name used for the mincho font inside epub.js iframes. */
+const MINCHO_EPUB_FAMILY = 'LeximoryMincho'
+/** @font-face declaration injected into every epub content frame. The font file is served from /fonts/ (public folder) so the absolute URL works inside epub.js iframes regardless of their blob/srcdoc base URL. */
+const MINCHO_FONT_CSS = `@font-face { font-family: "${MINCHO_EPUB_FAMILY}"; src: url("/fonts/mincho.woff2") format("woff2"); font-display: swap; }`
+
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean) {
     const doc = contents.document
@@ -49,9 +54,9 @@ function injectThemeCSS(contents: Contents, isDark: boolean) {
         style.id = 'leximory-theme-override'
         doc.head.appendChild(style)
     }
-    style.textContent = isDark
+    style.textContent = MINCHO_FONT_CSS + (isDark
         ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
-        : ``
+        : '')
 }
 
 function updateTheme(rendition: Rendition, isDarkMode: boolean) {
@@ -150,29 +155,30 @@ export default function Ebook() {
                         }}
                         getRendition={rendition => {
                             updateTheme(rendition, isDarkMode)
+                            const minchoFallback = `, ${MINCHO_EPUB_FAMILY}`
                             rendition.themes.default({
                                 p: {
                                     'margin-top': '0.6em',
                                     'margin-bottom': '0.6em',
                                     'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'font-family': `"Athelas", Georgia${minchoFallback}, serif !important`,
                                     'line-height': strategy.lineHeight,
                                     'text-rendering': 'optimizeLegibility',
                                 },
                                 div: {
                                     'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
+                                    'font-family': `"Athelas", Georgia${minchoFallback}, serif !important`,
                                     'line-height': strategy.lineHeight,
                                     'text-rendering': 'optimizeLegibility',
                                 },
                                 h1: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 h2: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 h3: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
+                                    'font-family': `"Baskerville", Georgia${minchoFallback}, serif !important`,
                                 },
                                 '.codeline': {
                                     'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
