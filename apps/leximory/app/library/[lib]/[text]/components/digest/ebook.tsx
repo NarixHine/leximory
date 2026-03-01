@@ -39,38 +39,10 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
-/** Extracts the mincho `@font-face` CSS text and font family name from the parent document's stylesheets. */
-let _minchoFontInfo: { fontFaceCss: string; fontFamily: string } | null = null
-function getMinchoFontInfo(): { fontFaceCss: string; fontFamily: string } {
-    if (_minchoFontInfo !== null) return _minchoFontInfo
-    if (typeof document === 'undefined') return { fontFaceCss: '', fontFamily: '' }
-    const rawFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-mincho').trim()
-    if (!rawFontFamily) return { fontFaceCss: '', fontFamily: '' }
-    // --font-mincho may be a comma-separated list (primary, Next.js fallback); use only the first entry
-    const fontFamily = rawFontFamily.split(',')[0].trim()
-    const normalizedFamily = fontFamily.replace(/['"]/g, '').trim()
-    let fontFaceCss = ''
-    for (const sheet of Array.from(document.styleSheets)) {
-        try {
-            for (const rule of Array.from(sheet.cssRules)) {
-                if (rule instanceof CSSFontFaceRule) {
-                    const ruleFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim()
-                    if (ruleFamily === normalizedFamily) {
-                        // Make origin-relative URLs absolute so they resolve inside epub.js iframes
-                        const absoluteCss = rule.cssText.replace(
-                            /url\((['"]?)(\/[^'")\s]+)\1\)/g,
-                            (_, _quote, path) => `url("${window.location.origin}${path}")`
-                        )
-                        fontFaceCss += absoluteCss + '\n'
-                    }
-                }
-            }
-        } catch { /* cross-origin stylesheet */ }
-    }
-    // Only cache once the font-face rule is found; if stylesheets haven't loaded yet, retry next call
-    if (fontFaceCss) _minchoFontInfo = { fontFaceCss, fontFamily }
-    return { fontFaceCss, fontFamily }
-}
+/** Font family name used for the mincho font inside epub.js iframes. */
+const MINCHO_EPUB_FAMILY = 'LeximoryMincho'
+/** @font-face declaration injected into every epub content frame. The font file is served from /fonts/ (public folder) so the absolute URL works inside epub.js iframes regardless of their blob/srcdoc base URL. */
+const MINCHO_FONT_CSS = `@font-face { font-family: "${MINCHO_EPUB_FAMILY}"; src: url("/fonts/mincho.woff2") format("woff2"); font-display: swap; }`
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean) {
@@ -82,8 +54,7 @@ function injectThemeCSS(contents: Contents, isDark: boolean) {
         style.id = 'leximory-theme-override'
         doc.head.appendChild(style)
     }
-    const { fontFaceCss } = getMinchoFontInfo()
-    style.textContent = fontFaceCss + (isDark
+    style.textContent = MINCHO_FONT_CSS + (isDark
         ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
         : '')
 }
@@ -184,8 +155,7 @@ export default function Ebook() {
                         }}
                         getRendition={rendition => {
                             updateTheme(rendition, isDarkMode)
-                            const { fontFamily: minchoFamily } = getMinchoFontInfo()
-                            const minchoFallback = minchoFamily ? `, ${minchoFamily}` : ''
+                            const minchoFallback = `, ${MINCHO_EPUB_FAMILY}`
                             rendition.themes.default({
                                 p: {
                                     'margin-top': '0.6em',

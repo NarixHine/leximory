@@ -1,5 +1,5 @@
 import { cn } from '@heroui/theme'
-import { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useTheme } from 'next-themes'
 
@@ -240,8 +240,12 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false }:
 
     return (
         <div
-            className={cn('relative flex items-center justify-center rounded-4xl overflow-clip', className)}
-            style={{ containerType: 'size', backgroundColor: isDarkMode ? bg.dark : bg.light }}
+            className={cn('relative flex items-center justify-center rounded-4xl overflow-clip emoji-cover-bg', className)}
+            style={{
+                containerType: 'size',
+                '--emoji-bg-light': bg.light,
+                '--emoji-bg-dark': bg.dark,
+            } as React.CSSProperties}
         >
             <BayerDither articleId={articleId} dynamic={true} isDarkMode={isDarkMode} />
             <div className='w-full h-full flex items-center justify-center z-1'>
