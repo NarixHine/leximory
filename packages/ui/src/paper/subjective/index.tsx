@@ -89,10 +89,9 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     const ry = 12
     const w = 400
     const h = 120
-    // Approximate perimeter of a rounded rect
-    const perimeter = 2 * (w - 2 * rx) + 2 * (h - 2 * ry) + 2 * Math.PI * rx
-
-    const dashOffset = perimeter * (1 - progress)
+    // Use a fixed pathLength so dasharray/offset are relative to 1.0
+    const pathLen = 1000
+    const dashOffset = pathLen * (1 - progress)
 
     return (
         <div className='mt-3 relative'>
@@ -109,7 +108,8 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     rx={rx} ry={ry}
                     stroke={ringColor}
                     strokeWidth={2.5}
-                    strokeDasharray={perimeter}
+                    pathLength={pathLen}
+                    strokeDasharray={pathLen}
                     strokeDashoffset={dashOffset}
                     strokeLinecap='round'
                     style={{
@@ -120,12 +120,12 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
             <Textarea
                 value={currentAnswer}
                 onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
-                variant='bordered'
+                variant='flat'
                 minRows={3}
                 maxRows={10}
                 classNames={{
                     input: 'text-sm',
-                    inputWrapper: 'shadow-sm !border-transparent',
+                    inputWrapper: 'shadow-sm bg-default-50',
                 }}
             />
             {/* Word counter */}
