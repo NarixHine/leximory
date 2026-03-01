@@ -563,7 +563,6 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     renderPaper: ({ data }) => (
         <section>
             {safeParseHTML(data.text)}
-            <p className='text-default-500 italic mt-4'>请用不超过 60 个英语单词概括上文。</p>
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
         </section>
     ),

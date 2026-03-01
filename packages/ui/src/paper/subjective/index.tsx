@@ -52,14 +52,13 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
             value={currentAnswer}
             onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
             placeholder={placeholder}
-            variant='bordered'
+            variant='underlined'
             minRows={3}
             maxRows={10}
             maxLength={maxLength}
-            className='mt-3'
+            className='mt-2'
             classNames={{
                 input: 'text-sm',
-                inputWrapper: 'shadow-sm',
             }}
         />
     )
@@ -83,54 +82,47 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     // Color: green base → yellow at 50 → red at 60+
     const ringColor = wordCount >= 60 ? '#ef4444' : wordCount >= 50 ? '#eab308' : '#22c55e'
 
-    // SVG rect perimeter for the ring. Using a rounded rect matching the container.
-    // We use viewBox-relative units; the SVG is stretched to fit.
-    const rx = 12
-    const ry = 12
-    const w = 400
-    const h = 120
-    // Use a fixed pathLength so dasharray/offset are relative to 1.0
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
 
     return (
-        <div className='mt-3 relative'>
-            {/* SVG ring overlay */}
-            <svg
-                className='absolute inset-0 w-full h-full pointer-events-none z-10'
-                viewBox={`0 0 ${w} ${h}`}
-                preserveAspectRatio='none'
-                fill='none'
-            >
-                <rect
-                    x='1' y='1'
-                    width={w - 2} height={h - 2}
-                    rx={rx} ry={ry}
-                    stroke={ringColor}
-                    strokeWidth={2.5}
-                    pathLength={pathLen}
-                    strokeDasharray={pathLen}
-                    strokeDashoffset={dashOffset}
-                    strokeLinecap='round'
-                    style={{
-                        transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease',
+        <div className='mt-3 flex flex-col gap-1'>
+            {/* Wrapper that positions the SVG ring around only the textarea */}
+            <div className='relative'>
+                <svg
+                    className='absolute inset-0 w-full h-full pointer-events-none z-10 rounded-medium overflow-visible'
+                    preserveAspectRatio='none'
+                    fill='none'
+                >
+                    <rect
+                        x='0' y='0'
+                        width='100%' height='100%'
+                        rx={12} ry={12}
+                        stroke={ringColor}
+                        strokeWidth={2}
+                        pathLength={pathLen}
+                        strokeDasharray={pathLen}
+                        strokeDashoffset={dashOffset}
+                        strokeLinecap='round'
+                        style={{
+                            transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease',
+                        }}
+                    />
+                </svg>
+                <Textarea
+                    value={currentAnswer}
+                    onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
+                    variant='underlined'
+                    minRows={3}
+                    maxRows={10}
+                    classNames={{
+                        input: 'text-sm',
                     }}
                 />
-            </svg>
-            <Textarea
-                value={currentAnswer}
-                onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
-                variant='flat'
-                minRows={3}
-                maxRows={10}
-                classNames={{
-                    input: 'text-sm',
-                    inputWrapper: 'shadow-sm bg-default-50',
-                }}
-            />
+            </div>
             {/* Word counter */}
-            <div className='flex justify-end mt-1 pr-1'>
-                <span className={`text-xs tabular-nums ${wordCount >= 60 ? 'text-danger font-medium' : wordCount >= 50 ? 'text-warning font-medium' : 'text-default-400'}`}>
+            <div className='flex justify-end pr-1'>
+                <span className={`text-xs font-mono ${wordCount >= 60 ? 'text-danger font-medium' : wordCount >= 50 ? 'text-warning font-medium' : 'text-default-400'}`}>
                     {wordCount} / 60
                 </span>
             </div>
