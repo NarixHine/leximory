@@ -7,6 +7,9 @@ import SentenceChoiceEditor from './sentence'
 import ReadingEditor from './reading'
 import ListeningEditor from './listening'
 import CustomTextEditor from './custom'
+import SummaryEditor from './summary'
+import TranslationEditor from './translation'
+import WritingEditor from './writing'
 import { useAtom, useAtomValue } from 'jotai'
 import { isChatAtom } from '../atoms'
 import ChatInterface from './chat'
@@ -78,6 +81,30 @@ export default function Editor({ id }: { id?: string }) {
 
                     case 'custom':
                         return <CustomTextEditor
+                            key={data.id}
+                            data={data}
+                            setData={setData}
+                            id={id}
+                        />
+
+                    case 'summary':
+                        return <SummaryEditor
+                            key={data.id}
+                            data={data}
+                            setData={setData}
+                            id={id}
+                        />
+
+                    case 'translation':
+                        return <TranslationEditor
+                            key={data.id}
+                            data={data}
+                            setData={setData}
+                            id={id}
+                        />
+
+                    case 'writing':
+                        return <WritingEditor
                             key={data.id}
                             data={data}
                             setData={setData}
