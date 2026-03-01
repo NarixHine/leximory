@@ -42,14 +42,25 @@ export function SubjectiveFeedbackPanel({ quizData, answers, feedback }: {
     )
 }
 
-/** Highlights copied chunks in the student's answer text. */
+/** Highlights copied chunks in the student's answer text using React elements. */
 function highlightCopied(answer: string, copiedChunks: string[]): React.ReactNode {
     if (copiedChunks.length === 0) return answer
-    let result = answer
-    for (const chunk of copiedChunks) {
-        result = result.replace(new RegExp(chunk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), `<mark class="bg-warning-200 rounded px-0.5">${chunk}</mark>`)
-    }
-    return <span dangerouslySetInnerHTML={{ __html: result }} />
+
+    // Build a regex matching all chunks (case-insensitive)
+    const escaped = copiedChunks.map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
+    const parts = answer.split(regex)
+
+    return (
+        <span>
+            {parts.map((part, i) => {
+                const isHighlighted = copiedChunks.some(c => c.toLowerCase() === part.toLowerCase())
+                return isHighlighted
+                    ? <mark key={i} className='bg-warning-200 rounded px-0.5'>{part}</mark>
+                    : <span key={i}>{part}</span>
+            })}
+        </span>
+    )
 }
 
 function SummaryFeedbackCard({ data, answer, feedback }: { data: SummaryData, answer: string, feedback: SummaryFeedback }) {

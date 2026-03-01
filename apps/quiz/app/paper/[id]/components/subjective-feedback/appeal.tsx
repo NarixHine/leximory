@@ -54,7 +54,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                 <div className='flex flex-col gap-3 max-h-80 overflow-y-auto'>
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`text-sm p-2 rounded-medium ${msg.role === 'user' ? 'bg-primary-50 ml-8' : 'bg-default-100 mr-8'}`}>
-                                            {msg.parts.map((part, i) => 'text' in part ? <span key={i}>{part.text}</span> : null)}
+                                            {msg.parts.map((part, i) => 'text' in part ? <span key={`${msg.id}-${i}`}>{part.text}</span> : null)}
                                         </div>
                                     ))}
                                     {messages.length === 0 && (

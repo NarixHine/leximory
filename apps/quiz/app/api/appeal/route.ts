@@ -1,8 +1,20 @@
-import { streamText } from 'ai'
+import { streamText, UIMessage } from 'ai'
 import { FLASH_AI } from '@repo/service/ai/config'
+import { z } from '@repo/schema'
+
+const bodySchema = z.object({
+    messages: z.array(z.any()),
+    sectionType: z.string(),
+    feedback: z.record(z.string(), z.unknown()),
+})
 
 export async function POST(req: Request) {
-    const { messages, sectionType, feedback } = await req.json()
+    const body = await req.json()
+    const { success, data } = bodySchema.safeParse(body)
+    if (!success) {
+        return new Response('Invalid request body', { status: 400 })
+    }
+    const { messages, sectionType, feedback } = data
 
     const systemPrompt = `You are a fair and patient exam marker answering a student's appeal or question about their ${sectionType} exam marking result. 
 
