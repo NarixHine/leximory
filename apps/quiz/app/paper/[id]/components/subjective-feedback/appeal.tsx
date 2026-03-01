@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
 import { ChatCircleDotsIcon } from '@phosphor-icons/react'
 import { SubjectiveFeedback } from '@repo/schema/paper'
+import { DefaultChatTransport } from 'ai'
 import { useChat } from '@ai-sdk/react'
 
 /**
@@ -18,14 +19,18 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const [question, setQuestion] = useState('')
 
-    const { messages, append, isLoading } = useChat({
-        api: '/api/appeal',
-        body: { sectionId, sectionType, feedback },
+    const { messages, sendMessage, status } = useChat({
+        transport: new DefaultChatTransport({
+            api: '/api/appeal',
+            body: { sectionId, sectionType, feedback },
+        }),
     })
+
+    const isLoading = status === 'streaming' || status === 'submitted'
 
     const handleSubmit = () => {
         if (!question.trim()) return
-        append({ role: 'user', content: question })
+        sendMessage({ text: question })
         setQuestion('')
     }
 
@@ -49,7 +54,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                 <div className='flex flex-col gap-3 max-h-80 overflow-y-auto'>
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`text-sm p-2 rounded-medium ${msg.role === 'user' ? 'bg-primary-50 ml-8' : 'bg-default-100 mr-8'}`}>
-                                            {msg.content}
+                                            {msg.parts.map((part, i) => 'text' in part ? <span key={i}>{part.text}</span> : null)}
                                         </div>
                                     ))}
                                     {messages.length === 0 && (

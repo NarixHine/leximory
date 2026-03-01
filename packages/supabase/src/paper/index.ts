@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '..'
-import type { TablesInsert, TablesUpdate } from '../types'
+import type { Json, TablesInsert, TablesUpdate } from '../types'
 import { QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 export * from './types'
 
@@ -266,7 +266,7 @@ export async function updateSubmissionFeedback({
   score,
 }: {
   submissionId: number
-  feedback: Record<string, unknown>
+  feedback: { [key: string]: Json | undefined }
   score: number
 }) {
   const { data: submission, error } = await supabase

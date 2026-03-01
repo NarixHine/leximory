@@ -17,5 +17,5 @@ Answer the student's question concisely in Chinese. Explain why points were dedu
         messages,
     })
 
-    return result.toDataStreamResponse()
+    return result.toUIMessageStreamResponse()
 }

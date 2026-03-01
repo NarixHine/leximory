@@ -150,7 +150,7 @@ export const markSubjectiveSections = inngest.createFunction(
             const newScore = submission.score + subjectiveScore
             await updateSubmissionFeedback({
                 submissionId,
-                feedback: feedback as Record<string, unknown>,
+                feedback: JSON.parse(JSON.stringify(feedback)),
                 score: newScore,
             })
         })
