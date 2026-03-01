@@ -563,8 +563,8 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     renderPaper: ({ data }) => (
         <section>
             {safeParseHTML(data.text)}
-            <p className='text-default-500 italic mt-4'>Summarize the above passage in no more than 61 words.</p>
-            <SubjectiveInput groupId={data.id} localNo={1} placeholder='Write your summary here…' />
+            <p className='text-default-500 italic mt-4'>请用不超过 60 个英语单词概括上文。</p>
+            <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
         </section>
     ),
     renderAnswerSheet: () => <></>,
@@ -595,7 +595,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
                         <li key={index}>
                             <span className='font-bold'>{displayNo}. </span>
                             {item.chinese}（{item.keyword}）
-                            <SubjectiveInput groupId={data.id} localNo={localNo} placeholder='Translate into English…' />
+                            <SubjectiveInput groupId={data.id} localNo={localNo} />
                         </li>
                     )
                 })}
@@ -624,7 +624,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     renderPaper: ({ data }) => (
         <section>
             {safeParseHTML(data.guidance)}
-            <SubjectiveInput groupId={data.id} localNo={1} placeholder='Write your essay here…' />
+            <SubjectiveInput groupId={data.id} localNo={1} />
         </section>
     ),
     renderAnswerSheet: () => <></>,

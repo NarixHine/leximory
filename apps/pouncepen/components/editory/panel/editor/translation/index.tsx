@@ -33,27 +33,27 @@ export default function TranslationEditor({
         {data.items.map((item, index) => (
             <div key={index} className='flex flex-col gap-2 border border-default-200 rounded-medium p-3'>
                 <div className='flex items-center justify-between'>
-                    <span className='text-sm font-bold text-default-600'>#{index + 1}（{item.score} pts）</span>
+                    <span className='text-sm font-bold text-default-600'>#{index + 1}（{item.score} 分）</span>
                     <Button size='sm' isIconOnly variant='light' color='danger' onPress={() => removeItem(index)}>
                         <TrashIcon />
                     </Button>
                 </div>
                 <Input
-                    label='Chinese Sentence'
+                    label='中文原句'
                     value={item.chinese}
                     onValueChange={(chinese) => updateItem(index, { chinese })}
                     variant='underlined'
                 />
                 <div className='flex gap-2'>
                     <Input
-                        label='Required Keyword'
+                        label='关键词'
                         value={item.keyword}
                         onValueChange={(keyword) => updateItem(index, { keyword })}
                         variant='underlined'
                         className='flex-1'
                     />
                     <Input
-                        label='Score'
+                        label='分值'
                         type='number'
                         value={String(item.score)}
                         onValueChange={(v) => updateItem(index, { score: Number(v) || 0 })}
@@ -63,7 +63,7 @@ export default function TranslationEditor({
                 </div>
                 <List
                     items={item.references}
-                    placeholder='Add reference translation'
+                    placeholder='添加参考译文'
                     add={(ref) => updateItem(index, { references: [...item.references, ref] })}
                     remove={(ref) => updateItem(index, { references: item.references.filter(r => r !== ref) })}
                 />
@@ -75,7 +75,7 @@ export default function TranslationEditor({
             color='secondary'
             onPress={addItem}
         >
-            Add Translation Item
+            添加翻译题
         </Button>
     </div>
 }

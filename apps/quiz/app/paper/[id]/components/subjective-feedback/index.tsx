@@ -71,19 +71,18 @@ function SummaryFeedbackCard({ data, answer, feedback }: { data: SummaryData, an
                 <Chip color='primary' variant='flat' size='sm'>{feedback.totalScore}/10</Chip>
             </div>
             <div className='flex gap-4 text-sm'>
-                <span>Content: <strong>{feedback.contentScore}</strong>/5</span>
-                <span>Language: <strong>{feedback.languageScore}</strong>/5</span>
+                <span>内容：<strong>{feedback.contentScore}</strong>/5</span>
+                <span>语言：<strong>{feedback.languageScore}</strong>/5</span>
             </div>
             <Divider />
             <div className='text-sm'>
-                <p className='text-default-500 mb-1'>Your answer:</p>
                 <p className='italic'>{highlightCopied(answer, feedback.copiedChunks)}</p>
             </div>
             {feedback.copiedChunks.length > 0 && (
-                <p className='text-xs text-warning-600'>⚠ Verbatim copying detected ({feedback.copiedChunks.length} chunk{feedback.copiedChunks.length > 1 ? 's' : ''})</p>
+                <p className='text-xs text-warning-600'>⚠ 检测到直接照抄（{feedback.copiedChunks.length} 处）</p>
             )}
             <div className='text-sm'>
-                <p className='text-default-500 mb-1'>Essential items:</p>
+                <p className='text-default-500 mb-1'>核心要点：</p>
                 <ul className='list-none flex flex-col gap-1'>
                     {feedback.essentialItemResults.map((r, i) => (
                         <li key={i} className='flex items-start gap-1'>
@@ -95,7 +94,7 @@ function SummaryFeedbackCard({ data, answer, feedback }: { data: SummaryData, an
             </div>
             {feedback.extraItemResults.length > 0 && (
                 <div className='text-sm'>
-                    <p className='text-default-500 mb-1'>Extra items:</p>
+                    <p className='text-default-500 mb-1'>补充细节：</p>
                     <ul className='list-none flex flex-col gap-1'>
                         {feedback.extraItemResults.map((r, i) => (
                             <li key={i} className='flex items-start gap-1'>
@@ -129,7 +128,7 @@ function TranslationFeedbackCard({ data, answers, feedback }: { data: Translatio
                         </Chip>
                     </div>
                     <p className='text-default-500'>{data.items[index]?.chinese}</p>
-                    <p className='italic'>{answers[index + 1] ?? '(unanswered)'}</p>
+                    <p className='italic'>{answers[index + 1] ?? <span className='text-default-400'>（未作答）</span>}</p>
                     <p className='text-default-600'>{item.rationale}</p>
                 </div>
             ))}
@@ -146,15 +145,15 @@ function WritingFeedbackCard({ data, answer, feedback }: { data: WritingData, an
                 <Chip color='primary' variant='flat' size='sm'>{feedback.totalScore}/25</Chip>
             </div>
             <div className='flex gap-4 text-sm flex-wrap'>
-                <span>Content: <strong>{feedback.contentScore}</strong>/10</span>
-                <span>Language: <strong>{feedback.languageScore}</strong>/10</span>
-                <span>Structure: <strong>{feedback.structureScore}</strong>/5</span>
+                <span>内容：<strong>{feedback.contentScore}</strong>/10</span>
+                <span>语言：<strong>{feedback.languageScore}</strong>/10</span>
+                <span>结构：<strong>{feedback.structureScore}</strong>/5</span>
             </div>
             <Divider />
             <p className='text-sm text-default-600'>{feedback.rationale}</p>
             {feedback.badPairs.length > 0 && (
                 <div className='text-sm'>
-                    <p className='text-default-500 mb-1 font-medium'>Improvements:</p>
+                    <p className='text-default-500 mb-1 font-medium'>有待改进：</p>
                     <ul className='flex flex-col gap-2'>
                         {feedback.badPairs.map((pair, i) => (
                             <li key={i} className='border-l-2 border-danger-300 pl-2'>
@@ -167,7 +166,7 @@ function WritingFeedbackCard({ data, answer, feedback }: { data: WritingData, an
             )}
             {feedback.goodPairs.length > 0 && (
                 <div className='text-sm'>
-                    <p className='text-default-500 mb-1 font-medium'>Highlights:</p>
+                    <p className='text-default-500 mb-1 font-medium'>亮点：</p>
                     <ul className='flex flex-col gap-2'>
                         {feedback.goodPairs.map((pair, i) => (
                             <li key={i} className='border-l-2 border-success-300 pl-2'>
@@ -181,7 +180,7 @@ function WritingFeedbackCard({ data, answer, feedback }: { data: WritingData, an
             {feedback.corrected && (
                 <div className='text-sm'>
                     <Divider className='my-2' />
-                    <p className='text-default-500 mb-1 font-medium'>Corrected version:</p>
+                    <p className='text-default-500 mb-1 font-medium'>修改版本：</p>
                     <div className='prose prose-sm dark:prose-invert max-w-none' dangerouslySetInnerHTML={{ __html: feedback.corrected.replace(/\n/g, '<br/>') }} />
                 </div>
             )}
