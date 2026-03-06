@@ -148,8 +148,8 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
 export async function getNewText(id: string) {
     const textWithLib = await getTextWithLib(id)
     await Kilpi.texts.read(textWithLib).authorize().assert()
-    const { content, topics, emoji } = await getTextContent({ id })
-    return { content, topics, emoji }
+    const { content, topics, emoji, title } = await getTextContent({ id })
+    return { content, topics, emoji, title }
 }
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
@@ -187,7 +187,7 @@ export async function saveEbook(id: string, form: FormData) {
 }
 
 /** Triggers article annotation via Inngest after checking quota. */
-export async function generate({ article, textId, onlyComments, delayRevalidate }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean }) {
+export async function generate({ article, textId, onlyComments, delayRevalidate, generateTitle }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean, generateTitle?: boolean }) {
     const { userId } = await getUserOrThrow()
     const text = await getTextWithLib(textId)
     await Kilpi.texts.write(text).authorize().assert()
@@ -206,7 +206,7 @@ export async function generate({ article, textId, onlyComments, delayRevalidate 
 
     await inngest.send({
         name: 'app/article.imported',
-        data: { article, userId, textId, onlyComments }
+        data: { article, userId, textId, onlyComments, generateTitle }
     })
 }
 

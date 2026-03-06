@@ -27,6 +27,13 @@ const emojiPrompt = (input: string) => ({
     ...nanoAI
 })
 
+const titlePrompt = (input: string) => ({
+    system: `你是一个标题生成器。根据文章内容生成一个简洁、准确、有吸引力的标题。用文章的原语言输出标题。只输出标题文本，不要输出任何其他内容、引号或标点符号包裹。`,
+    prompt: `为以下文章生成一个标题：\n\n${input.slice(0, 2000)}`,
+    maxOutputTokens: 60,
+    ...nanoAI
+})
+
 const chunkText = (text: string, maxLength: number): string[] => {
     // Handle edge cases
     if (!text) return []
@@ -93,7 +100,7 @@ export const annotateFullArticle = inngest.createFunction(
     { id: 'annotate-article' },
     { event: 'app/article.imported' },
     async ({ step, event }) => {
-        const { data: { article, textId, onlyComments, userId } } = event
+        const { data: { article, textId, onlyComments, userId, generateTitle } } = event
 
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
@@ -107,18 +114,28 @@ export const annotateFullArticle = inngest.createFunction(
             return chunkText(article, getLanguageStrategy(lang).maxChunkSize)
         })
 
-        const { topicsConfig, emojiConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
+        const { topicsConfig, emojiConfig, titleConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
             const topicsConfig = topicsPrompt(article)
             const emojiConfig = emojiPrompt(article)
+            const titleConfig = generateTitle ? titlePrompt(article) : undefined
             const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
-            return { topicsConfig, emojiConfig, annotationConfigs }
+            return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
         })
 
-        const [topics, emoji, ...annotatedChunks] = await Promise.all([
+        const parallelTasks: Promise<unknown>[] = [
             step.ai.wrap('annotate-topics', generateText, topicsConfig),
             step.ai.wrap('generate-emoji', generateText, emojiConfig),
             ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
-        ])
+        ]
+        if (titleConfig) {
+            parallelTasks.push(step.ai.wrap('generate-title', generateText, titleConfig))
+        }
+
+        const results = await Promise.all(parallelTasks)
+        const topics = results[0] as Awaited<ReturnType<typeof generateText>>
+        const emoji = results[1] as Awaited<ReturnType<typeof generateText>>
+        const annotatedChunks = results.slice(2, titleConfig ? -1 : undefined) as Awaited<ReturnType<typeof generateText>>[]
+        const titleResult = titleConfig ? results[results.length - 1] as Awaited<ReturnType<typeof generateText>> : undefined
 
         const content = annotatedChunks.map(chunk => chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '').join('\n\n')
 
@@ -129,11 +146,13 @@ export const annotateFullArticle = inngest.createFunction(
         })
         await step.run('save-article', async () => {
             const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
+            const generatedTitle = titleResult?.steps[0].content[0].type === 'text' ? titleResult.steps[0].content[0].text.trim() : undefined
             await updateText({
                 id: textId,
                 content: fixDumbPunctuation(content),
                 topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
-                emoji: generatedEmoji
+                emoji: generatedEmoji,
+                title: generatedTitle
             })
             revalidateTag(`texts:${libId}`, 'max')
         })

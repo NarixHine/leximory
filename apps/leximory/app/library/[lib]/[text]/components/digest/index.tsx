@@ -245,6 +245,7 @@ function GeneratingView() {
   const text = useAtomValue(textAtom)
   const [currentProgress, setCurrentProgress] = useState(0)
   const setEmoji = useSetAtom(emojiAtom)
+  const setTitle = useSetAtom(titleAtom)
   const router = useRouter()
 
   const targetProgressRecord: Record<AnnotationProgress, number> = {
@@ -277,11 +278,12 @@ function GeneratingView() {
       if (annotationProgress !== newProgress) {
         setCurrentProgress(startProgressRecord[newProgress])
         if (newProgress === 'completed') {
-          getNewText(text).then(({ content, topics, emoji }) => {
+          getNewText(text).then(({ content, topics, emoji, title }) => {
             setContent(content)
             setTopics(topics ?? [])
             setIsLoading(false)
             setEmoji(emoji)
+            if (title) setTitle(title)
             router.refresh()
           })
         }
