@@ -23,7 +23,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
     placeholder?: string
     maxLength?: number
     /** Use 'summary' for the animated ring + word counter variant. */
-    variant?: 'default' | 'summary'
+    variant?: 'default' | 'summary' | 'translation' | 'writing'
 }) {
     const viewMode = useAtomValue(viewModeAtom)
     const answers = useAtomValue(answersAtom)
@@ -53,8 +53,8 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
             onValueChange={(value) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: value })}
             placeholder={placeholder}
             variant='underlined'
-            minRows={3}
-            maxRows={10}
+            minRows={variant === 'writing' ? 10 : 1}
+            maxRows={variant === 'writing' ? 20 : 3}
             maxLength={maxLength}
             className='mt-2'
             classNames={{
@@ -103,9 +103,9 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
 
-    // Rect inset by 1px on each side so the 2px stroke sits on the border
+    // Rect inset on each side so the 2px stroke sits on the border
     const rw = size.w - 2
-    const rh = size.h - 2
+    const rh = size.h - 5
     const rx = 11
 
     // Auto-resize height based on content

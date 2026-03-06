@@ -168,6 +168,91 @@ export function buildWritingScoringPrompt(
         Yours sincerely,
         Li Hua
     </essay>
+    <essay id="High-23" score="23" content="9" language="10" structure="4">
+                Dear English Group,
+                As the delegate tasked with collecting student feedback on the "Reading Classics" project, I am pleased to present the findings of my inquiry. Generally, students hold a positive attitude towards the program, yet certain practical hurdles remain to be cleared.
+                One primary obstacle is the "language barrier" inherent in unabridged classics. To many, the prospect of navigating through hundreds of pages of sophisticated English is somewhat intimidating. Moreover, there is a collective worry regarding the "relevance" of these texts. Students are concerned that the philosophical depths of ancient works might be too detached from their contemporary lives, leading to a potential lack of motivation.
+                To address these concerns, I suggest incorporating a "Thematic Selection" process. Instead of imposing a fixed list, allowing students to vote for genres that align with their interests would ensure higher engagement. Furthermore, integrating multimedia resources—such as film adaptations or expert podcasts—could serve as an accessible entry point. Such an approach would not only demystify the classics but also illuminate their enduring value in a modern context.
+                Thank you for considering these suggestions. I am confident that with these adjustments, the project will be a resounding success.
+                Yours sincerely,
+                Li Hua
+    </essay>
+    <essay id="1" score="22.0" content="9" language="9" structure="4">
+                Dear Sir/Madam,
+                I was previously entrusted with the task of student opinion inquiry as the project of Reading Classics in Their Entirety was approaching. Lately I have been surveying my classmates, and I hope the following findings can be of help to you.
+                The main concerns can be divided into two categories. First and foremost, many students are worried about difficulty, citing inexperience in ESL reading. Some fear the plot can be hard to catch up with due to extravagant language or highly wrought settings, which significantly degrades their motivation to carry on. Secondly, there is also a lack of interest. If the topics discussed don't fall under their radar or feel right up their alley, the whole process can become insipid.
+                To address the challenges above, we must ensure a less daunting, more inviting reading experience. Firstly, before the project kicks off, set up a poll on the school website about students' favourite topics or genres. Not only does it prevent us from selecting books that dampen their interest, but students will also feel like part of the project as they have a say in steering its course. Next, hold a weekly seminar where all students get to discuss a certain chapter. Those who struggle can catch up by listening to others, while others may leap at the opportunity to deepen their understanding. In this way, classics reading can be both engaging and easy.
+                If the problems above are properly handled, the project is certain to yield transformative results in student performance, setting the stage for a brand new world of growth potential. I can't wait to see it in action.
+                Li Hua
+    </essay>
+    <essay id="2" score="21.0" content="9" language="8" structure="4">
+                Dear Teacher who's responsible for the project,
+                I'm Li Hua from Senior 2. Thank you so much for your trusting me. In order to help you, I have asked many students about their ideas of the "whole-book reading of classics" project. And here are the results of my investigation.
+                According to my schoolmates, they think the project is nearly impossible due to their lacking in time. Since we're entering Senior 3, the burden of stress from study will fill us with huge amounts of exercise. We won't have enough spare time to read a whole book. Also, the classics are usually hard to read and philosophical, revealing social phenomena at that time. It may be too difficult for us to understand without background knowledge. Last but not least, not all the students are interested in the project. For those who aren't good at English, they don't want to read novels. And some people are keen on non-fictions or poems while most of the classics are fiction, thus leading to their indifference to the project.
+                I have got some suggestions for you. Firstly, extend the time for students to read a whole book. Through periods of spare time, the whole-book reading can be finished step by step. Secondly, choose some easy-to-understand classics at first and gradually increase the level of difficulty, giving students a buffer to adapt to the classics. This can also help students improve their skills of phenomenal analysis. Thirdly, release a survey each time when opting for a new book and choose the top one. This can ensure that most students like the book. Also choose various types of books from fiction to non-fiction, meeting the students' needs for varied reading.
+                These are my suggestions. I hope they can help you a lot. I truly hope the project can be held successfully. Wait for your good news.
+                Your sincerely
+                Li Hua.
+    </essay>
+    <essay id="3" score="20.0" content="8" language="8" structure="4">
+                Dear teacher,
+                I'm Li Ming from Ming Qi Highschool. As our school is about to arrange a project of "reading literal classics", I have taken insights into students' thoughts and I'm willing to air their opinions and corresponding suggestions.
+                As far as I know, lack of interest and fear of difficulty are among the two most common problems.
+                I fully resonate with students in terms of difficulty in reading. Take "Red Building Dream" as an example. It is a novel featuring 120 chapters and hundreds of vivid characters, making it impossible for us to read completely. I suggest that teachers can select some classic passages like "Bao Chai catching butterflies" or "Dai Yu dumping flowers" for our students to carefully and deeply perceive the profound meanings of these behaviors.
+                As for the lack of interest, I believe that while the context itself is indispensable, approaches besides reading matters significantly too. For instance, when reading novels like "journey to the west", we can arrange for students to act as the characters to demonstrate the plot, thus deepening our understanding and enhancing our interests.
+                To put it in a nutshell, I reckon that with structured approach, the project will go around effectively and smoothly.
+                Yours sincerely
+                Li Ming
+    </essay>
+    <essay id="4" score="18.0" content="8" language="6" structure="4">
+                Dear English teacher:
+                As a student in Minqi Middle school, I felt very pleased to hear that our school will start the project "reading the whole books of the classics". However, there might be some obstacles to implement such a project. Here are the reasons:
+                First and foremost, students' time is extremely precious. many students won't have enough time to take part in the activities, they usually spend much energy finishing their own schoolwork. Additionally, classics reading require large vocabularies and a series of background knowledge. Hence, the difficulty of reading the classics is inevitably high. many students may be unable to comprehend such a difficult context. Therefore, the implementation of the project will be tough.
+                Here are some measures to cope with it. Firstly, set a club that aim to read these classics. In this way, reading classics can be viewed as a normal class, therefore, students can take part in the projects more. Moreover, choose some easier topics of classics rather than difficult one. In that way not only can students confidence be greatly improved, but also increase their willingness to take part in it.
+                If my suggestions can be taken into consideration, I hold the belief that the project will be successfully implemented.
+                Best regards. Li Hua.
+    </essay>
+    <essay id="5" score="17.0" content="7" language="7" structure="3">
+                Dear teacher
+                I've heard that our school English group want to hold a new programme, and I've asked my classmates and record their ideas carefully. Here're my classmates' suggestions.
+                Some students in my class voice the opinion that lack time to participate in the activity because they need to do homework and don't have spare time. Some students lack the interest in English or don't like reading English classic. they think it's boring and hard to understand and afraid of falling behind others.
+                After hearing my classmates ideas, I want to offer my suggestion. I think you can offer some English novels which are more easier and interesting than classic to develop students' interests. Second, I suggest you can make a survey about what students like and select some topics for students to choose so that children can choose what they interested in. Finally, you can take students to the museum to learn the foreign culture Art derive from life, isn't it.
+                I really hope you can take my advice and I sincerely hope the program can continue.
+                Yours sincerely
+                Li hua
+    </essay>
+     <essay id="6" score="16.0" content="7" language="6" structure="3">
+                Dear School English group,
+                Hearing that our school is ready to start a "typical famous books reading" campaign. What a marvelous plan. I can't wait and willing to give my own suggestions.
+                Because we will become grade three students, our time on reading famous books is tightened and some of students are lacking of the interest of reading famous books. the difficulty of the selected books is important too.
+                Due to these problem, I have several own suggestions. Firstly, trying to reduce the homeworks, this way can make students have more time to read some famous books. Secondly, taking a competition in all students, this way may let this activity more interesting and also absorb more students to take part in this activity. In my opinion, Finally, the difficulty of the selected books is the most important. Try to select the middle-difficulty books and the students can join this activity. this can make the students understand the meaning that hidden in books.
+                In conclusion, taking correct way that most students adapting is the most important. I'm hoping that my suggestions can be adopted and I wish this campaign can take be took perfectly!
+                Li Hua.
+    </essay>
+    <essay id="7" score="15.0" content="6" language="6" structure="3">
+                Dear teacher:
+                I've learned that our school is planning to start the project "reading the whole classic novels". So students' ideas are welcomed. So I'm here to express students' ideas.
+                Many students think reading the whole classic novel in English is too difficult for us. The classic itself is hard to understand and our English ability isn't good enough to read it. Besides, the classics often lack interesting plots and they are boring for most of us. We eventually have no interest to read the Chinese version. What's more, the reading time is also a big problem. Understanding the English version thoroughly requires plenty of time. Our time is limited because we have many study tasks to complete.
+                From my perspective, reading a classic chapter of a novel may be a better choice. We can not only learn the literal express, but also save our time. Students may be willing to read short passage.
+                I will appreciate it very much if you could take my suggestion into consideration.
+                Yours sincerely
+                Li Hua
+    </essay>
+    <essay id="8" score="13.0" content="6" language="5" structure="2">
+                Dear teacher:
+                I'm Li Hua from Grade Eleven. You have asked me to get to know students' idea of the program of "Read a Whole Book". Here are my results and advices.
+                Many of the students find it hard to read a book completely in their spare time. First, we students are busy studying in most of the time so we have trouble to leave time reading. Secondly, the books which were written by famous author are quite great but hard to read. Many students meet challenge reading them. So they have little entertain to read them.
+                In my opinion, teachers can act as a guide in students' reading. The teachers are knowledgeable, so with their help, students can easily understand the books. It can not only help us but also improve their ability of reading and understanding.
+                Hope it can help you.
+                Best wishes from
+                Li Hua.
+    </essay>
+    <essay id="10" score="7.0" content="3" language="3" structure="1">
+                Dear Teacher:
+                I'm Li Hua from grade nine class seven. Hearing that we are going to hold the campaign of "reading the whole classic". I'm too thrilling to say a word. I just can't agree more.
+                After I told our classmates this idea. We are all agree. But we think the school time is limited. So reduce some school work is our advice.
+                In my point of View, this project is very meaningful. We are looking forward to its beginning.
+    </essay>
 </example_essays>
 </reference_baselines>
 

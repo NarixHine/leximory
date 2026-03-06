@@ -594,7 +594,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
                         <li key={index}>
                             <span className='font-bold'>{displayNo}. </span>
                             {item.chinese}（{item.keyword}）
-                            <SubjectiveInput groupId={data.id} localNo={localNo} />
+                            <SubjectiveInput groupId={data.id} localNo={localNo} variant='translation' />
                         </li>
                     )
                 })}
@@ -623,7 +623,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     renderPaper: ({ data }) => (
         <section>
             {safeParseHTML(data.guidance)}
-            <SubjectiveInput groupId={data.id} localNo={1} />
+            <SubjectiveInput groupId={data.id} localNo={1} variant='writing' />
         </section>
     ),
     renderAnswerSheet: () => <></>,
