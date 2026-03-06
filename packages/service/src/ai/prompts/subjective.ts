@@ -65,9 +65,9 @@ Return a JSON object: {
   "contentScore": number (0-5),
   "languageScore": number (0-5),
   "totalScore": number,
-  "essentialItemResults": [{"item": string, "fulfilled": boolean, "note": string}],
-  "extraItemResults": [{"item": string, "fulfilled": boolean, "note": string}],
-  "rationale": string (extremely concise marking rationale, 1-2 sentences)
+  "essentialItemResults": [{"item": string, "fulfilled": boolean, "note": string (in Chinese)}],
+  "extraItemResults": [{"item": string, "fulfilled": boolean, "note": string (in Chinese)}],
+  "rationale": string (extremely concise marking rationale in Chinese, 1-2 sentences)
 }
 </output_format>
 </prompt>`.trim()
@@ -111,7 +111,7 @@ ${itemPrompts}
 
 <output_format>
 Return a JSON object: {
-  "items": [{"score": number, "maxScore": number, "rationale": string (extremely concise, 1 sentence per item)}],
+  "items": [{"score": number, "maxScore": number, "rationale": string (extremely concise in Chinese, 1 sentence per item)}],
   "totalScore": number
 }
 </output_format>

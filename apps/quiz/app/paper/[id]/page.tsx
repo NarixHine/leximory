@@ -133,8 +133,8 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
             </span>
         </h1>
         {isMarkingPending && (
-            <div className='flex items-center gap-2 p-3 rounded-medium bg-warning-50 text-warning-700 mb-4'>
-                <Spinner size='sm' />
+            <div className='flex items-center gap-2 p-3 rounded-large bg-warning-50 text-warning-700 mb-4'>
+                <Spinner size='sm' color='warning' />
                 <span className='text-sm'>主观题正在批改中，请稍后刷新查看结果……</span>
             </div>
         )}

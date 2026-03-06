@@ -33,14 +33,13 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
     const hasCompleted = answeredCount >= questionCount
 
     return (
-        <div className='flex flex-col gap-4'>
+        <div className='flex flex-col items-end gap-4'>
             <ConfirmPopover
                 skipConfirm={hasCompleted}
                 actionButton={(
                     <ProtectedButton
                         label='登录一下即可查看答案，并且荣登排行榜喵～'
                         onPress={() => execute({ answers, id: parseInt(paperId!), passcode: passcode ?? undefined })}
-                        fullWidth
                         startContent={!isPending && <BoxArrowUpIcon weight='duotone' />}
                         color='primary'
                         isLoading={isPending}
@@ -54,7 +53,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
                     </ProtectedButton>
                 )}
             >
-                <Button startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' fullWidth isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>
+                <Button startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>
             </ConfirmPopover>
         </div>
     )

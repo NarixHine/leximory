@@ -37,7 +37,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 
     if (isRevise) {
         return (
-            <div className='mt-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20 border border-default-200'>
+            <div className='mt-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20'>
                 {currentAnswer || <span className='text-default-400 italic'>（未作答）</span>}
             </div>
         )
