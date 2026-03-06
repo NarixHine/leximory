@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
 import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
+import PhotoImportTab from './photo-import'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
@@ -169,6 +170,9 @@ export default function ImportModal() {
                                         onClose()
                                     }}></FileUpload>
                                 </Tab>
+                                {!ebook && lang === 'zh' && <Tab key='photo' title='拍照' className='flex flex-col gap-2'>
+                                    <PhotoImportTab onClose={onClose} />
+                                </Tab>}
                             </Tabs>
                         </DrawerBody>
                     </form>

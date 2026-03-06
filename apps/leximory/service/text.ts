@@ -1,7 +1,7 @@
 'use server'
 
 import { Kilpi } from '@repo/service/kilpi'
-import { generateObject, smoothStream, streamText } from 'ai'
+import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
 import { createText, getTextAnnotationProgress, getTextContent, getTextWithLib, setTextAnnotationProgress, updateText, deleteText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
@@ -37,6 +37,34 @@ export async function markAsVisited(textId: string) {
     await visitText({ textId, userId })
     const { lib } = await getTextContent({ id: textId })
     updateTag(`reads:${lib.id}`)
+}
+
+/** OCR + format a Classical Chinese image: dotted words become [[word]]. */
+export async function ocrClassicalChinese(form: FormData) {
+    const { userId } = await getUserOrThrow()
+    const file = form.get('file') as File
+
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
+        throw new Error('Quota exceeded')
+    }
+
+    const { text } = await generateText({
+        messages: [{
+            role: 'system',
+            content: '转文字。规则：只输出文章！不输出任何其他内容！图中括号总是放在加点词之后。输出时删去括号，而是将所有括号前的加点词以[[]]包裹。',
+        }, {
+            role: 'user',
+            content: [{
+                type: 'file',
+                data: await file.arrayBuffer(),
+                mediaType: file.type as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
+            }]
+        }],
+        maxOutputTokens: 8000,
+        ...nanoAI
+    })
+
+    return text
 }
 
 /** Extracts foreign-language words from an uploaded file via AI. */
