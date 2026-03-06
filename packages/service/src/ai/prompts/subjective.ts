@@ -113,7 +113,7 @@ ${itemPrompts}
 For each item, provide:
 1. badPairs: Array of problematic phrases/words from the student's answer and their corrections.
    - "original" must be the EXACT substring from the student's answer (case-sensitive match).
-   - "improved" should contain the correction AND a brief Chinese explanation of the issue.
+   - "improved" should contain the corrected version followed by a brief Chinese explanation, e.g. "had planned → 时态应用过去完成时".
    - Include all errors: grammar mistakes, wrong vocabulary, awkward phrasing, missing keywords, etc.
 2. goodPairs: Array of well-translated phrases/words from the student's answer.
    - "original" must be the EXACT substring from the student's answer (case-sensitive match).
