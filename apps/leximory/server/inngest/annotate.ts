@@ -134,8 +134,8 @@ export const annotateFullArticle = inngest.createFunction(
         const results = await Promise.all(parallelTasks)
         const topics = results[0] as Awaited<ReturnType<typeof generateText>>
         const emoji = results[1] as Awaited<ReturnType<typeof generateText>>
-        const annotatedChunks = results.slice(2, titleConfig ? -1 : undefined) as Awaited<ReturnType<typeof generateText>>[]
-        const titleResult = titleConfig ? results[results.length - 1] as Awaited<ReturnType<typeof generateText>> : undefined
+        const annotatedChunks = results.slice(2, 2 + annotationConfigs.length) as Awaited<ReturnType<typeof generateText>>[]
+        const titleResult = titleConfig ? results[2 + annotationConfigs.length] as Awaited<ReturnType<typeof generateText>> : undefined
 
         const content = annotatedChunks.map(chunk => chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '').join('\n\n')
 
@@ -146,7 +146,7 @@ export const annotateFullArticle = inngest.createFunction(
         })
         await step.run('save-article', async () => {
             const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
-            const generatedTitle = titleResult?.steps[0].content[0].type === 'text' ? titleResult.steps[0].content[0].text.trim() : undefined
+            const generatedTitle = titleResult?.steps[0].content[0].type === 'text' ? titleResult.steps[0].content[0].text.trim().replace(/^["'""''《》]+|["'""''《》]+$/g, '') : undefined
             await updateText({
                 id: textId,
                 content: fixDumbPunctuation(content),
