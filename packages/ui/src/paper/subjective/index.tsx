@@ -37,7 +37,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 
     if (isRevise) {
         return (
-            <div className='mt-3 py-3 text-sm whitespace-pre-wrap min-h-20'>
+            <div className='mt-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20'>
                 {currentAnswer || <span className='text-default-400 italic'>（未作答）</span>}
             </div>
         )
@@ -147,7 +147,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     onChange={handleChange}
                     rows={3}
                     aria-label='Summary'
-                    className='w-full resize-none rounded-medium bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none border-none'
+                    className='w-full resize-none rounded-medium border border-default-200 bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none transition-colors focus:border-default-400'
                 />
             </div>
             {/* Word counter */}

@@ -2,6 +2,7 @@
 
 import { QuizItems, SectionAnswers, SubmissionFeedback, SummaryFeedback, TranslationFeedback, WritingFeedback, SUBJECTIVE_TYPES, SummaryData, TranslationData, WritingData } from '@repo/schema/paper'
 import { Chip } from '@heroui/chip'
+import { Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
 import { cn } from '@heroui/theme'
 import { AppealButton } from './appeal'
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowFatLineRightIcon, SparkleIcon } from '@phosphor-icons/react'
@@ -74,6 +75,157 @@ function highlightCopied(answer: string, copiedChunks: string[]): React.ReactNod
                     : <span key={i}>{part}</span>
             })}
         </span>
+    )
+}
+
+/** Annotation type for marking up essay text with popover feedback. */
+type Annotation = {
+    start: number
+    end: number
+    kind: 'bad' | 'good'
+    /** For 'bad': the improved version. For 'good': why it's good. */
+    detail: string
+}
+
+/**
+ * Matches badPairs/goodPairs originals against the answer text, producing
+ * non-overlapping annotations sorted by position.
+ */
+function buildAnnotations(
+    answer: string,
+    badPairs: WritingFeedback['badPairs'],
+    goodPairs: WritingFeedback['goodPairs'],
+): Annotation[] {
+    const annotations: Annotation[] = []
+    const lowerAnswer = answer.toLowerCase()
+
+    for (const pair of badPairs) {
+        const needle = pair.original.toLowerCase()
+        const idx = lowerAnswer.indexOf(needle)
+        if (idx !== -1) {
+            annotations.push({ start: idx, end: idx + pair.original.length, kind: 'bad', detail: pair.improved })
+        }
+    }
+    for (const pair of goodPairs) {
+        const needle = pair.original.toLowerCase()
+        const idx = lowerAnswer.indexOf(needle)
+        if (idx !== -1) {
+            annotations.push({ start: idx, end: idx + pair.original.length, kind: 'good', detail: pair.why })
+        }
+    }
+
+    // Sort by start position, remove overlaps (keep the first match)
+    annotations.sort((a, b) => a.start - b.start)
+    const merged: Annotation[] = []
+    for (const ann of annotations) {
+        const prev = merged[merged.length - 1]
+        if (prev && ann.start < prev.end) continue // overlap — skip
+        merged.push(ann)
+    }
+    return merged
+}
+
+/**
+ * Renders the student's essay with inline popover annotations for good/bad pairs.
+ * Unmatched pairs are shown in a fallback list below.
+ */
+function AnnotatedEssay({ answer, feedback }: { answer: string, feedback: WritingFeedback }) {
+    const annotations = buildAnnotations(answer, feedback.badPairs, feedback.goodPairs)
+
+    // Collect unmatched pairs (those that didn't find a position in the text)
+    const matchedBadOriginals = new Set(annotations.filter(a => a.kind === 'bad').map(a => answer.slice(a.start, a.end).toLowerCase()))
+    const matchedGoodOriginals = new Set(annotations.filter(a => a.kind === 'good').map(a => answer.slice(a.start, a.end).toLowerCase()))
+    const unmatchedBad = feedback.badPairs.filter(p => !matchedBadOriginals.has(p.original.toLowerCase()))
+    const unmatchedGood = feedback.goodPairs.filter(p => !matchedGoodOriginals.has(p.original.toLowerCase()))
+
+    // Build segments: alternating plain text and annotated spans
+    const segments: React.ReactNode[] = []
+    let cursor = 0
+    for (const ann of annotations) {
+        if (ann.start > cursor) {
+            segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor, ann.start)}</span>)
+        }
+        const matchedText = answer.slice(ann.start, ann.end)
+        segments.push(
+            <Popover key={`a-${ann.start}`} shadow='sm'>
+                <PopoverTrigger>
+                    <span className={cn(
+                        'cursor-pointer underline decoration-2 underline-offset-2 decoration-dotted',
+                        ann.kind === 'bad' ? 'decoration-danger-400' : 'decoration-success-400',
+                    )}>
+                        {matchedText}
+                    </span>
+                </PopoverTrigger>
+                <PopoverContent>
+                    <div className='p-3 max-w-72 flex flex-col gap-1.5'>
+                        {ann.kind === 'bad' ? (
+                            <>
+                                <p className='text-xs text-danger-600 flex items-center gap-1'>
+                                    <XCircleIcon weight='fill' size={14} className='shrink-0' />
+                                    有待改进
+                                </p>
+                                <p className='text-sm text-success-600 flex items-start gap-1.5'>
+                                    <ArrowFatLineRightIcon weight='fill' size={14} className='shrink-0 mt-0.5' />
+                                    {ann.detail}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className='text-xs text-success-600 flex items-center gap-1'>
+                                    <SparkleIcon weight='fill' size={14} className='shrink-0' />
+                                    亮点
+                                </p>
+                                <p className='text-sm text-default-600'>{ann.detail}</p>
+                            </>
+                        )}
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
+        cursor = ann.end
+    }
+    if (cursor < answer.length) {
+        segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor)}</span>)
+    }
+
+    return (
+        <>
+            <div className='font-mono text-sm leading-loose whitespace-pre-wrap'>
+                {segments}
+            </div>
+            {unmatchedBad.length > 0 && (
+                <div>
+                    <p className='text-default-500 mb-2 font-medium text-xs uppercase tracking-wide'>有待改进</p>
+                    <ul className='flex flex-col gap-3'>
+                        {unmatchedBad.map((pair, i) => (
+                            <li key={i} className='border-l-2 border-danger-300 pl-3'>
+                                <p className='text-sm text-danger-600 line-through'>{pair.original}</p>
+                                <p className='text-sm text-success-600 flex items-start gap-1.5 mt-1'>
+                                    <ArrowFatLineRightIcon weight='fill' className='shrink-0 mt-0.5' size={14} />
+                                    {pair.improved}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {unmatchedGood.length > 0 && (
+                <div>
+                    <p className='text-default-500 mb-2 font-medium text-xs uppercase tracking-wide'>亮点</p>
+                    <ul className='flex flex-col gap-3'>
+                        {unmatchedGood.map((pair, i) => (
+                            <li key={i} className='border-l-2 border-success-300 pl-3'>
+                                <p className='text-sm text-success-700 flex items-start gap-1.5'>
+                                    <SparkleIcon weight='fill' className='shrink-0 mt-0.5' size={14} />
+                                    {pair.original}
+                                </p>
+                                <p className='text-sm text-default-500 mt-1'>{pair.why}</p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </>
     )
 }
 
@@ -187,44 +339,12 @@ function WritingFeedbackCard({ data, answer, feedback }: { data: WritingData, an
 
             <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
 
-            {feedback.badPairs.length > 0 && (
-                <div>
-                    <p className='text-default-500 mb-2 font-medium text-xs uppercase tracking-wide'>有待改进</p>
-                    <ul className='flex flex-col gap-3'>
-                        {feedback.badPairs.map((pair, i) => (
-                            <li key={i} className='border-l-2 border-danger-300 pl-3'>
-                                <p className='text-sm text-danger-600 line-through'>{pair.original}</p>
-                                <p className='text-sm text-success-600 flex items-start gap-1.5 mt-1'>
-                                    <ArrowFatLineRightIcon weight='fill' className='shrink-0 mt-0.5' size={14} />
-                                    {pair.improved}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {feedback.goodPairs.length > 0 && (
-                <div>
-                    <p className='text-default-500 mb-2 font-medium text-xs uppercase tracking-wide'>亮点</p>
-                    <ul className='flex flex-col gap-3'>
-                        {feedback.goodPairs.map((pair, i) => (
-                            <li key={i} className='border-l-2 border-success-300 pl-3'>
-                                <p className='text-sm text-success-700 flex items-start gap-1.5'>
-                                    <SparkleIcon weight='fill' className='shrink-0 mt-0.5' size={14} />
-                                    {pair.original}
-                                </p>
-                                <p className='text-sm text-default-500 mt-1'>{pair.why}</p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            {answer && <AnnotatedEssay answer={answer} feedback={feedback} />}
 
             {feedback.corrected && (
                 <div>
                     <p className='text-default-500 mb-2 font-medium text-xs uppercase tracking-wide'>修改版本</p>
-                    <div className='prose prose-sm dark:prose-invert max-w-none' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
+                    <div className='prose prose-sm dark:prose-invert max-w-none font-mono' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
                 </div>
             )}
 
