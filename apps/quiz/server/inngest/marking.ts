@@ -8,7 +8,6 @@ import {
     WritingData,
     SummaryFeedbackSchema,
     TranslationFeedbackSchema,
-    WritingFeedbackSchema,
     SUBJECTIVE_TYPES,
     SubmissionFeedback,
 } from '@repo/schema/paper'

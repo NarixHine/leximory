@@ -85,11 +85,12 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback: SummaryFeedback }) {
     return (
         <div className='mt-4 flex flex-col gap-4'>
-            <div className='flex items-baseline gap-3'>
+            <div className='flex items-baseline gap-1'>
                 <span className='text-2xl font-bold'>{feedback.totalScore}</span>
                 <span className='text-default-400'>/10</span>
-                <span className='text-sm text-default-500 ml-2'>
-                    内容 {feedback.contentScore}/5 · 语言 {feedback.languageScore}/5
+                <span className='text-sm text-default-500 ml-2 space-x-3'>
+                    <span>内容 {feedback.contentScore}/5</span>
+                    <span>语言 {feedback.languageScore}/5</span>
                 </span>
             </div>
 
@@ -156,7 +157,7 @@ function HighlightCopied({ answer, copiedChunks }: { answer: string, copiedChunk
             {parts.map((part, i) => {
                 const isHighlighted = copiedChunks.some(c => c.toLowerCase() === part.toLowerCase())
                 return isHighlighted
-                    ? <mark key={i} className='bg-warning-100 rounded px-0.5'>{part}</mark>
+                    ? <mark key={i} className='bg-warning-100 dark:bg-warning-100 text-inherit rounded px-0.5'>{part}</mark>
                     : <span key={i}>{part}</span>
             })}
         </span>
@@ -182,7 +183,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
             <div className='font-mono text-sm leading-relaxed p-3 bg-default-50 rounded-large whitespace-pre-wrap'>
                 {answer || <span className='text-default-400 italic'>（未作答）</span>}
             </div>
-            <div className='flex items-baseline gap-2'>
+            <div className='flex items-baseline gap-0.5'>
                 <span className='text-lg font-bold'>{itemFeedback.score}</span>
                 <span className='text-default-400 text-sm'>/{itemFeedback.maxScore}</span>
             </div>
@@ -295,34 +296,40 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
     }
 
     return (
-        <div className='mt-4 flex flex-col gap-4'>
-            <div className='flex items-baseline gap-3'>
+        <div className='mt-6 flex flex-col gap-4'>
+            <div className='flex items-baseline gap-1'>
                 <span className='text-2xl font-bold'>{feedback.totalScore}</span>
                 <span className='text-default-400'>/25</span>
-                <span className='text-sm text-default-500 ml-2'>
-                    内容 {feedback.contentScore}/10 · 语言 {feedback.languageScore}/10 · 结构 {feedback.structureScore}/5
+                <span className='text-sm text-default-500 ml-2 space-x-3'>
+                    <span>内容 {feedback.contentScore}/10</span>
+                    <span>语言 {feedback.languageScore}/10</span>
+                    <span>结构 {feedback.structureScore}/5</span>
                 </span>
             </div>
 
             <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
 
-            {answer ? (
-                <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
-                    {segments}
-                </div>
-            ) : (
-                <div className='p-4 bg-default-50 rounded-large text-sm'>
-                    <span className='text-default-400 italic'>（未作答）</span>
-                </div>
-            )}
+            {
+                answer ? (
+                    <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
+                        {segments}
+                    </div>
+                ) : (
+                    <div className='p-4 bg-default-50 rounded-large text-sm'>
+                        <span className='text-default-400 italic'>（未作答）</span>
+                    </div>
+                )
+            }
 
-            {feedback.corrected && (
-                <div className='flex flex-col gap-2'>
-                    <p className='text-sm text-default-500 font-medium'>修改版本</p>
-                    <div className='prose prose-sm dark:prose-invert max-w-none font-mono' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
-                </div>
-            )}
-        </div>
+            {
+                feedback.corrected && (
+                    <div className='flex flex-col'>
+                        <p className='text-sm text-default-500 font-medium'>修改版本</p>
+                        <div className='prose prose-sm dark:prose-invert max-w-none font-mono' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
+                    </div>
+                )
+            }
+        </div >
     )
 }
 

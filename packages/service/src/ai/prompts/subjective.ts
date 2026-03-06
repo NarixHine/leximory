@@ -40,7 +40,7 @@ ${data.extraItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}
 REFERENCE SUMMARY:
 ${data.referenceSummary || '(not provided)'}
 
-STUDENT'S ANSWER (${wordCount} words):
+STUDENT'S ANSWER (WORD COUNT: ${wordCount}):
 ${answer}
 
 ${copyInfo}
