@@ -39,10 +39,23 @@ export async function markAsVisited(textId: string) {
     updateTag(`reads:${lib.id}`)
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
+type AllowedImageType = typeof ALLOWED_IMAGE_TYPES[number]
+
 /** OCR + format a Classical Chinese image: dotted words become [[word]]. */
 export async function ocrClassicalChinese(form: FormData) {
     const { userId } = await getUserOrThrow()
-    const file = form.get('file') as File
+    const file = form.get('file')
+
+    if (!(file instanceof File)) {
+        throw new Error('No file provided')
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
+        throw new Error('Invalid file type')
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        throw new Error('File too large')
+    }
 
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
         throw new Error('Quota exceeded')
@@ -68,7 +81,7 @@ export async function ocrClassicalChinese(form: FormData) {
             content: [{
                 type: 'file',
                 data: await file.arrayBuffer(),
-                mediaType: file.type
+                mediaType: file.type as AllowedImageType
             }]
         }],
         maxOutputTokens: 8000,

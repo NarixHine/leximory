@@ -68,6 +68,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                 </div>
             ) : (
                 <FileUpload acceptableTypes={['image/png', 'image/jpeg', 'image/webp', 'image/gif']} onChange={async (files) => {
+                    if (!files.length) return
                     const file = files[files.length - 1]
                     startOcr(async () => {
                         const form = new FormData()
@@ -76,7 +77,12 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                             const result = await ocrClassicalChinese(form)
                             goToEditor(result)
                         } catch (e) {
-                            toast.error(e instanceof Error && e.message === 'Quota exceeded' ? '额度已耗尽' : '识别失败，请重试')
+                            const msg = e instanceof Error ? e.message : ''
+                            toast.error(
+                                msg === 'Quota exceeded' ? '额度已耗尽' :
+                                msg === 'File too large' ? '图片文件过大' :
+                                '识别失败，请重试'
+                            )
                         }
                     })
                 }} />

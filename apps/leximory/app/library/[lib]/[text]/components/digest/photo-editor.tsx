@@ -17,11 +17,18 @@ function bracketToHtml(text: string): string {
 function htmlToBracket(html: string): string {
     return html
         .replace(/<mark[^>]*>(.*?)<\/mark>/g, '[[$1]]')
+        // Insert newlines at block boundaries before stripping tags
+        .replace(/<\/p>\s*<p/gi, '</p>\n<p')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(?:p|div|h[1-6]|li|blockquote)>/gi, '\n')
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/g, ' ')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
+        // Collapse more than two consecutive newlines
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
 }
 
 /** Escape HTML special chars, but preserve `<mark>` tags. */
@@ -44,8 +51,11 @@ export default function PhotoEditor({ initialText, onChange, className }: PhotoE
     const initialHtml = useRef(
         bracketToHtml(initialText)
             .split('\n')
-            .filter(Boolean)
-            .map(p => `<p>${escapeHtmlPreserveMark(p)}</p>`)
+            .map(line =>
+                line === ''
+                    ? '<p><br /></p>'
+                    : `<p>${escapeHtmlPreserveMark(line)}</p>`
+            )
             .join('')
     )
 
