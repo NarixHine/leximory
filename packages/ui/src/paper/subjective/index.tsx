@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answersAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
 import { Textarea } from '@heroui/react'
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -68,6 +68,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
  * Summary input with an animated SVG ring that traces the border as word count approaches 60,
  * and a word counter at the bottom. Ring color: green → yellow (50 words) → red (60+ words).
  * Uses a native textarea styled with a default border for the ring to trace.
+ * A ResizeObserver tracks the container so the ring adapts to vertical expansion.
  */
 function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     groupId: string
@@ -76,6 +77,22 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     setAnswer: (payload: { sectionId: string; localQuestionNo: number; option: string }) => void
 }) {
     const wordCount = useMemo(() => countWords(currentAnswer), [currentAnswer])
+    const wrapperRef = useRef<HTMLDivElement>(null)
+    const [size, setSize] = useState({ w: 0, h: 0 })
+
+    // Track actual container dimensions so the SVG ring matches the textarea at every height
+    useEffect(() => {
+        const el = wrapperRef.current
+        if (!el) return
+        const ro = new ResizeObserver((entries) => {
+            const entry = entries[0]
+            if (!entry) return
+            const { width, height } = entry.contentRect
+            setSize({ w: width, h: height })
+        })
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [])
 
     // Progress: 0 at 0 words, 1 at 60 words
     const progress = Math.min(wordCount / 60, 1)
@@ -85,6 +102,11 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
+
+    // Rect inset by 1px on each side so the 2px stroke sits on the border
+    const rw = size.w - 2
+    const rh = size.h - 2
+    const rx = 11
 
     // Auto-resize height based on content
     const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -96,28 +118,30 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 
     return (
         <div className='mt-3 flex flex-col gap-1'>
-            <div className='relative'>
-                {/* SVG ring that traces the border */}
-                <svg
-                    className='absolute inset-0 w-full h-full pointer-events-none z-10'
-                    preserveAspectRatio='none'
-                    fill='none'
-                >
-                    <rect
-                        x='1' y='1'
-                        width='calc(100% - 2px)' height='calc(100% - 2px)'
-                        rx={11} ry={11}
-                        stroke={ringColor}
-                        strokeWidth={2}
-                        pathLength={pathLen}
-                        strokeDasharray={pathLen}
-                        strokeDashoffset={dashOffset}
-                        strokeLinecap='round'
-                        style={{
-                            transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease',
-                        }}
-                    />
-                </svg>
+            <div ref={wrapperRef} className='relative'>
+                {/* SVG ring that traces the border — viewBox tracks actual container size */}
+                {size.w > 0 && size.h > 0 && (
+                    <svg
+                        className='absolute inset-0 w-full h-full pointer-events-none z-10'
+                        viewBox={`0 0 ${size.w} ${size.h}`}
+                        fill='none'
+                    >
+                        <rect
+                            x={1} y={1}
+                            width={rw} height={rh}
+                            rx={rx} ry={rx}
+                            stroke={ringColor}
+                            strokeWidth={2}
+                            pathLength={pathLen}
+                            strokeDasharray={pathLen}
+                            strokeDashoffset={dashOffset}
+                            strokeLinecap='round'
+                            style={{
+                                transition: 'stroke-dashoffset 0.4s ease, stroke 0.3s ease',
+                            }}
+                        />
+                    </svg>
+                )}
                 <textarea
                     value={currentAnswer}
                     onChange={handleChange}
