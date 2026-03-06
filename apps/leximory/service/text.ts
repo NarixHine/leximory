@@ -1,7 +1,7 @@
 'use server'
 
 import { Kilpi } from '@repo/service/kilpi'
-import { generateObject, smoothStream, streamText } from 'ai'
+import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
 import { createText, getTextAnnotationProgress, getTextContent, getTextWithLib, setTextAnnotationProgress, updateText, deleteText, uploadEbook } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
@@ -37,6 +37,61 @@ export async function markAsVisited(textId: string) {
     await visitText({ textId, userId })
     const { lib } = await getTextContent({ id: textId })
     updateTag(`reads:${lib.id}`)
+}
+
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
+type AllowedImageType = typeof ALLOWED_IMAGE_TYPES[number]
+
+/** OCR + format a Classical Chinese image: dotted words become [[word]]. */
+export async function ocrClassicalChinese(form: FormData): Promise<{ error: string } | string> {
+    const { userId } = await getUserOrThrow()
+    const file = form.get('file')
+
+    if (!(file instanceof File)) {
+        return { error: '未选择图片文件，请先上传图片' }
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
+        return { error: '不支持的图片格式，请上传 PNG / JPG / WEBP / GIF 图片' }
+    }
+    if (file.size === 0) {
+        return { error: '图片文件为空，请选择包含内容的图片' }
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        return { error: `图片文件过大，请选择小于 ${MAX_FILE_SIZE / 1024 / 1024}MB 的图片` }
+    }
+
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
+        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
+    }
+
+    const { text } = await generateText({
+        messages: [{
+            role: 'system',
+            content: `
+你将看到一张学生文言文注释加点词练习纸。任务：提取图中文言文，并用[[ ]]包裹加点词/要求注解的词汇。
+
+执行规则：
+1. **内容限定**：仅输出识别后的正文内容。
+2. **注释处理**：
+   - 图片中若出现“加点词+括号”的形式，括号通常紧随其后。
+   - **操作**：删除括号及其内部内容，并将括号前的加点词用双方括号 [[ ]] 包裹。
+3. **补全句读**：若有一句句子句读缺失，补足。
+4. **保持原样**：除上述处理外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
+5. **零冗余**：如果图中没有文字，则输出为空。
+`.trim(),
+        }, {
+            role: 'user',
+            content: [{
+                type: 'file',
+                data: await file.arrayBuffer(),
+                mediaType: file.type as AllowedImageType
+            }]
+        }],
+        maxOutputTokens: 8000,
+        ...miniAI
+    })
+
+    return text
 }
 
 /** Extracts foreign-language words from an uploaded file via AI. */
