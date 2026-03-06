@@ -13,7 +13,7 @@ function mdToHtml(md: string): string {
         .replace(/>/g, '&gt;')
         .replace(/### (.+)/g, '<h3>$1</h3>')
         .replace(/## (.+)/g, '<h2>$1</h2>')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n{2,}/g, '</p><p>')
         .replace(/\n/g, '<br/>')
         .replace(/^/, '<p>')
