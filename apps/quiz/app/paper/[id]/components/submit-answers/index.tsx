@@ -53,7 +53,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
                     </ProtectedButton>
                 )}
             >
-                <Button startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>
+                <Button fullWidth startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>
             </ConfirmPopover>
         </div>
     )
