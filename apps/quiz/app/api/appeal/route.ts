@@ -1,4 +1,4 @@
-import { streamText, UIMessage } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 import { FLASH_AI } from '@repo/service/ai/config'
 import { z } from '@repo/schema'
 
@@ -23,10 +23,12 @@ ${JSON.stringify(feedback, null, 2)}
 
 Answer the student's question concisely in Chinese. Explain why points were deducted and what the correct usage/answer would be. Be objective and educational. If the student's appeal has merit, acknowledge it honestly.`
 
+    const modelMessages = await convertToModelMessages(messages)
+
     const result = streamText({
         ...FLASH_AI,
         system: systemPrompt,
-        messages,
+        messages: modelMessages,
     })
 
     return result.toUIMessageStreamResponse()

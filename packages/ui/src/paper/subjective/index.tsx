@@ -179,7 +179,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
         )
     }
 
-    const annotations = buildAnnotations(answer, itemFeedback.badPairs, itemFeedback.goodPairs)
+    const annotations = buildAnnotations(answer, itemFeedback.badPairs, [])
 
     const segments: React.ReactNode[] = []
     let cursor = 0

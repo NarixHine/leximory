@@ -9,6 +9,7 @@ import { SubmitAnswers } from './components/submit-answers'
 import { Suspense } from 'react'
 import { Ask, Paper } from '@repo/ui/paper'
 import { Spinner } from '@heroui/spinner'
+import { Alert } from '@heroui/react'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
 import { SectionAnswers, QuizItems, SubmissionFeedback, SUBJECTIVE_TYPES } from '@repo/schema/paper'
@@ -134,10 +135,12 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         <MarkedItemsPanel />
         <HighlightedPaper data={quizData} />
         {isMarkingPending && (
-            <div className='flex items-center gap-2 p-3 rounded-large bg-default-50 mb-4'>
-                <Spinner size='sm' color='warning' />
-                <span className='text-sm'>主观题正在批改中，请稍后刷新查看结果……</span>
-            </div>
+            <Alert
+                color='warning'
+                title='主观题正在批改中，请稍后刷新查看结果……'
+                icon={<Spinner size='sm' color='warning' />}
+                className='mb-4'
+            />
         )}
         <Ask />
         <Define />

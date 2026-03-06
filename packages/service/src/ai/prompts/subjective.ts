@@ -102,11 +102,13 @@ ${itemPrompts}
 </task>
 
 <marking_criteria>
+- Start each item at its full score (maxScore) and subtract for errors found.
 - Every omission of information or vocabulary inaccuracy: -0.5 pts.
 - Tense misuse, other grammatical mistakes, and failure to correctly incorporate the required keyword: -1 pt each.
 - Pay special attention to correctness over vividness. Take a relatively loose approach.
 - Idioms do not need to be translated literally.
 - Score per item cannot go below 0.
+- The final score MUST equal maxScore minus the sum of all deductions. Be mechanical and strict about this.
 </marking_criteria>
 
 <annotation_guidelines>
@@ -114,17 +116,14 @@ For each item, provide:
 1. badPairs: Array of problematic phrases/words from the student's answer and their corrections.
    - "original" must be the EXACT substring from the student's answer (case-sensitive match).
    - "improved" should contain the corrected version followed by a brief Chinese explanation, e.g. "had planned → 时态应用过去完成时".
-   - Include all errors: grammar mistakes, wrong vocabulary, awkward phrasing, missing keywords, etc.
-2. goodPairs: Array of well-translated phrases/words from the student's answer.
-   - "original" must be the EXACT substring from the student's answer (case-sensitive match).
-   - "why" briefly explains why this is good (in Chinese).
-   - Only include genuinely impressive translations, not just correct ones.
-3. rationale: A very brief overarching comment (1 short sentence in Chinese) that is NOT about specific errors (those go in badPairs). Focus on overall impression only. If all specific issues are covered by annotations, rationale can be minimal.
+   - Include ALL errors: grammar mistakes, wrong vocabulary, awkward phrasing, missing keywords, etc.
+   - Each badPair corresponds to a deduction. The number of badPairs should match the number of deductions.
+2. rationale: A very brief overarching comment (1 short sentence in Chinese) that is NOT about specific errors (those go in badPairs). Focus on overall impression only. If all specific issues are covered by annotations, rationale can be minimal.
 </annotation_guidelines>
 
 <output_format>
 Return a JSON object: {
-  "items": [{"score": number, "maxScore": number, "rationale": string, "badPairs": [{"original": string, "improved": string}], "goodPairs": [{"original": string, "why": string}]}],
+  "items": [{"score": number, "maxScore": number, "rationale": string, "badPairs": [{"original": string, "improved": string}]}],
   "totalScore": number
 }
 </output_format>
