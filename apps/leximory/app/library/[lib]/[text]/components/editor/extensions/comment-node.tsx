@@ -8,15 +8,22 @@ import { Button } from '@heroui/button'
 import { Spacer } from '@heroui/spacer'
 import { useState } from 'react'
 import type { NodeViewProps } from '@tiptap/react'
-import { PiCheckCircle, PiPlusCircle, PiMinusCircle } from 'react-icons/pi'
+import { PiCheckCircle, PiPlusCircle, PiMinusCircle, PiXCircle } from 'react-icons/pi'
 import { cn } from '@/lib/utils'
 
 const LABELS = ['原文形式', '词条', '释义', '语源', '同源词']
 
-function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
+function CommentNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
     const portions = node.attrs.portions as string[]
     const [isOpen, setIsOpen] = useState(false)
     const [editing, setEditing] = useState<string[]>(portions)
+
+    const removeComment = () => {
+        const pos = getPos()
+        if (pos === undefined) return
+        const text = portions[0] || ''
+        editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).insertContentAt(pos, text).run()
+    }
 
     return (
         <NodeViewWrapper as='span' className='inline'>
@@ -84,8 +91,17 @@ function CommentNodeView({ node, updateAttributes, selected }: NodeViewProps) {
                             )}
                             <Button
                                 size='sm'
-                                color='primary'
+                                variant='light'
+                                color='danger'
                                 className='rounded-4xl ml-auto'
+                                startContent={<PiXCircle className='size-4' />}
+                                onPress={removeComment}
+                                isIconOnly
+                            />
+                            <Button
+                                size='sm'
+                                color='primary'
+                                className='rounded-4xl'
                                 startContent={<PiCheckCircle className='size-4' />}
                                 onPress={() => {
                                     updateAttributes({ portions: editing.filter(Boolean) })

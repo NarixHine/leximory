@@ -50,6 +50,8 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         })
         // prevent line break after comments
         .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?;:"。，！？；：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')
+        // prevent comments at start of line from being treated as block elements
+        .replace(/^(<Comment|<Nobr)/gm, '\u200B$1')
         // replace all instances of :::...::: with the Audio component
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
@@ -63,9 +65,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     // the first paragraph starts with a dropcap-eligible letter only when it begins
     // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
     const firstParaDropcap = /^\p{L}/u.test(
-        result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
+        result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
     ) || /^<span class="convening">/i.test(
-        result.replace(/^<article>\n?/, '').replace(/^[\u200E\u200F\u00A0]+/, '').trimStart()
+        result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
     )
 
     return (
