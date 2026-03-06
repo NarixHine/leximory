@@ -70,18 +70,14 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
             ) : (
                 <FileUpload acceptableTypes={['image/png', 'image/jpeg', 'image/webp', 'image/gif']} onChange={async (files) => {
                     const file = files[files.length - 1]
-                    if (!file.type.startsWith('image/')) {
-                        toast.error('请上传图片文件')
-                        return
-                    }
                     startOcr(async () => {
                         const form = new FormData()
                         form.append('file', file)
                         try {
                             const result = await ocrClassicalChinese(form)
                             goToEditor(result)
-                        } catch {
-                            toast.error('识别失败，请重试')
+                        } catch (e) {
+                            toast.error(e instanceof Error && e.message === 'Quota exceeded' ? '额度已耗尽' : '识别失败，请重试')
                         }
                     })
                 }} />

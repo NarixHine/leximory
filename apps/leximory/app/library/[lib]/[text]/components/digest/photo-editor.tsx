@@ -24,6 +24,16 @@ function htmlToBracket(html: string): string {
         .replace(/&gt;/g, '>')
 }
 
+/** Escape HTML special chars, but preserve `<mark>` tags. */
+function escapeHtmlPreserveMark(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/&lt;mark&gt;/g, '<mark>')
+        .replace(/&lt;\/mark&gt;/g, '</mark>')
+}
+
 interface PhotoEditorProps {
     initialText: string
     onChange: (text: string) => void
@@ -31,7 +41,13 @@ interface PhotoEditorProps {
 }
 
 export default function PhotoEditor({ initialText, onChange, className }: PhotoEditorProps) {
-    const initialHtml = useRef(bracketToHtml(initialText).split('\n').filter(Boolean).map(p => `<p>${p}</p>`).join(''))
+    const initialHtml = useRef(
+        bracketToHtml(initialText)
+            .split('\n')
+            .filter(Boolean)
+            .map(p => `<p>${escapeHtmlPreserveMark(p)}</p>`)
+            .join('')
+    )
 
     const handleUpdate = useCallback(({ editor }: { editor: ReturnType<typeof useEditor> }) => {
         if (!editor) return

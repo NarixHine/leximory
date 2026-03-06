@@ -48,6 +48,9 @@ export async function ocrClassicalChinese(form: FormData) {
         throw new Error('Quota exceeded')
     }
 
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
+    type AllowedImageType = typeof allowedTypes[number]
+
     const { text } = await generateText({
         messages: [{
             role: 'system',
@@ -57,7 +60,7 @@ export async function ocrClassicalChinese(form: FormData) {
             content: [{
                 type: 'file',
                 data: await file.arrayBuffer(),
-                mediaType: file.type as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif'
+                mediaType: (allowedTypes.includes(file.type as AllowedImageType) ? file.type : 'image/png') as AllowedImageType
             }]
         }],
         maxOutputTokens: 8000,
