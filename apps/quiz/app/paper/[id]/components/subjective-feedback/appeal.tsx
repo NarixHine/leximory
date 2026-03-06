@@ -38,10 +38,10 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
         <>
             <Button
                 size='sm'
-                variant='light'
-                startContent={<ChatCircleDotsIcon className='size-3.5' />}
+                variant='flat'
+                color='secondary'
+                startContent={<ChatCircleDotsIcon />}
                 onPress={onOpen}
-                className='text-default-400 self-start -ml-2'
             >
                 申述与提问
             </Button>
@@ -49,11 +49,11 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className='text-base font-medium'>申述与提问</ModalHeader>
+                            <ModalHeader>申述与提问</ModalHeader>
                             <ModalBody>
                                 <div className='flex flex-col gap-3 max-h-80 overflow-y-auto'>
                                     {messages.map((msg) => (
-                                        <div key={msg.id} className={`text-sm py-1 ${msg.role === 'user' ? 'ml-8 text-right text-default-500' : 'mr-8'}`}>
+                                        <div key={msg.id} className={`text-sm p-2 rounded-medium ${msg.role === 'user' ? 'bg-primary-50 ml-8' : 'bg-default-100 mr-8'}`}>
                                             {msg.parts.map((part, i) => 'text' in part ? <span key={`${msg.id}-${i}`}>{part.text}</span> : null)}
                                         </div>
                                     ))}
@@ -68,14 +68,13 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                         value={question}
                                         onValueChange={setQuestion}
                                         placeholder='输入你的问题……'
-                                        variant='underlined'
+                                        variant='bordered'
                                         size='sm'
                                         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                                     />
                                     <Button
                                         size='sm'
                                         color='primary'
-                                        variant='light'
                                         isLoading={isLoading}
                                         onPress={handleSubmit}
                                     >
