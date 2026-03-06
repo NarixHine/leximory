@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
-import { ChatCircleDotsIcon } from '@phosphor-icons/react'
+import { useState, useRef, useEffect } from 'react'
+import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure, Spinner } from '@heroui/react'
+import { ChatCircleDotsIcon, PaperPlaneRightIcon } from '@phosphor-icons/react'
 import { SubjectiveFeedback } from '@repo/schema/paper'
 import { DefaultChatTransport } from 'ai'
 import { useChat } from '@ai-sdk/react'
@@ -18,6 +18,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
 }) {
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const [question, setQuestion] = useState('')
+    const scrollRef = useRef<HTMLDivElement>(null)
 
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({
@@ -28,8 +29,16 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
 
     const isLoading = status === 'streaming' || status === 'submitted'
 
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        const el = scrollRef.current
+        if (el) {
+            el.scrollTop = el.scrollHeight
+        }
+    }, [messages, status])
+
     const handleSubmit = () => {
-        if (!question.trim()) return
+        if (!question.trim() || isLoading) return
         sendMessage({ text: question })
         setQuestion('')
     }
@@ -47,22 +56,40 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
             </Button>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} size='lg' scrollBehavior='inside'>
                 <ModalContent>
-                    {(onClose) => (
+                    {() => (
                         <>
-                            <ModalHeader>申述与提问</ModalHeader>
-                            <ModalBody>
-                                <div className='flex flex-col gap-3 max-h-80 overflow-y-auto'>
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className={`text-sm p-2 rounded-medium ${msg.role === 'user' ? 'bg-primary-50 ml-8' : 'bg-default-100 mr-8'}`}>
-                                            {msg.parts.map((part, i) => 'text' in part ? <span key={`${msg.id}-${i}`}>{part.text}</span> : null)}
+                            <ModalHeader className='text-base font-medium'>申述与提问</ModalHeader>
+                            <ModalBody className='px-4 py-0'>
+                                <div ref={scrollRef} className='flex flex-col gap-3 min-h-48 max-h-96 overflow-y-auto py-3'>
+                                    {messages.length === 0 ? (
+                                        <div className='flex-1 flex items-center justify-center'>
+                                            <p className='text-sm text-default-400 text-center leading-relaxed'>
+                                                你可以在此处就本题的评分提出疑问，<br />例如询问扣分原因或正确用法。
+                                            </p>
                                         </div>
-                                    ))}
-                                    {messages.length === 0 && (
-                                        <p className='text-sm text-default-400'>你可以在此处就本题的评分提出疑问，例如询问扣分原因或正确用法。</p>
+                                    ) : (
+                                        messages.map((msg) => (
+                                            <div
+                                                key={msg.id}
+                                                className={`text-sm leading-relaxed px-3 py-2 rounded-large max-w-[85%] whitespace-pre-wrap ${msg.role === 'user'
+                                                    ? 'bg-primary-50 self-end'
+                                                    : 'bg-default-100 self-start'
+                                                    }`}
+                                            >
+                                                {msg.parts.map((part, i) =>
+                                                    'text' in part ? <span key={`${msg.id}-${i}`}>{part.text}</span> : null
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                    {isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'user' && (
+                                        <div className='self-start px-3 py-2'>
+                                            <Spinner size='sm' />
+                                        </div>
                                     )}
                                 </div>
                             </ModalBody>
-                            <ModalFooter>
+                            <ModalFooter className='px-4 pb-4 pt-2'>
                                 <div className='flex gap-2 w-full'>
                                     <Input
                                         value={question}
@@ -70,15 +97,23 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                         placeholder='输入你的问题……'
                                         variant='bordered'
                                         size='sm'
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                                        classNames={{ inputWrapper: 'shadow-none' }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault()
+                                                handleSubmit()
+                                            }
+                                        }}
                                     />
                                     <Button
                                         size='sm'
                                         color='primary'
+                                        isIconOnly
                                         isLoading={isLoading}
                                         onPress={handleSubmit}
+                                        isDisabled={!question.trim()}
                                     >
-                                        发送
+                                        <PaperPlaneRightIcon size={16} />
                                     </Button>
                                 </div>
                             </ModalFooter>

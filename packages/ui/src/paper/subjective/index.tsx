@@ -179,16 +179,39 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
         )
     }
 
+    const annotations = buildAnnotations(answer, itemFeedback.badPairs, itemFeedback.goodPairs)
+
+    const segments: React.ReactNode[] = []
+    let cursor = 0
+    for (const ann of annotations) {
+        if (ann.start > cursor) {
+            segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor, ann.start)}</span>)
+        }
+        const matchedText = answer.slice(ann.start, ann.end)
+        segments.push(
+            <AnnotationPopover key={`a-${ann.start}`} annotation={ann} matchedText={matchedText} />
+        )
+        cursor = ann.end
+    }
+    if (cursor < answer.length) {
+        segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor)}</span>)
+    }
+
     return (
         <div className='mt-2 flex flex-col gap-2'>
             <div className='font-mono text-sm leading-relaxed p-3 bg-default-50 rounded-large whitespace-pre-wrap'>
-                {answer || <span className='text-default-400 italic'>（未作答）</span>}
+                {answer
+                    ? (annotations.length > 0 ? segments : answer)
+                    : <span className='text-default-400 italic'>（未作答）</span>
+                }
             </div>
             <div className='flex items-baseline'>
                 <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
                 <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
             </div>
-            <p className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</p>
+            {itemFeedback.rationale && (
+                <p className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</p>
+            )}
         </div>
     )
 }
@@ -219,8 +242,8 @@ type Annotation = {
 
 function buildAnnotations(
     answer: string,
-    badPairs: WritingFeedback['badPairs'],
-    goodPairs: WritingFeedback['goodPairs'],
+    badPairs: { original: string, improved: string }[],
+    goodPairs: { original: string, why: string }[],
 ): Annotation[] {
     const annotations: Annotation[] = []
     const lowerAnswer = answer.toLowerCase()
@@ -250,6 +273,40 @@ function buildAnnotations(
     return merged
 }
 
+/** Reusable popover for an annotation on student text. */
+function AnnotationPopover({ annotation, matchedText }: { annotation: Annotation, matchedText: string }) {
+    return (
+        <Popover shadow='sm'>
+            <PopoverTrigger>
+                <span className={cn(
+                    'cursor-pointer underline decoration-2 underline-offset-2 decoration-dotted',
+                    annotation.kind === 'bad' ? 'decoration-danger-400' : 'decoration-success-400',
+                )}>
+                    {matchedText}
+                </span>
+            </PopoverTrigger>
+            <PopoverContent>
+                <div className='p-3 max-w-72 flex flex-col gap-1.5'>
+                    {annotation.kind === 'bad' ? (
+                        <>
+                            <p className='text-xs text-default-500'>有待改进</p>
+                            <p className='text-sm flex items-start gap-1.5'>
+                                <ArrowRightIcon className='shrink-0 mt-0.5' size={14} />
+                                {annotation.detail}
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p className='text-xs text-default-500'>亮点</p>
+                            <p className='text-sm'>{annotation.detail}</p>
+                        </>
+                    )}
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback: WritingFeedback }) {
     const annotations = buildAnnotations(answer, feedback.badPairs, feedback.goodPairs)
 
@@ -261,34 +318,7 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
         }
         const matchedText = answer.slice(ann.start, ann.end)
         segments.push(
-            <Popover key={`a-${ann.start}`} shadow='sm'>
-                <PopoverTrigger>
-                    <span className={cn(
-                        'cursor-pointer underline decoration-2 underline-offset-2 decoration-dotted',
-                        ann.kind === 'bad' ? 'decoration-danger-400' : 'decoration-success-400',
-                    )}>
-                        {matchedText}
-                    </span>
-                </PopoverTrigger>
-                <PopoverContent>
-                    <div className='p-3 max-w-72 flex flex-col gap-1.5'>
-                        {ann.kind === 'bad' ? (
-                            <>
-                                <p className='text-xs text-default-500'>有待改进</p>
-                                <p className='text-sm flex items-start gap-1.5'>
-                                    <ArrowRightIcon className='shrink-0 mt-0.5' size={14} />
-                                    {ann.detail}
-                                </p>
-                            </>
-                        ) : (
-                            <>
-                                <p className='text-xs text-default-500'>亮点</p>
-                                <p className='text-sm'>{ann.detail}</p>
-                            </>
-                        )}
-                    </div>
-                </PopoverContent>
-            </Popover>
+            <AnnotationPopover key={`a-${ann.start}`} annotation={ann} matchedText={matchedText} />
         )
         cursor = ann.end
     }

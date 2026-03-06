@@ -126,9 +126,9 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         [feedbackAtom, feedback ?? null],
     ]}>
         <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span className='text-5xl'>{displayScore}</span>&nbsp;
-            <span className='text-default-400 text-xl flex items-center'>
-                / {computePerfectScore(quizData)} 分
+            <span className='text-5xl font-mono'>{displayScore}</span>
+            <span className='text-default-400 text-xl flex items-center font-mono'>
+                /{computePerfectScore(quizData)} 分
             </span>
         </h1>
         <MarkedItemsPanel />
