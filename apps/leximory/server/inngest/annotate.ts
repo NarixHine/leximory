@@ -11,7 +11,7 @@ import { fixDumbPunctuation } from '@/lib/comment'
 
 const topicsPrompt = (input: string) => ({
     system: `
-    用1~3个中文标签表示下文的话题或关键词。每个关键词间用||分隔。
+    用1~3个中文标签表示下文的话题或关键词。每个关键词间用||分隔（双竖线）。
     `,
     prompt: `请从下文提取出1~3个中文标签表示下文的话题或关键词：
     
