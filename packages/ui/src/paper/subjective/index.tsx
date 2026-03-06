@@ -1,9 +1,12 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
-import { Textarea } from '@heroui/react'
+import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
+import { Textarea, Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
+import { cn } from '@heroui/theme'
+import type { SummaryFeedback, TranslationFeedback, WritingFeedback } from '@repo/schema/paper'
+import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -15,19 +18,19 @@ function countWords(text: string): number {
 /**
  * A text area input for subjective question types (summary, translation, writing).
  * In normal mode, it provides an editable text area.
- * In revise mode, it displays the submitted answer as read-only.
+ * In revise mode, it displays the submitted answer with inline feedback.
  */
 export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, variant = 'default' }: {
     groupId: string
     localNo: number
     placeholder?: string
     maxLength?: number
-    /** Use 'summary' for the animated ring + word counter variant. */
     variant?: 'default' | 'summary' | 'translation' | 'writing'
 }) {
     const viewMode = useAtomValue(viewModeAtom)
     const answers = useAtomValue(answersAtom)
     const submittedAnswers = useAtomValue(submittedAnswersAtom)
+    const feedback = useAtomValue(feedbackAtom)
     const setAnswer = useSetAtom(setAnswerAtom)
 
     const isRevise = viewMode === 'revise'
@@ -35,7 +38,20 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
         ? submittedAnswers[groupId]?.[localNo] ?? ''
         : answers[groupId]?.[localNo] ?? ''
 
+    const sectionFeedback = feedback?.[groupId] ?? null
+
     if (isRevise) {
+        if (variant === 'summary' && sectionFeedback?.type === 'summary') {
+            return <SummaryReviseFeedback answer={currentAnswer} feedback={sectionFeedback} />
+        }
+        if (variant === 'translation' && sectionFeedback?.type === 'translation') {
+            const itemFeedback = sectionFeedback.items[localNo - 1]
+            return <TranslationItemReviseFeedback answer={currentAnswer} itemFeedback={itemFeedback} />
+        }
+        if (variant === 'writing' && sectionFeedback?.type === 'writing') {
+            return <WritingReviseFeedback answer={currentAnswer} feedback={sectionFeedback} />
+        }
+        // Default revise mode (no feedback yet)
         return (
             <div className='mt-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20'>
                 {currentAnswer || <span className='text-default-400 italic'>（未作答）</span>}
@@ -64,12 +80,254 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
     )
 }
 
-/**
- * Summary input with an animated SVG ring that traces the border as word count approaches 60,
- * and a word counter at the bottom. Ring color: green → yellow (50 words) → red (60+ words).
- * Uses a native textarea styled with a default border for the ring to trace.
- * A ResizeObserver tracks the container so the ring adapts to vertical expansion.
- */
+// ─── Summary Feedback ──────────────────────────────────────────────────
+
+function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback: SummaryFeedback }) {
+    return (
+        <div className='mt-4 flex flex-col gap-4'>
+            <div className='flex items-baseline gap-3'>
+                <span className='text-2xl font-bold'>{feedback.totalScore}</span>
+                <span className='text-default-400'>/10</span>
+                <span className='text-sm text-default-500 ml-2'>
+                    内容 {feedback.contentScore}/5 · 语言 {feedback.languageScore}/5
+                </span>
+            </div>
+
+            <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
+                {feedback.copiedChunks.length > 0
+                    ? <HighlightCopied answer={answer} copiedChunks={feedback.copiedChunks} />
+                    : (answer || <span className='text-default-400 italic'>（未作答）</span>)
+                }
+            </div>
+            {feedback.copiedChunks.length > 0 && (
+                <p className='text-sm text-warning-600 flex items-center gap-1.5'>
+                    <WarningCircleIcon className='shrink-0' size={16} />
+                    检测到直接照抄（{feedback.copiedChunks.length} 处）
+                </p>
+            )}
+
+            <div className='flex flex-col gap-2'>
+                <p className='text-sm text-default-500 font-medium'>核心要点</p>
+                <ul className='list-none flex flex-col gap-1.5'>
+                    {feedback.essentialItemResults.map((r, i) => (
+                        <li key={i} className='flex items-start gap-2 text-sm'>
+                            {r.fulfilled
+                                ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
+                                : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />
+                            }
+                            <span>{r.item}{r.note && <span className='text-default-400'> — {r.note}</span>}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            {feedback.extraItemResults.length > 0 && (
+                <div className='flex flex-col gap-2'>
+                    <p className='text-sm text-default-500 font-medium'>补充细节</p>
+                    <ul className='list-none flex flex-col gap-1.5'>
+                        {feedback.extraItemResults.map((r, i) => (
+                            <li key={i} className='flex items-start gap-2 text-sm'>
+                                {r.fulfilled
+                                    ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
+                                    : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />
+                                }
+                                <span>{r.item}{r.note && <span className='text-default-400'> — {r.note}</span>}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+        </div>
+    )
+}
+
+/** Highlights copied chunks in the student's answer text. */
+function HighlightCopied({ answer, copiedChunks }: { answer: string, copiedChunks: string[] }) {
+    if (copiedChunks.length === 0) return <>{answer}</>
+
+    const escaped = copiedChunks.map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
+    const parts = answer.split(regex)
+
+    return (
+        <span>
+            {parts.map((part, i) => {
+                const isHighlighted = copiedChunks.some(c => c.toLowerCase() === part.toLowerCase())
+                return isHighlighted
+                    ? <mark key={i} className='bg-warning-100 rounded px-0.5'>{part}</mark>
+                    : <span key={i}>{part}</span>
+            })}
+        </span>
+    )
+}
+
+// ─── Translation Feedback ──────────────────────────────────────────────
+
+function TranslationItemReviseFeedback({ answer, itemFeedback }: {
+    answer: string
+    itemFeedback?: TranslationFeedback['items'][number]
+}) {
+    if (!itemFeedback) {
+        return (
+            <div className='mt-2 p-3 bg-default-50 rounded-large text-sm whitespace-pre-wrap'>
+                {answer || <span className='text-default-400 italic'>（未作答）</span>}
+            </div>
+        )
+    }
+
+    return (
+        <div className='mt-2 flex flex-col gap-2'>
+            <div className='font-mono text-sm leading-relaxed p-3 bg-default-50 rounded-large whitespace-pre-wrap'>
+                {answer || <span className='text-default-400 italic'>（未作答）</span>}
+            </div>
+            <div className='flex items-baseline gap-2'>
+                <span className='text-lg font-bold'>{itemFeedback.score}</span>
+                <span className='text-default-400 text-sm'>/{itemFeedback.maxScore}</span>
+            </div>
+            <p className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</p>
+        </div>
+    )
+}
+
+// ─── Writing Feedback ──────────────────────────────────────────────────
+
+/** Converts constrained markdown to safe HTML. */
+function mdToHtml(md: string): string {
+    return md
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/### (.+)/g, '<h3>$1</h3>')
+        .replace(/## (.+)/g, '<h2>$1</h2>')
+        .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, '<br/>')
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>')
+}
+
+type Annotation = {
+    start: number
+    end: number
+    kind: 'bad' | 'good'
+    detail: string
+}
+
+function buildAnnotations(
+    answer: string,
+    badPairs: WritingFeedback['badPairs'],
+    goodPairs: WritingFeedback['goodPairs'],
+): Annotation[] {
+    const annotations: Annotation[] = []
+    const lowerAnswer = answer.toLowerCase()
+
+    for (const pair of badPairs) {
+        const needle = pair.original.toLowerCase()
+        const idx = lowerAnswer.indexOf(needle)
+        if (idx !== -1) {
+            annotations.push({ start: idx, end: idx + pair.original.length, kind: 'bad', detail: pair.improved })
+        }
+    }
+    for (const pair of goodPairs) {
+        const needle = pair.original.toLowerCase()
+        const idx = lowerAnswer.indexOf(needle)
+        if (idx !== -1) {
+            annotations.push({ start: idx, end: idx + pair.original.length, kind: 'good', detail: pair.why })
+        }
+    }
+
+    annotations.sort((a, b) => a.start - b.start)
+    const merged: Annotation[] = []
+    for (const ann of annotations) {
+        const prev = merged[merged.length - 1]
+        if (prev && ann.start < prev.end) continue
+        merged.push(ann)
+    }
+    return merged
+}
+
+function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback: WritingFeedback }) {
+    const annotations = buildAnnotations(answer, feedback.badPairs, feedback.goodPairs)
+
+    const segments: React.ReactNode[] = []
+    let cursor = 0
+    for (const ann of annotations) {
+        if (ann.start > cursor) {
+            segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor, ann.start)}</span>)
+        }
+        const matchedText = answer.slice(ann.start, ann.end)
+        segments.push(
+            <Popover key={`a-${ann.start}`} shadow='sm'>
+                <PopoverTrigger>
+                    <span className={cn(
+                        'cursor-pointer underline decoration-2 underline-offset-2 decoration-dotted',
+                        ann.kind === 'bad' ? 'decoration-danger-400' : 'decoration-success-400',
+                    )}>
+                        {matchedText}
+                    </span>
+                </PopoverTrigger>
+                <PopoverContent>
+                    <div className='p-3 max-w-72 flex flex-col gap-1.5'>
+                        {ann.kind === 'bad' ? (
+                            <>
+                                <p className='text-xs text-default-500'>有待改进</p>
+                                <p className='text-sm flex items-start gap-1.5'>
+                                    <ArrowRightIcon className='shrink-0 mt-0.5' size={14} />
+                                    {ann.detail}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className='text-xs text-default-500'>亮点</p>
+                                <p className='text-sm'>{ann.detail}</p>
+                            </>
+                        )}
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
+        cursor = ann.end
+    }
+    if (cursor < answer.length) {
+        segments.push(<span key={`t-${cursor}`}>{answer.slice(cursor)}</span>)
+    }
+
+    return (
+        <div className='mt-4 flex flex-col gap-4'>
+            <div className='flex items-baseline gap-3'>
+                <span className='text-2xl font-bold'>{feedback.totalScore}</span>
+                <span className='text-default-400'>/25</span>
+                <span className='text-sm text-default-500 ml-2'>
+                    内容 {feedback.contentScore}/10 · 语言 {feedback.languageScore}/10 · 结构 {feedback.structureScore}/5
+                </span>
+            </div>
+
+            <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+
+            {answer ? (
+                <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
+                    {segments}
+                </div>
+            ) : (
+                <div className='p-4 bg-default-50 rounded-large text-sm'>
+                    <span className='text-default-400 italic'>（未作答）</span>
+                </div>
+            )}
+
+            {feedback.corrected && (
+                <div className='flex flex-col gap-2'>
+                    <p className='text-sm text-default-500 font-medium'>修改版本</p>
+                    <div className='prose prose-sm dark:prose-invert max-w-none font-mono' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ─── Summary Input Ring ────────────────────────────────────────────────
+
 function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     groupId: string
     localNo: number
@@ -80,7 +338,6 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })
 
-    // Track actual container dimensions so the SVG ring matches the textarea at every height
     useEffect(() => {
         const el = wrapperRef.current
         if (!el) return
@@ -94,21 +351,14 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
         return () => ro.disconnect()
     }, [])
 
-    // Progress: 0 at 0 words, 1 at 60 words
     const progress = Math.min(wordCount / 60, 1)
-
-    // Color: green base → yellow at 50 → red at 60+
     const ringColor = wordCount >= 60 ? '#ef4444' : wordCount >= 50 ? '#eab308' : '#22c55e'
-
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
-
-    // Rect inset on each side so the 2px stroke sits on the border
     const rw = size.w - 2
     const rh = size.h - 5
     const rx = 11
 
-    // Auto-resize height based on content
     const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: e.target.value })
         const el = e.target
@@ -119,7 +369,6 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     return (
         <div className='mt-3 flex flex-col gap-1'>
             <div ref={wrapperRef} className='relative'>
-                {/* SVG ring that traces the border — viewBox tracks actual container size */}
                 {size.w > 0 && size.h > 0 && (
                     <svg
                         className='absolute inset-0 w-full h-full pointer-events-none z-10'
@@ -150,7 +399,6 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     className='w-full resize-none rounded-medium border border-default-200 bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none transition-colors focus:border-default-400'
                 />
             </div>
-            {/* Word counter */}
             <div className='flex justify-end pr-1'>
                 <span className={`text-xs font-mono ${wordCount >= 60 ? 'text-danger font-medium' : wordCount >= 50 ? 'text-warning font-medium' : 'text-default-400'}`}>
                     {wordCount} / 60

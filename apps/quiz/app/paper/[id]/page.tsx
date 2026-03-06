@@ -1,5 +1,5 @@
 import { getPaper } from '@repo/supabase/paper'
-import { editoryItemsAtom, paperIdAtom, passcodeAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
+import { editoryItemsAtom, feedbackAtom, paperIdAtom, passcodeAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { experimental_taintObjectReference as taintObjectReference } from 'react'
@@ -21,7 +21,7 @@ import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
-import { SubjectiveFeedbackPanel } from './components/subjective-feedback'
+import { SubjectiveAppealButtons } from './components/subjective-appeal'
 
 type PaperPageProps = {
     params: Promise<{
@@ -124,7 +124,8 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
     return <HydrationBoundary hydrateAtoms={[
         [viewModeAtom, 'revise'],
         [submittedAnswersAtom, answers],
-        [editoryItemsAtom, quizData]
+        [editoryItemsAtom, quizData],
+        [feedbackAtom, feedback ?? null],
     ]}>
         <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
             <span className='text-5xl'>{displayScore}</span>
@@ -142,7 +143,7 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         <HighlightedPaper
             data={quizData}
         />
-        {feedback && <SubjectiveFeedbackPanel quizData={quizData} answers={answers} feedback={feedback} />}
+        <SubjectiveAppealButtons />
         <Ask />
         <Define />
     </HydrationBoundary>
