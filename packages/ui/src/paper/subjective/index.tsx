@@ -147,7 +147,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     onChange={handleChange}
                     rows={3}
                     aria-label='Summary'
-                    className='w-full resize-none rounded-medium bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none transition-colors border-none'
+                    className='w-full resize-none rounded-medium bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none border-none'
                 />
             </div>
             {/* Word counter */}
