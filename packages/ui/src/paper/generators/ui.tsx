@@ -6,7 +6,7 @@ const QuestionSection = ({ children, title }: {
     title?: string
 }) => {
     return (
-        <section className='question-section my-4'>
+        <section className='question-section my-8'>
             {title && <h2>{title}</h2>}
             {children}
         </section>
