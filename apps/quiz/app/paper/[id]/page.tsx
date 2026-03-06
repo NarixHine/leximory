@@ -131,14 +131,14 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
                 / {computePerfectScore(quizData)} 分
             </span>
         </h1>
+        <MarkedItemsPanel />
+        <HighlightedPaper data={quizData} />
         {isMarkingPending && (
-            <div className='flex items-center gap-2 p-3 rounded-large bg-warning-50 text-warning-700 mb-4'>
+            <div className='flex items-center gap-2 p-3 rounded-large bg-default-50 mb-4'>
                 <Spinner size='sm' color='warning' />
                 <span className='text-sm'>主观题正在批改中，请稍后刷新查看结果……</span>
             </div>
         )}
-        <MarkedItemsPanel />
-        <HighlightedPaper data={quizData} />
         <Ask />
         <Define />
     </HydrationBoundary>
