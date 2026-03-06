@@ -46,11 +46,16 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                     isDisabled={isLoading || !editorText.trim() || isGenerating}
                     onPress={() => {
                         startGenerating(async () => {
-                            setInput(editorText)
-                            await setAnnotationProgressAction({ id: text, progress: 'annotating' })
-                            setIsLoading(true)
-                            onClose()
-                            await generate({ article: editorText, textId: text, onlyComments: false })
+                            try {
+                                setInput(editorText)
+                                await setAnnotationProgressAction({ id: text, progress: 'annotating' })
+                                setIsLoading(true)
+                                onClose()
+                                await generate({ article: editorText, textId: text, onlyComments: false })
+                            } catch (error) {
+                                setIsLoading(false)
+                                toast.error('生成失败，请稍后重试')
+                            }
                         })
                     }}>
                     生成
@@ -75,7 +80,12 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                         form.append('file', file)
                         try {
                             const result = await ocrClassicalChinese(form)
-                            goToEditor(result)
+                            const trimmed = result.trim()
+                            if (!trimmed) {
+                                toast.error('未在图片中识别到文本，请尝试另一张图片或手动粘贴')
+                                return
+                            }
+                            goToEditor(trimmed)
                         } catch (e) {
                             const msg = e instanceof Error ? e.message : ''
                             toast.error(

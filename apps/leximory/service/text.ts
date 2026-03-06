@@ -53,6 +53,9 @@ export async function ocrClassicalChinese(form: FormData) {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
         throw new Error('Invalid file type')
     }
+    if (file.size === 0) {
+        throw new Error('File is empty')
+    }
     if (file.size > MAX_FILE_SIZE) {
         throw new Error('File too large')
     }
@@ -73,8 +76,8 @@ export async function ocrClassicalChinese(form: FormData) {
    - 图片中若出现“加点词+括号”的形式，括号通常紧随其后。
    - **操作**：删除括号及其内部内容，并将括号前的加点词用双方括号 [[ ]] 包裹。
 3. **补全句读**：若有一句句子句读缺失，补足。
-3. **保持原样**：除上述处理外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
-4. **零冗余**：如果图中没有文字，则输出为空。
+4. **保持原样**：除上述处理外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
+5. **零冗余**：如果图中没有文字，则输出为空。
 `.trim(),
         }, {
             role: 'user',
