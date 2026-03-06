@@ -12,7 +12,6 @@ import { Spinner } from '@heroui/spinner'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
 import { SectionAnswers, QuizItems, SubmissionFeedback, SUBJECTIVE_TYPES } from '@repo/schema/paper'
-import { KeyIcon } from '@phosphor-icons/react/ssr'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
 import Dictation from './components/dictation'
@@ -21,7 +20,6 @@ import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
-import { SetAppealRenderer } from './components/subjective-appeal'
 
 type PaperPageProps = {
     params: Promise<{
@@ -128,11 +126,10 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         [feedbackAtom, feedback ?? null],
     ]}>
         <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span className='text-5xl font-mono'>{displayScore}</span>
-            <span className='text-default-400 text-xl flex items-center font-mono'>
-                /{computePerfectScore(quizData)}
+            <span className='text-5xl'>{displayScore}</span>&nbsp;
+            <span className='text-default-400 text-xl flex items-center'>
+                / {computePerfectScore(quizData)} 分
             </span>
-            <KeyIcon className='ml-1.5 size-5 text-default-400' />
         </h1>
         {isMarkingPending && (
             <div className='flex items-center gap-2 p-3 rounded-large bg-warning-50 text-warning-700 mb-4'>
@@ -140,11 +137,8 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
                 <span className='text-sm'>主观题正在批改中，请稍后刷新查看结果……</span>
             </div>
         )}
-        <SetAppealRenderer />
         <MarkedItemsPanel />
-        <HighlightedPaper
-            data={quizData}
-        />
+        <HighlightedPaper data={quizData} />
         <Ask />
         <Define />
     </HydrationBoundary>

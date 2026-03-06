@@ -1,12 +1,13 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, feedbackAtom, appealRendererAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
+import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
 import { Textarea, Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
 import type { SummaryFeedback, TranslationFeedback, WritingFeedback } from '@repo/schema/paper'
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
+import { AppealButton } from './appeal'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -107,8 +108,8 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
                 </p>
             )}
 
-            <div className='flex flex-col gap-2'>
-                <p className='text-sm text-default-500 font-medium'>核心要点</p>
+            <div className='flex flex-col -mt-3'>
+                <p className='text-sm text-default-600 font-medium'>基本点</p>
                 <ul className='list-none flex flex-col gap-1.5'>
                     {feedback.essentialItemResults.map((r, i) => (
                         <li key={i} className='flex items-start gap-2 text-sm'>
@@ -123,8 +124,8 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
             </div>
 
             {feedback.extraItemResults.length > 0 && (
-                <div className='flex flex-col gap-2'>
-                    <p className='text-sm text-default-500 font-medium'>补充细节</p>
+                <div className='flex flex-col -mt-3'>
+                    <p className='text-sm text-default-600 font-medium'>附加点</p>
                     <ul className='list-none flex flex-col gap-1.5'>
                         {feedback.extraItemResults.map((r, i) => (
                             <li key={i} className='flex items-start gap-2 text-sm'>
@@ -418,23 +419,22 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 // ─── Section Appeal Footer ─────────────────────────────────────────────
 
 /**
- * Renders the appeal button for a subjective section, if an appeal renderer has been injected.
+ * Renders the appeal button for a subjective section.
  * Place this at the end of each subjective section's renderPaper to show
  * the appeal button within its natural context.
  */
 export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
     const viewMode = useAtomValue(viewModeAtom)
     const feedback = useAtomValue(feedbackAtom)
-    const appealRenderer = useAtomValue(appealRendererAtom)
 
     if (viewMode !== 'revise') return null
 
     const sectionFeedback = feedback?.[groupId]
-    if (!sectionFeedback || !appealRenderer) return null
+    if (!sectionFeedback) return null
 
     return (
-        <div className='mt-3'>
-            {appealRenderer({ sectionId: groupId, sectionType: sectionFeedback.type, feedback: sectionFeedback })}
+        <div className='mt-0 mb-8'>
+            <AppealButton sectionId={groupId} sectionType={sectionFeedback.type} feedback={sectionFeedback} />
         </div>
     )
 }
