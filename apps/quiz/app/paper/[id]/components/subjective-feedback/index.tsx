@@ -133,10 +133,15 @@ function AnnotatedEssay({ answer, feedback }: { answer: string, feedback: Writin
     const annotations = buildAnnotations(answer, feedback.badPairs, feedback.goodPairs)
 
     // Collect unmatched pairs (those that didn't find a position in the text)
-    const matchedBadOriginals = new Set(annotations.filter(a => a.kind === 'bad').map(a => answer.slice(a.start, a.end).toLowerCase()))
-    const matchedGoodOriginals = new Set(annotations.filter(a => a.kind === 'good').map(a => answer.slice(a.start, a.end).toLowerCase()))
-    const unmatchedBad = feedback.badPairs.filter(p => !matchedBadOriginals.has(p.original.toLowerCase()))
-    const unmatchedGood = feedback.goodPairs.filter(p => !matchedGoodOriginals.has(p.original.toLowerCase()))
+    const matchedBad = new Set<string>()
+    const matchedGood = new Set<string>()
+    for (const ann of annotations) {
+        const key = answer.slice(ann.start, ann.end).toLowerCase()
+        if (ann.kind === 'bad') matchedBad.add(key)
+        else matchedGood.add(key)
+    }
+    const unmatchedBad = feedback.badPairs.filter(p => !matchedBad.has(p.original.toLowerCase()))
+    const unmatchedGood = feedback.goodPairs.filter(p => !matchedGood.has(p.original.toLowerCase()))
 
     // Build segments: alternating plain text and annotated spans
     const segments: React.ReactNode[] = []

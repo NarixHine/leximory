@@ -40,7 +40,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                 size='sm'
                 variant='flat'
                 color='secondary'
-                startContent={<ChatCircleDotsIcon />}
+                startContent={<ChatCircleDotsIcon size={16} />}
                 onPress={onOpen}
             >
                 申述与提问
