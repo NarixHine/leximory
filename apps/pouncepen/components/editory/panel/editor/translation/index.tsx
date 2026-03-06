@@ -31,9 +31,9 @@ export default function TranslationEditor({
 
     return <div className='flex flex-col gap-4 before:content-["Translation"] before:text-secondary-300 before:font-bold before:-mb-2 my-5'>
         {data.items.map((item, index) => (
-            <div key={index} className='flex flex-col gap-2 border border-default-200 rounded-medium p-3'>
+            <div key={index} className='flex flex-col gap-2 pt-3'>
                 <div className='flex items-center justify-between'>
-                    <span className='text-sm font-bold text-default-600'>#{index + 1}（{item.score} 分）</span>
+                    <span className='text-sm text-default-400'>#{index + 1}（{item.score} 分）</span>
                     <Button size='sm' isIconOnly variant='light' color='danger' onPress={() => removeItem(index)}>
                         <TrashIcon />
                     </Button>
