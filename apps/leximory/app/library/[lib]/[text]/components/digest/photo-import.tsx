@@ -31,7 +31,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
     if (step === 'edit') {
         return (
             <div className='flex flex-col gap-3'>
-                <p className='text-sm opacity-60'>选中文字以标注重点词</p>
+                <p className='text-sm opacity-60'>选中以强制注释词汇</p>
                 <div className='border border-default-200 rounded-2xl p-4 max-h-80 overflow-y-auto'>
                     <PhotoEditor
                         initialText={editorText}
@@ -65,7 +65,6 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
             {isOcring ? (
                 <div className='flex flex-col items-center justify-center py-16 gap-3'>
                     <Spinner color='secondary' size='lg' />
-                    <p className='text-sm opacity-60'>识别中……</p>
                 </div>
             ) : (
                 <FileUpload acceptableTypes={['image/png', 'image/jpeg', 'image/webp', 'image/gif']} onChange={async (files) => {
@@ -90,7 +89,6 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
             <Textarea
                 value={pastedText}
                 label='粘贴文本'
-                description='以 [[]] 包裹重点词'
                 rows={4}
                 onValueChange={setPastedText}
                 disableAutosize

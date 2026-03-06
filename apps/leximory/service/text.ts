@@ -48,23 +48,31 @@ export async function ocrClassicalChinese(form: FormData) {
         throw new Error('Quota exceeded')
     }
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
-    type AllowedImageType = typeof allowedTypes[number]
-
     const { text } = await generateText({
         messages: [{
             role: 'system',
-            content: '转文字。规则：只输出文章！不输出任何其他内容！图中括号总是放在加点词之后。输出时删去括号，而是将所有括号前的加点词以[[]]包裹。',
+            content: `
+你将看到一张学生文言文注释加点词练习纸。任务：提取图中文言文，并用[[ ]]包裹加点词/要求注解的词汇。
+
+执行规则：
+1. **内容限定**：仅输出识别后的正文内容。
+2. **注释处理**：
+   - 图片中若出现“加点词+括号”的形式，括号通常紧随其后。
+   - **操作**：删除括号及其内部内容，并将括号前的加点词用双方括号 [[ ]] 包裹。
+3. **补全句读**：若有一句句子句读缺失，补足。
+3. **保持原样**：除上述处理外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
+4. **零冗余**：如果图中没有文字，则输出为空。
+`.trim(),
         }, {
             role: 'user',
             content: [{
                 type: 'file',
                 data: await file.arrayBuffer(),
-                mediaType: (allowedTypes.includes(file.type as AllowedImageType) ? file.type : 'image/png') as AllowedImageType
+                mediaType: file.type
             }]
         }],
         maxOutputTokens: 8000,
-        ...nanoAI
+        ...miniAI
     })
 
     return text
