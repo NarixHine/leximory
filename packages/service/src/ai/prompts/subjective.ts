@@ -109,9 +109,22 @@ ${itemPrompts}
 - Score per item cannot go below 0.
 </marking_criteria>
 
+<annotation_guidelines>
+For each item, provide:
+1. badPairs: Array of problematic phrases/words from the student's answer and their corrections.
+   - "original" must be the EXACT substring from the student's answer (case-sensitive match).
+   - "improved" should contain the correction AND a brief Chinese explanation of the issue.
+   - Include all errors: grammar mistakes, wrong vocabulary, awkward phrasing, missing keywords, etc.
+2. goodPairs: Array of well-translated phrases/words from the student's answer.
+   - "original" must be the EXACT substring from the student's answer (case-sensitive match).
+   - "why" briefly explains why this is good (in Chinese).
+   - Only include genuinely impressive translations, not just correct ones.
+3. rationale: A very brief overarching comment (1 short sentence in Chinese) that is NOT about specific errors (those go in badPairs). Focus on overall impression only. If all specific issues are covered by annotations, rationale can be minimal.
+</annotation_guidelines>
+
 <output_format>
 Return a JSON object: {
-  "items": [{"score": number, "maxScore": number, "rationale": string (extremely concise in Chinese, 1 sentence per item)}],
+  "items": [{"score": number, "maxScore": number, "rationale": string, "badPairs": [{"original": string, "improved": string}], "goodPairs": [{"original": string, "why": string}]}],
   "totalScore": number
 }
 </output_format>

@@ -197,6 +197,8 @@ export const TranslationFeedbackSchema = z.object({
         score: z.number(),
         maxScore: z.number(),
         rationale: z.string(),
+        badPairs: z.array(z.object({ original: z.string(), improved: z.string() })),
+        goodPairs: z.array(z.object({ original: z.string(), why: z.string() })),
     })),
     totalScore: z.number(),
 })
