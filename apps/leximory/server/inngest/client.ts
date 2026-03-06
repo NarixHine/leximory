@@ -15,6 +15,7 @@ type ArticleImported = {
         textId: string
         onlyComments: boolean
         userId: string
+        generateTitle?: boolean
     }
 }
 

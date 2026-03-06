@@ -45,6 +45,7 @@ export default function ImportModal() {
     const exceeded = hideText ? false : input.length > maxArticleLength
 
     const [isGenerating, startGenerating] = useTransition()
+    const [shouldGenerateTitle, setShouldGenerateTitle] = useState(false)
 
     const KanbanSwitch = () => (
         <Switch
@@ -129,21 +130,28 @@ export default function ImportModal() {
                                         rows={5}
                                         onValueChange={setInput}
                                         disableAutosize />
-                                    <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
-                                        仅生成词摘
-                                    </Switch>
+                                    <div className='flex flex-wrap gap-6'>
+                                        <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
+                                            仅生成词摘
+                                        </Switch>
+                                        <Switch isDisabled={isReadOnly || isLoading} isSelected={shouldGenerateTitle} onValueChange={setShouldGenerateTitle} color='secondary'>
+                                            AI 生成标题
+                                        </Switch>
+                                    </div>
                                     <Button
                                         className='mt-2'
                                         color='primary'
                                         fullWidth
+                                        radius='full'
+                                        isLoading={isGenerating}
                                         startContent={<PiAirplaneInFlight className='text-xl' />}
-                                        isDisabled={isLoading || exceeded || isGenerating}
+                                        isDisabled={isLoading || exceeded}
                                         onPress={() => {
                                             startGenerating(async () => {
                                                 await setAnnotationProgressAction({ id: text, progress: 'annotating' })
                                                 setIsLoading(true)
                                                 onClose()
-                                                await generate({ article: input, textId: text, onlyComments: hideText })
+                                                await generate({ article: input, textId: text, onlyComments: hideText, generateTitle: shouldGenerateTitle })
                                             })
                                         }}>
                                         生成

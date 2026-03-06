@@ -75,8 +75,8 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
 2. **注释处理**：
    - 图片中若出现“加点词+括号”的形式，括号通常紧随其后。
    - **操作**：删除括号及其内部内容，并将括号前的加点词用双方括号 [[ ]] 包裹。
-3. **补全句读**：若有一句句子句读缺失，补足。
-4. **保持原样**：除上述处理外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
+3. **补全句读**：若有句子句读缺失，按句意与古汉语语法补足标点符号。
+4. **保持原样**：除上述处理和删去大标题外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
 5. **零冗余**：如果图中没有文字，则输出为空。
 `.trim(),
         }, {
@@ -148,8 +148,8 @@ export async function generateStory({ comments, textId, storyStyle }: { comments
 export async function getNewText(id: string) {
     const textWithLib = await getTextWithLib(id)
     await Kilpi.texts.read(textWithLib).authorize().assert()
-    const { content, topics, emoji } = await getTextContent({ id })
-    return { content, topics, emoji }
+    const { content, topics, emoji, title } = await getTextContent({ id })
+    return { content, topics, emoji, title }
 }
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
@@ -187,7 +187,7 @@ export async function saveEbook(id: string, form: FormData) {
 }
 
 /** Triggers article annotation via Inngest after checking quota. */
-export async function generate({ article, textId, onlyComments, delayRevalidate }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean }) {
+export async function generate({ article, textId, onlyComments, delayRevalidate, generateTitle }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean, generateTitle?: boolean }) {
     const { userId } = await getUserOrThrow()
     const text = await getTextWithLib(textId)
     await Kilpi.texts.write(text).authorize().assert()
@@ -206,7 +206,7 @@ export async function generate({ article, textId, onlyComments, delayRevalidate 
 
     await inngest.send({
         name: 'app/article.imported',
-        data: { article, userId, textId, onlyComments }
+        data: { article, userId, textId, onlyComments, generateTitle }
     })
 }
 

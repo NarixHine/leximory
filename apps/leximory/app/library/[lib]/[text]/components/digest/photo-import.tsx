@@ -7,6 +7,7 @@ import { Divider } from '@heroui/divider'
 import { Spinner } from '@heroui/spinner'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
+import { Switch } from '@heroui/switch'
 import { ocrClassicalChinese, generate, setAnnotationProgressAction } from '@/service/text'
 import { PiAirplaneInFlight, PiArrowRight } from 'react-icons/pi'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -22,6 +23,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
     const setInput = useSetAtom(inputAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [isGenerating, startGenerating] = useTransition()
+    const [shouldGenerateTitle, setShouldGenerateTitle] = useState(false)
 
     const goToEditor = (content: string) => {
         setEditorText(content)
@@ -38,6 +40,9 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                         onChange={setEditorText}
                     />
                 </div>
+                <Switch isDisabled={isLoading} isSelected={shouldGenerateTitle} onValueChange={setShouldGenerateTitle} color='secondary'>
+                    AI 生成标题
+                </Switch>
                 <Button
                     className='mt-2'
                     color='primary'
@@ -51,7 +56,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                                 await setAnnotationProgressAction({ id: textId, progress: 'annotating' })
                                 setIsLoading(true)
                                 onClose()
-                                const result = await generate({ article: editorText, textId, onlyComments: false })
+                                const result = await generate({ article: editorText, textId, onlyComments: false, generateTitle: shouldGenerateTitle })
                                 if (result && 'error' in result) {
                                     setIsLoading(false)
                                     toast.error(result.error)
