@@ -18,7 +18,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
     const [pastedText, setPastedText] = useState('')
     const [editorText, setEditorText] = useState('')
     const [isOcring, startOcr] = useTransition()
-    const text = useAtomValue(textAtom)
+    const textId = useAtomValue(textAtom)
     const setInput = useSetAtom(inputAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [isGenerating, startGenerating] = useTransition()
@@ -48,10 +48,14 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                         startGenerating(async () => {
                             try {
                                 setInput(editorText)
-                                await setAnnotationProgressAction({ id: text, progress: 'annotating' })
+                                await setAnnotationProgressAction({ id: textId, progress: 'annotating' })
                                 setIsLoading(true)
                                 onClose()
-                                await generate({ article: editorText, textId: text, onlyComments: false })
+                                const result = await generate({ article: editorText, textId, onlyComments: false })
+                                if (result && 'error' in result) {
+                                    setIsLoading(false)
+                                    toast.error(result.error)
+                                }
                             } catch (error) {
                                 setIsLoading(false)
                                 toast.error('生成失败，请稍后重试')
@@ -80,19 +84,18 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                         form.append('file', file)
                         try {
                             const result = await ocrClassicalChinese(form)
+                            if (typeof result === 'object' && 'error' in result) {
+                                toast.error(result.error)
+                                return
+                            }
                             const trimmed = result.trim()
                             if (!trimmed) {
                                 toast.error('未在图片中识别到文本，请尝试另一张图片或手动粘贴')
                                 return
                             }
                             goToEditor(trimmed)
-                        } catch (e) {
-                            const msg = e instanceof Error ? e.message : ''
-                            toast.error(
-                                msg === 'Quota exceeded' ? '额度已耗尽' :
-                                msg === 'File too large' ? '图片文件过大' :
-                                '识别失败，请重试'
-                            )
+                        } catch {
+                            toast.error('识别失败，请重试')
                         }
                     })
                 }} />

@@ -43,25 +43,25 @@ const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif
 type AllowedImageType = typeof ALLOWED_IMAGE_TYPES[number]
 
 /** OCR + format a Classical Chinese image: dotted words become [[word]]. */
-export async function ocrClassicalChinese(form: FormData) {
+export async function ocrClassicalChinese(form: FormData): Promise<{ error: string } | string> {
     const { userId } = await getUserOrThrow()
     const file = form.get('file')
 
     if (!(file instanceof File)) {
-        throw new Error('No file provided')
+        return { error: '未选择图片文件，请先上传图片' }
     }
     if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
-        throw new Error('Invalid file type')
+        return { error: '不支持的图片格式，请上传 PNG / JPG / WEBP / GIF 图片' }
     }
     if (file.size === 0) {
-        throw new Error('File is empty')
+        return { error: '图片文件为空，请选择包含内容的图片' }
     }
     if (file.size > MAX_FILE_SIZE) {
-        throw new Error('File too large')
+        return { error: `图片文件过大，请选择小于 ${MAX_FILE_SIZE / 1024 / 1024}MB 的图片` }
     }
 
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
-        throw new Error('Quota exceeded')
+        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
     }
 
     const { text } = await generateText({
