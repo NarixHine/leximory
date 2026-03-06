@@ -1,40 +1,23 @@
 'use client'
 
-import { useAtomValue } from 'jotai'
-import { feedbackAtom, editoryItemsAtom } from '@repo/ui/paper/atoms'
-import { SUBJECTIVE_TYPES } from '@repo/schema/paper'
+import { useEffect } from 'react'
+import { useSetAtom } from 'jotai'
+import { appealRendererAtom } from '@repo/ui/paper/atoms'
 import { AppealButton } from './subjective-feedback/appeal'
 
 /**
- * Renders appeal buttons for each subjective section that has feedback.
- * Placed inline after the paper rendering.
+ * Sets the appealRendererAtom so that SubjectiveSectionFooter can render
+ * AppealButton within each section's feedback area.
  */
-export function SubjectiveAppealButtons() {
-    const feedback = useAtomValue(feedbackAtom)
-    const quizData = useAtomValue(editoryItemsAtom)
+export function SetAppealRenderer() {
+    const setAppealRenderer = useSetAtom(appealRendererAtom)
 
-    if (!feedback) return null
+    useEffect(() => {
+        setAppealRenderer(() => ({ sectionId, sectionType, feedback }: { sectionId: string, sectionType: string, feedback: any }) => (
+            <AppealButton sectionId={sectionId} sectionType={sectionType} feedback={feedback} />
+        ))
+        return () => setAppealRenderer(null)
+    }, [setAppealRenderer])
 
-    const subjectiveSections = quizData.filter(
-        (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
-    )
-
-    const sectionsWithFeedback = subjectiveSections.filter(s => feedback[s.id])
-    if (sectionsWithFeedback.length === 0) return null
-
-    return (
-        <div className='flex flex-wrap gap-2 mt-4'>
-            {sectionsWithFeedback.map((section) => {
-                const sectionFeedback = feedback[section.id]!
-                return (
-                    <AppealButton
-                        key={section.id}
-                        sectionId={section.id}
-                        sectionType={sectionFeedback.type}
-                        feedback={sectionFeedback}
-                    />
-                )
-            })}
-        </div>
-    )
+    return null
 }

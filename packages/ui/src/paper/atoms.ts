@@ -1,6 +1,7 @@
 'use client'
 
-import { SectionAnswers, QuizItems, QuizItemsSchema, SubmissionFeedback } from '@repo/schema/paper'
+import React from 'react'
+import { SectionAnswers, QuizItems, QuizItemsSchema, SubmissionFeedback, SubjectiveFeedback } from '@repo/schema/paper'
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
@@ -39,6 +40,13 @@ export const submittedAnswersAtom = atom<SectionAnswers>({})
  * Maps section IDs to their feedback objects.
  */
 export const feedbackAtom = atom<SubmissionFeedback | null>(null)
+
+/**
+ * Atom that holds an optional render function for appeal buttons.
+ * Set by the consuming app (e.g. quiz) to inject app-specific appeal UI
+ * into the shared subjective feedback rendering.
+ */
+export const appealRendererAtom = atom<((props: { sectionId: string, sectionType: string, feedback: SubjectiveFeedback }) => React.ReactNode) | null>(null)
 
 /**
  * Derived atom that returns the answers for the current paper.

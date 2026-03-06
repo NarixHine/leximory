@@ -21,7 +21,7 @@ import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
-import { SubjectiveAppealButtons } from './components/subjective-appeal'
+import { SetAppealRenderer } from './components/subjective-appeal'
 
 type PaperPageProps = {
     params: Promise<{
@@ -128,10 +128,11 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         [feedbackAtom, feedback ?? null],
     ]}>
         <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span className='text-5xl'>{displayScore}</span>
-            <span className='ml-1 text-default-400 text-xl flex items-center'>
-                /{computePerfectScore(quizData)} <KeyIcon className='ml-1 size-5' />
+            <span className='text-5xl font-mono'>{displayScore}</span>
+            <span className='text-default-400 text-xl flex items-center font-mono'>
+                /{computePerfectScore(quizData)}
             </span>
+            <KeyIcon className='ml-1.5 size-5 text-default-400' />
         </h1>
         {isMarkingPending && (
             <div className='flex items-center gap-2 p-3 rounded-large bg-warning-50 text-warning-700 mb-4'>
@@ -139,11 +140,11 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
                 <span className='text-sm'>主观题正在批改中，请稍后刷新查看结果……</span>
             </div>
         )}
+        <SetAppealRenderer />
         <MarkedItemsPanel />
         <HighlightedPaper
             data={quizData}
         />
-        <SubjectiveAppealButtons />
         <Ask />
         <Define />
     </HydrationBoundary>

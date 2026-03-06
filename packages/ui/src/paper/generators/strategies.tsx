@@ -8,7 +8,7 @@ import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
 import { safeParseHTML } from '../../utils/parse'
-import { SubjectiveInput } from '../subjective'
+import { SubjectiveInput, SubjectiveSectionFooter } from '../subjective'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -564,6 +564,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
         <section>
             {safeParseHTML(data.text)}
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
+            <SubjectiveSectionFooter groupId={data.id} />
         </section>
     ),
     renderAnswerSheet: () => <></>,
@@ -599,6 +600,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
                     )
                 })}
             </ol>
+            <SubjectiveSectionFooter groupId={data.id} />
         </section>
     ),
     renderAnswerSheet: () => <></>,
@@ -624,6 +626,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
         <section>
             {safeParseHTML(data.guidance)}
             <SubjectiveInput groupId={data.id} localNo={1} variant='writing' />
+            <SubjectiveSectionFooter groupId={data.id} />
         </section>
     ),
     renderAnswerSheet: () => <></>,

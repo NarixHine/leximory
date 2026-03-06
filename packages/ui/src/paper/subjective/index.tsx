@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
+import { answersAtom, feedbackAtom, appealRendererAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
 import { Textarea, Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
@@ -85,12 +85,12 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback: SummaryFeedback }) {
     return (
         <div className='mt-4 flex flex-col gap-4'>
-            <div className='flex items-baseline gap-1'>
-                <span className='text-2xl font-bold'>{feedback.totalScore}</span>
-                <span className='text-default-400'>/10</span>
+            <div className='flex items-baseline'>
+                <span className='text-2xl font-bold font-mono'>{feedback.totalScore}</span>
+                <span className='text-default-400 font-mono'>/10</span>
                 <span className='text-sm text-default-500 ml-2 space-x-3'>
-                    <span>内容 {feedback.contentScore}/5</span>
-                    <span>语言 {feedback.languageScore}/5</span>
+                    <span>内容 <span className='font-mono'>{feedback.contentScore}/5</span></span>
+                    <span>语言 <span className='font-mono'>{feedback.languageScore}/5</span></span>
                 </span>
             </div>
 
@@ -183,9 +183,9 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
             <div className='font-mono text-sm leading-relaxed p-3 bg-default-50 rounded-large whitespace-pre-wrap'>
                 {answer || <span className='text-default-400 italic'>（未作答）</span>}
             </div>
-            <div className='flex items-baseline gap-0.5'>
-                <span className='text-lg font-bold'>{itemFeedback.score}</span>
-                <span className='text-default-400 text-sm'>/{itemFeedback.maxScore}</span>
+            <div className='flex items-baseline'>
+                <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
+                <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
             </div>
             <p className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</p>
         </div>
@@ -297,13 +297,13 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
 
     return (
         <div className='mt-6 flex flex-col gap-4'>
-            <div className='flex items-baseline gap-1'>
-                <span className='text-2xl font-bold'>{feedback.totalScore}</span>
-                <span className='text-default-400'>/25</span>
+            <div className='flex items-baseline'>
+                <span className='text-2xl font-bold font-mono'>{feedback.totalScore}</span>
+                <span className='text-default-400 font-mono'>/25</span>
                 <span className='text-sm text-default-500 ml-2 space-x-3'>
-                    <span>内容 {feedback.contentScore}/10</span>
-                    <span>语言 {feedback.languageScore}/10</span>
-                    <span>结构 {feedback.structureScore}/5</span>
+                    <span>内容 <span className='font-mono'>{feedback.contentScore}/10</span></span>
+                    <span>语言 <span className='font-mono'>{feedback.languageScore}/10</span></span>
+                    <span>结构 <span className='font-mono'>{feedback.structureScore}/5</span></span>
                 </span>
             </div>
 
@@ -411,6 +411,30 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     {wordCount} / 60
                 </span>
             </div>
+        </div>
+    )
+}
+
+// ─── Section Appeal Footer ─────────────────────────────────────────────
+
+/**
+ * Renders the appeal button for a subjective section, if an appeal renderer has been injected.
+ * Place this at the end of each subjective section's renderPaper to show
+ * the appeal button within its natural context.
+ */
+export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
+    const viewMode = useAtomValue(viewModeAtom)
+    const feedback = useAtomValue(feedbackAtom)
+    const appealRenderer = useAtomValue(appealRendererAtom)
+
+    if (viewMode !== 'revise') return null
+
+    const sectionFeedback = feedback?.[groupId]
+    if (!sectionFeedback || !appealRenderer) return null
+
+    return (
+        <div className='mt-3'>
+            {appealRenderer({ sectionId: groupId, sectionType: sectionFeedback.type, feedback: sectionFeedback })}
         </div>
     )
 }
