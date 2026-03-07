@@ -1,13 +1,14 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
+import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom, paperIdAtom } from '../atoms'
 import { Textarea, Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
-import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems } from '@repo/schema/paper'
+import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems, SubmissionFeedback } from '@repo/schema/paper'
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon, HourglassIcon } from '@phosphor-icons/react'
-import { useRouter } from 'next/navigation'
+import { useAction } from '@repo/service'
+import { getPaperSubmissionAction } from '@repo/service/paper'
 import { AppealButton } from './appeal'
 import { Streamdown } from 'streamdown'
 import { fixDumbPunctuation } from '@repo/utils'
@@ -516,7 +517,17 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
     const feedback = useAtomValue(feedbackAtom)
     const quizItems = useAtomValue(editoryItemsAtom)
     const submittedAnswers = useAtomValue(submittedAnswersAtom)
-    const router = useRouter()
+    const paperId = useAtomValue(paperIdAtom)
+    const setFeedback = useSetAtom(feedbackAtom)
+
+    const { execute, isPending } = useAction(getPaperSubmissionAction, {
+        onSuccess: ({ data }) => {
+            const newFeedback = data?.submission?.feedback as SubmissionFeedback | null
+            if (newFeedback) {
+                setFeedback(newFeedback)
+            }
+        },
+    })
 
     if (viewMode !== 'revise') return null
 
@@ -530,7 +541,8 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
                     size='sm'
                     variant='flat'
                     startContent={<HourglassIcon size={16} />}
-                    onPress={() => router.refresh()}
+                    isLoading={isPending}
+                    onPress={() => { if (paperId) execute({ paperId: parseInt(paperId, 10) }) }}
                 >
                     检查批改进度
                 </Button>
