@@ -59,7 +59,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                     {() => (
                         <>
                             <ModalHeader className='text-base font-medium'>申述与提问</ModalHeader>
-                            <ModalBody className='px-4 py-0'>
+                            <ModalBody className='px-6 py-2'>
                                 <div ref={scrollRef} className='flex flex-col gap-3 min-h-48 max-h-96 overflow-y-auto py-3'>
                                     {messages.length === 0 ? (
                                         <div className='flex-1 flex items-center justify-center'>
@@ -84,19 +84,18 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                     )}
                                     {isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'user' && (
                                         <div className='self-start px-3 py-2'>
-                                            <Spinner size='sm' />
+                                            <Spinner size='sm' variant='wave' />
                                         </div>
                                     )}
                                 </div>
                             </ModalBody>
-                            <ModalFooter className='px-4 pb-4 pt-2'>
+                            <ModalFooter className='px-6 pb-6 pt-2'>
                                 <div className='flex gap-2 w-full'>
                                     <Input
                                         value={question}
                                         onValueChange={setQuestion}
                                         placeholder='输入你的问题……'
-                                        variant='bordered'
-                                        size='sm'
+                                        variant='flat'
                                         classNames={{ inputWrapper: 'shadow-none' }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -106,7 +105,6 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
                                         }}
                                     />
                                     <Button
-                                        size='sm'
                                         color='primary'
                                         isIconOnly
                                         isLoading={isLoading}

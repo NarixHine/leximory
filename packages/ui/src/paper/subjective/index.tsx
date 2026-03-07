@@ -355,8 +355,8 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
             {
                 feedback.corrected && (
                     <div className='flex flex-col'>
-                        <p className='text-sm text-default-500 font-medium'>修改版本</p>
-                        <div className='prose prose-sm dark:prose-invert max-w-none font-mono' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
+                        <p className='text-sm text-default-600 font-medium'>修改版本</p>
+                        <div className='prose prose-sm dark:prose-invert max-w-none font-mono -mt-2' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
                     </div>
                 )
             }

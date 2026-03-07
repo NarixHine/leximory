@@ -317,6 +317,10 @@ export function buildWritingAnalysisPrompt(
 前提：你必须尊重原文的内容、文风和英语变体（英式/美式）！对失当措辞作改动（包含首尾），但保持实质性内容不变。用粗体标记所有改动部分。
 理想字数：220-280词。禁止输出打分。
 </correction_principles>
+<stylistic_requirements>
+在你的输出中，总是使用标准标点符号。使用smart quotes（“”）而非straight quotes（""）
+在供学生阅读的评价、指导、意见中，一般使用中文。
+</stylistic_requirements>
 
 <bad_pairs_criteria>
 badPairs 多多益善！任何以下表述都必须作为 badPairs 输出：
