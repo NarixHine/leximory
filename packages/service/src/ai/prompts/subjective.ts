@@ -22,6 +22,8 @@ export function buildSummaryMarkingPrompt(
         ? `Detected verbatim copied chunks (4+ consecutive words from source): ${copiedChunks.map(c => `"${c}"`).join(', ')}. Each instance of copying 4+ consecutive words with no variation deducts 0.5 language pts.`
         : 'No verbatim copying of 4+ consecutive words was detected.'
 
+
+    console.log(wordCount)
     return `<prompt>
 <role>You are a strict, objective marker for an English Summary Writing exam.</role>
 
@@ -40,7 +42,7 @@ ${data.extraItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}
 REFERENCE SUMMARY:
 ${data.referenceSummary || '(not provided)'}
 
-STUDENT'S ANSWER (WORD COUNT: ${wordCount}):
+STUDENT'S ANSWER (${wordCount} words, ${wordCount > 61 ? `exceeds ideal range by ${wordCount - 61} words` : 'within ideal range'}):
 ${answer}
 
 ${copyInfo}

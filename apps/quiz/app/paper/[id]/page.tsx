@@ -21,6 +21,7 @@ import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
+import { Spacer } from '@heroui/spacer'
 
 type PaperPageProps = {
     params: Promise<{
@@ -127,9 +128,9 @@ function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: Q
         [feedbackAtom, feedback ?? null],
     ]}>
         <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span className='text-5xl font-mono'>{displayScore}</span>
+            <span className='text-5xl'>{displayScore}</span>
             <span className='text-default-400 text-xl flex items-center font-mono'>
-                /{computePerfectScore(quizData)} 分
+                /{computePerfectScore(quizData)}<Spacer x={0.5} />分
             </span>
         </h1>
         <MarkedItemsPanel />
