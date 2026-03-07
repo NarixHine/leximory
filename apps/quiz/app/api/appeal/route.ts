@@ -1,6 +1,9 @@
 import { streamText, convertToModelMessages } from 'ai'
 import { FLASH_AI } from '@repo/service/ai/config'
 import { z } from '@repo/schema'
+import { getUserOrThrow } from '@repo/user'
+import incrCommentaryQuota from '@repo/user/quota'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 
 const bodySchema = z.object({
     messages: z.array(z.any()),
@@ -10,12 +13,18 @@ const bodySchema = z.object({
 })
 
 export async function POST(req: Request) {
+    const { userId } = await getUserOrThrow()
+
     const body = await req.json()
     const { success, data } = bodySchema.safeParse(body)
     if (!success) {
         return new Response('Invalid request body', { status: 400 })
     }
     const { messages, sectionType, feedback, context } = data
+
+    if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.ask, userId)) {
+        return new Response('Quota exceeded', { status: 429 })
+    }
 
     const systemPrompt = `You are a fair and patient exam marker, 猫谜, answering a student's appeal or question about their ${sectionType} exam marking result.
 

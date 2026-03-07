@@ -220,7 +220,6 @@ function TranslationItemReviseFeedback({ answer, itemFeedback, groupId, localNo 
             <div className='flex items-baseline gap-2'>
                 <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
                 <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
-                <Spacer x={1} />
                 {itemFeedback.rationale && (
                     <span className='text-sm text-default-600 leading-relaxed flex-1'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
                 )}
