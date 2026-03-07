@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const systemPrompt = `You are a fair and patient exam marker answering a student's appeal or question about their ${sectionType} exam marking result.
 
 Here is the complete exam context with question details, reference answers, and the student's actual response:
-${context || '(No additional context available)'}
+${context?.trim() || '(No additional context available)'}
 
 Here is the marking feedback that was given:
 ${JSON.stringify(feedback, null, 2)}
