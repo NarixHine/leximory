@@ -386,7 +386,7 @@ const readingStrategy: QuestionStrategy<ReadingData> = createQuestionStrategy<Re
                     const displayNo = (config.start ?? 1) + index
                     const localNo = index + 1
                     return (
-                        <div key={index} id={`q${displayNo}`} className='flex flex-col gap-1'>
+                        <div key={index} id={`q${displayNo}`} className='flex flex-col gap-1 prose-code:before:hidden prose-code:after:hidden prose-code:italic prose-code:font-ui prose-code:text-medium prose-code:font-medium'>
                             <div>
                                 <span className='font-bold'>{displayNo}. </span>{safeParseHTML(q.q)}
                             </div>

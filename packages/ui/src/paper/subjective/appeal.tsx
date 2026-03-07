@@ -6,6 +6,7 @@ import { ChatCircleDotsIcon, PaperPlaneRightIcon } from '@phosphor-icons/react'
 import { SubjectiveFeedback } from '@repo/schema/paper'
 import { DefaultChatTransport } from 'ai'
 import { useChat } from '@ai-sdk/react'
+import { Streamdown } from 'streamdown'
 
 /**
  * Appeal button that opens a dialog for the student to ask questions about marking.
@@ -72,13 +73,13 @@ export function AppealButton({ sectionId, sectionType, feedback, context }: {
                                         messages.map((msg) => (
                                             <div
                                                 key={msg.id}
-                                                className={`text-sm leading-relaxed px-3 py-2 rounded-large max-w-[85%] whitespace-pre-wrap ${msg.role === 'user'
+                                                className={`text-sm leading-relaxed px-3 py-3 rounded-large max-w-[85%] whitespace-pre-wrap ${msg.role === 'user'
                                                     ? 'bg-primary-50 self-end'
                                                     : 'bg-default-100 self-start'
                                                     }`}
                                             >
                                                 {msg.parts.map((part, i) =>
-                                                    'text' in part ? <span key={`${msg.id}-${i}`}>{part.text}</span> : null
+                                                    'text' in part ? <Streamdown key={`${msg.id}-${i}`}>{part.text}</Streamdown> : null
                                                 )}
                                             </div>
                                         ))

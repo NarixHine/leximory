@@ -85,7 +85,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
 
 function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback: SummaryFeedback }) {
     return (
-        <div className='mt-4 flex flex-col gap-4'>
+        <div className='mt-4 flex flex-col gap-3'>
             <div className='flex items-baseline'>
                 <span className='text-2xl font-bold font-mono'>{feedback.totalScore}</span>
                 <span className='text-default-400 font-mono'>/10</span>

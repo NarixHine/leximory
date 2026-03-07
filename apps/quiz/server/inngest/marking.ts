@@ -21,7 +21,7 @@ import { z } from '@repo/schema'
  * of a quiz submission asynchronously. Updates the submission's feedback and score.
  */
 export const markSubjectiveSections = inngest.createFunction(
-    { id: 'mark-subjective-sections', retries: 2 },
+    { id: 'mark-subjective-sections', retries: 2, idempotency: 'event.data.submissionId' },
     { event: 'quiz/submission.marking' },
     async ({ event, step }) => {
         const { submissionId, paperId } = event.data
