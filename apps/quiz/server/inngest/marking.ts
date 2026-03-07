@@ -36,7 +36,6 @@ export const markSubjectiveSections = inngest.createFunction(
 
         const answers = submission.answers
         const feedback: SubmissionFeedback = {}
-        let subjectiveScore = 0
 
         // Find all subjective sections in the paper
         const subjectiveSections = paper.content.filter(
@@ -62,7 +61,7 @@ export const markSubjectiveSections = inngest.createFunction(
                     continue
                 }
 
-                const result = await step.run(`mark-summary-${section.id}`, async () => {
+                feedback[section.id] = await step.run(`mark-summary-${section.id}`, async () => {
                     const data = section as SummaryData
                     const copiedChunks = findCopiedChunks(data.text, answer)
                     const wordCount = countWords(answer)
@@ -80,9 +79,6 @@ export const markSubjectiveSections = inngest.createFunction(
                         copiedChunks,
                     } satisfies SummaryFeedback
                 })
-
-                feedback[section.id] = result
-                subjectiveScore += result.totalScore
             }
 
             if (section.type === 'translation') {
@@ -104,7 +100,7 @@ export const markSubjectiveSections = inngest.createFunction(
                     continue
                 }
 
-                const result = await step.run(`mark-translation-${section.id}`, async () => {
+                feedback[section.id] = await step.run(`mark-translation-${section.id}`, async () => {
                     const prompt = buildTranslationMarkingPrompt(data, sectionAnswers)
 
                     const { object } = await generateObject({
@@ -118,9 +114,6 @@ export const markSubjectiveSections = inngest.createFunction(
                         type: 'translation' as const,
                     } satisfies TranslationFeedback
                 })
-
-                feedback[section.id] = result
-                subjectiveScore += result.totalScore
             }
 
             if (section.type === 'writing') {
@@ -179,24 +172,26 @@ export const markSubjectiveSections = inngest.createFunction(
                     return object
                 })
 
-                const writingFeedback: WritingFeedback = {
+                feedback[section.id] = {
                     type: 'writing',
                     ...scores,
                     ...analysis,
-                }
-
-                feedback[section.id] = writingFeedback
-                subjectiveScore += scores.totalScore
+                } satisfies WritingFeedback
             }
         }
 
+        // Compute subjective score deterministically from feedback — not via
+        // a mutable accumulator that would re-run on every Inngest invocation.
+        const subjectiveScore = Object.values(feedback).reduce(
+            (sum, fb) => sum + fb.totalScore, 0
+        )
+
         // Update the submission with feedback and adjusted score
         await step.run('update-submission', async () => {
-            const newScore = submission.score + subjectiveScore
             await updateSubmissionFeedback({
                 submissionId,
                 feedback: JSON.parse(JSON.stringify(feedback)),
-                score: newScore,
+                score: submission.score + subjectiveScore,
             })
         })
 
