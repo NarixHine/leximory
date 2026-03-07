@@ -587,7 +587,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
     renderRubric: () => (<h2>Translation</h2>),
     renderPaper: ({ data, config }) => (
         <section>
-            <ol className='list-none pl-0 flex flex-col gap-4 mb-0'>
+            <ol className='list-none pl-0 flex flex-col gap-4 mb-2'>
                 {data.items.map((item, index) => {
                     const displayNo = (config.start ?? 1) + index
                     const localNo = index + 1

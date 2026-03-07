@@ -2,7 +2,7 @@
 
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
-import { Textarea, Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react'
+import { Textarea, Popover, PopoverTrigger, PopoverContent, Button, Spacer } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
 import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems } from '@repo/schema/paper'
@@ -205,7 +205,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
     }
 
     return (
-        <div className='mt-2 flex flex-col gap-2'>
+        <div className='my-2 flex flex-col gap-2'>
             <div className='font-mono text-sm leading-relaxed p-3 px-4 bg-default-50 -mx-4 rounded-large whitespace-pre-wrap'>
                 {answer
                     ? (annotations.length > 0 ? segments : answer)
@@ -215,10 +215,11 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
             <div className='flex items-baseline'>
                 <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
                 <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
+                <Spacer x={2} />
+                {itemFeedback.rationale && (
+                    <span className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</span>
+                )}
             </div>
-            {itemFeedback.rationale && (
-                <p className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</p>
-            )}
         </div>
     )
 }

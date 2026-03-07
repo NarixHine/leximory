@@ -53,7 +53,7 @@ CONTENT (5 pts):
 - Each essential item: 1pt if mentioned in precise, clear, informative terms serving the purpose of a summary and corresponding to the reference.
 - Extra items: 1pt each, but ONLY if ALL essential items are fulfilled.
 - For each item, output fulfilled (true/false) and a brief note.
-- The way of expressing the content can be different from the reference, but the information MUST be accurately and clearly conveyed. Any factual inaccuracy, ambiguity, or omission that hinders understanding of the main points should count as unfulfilled.
+- The way of expressing the content can be different from the reference, but the CORE information MUST be accurately and clearly conveyed (note that introductory information is usually unnecessary). Any major inaccuracy and ambiguity that hinders understanding should count as unfulfilled.
 
 LANGUAGE (5 pts):
 - Base score: evaluate succinctness and clarity (NOT vocabulary variety). Paraphrasing is strongly encouraged; the message must stay faithful.
