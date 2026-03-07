@@ -107,11 +107,11 @@ ${itemPrompts}
 <marking_criteria>
 - Start each item at its full score (maxScore) and subtract for errors found.
 - Every omission of information or vocabulary inaccuracy: -0.5 pts.
-- Tense misuse, other grammatical mistakes, and failure to correctly incorporate the required keyword: -1 pt each.
+- Grammatical mistakes like tense misuse, and failure to correctly incorporate the required keyword: -1 pt each.
 - Pay special attention to correctness over vividness. Take a relatively loose approach.
 - Idioms do not need to be translated literally.
 - Score per item cannot go below 0.
-- The final score MUST equal maxScore minus the sum of all deductions. Be mechanical and strict about this.
+- The final score MUST equal maxScore minus the sum of all deductions. Be mechanical and strict about this. Assign points PER CHUNK based on the number of errors, NOT an overall impression.
 </marking_criteria>
 
 <annotation_guidelines>
@@ -319,7 +319,6 @@ export function buildWritingAnalysisPrompt(
 理想字数：220-280词。禁止输出打分。
 </correction_principles>
 <stylistic_requirements>
-在你的输出中，总是使用标准标点符号。使用smart quotes（“”）而非straight quotes（""）
 在供学生阅读的评价、指导、意见中，一般使用中文。
 </stylistic_requirements>
 

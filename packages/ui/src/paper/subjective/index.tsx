@@ -12,6 +12,7 @@ import { getPaperSubmissionAction } from '@repo/service/paper'
 import { AppealButton } from './appeal'
 import { Streamdown } from 'streamdown'
 import { fixDumbPunctuation } from '@repo/utils'
+import { toast } from 'sonner'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -147,7 +148,7 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
             )}
 
             {feedback.rationale && (
-                <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+                <p className='text-sm text-default-600 leading-relaxed'>{fixDumbPunctuation(feedback.rationale)}</p>
             )}
         </div>
     )
@@ -218,7 +219,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
                 <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
                 <Spacer x={2} />
                 {itemFeedback.rationale && (
-                    <span className='text-sm text-default-600 leading-relaxed'>{itemFeedback.rationale}</span>
+                    <span className='text-sm text-default-600 leading-relaxed'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
                 )}
             </div>
         </div>
@@ -348,7 +349,7 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
             </div>
 
             {feedback.rationale && (
-                <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+                <p className='text-sm text-default-600 leading-relaxed'>{fixDumbPunctuation(feedback.rationale)}</p>
             )}
 
             {
@@ -526,6 +527,9 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
             const newFeedback = data?.submission?.feedback as SubmissionFeedback | null
             if (newFeedback) {
                 setFeedback(newFeedback)
+            }
+            else{
+                toast.warning('批改尚未完成，请稍后再试')
             }
         },
     })
