@@ -2,11 +2,12 @@
 
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
-import { Textarea, Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
+import { Textarea, Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
 import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems } from '@repo/schema/paper'
-import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon, HourglassIcon } from '@phosphor-icons/react'
+import { useRouter } from 'next/navigation'
 import { AppealButton } from './appeal'
 import { Streamdown } from 'streamdown'
 import { fixDumbPunctuation } from '@repo/utils'
@@ -508,17 +509,34 @@ function buildAppealContext(section: QuizItems[number], answers: Record<number, 
  * Renders the appeal button for a subjective section.
  * Place this at the end of each subjective section's renderPaper to show
  * the appeal button within its natural context.
+ * When marking is pending (no feedback yet), shows a "检查批改进度" button.
  */
 export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
     const viewMode = useAtomValue(viewModeAtom)
     const feedback = useAtomValue(feedbackAtom)
     const quizItems = useAtomValue(editoryItemsAtom)
     const submittedAnswers = useAtomValue(submittedAnswersAtom)
+    const router = useRouter()
 
     if (viewMode !== 'revise') return null
 
     const sectionFeedback = feedback?.[groupId]
-    if (!sectionFeedback) return null
+
+    // When marking is pending, show a button to check progress
+    if (!sectionFeedback) {
+        return (
+            <div className='mt-3 mb-8'>
+                <Button
+                    size='sm'
+                    variant='flat'
+                    startContent={<HourglassIcon size={16} />}
+                    onPress={() => router.refresh()}
+                >
+                    检查批改进度
+                </Button>
+            </div>
+        )
+    }
 
     const section = quizItems.find(s => s.id === groupId)
     const sectionAnswers = submittedAnswers[groupId] ?? {}
