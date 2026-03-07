@@ -2,7 +2,7 @@
     "extends": "@repo/typescript-config/base.json",
     "include": [
         "src"
-    ],
+, "../../apps/quiz/app/paper/[id]/components/subjective-appeal.tsx"    ],
     "compilerOptions": {
         "rootDir": "src",
         "outDir": "dist",

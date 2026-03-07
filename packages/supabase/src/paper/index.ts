@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '..'
-import type { TablesInsert, TablesUpdate } from '../types'
+import type { Json, TablesInsert, TablesUpdate } from '../types'
 import { QuizItemsSchema, SectionAnswersSchema } from '@repo/schema/paper'
 export * from './types'
 
@@ -249,4 +249,51 @@ export async function getAllPaperSubmissions({
     .order('score', { ascending: false })
     .throwOnError()
   return submissions
+}
+
+/**
+ * Updates the feedback and score of a submission after AI marking.
+ * @param props - The parameters object
+ * @param props.submissionId - The submission ID
+ * @param props.feedback - The AI-generated feedback (jsonb)
+ * @param props.score - The updated total score (objective + subjective)
+ * @returns The updated submission record
+ * @throws Error if the update fails
+ */
+export async function updateSubmissionFeedback({
+  submissionId,
+  feedback,
+  score,
+}: {
+  submissionId: number
+  feedback: { [key: string]: Json | undefined }
+  score: number
+}) {
+  const { data: submission, error } = await supabase
+    .from('submissions')
+    .update({ feedback, score })
+    .eq('id', submissionId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return submission
+}
+
+/**
+ * Retrieves a submission by its ID.
+ * @param props - The parameters object
+ * @param props.id - The submission ID
+ * @returns The submission record
+ * @throws Error if the submission is not found
+ */
+export async function getSubmissionById({ id }: { id: number }) {
+  const { data: submission, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) throw error
+  return { ...submission, answers: SectionAnswersSchema.parse(submission.answers) }
 }

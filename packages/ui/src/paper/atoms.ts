@@ -1,6 +1,7 @@
 'use client'
 
-import { SectionAnswers, QuizItems, QuizItemsSchema } from '@repo/schema/paper'
+import React from 'react'
+import { SectionAnswers, QuizItems, QuizItemsSchema, SubmissionFeedback, SubjectiveFeedback } from '@repo/schema/paper'
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'
@@ -33,6 +34,12 @@ export const answersAtomFamily = atomFamily((paperId: string) =>
  * Uses the new section-based structure.
  */
 export const submittedAnswersAtom = atom<SectionAnswers>({})
+
+/**
+ * Atom for storing subjective feedback in revise mode.
+ * Maps section IDs to their feedback objects.
+ */
+export const feedbackAtom = atom<SubmissionFeedback | null>(null)
 
 /**
  * Derived atom that returns the answers for the current paper.

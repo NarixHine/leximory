@@ -32,6 +32,11 @@ export function CostTable() {
                     <TableCell>{ACTION_QUOTA_COST.quiz.genNote}</TableCell>
                     <TableCell>将错题整理成条目</TableCell>
                 </TableRow>
+                <TableRow key='marking'>
+                    <TableCell>主观题批改</TableCell>
+                    <TableCell>{ACTION_QUOTA_COST.quiz.marking}</TableCell>
+                    <TableCell>AI 批改概要、翻译、写作</TableCell>
+                </TableRow>
             </TableBody>
         </Table>
     )
