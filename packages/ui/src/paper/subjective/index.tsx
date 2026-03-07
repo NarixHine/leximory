@@ -1,11 +1,11 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom } from '../atoms'
+import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
 import { Textarea, Popover, PopoverTrigger, PopoverContent } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
-import type { SummaryFeedback, TranslationFeedback, WritingFeedback } from '@repo/schema/paper'
+import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems } from '@repo/schema/paper'
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
 import { AppealButton } from './appeal'
 
@@ -108,20 +108,22 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
                 </p>
             )}
 
-            <div className='flex flex-col -mt-3'>
-                <p className='text-sm text-default-600 font-medium'>基本点</p>
-                <ul className='list-none flex flex-col gap-1.5'>
-                    {feedback.essentialItemResults.map((r, i) => (
-                        <li key={i} className='flex items-start gap-2 text-sm'>
-                            {r.fulfilled
-                                ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
-                                : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />
-                            }
-                            <span>{r.item}{r.note && <span className='text-default-400'> — {r.note}</span>}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            {feedback.essentialItemResults.length > 0 && (
+                <div className='flex flex-col -mt-3'>
+                    <p className='text-sm text-default-600 font-medium'>基本点</p>
+                    <ul className='list-none flex flex-col gap-1.5'>
+                        {feedback.essentialItemResults.map((r, i) => (
+                            <li key={i} className='flex items-start gap-2 text-sm'>
+                                {r.fulfilled
+                                    ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
+                                    : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />
+                                }
+                                <span>{r.item}{r.note && <span className='text-default-400'> — {r.note}</span>}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {feedback.extraItemResults.length > 0 && (
                 <div className='flex flex-col -mt-3'>
@@ -140,7 +142,9 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
                 </div>
             )}
 
-            <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+            {feedback.rationale && (
+                <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+            )}
         </div>
     )
 }
@@ -338,7 +342,9 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
                 </span>
             </div>
 
-            <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+            {feedback.rationale && (
+                <p className='text-sm text-default-600 leading-relaxed'>{feedback.rationale}</p>
+            )}
 
             {
                 answer ? (
@@ -448,6 +454,55 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 
 // ─── Section Appeal Footer ─────────────────────────────────────────────
 
+/** Builds a comprehensive context string for the appeal AI. */
+function buildAppealContext(section: QuizItems[number], answers: Record<number, string | null>): string {
+    if (section.type === 'summary') {
+        const data = section as SummaryData
+        return [
+            `## 题目信息`,
+            `考生须概括以下文章（不超过61词）：`,
+            data.text,
+            ``,
+            `## 评分要点`,
+            `基本点：${data.essentialItems.join('；')}`,
+            data.extraItems.length > 0 ? `附加点：${data.extraItems.join('；')}` : '',
+            ``,
+            `## 参考答案`,
+            data.referenceSummary,
+            ``,
+            `## 考生作答`,
+            answers[1] || '（未作答）',
+        ].filter(Boolean).join('\n')
+    }
+
+    if (section.type === 'translation') {
+        const data = section as TranslationData
+        return data.items.map((item, i) => {
+            const localNo = i + 1
+            return [
+                `## 第${localNo}题（${item.score}分）`,
+                `中文：${item.chinese}`,
+                `关键词：${item.keyword}`,
+                `参考译文：${item.references.join(' / ')}`,
+                `考生作答：${answers[localNo] || '（未作答）'}`,
+            ].join('\n')
+        }).join('\n\n')
+    }
+
+    if (section.type === 'writing') {
+        const data = section as WritingData
+        return [
+            `## 写作要求`,
+            data.guidance,
+            ``,
+            `## 考生作答`,
+            answers[1] || '（未作答）',
+        ].join('\n')
+    }
+
+    return ''
+}
+
 /**
  * Renders the appeal button for a subjective section.
  * Place this at the end of each subjective section's renderPaper to show
@@ -456,15 +511,21 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
     const viewMode = useAtomValue(viewModeAtom)
     const feedback = useAtomValue(feedbackAtom)
+    const quizItems = useAtomValue(editoryItemsAtom)
+    const submittedAnswers = useAtomValue(submittedAnswersAtom)
 
     if (viewMode !== 'revise') return null
 
     const sectionFeedback = feedback?.[groupId]
     if (!sectionFeedback) return null
 
+    const section = quizItems.find(s => s.id === groupId)
+    const sectionAnswers = submittedAnswers[groupId] ?? {}
+    const context = section ? buildAppealContext(section, sectionAnswers) : ''
+
     return (
         <div className='mt-0 mb-8'>
-            <AppealButton sectionId={groupId} sectionType={sectionFeedback.type} feedback={sectionFeedback} />
+            <AppealButton sectionId={groupId} sectionType={sectionFeedback.type} feedback={sectionFeedback} context={context} />
         </div>
     )
 }

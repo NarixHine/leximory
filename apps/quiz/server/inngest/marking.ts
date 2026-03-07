@@ -46,9 +46,24 @@ export const markSubjectiveSections = inngest.createFunction(
         // Mark each subjective section
         for (const section of subjectiveSections) {
             if (section.type === 'summary') {
+                const answer = answers[section.id]?.[1] ?? ''
+
+                if (!answer.trim()) {
+                    feedback[section.id] = {
+                        type: 'summary',
+                        contentScore: 0,
+                        languageScore: 0,
+                        totalScore: 0,
+                        essentialItemResults: [],
+                        extraItemResults: [],
+                        copiedChunks: [],
+                        rationale: '',
+                    } satisfies SummaryFeedback
+                    continue
+                }
+
                 const result = await step.run(`mark-summary-${section.id}`, async () => {
                     const data = section as SummaryData
-                    const answer = answers[section.id]?.[1] ?? ''
                     const copiedChunks = findCopiedChunks(data.text, answer)
                     const wordCount = countWords(answer)
                     const prompt = buildSummaryMarkingPrompt(data, answer, copiedChunks, wordCount)
@@ -71,9 +86,25 @@ export const markSubjectiveSections = inngest.createFunction(
             }
 
             if (section.type === 'translation') {
+                const data = section as TranslationData
+                const sectionAnswers = answers[section.id] ?? {}
+                const hasAnyAnswer = Object.values(sectionAnswers).some(v => v != null && v.trim() !== '')
+
+                if (!hasAnyAnswer) {
+                    feedback[section.id] = {
+                        type: 'translation',
+                        items: data.items.map(item => ({
+                            score: 0,
+                            maxScore: item.score,
+                            rationale: '',
+                            badPairs: [],
+                        })),
+                        totalScore: 0,
+                    } satisfies TranslationFeedback
+                    continue
+                }
+
                 const result = await step.run(`mark-translation-${section.id}`, async () => {
-                    const data = section as TranslationData
-                    const sectionAnswers = answers[section.id] ?? {}
                     const prompt = buildTranslationMarkingPrompt(data, sectionAnswers)
 
                     const { object } = await generateObject({
@@ -93,10 +124,26 @@ export const markSubjectiveSections = inngest.createFunction(
             }
 
             if (section.type === 'writing') {
+                const answer = answers[section.id]?.[1] ?? ''
+
+                if (!answer.trim()) {
+                    feedback[section.id] = {
+                        type: 'writing',
+                        contentScore: 0,
+                        languageScore: 0,
+                        structureScore: 0,
+                        totalScore: 0,
+                        rationale: '',
+                        corrected: '',
+                        badPairs: [],
+                        goodPairs: [],
+                    } satisfies WritingFeedback
+                    continue
+                }
+
                 // Step 1: Score the essay
                 const scores = await step.run(`score-writing-${section.id}`, async () => {
                     const data = section as WritingData
-                    const answer = answers[section.id]?.[1] ?? ''
                     const prompt = buildWritingScoringPrompt(data, answer)
 
                     const { object } = await generateObject({
@@ -117,7 +164,6 @@ export const markSubjectiveSections = inngest.createFunction(
                 // Step 2: Analyze the essay (badPairs, goodPairs, corrected)
                 const analysis = await step.run(`analyze-writing-${section.id}`, async () => {
                     const data = section as WritingData
-                    const answer = answers[section.id]?.[1] ?? ''
                     const prompt = buildWritingAnalysisPrompt(data, answer)
 
                     const { object } = await generateObject({

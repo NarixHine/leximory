@@ -11,10 +11,11 @@ import { useChat } from '@ai-sdk/react'
  * Appeal button that opens a dialog for the student to ask questions about marking.
  * Uses streaming AI to answer questions about why points were deducted.
  */
-export function AppealButton({ sectionId, sectionType, feedback }: {
+export function AppealButton({ sectionId, sectionType, feedback, context }: {
     sectionId: string
     sectionType: string
     feedback: SubjectiveFeedback
+    context: string
 }) {
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
     const [question, setQuestion] = useState('')
@@ -23,7 +24,7 @@ export function AppealButton({ sectionId, sectionType, feedback }: {
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/appeal',
-            body: { sectionId, sectionType, feedback },
+            body: { sectionId, sectionType, feedback, context },
         }),
     })
 
