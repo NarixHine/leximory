@@ -8,6 +8,8 @@ import { computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import { SectionAnswersSchema, SectionAnswers, SUBJECTIVE_TYPES } from '@repo/schema/paper'
 import { inngest } from '@/server/inngest/client'
 import { getUserOrThrow } from '@repo/user'
+import incrCommentaryQuota from '@repo/user/quota'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 
 /**
  * Sanitizes section-based answers by trimming whitespace from all answer strings.
@@ -52,6 +54,9 @@ export const submitAnswersAction = actionClient
             (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
         )
         if (hasSubjective && submission?.data?.id) {
+            if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.marking, user.userId)) {
+                throw new Error('Quota exceeded')
+            }
             await inngest.send({
                 name: 'quiz/submission.marking',
                 data: {

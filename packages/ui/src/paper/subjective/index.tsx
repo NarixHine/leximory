@@ -10,6 +10,7 @@ import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon, Hourgl
 import { useAction } from '@repo/service'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import { AppealButton } from './appeal'
+import { SaveQuestionNoteButton } from '../blank/save-question-note'
 import { Streamdown } from 'streamdown'
 import { fixDumbPunctuation } from '@repo/utils'
 import { toast } from 'sonner'
@@ -52,7 +53,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
         }
         if (variant === 'translation' && sectionFeedback?.type === 'translation') {
             const itemFeedback = sectionFeedback.items[localNo - 1]
-            return <TranslationItemReviseFeedback answer={currentAnswer} itemFeedback={itemFeedback} />
+            return <TranslationItemReviseFeedback answer={currentAnswer} itemFeedback={itemFeedback} groupId={groupId} localNo={localNo} />
         }
         if (variant === 'writing' && sectionFeedback?.type === 'writing') {
             return <WritingReviseFeedback answer={currentAnswer} feedback={sectionFeedback} />
@@ -176,9 +177,11 @@ function HighlightCopied({ answer, copiedChunks }: { answer: string, copiedChunk
 
 // ─── Translation Feedback ──────────────────────────────────────────────
 
-function TranslationItemReviseFeedback({ answer, itemFeedback }: {
+function TranslationItemReviseFeedback({ answer, itemFeedback, groupId, localNo }: {
     answer: string
     itemFeedback?: TranslationFeedback['items'][number]
+    groupId: string
+    localNo: number
 }) {
     if (!itemFeedback) {
         return (
@@ -214,13 +217,14 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
                     : <span className='text-default-400 italic'>（未作答）</span>
                 }
             </div>
-            <div className='flex items-baseline'>
+            <div className='flex items-baseline gap-2'>
                 <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
                 <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
-                <Spacer x={2} />
+                <Spacer x={1} />
                 {itemFeedback.rationale && (
-                    <span className='text-sm text-default-600 leading-relaxed'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
+                    <span className='text-sm text-default-600 leading-relaxed flex-1'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
                 )}
+                <SaveQuestionNoteButton size='sm' localNo={localNo} groupId={groupId} />
             </div>
         </div>
     )
