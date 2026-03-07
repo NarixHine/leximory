@@ -73,13 +73,13 @@ export function AppealButton({ sectionId, sectionType, feedback, context }: {
                                         messages.map((msg) => (
                                             <div
                                                 key={msg.id}
-                                                className={`text-sm leading-relaxed px-3 py-3 rounded-large max-w-[85%] whitespace-pre-wrap ${msg.role === 'user'
+                                                className={`text-sm leading-relaxed px-4 py-3 rounded-large max-w-[85%] whitespace-pre-wrap ${msg.role === 'user'
                                                     ? 'bg-primary-50 self-end'
                                                     : 'bg-default-100 self-start'
                                                     }`}
                                             >
                                                 {msg.parts.map((part, i) =>
-                                                    'text' in part ? <Streamdown key={`${msg.id}-${i}`}>{part.text}</Streamdown> : null
+                                                    'text' in part ? <Streamdown key={`${msg.id}-${i}`} className='prose-headings:my-3'>{part.text}</Streamdown> : null
                                                 )}
                                             </div>
                                         ))
