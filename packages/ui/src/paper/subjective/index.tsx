@@ -8,6 +8,7 @@ import { cn } from '@heroui/theme'
 import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems } from '@repo/schema/paper'
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
 import { AppealButton } from './appeal'
+import { Streamdown } from 'streamdown'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -296,13 +297,13 @@ function AnnotationPopover({ annotation, matchedText }: { annotation: Annotation
                             <p className='text-xs text-default-500'>有待改进</p>
                             <p className='text-sm flex items-start gap-1.5'>
                                 <ArrowRightIcon className='shrink-0 mt-0.5' size={14} />
-                                {annotation.detail}
+                                <Streamdown>{annotation.detail}</Streamdown>
                             </p>
                         </>
                     ) : (
                         <>
                             <p className='text-xs text-default-500'>亮点</p>
-                            <p className='text-sm'>{annotation.detail}</p>
+                            <Streamdown className='text-sm'>{annotation.detail}</Streamdown>
                         </>
                     )}
                 </div>
