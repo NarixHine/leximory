@@ -34,7 +34,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
         return (
             <div className='flex flex-col gap-3'>
                 <p className='text-sm opacity-60'>选中以强制注释词汇</p>
-                <div className='border border-default-200 rounded-2xl p-4 max-h-80 overflow-y-auto'>
+                <div className='border border-default-200 rounded-2xl p-4 overflow-y-auto'>
                     <PhotoEditor
                         initialText={editorText}
                         onChange={setEditorText}
@@ -44,7 +44,7 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                     AI 生成标题
                 </Switch>
                 <Button
-                    className='mt-2'
+                    className='mt-2 shrink-0'
                     color='primary'
                     fullWidth
                     startContent={<PiAirplaneInFlight className='text-xl' />}
