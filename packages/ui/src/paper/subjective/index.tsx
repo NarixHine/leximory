@@ -1,9 +1,7 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom, paperIdAtom } from '../atoms'
-import { Textarea, Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react'
-import { answersAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
+import { answersAtom, paperIdAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
 import { Textarea, Popover, PopoverTrigger, PopoverContent, Button, Spacer } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
