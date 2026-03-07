@@ -10,7 +10,11 @@ import { useRef, useCallback } from 'react'
 
 /** Convert `[[word]]` markers to `<mark>` tags for Tiptap. */
 function bracketToHtml(text: string): string {
-    return text.replace(/\[\[(.+?)\]\]/g, '<mark>$1</mark>')
+    return text
+        .replace(/\[\[(.+?)\]\]/g, '<mark>$1</mark>')
+        // collapse multiple consecutive newlines into a single newline
+        .replace(/\n{2,}/g, '\n')
+        .trim()
 }
 
 /** Convert Tiptap HTML `<mark>` tags back to `[[word]]` markers. */
@@ -76,7 +80,7 @@ export default function PhotoEditor({ initialText, onChange, className }: PhotoE
             attributes: {
                 class: [
                     'focus:outline-none prose dark:prose-invert prose-lg font-formal',
-                    'min-h-40 max-w-none',
+                    'max-h-[calc(80vh-300px)] max-w-none',
                     className ?? '',
                 ].join(' '),
             },
