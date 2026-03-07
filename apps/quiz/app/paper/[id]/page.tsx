@@ -11,7 +11,7 @@ import { Ask, Paper } from '@repo/ui/paper'
 import { Spinner } from '@heroui/spinner'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
-import { SectionAnswers, QuizItems, SubmissionFeedback, SUBJECTIVE_TYPES } from '@repo/schema/paper'
+import { SectionAnswers, QuizItems, SubmissionFeedback } from '@repo/schema/paper'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
 import Dictation from './components/dictation'
@@ -113,12 +113,8 @@ async function Content({ params, searchParams }: { params: PaperPageProps['param
 
 function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: QuizItems, answers: SectionAnswers, feedback?: SubmissionFeedback, serverScore?: number }) {
     const objectiveScore = computeTotalScore(quizData, answers)
-    const hasSubjective = quizData.some(
-        (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
-    )
     // Use server score (which includes subjective marks) if available
     const displayScore = serverScore ?? objectiveScore
-    const isMarkingPending = hasSubjective && !feedback
 
     return <HydrationBoundary hydrateAtoms={[
         [viewModeAtom, 'revise'],
