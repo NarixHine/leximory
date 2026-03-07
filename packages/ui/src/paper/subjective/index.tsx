@@ -9,6 +9,7 @@ import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData
 import { CheckCircleIcon, XCircleIcon, WarningCircleIcon, ArrowRightIcon } from '@phosphor-icons/react'
 import { AppealButton } from './appeal'
 import { Streamdown } from 'streamdown'
+import { fixDumbPunctuation } from '@repo/utils'
 
 /** Counts words in a string (whitespace-separated tokens). */
 function countWords(text: string): number {
@@ -96,7 +97,7 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
                 </span>
             </div>
 
-            <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
+            <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 -mx-4 bg-default-50 rounded-large'>
                 {feedback.copiedChunks.length > 0
                     ? <HighlightCopied answer={answer} copiedChunks={feedback.copiedChunks} />
                     : (answer || <span className='text-default-400 italic'>（未作答）</span>)
@@ -204,7 +205,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback }: {
 
     return (
         <div className='mt-2 flex flex-col gap-2'>
-            <div className='font-mono text-sm leading-relaxed p-3 bg-default-50 rounded-large whitespace-pre-wrap'>
+            <div className='font-mono text-sm leading-relaxed p-3 px-4 bg-default-50 -mx-4 rounded-large whitespace-pre-wrap'>
                 {answer
                     ? (annotations.length > 0 ? segments : answer)
                     : <span className='text-default-400 italic'>（未作答）</span>
@@ -294,16 +295,16 @@ function AnnotationPopover({ annotation, matchedText }: { annotation: Annotation
                 <div className='p-3 max-w-72 flex flex-col gap-1.5'>
                     {annotation.kind === 'bad' ? (
                         <>
-                            <p className='text-xs text-default-500'>有待改进</p>
-                            <p className='text-sm flex items-start gap-1.5'>
+                            <p className='text-default-500 text-sm'>有待改进</p>
+                            <p className='flex text-sm items-start gap-1.5'>
                                 <ArrowRightIcon className='shrink-0 mt-0.5' size={14} />
-                                <Streamdown>{annotation.detail}</Streamdown>
+                                <Streamdown>{fixDumbPunctuation(annotation.detail)}</Streamdown>
                             </p>
                         </>
                     ) : (
                         <>
                             <p className='text-xs text-default-500'>亮点</p>
-                            <Streamdown className='text-sm'>{annotation.detail}</Streamdown>
+                            <Streamdown className='text-sm'>{fixDumbPunctuation(annotation.detail)}</Streamdown>
                         </>
                     )}
                 </div>
@@ -349,7 +350,7 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
 
             {
                 answer ? (
-                    <div className='font-mono text-sm leading-loose whitespace-pre-wrap p-4 bg-default-50 rounded-large'>
+                    <div className='font-mono text-sm leading-loose whitespace-pre-wrap -mx-4 p-4 bg-default-50 rounded-large'>
                         {segments}
                     </div>
                 ) : (
@@ -362,8 +363,7 @@ function WritingReviseFeedback({ answer, feedback }: { answer: string, feedback:
             {
                 feedback.corrected && (
                     <div className='flex flex-col'>
-                        <p className='text-sm text-default-600 font-medium'>修改版本</p>
-                        <div className='prose prose-sm dark:prose-invert max-w-none font-mono -mt-2' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
+                        <div className='prose dark:prose-invert max-w-none font-mono -mt-2' dangerouslySetInnerHTML={{ __html: mdToHtml(feedback.corrected) }} />
                     </div>
                 )
             }

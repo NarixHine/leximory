@@ -14,6 +14,7 @@ import { CustomLexicon } from '@/lib/types'
 import { memo } from 'react'
 import sanitize from 'sanitize-html'
 import Equation from './equation'
+import { langAtom } from '@/app/library/[lib]/atoms'
 
 export type MarkdownProps = {
     md: string,
@@ -31,8 +32,11 @@ export type MarkdownProps = {
 
 function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
+    const lang = useAtomValue(langAtom)
 
-    const result = hasWrapped ? md.trim() : sanitize(lexiconWrap(md.trim(), lexicon))
+    const sanitizedMd = hasWrapped ? md.trim() : sanitize(lexiconWrap(md.trim(), lexicon))
+
+    const result = lang === 'en' ? sanitizedMd.replaceAll('}}，', '}}, ') : sanitizedMd
         // double space after list markers
         .replace(/([*-]) \{\{/g, '$1  {{')
         // space handling
