@@ -219,7 +219,7 @@ function TranslationItemReviseFeedback({ answer, itemFeedback, groupId, localNo 
             </div>
             <div className='flex gap-1'>
                 <div className='flex items-baseline gap-2 flex-1'>
-                    <span className='text-lg font-bold font-mono'>
+                    <span className='text-lg font-semibold font-mono'>
                         {itemFeedback.score}
                         <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
                     </span>
@@ -450,7 +450,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                 <textarea
                     value={currentAnswer}
                     onChange={handleChange}
-                    rows={3}
+                    rows={5}
                     aria-label='Summary'
                     className='w-full resize-none rounded-medium border border-default-200 bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-default-400 outline-none transition-colors focus:border-default-400'
                 />
@@ -552,7 +552,7 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
                 <Button
                     size='sm'
                     variant='flat'
-                    startContent={<HourglassIcon size={16} />}
+                    startContent={!isPending && <HourglassIcon size={16} />}
                     isLoading={isPending}
                     onPress={() => { if (paperId) execute({ paperId: parseInt(paperId, 10) }) }}
                 >
