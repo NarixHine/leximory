@@ -70,13 +70,29 @@ export const markSubjectiveSections = inngest.createFunction(
                     const { object } = await generateObject({
                         ...FLASH_AI,
                         prompt,
-                        schema: SummaryFeedbackSchema.omit({ type: true, copiedChunks: true }),
+                        schema: SummaryFeedbackSchema.omit({ type: true, copiedChunks: true, contentScore: true, totalScore: true }),
                     })
+
+                    // Deterministic content score: each essential = 1pt, extras only if ALL essentials fulfilled, cap 5
+                    const essentialFulfilled = object.essentialItemResults.filter(r => r.fulfilled).length
+                    const allEssentialsFulfilled = essentialFulfilled === data.essentialItems.length
+                    const extraFulfilled = allEssentialsFulfilled
+                        ? object.extraItemResults.filter(r => r.fulfilled).length
+                        : 0
+                    const contentScore = Math.min(essentialFulfilled + extraFulfilled, 5)
+
+                    // Clamp language score to valid range and enforce ±2 from content score
+                    const languageScore = Math.max(0, Math.min(5,
+                        Math.min(object.languageScore, contentScore + 2),
+                    ))
 
                     return {
                         ...object,
                         type: 'summary' as const,
                         copiedChunks,
+                        contentScore,
+                        languageScore,
+                        totalScore: contentScore + languageScore,
                     } satisfies SummaryFeedback
                 })
             }

@@ -23,20 +23,19 @@ export function buildSummaryMarkingPrompt(
         : 'No verbatim copying of 4+ consecutive words was detected.'
 
 
-    console.log(wordCount)
     return `<prompt>
 <role>You are a strict, objective marker for an English Summary Writing exam.</role>
 
 <task>
-Mark the student's summary of the passage. Total: 10 pts (Content 5 + Language 5).
+Evaluate the student's summary of the passage. Total: 10 pts (Content 5 + Language 5).
 
 PASSAGE:
 ${data.text.replace(/<[^>]*>/g, '')}
 
-ESSENTIAL ITEMS (core structure, 1pt each — ALL must be fulfilled before extra items score):
+ESSENTIAL ITEMS (core structure — ALL must be fulfilled before extra items score):
 ${data.essentialItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}
 
-EXTRA ITEMS (supporting details, 1pt each — only scored if ALL essential items are fulfilled):
+EXTRA ITEMS (supporting details — only scored if ALL essential items are fulfilled):
 ${data.extraItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}
 
 REFERENCE SUMMARY:
@@ -49,7 +48,7 @@ ${copyInfo}
 </task>
 
 <marking_criteria>
-CONTENT (5 pts):
+CONTENT (5 pts, scored deterministically from your item judgments — do NOT assign contentScore yourself):
 - Each essential item: 1pt if mentioned in precise, clear, informative terms serving the purpose of a summary and corresponding to the reference.
 - Extra items: 1pt each, but ONLY if ALL essential items are fulfilled.
 - For each item, output fulfilled (true/false) and a brief note.
@@ -57,7 +56,7 @@ CONTENT (5 pts):
 
 LANGUAGE (5 pts):
 - Base score: evaluate succinctness and clarity (NOT vocabulary variety). Paraphrasing is strongly encouraged; the message must stay faithful.
-- The base language score must not deviate more than 2 pts from the content score.
+- The base language score must not deviate more than 2 pts from the content score (which will be deterministically computed from your item judgments).
 - For every 2 additional words beyond 61 words, subtract 1 language pt from the base.
 - Each instance of copying 4+ consecutive words with no variation: -0.5 pts.
 - Minimum language score: 0.
@@ -65,13 +64,12 @@ LANGUAGE (5 pts):
 
 <output_format>
 Return a JSON object: {
-  "contentScore": number (0-5),
   "languageScore": number (0-5),
-  "totalScore": number,
   "essentialItemResults": [{"item": string, "fulfilled": boolean, "note": string (in Chinese)}],
   "extraItemResults": [{"item": string, "fulfilled": boolean, "note": string (in Chinese)}],
   "rationale": string (extremely concise marking rationale in Chinese, 1-2 sentences)
 }
+Note: contentScore and totalScore will be computed deterministically from your item judgments. Do NOT include them.
 </output_format>
 </prompt>`.trim()
 }
