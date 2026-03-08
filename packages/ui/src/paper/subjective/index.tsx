@@ -572,3 +572,15 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
         </div>
     )
 }
+
+/**
+ * Section title for subjective sections that shimmers when marking is pending.
+ * In revise mode, shows a pulsing animation if feedback has not yet arrived.
+ */
+export function SubjectiveSectionTitle({ groupId, children }: { groupId: string, children: React.ReactNode }) {
+    const viewMode = useAtomValue(viewModeAtom)
+    const feedback = useAtomValue(feedbackAtom)
+    const isMarkingPending = viewMode === 'revise' && !feedback?.[groupId]
+
+    return <h2 className={isMarkingPending ? 'animate-shimmer' : ''}>{children}</h2>
+}

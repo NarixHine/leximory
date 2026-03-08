@@ -8,7 +8,7 @@ import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
 import { safeParseHTML } from '../../utils/parse'
-import { SubjectiveInput, SubjectiveSectionFooter } from '../subjective'
+import { SubjectiveInput, SubjectiveSectionFooter, SubjectiveSectionTitle } from '../subjective'
 
 const listeningStrategy: QuestionStrategy<ListeningData> = createQuestionStrategy<ListeningData>({
     keyPerLine: 5,
@@ -562,6 +562,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     renderRubric: () => (<h2>Summary Writing</h2>),
     renderPaper: ({ data }) => (
         <section>
+            <SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>
             {safeParseHTML(data.text)}
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
             <SubjectiveSectionFooter groupId={data.id} />
@@ -587,6 +588,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
     renderRubric: () => (<h2>Translation</h2>),
     renderPaper: ({ data, config }) => (
         <section>
+            <SubjectiveSectionTitle groupId={data.id}>Translation</SubjectiveSectionTitle>
             <ol className='list-none pl-0 flex flex-col gap-4 mb-2'>
                 {data.items.map((item, index) => {
                     const displayNo = (config.start ?? 1) + index
@@ -624,6 +626,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     renderRubric: () => (<h2>Guided Writing</h2>),
     renderPaper: ({ data }) => (
         <section>
+            <SubjectiveSectionTitle groupId={data.id}>Guided Writing</SubjectiveSectionTitle>
             {safeParseHTML(data.guidance)}
             <SubjectiveInput groupId={data.id} localNo={1} variant='writing' />
             <SubjectiveSectionFooter groupId={data.id} />

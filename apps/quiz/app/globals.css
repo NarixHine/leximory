@@ -12,4 +12,10 @@
     --font-serif: 'Times New Roman', Times, serif;
     --font-formal: var(--font-display), -apple-system, BlinkMacSystemFont, 'PingFang SC', serif;
     --font-mono: var(--font-english-mono), 'Courier New', var(--font-chinese), Courier, monospace;
+    --animate-shimmer: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
