@@ -217,13 +217,17 @@ function TranslationItemReviseFeedback({ answer, itemFeedback, groupId, localNo 
                     : <span className='text-default-400 italic'>（未作答）</span>
                 }
             </div>
-            <div className='flex items-baseline gap-2'>
-                <span className='text-lg font-bold font-mono'>{itemFeedback.score}</span>
-                <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
-                {itemFeedback.rationale && (
-                    <span className='text-sm text-default-600 leading-relaxed flex-1'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
-                )}
-                <SaveQuestionNoteButton size='sm' localNo={localNo} groupId={groupId} />
+            <div className='flex gap-1'>
+                <div className='flex items-baseline gap-2 flex-1'>
+                    <span className='text-lg font-bold font-mono'>
+                        {itemFeedback.score}
+                        <span className='text-default-400 text-sm font-mono'>/{itemFeedback.maxScore}</span>
+                    </span>
+                    {itemFeedback.rationale && (
+                        <span className='text-sm text-default-600 leading-relaxed flex-1'>{fixDumbPunctuation(itemFeedback.rationale)}</span>
+                    )}
+                </div>
+                <SaveQuestionNoteButton isIconOnly size='sm' variant='light' localNo={localNo} groupId={groupId} />
             </div>
         </div>
     )
@@ -531,7 +535,7 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
             if (newFeedback) {
                 setFeedback(newFeedback)
             }
-            else{
+            else {
                 toast.warning('批改尚未完成，请稍后再试')
             }
         },

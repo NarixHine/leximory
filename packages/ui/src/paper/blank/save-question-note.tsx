@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, ButtonProps } from '@heroui/button'
-import { NotebookIcon } from '@phosphor-icons/react'
+import { CheckIcon, NotebookIcon } from '@phosphor-icons/react'
 import { saveQuestionNoteAction } from '@repo/service/question-note'
 import { toast } from 'sonner'
 import { useSaveQuestionNoteParams } from './hooks'
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 export function SaveQuestionNoteButton({
     localNo,
     groupId,
+    isIconOnly,
     ...props
 }: {
     localNo: number
@@ -50,15 +51,16 @@ export function SaveQuestionNoteButton({
 
     return (
         <Button
-            startContent={!isPending && <NotebookIcon weight='duotone' size={20} />}
+            startContent={!isPending && (isSuccess ? <CheckIcon size={20} /> : <NotebookIcon weight='duotone' size={20} />)}
             color='secondary'
             variant='flat'
             isLoading={isPending}
             isDisabled={isSuccess}
+            isIconOnly={isIconOnly}
             {...props}
             onPress={handleSave}
         >
-            {isSuccess ? '已收录' : '收录本题于笔记'}
+            {isIconOnly ? null : isSuccess ? '已收录' : '收录本题于笔记'}
         </Button>
     )
 }
