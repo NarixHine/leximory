@@ -306,7 +306,7 @@ export function buildWritingAnalysisPrompt(
 请结合题目列出的必须涵盖的要点，分析我提供的学生作文。首先提供 badPairs 和 goodPairs，然后提供 corrected。
 1. badPairs: 数组，包含原文中完整问题句子/短语及其改进版本和中文解释说明。每个对象包含 original（完整原文表述，系统会根据这一字符串匹配原文）和 improved。
 2. goodPairs: 数组，包含原文中完整精彩句子/短语及其优点说明。每个对象包含 original（完整原文表述，系统会根据这一字符串匹配原文）和 why。
-3. corrected: 做出评价和/或给出修改。若几近完美，给出评判即可；否则给出修改建议，再以小标题"### For Your Reference"引出修正后的完整作文版本。
+3. corrected: 做出评价和/或给出修改。若几近完美，给出评判即可；否则给出修改建议，再以小标题"### Your Essay, Refined"引出修正后的完整作文版本。
 </task_description>
 
 <analysis_guidelines>
