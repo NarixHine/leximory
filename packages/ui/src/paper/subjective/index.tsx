@@ -582,5 +582,5 @@ export function SubjectiveSectionTitle({ groupId, children }: { groupId: string,
     const feedback = useAtomValue(feedbackAtom)
     const isMarkingPending = viewMode === 'revise' && !feedback?.[groupId]
 
-    return <h2 className={isMarkingPending ? 'animate-shimmer' : ''}>{children}</h2>
+    return <h2 className={isMarkingPending ? 'animate-pulse' : ''}>{children}</h2>
 }

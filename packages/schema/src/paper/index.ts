@@ -58,7 +58,7 @@ export interface QuestionStrategy<T extends QuizData = QuizData, O = unknown> {
     isCorrect: (userAnswer: string, correctAnswer: string) => boolean
     renderPaper: (props: StrategyRenderProps<T, O>) => JSX.Element | null
     renderAnswerSheet?: (props: StrategyRenderProps<T, O>) => JSX.Element | null
-    renderRubric: () => JSX.Element | null
+    renderRubric: (props: StrategyRenderProps<T, O>) => JSX.Element | null
     keyPerLine: number
     getDefaultValue: () => T
     scorePerQuestion: number

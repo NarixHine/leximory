@@ -22,18 +22,48 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
     )
 
     return (
-        <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span
-                className={`text-5xl ${isMarkingPending ? 'animate-shimmer' : ''}`}
-                style={isMarkingPending ? {
-                    color: 'transparent',
-                    WebkitTextStroke: '1.5px var(--color-foreground)',
-                } : undefined}
-            >
-                {score}
-            </span>
-            <span className='text-default-400 text-xl flex items-center font-mono'>
-                /{perfectScore}<Spacer x={0.5} />分
+        <h1 className='mt-2 mb-5 text-balance items-baseline-last flex'>
+            {isMarkingPending ? (
+                <>
+                    <style>{`
+                        @keyframes dashMove {
+                            from { stroke-dashoffset: 18; }
+                            to   { stroke-dashoffset: 0; }
+                        }
+                    `}</style>
+                    <span
+                        className='text-5xl leading-none inline-block relative'
+                        aria-label={String(score)}
+                    >
+                        <span style={{ visibility: 'hidden' }}>{score}</span>
+                        <svg
+                            aria-hidden='true'
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}
+                        >
+                            <text
+                                x='0'
+                                y='0.82em'
+                                style={{
+                                    fill: 'transparent',
+                                    stroke: 'currentColor',
+                                    strokeWidth: '1.5px',
+                                    strokeDasharray: '6 3',
+                                    animation: 'dashMove 2s linear infinite',
+                                    fontSize: '1em',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'inherit',
+                                }}
+                            >
+                                {score}
+                            </text>
+                        </svg>
+                    </span>
+                </>
+            ) : (
+                <span className='text-5xl font-bold'>{score}</span>
+            )}
+            <span className='text-default-400 font-semibold text-xl flex items-center font-mono'>
+                <Spacer x={'px'} />/<Spacer x={'px'} />{perfectScore}
             </span>
         </h1>
     )

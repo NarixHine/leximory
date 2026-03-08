@@ -217,7 +217,7 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
         return (
             <>
                 <section>{parsedContent}</section>
-                <Accordion className='' itemProps={{ title: '完形填空选项', subtitle: '点击以展开／折叠', className: 'not-prose print:hidden -ml-2 -mr-2' }}>
+                <Accordion className='' itemProps={{ title: '完形填空选项', className: 'print:hidden -ml-2 -mr-2' }}>
                     <Options />
                 </Accordion>
                 <div className='hidden print:block'>
@@ -559,11 +559,12 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     scorePerQuestion: 10,
     getQuestionCount: () => 1,
     getCorrectAnswers: (data) => [data.referenceSummary],
-    renderRubric: () => (<></>),
+    renderRubric: ({ data }) => (<SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>),
     renderPaper: ({ data }) => (
         <section>
-            <SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>
-            {safeParseHTML(data.text)}
+            <Accordion itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2' }}>
+                <>{safeParseHTML(data.text)}</>
+            </Accordion>
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
             <SubjectiveSectionFooter groupId={data.id} />
         </section>
@@ -585,10 +586,9 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
     getPerfectScore: (data) => data.items.reduce((sum, item) => sum + item.score, 0),
     getQuestionCount: (data) => data.items.length,
     getCorrectAnswers: (data) => data.items.map(item => item.references[0] ?? ''),
-    renderRubric: () => (<></>),
+    renderRubric: ({ data }) => (<SubjectiveSectionTitle groupId={data.id}>Translation</SubjectiveSectionTitle>),
     renderPaper: ({ data, config }) => (
         <section>
-            <SubjectiveSectionTitle groupId={data.id}>Translation</SubjectiveSectionTitle>
             <ol className='list-none pl-0 flex flex-col gap-4 mb-2'>
                 {data.items.map((item, index) => {
                     const displayNo = (config.start ?? 1) + index
@@ -623,10 +623,9 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     scorePerQuestion: 25,
     getQuestionCount: () => 1,
     getCorrectAnswers: () => [],
-    renderRubric: () => (<></>),
+    renderRubric: ({ data }) => (<SubjectiveSectionTitle groupId={data.id}>Guided Writing</SubjectiveSectionTitle>),
     renderPaper: ({ data }) => (
         <section>
-            <SubjectiveSectionTitle groupId={data.id}>Guided Writing</SubjectiveSectionTitle>
             {safeParseHTML(data.guidance)}
             <SubjectiveInput groupId={data.id} localNo={1} variant='writing' />
             <SubjectiveSectionFooter groupId={data.id} />

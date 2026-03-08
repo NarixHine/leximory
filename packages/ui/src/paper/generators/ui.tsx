@@ -28,7 +28,7 @@ export const Question = <K extends QuizData['type']>({ strategy, specificData, v
     if (variant === 'paper') {
         return (
             <QuestionSection>
-                {strategy.renderRubric()}
+                {strategy.renderRubric(renderProps)}
                 {strategy.renderPaper(renderProps)}
             </QuestionSection>
         )
