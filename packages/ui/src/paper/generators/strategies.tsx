@@ -559,7 +559,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     scorePerQuestion: 10,
     getQuestionCount: () => 1,
     getCorrectAnswers: (data) => [data.referenceSummary],
-    renderRubric: () => (<h2>Summary Writing</h2>),
+    renderRubric: () => (<></>),
     renderPaper: ({ data }) => (
         <section>
             <SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>
@@ -585,7 +585,7 @@ const translationStrategy: QuestionStrategy<TranslationData> = createQuestionStr
     getPerfectScore: (data) => data.items.reduce((sum, item) => sum + item.score, 0),
     getQuestionCount: (data) => data.items.length,
     getCorrectAnswers: (data) => data.items.map(item => item.references[0] ?? ''),
-    renderRubric: () => (<h2>Translation</h2>),
+    renderRubric: () => (<></>),
     renderPaper: ({ data, config }) => (
         <section>
             <SubjectiveSectionTitle groupId={data.id}>Translation</SubjectiveSectionTitle>
@@ -623,7 +623,7 @@ const writingStrategy: QuestionStrategy<WritingData> = createQuestionStrategy<Wr
     scorePerQuestion: 25,
     getQuestionCount: () => 1,
     getCorrectAnswers: () => [],
-    renderRubric: () => (<h2>Guided Writing</h2>),
+    renderRubric: () => (<></>),
     renderPaper: ({ data }) => (
         <section>
             <SubjectiveSectionTitle groupId={data.id}>Guided Writing</SubjectiveSectionTitle>
