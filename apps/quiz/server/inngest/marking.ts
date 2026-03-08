@@ -81,9 +81,9 @@ export const markSubjectiveSections = inngest.createFunction(
                         : 0
                     const contentScore = Math.min(essentialFulfilled + extraFulfilled, 5)
 
-                    // Clamp language score to valid range and enforce ±2 from content score
+                    // Clamp language score to [0,5] and enforce ±2 from content score
                     const languageScore = Math.max(0, Math.min(5,
-                        Math.min(object.languageScore, contentScore + 2),
+                        Math.max(contentScore - 2, Math.min(object.languageScore, contentScore + 2)),
                     ))
 
                     return {
