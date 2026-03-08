@@ -574,7 +574,7 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
 }
 
 /**
- * Section title for subjective sections that shimmers when marking is pending.
+ * Section title for subjective sections that pulses when marking is pending.
  * In revise mode, shows a pulsing animation if feedback has not yet arrived.
  */
 export function SubjectiveSectionTitle({ groupId, children }: { groupId: string, children: React.ReactNode }) {

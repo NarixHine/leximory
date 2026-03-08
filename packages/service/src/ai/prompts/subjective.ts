@@ -39,7 +39,7 @@ EXTRA ITEMS (supporting details — only scored if ALL essential items are fulfi
 ${data.extraItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}
 
 REFERENCE SUMMARY:
-${data.referenceSummary || '(not provided)'}
+${(data.referenceSummary || '(not provided)').replace(/<[^>]*>/g, '')}
 
 STUDENT'S ANSWER (${wordCount} words, ${wordCount > 61 ? `exceeds ideal range by ${wordCount - 61} words` : 'within ideal range'}):
 ${answer}

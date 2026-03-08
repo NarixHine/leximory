@@ -41,6 +41,16 @@ export const submitAnswersAction = actionClient
         const sanitizedAnswers = sanitizeAnswers(answers)
         const user = await getUserOrThrow()
 
+        // Check quota BEFORE creating submission to avoid orphaned submissions
+        const hasSubjective = content.some(
+            (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
+        )
+        if (hasSubjective) {
+            if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.marking, user.userId)) {
+                throw new Error('Quota exceeded')
+            }
+        }
+
         const submission = await submitPaperAction({
             paperId: id,
             score: computeTotalScore(content, sanitizedAnswers),
@@ -50,13 +60,7 @@ export const submitAnswersAction = actionClient
         })
 
         // Trigger async AI marking if paper has subjective sections
-        const hasSubjective = content.some(
-            (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
-        )
         if (hasSubjective && submission?.data?.id) {
-            if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.marking, user.userId)) {
-                throw new Error('Quota exceeded')
-            }
             await inngest.send({
                 name: 'quiz/submission.marking',
                 data: {

@@ -30,6 +30,9 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
                             from { stroke-dashoffset: 18; }
                             to   { stroke-dashoffset: 0; }
                         }
+                        @media (prefers-reduced-motion: reduce) {
+                            .dash-animate { animation: none !important; }
+                        }
                     `}</style>
                     <span
                         className='text-5xl leading-none inline-block relative'
@@ -43,6 +46,7 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
                             <text
                                 x='0'
                                 y='0.82em'
+                                className='dash-animate'
                                 style={{
                                     fill: 'transparent',
                                     stroke: 'currentColor',

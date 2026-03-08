@@ -13,7 +13,8 @@
  */
 export function findCopiedChunks(source: string, answer: string, minLength = 4): string[] {
     const strip = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
-    const sourceWords = strip(source).toLowerCase().split(/\s+/)
+    const strippedSourceLower = strip(source).toLowerCase()
+    const sourceWords = strippedSourceLower.split(/\s+/)
     const answerWords = strip(answer).toLowerCase().split(/\s+/)
     const sourceSet = new Set<string>()
 
@@ -31,7 +32,7 @@ export function findCopiedChunks(source: string, answer: string, minLength = 4):
             let end = i + minLength
             while (end < answerWords.length) {
                 const extended = answerWords.slice(i, end + 1).join(' ')
-                const found = strip(source).toLowerCase().includes(extended)
+                const found = strippedSourceLower.includes(extended)
                 if (!found) break
                 end++
             }
