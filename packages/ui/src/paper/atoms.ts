@@ -1,7 +1,6 @@
 'use client'
 
-import React from 'react'
-import { SectionAnswers, QuizItems, QuizItemsSchema, SubmissionFeedback, SubjectiveFeedback } from '@repo/schema/paper'
+import { SectionAnswers, QuizItems, QuizItemsSchema, SubmissionFeedback } from '@repo/schema/paper'
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai-family'
 import { atomWithStorage } from 'jotai/utils'

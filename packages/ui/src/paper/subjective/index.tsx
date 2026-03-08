@@ -2,7 +2,7 @@
 
 import { useAtomValue, useSetAtom } from 'jotai'
 import { answersAtom, paperIdAtom, feedbackAtom, setAnswerAtom, viewModeAtom, submittedAnswersAtom, editoryItemsAtom } from '../atoms'
-import { Textarea, Popover, PopoverTrigger, PopoverContent, Button, Spacer } from '@heroui/react'
+import { Textarea, Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react'
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { cn } from '@heroui/theme'
 import type { SummaryFeedback, TranslationFeedback, WritingFeedback, SummaryData, TranslationData, WritingData, QuizItems, SubmissionFeedback } from '@repo/schema/paper'

@@ -15,6 +15,7 @@ import type { SummaryFeedback, TranslationFeedback, WritingFeedback } from '@rep
 import { buildSummaryMarkingPrompt, buildTranslationMarkingPrompt, buildWritingScoringPrompt, buildWritingAnalysisPrompt } from '@repo/service/ai/prompts/subjective'
 import { findCopiedChunks, countWords } from '@repo/utils/subjective'
 import { z } from '@repo/schema'
+import { computeTotalScore } from '@repo/ui/paper/utils'
 
 /**
  * Inngest function that marks subjective sections (summary, translation, writing)
@@ -202,12 +203,16 @@ export const markSubjectiveSections = inngest.createFunction(
             (sum, fb) => sum + fb.totalScore, 0
         )
 
+        // Recompute objective score deterministically from paper content +
+        // submission answers, so the update is idempotent across reruns.
+        const objectiveScore = computeTotalScore(paper.content, submission.answers)
+
         // Update the submission with feedback and adjusted score
         await step.run('update-submission', async () => {
             await updateSubmissionFeedback({
                 submissionId,
                 feedback: JSON.parse(JSON.stringify(feedback)),
-                score: submission.score + subjectiveScore,
+                score: objectiveScore + subjectiveScore,
             })
         })
 

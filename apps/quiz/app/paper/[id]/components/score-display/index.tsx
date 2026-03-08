@@ -25,15 +25,6 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
         <h1 className='mt-2 mb-5 text-balance items-baseline-last flex'>
             {isMarkingPending ? (
                 <>
-                    <style>{`
-                        @keyframes dashMove {
-                            from { stroke-dashoffset: 18; }
-                            to   { stroke-dashoffset: 0; }
-                        }
-                        @media (prefers-reduced-motion: reduce) {
-                            .dash-animate { animation: none !important; }
-                        }
-                    `}</style>
                     <span
                         className='text-5xl leading-none inline-block relative'
                         aria-label={String(score)}
