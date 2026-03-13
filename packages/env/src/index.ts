@@ -14,7 +14,6 @@ const env = createEnv({
         SUPABASE_URL: z.string().min(1),
         SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
         AI_GATEWAY_API_KEY: z.string().min(1),
-        TABSTACK_API_KEY: z.string().min(1),
     },
 
     client: {
@@ -46,8 +45,6 @@ const env = createEnv({
         NEXT_PUBLIC_SIGN_IN_URL: process.env.NEXT_PUBLIC_SIGN_IN_URL,
         // AI Gateway
         AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
-        // Scraping URL
-        TABSTACK_API_KEY: process.env.TABSTACK_API_KEY,
     },
 })
 

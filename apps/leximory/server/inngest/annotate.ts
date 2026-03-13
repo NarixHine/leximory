@@ -118,7 +118,7 @@ export const annotateFullArticle = inngest.createFunction(
             const topicsConfig = topicsPrompt(article)
             const emojiConfig = emojiPrompt(article)
             const titleConfig = generateTitle ? titlePrompt(article) : undefined
-            const annotationConfigs = await Promise.all(chunks.map(chunk => articleAnnotationPrompt(lang, chunk, onlyComments, userId)))
+            const annotationConfigs = await Promise.all(chunks.map((chunk, index) => articleAnnotationPrompt(lang, chunk, onlyComments, userId, true, index === 0)))
             return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
         })
 

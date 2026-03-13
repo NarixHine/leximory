@@ -36,7 +36,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
 
     const sanitizedMd = hasWrapped ? md.trim() : sanitize(lexiconWrap(md.trim(), lexicon))
 
-    const result = lang === 'en' ? sanitizedMd.replaceAll('}}，', '}}, ') : sanitizedMd
+    const result = (lang === 'en' ? sanitizedMd.replaceAll('}}，', '}}, ') : sanitizedMd)
         // double space after list markers
         .replace(/([*-]) \{\{/g, '$1  {{')
         // space handling
