@@ -103,13 +103,12 @@ ${itemPrompts}
 </task>
 
 <marking_criteria>
-- Start each item at its full score (maxScore) and subtract for errors found.
-- Every omission of information or vocabulary inaccuracy: -0.5 pts.
+- Start each item AT ITS FULL SCORE (maxScore) and subtract for errors found. Strictly adhere to this rule. NEVER rely on overall judgment in any case.
 - Grammatical mistakes like tense misuse, and failure to correctly incorporate the required keyword: -1 pt each.
 - Pay special attention to correctness over vividness. Take a relatively loose approach.
 - Idioms do not need to be translated literally.
 - Score per item cannot go below 0.
-- The final score MUST equal maxScore minus the sum of all deductions. Be mechanical and strict about this. Assign points PER CHUNK based on the number of errors, NOT an overall impression.
+- The final score MUST equal maxScore minus the sum of all deductions. Be mechanical and strict about this — assign points PER CHUNK based on the number of errors, rather than an overall impression.
 </marking_criteria>
 
 <annotation_guidelines>

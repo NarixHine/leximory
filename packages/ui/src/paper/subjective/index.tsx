@@ -60,7 +60,7 @@ export function SubjectiveInput({ groupId, localNo, placeholder, maxLength, vari
         }
         // Default revise mode (no feedback yet)
         return (
-            <div className='mt-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20'>
+            <div className='mt-3 -mx-3 p-4 bg-default-50 rounded-large text-sm whitespace-pre-wrap min-h-20 font-mono'>
                 {currentAnswer || <span className='text-default-400 italic'>（未作答）</span>}
             </div>
         )
@@ -117,9 +117,9 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
             {feedback.essentialItemResults.length > 0 && (
                 <div className='flex flex-col -mt-3'>
                     <p className='text-sm text-default-600 font-medium'>基本点</p>
-                    <ul className='list-none flex flex-col gap-1.5'>
+                    <ul className='list-none flex flex-col gap-1.5 pl-0'>
                         {feedback.essentialItemResults.map((r, i) => (
-                            <li key={i} className='flex items-start gap-2 text-sm'>
+                            <li key={i} className='flex items-start gap-2 text-sm pl-0'>
                                 {r.fulfilled
                                     ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
                                     : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />
@@ -134,9 +134,9 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
             {feedback.extraItemResults.length > 0 && (
                 <div className='flex flex-col -mt-3'>
                     <p className='text-sm text-default-600 font-medium'>附加点</p>
-                    <ul className='list-none flex flex-col gap-1.5'>
+                    <ul className='list-none flex flex-col gap-1.5 pl-0'>
                         {feedback.extraItemResults.map((r, i) => (
-                            <li key={i} className='flex items-start gap-2 text-sm'>
+                            <li key={i} className='flex items-start gap-2 text-sm pl-0'>
                                 {r.fulfilled
                                     ? <CheckCircleIcon className='text-success shrink-0 mt-0.5' size={16} />
                                     : <XCircleIcon className='text-default-400 shrink-0 mt-0.5' size={16} />

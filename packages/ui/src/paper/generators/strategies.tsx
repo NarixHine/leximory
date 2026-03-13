@@ -562,7 +562,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     renderRubric: ({ data }) => (<SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>),
     renderPaper: ({ data }) => (
         <section>
-            <Accordion itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2' }}>
+            <Accordion itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0' } }}>
                 <>{safeParseHTML(data.text)}</>
             </Accordion>
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
