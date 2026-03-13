@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 
 export const ENGLISH_MONO = Source_Code_Pro({
   subsets: ['latin'],
-  weight: ['400'],
+  weight: 'variable',
   style: ['normal', 'italic'],
   variable: '--font-english-mono',
 })
 
 const ENGLISH_SERIF = Libre_Baskerville({
   variable: '--font-serif',
-  weight: ['400', '700'],
+  weight: 'variable',
   style: ['normal', 'italic'],
   subsets: ['latin'],
 })

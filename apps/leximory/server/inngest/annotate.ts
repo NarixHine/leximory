@@ -7,7 +7,7 @@ import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/configs'
 import { generateText } from 'ai'
 import { revalidateTag } from 'next/cache'
-import { fixDumbPunctuation } from '@/lib/comment'
+import { fixDumbPunctuation } from '@repo/utils'
 
 const topicsPrompt = (input: string) => ({
     system: `

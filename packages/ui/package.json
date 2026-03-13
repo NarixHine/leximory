@@ -16,6 +16,7 @@
     "./paper/strategies": "./src/paper/generators/strategies.tsx",
     "./paper/atoms": "./src/paper/atoms.ts",
     "./paper/utils": "./src/paper/utils.ts",
+    "./paper/subjective": "./src/paper/subjective/index.tsx",
     "./paper/rsc": "./src/paper/generators/rsc.tsx",
     "./nav-indicator": "./src/nav-indicator/index.tsx",
     "./main": "./src/main/index.tsx",
@@ -91,6 +92,8 @@
     "react-dom": "^19.0.0",
     "sonner": "^2.0.0",
     "tailwindcss": "^4.0.0",
-    "vaul": "^1.0.0"
+    "vaul": "^1.0.0",
+    "ai": "^6.0.0",
+    "@ai-sdk/react": "^3.0.0"
   }
 }

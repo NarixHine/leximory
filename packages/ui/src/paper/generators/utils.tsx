@@ -324,12 +324,16 @@ export const getClozeOriginalWord = (clozeQuestionGroup: ClozeData, no: number):
 
 /**
  * Calculates the perfect score for a given quiz.
+ * Uses `getPerfectScore` override when available (e.g. translation items with varying points).
  * @param quizData - An array of quiz data sections.
  * @returns The total perfect score for the quiz.
  */
 export const computePerfectScore = (quizData: QuizData[]): number => {
     return quizData.reduce((acc, data) => {
         return acc + applyStrategy(data, (strategy, specificData) => {
+            if (strategy.getPerfectScore) {
+                return strategy.getPerfectScore(specificData)
+            }
             const questionCount = strategy.getQuestionCount(specificData)
             return questionCount * (strategy.scorePerQuestion ?? 1)
         })

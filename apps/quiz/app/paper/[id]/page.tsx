@@ -1,5 +1,5 @@
 import { getPaper } from '@repo/supabase/paper'
-import { editoryItemsAtom, paperIdAtom, passcodeAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
+import { editoryItemsAtom, feedbackAtom, paperIdAtom, passcodeAtom, submittedAnswersAtom, viewModeAtom } from '@repo/ui/paper/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import { Metadata } from 'next'
 import { experimental_taintObjectReference as taintObjectReference } from 'react'
@@ -11,8 +11,7 @@ import { Ask, Paper } from '@repo/ui/paper'
 import { Spinner } from '@heroui/spinner'
 import { getPaperSubmissionAction } from '@repo/service/paper'
 import HighlightedPaper from './components/highlighted-paper'
-import { SectionAnswers, QuizItems } from '@repo/schema/paper'
-import { KeyIcon } from '@phosphor-icons/react/ssr'
+import { SectionAnswers, QuizItems, SubmissionFeedback } from '@repo/schema/paper'
 import { applyStrategy, computeTotalScore, computePerfectScore } from '@repo/ui/paper/utils'
 import Leaderboard from './components/leaderboard'
 import Dictation from './components/dictation'
@@ -21,6 +20,7 @@ import { MarkForLater } from '@repo/ui/mark-for-later'
 import { MarkedItemsPanel } from '@repo/ui/mark-for-later/panel'
 import { AddWorkingPaper } from '@/app/components/working-paper'
 import { Kilpi } from '@repo/service/kilpi'
+import { ScoreDisplay } from './components/score-display'
 
 type PaperPageProps = {
     params: Promise<{
@@ -54,7 +54,9 @@ async function getData({ id, passcode }: { id: number, passcode?: string }) {
         return {
             content: paper.content,
             title: paper.title,
-            answers: submission.answers
+            answers: submission.answers,
+            feedback: submission.feedback as SubmissionFeedback | null,
+            score: submission.score,
         }
     }
     else {
@@ -80,7 +82,7 @@ export default function Page({ params, searchParams }: PaperPageProps) {
 
 async function Content({ params, searchParams }: { params: PaperPageProps['params'], searchParams: PaperPageProps['searchParams'] }) {
     const [{ id }, { passcode }] = await Promise.all([params, searchParams])
-    const { content, answers, title } = await getData({ id: parseInt(id), passcode })
+    const { content, answers, title, feedback, score } = await getData({ id: parseInt(id), passcode })
     const questionCount = content.reduce((count, item) => count + applyStrategy(item, (strategy, data) => strategy.getQuestionCount(data)), 0)
 
     return (
@@ -92,7 +94,7 @@ async function Content({ params, searchParams }: { params: PaperPageProps['param
             <h2 className='text-4xl mb-2 font-formal'>{title}</h2>
             <QuizTabs
                 {...(!!answers ? {
-                    Revise: <RevisePaper quizData={content} answers={answers} />
+                    Revise: <RevisePaper quizData={content} answers={answers} feedback={feedback ?? undefined} serverScore={score} />
                 } : {
                     Paper: <>
                         <Paper data={content} />
@@ -109,22 +111,20 @@ async function Content({ params, searchParams }: { params: PaperPageProps['param
     )
 }
 
-function RevisePaper({ quizData, answers }: { quizData: QuizItems, answers: SectionAnswers }) {
+function RevisePaper({ quizData, answers, feedback, serverScore }: { quizData: QuizItems, answers: SectionAnswers, feedback?: SubmissionFeedback, serverScore?: number }) {
+    const objectiveScore = computeTotalScore(quizData, answers)
+    // Use server score (which includes subjective marks) if available
+    const displayScore = serverScore ?? objectiveScore
+
     return <HydrationBoundary hydrateAtoms={[
         [viewModeAtom, 'revise'],
         [submittedAnswersAtom, answers],
-        [editoryItemsAtom, quizData]
+        [editoryItemsAtom, quizData],
+        [feedbackAtom, feedback ?? null],
     ]}>
-        <h1 className='font-bold mt-2 mb-5 text-balance items-baseline flex'>
-            <span className='text-5xl'>{computeTotalScore(quizData, answers)}</span>
-            <span className='ml-1 text-default-400 text-xl flex items-center'>
-                /{computePerfectScore(quizData)} <KeyIcon className='ml-1 size-5' />
-            </span>
-        </h1>
+        <ScoreDisplay score={displayScore} perfectScore={computePerfectScore(quizData)} />
         <MarkedItemsPanel />
-        <HighlightedPaper
-            data={quizData}
-        />
+        <HighlightedPaper data={quizData} />
         <Ask />
         <Define />
     </HydrationBoundary>

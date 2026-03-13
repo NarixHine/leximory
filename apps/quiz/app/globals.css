@@ -7,6 +7,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@keyframes dashMove {
+    from { stroke-dashoffset: 18; }
+    to   { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-animate { animation: none !important; }
+}
+
 @theme inline {
     --font-ui: var(--font-serif), var(--font-chinese), -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
     --font-serif: 'Times New Roman', Times, serif;

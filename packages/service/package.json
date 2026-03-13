@@ -7,7 +7,9 @@
   "exports": {
     "./paper": "./src/paper/index.ts",
     "./ai": "./src/ai/index.ts",
+    "./ai/config": "./src/ai/config.ts",
     "./ai/dictation": "./src/ai/dictation/index.ts",
+    "./ai/prompts/subjective": "./src/ai/prompts/subjective.ts",
     ".": "./src/index.ts",
     "./kilpi": "./src/kilpi/index.ts",
     "./user": "./src/user/index.ts",

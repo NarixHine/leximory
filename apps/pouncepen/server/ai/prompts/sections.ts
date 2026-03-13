@@ -1,4 +1,4 @@
-import { ClozeDataSchema, CustomDataSchema, FishingDataSchema, GrammarDataSchema, ReadingDataSchema, SentenceChoiceDataSchema } from '@repo/schema/paper'
+import { ClozeDataSchema, CustomDataSchema, FishingDataSchema, GrammarDataSchema, ReadingDataSchema, SentenceChoiceDataSchema, SummaryDataSchema, TranslationDataSchema, WritingDataSchema } from '@repo/schema/paper'
 import { omit } from 'es-toolkit'
 import { z } from '@repo/schema'
 import { questionStrategiesList } from '@repo/ui/paper/strategies'
@@ -66,24 +66,26 @@ questions数组中，每个问题对象包含q、a、correct，分别对应题�
                 schema: SentenceChoiceDataSchema.omit({ id: true })
         },
         summary: {
-                name: '摘要（Summary）',
+                name: '摘要（Summary Writing）',
                 description: `
-摘要题：要求考生阅读一篇短文，然后用自己的话概括短文的主要内容，通常在指定字数范围内。
+摘要题：要求考生阅读一篇短文，然后用自己的话概括短文的主要内容（不超过61词）。
+评分标准：内容5分（必须涵盖的核心要点和补充细节），语言5分（简洁性和准确性）。
         `.trim(),
                 format: `
-该大题type为custom。paper字段包含<h2>IV. Summary Writing</h2>和原文，key字段包含参考摘要（无则留空）。
+该大题type为summary。text字段包含原文。essentialItems数组包含核心要点（通常3个，涉及核心结构），extraItems数组包含补充细节（通常2个）。referenceSummary字段包含参考摘要。
+若答案中只有参考摘要而无要点分类，请根据对原文核心结构/补充细节的客观分析填充essentialItems和extraItems。
         `.trim(),
-                schema: CustomDataSchema.omit({ id: true })
+                schema: SummaryDataSchema.omit({ id: true })
         },
         translation: {
                 name: '翻译（Translation）',
                 description: `
-翻译题：要求考生将给定的句子翻译成英语，必须使用括号中的单词。
+翻译题：要求考生将给定的中文句子翻译成英语，必须使用括号中给出的关键词或句型。典型的翻译共4小题，分值分别为3、4、4、5分。
         `.trim(),
                 format: `
-该大题type为custom。paper字段包含<h2>V. Translation</h2>和待翻译句子（每句包含题号、中文和括号内关键词），key字段包含参考译文（无则留空）。使用HTMl的list语法。
+该大题type为translation。items数组中，每个对象包含chinese（中文原句）、keyword（括号中的关键词）、references（参考译文数组）和score（该小题分值）。
         `.trim(),
-                schema: CustomDataSchema.omit({ id: true })
+                schema: TranslationDataSchema.omit({ id: true })
         },
         writing: {
                 name: '写作（Guided Writing）',
@@ -91,15 +93,15 @@ questions数组中，每个问题对象包含q、a、correct，分别对应题�
 写作题：要求考生根据中文指示写一篇英语作文，通常指定字数范围。
         `.trim(),
                 format: `
-该大题type为custom。paper字段包含<h2>VI. Guided Writing</h2>和作文指示，key字段包含参考范文（无则留空）。
+该大题type为writing。guidance字段包含作文指示（中文提示，使用HTML格式）。
         `.trim(),
-                schema: CustomDataSchema.omit({ id: true })
+                schema: WritingDataSchema.omit({ id: true })
         }
 } as const
 
 type SectionType = keyof typeof SECTIONS
 const SECTION_TYPES = Object.keys(SECTIONS) as SectionType[]
-const SECTION_QUIZ_TYPES = ['grammar', 'fishing', 'cloze', 'reading', 'sentences', 'custom'] as const
+const SECTION_QUIZ_TYPES = ['grammar', 'fishing', 'cloze', 'reading', 'sentences', 'custom', 'summary', 'translation', 'writing'] as const
 const SECTION_NAMES = Object.values(SECTIONS).map(section => section.name)
 export const SectionTypeSchema = z.enum(SECTION_TYPES)
 

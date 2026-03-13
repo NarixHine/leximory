@@ -9,7 +9,7 @@ import { Streamdown } from 'streamdown'
 
 export function WordNote({ portions, isPending, showSaveButton, className, cardBodyClassName }: { portions: string[], isPending?: boolean, showSaveButton?: boolean, className?: string, cardBodyClassName?: string }) {
     return (
-        <Card fullWidth radius='sm' shadow='none' className={className}>
+        <Card fullWidth shadow='none' className={cn('rounded-4xl p-2', className)}>
             <CardBody className={cn('px-5 py-3 leading-snug gap-2', cardBodyClassName)}>
                 <div className={'font-bold text-lg'}>{portions[1] ?? portions[0]}</div>
                 <div className='overflow-hidden'>
@@ -56,6 +56,7 @@ function Save({ portions }: { portions: string[] }) {
             onPress={() => {
                 mutate()
             }}
+            className='rounded-4xl'
         >
             {isSuccess ? '已保存' : '保存'}
         </Button>

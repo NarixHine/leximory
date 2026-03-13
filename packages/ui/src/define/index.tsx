@@ -77,7 +77,7 @@ export function Define() {
             direction='top'
             repositionInputs={false}
         >
-            {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
+            {selection && selection.anchorNode?.textContent && selection.toString() && left != null && width != null && rect && (
                 <Drawer.Trigger asChild>
                     <Button
                         style={{

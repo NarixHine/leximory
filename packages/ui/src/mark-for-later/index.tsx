@@ -36,7 +36,7 @@ export function MarkForLater() {
 
     return (
         <>
-            {selection && left && width && rect && (
+            {selection && left != null && width != null && rect && (
                 <Button
                     style={{
                         left: left + width / 2,
