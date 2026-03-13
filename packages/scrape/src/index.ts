@@ -1,6 +1,6 @@
 import 'server-only'
-import Defuddle from 'defuddle'
-import { parseHTML } from 'linkedom'
+import { Defuddle } from 'defuddle/node'
+import { JSDOM } from 'jsdom'
 
 /**
  * Extracts an article from a given URL using Defuddle.
@@ -9,13 +9,10 @@ import { parseHTML } from 'linkedom'
  * @returns An object containing the title and content of the article.
  */
 export async function extractArticleFromUrl(url: string) {
-    const res = await fetch(url)
-    if (!res.ok) {
-        throw new Error(`Failed to fetch ${url}: ${res.status}`)
-    }
-    const html = await res.text()
-    const { document } = parseHTML(html)
-    const result = new Defuddle(document as unknown as Document, { url }).parse()
+    const dom = await JSDOM.fromURL(url)
+    const result = await Defuddle(dom, url, {
+        markdown: true,
+    })
     const { content, title, site } = result
     return { title: title || site || 'Untitled', content }
 }
