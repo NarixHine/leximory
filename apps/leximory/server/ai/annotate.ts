@@ -5,11 +5,13 @@ import { instruction } from '@/lib/prompt'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { miniAI } from './configs'
 
-export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string, autoTrim: boolean = true) => ({
+export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string, autoTrim: boolean = true, isFirstChunk: boolean = true) => ({
     system: `
         生成文本注解（形如 [[vocabulary]] 双重中括号内的词以及形如<must>vocabulary</must>的词必须注解，除此以外***尽可能多***地挑选。
 
         ${instruction[lang]}
+
+        ${!isFirstChunk ? '注意：你正在处理的是文章的后续部分（非开头），禁止使用Small caps语法（&&...&&）。' : ''}
             
         你将会看到一段网页文本，你${onlyComments ? '可以无视示例格式。禁止输出文本，直接制作词摘。你必须直接给出以{{}}包裹的注释部分，不加上下文。只输出{{}}内的内容（含{{}}，禁止省略双重大括号），输出形如“{{一个词汇的原形||原形||注解||……}} {{另一个词汇的原形||原形||注解||……}} ……”。多多注解实用、通用语块，俗语、短语和动词搭配' : (autoTrim ? '首先要删去首尾的标题、作者、日期、导航和插入正文的广告等无关部分，段与段间空两行，并提取出其中的正文。' : '必须完整保留原文的内容和格式！包括必须完整保留所有Markdown语法，禁止删除Markdown语法的标题、引用或其他任何元素。极其小心、严格地按要求使用注释语法，谨防出现误用。')}
     `,
