@@ -116,7 +116,7 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
 
             {feedback.essentialItemResults.length > 0 && (
                 <div className='flex flex-col -mt-3'>
-                    <p className='text-sm text-default-600 font-medium'>基本点</p>
+                    <p className='text-sm text-default-800 font-medium'>基本点</p>
                     <ul className='list-none flex flex-col gap-1.5 pl-0'>
                         {feedback.essentialItemResults.map((r, i) => (
                             <li key={i} className='flex items-start gap-2 text-sm pl-0'>
@@ -133,7 +133,7 @@ function SummaryReviseFeedback({ answer, feedback }: { answer: string, feedback:
 
             {feedback.extraItemResults.length > 0 && (
                 <div className='flex flex-col -mt-3'>
-                    <p className='text-sm text-default-600 font-medium'>附加点</p>
+                    <p className='text-sm text-default-800 font-medium'>附加点</p>
                     <ul className='list-none flex flex-col gap-1.5 pl-0'>
                         {feedback.extraItemResults.map((r, i) => (
                             <li key={i} className='flex items-start gap-2 text-sm pl-0'>

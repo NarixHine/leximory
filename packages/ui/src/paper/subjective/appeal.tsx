@@ -79,7 +79,7 @@ export function AppealButton({ sectionId, sectionType, feedback, context }: {
                                                     }`}
                                             >
                                                 {msg.parts.map((part, i) =>
-                                                    'text' in part ? <Streamdown key={`${msg.id}-${i}`} className='prose-headings:my-3'>{part.text}</Streamdown> : null
+                                                    'text' in part ? <Streamdown key={`${msg.id}-${i}`} className='prose-headings:my-3 prose-p:not-first:mt-2'>{part.text}</Streamdown> : null
                                                 )}
                                             </div>
                                         ))
