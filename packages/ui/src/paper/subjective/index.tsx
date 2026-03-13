@@ -552,7 +552,7 @@ export function SubjectiveSectionFooter({ groupId }: { groupId: string }) {
                 <Button
                     size='sm'
                     variant='flat'
-                    startContent={!isPending && <HourglassIcon size={16} />}
+                    startContent={!isPending && <HourglassIcon size={20} />}
                     isLoading={isPending}
                     onPress={() => { if (paperId) execute({ paperId: parseInt(paperId, 10) }) }}
                 >
