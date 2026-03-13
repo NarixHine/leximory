@@ -1,23 +1,17 @@
 import 'server-only'
-import env from '@repo/env'
-import { Tabstack } from '@tabstack/sdk'
-
-const tabs = new Tabstack({
-    apiKey: env.TABSTACK_API_KEY
-})
+import Defuddle from 'defuddle'
+import { parseHTML } from 'linkedom'
 
 /**
- * Extracts an article from a given URL using the Jina API.
+ * Extracts an article from a given URL using Defuddle.
  * 
  * @param url - The URL of the article to extract.
  * @returns An object containing the title and content of the article.
  */
 export async function extractArticleFromUrl(url: string) {
-    const result = await tabs.extract.markdown({
-        url,
-        metadata: true,
-    })
-    const { content, metadata } = result
-    const { title, site_name } = metadata || {}
-    return { title: title || site_name || 'Untitled', content }
+    const html = await fetch(url).then((res) => res.text())
+    const { document } = parseHTML(html)
+    const result = new Defuddle(document as unknown as Document, { url }).parse()
+    const { content, title, site } = result
+    return { title: title || site || 'Untitled', content }
 }

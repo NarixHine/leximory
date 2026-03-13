@@ -10,12 +10,12 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
-    "typescript": "latest",
-    "@types/node": "latest"
+    "@types/node": "latest",
+    "typescript": "latest"
   },
   "dependencies": {
-    "@repo/env": "workspace:^",
-    "@tabstack/sdk": "2.0.0",
+    "defuddle": "^0.12.0",
+    "linkedom": "^0.18.12",
     "server-only": "0.0.1"
   }
 }
