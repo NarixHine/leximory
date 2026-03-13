@@ -9,7 +9,11 @@ import { parseHTML } from 'linkedom'
  * @returns An object containing the title and content of the article.
  */
 export async function extractArticleFromUrl(url: string) {
-    const html = await fetch(url).then((res) => res.text())
+    const res = await fetch(url)
+    if (!res.ok) {
+        throw new Error(`Failed to fetch ${url}: ${res.status}`)
+    }
+    const html = await res.text()
     const { document } = parseHTML(html)
     const result = new Defuddle(document as unknown as Document, { url }).parse()
     const { content, title, site } = result
