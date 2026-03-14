@@ -39,3 +39,11 @@ span.convening {
   letter-spacing: 0.05em;
   font-weight: 500;
 }
+
+.emoji-cover-bg {
+  background-color: var(--emoji-bg-light);
+}
+
+html.dark .emoji-cover-bg {
+  background-color: var(--emoji-bg-dark);
+}

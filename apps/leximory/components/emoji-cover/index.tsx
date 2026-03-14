@@ -1,7 +1,7 @@
 import { cn } from '@heroui/theme'
-import { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
-import { useDarkMode } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
 
 // --- GLOBAL TICKER ---
 type DitherTask = (timestamp: number) => void
@@ -235,12 +235,17 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
-    const { isDarkMode } = useDarkMode()
+    const { resolvedTheme } = useTheme()
+    const isDarkMode = resolvedTheme === 'dark'
 
     return (
         <div
-            className={cn('relative flex items-center justify-center rounded-4xl overflow-clip', className)}
-            style={{ containerType: 'size', backgroundColor: isDarkMode ? bg.dark : bg.light }}
+            className={cn('relative flex items-center justify-center rounded-4xl overflow-clip emoji-cover-bg', className)}
+            style={{
+                containerType: 'size',
+                '--emoji-bg-light': bg.light,
+                '--emoji-bg-dark': bg.dark,
+            } as React.CSSProperties}
         >
             <BayerDither articleId={articleId} dynamic={true} isDarkMode={isDarkMode} />
             <div className='w-full h-full flex items-center justify-center z-1'>
