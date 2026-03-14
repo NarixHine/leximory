@@ -436,7 +436,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                         fill='none'
                     >
                         <rect
-                            x={1} y={1}
+                            x={1} y={-2}
                             width={rw} height={rh}
                             rx={rx} ry={rx}
                             stroke={ringColor}
