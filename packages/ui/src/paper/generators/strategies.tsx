@@ -7,6 +7,7 @@ import Choice from '../choice'
 import { cn } from '@heroui/theme'
 import { Accordion } from '../../accordion'
 import { nanoid } from 'nanoid'
+import SummaryAccordion from './summary-accordion'
 import { safeParseHTML } from '../../utils/parse'
 import { SubjectiveInput, SubjectiveSectionFooter, SubjectiveSectionTitle } from '../subjective'
 
@@ -217,7 +218,7 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
         return (
             <>
                 <section>{parsedContent}</section>
-                <Accordion className='' itemProps={{ title: '完形填空选项', className: 'print:hidden -ml-2 -mr-2' }}>
+                <Accordion className='' itemProps={{ title: '完形填空选项', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0' } }}>
                     <Options />
                 </Accordion>
                 <div className='hidden print:block'>
@@ -562,9 +563,7 @@ const summaryStrategy: QuestionStrategy<SummaryData> = createQuestionStrategy<Su
     renderRubric: ({ data }) => (<SubjectiveSectionTitle groupId={data.id}>Summary Writing</SubjectiveSectionTitle>),
     renderPaper: ({ data }) => (
         <section>
-            <Accordion itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0' } }}>
-                <>{safeParseHTML(data.text)}</>
-            </Accordion>
+            <SummaryAccordion text={data.text} />
             <SubjectiveInput groupId={data.id} localNo={1} variant='summary' />
             <SubjectiveSectionFooter groupId={data.id} />
         </section>

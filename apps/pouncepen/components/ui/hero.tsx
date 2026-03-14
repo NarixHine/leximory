@@ -1,5 +1,4 @@
 import Main from '@/components/ui/main'
-import { OrangeIcon } from '@phosphor-icons/react/ssr'
 import { cn } from '@heroui/theme'
 import { ReactNode } from 'react'
 import { PouncePenIcon } from './logo'
@@ -9,7 +8,7 @@ export default function Hero({
     title,
     description,
     className,
-    imgSrc = '/img/bg.webp'
+    imgSrc = '/assets/cover.webp'
 }: {
     children: ReactNode
     title: string
@@ -37,7 +36,7 @@ export default function Hero({
                     <h1 className='text-default-50/80 sm:text-9xl text-8xl font-extrabold text-center'>
                         {title}
                     </h1>
-                    {description && <p className='text-white text-shadow-lg rounded px-1 text-2xl font-semibold'>
+                    {description && <p className='text-white rounded px-1 text-2xl font-semibold'>
                         {description}
                     </p>}
                     {children}

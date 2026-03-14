@@ -28,7 +28,9 @@ import { useAtom } from 'jotai'
 export default function Sortable() {
     const [items, setItems] = useAtom(editoryItemsAtom)
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: { distance: 5 },
+        }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
@@ -64,6 +66,8 @@ export default function Sortable() {
                     <div className='border-1 border-default-800/20 rounded-medium pl-4 py-4 gap-2 pr-1 min-w-60 flex flex-col justify-center items-center'>
                         {items?.map((item, index) => <SortableItem key={item.id} id={item.id} index={index} name={NAME_MAP[item.type]} onDelete={() => {
                             setItems((items) => items.filter((_, i) => i !== index))
+                        }} onClick={() => {
+                            document.getElementById(`section-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                         }} />)}
                     </div>
                 </SortableContext>

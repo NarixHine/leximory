@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Divider, Input } from '@heroui/react'
+import { Button, Input, NumberInput } from '@heroui/react'
 import { TranslationData, TranslationItem } from '@repo/schema/paper'
 import { PlusCircleIcon, TrashIcon } from '@phosphor-icons/react'
 import List from '../list'
@@ -52,13 +52,13 @@ export default function TranslationEditor({
                         variant='underlined'
                         className='flex-1'
                     />
-                    <Input
+                    <NumberInput
                         label='分值'
-                        type='number'
-                        value={String(item.score)}
+                        value={item.score}
                         onValueChange={(v) => updateItem(index, { score: Number(v) || 0 })}
                         variant='underlined'
                         className='w-20'
+                        minValue={0.5}
                     />
                 </div>
                 <List
