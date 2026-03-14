@@ -11,12 +11,11 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:^",
     "@types/node": "latest",
-    "@types/jsdom": "28.0.0",
     "typescript": "latest"
   },
   "dependencies": {
-    "defuddle": "^0.12.0",
-    "jsdom": "^28.1.0",
+    "defuddle": "^0.13.0",
+    "linkedom": "^0.18.12",
     "server-only": "0.0.1"
   }
 }

@@ -392,16 +392,20 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
 }) {
     const wordCount = useMemo(() => countWords(currentAnswer), [currentAnswer])
     const wrapperRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [size, setSize] = useState({ w: 0, h: 0 })
 
     useEffect(() => {
-        const el = wrapperRef.current
+        const el = textareaRef.current
         if (!el) return
         const ro = new ResizeObserver((entries) => {
             const entry = entries[0]
             if (!entry) return
-            const { width, height } = entry.contentRect
-            setSize({ w: width, h: height })
+            if (entry.borderBoxSize && entry.borderBoxSize.length > 0) {
+                setSize({ w: entry.borderBoxSize[0].inlineSize, h: entry.borderBoxSize[0].blockSize })
+            } else {
+                setSize({ w: el.offsetWidth, h: el.offsetHeight })
+            }
         })
         ro.observe(el)
         return () => ro.disconnect()
@@ -412,7 +416,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
     const pathLen = 1000
     const dashOffset = pathLen * (1 - progress)
     const rw = size.w - 2
-    const rh = size.h - 5
+    const rh = size.h - 2
     const rx = 11
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -448,6 +452,7 @@ function SummaryInputWithRing({ groupId, localNo, currentAnswer, setAnswer }: {
                     </svg>
                 )}
                 <textarea
+                    ref={textareaRef}
                     value={currentAnswer}
                     onChange={handleChange}
                     rows={5}
