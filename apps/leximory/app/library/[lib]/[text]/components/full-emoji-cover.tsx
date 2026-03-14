@@ -13,5 +13,7 @@ export function TextEmojiCover({ className }: { className?: string }) {
         emoji={resolveEmoji(emoji, !!ebook)}
         articleId={textId}
         className={cn('rounded-none', className)}
+        variant='grid'
+        switchToDitherInDarkMode
     />)
 }

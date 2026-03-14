@@ -53,8 +53,10 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
+                variant='drift'
                 className='mb-3 aspect-4/3 w-full'
                 isLink
+                switchToDitherInDarkMode
             />
             <h2 className='mb-2 font-fancy text-2xl leading-tight tracking-tight text-foreground text-balance'>
                 {title}
@@ -73,10 +75,12 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
     return (
         <Link href={`/library/${lib}/${id}`} className='group cursor-pointer block'>
             <EmojiCover
+                variant='liquid'
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='mb-8 aspect-4/3 w-full'
                 isLink
+                switchToDitherInDarkMode
             />
             <h2 className='mb-3 text-center font-fancy text-4xl leading-none tracking-tight text-foreground text-balance'>
                 {title}
@@ -104,10 +108,12 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
                 <TagPills tags={allTopics} />
             </div>
             <EmojiCover
+                variant='drift'
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
                 className='h-22 w-22 shrink-0'
                 isLink
+                switchToDitherInDarkMode
             />
         </Link>
     )
@@ -126,6 +132,8 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
                 articleId={id}
                 className='h-16 w-16 shrink-0 sm:h-auto sm:w-full sm:aspect-4/3'
                 isLink
+                variant='grid'
+                switchToDitherInDarkMode
             />
             <div className='flex min-w-0 flex-1 flex-col justify-center sm:justify-start sm:px-4'>
                 <h3 className='mb-1.5 font-fancy text-xl leading-tight tracking-tight text-foreground text-balance'>

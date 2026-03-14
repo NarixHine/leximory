@@ -1,11 +1,13 @@
+'use client'
+
 import { cn } from '@heroui/theme'
-import { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useDarkMode } from 'usehooks-ts'
 
 // --- GLOBAL TICKER ---
-type DitherTask = (timestamp: number) => void
-const subscribers = new Set<DitherTask>()
+type Task = (timestamp: number) => void
+const subscribers = new Set<Task>()
 let globalFrameId: number | null = null
 
 function startGlobalTicker() {
@@ -24,6 +26,33 @@ function stopGlobalTicker() {
     }
 }
 
+function subscribe(task: Task) {
+    subscribers.add(task)
+    startGlobalTicker()
+    return () => {
+        subscribers.delete(task)
+        if (subscribers.size === 0) stopGlobalTicker()
+    }
+}
+
+// --- OKLCH → sRGB (for shader uniforms) ---
+
+function oklchToSrgb(L: number, C: number, H: number): [number, number, number] {
+    const hRad = (H * Math.PI) / 180
+    const a = C * Math.cos(hRad)
+    const b = C * Math.sin(hRad)
+    const lp = L + 0.3963377774 * a + 0.2158037573 * b
+    const mp = L - 0.1055613458 * a - 0.0638541728 * b
+    const sp = L - 0.0894841775 * a - 1.2914855480 * b
+    const l = lp ** 3, m = mp ** 3, s = sp ** 3
+    const gamma = (x: number) => x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055
+    return [
+        Math.min(1, Math.max(0, gamma(+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s))),
+        Math.min(1, Math.max(0, gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s))),
+        Math.min(1, Math.max(0, gamma(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)))
+    ]
+}
+
 // --- CORE UTILS ---
 
 function hashString(str: string): number {
@@ -34,17 +63,24 @@ function hashString(str: string): number {
     return Math.abs(hash)
 }
 
-export function emojiBackground(id: string): { light: string, dark: string } {
+export type ShaderVariant = 'liquid' | 'grid' | 'drift' | 'dither'
+
+export function emojiBackground(id: string) {
     const h = hashString(id)
     const hue = 130 + (h % 36)
-    const chroma = 0.008 + (((h >> 8) % 10) / 10) * 0.012
-    const lightness = 0.94 + (((h >> 16) % 10) / 10) * 0.04
+    const chroma = 0.003 + (((h >> 8) % 10) / 10) * 0.005
+    const lightness = 0.975 + (((h >> 16) % 10) / 10) * 0.02
     const darkLightness = 0.18 + (((h >> 16) % 10) / 10) * 0.06
     return {
+        hue,
         light: `oklch(${lightness.toFixed(3)} ${chroma.toFixed(3)} ${hue})`,
-        dark: `oklch(${darkLightness.toFixed(3)} 0 0)`
+        dark: `oklch(${darkLightness.toFixed(3)} 0 0)`,
+        lightRgb: oklchToSrgb(lightness, chroma, hue),
+        darkRgb: oklchToSrgb(darkLightness, 0, 0),
     }
 }
+
+// --- BAYER DITHER ---
 
 const BAYER_FLAT = new Float32Array([
     0 / 16, 8 / 16, 2 / 16, 10 / 16,
@@ -54,75 +90,52 @@ const BAYER_FLAT = new Float32Array([
 ])
 
 function createColorLUT(hue: number, isDarkMode: boolean) {
-    if (typeof document === 'undefined') {
-        return new Uint8ClampedArray(256 * 4)
-    }
-    const lut = new Uint8ClampedArray(256 * 4)
+    if (typeof document === 'undefined') return new Uint8ClampedArray(256 * 4)
     const canvas = document.createElement('canvas')
     canvas.width = 256; canvas.height = 1
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return lut
+    if (!ctx) return new Uint8ClampedArray(256 * 4)
     for (let i = 0; i < 256; i++) {
-        const intensity = i / 255
+        const t = i / 255
         let l, chr, h_val, alpha
         if (isDarkMode) {
-            l = 0.28 + intensity * 0.15; chr = 0; h_val = 0
-            alpha = 0.08 + intensity * 0.25
+            l = 0.28 + t * 0.15; chr = 0; h_val = 0; alpha = 0.08 + t * 0.25
         } else {
-            l = 0.75 + intensity * 0.13; chr = 0.015 + intensity * 0.04
-            h_val = hue
-            alpha = 0.12 + intensity * 0.5
+            l = 0.75 + t * 0.13; chr = 0.015 + t * 0.04; h_val = hue; alpha = 0.12 + t * 0.5
         }
-        ctx.clearRect(0, 0, 256, 1)
         ctx.fillStyle = `oklch(${l.toFixed(3)} ${chr.toFixed(3)} ${h_val} / ${alpha.toFixed(3)})`
         ctx.fillRect(i, 0, 1, 1)
-        const pixel = ctx.getImageData(i, 0, 1, 1).data
-        const idx = i * 4
-        lut[idx] = pixel[0]; lut[idx + 1] = pixel[1]; lut[idx + 2] = pixel[2]; lut[idx + 3] = pixel[3]
     }
-    return lut
+    return ctx.getImageData(0, 0, 256, 1).data
 }
 
 function seededRandom(seed: number) {
     let s = seed
-    return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646 }
+    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646 }
 }
 
 interface GradientSource { cx: number; cy: number; radius: number; strength: number; phaseX: number; phaseY: number; speed: number }
 
 function deriveGradientSources(id: string): GradientSource[] {
-    const h = hashString(id); const rng = seededRandom(h)
+    const rng = seededRandom(hashString(id))
     const count = 3 + Math.floor(rng() * 3)
-    const sources: GradientSource[] = []
+    const out: GradientSource[] = []
     for (let i = 0; i < count; i++) {
-        sources.push({
-            cx: rng() * 0.8 + 0.1, cy: rng() * 0.8 + 0.1, radius: 0.4 + rng() * 0.5,
-            strength: 0.4 + rng() * 0.5, phaseX: rng() * Math.PI * 2, phaseY: rng() * Math.PI * 2,
+        out.push({
+            cx: rng() * 0.8 + 0.1, cy: rng() * 0.8 + 0.1,
+            radius: 0.4 + rng() * 0.5, strength: 0.4 + rng() * 0.5,
+            phaseX: rng() * Math.PI * 2, phaseY: rng() * Math.PI * 2,
             speed: 0.12 + rng() * 0.25,
         })
     }
-    return sources
+    return out
 }
 
-function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dynamic: boolean; isDarkMode: boolean }) {
+function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDarkMode: boolean; hue: number }) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const sources = useMemo(() => deriveGradientSources(articleId), [articleId])
-    const hue = useMemo(() => 125 + (hashString(articleId) % 45), [articleId])
     const colorLUT = useMemo(() => createColorLUT(hue, isDarkMode), [hue, isDarkMode])
-
-    const stateRef = useRef<{
-        startTime: number
-        w: number
-        h: number
-        cachedImgData: ImageData | null
-        isVisible: boolean
-    }>({
-        startTime: 0,
-        w: 0,
-        h: 0,
-        cachedImgData: null,
-        isVisible: false
-    })
+    const stateRef = useRef({ startTime: 0, w: 0, h: 0, imgData: null as ImageData | null, visible: false })
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -130,98 +143,60 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
         const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true })
         if (!ctx) return
 
+        const PIXEL = 4
+
         const renderFrame = (timestamp: number) => {
-            const state = stateRef.current
-            if (!state.isVisible || !canvas || !ctx) return
-            if (state.startTime === 0) state.startTime = timestamp
-
-            const pixelSize = 4
-            const cols = Math.floor(state.w / pixelSize)
-            const rows = Math.floor(state.h / pixelSize)
-
+            const st = stateRef.current
+            if (!st.visible) return
+            if (st.startTime === 0) st.startTime = timestamp
+            const cols = Math.floor(st.w / PIXEL)
+            const rows = Math.floor(st.h / PIXEL)
             if (cols <= 0 || rows <= 0) return
-
             if (canvas.width !== cols || canvas.height !== rows) {
-                canvas.width = cols
-                canvas.height = rows
-                state.cachedImgData = null
+                canvas.width = cols; canvas.height = rows
+                st.imgData = null
             }
-
-            if (!state.cachedImgData) {
-                state.cachedImgData = ctx.createImageData(cols, rows)
-            }
-
-            const imgData = state.cachedImgData
-            const pixels = imgData.data
+            if (!st.imgData) st.imgData = ctx.createImageData(cols, rows)
+            const pixels = st.imgData.data
             pixels.fill(0)
-
-            const elapsed = (timestamp - state.startTime) / 1000
-
+            const elapsed = (timestamp - st.startTime) / 1000
             for (let r = 0; r < rows; r++) {
                 const ny = r / rows
-                const bayerRowStart = (r % 4) << 2
+                const bayerRow = (r % 4) << 2
                 for (let c = 0; c < cols; c++) {
                     const nx = c / cols
                     let val = 0
                     for (let i = 0; i < sources.length; i++) {
                         const s = sources[i]
-                        const sx = s.cx + (dynamic ? Math.sin(elapsed * s.speed + s.phaseX) * 0.14 : 0)
-                        const sy = s.cy + (dynamic ? Math.cos(elapsed * s.speed * 0.8 + s.phaseY) * 0.12 : 0)
-                        const dx = nx - sx; const dy = ny - sy
-                        const dist = Math.sqrt(dx * dx + dy * dy)
-                        val += s.strength * Math.max(0, 1 - dist / s.radius)
+                        const sx = s.cx + Math.sin(elapsed * s.speed + s.phaseX) * 0.14
+                        const sy = s.cy + Math.cos(elapsed * s.speed * 0.8 + s.phaseY) * 0.12
+                        const dx = nx - sx, dy = ny - sy
+                        val += s.strength * Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / s.radius)
                     }
                     if (val > 1) val = 1
-
-                    const threshold = BAYER_FLAT[bayerRowStart + (c % 4)] * 0.85
-                    const shouldDraw = isDarkMode ? (val > threshold) : (val < threshold)
-
-                    if (shouldDraw) {
-                        const intensity = isDarkMode ? val : (1 - val)
-                        const lIdx = (intensity * 255 | 0) << 2
+                    const threshold = BAYER_FLAT[bayerRow + (c % 4)] * 0.85
+                    if (isDarkMode ? val > threshold : val < threshold) {
+                        const lIdx = (isDarkMode ? val : 1 - val) * 255 | 0
                         const pIdx = (r * cols + c) << 2
-                        pixels[pIdx] = colorLUT[lIdx]
-                        pixels[pIdx + 1] = colorLUT[lIdx + 1]
-                        pixels[pIdx + 2] = colorLUT[lIdx + 2]
-                        pixels[pIdx + 3] = colorLUT[lIdx + 3]
+                        const base = lIdx << 2
+                        pixels[pIdx] = colorLUT[base]; pixels[pIdx + 1] = colorLUT[base + 1]
+                        pixels[pIdx + 2] = colorLUT[base + 2]; pixels[pIdx + 3] = colorLUT[base + 3]
                     }
                 }
             }
-            ctx.putImageData(imgData, 0, 0)
+            ctx.putImageData(st.imgData, 0, 0)
         }
 
-        const resizeObserver = new ResizeObserver((entries) => {
-            const entry = entries[0]
-            if (entry) {
-                stateRef.current.w = entry.contentRect.width
-                stateRef.current.h = entry.contentRect.height
-                if (!dynamic) requestAnimationFrame(() => renderFrame(0))
-            }
+        const ro = new ResizeObserver(([e]) => {
+            stateRef.current.w = e.contentRect.width
+            stateRef.current.h = e.contentRect.height
         })
-
-        const intersectionObserver = new IntersectionObserver((entries) => {
-            const isVisible = entries[0].isIntersecting
-            stateRef.current.isVisible = isVisible
-
-            if (isVisible && dynamic) {
-                subscribers.add(renderFrame)
-                startGlobalTicker()
-            } else {
-                subscribers.delete(renderFrame)
-                if (subscribers.size === 0) stopGlobalTicker()
-            }
-        }, { threshold: 0.01 })
-
-        resizeObserver.observe(canvas)
-        intersectionObserver.observe(canvas)
-
-        return () => {
-            resizeObserver.disconnect()
-            intersectionObserver.disconnect()
-            subscribers.delete(renderFrame)
-            if (subscribers.size === 0) stopGlobalTicker()
-        }
-    }, [dynamic, sources, colorLUT, isDarkMode])
+        const io = new IntersectionObserver(([e]) => { stateRef.current.visible = e.isIntersecting }, { threshold: 0.01 })
+        ro.observe(canvas)
+        io.observe(canvas)
+        const unsub = subscribe(renderFrame)
+        return () => { unsub(); ro.disconnect(); io.disconnect() }
+    }, [sources, colorLUT, isDarkMode])
 
     return (
         <canvas
@@ -233,16 +208,142 @@ function BayerDither({ articleId, dynamic, isDarkMode }: { articleId: string; dy
     )
 }
 
-export function EmojiCover({ emoji, articleId, className = '', isLink = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean }) {
+// --- WEBGL SHADERS ---
+
+const VERT = `attribute vec2 a;varying vec2 v;
+void main(){v=a*.5+.5;gl_Position=vec4(a,0,1);}`
+
+const FRAG_LIQUID = `precision mediump float;
+uniform float uTime;uniform vec3 uColor;varying vec2 v;
+void main(){
+  vec2 p=v*2.-1.;float t=uTime*.3;
+  for(float i=1.;i<3.;i++){p.x+=.4/i*sin(i*2.*p.y+t);p.y+=.4/i*sin(i*2.*p.x+t);}
+  gl_FragColor=vec4(mix(uColor,uColor*.96,smoothstep(.2,.9,length(p))),1);
+}`
+
+const FRAG_GRID = `precision mediump float;
+uniform vec3 uColor;varying vec2 v;
+void main(){
+  vec2 g=step(.97,fract(v*50.));
+  gl_FragColor=vec4(mix(uColor,uColor*.94,max(g.x,g.y)),1);
+}`
+
+const FRAG_DRIFT = `precision mediump float;
+uniform float uTime;uniform vec3 uColor;varying vec2 v;
+void main(){
+  float m=sin(v.x*3.+uTime*.5)*cos(v.y*2.+uTime*.4);
+  gl_FragColor=vec4(mix(uColor,uColor*.97,smoothstep(.3,.7,.5+.5*m)),1);
+}`
+
+const FRAG_MAP: Record<Exclude<ShaderVariant, 'dither'>, string> = { liquid: FRAG_LIQUID, grid: FRAG_GRID, drift: FRAG_DRIFT }
+
+function initWebGL(canvas: HTMLCanvasElement, variant: ShaderVariant, rgb: [number, number, number]) {
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false })
+    if (!gl) return null
+    const compile = (type: number, src: string) => {
+        const s = gl.createShader(type)!
+        gl.shaderSource(s, src)
+        gl.compileShader(s)
+        return s
+    }
+    const prog = gl.createProgram()!
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT))
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant]))
+    gl.linkProgram(prog)
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null
+    const buf = gl.createBuffer()!
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+    const pos = gl.getAttribLocation(prog, 'a')
+    gl.enableVertexAttribArray(pos)
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
+    gl.useProgram(prog)
+    gl.uniform3f(gl.getUniformLocation(prog, 'uColor'), rgb[0], rgb[1], rgb[2])
+    const uTime = gl.getUniformLocation(prog, 'uTime')
+    const offset = Math.random() * 100
+    let disposed = false
+    return {
+        render(time: number) {
+            if (disposed || gl.isContextLost()) return
+            try {
+                if (uTime) gl.uniform1f(uTime, time / 1000 + offset)
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+            } catch { /* context lost mid-frame */ }
+        },
+        resize(w: number, h: number) {
+            if (disposed || gl.isContextLost()) return
+            canvas.width = w; canvas.height = h
+            gl.viewport(0, 0, w, h)
+        },
+        dispose() {
+            if (disposed) return
+            disposed = true
+            if (!gl.isContextLost()) {
+                gl.deleteBuffer(buf)
+                gl.deleteProgram(prog)
+            }
+        }
+    }
+}
+
+function useShaderCanvas(
+    canvasRef: React.RefObject<HTMLCanvasElement | null>,
+    variant: Exclude<ShaderVariant, 'dither'> | undefined,
+    rgb: [number, number, number]
+) {
+    useEffect(() => {
+        if (!variant) return
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = initWebGL(canvas, variant, rgb)
+        if (!ctx) return
+
+        const parent = canvas.parentElement!
+        const dpr = Math.min(window.devicePixelRatio, 1.5)
+        const isAnimated = variant !== 'grid'
+
+        const fit = () => {
+            const { width, height } = parent.getBoundingClientRect()
+            const w = Math.round(width * dpr), h = Math.round(height * dpr)
+            if (canvas.width !== w || canvas.height !== h) {
+                ctx.resize(w, h)
+                if (!isAnimated) ctx.render(0)
+            }
+        }
+        const ro = new ResizeObserver(fit)
+        ro.observe(parent)
+        fit()
+
+        if (!isAnimated) {
+            ctx.render(0)
+            return () => { ro.disconnect(); ctx.dispose() }
+        }
+
+        let visible = true
+        const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
+        io.observe(canvas)
+        const unsub = subscribe((ts) => { if (visible) ctx.render(ts) })
+
+        return () => { unsub(); io.disconnect(); ro.disconnect(); ctx.dispose() }
+    }, [variant, rgb[0], rgb[1], rgb[2]])
+}
+
+export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
     const { isDarkMode } = useDarkMode()
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const rgb = isDarkMode ? bg.darkRgb : bg.lightRgb
+    const activeVariant = switchToDitherInDarkMode && isDarkMode ? 'dither' : variant
+    const glVariant = activeVariant === 'dither' ? undefined : activeVariant
+    useShaderCanvas(canvasRef, glVariant, rgb)
 
     return (
         <div
             className={cn('relative flex items-center justify-center rounded-4xl overflow-clip', className)}
             style={{ containerType: 'size', backgroundColor: isDarkMode ? bg.dark : bg.light }}
         >
-            <BayerDither articleId={articleId} dynamic={true} isDarkMode={isDarkMode} />
+            {glVariant && <canvas ref={canvasRef} className='absolute inset-0 w-full h-full pointer-events-none' />}
+            {activeVariant === 'dither' && <BayerDither articleId={articleId} isDarkMode={isDarkMode} hue={bg.hue} />}
             <div className='w-full h-full flex items-center justify-center z-1'>
                 <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
                     {isLink ? (
