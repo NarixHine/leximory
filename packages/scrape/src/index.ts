@@ -13,6 +13,9 @@ export async function extractArticleFromUrl(url: string) {
     const { document } = parseHTML(html)
     const result = await Defuddle(document, url, {
         markdown: true,
+        removeContentPatterns: true,
+        removeImages: true,
+        removePartialSelectors: true,
         removeSmallImages: true,
         removeHiddenElements: true,
         removeLowScoring: true
