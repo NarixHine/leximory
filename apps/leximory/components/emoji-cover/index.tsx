@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@heroui/theme'
-import React, { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect, useState } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useDarkMode } from 'usehooks-ts'
 
@@ -194,20 +194,43 @@ const FRAG_MAP = {
 }
 
 function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, variant: Exclude<ShaderVariant, 'dither'> | undefined, rgb: [number, number, number], articleId: string) {
+    const [restartKey, setRestartKey] = useState(0)
+
     useEffect(() => {
         if (!variant || !canvasRef.current) return
         const canvas = canvasRef.current
         const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false })
         if (!gl) return
 
+        // Register context-loss handlers before the isContextLost() guard so that
+        // even an already-lost context (e.g. Safari evicted it) can be restored:
+        // preventDefault() signals intent to restore; contextrestored bumps restartKey
+        // which re-triggers this effect to fully reinitialize on the fresh context.
+        const handleContextLost = (e: Event) => { e.preventDefault() }
+        const handleContextRestored = () => { setRestartKey(k => k + 1) }
+        canvas.addEventListener('webglcontextlost', handleContextLost)
+        canvas.addEventListener('webglcontextrestored', handleContextRestored)
+
+        if (gl.isContextLost()) {
+            return () => {
+                canvas.removeEventListener('webglcontextlost', handleContextLost)
+                canvas.removeEventListener('webglcontextrestored', handleContextRestored)
+            }
+        }
+
         const compile = (t: number, s: string) => {
-            const shader = gl.createShader(t)!
+            const shader = gl.createShader(t)
+            if (!shader) return null
             gl.shaderSource(shader, s); gl.compileShader(shader)
             return shader
         }
-        const prog = gl.createProgram()!
-        gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT))
-        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant]))
+        const vs = compile(gl.VERTEX_SHADER, VERT)
+        const fs = compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant])
+        if (!vs || !fs) return
+        const prog = gl.createProgram()
+        if (!prog) return
+        gl.attachShader(prog, vs)
+        gl.attachShader(prog, fs)
         gl.linkProgram(prog); gl.useProgram(prog)
 
         const buf = gl.createBuffer()
@@ -241,7 +264,7 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
             gl.viewport(0, 0, w, h)
             if (variant === 'grid') render(0)
         })
-        ro.observe(canvas.parentElement!)
+        if (canvas.parentElement) ro.observe(canvas.parentElement)
 
         const unsub = variant !== 'grid' ? subscribe(render) : () => { }
         const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
@@ -249,14 +272,19 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
 
         return () => {
             unsub(); ro.disconnect(); io.disconnect()
-            gl.deleteBuffer(buf); gl.deleteProgram(prog)
+            canvas.removeEventListener('webglcontextlost', handleContextLost)
+            canvas.removeEventListener('webglcontextrestored', handleContextRestored)
+            gl.deleteBuffer(buf)
+            gl.detachShader(prog, vs); gl.detachShader(prog, fs)
+            gl.deleteShader(vs); gl.deleteShader(fs)
+            gl.deleteProgram(prog)
         }
-    }, [variant, articleId, rgb[0], rgb[1], rgb[2]])
+    }, [variant, articleId, rgb[0], rgb[1], rgb[2], restartKey])
 }
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
-    const { isDarkMode } = useDarkMode()
+    const { isDarkMode } = useDarkMode({ initializeWithValue: false })
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const activeVariant = (switchToDitherInDarkMode && isDarkMode) ? 'dither' : variant
     const rgb = isDarkMode ? bg.darkRgb : bg.lightRgb
