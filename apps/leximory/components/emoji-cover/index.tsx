@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@heroui/theme'
-import React, { useRef, useMemo, useEffect } from 'react'
+import React, { useRef, useMemo, useEffect, useState } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useDarkMode } from 'usehooks-ts'
 
@@ -194,6 +194,8 @@ const FRAG_MAP = {
 }
 
 function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, variant: Exclude<ShaderVariant, 'dither'> | undefined, rgb: [number, number, number], articleId: string) {
+    const [restartKey, setRestartKey] = useState(0)
+
     useEffect(() => {
         if (!variant || !canvasRef.current) return
         const canvas = canvasRef.current
@@ -252,15 +254,25 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
         const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
         io.observe(canvas)
 
+        // Allow the browser to restore an evicted context (e.g. Safari's context limit).
+        // Calling loseContext() explicitly is intentionally avoided here: it permanently
+        // destroys the context so that the next getContext() call on the same canvas
+        // returns the already-lost context and the animation never restarts.
+        const handleContextLost = (e: Event) => { e.preventDefault() }
+        const handleContextRestored = () => { setRestartKey(k => k + 1) }
+        canvas.addEventListener('webglcontextlost', handleContextLost)
+        canvas.addEventListener('webglcontextrestored', handleContextRestored)
+
         return () => {
             unsub(); ro.disconnect(); io.disconnect()
+            canvas.removeEventListener('webglcontextlost', handleContextLost)
+            canvas.removeEventListener('webglcontextrestored', handleContextRestored)
             gl.deleteBuffer(buf)
             gl.detachShader(prog, vs); gl.detachShader(prog, fs)
             gl.deleteShader(vs); gl.deleteShader(fs)
             gl.deleteProgram(prog)
-            gl.getExtension('WEBGL_lose_context')?.loseContext()
         }
-    }, [variant, articleId, rgb[0], rgb[1], rgb[2]])
+    }, [variant, articleId, rgb[0], rgb[1], rgb[2], restartKey])
 }
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
