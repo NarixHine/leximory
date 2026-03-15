@@ -198,16 +198,21 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
         if (!variant || !canvasRef.current) return
         const canvas = canvasRef.current
         const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false })
-        if (!gl) return
+        if (!gl || gl.isContextLost()) return
 
         const compile = (t: number, s: string) => {
-            const shader = gl.createShader(t)!
+            const shader = gl.createShader(t)
+            if (!shader) return null
             gl.shaderSource(shader, s); gl.compileShader(shader)
             return shader
         }
-        const prog = gl.createProgram()!
-        gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT))
-        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant]))
+        const vs = compile(gl.VERTEX_SHADER, VERT)
+        const fs = compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant])
+        if (!vs || !fs) return
+        const prog = gl.createProgram()
+        if (!prog) return
+        gl.attachShader(prog, vs)
+        gl.attachShader(prog, fs)
         gl.linkProgram(prog); gl.useProgram(prog)
 
         const buf = gl.createBuffer()
@@ -241,7 +246,7 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
             gl.viewport(0, 0, w, h)
             if (variant === 'grid') render(0)
         })
-        ro.observe(canvas.parentElement!)
+        if (canvas.parentElement) ro.observe(canvas.parentElement)
 
         const unsub = variant !== 'grid' ? subscribe(render) : () => { }
         const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
@@ -249,14 +254,18 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
 
         return () => {
             unsub(); ro.disconnect(); io.disconnect()
-            gl.deleteBuffer(buf); gl.deleteProgram(prog)
+            gl.deleteBuffer(buf)
+            gl.detachShader(prog, vs); gl.detachShader(prog, fs)
+            gl.deleteShader(vs); gl.deleteShader(fs)
+            gl.deleteProgram(prog)
+            gl.getExtension('WEBGL_lose_context')?.loseContext()
         }
     }, [variant, articleId, rgb[0], rgb[1], rgb[2]])
 }
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
-    const { isDarkMode } = useDarkMode()
+    const { isDarkMode } = useDarkMode({ initializeWithValue: false })
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const activeVariant = (switchToDitherInDarkMode && isDarkMode) ? 'dither' : variant
     const rgb = isDarkMode ? bg.darkRgb : bg.lightRgb
