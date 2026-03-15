@@ -200,7 +200,23 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
         if (!variant || !canvasRef.current) return
         const canvas = canvasRef.current
         const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false })
-        if (!gl || gl.isContextLost()) return
+        if (!gl) return
+
+        // Register context-loss handlers before the isContextLost() guard so that
+        // even an already-lost context (e.g. Safari evicted it) can be restored:
+        // preventDefault() signals intent to restore; contextrestored bumps restartKey
+        // which re-triggers this effect to fully reinitialize on the fresh context.
+        const handleContextLost = (e: Event) => { e.preventDefault() }
+        const handleContextRestored = () => { setRestartKey(k => k + 1) }
+        canvas.addEventListener('webglcontextlost', handleContextLost)
+        canvas.addEventListener('webglcontextrestored', handleContextRestored)
+
+        if (gl.isContextLost()) {
+            return () => {
+                canvas.removeEventListener('webglcontextlost', handleContextLost)
+                canvas.removeEventListener('webglcontextrestored', handleContextRestored)
+            }
+        }
 
         const compile = (t: number, s: string) => {
             const shader = gl.createShader(t)
@@ -253,15 +269,6 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
         const unsub = variant !== 'grid' ? subscribe(render) : () => { }
         const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting })
         io.observe(canvas)
-
-        // Allow the browser to restore an evicted context (e.g. Safari's context limit).
-        // Calling loseContext() explicitly is intentionally avoided here: it permanently
-        // destroys the context so that the next getContext() call on the same canvas
-        // returns the already-lost context and the animation never restarts.
-        const handleContextLost = (e: Event) => { e.preventDefault() }
-        const handleContextRestored = () => { setRestartKey(k => k + 1) }
-        canvas.addEventListener('webglcontextlost', handleContextLost)
-        canvas.addEventListener('webglcontextrestored', handleContextRestored)
 
         return () => {
             unsub(); ro.disconnect(); io.disconnect()
