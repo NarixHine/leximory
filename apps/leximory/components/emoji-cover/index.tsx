@@ -199,8 +199,8 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
     useEffect(() => {
         if (!variant || !canvasRef.current) return
         const canvas = canvasRef.current
-        const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false })
-        if (!gl) return
+        const gl = canvas.getContext('webgl', { antialias: false, alpha: true, preserveDrawingBuffer: false })
+        if (!gl || gl.isContextLost()) return
 
         // Register context-loss handlers before the isContextLost() guard so that
         // even an already-lost context (e.g. Safari evicted it) can be restored:
@@ -260,9 +260,10 @@ function useShaderCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>, v
 
         const ro = new ResizeObserver(([entry]) => {
             const w = Math.round(entry.contentRect.width * dpr), h = Math.round(entry.contentRect.height * dpr)
+            if (canvas.width === w && canvas.height === h) return
             canvas.width = w; canvas.height = h
             gl.viewport(0, 0, w, h)
-            if (variant === 'grid') render(0)
+            render(performance.now())
         })
         if (canvas.parentElement) ro.observe(canvas.parentElement)
 
