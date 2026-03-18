@@ -13,14 +13,8 @@ import { AppealButton } from './appeal'
 import { SaveQuestionNoteButton } from '../blank/save-question-note'
 import { Streamdown } from 'streamdown'
 import { fixDumbPunctuation } from '@repo/utils'
+import { countWords } from '@repo/utils/subjective'
 import { toast } from 'sonner'
-
-/** Counts words in a string (whitespace-separated tokens). */
-function countWords(text: string): number {
-    const trimmed = text.trim()
-    if (!trimmed) return 0
-    return trimmed.split(/\s+/).length
-}
 
 /**
  * A text area input for subjective question types (summary, translation, writing).
