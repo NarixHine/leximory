@@ -48,11 +48,21 @@ export function findCopiedChunks(source: string, answer: string, minLength = 4):
 
 /**
  * Counts the number of words in a text string.
+ * CJK characters (Chinese, Japanese, Korean) are each counted as one word,
+ * while other languages use whitespace-separated tokens.
  * @param text - The text to count words in.
  * @returns The word count.
  */
 export function countWords(text: string): number {
     const stripped = text.replace(/<[^>]*>/g, '').trim()
     if (!stripped) return 0
-    return stripped.split(/\s+/).length
+    // Count CJK characters individually (each character = one word)
+    const cjkCount = (stripped.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? []).length
+    // Count remaining non-CJK words by whitespace splitting
+    const nonCjkWords = stripped
+        .replace(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+    return cjkCount + nonCjkWords.length
 }
