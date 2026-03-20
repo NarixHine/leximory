@@ -31,7 +31,7 @@ export const chineseStrategy = createLanguageStrategy({
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? []).length
-        return <span className='text-lg tracking-wide'>{charCount} 字，阅读约 {Math.ceil(charCount / ZH_CHARS_PER_MINUTE)} 分钟</span>
+        return <span className='text-lg tracking-wide'>{charCount}字，阅读约{Math.ceil(charCount / ZH_CHARS_PER_MINUTE)}分钟</span>
     },
     exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词**简短例句**（例句必须含有被注释的词，且例句中被注释词的义项必须与原文语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
     proseClassName: 'prose-lg font-formal dropcap-zh',

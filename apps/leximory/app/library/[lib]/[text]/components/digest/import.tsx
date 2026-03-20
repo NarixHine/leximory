@@ -11,7 +11,7 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
-import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
+import { PiAirplaneInFlight, PiFileMagnifyingGlass, PiFileMagnifyingGlassFill, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
 import PhotoImportTab from './photo-import'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom, inlineModeAtom } from '../../atoms'
@@ -55,12 +55,13 @@ export default function ImportModal() {
             return (
                 <Switch
                     size='lg'
-                    startContent={<PiKanbanFill />}
-                    endContent={<PiKanban />}
+                    startContent={lang === 'zh' ? <PiFileMagnifyingGlassFill /> : <PiKanbanFill />}
+                    endContent={lang === 'zh' ? <PiFileMagnifyingGlass /> : <PiKanban />}
                     isDisabled={isLoading}
                     isSelected={inlineMode}
                     onValueChange={setInlineMode}
-                    color='secondary' />
+                    color='secondary'
+                />
             )
         }
         return (
