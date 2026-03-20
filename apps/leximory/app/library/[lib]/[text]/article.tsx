@@ -2,7 +2,7 @@ import { getArticleData } from './data'
 import { isReaderModeAtom } from '@/app/atoms'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
-import { contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom, promptAtom, emojiAtom } from './atoms'
+import { contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isEditingAtom, promptAtom, emojiAtom, hideTextAtom, inlineModeAtom } from './atoms'
 import Digest from './components/digest'
 import QuoteInAgent from './components/quote-in-agent'
 import { ArticleHero } from './components/article-hero'
@@ -12,7 +12,7 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
     text: string,
     hideControls?: boolean
 }) => {
-    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom, emojiAtom]}>
+    return (<ScopeProvider atoms={[contentAtom, topicsAtom, ebookAtom, textAtom, titleAtom, inputAtom, isLoadingAtom, isReaderModeAtom, isEditingAtom, promptAtom, emojiAtom, hideTextAtom, inlineModeAtom]}>
         <HydrationBoundary hydrateAtoms={[
             [contentAtom, content.replaceAll('>', '>')],
             [topicsAtom, topics ?? []],

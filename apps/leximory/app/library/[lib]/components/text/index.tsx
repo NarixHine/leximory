@@ -18,7 +18,7 @@ import { DateTime } from 'luxon'
 import { useRouter } from 'next/navigation'
 import { EmojiCover } from '@/components/emoji-cover'
 
-export function TagPills({ tags, parentClassName, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
+export function TagPills({ tags, parentClassName, classNames, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
     if (!tags.length) return null
     return (
         <div className={cn('flex flex-wrap gap-1.5', parentClassName)}>
@@ -28,9 +28,9 @@ export function TagPills({ tags, parentClassName, ...props }: { tags: string[], 
                     color='secondary'
                     size='sm'
                     classNames={{
-                        ...props.classNames,
-                        base: cn('text-secondary-500 tracking-wide border-divider border-1 text-[10px]', props.classNames?.base),
-                        content: cn('px-0.75', props.classNames?.content)
+                        ...classNames,
+                        base: cn('border-divider border-1 text-[10px] font-mono', classNames?.base),
+                        content: cn('px-0.75 tracking-wide', classNames?.content)
                     }}
                     key={tag}
                     {...props}

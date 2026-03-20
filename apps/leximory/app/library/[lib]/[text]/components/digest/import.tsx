@@ -11,10 +11,10 @@ import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
 import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
-import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
+import { PiAirplaneInFlight, PiFileMagnifyingGlass, PiFileMagnifyingGlassFill, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
 import PhotoImportTab from './photo-import'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom } from '../../atoms'
+import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom, inlineModeAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
@@ -33,6 +33,7 @@ export default function ImportModal() {
     const { isOpen, onOpenChange, onOpen } = useDisclosure()
     const [url, setUrl] = useState('')
     const [hideText, setHideText] = useAtom(hideTextAtom)
+    const [inlineMode, setInlineMode] = useAtom(inlineModeAtom)
     const [isPopulating, startPopulating] = useTransition()
     const setTitle = useSetAtom(titleAtom)
     const populate = async () => {
@@ -47,16 +48,33 @@ export default function ImportModal() {
     const [isGenerating, startGenerating] = useTransition()
     const [shouldGenerateTitle, setShouldGenerateTitle] = useState(false)
 
-    const KanbanSwitch = () => (
-        <Switch
-            size='lg'
-            startContent={<PiKanbanFill />}
-            endContent={<PiKanban />}
-            isDisabled={isLoading}
-            isSelected={hideText}
-            onValueChange={setHideText}
-            color='secondary' />
-    )
+    const KanbanSwitch = () => {
+        // For Classical Chinese (lang === 'zh'), use inline mode toggle
+        // For other languages, use hide text mode toggle
+        if (lang === 'zh') {
+            return (
+                <Switch
+                    size='lg'
+                    startContent={lang === 'zh' ? <PiFileMagnifyingGlassFill /> : <PiKanbanFill />}
+                    endContent={lang === 'zh' ? <PiFileMagnifyingGlass /> : <PiKanban />}
+                    isDisabled={isLoading}
+                    isSelected={inlineMode}
+                    onValueChange={setInlineMode}
+                    color='secondary'
+                />
+            )
+        }
+        return (
+            <Switch
+                size='lg'
+                startContent={<PiKanbanFill />}
+                endContent={<PiKanban />}
+                isDisabled={isLoading}
+                isSelected={hideText}
+                onValueChange={setHideText}
+                color='secondary' />
+        )
+    }
 
     const ImportButton = () => (
         <Button
@@ -131,9 +149,15 @@ export default function ImportModal() {
                                         onValueChange={setInput}
                                         disableAutosize />
                                     <div className='flex flex-wrap gap-6'>
-                                        <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
-                                            仅生成词摘
-                                        </Switch>
+                                        {lang === 'zh' ? (
+                                            <Switch isDisabled={isReadOnly || isLoading} isSelected={inlineMode} onValueChange={setInlineMode} color='secondary'>
+                                                行内模式
+                                            </Switch>
+                                        ) : (
+                                            <Switch isDisabled={isReadOnly || isLoading} isSelected={hideText} onValueChange={setHideText} color='secondary'>
+                                                仅生成词摘
+                                            </Switch>
+                                        )}
                                         <Switch isDisabled={isReadOnly || isLoading} isSelected={shouldGenerateTitle} onValueChange={setShouldGenerateTitle} color='secondary'>
                                             AI 生成标题
                                         </Switch>

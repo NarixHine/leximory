@@ -42,6 +42,7 @@ interface CommentProps {
     print?: boolean
     shadow?: boolean
     className?: string
+    inlineMode?: boolean
 }
 
 interface CommentState {
@@ -88,7 +89,7 @@ const commentQueryOptions = (prompt: string, lang: Lang, onError: (error: string
         enabled: prompt.length > 0,
     })
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className, inlineMode }: CommentProps) {
     const router = useRouter()
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
@@ -270,8 +271,114 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         autoLock: false
     })
 
+
     if (print) {
         return <Note portions={portions}></Note>
+    }
+
+    const CommentWithPopover = <>
+        <Popover placement='right' onOpenChange={init}>
+            <PopoverTrigger>
+                {
+                    trigger
+                        ? <Button {...trigger}></Button>
+                        : <button
+                            className={cn(
+                                status === 'deleted' && 'opacity-30',
+                                'text-inherit antialiased!'
+                            )}
+                            style={{ fontStyle: 'inherit' }}
+                            ref={wordElement}
+                        >
+                            <span className={cn(
+                                !isReaderMode && [
+                                    'box-decoration-clone',
+                                    '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
+                                    isOnDemand ? 'shadow-emerald-300/30' : 'shadow-default-300/70',
+                                ]
+                            )}>
+                                {portions[0]}
+                            </span>
+                            {isReaderMode && portions[2] && <>
+                                <label htmlFor={uid} className={styles['sidenote-number']}></label>
+                                <input type='checkbox' id={uid} className={styles['margin-toggle']} />
+                            </>}
+                        </button>
+                }
+            </PopoverTrigger>
+            <PopoverContent className={cn('max-w-80 bg-default-50 shadow-none border-7 border-default-200 rounded-4xl')}>
+                <div className='py-3 px-2 space-y-5'>
+                    {
+                        isLoaded
+                            ? <div>
+                                <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
+                                {(!explicitDisableSave || isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
+                                <Save />
+                            </div>
+                            : <div className='space-y-3 w-40'>
+                                <StoneSkeleton className='w-3/5 rounded-lg h-3'></StoneSkeleton>
+                                <StoneSkeleton className='w-4/5 rounded-lg h-3'></StoneSkeleton>
+                                <StoneSkeleton className='w-2/5 rounded-lg h-3'></StoneSkeleton>
+                                <StoneSkeleton className='w-full rounded-lg h-3'></StoneSkeleton>
+                            </div>
+                    }
+                </div>
+            </PopoverContent>
+        </Popover>
+        {
+            isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm group')}>
+                <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    color="default"
+                    onPress={() => setPortions([portions[0]])}
+                    className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                    <PiEyeSlash />
+                </Button>
+                <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
+            </span>
+        }
+    </>
+
+    // Inline mode for Classical Chinese - display annotation inline
+    if (inlineMode) {
+        // Process the definition: skip first backticks and add ellipsis if needed
+        const processDefinition = (def: string): string => {
+            // Skip the first pair of backticks
+            let processed = def.replace(/^`[^`]+`\s*/, '')
+
+            if (processed.endsWith('。')) {
+                processed = processed.slice(0, -1)
+            }
+
+            // Add ellipsis if too long (max 20 characters after removing backticks)
+            const maxLength = 20
+            if (processed.length > maxLength) {
+                processed = processed.substring(0, maxLength) + '…'
+            }
+
+            return processed
+        }
+
+        return (
+            <span>
+                {CommentWithPopover}
+                {portions[2] && (
+                    <span className={cn(
+                        'inline-annotation',
+                        'text-sm',
+                        'text-default-500',
+                        'font-normal',
+                        'mx-0.5',
+                        lang === 'ja' ? 'font-ja' : 'font-mono'
+                    )}>
+                        {processDefinition(portions[2])}
+                    </span>
+                )}
+            </span>
+        )
     }
 
     return asCard
@@ -358,71 +465,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 </div>
             </CardBody>
         </FlatCard>
-        : <>
-            <Popover placement='right' onOpenChange={init}>
-                <PopoverTrigger>
-                    {
-                        trigger
-                            ? <Button {...trigger}></Button>
-                            : <button
-                                className={cn(
-                                    status === 'deleted' && 'opacity-30',
-                                    'text-inherit'
-                                )}
-                                style={{ fontStyle: 'inherit' }}
-                                ref={wordElement}
-                            >
-                                <span className={cn(
-                                    !isReaderMode && [
-                                        'box-decoration-clone',
-                                        '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
-                                        isOnDemand ? 'shadow-emerald-300/30' : 'shadow-default-300/70',
-                                    ]
-                                )}>
-                                    {portions[0]}
-                                </span>
-                                {isReaderMode && portions[2] && <>
-                                    <label htmlFor={uid} className={styles['sidenote-number']}></label>
-                                    <input type='checkbox' id={uid} className={styles['margin-toggle']} />
-                                </>}
-                            </button>
-                    }
-                </PopoverTrigger>
-                <PopoverContent className={cn('max-w-80 bg-default-50 shadow-none border-7 border-default-200 rounded-4xl')}>
-                    <div className='py-3 px-2 space-y-5'>
-                        {
-                            isLoaded
-                                ? <div>
-                                    <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
-                                    {(!explicitDisableSave || isDeleteable || lang === 'en') && <Spacer y={4}></Spacer>}
-                                    <Save />
-                                </div>
-                                : <div className='space-y-3 w-40'>
-                                    <StoneSkeleton className='w-3/5 rounded-lg h-3'></StoneSkeleton>
-                                    <StoneSkeleton className='w-4/5 rounded-lg h-3'></StoneSkeleton>
-                                    <StoneSkeleton className='w-2/5 rounded-lg h-3'></StoneSkeleton>
-                                    <StoneSkeleton className='w-full rounded-lg h-3'></StoneSkeleton>
-                                </div>
-                        }
-                    </div>
-                </PopoverContent>
-            </Popover>
-            {
-                isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm group')}>
-                    <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        color="default"
-                        onPress={() => setPortions([portions[0]])}
-                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    >
-                        <PiEyeSlash />
-                    </Button>
-                    <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
-                </span>
-            }
-        </>
+        : CommentWithPopover
 }
 
 function Note({ portions, omitOriginal, isEditing, editedPortions, onEdit }: {
