@@ -277,6 +277,20 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     // Inline mode for Classical Chinese - display annotation inline without popover
     if (inlineMode && portions[2]) {
+        // Process the definition: skip first backticks and add ellipsis if needed
+        const processDefinition = (def: string): string => {
+            // Skip the first pair of backticks if present (e.g., "`word` meaning" -> "meaning")
+            let processed = def.replace(/^`[^`]+`\s*/, '')
+
+            // Add ellipsis if too long (max 20 characters after removing backticks)
+            const maxLength = 20
+            if (processed.length > maxLength) {
+                processed = processed.substring(0, maxLength) + '…'
+            }
+
+            return processed
+        }
+
         return (
             <span className='inline-comment-wrapper'>
                 <span className={cn(
@@ -293,7 +307,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                     'ml-1',
                     lang === 'ja' ? 'font-ja' : 'font-formal'
                 )}>
-                    （{portions[2]}）
+                    {processDefinition(portions[2])}
                 </span>
             </span>
         )
