@@ -282,6 +282,10 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             // Skip the first pair of backticks if present (e.g., "`word` meaning" -> "meaning")
             let processed = def.replace(/^`[^`]+`\s*/, '')
 
+            if (processed.endsWith('。')) {
+                processed = processed.slice(0, -1)
+            }
+
             // Add ellipsis if too long (max 20 characters after removing backticks)
             const maxLength = 20
             if (processed.length > maxLength) {
@@ -301,11 +305,11 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 </span>
                 <span className={cn(
                     'inline-annotation',
-                    'text-xs',
+                    'text-sm',
                     'text-default-500',
                     'font-normal',
-                    'ml-1',
-                    lang === 'ja' ? 'font-ja' : 'font-formal'
+                    'mx-0.5',
+                    lang === 'ja' ? 'font-ja' : 'font-mono'
                 )}>
                     {processDefinition(portions[2])}
                 </span>
