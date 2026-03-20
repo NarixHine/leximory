@@ -28,9 +28,10 @@ export type MarkdownProps = {
     print?: boolean
     commentClassName?: string
     compact?: boolean
+    inlineMode?: boolean
 }
 
-function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact }: MarkdownProps) {
+function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, onlyComments, print, compact, inlineMode }: MarkdownProps) {
     const lexicon = useAtomValue(lexiconAtom)
     const lang = useAtomValue(langAtom)
 
@@ -50,7 +51,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         // replace all instances of {{...}} with the Comment component
         .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
             const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
-            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '}></Comment>'
+            return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} inlineMode={' + (inlineMode ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments
         .replace(/(<Comment[^>]*><\/Comment>)(\s?)([.,!?;:"。，！？；：、”])/g, '<Nobr>$1<span>$3</span></Nobr>')

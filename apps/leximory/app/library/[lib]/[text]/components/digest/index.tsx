@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom, emojiAtom } from '../../atoms'
+import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom, emojiAtom, inlineModeAtom } from '../../atoms'
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -181,6 +181,7 @@ function ReadingView() {
   const isReaderMode = useAtomValue(isReaderModeAtom)
   const ebook = useAtomValue(ebookAtom)
   const hideText = useAtomValue(hideTextAtom)
+  const inlineMode = useAtomValue(inlineModeAtom)
   const text = useAtomValue(textAtom)
   const lang = useAtomValue(langAtom)
   const { user } = useAuth()
@@ -228,8 +229,10 @@ function ReadingView() {
           isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
           !isReaderMode && 'dropcap',
           getLanguageStrategy(lang).proseClassName,
+          lang === 'zh' && inlineMode && 'inline-mode'
         )}
         md={`<article>\n${content}\n</article>`}
+        inlineMode={lang === 'zh' ? inlineMode : false}
       />
       <Define />
       <div ref={bottomRef} className='w-full h-1'></div>

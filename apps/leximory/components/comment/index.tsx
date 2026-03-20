@@ -42,6 +42,7 @@ interface CommentProps {
     print?: boolean
     shadow?: boolean
     className?: string
+    inlineMode?: boolean
 }
 
 interface CommentState {
@@ -88,7 +89,7 @@ const commentQueryOptions = (prompt: string, lang: Lang, onError: (error: string
         enabled: prompt.length > 0,
     })
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className, inlineMode }: CommentProps) {
     const router = useRouter()
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
@@ -272,6 +273,30 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
 
     if (print) {
         return <Note portions={portions}></Note>
+    }
+
+    // Inline mode for Classical Chinese - display annotation inline without popover
+    if (inlineMode && portions[2]) {
+        return (
+            <span className='inline-comment-wrapper'>
+                <span className={cn(
+                    'text-inherit',
+                    status === 'deleted' && 'opacity-30'
+                )}>
+                    {portions[0]}
+                </span>
+                <span className={cn(
+                    'inline-annotation',
+                    'text-xs',
+                    'text-default-500',
+                    'font-normal',
+                    'ml-1',
+                    lang === 'ja' ? 'font-ja' : 'font-formal'
+                )}>
+                    （{portions[2]}）
+                </span>
+            </span>
+        )
     }
 
     return asCard
