@@ -9,6 +9,7 @@ export const MINCHO = localFont({
 export const KAITI = localFont({
     src: './kaiti.woff2',
     variable: '--font-kaiti',
+    preload: false,
 })
 
 export const ENGLISH = Raleway({
