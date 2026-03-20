@@ -276,43 +276,56 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
     }
 
     // Inline mode for Classical Chinese - display annotation inline without popover
-    if (inlineMode && portions[2]) {
-        // Process the definition: skip first backticks and add ellipsis if needed
-        const processDefinition = (def: string): string => {
-            // Skip the first pair of backticks if present (e.g., "`word` meaning" -> "meaning")
-            let processed = def.replace(/^`[^`]+`\s*/, '')
+    if (inlineMode) {
+        // If there's a definition, process and display it inline
+        if (portions[2]) {
+            // Process the definition: skip first backticks and add ellipsis if needed
+            const processDefinition = (def: string): string => {
+                // Skip the first pair of backticks if present (e.g., "`word` meaning" -> "meaning")
+                let processed = def.replace(/^`[^`]+`\s*/, '')
 
-            if (processed.endsWith('。')) {
-                processed = processed.slice(0, -1)
+                if (processed.endsWith('。')) {
+                    processed = processed.slice(0, -1)
+                }
+
+                // Add ellipsis if too long (max 20 characters after removing backticks)
+                const maxLength = 20
+                if (processed.length > maxLength) {
+                    processed = processed.substring(0, maxLength) + '…'
+                }
+
+                return processed
             }
 
-            // Add ellipsis if too long (max 20 characters after removing backticks)
-            const maxLength = 20
-            if (processed.length > maxLength) {
-                processed = processed.substring(0, maxLength) + '…'
-            }
-
-            return processed
+            return (
+                <span className='inline-comment-wrapper'>
+                    <span className={cn(
+                        'text-inherit',
+                        status === 'deleted' && 'opacity-30'
+                    )}>
+                        {portions[0]}
+                    </span>
+                    <span className={cn(
+                        'inline-annotation',
+                        'text-sm',
+                        'text-default-500',
+                        'font-normal',
+                        'mx-0.5',
+                        lang === 'ja' ? 'font-ja' : 'font-mono'
+                    )}>
+                        {processDefinition(portions[2])}
+                    </span>
+                </span>
+            )
         }
 
+        // If there's no definition in inline mode, just show the word without any interaction
         return (
-            <span className='inline-comment-wrapper'>
-                <span className={cn(
-                    'text-inherit',
-                    status === 'deleted' && 'opacity-30'
-                )}>
-                    {portions[0]}
-                </span>
-                <span className={cn(
-                    'inline-annotation',
-                    'text-sm',
-                    'text-default-500',
-                    'font-normal',
-                    'mx-0.5',
-                    lang === 'ja' ? 'font-ja' : 'font-mono'
-                )}>
-                    {processDefinition(portions[2])}
-                </span>
+            <span className={cn(
+                'text-inherit',
+                status === 'deleted' && 'opacity-30'
+            )}>
+                {portions[0]}
             </span>
         )
     }
