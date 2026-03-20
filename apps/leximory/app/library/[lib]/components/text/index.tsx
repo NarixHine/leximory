@@ -30,7 +30,7 @@ export function TagPills({ tags, parentClassName, classNames, ...props }: { tags
                     classNames={{
                         ...classNames,
                         base: cn('border-divider border-1 text-[10px] font-mono', classNames?.base),
-                        content: cn('px-0.75 text-secondary-500 tracking-wide', classNames?.content)
+                        content: cn('px-0.75 tracking-wide', classNames?.content)
                     }}
                     key={tag}
                     {...props}

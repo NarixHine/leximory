@@ -6,6 +6,7 @@
 
 @theme {
   --font-ui: var(--font-english), var(--font-mincho), serif;
+  --font-kaiti: var(--font-english), var(--font-kaiti), sans-serif;
   --font-mono: var(--font-english-mono), var(--font-kaiti), monospace;
   --font-formal: var(--font-english-serif), var(--font-mincho), serif;
   --font-fancy: var(--font-english-fancy), var(--font-mincho), serif;
