@@ -11,7 +11,7 @@ export default function SummaryAccordion({ text }: { text: string }) {
         <Accordion
             defaultExpandedKeys={viewMode === 'normal' ? ['summary-text'] : []}
             itemKey='summary-text'
-            itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0' } }}
+            itemProps={{ title: '概要原文', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0', title: 'font-medium' } }}
         >
             <>{safeParseHTML(text)}</>
         </Accordion>

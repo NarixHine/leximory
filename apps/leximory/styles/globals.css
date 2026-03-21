@@ -21,9 +21,9 @@
 
 .dropcap.has-dropcap-first article div:first-of-type:not(.not-dropcap)::first-letter {
   float: left;
-  font-size: 4em;
+  font-size: 4.2em;
   padding-right: 0.1em;
-  margin-top: 0.1em;
+  margin-top: 0.11em;
   line-height: 0.4;
   font-family: var(--font-fancy);
 }

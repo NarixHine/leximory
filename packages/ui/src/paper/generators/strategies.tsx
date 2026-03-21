@@ -218,7 +218,7 @@ const clozeStrategy: QuestionStrategy<ClozeData, Record<string, string[]>> = cre
         return (
             <>
                 <section>{parsedContent}</section>
-                <Accordion className='' itemProps={{ title: '完形填空选项', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0' } }}>
+                <Accordion className='' itemProps={{ title: '完形填空选项', className: 'print:hidden -ml-2 -mr-2 -mb-2', classNames: { content: 'pt-0', title: 'font-medium' } }}>
                     <Options />
                 </Accordion>
                 <div className='hidden print:block'>
