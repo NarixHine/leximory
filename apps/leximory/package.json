@@ -149,7 +149,7 @@
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.14.1",
     "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react-dom": "^19.2.0",
     "@types/sanitize-html": "^2.13.0",
     "@types/showdown": "^2.0.6",
     "@types/web-push": "^3.6.4",
@@ -164,9 +164,5 @@
     "tailwindcss": "^4.1.11",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.2"
-  },
-  "overrides": {
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3"
   }
 }
