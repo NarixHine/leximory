@@ -6,7 +6,6 @@ import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useDarkMode } from 'usehooks-ts'
 
 // --- WEBGL CONTEXT UTILS ---
-// Attempts to create a WebGL context and returns null if unavailable
 function createWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | null {
     try {
         const gl = canvas.getContext('webgl', {
@@ -15,14 +14,13 @@ function createWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | 
             preserveDrawingBuffer: false,
             powerPreference: 'low-power'
         })
-        if (!gl || gl.isContextLost()) return null
-        return gl
+        return gl && !gl.isContextLost() ? gl : null
     } catch {
         return null
     }
 }
 
-// --- GLOBAL TICKER (throttled for performance) ---
+// --- GLOBAL TICKER ---
 type Task = (timestamp: number) => void
 const subscribers = new Map<Task, { task: Task; lastFrame: number; throttle: number }>()
 let globalFrameId: number | null = null
@@ -30,10 +28,10 @@ let globalFrameId: number | null = null
 function startGlobalTicker() {
     if (globalFrameId !== null) return
     const tick = (ts: number) => {
-        for (const { task, lastFrame, throttle } of subscribers.values()) {
-            if (ts - lastFrame >= throttle) {
-                task(ts)
-                subscribers.get(task)!.lastFrame = ts
+        for (const data of subscribers.values()) {
+            if (ts - data.lastFrame >= data.throttle) {
+                data.task(ts)
+                data.lastFrame = ts
             }
         }
         globalFrameId = requestAnimationFrame(tick)
@@ -57,7 +55,7 @@ function subscribe(task: Task, throttleMs = 0) {
     }
 }
 
-// --- OKLCH → sRGB (Optimized for Uniforms) ---
+// --- COLOR & MATH UTILS ---
 function oklchToSrgb(L: number, C: number, H: number): [number, number, number] {
     const hRad = (H * Math.PI) / 180
     const a = C * Math.cos(hRad), b = C * Math.sin(hRad)
@@ -98,7 +96,7 @@ export function emojiBackground(id: string) {
     }
 }
 
-// --- BAYER DITHER (CPU Optimized) ---
+// --- BAYER DITHER (CPU) ---
 const BAYER_FLAT = new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]).map(v => v / 16)
 
 function createColorLUT(hue: number, isDarkMode: boolean): Uint32Array {
@@ -155,25 +153,16 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
 
         const renderFrame = (timestamp: number) => {
             const st = stateRef.current
-            // Skip if not visible or no size
             if (!st.visible || st.w === 0) return
-
-            // Throttle: only render every 2nd frame (~30fps instead of 60fps)
             frameCount++
             if (frameCount % 2 !== 0) return
-
-            // Limit frame rate to save CPU - don't render faster than 30fps
             if (timestamp - st.lastFrameTime < 33) return
             st.lastFrameTime = timestamp
-
             if (st.startTime === 0) st.startTime = timestamp
 
             const cols = (st.w / PIXEL_SIZE) | 0, rows = (st.h / PIXEL_SIZE) | 0
-
-            // Only recreate ImageData if size changed
             if (canvas.width !== cols || canvas.height !== rows) {
-                canvas.width = cols
-                canvas.height = rows
+                canvas.width = cols; canvas.height = rows
                 st.imgData = ctx.createImageData(cols, rows)
                 st.buf32 = new Uint32Array(st.imgData.data.buffer)
                 st.hasRendered = false
@@ -182,36 +171,26 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
             const { buf32, imgData } = st
             if (!buf32 || !imgData) return
 
-            // Static render for first frame (no animation), then animate
             const elapsed = st.hasRendered ? (timestamp - st.startTime) / 1000 : 0
-            const srcLen = sources.length
-
-            // Pre-calculate source positions for this frame
             const activeSources = sources.map(s => ({
                 sx: s.cx + Math.sin(elapsed * s.speed + s.phaseX) * 0.14,
                 sy: s.cy + Math.cos(elapsed * s.speed * 0.8 + s.phaseY) * 0.12,
                 r: s.radius, str: s.strength
             }))
 
-            // Optimization: clear with fillRect for large areas instead of buf32.fill
-            // Actually, for small canvases, fill is fine
             buf32.fill(0)
-
             for (let r = 0; r < rows; r++) {
-                const ny = r / rows
-                const bayerOff = (r % 4) << 2
-                const rowOffset = r * cols
+                const ny = r / rows, bayerOff = (r % 4) << 2, rowOffset = r * cols
                 for (let c = 0; c < cols; c++) {
                     const nx = c / cols
                     let val = 0
-                    for (let i = 0; i < srcLen; i++) {
+                    for (let i = 0; i < sources.length; i++) {
                         const s = activeSources[i]
                         const dx = nx - s.sx, dy = ny - s.sy
                         const dist = Math.sqrt(dx * dx + dy * dy)
                         if (dist < s.r) val += s.str * (1 - dist / s.r)
                     }
                     if (val > 1) val = 1
-
                     const threshold = BAYER_FLAT[bayerOff + (c % 4)] * 0.85
                     if (isDarkMode ? val > threshold : val < threshold) {
                         const lIdx = ((isDarkMode ? val : 1 - val) * 255) | 0
@@ -231,17 +210,10 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
             stateRef.current.visible = e.isIntersecting
         }, { threshold: 0.01 })
 
-        ro.observe(canvas)
-        io.observe(canvas)
-
-        // Throttle BayerDither to 30fps
+        ro.observe(canvas); io.observe(canvas)
         const unsub = subscribe(renderFrame, 33)
 
-        return () => {
-            unsub()
-            ro.disconnect()
-            io.disconnect()
-        }
+        return () => { unsub(); ro.disconnect(); io.disconnect() }
     }, [sources, colorLUT, isDarkMode])
 
     return <canvas ref={canvasRef} className='pointer-events-none absolute inset-0 h-full w-full' style={{ imageRendering: 'pixelated' }} aria-hidden='true' />
@@ -260,195 +232,139 @@ function useShaderCanvas(
     variant: Exclude<ShaderVariant, 'dither'> | undefined,
     rgb: [number, number, number],
     articleId: string,
-    onWebGLUnavailable?: () => void
+    onContextLost: () => void
 ) {
-    const [restartKey, setRestartKey] = useState(0)
-    const glRef = useRef<WebGLRenderingContext | null>(null)
-    const cleanupRef = useRef<(() => void) | null>(null)
-    const isInitializedRef = useRef(false)
-
-    const cleanup = useCallback(() => {
-        if (cleanupRef.current) {
-            cleanupRef.current()
-            cleanupRef.current = null
-        }
-        glRef.current = null
-        isInitializedRef.current = false
-    }, [])
-
     useEffect(() => {
-        if (!variant || !canvasRef.current) return
-
         const canvas = canvasRef.current
-        let isActive = true
+        if (!variant || !canvas) return
 
-        // Only initialize when visible
-        const initializeWebGL = () => {
-            if (!isActive || isInitializedRef.current) return
-
-            const gl = createWebGLContext(canvas)
-            if (!gl) {
-                // WebGL not available, fall back to pure color
-                onWebGLUnavailable?.()
-                return
-            }
-
-            glRef.current = gl
-            isInitializedRef.current = true
-
-            const handleContextLost = (e: Event) => {
-                e.preventDefault()
-                cleanup()
-                onWebGLUnavailable?.()
-            }
-            const handleContextRestored = () => {
-                setRestartKey(k => k + 1)
-            }
-
-            canvas.addEventListener('webglcontextlost', handleContextLost)
-            canvas.addEventListener('webglcontextrestored', handleContextRestored)
-
-            if (gl.isContextLost()) {
-                canvas.removeEventListener('webglcontextlost', handleContextLost)
-                canvas.removeEventListener('webglcontextrestored', handleContextRestored)
-                onWebGLUnavailable?.()
-                return
-            }
-
-            // Compile shaders
-            const compile = (t: number, s: string) => {
-                const shader = gl.createShader(t)
-                if (!shader) return null
-                gl.shaderSource(shader, s)
-                gl.compileShader(shader)
-                return shader
-            }
-
-            const vs = compile(gl.VERTEX_SHADER, VERT)
-            const fs = compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant])
-            if (!vs || !fs) {
-                cleanup()
-                onWebGLUnavailable?.()
-                return
-            }
-
-            const prog = gl.createProgram()
-            if (!prog) {
-                cleanup()
-                onWebGLUnavailable?.()
-                return
-            }
-
-            gl.attachShader(prog, vs)
-            gl.attachShader(prog, fs)
-            gl.linkProgram(prog)
-            gl.useProgram(prog)
-
-            const buf = gl.createBuffer()
-            gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
-            const pos = gl.getAttribLocation(prog, 'a')
-            gl.enableVertexAttribArray(pos)
-            gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
-
-            gl.uniform3f(gl.getUniformLocation(prog, 'uColor'), rgb[0], rgb[1], rgb[2])
-            if (variant === 'grid') {
-                const h = hashString(articleId)
-                gl.uniform1f(gl.getUniformLocation(prog, 'uScale'), 35 + (h % 31))
-                gl.uniform1f(gl.getUniformLocation(prog, 'uThick'), 0.955 + ((h >> 4) % 10) / 333)
-            }
-
-            const uTime = gl.getUniformLocation(prog, 'uTime')
-            const offset = Math.random() * 100
-            const dpr = Math.min(window.devicePixelRatio, 1.5)
-            let visible = true
-
-            const render = (ts: number) => {
-                if (!visible || gl.isContextLost()) return
-                if (uTime) gl.uniform1f(uTime, ts / 1000 + offset)
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-            }
-
-            const ro = new ResizeObserver(([entry]) => {
-                const w = Math.round(entry.contentRect.width * dpr)
-                const h = Math.round(entry.contentRect.height * dpr)
-                if (canvas.width === w && canvas.height === h) return
-                canvas.width = w
-                canvas.height = h
-                gl.viewport(0, 0, w, h)
-                render(performance.now())
-            })
-            if (canvas.parentElement) ro.observe(canvas.parentElement)
-
-            const unsub = variant !== 'grid' ? subscribe(render, 33) : () => { } // Throttle to ~30fps max
-
-            cleanupRef.current = () => {
-                unsub()
-                ro.disconnect()
-                canvas.removeEventListener('webglcontextlost', handleContextLost)
-                canvas.removeEventListener('webglcontextrestored', handleContextRestored)
-                if (!gl.isContextLost()) {
-                    gl.deleteBuffer(buf)
-                    gl.detachShader(prog, vs)
-                    gl.detachShader(prog, fs)
-                    gl.deleteShader(vs)
-                    gl.deleteShader(fs)
-                    gl.deleteProgram(prog)
-                }
-            }
+        const gl = createWebGLContext(canvas)
+        if (!gl) {
+            // If we can't even get a context on a fresh canvas, it's a hard fail
+            return
         }
 
-        // Use IntersectionObserver to only initialize when visible
-        let io: IntersectionObserver | null = null
-        let hasBeenVisible = false
+        const handleLost = (e: Event) => {
+            e.preventDefault()
+            onContextLost() // Trigger re-mount in parent
+        }
+        canvas.addEventListener('webglcontextlost', handleLost)
 
-        io = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting && !hasBeenVisible) {
-                hasBeenVisible = true
-                initializeWebGL()
-            }
-        }, { threshold: 0.01, rootMargin: '100px' }) // Start loading 100px before visible
+        const compile = (t: number, s: string) => {
+            const shader = gl.createShader(t)
+            if (!shader) return null
+            gl.shaderSource(shader, s); gl.compileShader(shader)
+            return shader
+        }
 
-        io.observe(canvas)
+        const vs = compile(gl.VERTEX_SHADER, VERT)
+        const fs = compile(gl.FRAGMENT_SHADER, FRAG_MAP[variant])
+        const prog = gl.createProgram()
+        if (!vs || !fs || !prog) return
+
+        gl.attachShader(prog, vs); gl.attachShader(prog, fs)
+        gl.linkProgram(prog); gl.useProgram(prog)
+
+        const buf = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+        const pos = gl.getAttribLocation(prog, 'a')
+        gl.enableVertexAttribArray(pos)
+        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
+
+        gl.uniform3f(gl.getUniformLocation(prog, 'uColor'), rgb[0], rgb[1], rgb[2])
+        if (variant === 'grid') {
+            const h = hashString(articleId)
+            gl.uniform1f(gl.getUniformLocation(prog, 'uScale'), 35 + (h % 31))
+            gl.uniform1f(gl.getUniformLocation(prog, 'uThick'), 0.955 + ((h >> 4) % 10) / 333)
+        }
+
+        const uTime = gl.getUniformLocation(prog, 'uTime')
+        const offset = Math.random() * 100
+        const dpr = Math.min(window.devicePixelRatio, 1.5)
+
+        const render = (ts: number) => {
+            if (gl.isContextLost()) return
+            if (uTime) gl.uniform1f(uTime, ts / 1000 + offset)
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        }
+
+        const ro = new ResizeObserver(([entry]) => {
+            const w = Math.round(entry.contentRect.width * dpr)
+            const h = Math.round(entry.contentRect.height * dpr)
+            canvas.width = w; canvas.height = h
+            gl.viewport(0, 0, w, h)
+            render(performance.now())
+        })
+        if (canvas.parentElement) ro.observe(canvas.parentElement)
+
+        const unsub = variant !== 'grid' ? subscribe(render, 33) : () => { }
 
         return () => {
-            isActive = false
-            if (io) io.disconnect()
-            cleanup()
+            unsub()
+            ro.disconnect()
+            canvas.removeEventListener('webglcontextlost', handleLost)
+            const ext = gl.getExtension('WEBGL_lose_context')
+            if (ext) ext.loseContext()
         }
-    }, [variant, articleId, rgb[0], rgb[1], rgb[2], restartKey, cleanup, onWebGLUnavailable])
+    }, [variant, articleId, rgb, onContextLost, canvasRef])
 }
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
     const { isDarkMode } = useDarkMode({ initializeWithValue: false })
+    const [isVisible, setIsVisible] = useState(false)
+    const [retryKey, setRetryKey] = useState(0)
+    const containerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const [webGLFailed, setWebGLFailed] = useState(false)
+
     const activeVariant = (switchToDitherInDarkMode && isDarkMode) ? 'dither' : variant
     const rgb = isDarkMode ? bg.darkRgb : bg.lightRgb
+    const shouldUseWebGL = activeVariant && activeVariant !== 'dither'
 
-    const handleWebGLUnavailable = useCallback(() => {
-        setWebGLFailed(true)
+    // Intersection Observer watches the CONTAINER, not the canvas
+    useEffect(() => {
+        const el = containerRef.current
+        if (!el) return
+        const io = new IntersectionObserver(([entry]) => {
+            setIsVisible(entry.isIntersecting)
+        }, { threshold: 0, rootMargin: '200px' })
+        io.observe(el)
+        return () => io.disconnect()
     }, [])
 
-    // Only use WebGL if variant is specified and not dither, and we haven't failed yet
-    const shouldUseWebGL = activeVariant && activeVariant !== 'dither' && !webGLFailed
+    const handleContextLost = useCallback(() => {
+        // Force a re-mount of the canvas element by incrementing the key
+        setRetryKey(prev => prev + 1)
+    }, [])
 
     useShaderCanvas(
         canvasRef,
-        shouldUseWebGL ? activeVariant : undefined,
+        (isVisible && shouldUseWebGL) ? activeVariant : undefined,
         rgb,
         articleId,
-        handleWebGLUnavailable
+        handleContextLost
     )
 
     return (
         <div
+            ref={containerRef}
             className={cn('relative flex items-center justify-center rounded-4xl overflow-hidden', className)}
             style={{ containerType: 'size', backgroundColor: isDarkMode ? bg.dark : bg.light }}
         >
-            {shouldUseWebGL && <canvas ref={canvasRef} className='absolute inset-0 w-full h-full pointer-events-none' />}
-            {activeVariant === 'dither' && <BayerDither articleId={articleId} isDarkMode={isDarkMode} hue={bg.hue} />}
+            {/* The canvas is UNMOUNTED when off-screen or when context is lost to force resource release */}
+            {isVisible && shouldUseWebGL && (
+                <canvas
+                    key={`${articleId}-${retryKey}`}
+                    ref={canvasRef}
+                    className='absolute inset-0 w-full h-full pointer-events-none'
+                />
+            )}
+
+            {isVisible && activeVariant === 'dither' && (
+                <BayerDither articleId={articleId} isDarkMode={isDarkMode} hue={bg.hue} />
+            )}
+
             <div className='w-full h-full flex items-center justify-center z-10'>
                 <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
                     {isLink ? (
