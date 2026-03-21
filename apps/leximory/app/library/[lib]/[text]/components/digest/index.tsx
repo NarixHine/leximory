@@ -226,7 +226,7 @@ function ReadingView() {
     <>
       <Markdown
         className={cn(
-          isReaderMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
+          isReaderMode && !inlineMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
           !isReaderMode && 'dropcap',
           getLanguageStrategy(lang).proseClassName,
           lang === 'zh' && inlineMode && 'inline-mode'

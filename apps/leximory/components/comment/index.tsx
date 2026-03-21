@@ -299,7 +299,7 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                             )}>
                                 {portions[0]}
                             </span>
-                            {isReaderMode && portions[2] && <>
+                            {isReaderMode && portions[2] && !inlineMode && <>
                                 <label htmlFor={uid} className={styles['sidenote-number']}></label>
                                 <input type='checkbox' id={uid} className={styles['margin-toggle']} />
                             </>}
@@ -326,19 +326,21 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
             </PopoverContent>
         </Popover>
         {
-            isReaderMode && portions[2] && <span className={cn(styles['sidenote'], 'text-sm group')}>
-                <Button
-                    isIconOnly
-                    size="sm"
-                    variant="light"
-                    color="default"
-                    onPress={() => setPortions([portions[0]])}
-                    className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                >
-                    <PiEyeSlash />
-                </Button>
-                <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
-            </span>
+            isReaderMode && portions[2] && !inlineMode && (
+                <span className={cn(styles['sidenote'], 'text-sm group')}>
+                    <Button
+                        isIconOnly
+                        size="sm"
+                        variant="light"
+                        color="default"
+                        onPress={() => setPortions([portions[0]])}
+                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                        <PiEyeSlash />
+                    </Button>
+                    <Note portions={portions} isEditing={isEditing} editedPortions={editedPortions} onEdit={setEditedPortions}></Note>
+                </span>
+            )
         }
     </>
 
