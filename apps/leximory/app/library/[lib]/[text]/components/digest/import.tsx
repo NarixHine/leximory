@@ -21,6 +21,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getLanguageStrategy } from '@/lib/languages'
 import { scrapeArticle } from '@/server/ai/scrape'
+import { InlineModeSwitch } from './inline-mode-switch'
 
 export default function ImportModal() {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
@@ -52,17 +53,7 @@ export default function ImportModal() {
         // For Classical Chinese (lang === 'zh'), use inline mode toggle
         // For other languages, use hide text mode toggle
         if (lang === 'zh') {
-            return (
-                <Switch
-                    size='lg'
-                    startContent={lang === 'zh' ? <PiFileMagnifyingGlassFill /> : <PiKanbanFill />}
-                    endContent={lang === 'zh' ? <PiFileMagnifyingGlass /> : <PiKanban />}
-                    isDisabled={isLoading}
-                    isSelected={inlineMode}
-                    onValueChange={setInlineMode}
-                    color='secondary'
-                />
-            )
+            return <InlineModeSwitch />
         }
         return (
             <Switch

@@ -22,7 +22,7 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
             [inputAtom, ''],
             [isLoadingAtom, annotating === 'annotating' || annotating === 'saving'],
             [promptAtom, prompt],
-            [emojiAtom, emoji]
+            [emojiAtom, emoji],
         ]}>
             <ArticleHero
                 hasEbook={!!ebook}

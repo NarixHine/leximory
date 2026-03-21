@@ -29,6 +29,7 @@ import { toast } from 'sonner'
 import { getLanguageStrategy } from '@/lib/languages'
 import { useAuth } from '@/lib/hooks'
 import { commentSyntaxRegex } from '@repo/utils'
+import { InlineModeSwitch } from './inline-mode-switch'
 
 function ReaderModeToggle() {
   const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -359,8 +360,8 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
 
       <Spacer y={6} />
 
-      {!hideImportControls && !isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
-        <ImportModal />
+      {!isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
+        {hideImportControls ? (lang === 'zh' && <InlineModeSwitch />) : <ImportModal />}
       </div>}
     </div>
   )

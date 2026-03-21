@@ -1,9 +1,11 @@
 import { Article } from '@/app/library/[lib]/[text]/article'
 import { getArticleData } from '@/app/library/[lib]/[text]/data'
 import { ArticleSkeleton } from '@/app/library/[lib]/[text]/skeleton'
+import { langAtom } from '@/app/library/[lib]/atoms'
 import Main from '@/components/ui/main'
 import { SIGN_IN_URL } from '@repo/env/config'
 import { getSession } from '@repo/user'
+import { HydrationBoundary } from 'jotai-ssr'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 
@@ -32,10 +34,14 @@ export async function PageContent({ params }: PublicTextPageProps) {
     if (!isPublicAndFree) {
         redirect(SIGN_IN_URL)
     }
-    return <Article
-        text={text}
-        hideControls
-        isPublicAndFree={isPublicAndFree}
-        {...data}
-    />
+    return <HydrationBoundary hydrateAtoms={[[
+        langAtom, data.lib.lang
+    ]]}>
+        <Article
+            text={text}
+            hideControls
+            isPublicAndFree={isPublicAndFree}
+            {...data}
+        />
+    </HydrationBoundary>
 }
