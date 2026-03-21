@@ -84,7 +84,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
                 'prose-em:font-light',
                 '[&_pre_code]:before:content-none [&_pre_code]:after:content-none',
                 'prose-headings:font-fancy',
-                'font-fancy',
+                'font-formal',
                 firstParaDropcap && 'has-dropcap-first',
                 className
             )}
