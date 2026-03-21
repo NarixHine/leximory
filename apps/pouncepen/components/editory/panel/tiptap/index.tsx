@@ -222,6 +222,42 @@ const Tiptap = ({
         <IconContext.Provider value={{ className: 'text-primary', size: 16, weight: 'duotone' }}>
           <div className='flex items-center gap-1'>
             <ButtonGroup className='bg-background/50 backdrop-blur-md z-10 shadow-medium dark:border-primary-50 rounded-xl overflow-clip'>
+
+              {/* Custom Logic: Blank/Unblank */}
+              {!unblankable && (
+                <Button
+                  onPress={() => {
+                    trimSelection()
+                    if (!editor.isActive('code') && blank) {
+                      blank(getSelectionText())
+                    } else if (editor.isActive('code') && unblank) {
+                      unblank(getSelectionText())
+                    }
+                    editor.chain().focus().toggleCode().run()
+                  }}
+                  className='font-light'
+                  variant={editor.isActive('code') ? 'shadow' : 'light'}
+                  aria-label='Toggle Code/Blank'
+                  startContent={<SealQuestionIcon />}
+                >
+                  Blank
+                </Button>
+              )}
+
+              {blank && editor.isActive('code') && (
+                <Button
+                  onPress={() => {
+                    trimSelection()
+                    blank(getSelectionText())
+                  }}
+                  className='font-light'
+                  variant={'light'}
+                  aria-label='Blank Selection'
+                  startContent={<OptionIcon />}
+                >
+                  Options
+                </Button>
+              )}
               {/* Formatting */}
               <Button
                 onPress={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -255,40 +291,6 @@ const Tiptap = ({
               >
                 <TextUnderlineIcon />
               </Button>
-
-              {/* Custom Logic: Blank/Unblank */}
-              {!unblankable && (
-                <Button
-                  onPress={() => {
-                    trimSelection()
-                    if (!editor.isActive('code') && blank) {
-                      blank(getSelectionText())
-                    } else if (editor.isActive('code') && unblank) {
-                      unblank(getSelectionText())
-                    }
-                    editor.chain().focus().toggleCode().run()
-                  }}
-                  variant={editor.isActive('code') ? 'shadow' : 'light'}
-                  isIconOnly
-                  aria-label='Toggle Code/Blank'
-                >
-                  <SealQuestionIcon />
-                </Button>
-              )}
-
-              {blank && editor.isActive('code') && (
-                <Button
-                  onPress={() => {
-                    trimSelection()
-                    blank(getSelectionText())
-                  }}
-                  variant={editor.isActive('code') ? 'shadow' : 'light'}
-                  isIconOnly
-                  aria-label='Blank Selection'
-                >
-                  <OptionIcon />
-                </Button>
-              )}
             </ButtonGroup>
             <Dropdown>
               <DropdownTrigger className='bg-transparent'>

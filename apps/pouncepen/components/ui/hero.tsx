@@ -23,7 +23,7 @@ export default function Hero({
                     <PouncePenIcon className='size-6' /> PouncePen
                 </div>
                 <div className='flex-1'></div>
-                <div className='tracking-tight hidden sm:block'>Pen the paper. Pounce on performance.</div>
+                <div className='tracking-normal hidden sm:block'>Pen the paper. Pounce on performance.</div>
             </header>
             <div
                 className={cn(
