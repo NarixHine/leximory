@@ -27,7 +27,7 @@ export function markdownToHtml(md: string): string {
     )
 
     processed = processed.replace(commentSyntaxRegex, commentToHtml)
-    processed = processed.replace(/&&(.*?)&&/g, '<span class="convening">$1</span>')
+    processed = processed.replace(/&&(.*?)&&/g, '<span class="smallcaps">$1</span>')
     let html = converter.makeHtml(processed)
 
     audioSections.forEach((section, idx) => {
@@ -64,7 +64,7 @@ export function getMarkdownFromEditor(editor: Editor): string {
     )
 
     result = result.replace(
-        /<span class="convening">(.*?)<\/span>/g,
+        /<span class="smallcaps">(.*?)<\/span>/g,
         (_, content: string) => {
             return `&&${content}&&`
         }

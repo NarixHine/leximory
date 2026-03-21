@@ -4,23 +4,23 @@ import { Mark, mergeAttributes } from '@tiptap/core'
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        convening: {
+        smallcaps: {
             toggleConvening: () => ReturnType
         }
     }
 }
 
-export const Convening = Mark.create({
-    name: 'convening',
+export const SmallCaps = Mark.create({
+    name: 'smallcaps',
 
     parseHTML() {
         return [
-            { tag: 'span.convening' },
+            { tag: 'span.smallcaps' },
         ]
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['span', mergeAttributes(HTMLAttributes, { class: 'convening' }), 0]
+        return ['span', mergeAttributes(HTMLAttributes, { class: 'smallcaps' }), 0]
     },
 
     addCommands() {

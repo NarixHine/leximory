@@ -21,10 +21,10 @@
 
 .dropcap.has-dropcap-first article div:first-of-type:not(.not-dropcap)::first-letter {
   float: left;
-  font-size: 3.7em;
-  padding-right: 0.08em;
+  font-size: 4em;
+  padding-right: 0.1em;
   margin-top: 0.14em;
-  line-height: 0.6;
+  line-height: 1;
   font-family: var(--font-fancy);
 }
 
@@ -33,10 +33,16 @@
   font-size: 3.4em;
 }
 
-span.convening {
+span.smallcaps {
   font-family: var(--font-formal);
   font-variant-caps: small-caps;
   font-variant-numeric: oldstyle-nums;
+  text-transform: lowercase;
   letter-spacing: 0.05em;
   font-weight: 500;
 }
+
+span.smallcaps button {
+  text-transform: lowercase;
+}
+

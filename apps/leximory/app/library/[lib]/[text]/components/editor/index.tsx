@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
 import { CommentNode } from './extensions/comment-node'
 import { AudioSection } from './extensions/audio-section'
-import { Convening } from './extensions/convening'
+import { SmallCaps } from './extensions/smallcaps'
 import EditorBubbleMenu from './bubble-menu'
 import { markdownToHtml, getMarkdownFromEditor } from './serialization'
 import { useRef } from 'react'
@@ -32,7 +32,7 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
             }),
             CommentNode,
             AudioSection,
-            Convening,
+            SmallCaps,
         ],
         content: initialHtml.current,
         editorProps: {

@@ -61,9 +61,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replace(/:::([A-Za-z0-9_-]+).*?\n(.*?):::/sg, (_, p1, p2) => {
             return `<Audio id="${p1}" md="${encodeURIComponent(p2)}" deleteId="${deleteId}"></Audio>`
         })
-        // replace all instances of &&...&& with <span class="convening">
+        // replace all instances of &&...&& with <span class="smallcaps">
         .replace(/&amp;&amp;(.+?)&amp;&amp;/g, (_, p1) => {
-            return `<span class="convening">${p1}</span>`
+            return `<span class="smallcaps">${p1}</span>`
         })
 
     // After stripping the <article> wrapper and any leading zero-width/nbsp chars,
@@ -71,7 +71,7 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
     // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
     const firstParaDropcap = /^\p{L}/u.test(
         result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
-    ) || /^<span class="convening">/i.test(
+    ) || /^<span class="smallcaps">/i.test(
         result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
     )
 

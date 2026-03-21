@@ -96,9 +96,9 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
                     )}
                     <Button
                         onPress={() => editor.chain().focus().toggleConvening().run()}
-                        variant={editor.isActive('convening') ? 'shadow' : 'light'}
+                        variant={editor.isActive('smallcaps') ? 'shadow' : 'light'}
                         isIconOnly
-                        aria-label='Convening'
+                        aria-label='SmallCaps'
                     >
                         <PiTextAaBold />
                     </Button>
