@@ -49,8 +49,9 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
         .replaceAll(')} ', ')}} ')
         .replaceAll(/\s+([.,!?;:"。，！？；：、”])/g, '$1') // remove intervening space if followed by punctuation
         // replace all instances of {{...}} with the Comment component
-        .replace(commentSyntaxRegex, (_, p1, p2, p3, p4, p5) => {
-            const portions = [p1, p2, p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
+        .replace(commentSyntaxRegex, (_, p1: string, p2: string, p3: string, p4: string, p5: string) => {
+            const portions = [p1, p2, lang === 'ja' ? p3.replace('）**', '）** ') : p3, p4, p5].filter(Boolean).map((portion) => encodeURIComponent((portion as string).replaceAll('\n', '').replaceAll('"', '\\"')))
+
             return '<Comment params={["' + portions.join('","') + '"]} disableSave={' + (disableSave ?? 'false') + '} deleteId={' + deleteId + '} asCard={' + ((onlyComments || asCard) ?? 'false') + '} onlyComments={' + (onlyComments ?? 'false') + '} print={' + (print ?? 'false') + '} inlineMode={' + (inlineMode ?? 'false') + '}></Comment>'
         })
         // prevent line break after comments
