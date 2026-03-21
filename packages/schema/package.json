@@ -16,7 +16,7 @@
     "@repo/typescript-config": "workspace:^",
     "@types/node": "^25.0.5",
     "typescript": "latest",
-    "@types/react": "19.2.7"
+    "@types/react": "^19.2.0"
   },
   "dependencies": {
     "zod": "^4.1.3"
