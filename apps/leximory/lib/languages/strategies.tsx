@@ -50,7 +50,7 @@ export const japaneseStrategy = createLanguageStrategy({
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? []).length
-        return <span className='text-lg tracking-wide'>{charCount} 字，約 {Math.ceil(charCount / JA_CHARS_PER_MINUTE)} 分で読了</span>
+        return <span className='text-lg tracking-wide font-kaiti'>{charCount}字，約{Math.ceil(charCount / JA_CHARS_PER_MINUTE)}分で読了</span>
     },
     exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的例句，例句中该词以粗体表示。形如単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である。「彼女は**可哀想**に見えた。」||**かわい**（可悲）＋**そう**（……的样子）',
     isRTL: true,
