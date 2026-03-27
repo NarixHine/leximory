@@ -1,13 +1,14 @@
 import TextList from './components/text-list'
 import { getLib } from '@/server/db/lib'
 import { getTexts } from '@/server/db/text'
-import { getUserOrThrow } from '@repo/user'
+import { getUserOrThrow, getUserById } from '@repo/user'
 import { LibProps } from '@/lib/types'
 import { Suspense } from 'react'
 import { PiArrowLeft, PiBookBookmark, PiPrinter } from 'react-icons/pi'
 import Link from 'next/link'
 import LoadingIndicatorWrapper from '@/components/ui/loading-indicator-wrapper'
 import Main from '@/components/ui/main'
+import { LibraryShareButton } from './components/share-button'
 
 async function getData(lib: string) {
     const [{ userId }, libData, texts] = await Promise.all([
@@ -16,12 +17,13 @@ async function getData(lib: string) {
         getTexts({ lib })
     ])
     const isReadOnly = libData.owner !== userId
-    return { texts, name: libData.name, isReadOnly }
+    const ownerData = await getUserById(libData.owner)
+    return { texts, name: libData.name, isReadOnly, lang: libData.lang, creatorName: ownerData.username || ownerData.email.split('@')[0] }
 }
 
 async function PageContent({ params }: LibProps) {
     const { lib } = await params
-    const { texts, name, isReadOnly } = await getData(lib)
+    const { texts, name, isReadOnly, lang, creatorName } = await getData(lib)
     return <>
         {/* Header */}
         <header className='mx-auto max-w-md sm:max-w-6xl mb-10'>
@@ -56,6 +58,14 @@ async function PageContent({ params }: LibProps) {
                 <h1 className='font-fancy text-balance text-2xl tracking-tight ml-1'>
                     {name}
                 </h1>
+                <LibraryShareButton 
+                    libName={name}
+                    creatorName={creatorName}
+                    lang={lang}
+                    libId={lib}
+                    texts={texts}
+                    className="ml-auto"
+                />
             </div>
         </header>
 

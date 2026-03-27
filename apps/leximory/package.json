@@ -111,6 +111,7 @@
     "next": "16.2.1",
     "next-themes": "^0.2.1",
     "nuqs": "^2.4.3",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-call": "^1.7.0",
     "react-dom": "19.2.4",

@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans } from 'next/font/google'
 import localFont from 'next/font/local'
 
 export const MINCHO = localFont({
@@ -17,6 +17,14 @@ export const ENGLISH = Raleway({
     weight: 'variable',
     style: ['normal', 'italic'],
     variable: '--font-english',
+})
+
+export const ENGLISH_SANS = DM_Sans({
+    subsets: ['latin'],
+    weight: 'variable',
+    style: ['normal', 'italic'],
+    variable: '--font-english-sans',
+    preload: false,
 })
 
 export const ENGLISH_MONO = Source_Code_Pro({
