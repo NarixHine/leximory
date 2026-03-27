@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { QRCodeSVG } from 'qrcode.react'
 import { Lang } from '@repo/schema/library'
 import { prefixUrl } from '@repo/env/config'
+import moment from 'moment'
 
 interface LibraryCardProps {
     isOpen: boolean
@@ -24,6 +25,14 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId }: Li
         if (isOpen) document.body.style.overflow = 'hidden'
         return () => { document.body.style.overflow = '' }
     }, [isOpen])
+    useEffect(() => {
+        if (!isOpen) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose()
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
 
     if (!mounted) return null
 
@@ -52,14 +61,14 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId }: Li
                             <div className='relative w-full h-full overflow-hidden rounded-2xl shadow-2xl bg-black/80 border border-white/50'>
                                 <Image src='/images/card.webp' alt='' fill className='object-cover opacity-65' priority />
 
-                                <div className='relative h-full flex flex-col p-8 z-10'>
+                                <div className='relative h-full flex flex-col px-8 pb-4 pt-6 z-10'>
                                     {/* Top: Creator Info */}
                                     <div className='mb-6'>
                                         <h2 className='font-fancy text-6xl tracking-tight text-white drop-shadow-md leading-tight -mb-2'>
                                             {creatorName}
                                         </h2>
                                         <p className='text-2xl text-balance font-sans tracking-tight font-semibold leading-tight text-shadow-lg mt-1'>
-                                            <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with this <span className='text-white/85'>Leximory Library</span>.</span>
+                                            <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span>.</span>
                                         </p>
                                     </div>
 
@@ -87,6 +96,18 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId }: Li
                                             </h1>
                                         </div>
                                     </div>
+
+                                    <footer className='flex'>
+                                        <p className='text-center font-mono text-white/75 uppercase text-shadow-lg mt-4'>
+                                            leximory.com
+                                        </p>
+                                        <div className='flex-1'></div>
+                                         <p className='text-center font-mono text-white/75 uppercase text-shadow-lg mt-4'>
+                                            <Suspense>
+                                                {moment().format('YYYY/MM/DD')}
+                                            </Suspense>
+                                        </p>
+                                    </footer>
                                 </div>
                             </div>
 

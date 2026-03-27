@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
 import { PiShareNetwork } from 'react-icons/pi'
 import { Button, type ButtonProps } from '@heroui/button'
 import { LibraryCard } from '../../components/library-card'
 import { Lang } from '@repo/schema/library'
+import { useDisclosure } from '@heroui/modal'
 
 interface TextItem {
     emoji: string | null
+    id: string
+    title: string
 }
 
 interface LibraryShareButtonProps extends ButtonProps {
@@ -19,22 +21,22 @@ interface LibraryShareButtonProps extends ButtonProps {
 }
 
 export function LibraryShareButton({ libName, creatorName, lang, libId, texts, ...props }: LibraryShareButtonProps) {
-    const [isCardOpen, setIsCardOpen] = useState(false)
+    const { isOpen, onOpen, onClose } = useDisclosure({})
 
     return (
         <>
             <Button
                 variant='light'
-                startContent={<PiShareNetwork />}
+                startContent={<PiShareNetwork className='size-5 text-default-400' />}
                 isIconOnly
                 radius='full'
-                onPress={() => { setIsCardOpen(true) }}
+                onPress={() => { onOpen() }}
                 {...props}
             />
 
             <LibraryCard
-                isOpen={isCardOpen}
-                onClose={() => setIsCardOpen(false)}
+                isOpen={isOpen}
+                onClose={onClose}
                 libName={libName}
                 creatorName={creatorName}
                 lang={lang}
