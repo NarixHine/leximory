@@ -7,7 +7,7 @@ import { prefixUrl } from '@repo/env/config'
 import { domToPng } from 'modern-screenshot'
 import { useIsClient, useEventListener } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
-import { EMOJI, GEIST_MONO } from '@/lib/fonts'
+import { EMOJI } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses } from './stacked-cards'
@@ -94,9 +94,9 @@ export function ArticleCard({
                         {title}
                     </h2>
                 </div>
-                <div className='font-mono text-lg text-white/75 tracking-tight mt-3'>
+                <div className='font-sans text-lg text-white/75 tracking-tight mt-3'>
                     <div><span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本</div>
-                    {strategy.FormattedReadingTime ? <div className='truncate line-clamp-1'>{strategy.FormattedReadingTime(content)}</div> : null}
+                    {strategy.FormattedReadingTime ? <div className={'truncate line-clamp-1'}>{strategy.FormattedReadingTime(content)}</div> : null}
                 </div>
             </div>
 
@@ -134,8 +134,7 @@ export function ArticleCard({
 
             <footer className='flex mt-3'>
                 <p className={cn(
-                    'text-center text-sm text-neutral-300/70 uppercase text-shadow-lg',
-                    GEIST_MONO.className
+                    'text-center text-sm font-mono text-neutral-300/70 uppercase text-shadow-lg',
                 )}>
                     leximory.com
                 </p>

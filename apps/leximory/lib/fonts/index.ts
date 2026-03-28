@@ -1,6 +1,5 @@
 import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji } from 'next/font/google'
 import localFont from 'next/font/local'
-import { GeistPixelSquare } from 'geist/font/pixel'
 import { GeistMono } from 'geist/font/mono'
 
 export const MINCHO = localFont({
@@ -34,15 +33,7 @@ export const ENGLISH_SANS = DM_Sans({
     preload: false,
 })
 
-export const ENGLISH_MONO = Source_Code_Pro({
-    subsets: ['latin'],
-    weight: ['400'],
-    style: ['normal'],
-    variable: '--font-english-mono',
-})
-
-export const GEIST_PIXEL = GeistPixelSquare
-export const GEIST_MONO = GeistMono
+export const ENGLISH_MONO = GeistMono
 
 export const ENGLISH_IPA = Source_Code_Pro({
     subsets: ['latin'],

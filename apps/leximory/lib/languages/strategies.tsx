@@ -1,7 +1,6 @@
 import { Lang } from '@repo/env/config'
 import { createLanguageStrategy } from './utils'
 import { commentSyntaxRegex } from '@repo/utils/comment'
-import { GEIST_MONO } from '@/lib/fonts'
 
 const ZH_CHARS_PER_MINUTE = 150
 const JA_CHARS_PER_MINUTE = 150
@@ -23,7 +22,7 @@ export const englishStrategy = createLanguageStrategy({
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
     },
-    articleTitleFont: GEIST_MONO.className
+    articleTitleFont: 'font-mono'
 })
 
 export const chineseStrategy = createLanguageStrategy({
@@ -87,7 +86,7 @@ export const notListedStrategy = createLanguageStrategy({
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
     },
-    articleTitleFont: GEIST_MONO.className
+    articleTitleFont: 'font-mono'
 })
 
 const strategies = [englishStrategy, chineseStrategy, japaneseStrategy, notListedStrategy]

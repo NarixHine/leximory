@@ -31,7 +31,7 @@ async function HeroSection() {
                 <h1 className='text-2xl font-formal tracking-tight text-foreground truncate'>{username ?? '你好 👋'}</h1>
                 <span className='text-xs tracking-wider text-default-500 font-mono flex items-center gap-1.5'>
                     <PiCalendarBlankDuotone className='size-3.5' />
-                    {momentSH(createdAt).locale('zh-cn').calendar()} 加入
+                    {momentSH(createdAt).locale('zh-cn').calendar()} <span className='font-sans'>加入</span>
                 </span>
             </div>
         </section>
