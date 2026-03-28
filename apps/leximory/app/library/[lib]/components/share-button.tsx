@@ -41,6 +41,7 @@ export function LibraryShareButton({ libName, creatorName, lang, libId, texts, .
                 creatorName={creatorName}
                 lang={lang}
                 libId={libId}
+                texts={texts}
             />
         </>
     )
