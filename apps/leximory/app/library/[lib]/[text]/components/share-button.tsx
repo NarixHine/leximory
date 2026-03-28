@@ -76,7 +76,7 @@ export default function ShareButton({ isPublicAndFree, libName, libId, lang, ...
                         onPress={onOpen}
                         startContent={<PiImageDuotone className={iconClasses} />}
                     >
-                        获取精美分享卡片
+                        分享二维码卡片
                     </DropdownItem>
                 </DropdownMenu>
             </Dropdown>
