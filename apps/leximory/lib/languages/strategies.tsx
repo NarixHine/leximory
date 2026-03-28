@@ -1,6 +1,7 @@
 import { Lang } from '@repo/env/config'
 import { createLanguageStrategy } from './utils'
 import { commentSyntaxRegex } from '@repo/utils/comment'
+import { GEIST_MONO } from '@/lib/fonts'
 
 const ZH_CHARS_PER_MINUTE = 150
 const JA_CHARS_PER_MINUTE = 150
@@ -17,8 +18,12 @@ export const englishStrategy = createLanguageStrategy({
         const wordCount = sanitizedText.split(/\s+/).length
         return <span className='text-lg tracking-wide'>{wordCount} Words, {Math.ceil(wordCount / 120)}-Minute Read</span>
     },
-    exampleSentencePrompt: '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽“升腾”: ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
-    dictionaryLink: (word: string) => `https://www.etymonline.com/word/${word}`
+    exampleSentencePrompt: '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
+    dictionaryLink: (word: string) => `https://www.etymonline.com/word/${word}`,
+    libraryCardLabels: {
+        learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
+    },
+    articleTitleFont: GEIST_MONO.className
 })
 
 export const chineseStrategy = createLanguageStrategy({
@@ -37,7 +42,11 @@ export const chineseStrategy = createLanguageStrategy({
     proseClassName: 'prose-lg font-formal dropcap-zh',
     defineLabel: '注解',
     defineClassName: 'font-formal font-semibold',
-    dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`
+    dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`,
+    libraryCardLabels: {
+        learningWith: <span className='text-white/65'>正在阅读<span className='text-white/85'>此 Leximory 文库</span>来<span className='text-white/85'>学习文言文</span> ↓</span>
+    },
+    articleTitleFont: 'font-kaiti'
 })
 
 export const japaneseStrategy = createLanguageStrategy({
@@ -58,7 +67,11 @@ export const japaneseStrategy = createLanguageStrategy({
     pageFormat: (page, total, chapter) => `${chapter ? chapter.concat(' ') : ''}${page}/${total} ページ目`,
     defineLabel: '調べる',
     defineClassName: 'font-ja',
-    dictionaryLink: (word: string) => `https://jisho.org/search/${encodeURIComponent(word)}`
+    dictionaryLink: (word: string) => `https://jisho.org/search/${encodeURIComponent(word)}`,
+    libraryCardLabels: {
+        learningWith: <span className='text-white/65'>は<span className='text-white/85'>Leximory</span>で<span className='text-white/85'>日本語を勉強</span>している ↓</span>
+    },
+    articleTitleFont: 'font-kaiti'
 })
 
 export const notListedStrategy = createLanguageStrategy({
@@ -69,6 +82,10 @@ export const notListedStrategy = createLanguageStrategy({
     maxChunkSize: 2000,
     maxArticleLength: 10000,
     exampleSentencePrompt: '',
+    libraryCardLabels: {
+        learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
+    },
+    articleTitleFont: GEIST_MONO.className
 })
 
 const strategies = [englishStrategy, chineseStrategy, japaneseStrategy, notListedStrategy]

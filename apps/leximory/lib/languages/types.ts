@@ -17,6 +17,11 @@ export interface LanguageStrategy {
     defineLabel: string
     defineClassName: string
     dictionaryLink?: (word: string) => string
+    // for library card
+    libraryCardLabels: {
+        learningWith: ReactNode
+    }
+    articleTitleFont?: string
     // for ebook
     isRTL: boolean
     lineHeight: string

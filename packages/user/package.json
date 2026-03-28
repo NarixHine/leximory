@@ -18,7 +18,8 @@
     "@repo/kv": "workspace:^",
     "@repo/supabase": "workspace:^",
     "kv": "^1.1.1",
-    "supabase": "^2.72.4"
+    "supabase": "^2.72.4",
+    "server-only": "^0.0.1"
   },
   "peerDependencies": {
     "next": "^16.0.0"

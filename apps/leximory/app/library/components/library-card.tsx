@@ -10,6 +10,7 @@ import { domToPng } from 'modern-screenshot'
 import { useIsClient, useEventListener } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
 import { EMOJI, GEIST_MONO, GEIST_PIXEL } from '@/lib/fonts'
+import { getLanguageStrategy } from '@/lib/languages'
 
 interface TextItem {
     emoji: string | null
@@ -27,10 +28,14 @@ interface LibraryCardProps {
     texts?: TextItem[]
 }
 
-export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, texts }: LibraryCardProps) {
+export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId, texts }: LibraryCardProps) {
     const [isSaving, setIsSaving] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
     const isClient = useIsClient()
+    const strategy = getLanguageStrategy(lang)
+    const learningWith = strategy.libraryCardLabels.learningWith
+    const articleTitleFont = strategy.articleTitleFont
+
 
     useEventListener('keydown', (e: KeyboardEvent) => {
         if (isOpen && e.key === 'Escape') {
@@ -88,7 +93,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                                             {creatorName}
                                         </h2>
                                         <p className='text-2xl text-balance font-sans tracking-tight font-semibold leading-tight text-shadow-lg mt-1'>
-                                            <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
+                                            {learningWith}
                                         </p>
                                     </div>
 
@@ -112,7 +117,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                                                 <div className={`flex-1 min-w-0`}>
                                                     <p className={cn(
                                                         'text-medium text-balance text-white/90 leading-tight line-clamp-2 text-shadow-lg',
-                                                        GEIST_MONO.className
+                                                        articleTitleFont
                                                     )}>
                                                         {text.title}
                                                     </p>
