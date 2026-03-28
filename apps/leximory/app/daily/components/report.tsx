@@ -14,7 +14,7 @@ export default async function Report({ day }: {
     const words = await getForgetCurve({ day, userId })
     return words.length > 0 ? (
         <div className='my-10'>
-            <div className='flex flex-row items-center mb-4'>
+            <div className='flex flex-row items-center'>
                 <div className='flex-1 h-px bg-secondary-300/70 mr-5' />
                 <h2 className='flex items-center font-bold text-lg tracking-widest text-secondary-400 mx-auto w-108 sm:w-133'>
                     <div className='flex gap-1 items-center'>
