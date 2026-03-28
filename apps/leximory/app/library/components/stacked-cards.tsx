@@ -5,17 +5,19 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export type BgTheme = 'forest' | 'idyll' | 'lake' | 'night'
+
 export const themeImages: Record<BgTheme, string> = {
     forest: '/images/forest.webp',
     idyll: '/images/idyll.webp',
     lake: '/images/lake.webp',
     night: '/images/night.webp',
 }
+
 export const themeOverlayClasses: Record<BgTheme, string> = {
-    forest: 'bg-black/35',
-    idyll: 'bg-black/40',
+    forest: 'bg-linear-to-b from-black/50 via-black/20 to-black/50',
+    idyll: 'bg-linear-to-b from-black/40 via-black/20 to-black/40',
     lake: 'bg-black/20',
-    night: 'bg-black/1',
+    night: 'bg-black/1', // already dark enough
 }
 
 interface StackedCardsProps {
@@ -47,6 +49,25 @@ export function StackedCards({
         }
     }
 
+    const handleDragEnd = (_: unknown, info: { offset: { x: number }; velocity: { x: number } }) => {
+        const swipeThreshold = 50
+        const swipeVelocity = 500
+
+        if (info.offset.x < -swipeThreshold || info.velocity.x < -swipeVelocity) {
+            const nextIndex = Math.min(currentIndex + 1, themes.length - 1)
+            if (nextIndex !== currentIndex) {
+                setSelectedTheme(themes[nextIndex])
+                onThemeSelect?.(themes[nextIndex])
+            }
+        } else if (info.offset.x > swipeThreshold || info.velocity.x > swipeVelocity) {
+            const prevIndex = Math.max(currentIndex - 1, 0)
+            if (prevIndex !== currentIndex) {
+                setSelectedTheme(themes[prevIndex])
+                onThemeSelect?.(themes[prevIndex])
+            }
+        }
+    }
+
     return (
         <div className='absolute inset-0 flex items-center justify-center'>
             {themes.map((theme, index) => {
@@ -57,7 +78,7 @@ export function StackedCards({
                 return (
                     <motion.div
                         key={theme}
-                        className={cn('absolute', isSelected ? 'pointer-events-none' : 'cursor-pointer')}
+                        className={cn('absolute', isSelected ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer')}
                         initial={false}
                         animate={{
                             x: isSelected ? 0 : isLeft ? -80 : 80,
@@ -73,11 +94,15 @@ export function StackedCards({
                             damping: 25,
                             mass: 0.8,
                         }}
-                        onClick={() => handleThemeSelect(theme)}
+                        drag={isSelected ? 'x' : false}
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.7}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => !isSelected && handleThemeSelect(theme)}
                     >
                         <div
                             ref={isSelected ? selectedRef : undefined}
-                            className='relative w-95 h-150 overflow-hidden rounded-none shadow-2xl bg-black/85 border border-white/50'
+                            className='relative w-95 h-full overflow-hidden rounded-none shadow-2xl bg-black/85 border border-white/50'
                         >
                             <motion.img
                                 src={themeImages[theme]}
@@ -119,7 +144,7 @@ export function CardModal({ onClose, children }: CardModalProps) {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className='relative w-95 h-150'
+                    className='relative w-95 min-h-150'
                     onClick={(e) => e.stopPropagation()}
                 >
                     {children}

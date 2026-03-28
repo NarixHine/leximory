@@ -111,7 +111,7 @@ export function ArticleCard({
                 </div>
             </div>
 
-            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-3 mb-4'></div>
+            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-3 mb-6'></div>
 
             <div className='flex-1' />
 
