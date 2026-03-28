@@ -12,15 +12,18 @@ interface TextItem {
     title: string
 }
 
+type BgTheme = 'forest' | 'idyll' | 'lake'
+
 interface LibraryShareButtonProps extends ButtonProps {
     libName: string
     creatorName: string
     lang: Lang
     libId: string
     texts?: TextItem[]
+    bgTheme?: BgTheme
 }
 
-export function LibraryShareButton({ libName, creatorName, lang, libId, texts, ...props }: LibraryShareButtonProps) {
+export function LibraryShareButton({ libName, creatorName, lang, libId, texts, bgTheme, ...props }: LibraryShareButtonProps) {
     const { isOpen, onOpen, onClose } = useDisclosure({})
 
     return (
@@ -42,6 +45,7 @@ export function LibraryShareButton({ libName, creatorName, lang, libId, texts, .
                 lang={lang}
                 libId={libId}
                 texts={texts}
+                bgTheme={bgTheme}
             />
         </>
     )
