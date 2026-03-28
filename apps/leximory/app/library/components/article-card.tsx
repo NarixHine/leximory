@@ -93,17 +93,15 @@ export function ArticleCard({
     const renderCardContent = () => (
         <>
             <div>
-                <div className='grid grid-cols-[0.3fr_1fr] gap-3 mb-2 mt-2'>
-                    <div className='p-1'>
-                        <div className={cn(
-                            'shrink-0 p-1 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
-                            EMOJI.className
-                        )}>
-                            {emoji || '📄'}
-                        </div>
+                <div className='grid grid-cols-[0fr_1fr] gap-3 mb-2 mt-2'>
+                    <div className={cn(
+                        'shrink-0 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                        EMOJI.className
+                    )}>
+                        {emoji || '📄'}
                     </div>
                     <h2 className={cn(
-                        'font-fancy text-2xl tracking-tight line-clamp-2 text-white leading-tighter'
+                        'font-fancy text-2xl py-2 pl-1 tracking-tight shrink line-clamp-2 text-white leading-tighter'
                     )}>
                         {title}
                     </h2>

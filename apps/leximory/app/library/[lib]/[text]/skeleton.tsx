@@ -43,8 +43,7 @@ export function ArticleSkeleton() {
                 </div>
                 <Bone className='w-full h-full rounded-none min-h-[60dvh]' />
             </div>
-            <div className='w-[calc(50%+24px)] h-px block -mt-px mb-3 bg-divider animate-pulse' />
-
+            <div className='hidden w-[calc(50%+24px)] h-px md:block -mt-px mb-3 bg-divider animate-pulse' />
 
             <div className='flex justify-center'>
                 <Spinner color='default' variant='wave' />
