@@ -14,6 +14,7 @@ const env = createEnv({
         SUPABASE_URL: z.string().min(1),
         SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
         AI_GATEWAY_API_KEY: z.string().min(1),
+        TABSTACK_API_KEY: z.string().min(1),
     },
 
     client: {
@@ -27,6 +28,8 @@ const env = createEnv({
     runtimeEnv: {
         // Audio Generation
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
+        // Scraping
+        TABSTACK_API_KEY: process.env.TABSTACK_API_KEY,
         // Redis
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,

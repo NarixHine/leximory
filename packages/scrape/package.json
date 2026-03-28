@@ -14,8 +14,10 @@
     "typescript": "latest"
   },
   "dependencies": {
+    "@tabstack/sdk": "^2.3.0",
     "defuddle": "^0.14.0",
     "linkedom": "^0.18.12",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "@repo/env": "workspace:^"
   }
 }

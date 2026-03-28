@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
+import { AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
-import { Lang } from '@repo/schema/library'
 import { prefixUrl } from '@repo/env/config'
 import { domToPng } from 'modern-screenshot'
 import { useIsClient, useEventListener } from 'usehooks-ts'
@@ -13,30 +11,39 @@ import { EMOJI, GEIST_MONO } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
 import { StackedCards, CardModal, BgTheme } from './stacked-cards'
+import { commentSyntaxRegex } from '@repo/utils/comment'
+import { removeRubyFurigana } from '@/lib/comment'
+import Markdown from '@/components/markdown'
 
-interface TextItem {
-    emoji: string | null
-    id: string
-    title: string
-}
-
-interface LibraryCardProps {
+interface ArticleCardProps {
     isOpen: boolean
     onClose: () => void
+    title: string
     libName: string
-    creatorName: string
-    lang: Lang
     libId: string
-    texts?: TextItem[]
+    textId: string
+    content: string
+    emoji?: string | null
+    lang: string
     bgTheme?: BgTheme
 }
 
-export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId, texts, bgTheme = 'forest' }: LibraryCardProps) {
+export function ArticleCard({
+    isOpen,
+    onClose,
+    title,
+    libName,
+    libId,
+    textId,
+    content,
+    emoji,
+    lang,
+    bgTheme = 'forest',
+}: ArticleCardProps) {
     const [isSaving, setIsSaving] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
     const isClient = useIsClient()
-    const strategy = getLanguageStrategy(lang)
-    const learningWith = strategy.libraryCardLabels.learningWith
+    const strategy = getLanguageStrategy(lang as any)
     const articleTitleFont = strategy.articleTitleFont
 
     const themes: BgTheme[] = ['forest', 'idyll', 'lake']
@@ -46,6 +53,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
         idyll: '/images/idyll.webp',
         lake: '/images/lake.webp',
     }
+
     const themeOverlayClasses: Record<BgTheme, string> = {
         forest: 'bg-black/35',
         idyll: 'bg-black/30',
@@ -64,7 +72,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
         try {
             const dataUrl = await domToPng(cardRef.current, { quality: 1, scale: 2 })
             const link = document.createElement('a')
-            link.download = `leximory-${libName.replace(/\s+/g, '-').toLowerCase()}.png`
+            link.download = `leximory-${title.replace(/\s+/g, '-').toLowerCase()}.png`
             link.href = dataUrl
             link.click()
         } catch {
@@ -72,59 +80,58 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
         } finally {
             setIsSaving(false)
         }
-    }, [libName])
+    }, [title])
 
     if (!isClient) return null
 
-    const libUrl = prefixUrl(`/library/${libId}`)
+    const articleUrl = prefixUrl(`/read/${textId}`)
+    const contentWithoutComments = content.replace(commentSyntaxRegex, (_, p1) => p1 || '')
+    const contentWithoutRuby = removeRubyFurigana(contentWithoutComments)
+    // get first sentence or first 100 characters as excerpt
+    const excerpt = contentWithoutRuby.split(strategy.periodMark)[0].slice(0, 200) + (contentWithoutRuby.length > 200 ? '...' : '')
 
     const renderCardContent = () => (
         <>
             <div>
-                <h2 className={cn('font-fancy text-6xl tracking-tight text-white leading-tight -mb-2')}>
-                    {creatorName}
-                </h2>
-                <p className='text-2xl text-balance font-sans tracking-tight font-semibold leading-tight text-shadow-lg mt-1'>
-                    {learningWith}
+                <div className='grid grid-cols-[0.3fr_1fr] gap-3 mb-2 mt-2'>
+                    <div className='p-1'>
+                        <div className={cn(
+                            'shrink-0 p-1 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                            EMOJI.className
+                        )}>
+                            {emoji || '📄'}
+                        </div>
+                    </div>
+                    <h2 className={cn(
+                        'font-fancy text-2xl tracking-tight line-clamp-2 text-white leading-tighter'
+                    )}>
+                        {title}
+                    </h2>
+                </div>
+                <p className='font-mono text-white/80 tracking-tight mt-3'>
+                    {strategy.FormattedReadingTime ? <div className='-mt-2 truncate line-clamp-1'>{strategy.FormattedReadingTime(content)}</div> : null}
                 </p>
             </div>
 
-            <div className='bg-white/60 h-1 rounded-lg w-1/3 mt-4 mb-3'></div>
+            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-4 mb-3'></div>
 
-            <div className='flex-1 flex flex-col justify-center space-y-1'>
-                {texts?.slice(0, 5).map((text) => (
-                    <div key={text.id} className='flex items-center gap-3'>
-                        <div className={cn(
-                            'shrink-0 w-12 h-12 text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
-                            EMOJI.className
-                        )}>
-                            {text.emoji || '📄'}
-                        </div>
-                        <div className='flex-1 min-w-0'>
-                            <p className={cn(
-                                'text-medium text-balance text-white/90 leading-tight line-clamp-2 text-shadow-lg',
-                                articleTitleFont
-                            )}>
-                                {text.title}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-                {(!texts || texts.length === 0) && (
-                    <div className='text-center text-white/50 font-sans text-sm italic'>
-                        No articles yet
-                    </div>
-                )}
+            <div className=''>
+                <div className={cn(
+                    'text-medium text-balance text-white/90 leading-relaxed text-shadow-lg',
+                    articleTitleFont
+                )}>
+                    <Markdown md={excerpt} className='text-white/85 not-dropcap' />
+                </div>
             </div>
 
-            <div className='bg-white/60 h-1 rounded-lg w-1/3 mt-3 mb-4'></div>
+            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-3 mb-4'></div>
 
             <div className='flex-1' />
 
             <div className='grid grid-cols-[0.3fr_1fr] gap-4 items-center w-full'>
                 <div className='h-full aspect-square flex items-center justify-start'>
                     <QRCodeSVG
-                        value={libUrl}
+                        value={articleUrl}
                         style={{ width: '100%', height: '100%' }}
                         bgColor='transparent'
                         fgColor='#FFFFFF'
@@ -132,7 +139,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
                     />
                 </div>
                 <div className='flex justify-end w-full'>
-                    <h1 className='font-fancy leading-9 tracking-tight text-balance text-right text-4xl text-white'>
+                    <h1 className='font-fancy leading-9 tracking-tight text-balance text-right text-3xl text-white'>
                         {libName}
                     </h1>
                 </div>

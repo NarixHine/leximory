@@ -11,6 +11,7 @@ export function createLanguageStrategy(
     proseClassName: 'prose-lg font-formal',
     defineLabel: 'Define',
     defineClassName: 'font-formal',
+    periodMark: '.',
   }
 
   return { ...defaults, ...config } as LanguageStrategy

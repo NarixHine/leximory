@@ -33,7 +33,14 @@ export const Article = ({ title, text, content, topics, ebook, emoji, createdAt,
                 createdAt={createdAt}
                 libId={lib.id}
             />
-            <ArticleHeading hideControls={hideControls} isPublicAndFree={isPublicAndFree} quoteInAgent={<QuoteInAgent className='mb-2 print:invisible' />} />
+            <ArticleHeading 
+                hideControls={hideControls} 
+                isPublicAndFree={isPublicAndFree} 
+                quoteInAgent={<QuoteInAgent className='mb-2 print:invisible' />}
+                libId={lib.id}
+                libName={lib.name}
+                lang={lib.lang}
+            />
             <div className='px-5 sm:w-5/6 mx-auto'>
                 <Digest hideImportControls={hideControls}></Digest>
             </div>

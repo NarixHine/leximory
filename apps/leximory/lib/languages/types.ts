@@ -5,6 +5,7 @@ export interface LanguageStrategy {
     type: Lang
     name: string
     emoji: string
+    periodMark: string
     // for corpus
     welcome: string
     // for annotation
