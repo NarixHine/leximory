@@ -14,7 +14,7 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "defuddle": "^0.13.0",
+    "defuddle": "^0.14.0",
     "linkedom": "^0.18.12",
     "server-only": "0.0.1"
   }
