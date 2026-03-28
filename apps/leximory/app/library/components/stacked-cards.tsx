@@ -4,7 +4,19 @@ import { ReactNode, useState } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-export type BgTheme = 'forest' | 'idyll' | 'lake'
+export type BgTheme = 'forest' | 'idyll' | 'lake' | 'night'
+export const themeImages: Record<BgTheme, string> = {
+    forest: '/images/forest.webp',
+    idyll: '/images/idyll.webp',
+    lake: '/images/lake.webp',
+    night: '/images/night.webp',
+}
+export const themeOverlayClasses: Record<BgTheme, string> = {
+    forest: 'bg-black/35',
+    idyll: 'bg-black/40',
+    lake: 'bg-black/20',
+    night: 'bg-black/1',
+}
 
 interface StackedCardsProps {
     themes: BgTheme[]
@@ -70,7 +82,7 @@ export function StackedCards({
                             <motion.img
                                 src={themeImages[theme]}
                                 alt=''
-                                className='absolute inset-0 w-full h-full object-cover opacity-70'
+                                className='absolute inset-0 w-full h-full object-cover'
                             />
                             {themeOverlayClasses?.[theme] && (
                                 <div className={cn('absolute inset-0', themeOverlayClasses[theme])} />

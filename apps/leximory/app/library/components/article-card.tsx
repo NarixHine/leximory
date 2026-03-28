@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { EMOJI, GEIST_MONO } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { StackedCards, CardModal, BgTheme } from './stacked-cards'
+import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses } from './stacked-cards'
 import { commentSyntaxRegex } from '@repo/utils/comment'
 import { removeRubyFurigana } from '@/lib/comment'
 import Markdown from '@/components/markdown'
@@ -46,19 +46,7 @@ export function ArticleCard({
     const strategy = getLanguageStrategy(lang as any)
     const articleTitleFont = strategy.articleTitleFont
 
-    const themes: BgTheme[] = ['forest', 'idyll', 'lake']
-
-    const themeImages: Record<BgTheme, string> = {
-        forest: '/images/forest.webp',
-        idyll: '/images/idyll.webp',
-        lake: '/images/lake.webp',
-    }
-
-    const themeOverlayClasses: Record<BgTheme, string> = {
-        forest: 'bg-black/35',
-        idyll: 'bg-black/30',
-        lake: 'bg-black/20',
-    }
+    const themes: BgTheme[] = ['forest', 'idyll', 'lake', 'night']
 
     useEventListener('keydown', (e: KeyboardEvent) => {
         if (isOpen && e.key === 'Escape') {
@@ -106,9 +94,10 @@ export function ArticleCard({
                         {title}
                     </h2>
                 </div>
-                <p className='font-mono text-white/80 tracking-tight mt-3'>
-                    {strategy.FormattedReadingTime ? <div className='-mt-2 truncate line-clamp-1'>{strategy.FormattedReadingTime(content)}</div> : null}
-                </p>
+                <div className='font-mono text-lg text-white/75 tracking-tight mt-3'>
+                    <div><span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本</div>
+                    {strategy.FormattedReadingTime ? <div className='truncate line-clamp-1'>{strategy.FormattedReadingTime(content)}</div> : null}
+                </div>
             </div>
 
             <div className='bg-white/60 h-px rounded-lg w-1/3 mt-4 mb-3'></div>
@@ -145,13 +134,13 @@ export function ArticleCard({
 
             <footer className='flex mt-3'>
                 <p className={cn(
-                    'text-center text-sm text-white/75 uppercase text-shadow-lg',
+                    'text-center text-sm text-neutral-300/70 uppercase text-shadow-lg',
                     GEIST_MONO.className
                 )}>
                     leximory.com
                 </p>
                 <div className='flex-1'></div>
-                <p className='text-center font-kaiti text-sm text-white/75 uppercase text-shadow-lg'>
+                <p className='text-center font-kaiti text-sm text-neutral-300/70 uppercase text-shadow-lg'>
                     语言学地学语言
                 </p>
             </footer>

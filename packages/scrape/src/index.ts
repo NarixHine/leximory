@@ -26,8 +26,6 @@ export async function defuddleUrl(url: string) {
     return { title: title || site || 'Untitled', content }
 }
 
-import 'server-only'
-
 const tabs = new Tabstack({
     apiKey: env.TABSTACK_API_KEY
 })

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
+import { AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import { Lang } from '@repo/schema/library'
 import { prefixUrl } from '@repo/env/config'
@@ -12,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { EMOJI, GEIST_MONO } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { StackedCards, CardModal, BgTheme } from './stacked-cards'
+import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses } from './stacked-cards'
 
 interface TextItem {
     emoji: string | null
@@ -39,18 +38,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
     const learningWith = strategy.libraryCardLabels.learningWith
     const articleTitleFont = strategy.articleTitleFont
 
-    const themes: BgTheme[] = ['forest', 'idyll', 'lake']
-
-    const themeImages: Record<BgTheme, string> = {
-        forest: '/images/forest.webp',
-        idyll: '/images/idyll.webp',
-        lake: '/images/lake.webp',
-    }
-    const themeOverlayClasses: Record<BgTheme, string> = {
-        forest: 'bg-black/35',
-        idyll: 'bg-black/30',
-        lake: 'bg-black/20',
-    }
+    const themes: BgTheme[] = ['forest', 'idyll', 'lake', 'night']
 
     useEventListener('keydown', (e: KeyboardEvent) => {
         if (isOpen && e.key === 'Escape') {
