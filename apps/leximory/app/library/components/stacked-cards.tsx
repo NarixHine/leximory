@@ -1,8 +1,9 @@
 'use client'
 
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useScrollLock } from 'usehooks-ts'
 
 export type BgTheme = 'forest' | 'idyll' | 'lake' | 'night'
 
@@ -129,7 +130,20 @@ interface CardModalProps {
     children: ReactNode
 }
 
-export function CardModal({ onClose, children }: CardModalProps) {
+export function CardModal({ isOpen, onClose, children }: CardModalProps) {
+    const { lock, unlock } = useScrollLock({ autoLock: false })
+
+    useEffect(() => {
+        if (isOpen) {
+            lock()
+        } else {
+            unlock()
+        }
+        return () => {
+            unlock()
+        }
+    }, [isOpen, lock, unlock])
+
     return (
         <>
             <motion.div
