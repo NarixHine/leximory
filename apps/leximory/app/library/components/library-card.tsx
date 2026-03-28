@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { QRCodeSVG } from 'qrcode.react'
 import { Lang } from '@repo/schema/library'
 import { prefixUrl } from '@repo/env/config'
+import { domToPng } from 'modern-screenshot'
+import { useIsClient, useEventListener } from 'usehooks-ts'
 import { cn } from '@/lib/utils'
+import { EMOJI, GEIST_MONO, GEIST_PIXEL } from '@/lib/fonts'
 
 interface TextItem {
     emoji: string | null
@@ -25,23 +28,33 @@ interface LibraryCardProps {
 }
 
 export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, texts }: LibraryCardProps) {
-    const [mounted, setMounted] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const cardRef = useRef<HTMLDivElement>(null)
+    const isClient = useIsClient()
 
-    useEffect(() => { setMounted(true) }, [])
-    useEffect(() => {
-        if (isOpen) document.body.style.overflow = 'hidden'
-        return () => { document.body.style.overflow = '' }
-    }, [isOpen])
-    useEffect(() => {
-        if (!isOpen) return
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose()
+    useEventListener('keydown', (e: KeyboardEvent) => {
+        if (isOpen && e.key === 'Escape') {
+            onClose()
         }
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, onClose])
+    })
 
-    if (!mounted) return null
+    const handleSaveImage = useCallback(async () => {
+        if (!cardRef.current) return
+        setIsSaving(true)
+        try {
+            const dataUrl = await domToPng(cardRef.current, { quality: 1, scale: 2 })
+            const link = document.createElement('a')
+            link.download = `leximory-${libName.replace(/\s+/g, '-').toLowerCase()}.png`
+            link.href = dataUrl
+            link.click()
+        } catch (error) {
+            console.error('Failed to save image:', error)
+        } finally {
+            setIsSaving(false)
+        }
+    }, [libName])
+
+    if (!isClient) return null
 
     const libUrl = prefixUrl(`/library/${libId}`)
 
@@ -65,13 +78,13 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                             className='relative w-95 h-150'
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className='relative w-full h-full overflow-hidden rounded-2xl shadow-2xl bg-black/80 border border-white/50'>
-                                <Image src='/images/card.webp' alt='' fill className='object-cover opacity-65' priority />
+                            <div ref={cardRef} className='relative w-full h-full overflow-hidden rounded-none shadow-2xl bg-black/85 border border-white/50'>
+                                <Image src='/images/card.webp' alt='' fill className='object-cover opacity-70' priority />
 
                                 <div className='relative h-full flex flex-col px-8 pb-4 pt-5 z-10'>
                                     {/* Top: Creator Info */}
                                     <div>
-                                        <h2 className='font-fancy text-6xl tracking-tight text-white drop-shadow-md leading-tight -mb-2'>
+                                        <h2 className={cn('font-fancy text-6xl tracking-tight text-white drop-shadow-md leading-tight -mb-2')}>
                                             {creatorName}
                                         </h2>
                                         <p className='text-2xl text-balance font-sans tracking-tight font-semibold leading-tight text-shadow-lg mt-1'>
@@ -89,12 +102,18 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                                                 className={`flex items-center gap-3`}
                                             >
                                                 {/* Emoji Cover */}
-                                                <div className='shrink-0 w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-2xl shadow-lg'>
+                                                <div className={cn(
+                                                    'shrink-0 w-12 h-12 text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                                                    EMOJI.className
+                                                )}>
                                                     {text.emoji || '📄'}
                                                 </div>
                                                 {/* Title */}
                                                 <div className={`flex-1 min-w-0`}>
-                                                    <p className='font-mono text-medium text-balance font-semibold text-white/85 leading-tight line-clamp-2 text-shadow-lg'>
+                                                    <p className={cn(
+                                                        'text-medium text-balance text-white/90 leading-tight line-clamp-2 text-shadow-lg',
+                                                        GEIST_MONO.className
+                                                    )}>
                                                         {text.title}
                                                     </p>
                                                 </div>
@@ -131,7 +150,10 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                                     </div>
 
                                     <footer className='flex mt-3'>
-                                        <p className='text-center font-mono text-sm text-white/75 uppercase text-shadow-lg'>
+                                        <p className={cn(
+                                            'text-center text-sm text-white/75 uppercase text-shadow-lg',
+                                            GEIST_MONO.className
+                                        )}>
                                             leximory.com
                                         </p>
                                         <div className='flex-1'></div>
@@ -142,12 +164,21 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, libId, text
                                 </div>
                             </div>
 
-                            <button
-                                onClick={onClose}
-                                className='absolute -bottom-15 left-1/2 -translate-x-1/2 text-foreground/50 hover:text-foreground text-medium font-mono tracking-wide uppercase transition-all'
-                            >
-                                [ Dismiss ]
-                            </button>
+                            <div className='absolute -bottom-15 left-1/2 -translate-x-1/2 w-full flex justify-evenly items-center gap-6'>
+                                <button
+                                    onClick={handleSaveImage}
+                                    disabled={isSaving}
+                                    className='text-foreground/50 hover:text-foreground text-medium shrink-0 font-mono tracking-wide uppercase transition-all disabled:opacity-50'
+                                >
+                                    [ {isSaving ? 'Saving ...' : 'Save Image'} ]
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className='text-foreground/50 hover:text-foreground text-medium shrink-0 font-mono tracking-wide uppercase transition-all'
+                                >
+                                    [ Dismiss ]
+                                </button>
+                            </div>
                         </motion.div>
                     </div>
                 </>

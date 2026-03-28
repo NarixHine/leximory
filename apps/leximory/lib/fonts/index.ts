@@ -1,9 +1,16 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji } from 'next/font/google'
 import localFont from 'next/font/local'
+import { GeistPixelSquare } from 'geist/font/pixel'
+import { GeistMono } from 'geist/font/mono'
 
 export const MINCHO = localFont({
     src: './mincho.woff2',
     variable: '--font-mincho',
+})
+
+export const EMOJI = Noto_Emoji({
+    weight: '400',
+    preload: false,
 })
 
 export const KAITI = localFont({
@@ -33,6 +40,9 @@ export const ENGLISH_MONO = Source_Code_Pro({
     style: ['normal'],
     variable: '--font-english-mono',
 })
+
+export const GEIST_PIXEL = GeistPixelSquare
+export const GEIST_MONO = GeistMono
 
 export const ENGLISH_IPA = Source_Code_Pro({
     subsets: ['latin'],
