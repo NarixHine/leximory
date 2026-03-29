@@ -52,6 +52,6 @@ export const ENGLISH_SERIF = Libre_Baskerville({
 export const ENGLISH_FANCY = EB_Garamond({
     subsets: ['latin'],
     style: ['normal', 'italic'],
-    weight: ['400'],
+    weight: 'variable',
     variable: '--font-english-fancy',
 })

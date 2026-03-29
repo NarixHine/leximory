@@ -28,7 +28,7 @@ export function ArticleSkeleton() {
             </div>
 
             {/* md+ skeleton: side-by-side hero */}
-            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-dvh md:items-center'>
+            <div className='hidden md:grid md:grid-cols-[1fr_1fr] md:gap-12 md:min-h-screen md:items-center'>
                 <div className='flex flex-col max-w-[calc(40dvw)] self-end justify-self-start pb-10 pl-10'>
                     <Bone className='w-8 h-8 rounded-full mb-3' />
                     <Bone className='w-32 h-5 rounded-lg mb-4' />

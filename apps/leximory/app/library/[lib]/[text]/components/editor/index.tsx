@@ -49,7 +49,7 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
                     'prose-em:font-light',
                     '[&_pre_code]:before:content-none [&_pre_code]:after:content-none prose-pre:bg-stone-600 prose-pre:border-stone-600',
                     'font-formal min-h-40',
-                    'prose-headings:font-fancy',
+                    'prose-headings:font-fancy prose-headings:font-semibold',
                     className
                 ),
             },

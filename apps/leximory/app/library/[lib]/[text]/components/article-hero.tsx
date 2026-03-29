@@ -18,7 +18,7 @@ export function ArticleHero({ title, topics, libId, lang, content, hasEbook }: {
     return (<>
         <div className={cn('print:hidden hidden md:flex md:flex-col w-full opacity-100 transition-opacity duration-500', isFullViewport && 'opacity-0')}>
             {/* md+ layout: side-by-side, emoji on right, text on left */}
-            <div className='grid grid-cols-[1fr_1fr] gap-12 min-h-dvh items-center'>
+            <div className='grid grid-cols-[1fr_1fr] gap-12 min-h-screen items-center'>
                 <div className='flex flex-col max-w-[calc(40dvw)] mx-auto self-end pb-11'>
                     <BackwardButton libId={libId} className='mb-5 -ml-3' />
                     <h1 className='font-fancy uppercase text-4xl leading-tighter tracking-wide text-foreground text-balance mb-5'>
