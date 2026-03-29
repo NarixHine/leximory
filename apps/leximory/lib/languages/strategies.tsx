@@ -44,7 +44,7 @@ export const chineseStrategy = createLanguageStrategy({
     defineClassName: 'font-formal font-semibold',
     dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`,
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>正在阅读<span className='text-white/85'>此 Leximory 文库</span>来<span className='text-white/85'>学习文言文</span> ↓</span>
+        learningWith: <span className='text-white/65'>正在阅读<span className='text-white/90'>此 Leximory 文库</span>来<span className='text-white/90'>学习文言文</span> ↓</span>
     },
     articleTitleFont: 'font-kaiti'
 })
@@ -84,7 +84,7 @@ export const notListedStrategy = createLanguageStrategy({
     maxArticleLength: 10000,
     exampleSentencePrompt: '',
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
+        learningWith: <span className='text-white/65'>is <span className='text-white/95'>learning</span> with the <span className='text-white/95'>Leximory Library</span> ↓</span>
     },
     articleTitleFont: 'font-mono'
 })

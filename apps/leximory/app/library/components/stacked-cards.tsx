@@ -26,7 +26,7 @@ export const themeOverlayClasses: Record<BgTheme, string> = {
 export const themeTextClasses: Record<BgTheme, string> = {
     forest: 'text-white/95 text-shadow-lg/30',
     idyll: 'text-white/95 text-shadow-lg/20',
-    lake: 'text-white/90',
+    lake: 'text-white/90 text-shadow-xs/5',
     night: 'text-white/90',
 }
 
