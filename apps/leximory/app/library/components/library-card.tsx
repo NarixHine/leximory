@@ -75,7 +75,7 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
                     <h2 className={cn('font-fancy text-6xl tracking-tight text-white leading-tight -mb-2')}>
                         {creatorName}
                     </h2>
-                    <p className='text-2xl text-balance font-sans tracking-tight font-semibold leading-tight text-shadow-lg mt-1'>
+                    <p className='text-2xl text-balance text-white/75 font-sans tracking-tight font-semibold leading-tight mt-1'>
                         {learningWith}
                     </p>
                 </div>

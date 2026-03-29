@@ -92,14 +92,15 @@ export function ArticleCard({
                             {emoji || '📄'}
                         </div>
                         <h2 className={cn(
-                            'font-fancy text-2xl py-2 pl-1 tracking-tight shrink line-clamp-2 leading-tighter',
-                            textClass
+                            'font-fancy text-2xl py-2 pl-1 text-white tracking-tight shrink line-clamp-2 leading-tighter',
                         )}>
                             {title}
                         </h2>
                     </div>
-                    <div className={cn('font-sans text-lg tracking-tight mt-3', textClass)}>
-                        <div><span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本</div>
+                    <div className={cn('font-sans text-lg tracking-tight mt-3 text-white/75 text-shadow-xs/30')}>
+                        <div>
+                            <span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本
+                        </div>
                         {strategy.FormattedReadingTime ? <div className={'truncate line-clamp-1'}>{strategy.FormattedReadingTime(content)}</div> : null}
                     </div>
                 </div>
