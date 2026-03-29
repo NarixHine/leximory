@@ -10,6 +10,9 @@ import EditorBubbleMenu from './bubble-menu'
 import { markdownToHtml, getMarkdownFromEditor } from './serialization'
 import { useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { useAtomValue } from 'jotai'
+import { langAtom } from '../../../atoms'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
 
 interface LeximoryEditorProps {
     value: string
@@ -18,6 +21,8 @@ interface LeximoryEditorProps {
 }
 
 export default function LeximoryEditor({ value, onChange, className }: LeximoryEditorProps) {
+    const lang = useAtomValue(langAtom)
+    const strategy = getLanguageStrategy(lang)
     const initialHtml = useRef(markdownToHtml(value))
 
     const editor = useEditor({
@@ -44,6 +49,7 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
                     'prose-em:font-light',
                     '[&_pre_code]:before:content-none [&_pre_code]:after:content-none prose-pre:bg-stone-600 prose-pre:border-stone-600',
                     'font-formal min-h-40',
+                    'prose-headings:font-fancy',
                     className
                 ),
             },
@@ -59,7 +65,7 @@ export default function LeximoryEditor({ value, onChange, className }: LeximoryE
     if (!editor) return null
 
     return (
-        <div className='w-full dropcap has-dropcap-first'>
+        <div className={cn('w-full', strategy.isDropcapEnabled && 'dropcap has-dropcap-first')}>
             <EditorBubbleMenu editor={editor} />
             <article>
                 <EditorContent editor={editor} />

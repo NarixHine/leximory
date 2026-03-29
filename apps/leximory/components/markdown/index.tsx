@@ -15,6 +15,7 @@ import { memo } from 'react'
 import sanitize from 'sanitize-html'
 import Equation from './equation'
 import { langAtom } from '@/app/library/[lib]/atoms'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
 
 export type MarkdownProps = {
     md: string,
@@ -67,13 +68,17 @@ function Markdown({ md, deleteId, className, asCard, hasWrapped, disableSave, on
             return `<span class="smallcaps">${p1}</span>`
         })
 
+    const strategy = getLanguageStrategy(lang)
+
     // After stripping the <article> wrapper and any leading zero-width/nbsp chars,
     // the first paragraph starts with a dropcap-eligible letter only when it begins
     // with plain text rather than a <Comment> / <Nobr> / <Audio> tag.
-    const firstParaDropcap = /^\p{L}/u.test(
-        result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
-    ) || /^<span class="smallcaps">/i.test(
-        result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
+    const firstParaDropcap = strategy.isDropcapEnabled && (
+        /^\p{L}/u.test(
+            result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
+        ) || /^<span class="smallcaps">/i.test(
+            result.replace(/^<article>\n?/, '').replace(/^[\u200B\u200E\u200F\u00A0]+/, '').trimStart()
+        )
     )
 
     return (

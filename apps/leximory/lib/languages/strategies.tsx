@@ -12,6 +12,7 @@ export const englishStrategy = createLanguageStrategy({
     welcome: '{{Welcome!||welcome||Welcome to your new English library!}}',
     maxChunkSize: 5000,
     maxArticleLength: 30000,
+    isDropcapEnabled: true,
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const wordCount = sanitizedText.split(/\s+/).length

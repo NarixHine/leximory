@@ -186,6 +186,7 @@ function ReadingView() {
   const text = useAtomValue(textAtom)
   const lang = useAtomValue(langAtom)
   const { user } = useAuth()
+  const strategy = getLanguageStrategy(lang)
   const { ref: bottomRef, entry } = useIntersectionObserver({
     freezeOnceVisible: true
   })
@@ -228,8 +229,8 @@ function ReadingView() {
       <Markdown
         className={cn(
           isReaderMode && !inlineMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
-          !isReaderMode && 'dropcap',
-          getLanguageStrategy(lang).proseClassName,
+          !isReaderMode && strategy.isDropcapEnabled && 'dropcap',
+          strategy.proseClassName,
           lang === 'zh' && inlineMode && 'inline-mode'
         )}
         md={`<article>\n${content}\n</article>`}

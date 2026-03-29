@@ -369,12 +369,8 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
                 {CommentWithPopover}
                 {portions[2] && (
                     <span className={cn(
-                        'inline-annotation',
-                        'text-sm',
-                        'text-default-500',
-                        'font-normal',
+                        'font-kaiti text-sm text-default-500 font-normal',
                         'mx-0.5',
-                        lang === 'ja' ? 'font-ja' : 'font-mono'
                     )}>
                         {processDefinition(portions[2])}
                     </span>

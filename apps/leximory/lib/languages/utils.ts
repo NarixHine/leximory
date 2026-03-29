@@ -12,6 +12,7 @@ export function createLanguageStrategy(
     defineLabel: 'Define',
     defineClassName: 'font-formal',
     periodMark: '.',
+    isDropcapEnabled: false,
   }
 
   return { ...defaults, ...config } as LanguageStrategy
