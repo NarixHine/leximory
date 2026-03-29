@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { EMOJI } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses } from './stacked-cards'
+import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses, themeTextClasses, cardThemes } from './stacked-cards'
 import { commentSyntaxRegex } from '@repo/utils/comment'
 import { removeRubyFurigana } from '@/lib/comment'
 import Markdown from '@/components/markdown'
@@ -38,7 +38,7 @@ export function ArticleCard({
     content,
     emoji,
     lang,
-    bgTheme = 'forest',
+    bgTheme = 'lake',
 }: ArticleCardProps) {
     const [isSaving, setIsSaving] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
@@ -46,7 +46,7 @@ export function ArticleCard({
     const strategy = getLanguageStrategy(lang as any)
     const articleTitleFont = strategy.articleTitleFont
 
-    const themes: BgTheme[] = ['forest', 'idyll', 'lake', 'night']
+    const themes = cardThemes
 
     useEventListener('keydown', (e: KeyboardEvent) => {
         if (isOpen && e.key === 'Escape') {
@@ -78,73 +78,78 @@ export function ArticleCard({
     // get first sentence or first 100 characters as excerpt
     const excerpt = contentWithoutRuby.split(strategy.periodMark)[0].slice(0, 200) + (contentWithoutRuby.length > 200 ? '...' : '')
 
-    const renderCardContent = () => (
-        <>
-            <div>
-                <div className='grid grid-cols-[0fr_1fr] gap-3 mb-2 mt-2'>
-                    <div className={cn(
-                        'shrink-0 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
-                        EMOJI.className
-                    )}>
-                        {emoji || '📄'}
+    const renderCardContent = (theme: BgTheme, isSelected: boolean) => {
+        const textClass = themeTextClasses[theme]
+
+        return (
+            <>
+                <div>
+                    <div className='grid grid-cols-[0fr_1fr] gap-3 mb-2 mt-2'>
+                        <div className={cn(
+                            'shrink-0 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                            EMOJI.className
+                        )}>
+                            {emoji || '📄'}
+                        </div>
+                        <h2 className={cn(
+                            'font-fancy text-2xl py-2 pl-1 tracking-tight shrink line-clamp-2 leading-tighter',
+                            textClass
+                        )}>
+                            {title}
+                        </h2>
                     </div>
-                    <h2 className={cn(
-                        'font-fancy text-2xl py-2 pl-1 tracking-tight shrink line-clamp-2 text-white leading-tighter'
+                    <div className={cn('font-sans text-lg tracking-tight mt-3', textClass)}>
+                        <div><span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本</div>
+                        {strategy.FormattedReadingTime ? <div className={'truncate line-clamp-1'}>{strategy.FormattedReadingTime(content)}</div> : null}
+                    </div>
+                </div>
+
+                <div className='bg-white/60 h-px rounded-lg w-1/3 mt-4 mb-3'></div>
+
+                <div className=''>
+                    <div className={cn(
+                        'text-medium text-balance leading-relaxed text-shadow-lg',
+                        articleTitleFont
                     )}>
-                        {title}
-                    </h2>
+                        <Markdown md={excerpt} className={cn('not-dropcap', textClass)} />
+                    </div>
                 </div>
-                <div className='font-sans text-lg text-white/75 tracking-tight mt-3'>
-                    <div><span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本</div>
-                    {strategy.FormattedReadingTime ? <div className={'truncate line-clamp-1'}>{strategy.FormattedReadingTime(content)}</div> : null}
+
+                <div className='bg-white/60 h-px rounded-lg w-1/3 mt-3 mb-6'></div>
+
+                <div className='flex-1' />
+
+                <div className='grid grid-cols-[0.3fr_1fr] gap-4 items-center w-full'>
+                    <div className='h-full aspect-square flex items-center justify-start'>
+                        <QRCodeSVG
+                            value={articleUrl}
+                            style={{ width: '100%', height: '100%' }}
+                            bgColor='transparent'
+                            fgColor='#FFFFFF'
+                            level='L'
+                        />
+                    </div>
+                    <div className='flex justify-end w-full'>
+                        <h1 className='font-fancy leading-9 tracking-tight text-balance text-right text-3xl text-white'>
+                            {libName}
+                        </h1>
+                    </div>
                 </div>
-            </div>
 
-            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-4 mb-3'></div>
-
-            <div className=''>
-                <div className={cn(
-                    'text-medium text-balance text-white/90 leading-relaxed text-shadow-lg',
-                    articleTitleFont
-                )}>
-                    <Markdown md={excerpt} className='text-white/85 not-dropcap' />
-                </div>
-            </div>
-
-            <div className='bg-white/60 h-px rounded-lg w-1/3 mt-3 mb-6'></div>
-
-            <div className='flex-1' />
-
-            <div className='grid grid-cols-[0.3fr_1fr] gap-4 items-center w-full'>
-                <div className='h-full aspect-square flex items-center justify-start'>
-                    <QRCodeSVG
-                        value={articleUrl}
-                        style={{ width: '100%', height: '100%' }}
-                        bgColor='transparent'
-                        fgColor='#FFFFFF'
-                        level='L'
-                    />
-                </div>
-                <div className='flex justify-end w-full'>
-                    <h1 className='font-fancy leading-9 tracking-tight text-balance text-right text-3xl text-white'>
-                        {libName}
-                    </h1>
-                </div>
-            </div>
-
-            <footer className='flex mt-3'>
-                <p className={cn(
-                    'text-center text-sm font-mono text-neutral-300/70 uppercase text-shadow-lg',
-                )}>
-                    leximory.com
-                </p>
-                <div className='flex-1'></div>
-                <p className='text-center font-kaiti text-sm text-neutral-300/70 uppercase text-shadow-lg'>
-                    语言学地学语言
-                </p>
-            </footer>
-        </>
-    )
+                <footer className='flex mt-3'>
+                    <p className={cn(
+                        'text-center text-sm font-mono text-neutral-300/70 uppercase text-shadow-lg',
+                    )}>
+                        leximory.com
+                    </p>
+                    <div className='flex-1'></div>
+                    <p className='text-center font-kaiti text-sm text-neutral-300/70 uppercase text-shadow-lg'>
+                        语言学地学语言
+                    </p>
+                </footer>
+            </>
+        )
+    }
 
     return (
         <AnimatePresence>

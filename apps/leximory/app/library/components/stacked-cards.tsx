@@ -7,6 +7,8 @@ import { useScrollLock } from 'usehooks-ts'
 
 export type BgTheme = 'forest' | 'idyll' | 'lake' | 'night'
 
+export const cardThemes: BgTheme[] = ['lake', 'forest', 'idyll', 'night'] as const
+
 export const themeImages: Record<BgTheme, string> = {
     forest: '/images/forest.webp',
     idyll: '/images/idyll.webp',
@@ -15,10 +17,17 @@ export const themeImages: Record<BgTheme, string> = {
 }
 
 export const themeOverlayClasses: Record<BgTheme, string> = {
-    forest: 'bg-linear-to-b from-black/50 via-black/20 to-black/50',
-    idyll: 'bg-linear-to-b from-black/40 via-black/20 to-black/40',
+    forest: 'bg-linear-to-b from-black/50 via-black/25 to-black/50',
+    idyll: 'bg-linear-to-b from-black/50 via-black/25 to-black/50',
     lake: 'bg-black/20',
     night: 'bg-black/1', // already dark enough
+}
+
+export const themeTextClasses: Record<BgTheme, string> = {
+    forest: 'text-white/95 text-shadow-lg/30',
+    idyll: 'text-white/95 text-shadow-lg/20',
+    lake: 'text-white/90',
+    night: 'text-white/90',
 }
 
 interface StackedCardsProps {
@@ -33,7 +42,7 @@ interface StackedCardsProps {
 
 export function StackedCards({
     themes,
-    defaultTheme,
+    defaultTheme = 'lake',
     themeImages,
     themeOverlayClasses,
     selectedRef,

@@ -5,14 +5,13 @@ import { Button, type ButtonProps } from '@heroui/button'
 import { LibraryCard } from '../../components/library-card'
 import { Lang } from '@repo/schema/library'
 import { useDisclosure } from '@heroui/modal'
+import { BgTheme } from '../../components/stacked-cards'
 
 interface TextItem {
     emoji: string | null
     id: string
     title: string
 }
-
-type BgTheme = 'forest' | 'idyll' | 'lake'
 
 interface LibraryShareButtonProps extends ButtonProps {
     libName: string

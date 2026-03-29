@@ -22,7 +22,7 @@ export const englishStrategy = createLanguageStrategy({
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
     },
-    articleTitleFont: 'font-mono'
+    articleTitleFont: 'font-formal leading-tight italic'
 })
 
 export const chineseStrategy = createLanguageStrategy({

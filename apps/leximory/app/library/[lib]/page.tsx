@@ -65,7 +65,6 @@ async function PageContent({ params }: LibProps) {
                     libId={lib}
                     texts={texts}
                     className='ml-auto'
-                    bgTheme='idyll'
                 />
             </div>
         </header>
