@@ -32,16 +32,27 @@ export default function lexiconWrap(text: string, lexicon?: CustomLexicon): stri
         return text
     }
     const words = LEXICON[lexicon]
+    const wordsSet = new Set(words.map(word => word.toLowerCase()))
 
     const checkAndReplace = (word: string): string => {
-        const originalForms = originals(word)
-        if (originalForms.some(originalForm => words.includes(originalForm))) {
+        const normalizedWord = word.toLowerCase()
+
+        // Avoid lemmatizing contractions like "haven't" -> "haven"
+        if (/[\'’]/.test(word)) {
+            if (wordsSet.has(normalizedWord)) {
+                return `{{${word}}}`
+            }
+            return word
+        }
+
+        const originalForms = originals(normalizedWord).map(form => form.toLowerCase())
+        if (wordsSet.has(normalizedWord) || originalForms.some(originalForm => wordsSet.has(originalForm))) {
             return `{{${word}}}`
         }
         return word
     }
 
-    return text.replace(/\b[\w']+\b/g, (match, offset) => {
+    return text.replace(/\b[\w'’]+\b/g, (match, offset) => {
         // Check if the match is already part of a larger sandwiched phrase or within parentheses
         if (text.lastIndexOf('{{', offset) > text.lastIndexOf('}}', offset) ||
             text.lastIndexOf('(', offset) > text.lastIndexOf(')', offset)) {

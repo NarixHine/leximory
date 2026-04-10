@@ -33,7 +33,7 @@ export function ArticleHero({ title, topics, libId, lang, content, hasEbook }: {
                 </div>
                 <TextEmojiCover className='w-full h-full' />
             </div>
-            <div className='w-[calc(50%+24px)] h-px block -mt-px mb-10 bg-foreground' />
+            <div className='w-[calc(50%+24px)] h-px block -mt-px mb-10 bg-default-400 dark:bg-foreground' />
         </div>
 
         {/* Mobile layout: vertical stack */}

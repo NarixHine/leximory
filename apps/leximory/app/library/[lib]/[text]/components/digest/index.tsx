@@ -139,7 +139,7 @@ function EditingView() {
           isLoading={isUpdating}
           isDisabled={isDeleting}
           color='primary'
-          startContent={<PiPencilCircle />}
+          startContent={!isUpdating && <PiPencilCircle size={20} />}
           onPress={handleSaveChanges}
           radius='full'
         >
