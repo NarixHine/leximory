@@ -43,6 +43,7 @@ interface CommentProps {
     shadow?: boolean
     className?: string
     inlineMode?: boolean
+    preset?: 'default' | 'pill'
 }
 
 interface CommentState {
@@ -89,7 +90,7 @@ const commentQueryOptions = (prompt: string, lang: Lang, onError: (error: string
         enabled: prompt.length > 0,
     })
 
-function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className, inlineMode }: CommentProps) {
+function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, asCard, prompt, onlyComments, print, className, inlineMode, preset = 'default' }: CommentProps) {
     const router = useRouter()
     const lib = useAtomValue(libAtom)
     const content = useAtomValue(contentAtom)
@@ -276,34 +277,47 @@ function Comment({ params, disableSave: explicitDisableSave, deleteId, trigger, 
         return <Note portions={portions}></Note>
     }
 
+    // Pill preset styling
+    const pillTriggerProps: ComponentProps<typeof Button> = {
+        variant: 'flat',
+        radius: 'lg',
+        size: 'md',
+        className: cn(
+            'h-auto min-h-0 py-2 px-3 font-formal rounded-2xl',
+            className
+        ),
+    }
+
     const CommentWithPopover = <>
         <Popover placement='right' onOpenChange={init}>
             <PopoverTrigger>
                 {
                     trigger
                         ? <Button {...trigger}></Button>
-                        : <button
-                            className={cn(
-                                status === 'deleted' && 'opacity-30',
-                                'text-inherit antialiased!'
-                            )}
-                            style={{ fontStyle: 'inherit' }}
-                            ref={wordElement}
-                        >
-                            <span className={cn(
-                                !isReaderMode && [
-                                    'box-decoration-clone',
-                                    '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
-                                    isOnDemand ? 'shadow-emerald-300/30' : 'shadow-default-300/70',
-                                ]
-                            )}>
-                                {portions[0]}
-                            </span>
-                            {isReaderMode && portions[2] && !inlineMode && <>
-                                <label htmlFor={uid} className={styles['sidenote-number']}></label>
-                                <input type='checkbox' id={uid} className={styles['margin-toggle']} />
-                            </>}
-                        </button>
+                        : preset === 'pill'
+                            ? <Button {...pillTriggerProps}>{portions[0]}</Button>
+                            : <button
+                                className={cn(
+                                    status === 'deleted' && 'opacity-30',
+                                    'text-inherit antialiased!'
+                                )}
+                                style={{ fontStyle: 'inherit' }}
+                                ref={wordElement}
+                            >
+                                <span className={cn(
+                                    !isReaderMode && [
+                                        'box-decoration-clone',
+                                        '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
+                                        isOnDemand ? 'shadow-emerald-300/30' : 'shadow-default-300/70',
+                                    ]
+                                )}>
+                                    {portions[0]}
+                                </span>
+                                {isReaderMode && portions[2] && !inlineMode && <>
+                                    <label htmlFor={uid} className={styles['sidenote-number']}></label>
+                                    <input type='checkbox' id={uid} className={styles['margin-toggle']} />
+                                </>}
+                            </button>
                 }
             </PopoverTrigger>
             <PopoverContent className={cn('max-w-80 bg-default-50 shadow-none border-7 border-default-200 rounded-4xl')}>

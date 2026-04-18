@@ -5,6 +5,11 @@ import { AreaChart } from '@/components/ui/area-chart'
 import type { DayData } from '../data'
 import { momentSH } from '@/lib/moment'
 import { PiCursorClick, PiCalendarCheck } from 'react-icons/pi'
+import Comment from '@/components/comment'
+import { ScopeProvider } from 'jotai-scope'
+import { HydrationBoundary } from 'jotai-ssr'
+import { langAtom } from '@/app/library/[lib]/atoms'
+import { Lang } from '@repo/env/config'
 
 interface TimelineProps {
     days: DayData[]
@@ -70,10 +75,10 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                 <div className="text-sm text-default-600 tabular-nums">{momentSH(day.date).format('MM/DD')}</div>
             </div>
 
-            <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                     {day.words.map((word) => (
-                        <WordPill key={word.id} word={word.word} />
+                        <WordPill key={word.id} word={word.word} lang={word.lang} />
                     ))}
                 </div>
 
@@ -103,7 +108,7 @@ function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => v
 
                         <div className="flex flex-wrap items-center gap-2">
                             {day.words.map((word) => (
-                                <WordPill key={word.id} word={word.word} isToday />
+                                <WordPill key={word.id} word={word.word} isToday lang={word.lang} />
                             ))}
                         </div>
                         
@@ -118,19 +123,31 @@ function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => v
     )
 }
 
-function WordPill({ word, isToday }: { word: string; isToday?: boolean }) {
-    const cleanWord = extractWord(word)
-
-    return (
-        <span
+function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; lang?: string }) {
+    // Pass the full word params directly to Comment - it already contains {{word||reading||definition}}
+    const commentElement = (
+        <Comment
+            params={word}
+            disableSave
+            preset="pill"
             className={cn(
-                "inline-flex items-center px-2 py-1 rounded-lg bg-default-100 text-default-700",
-                isToday && "bg-primary-100 text-primary-700"
+                isToday && 'text-lg'
             )}
-        >
-            {cleanWord}
-        </span>
+        />
     )
+
+    // If lang is provided, wrap in ScopeProvider to set the correct language
+    if (lang) {
+        return (
+            <ScopeProvider atoms={[langAtom]}>
+                <HydrationBoundary hydrateAtoms={[[langAtom, lang as Lang]]}>
+                    {commentElement}
+                </HydrationBoundary>
+            </ScopeProvider>
+        )
+    }
+
+    return commentElement
 }
 
 function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => void }) {
@@ -165,11 +182,4 @@ function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => v
     )
 }
 
-function extractWord(wordText: string): string {
-    if (wordText.startsWith('{{') && wordText.includes('||')) {
-        const inner = wordText.slice(2, -2)
-        const parts = inner.split('||')
-        return parts[0]?.trim() || wordText
-    }
-    return wordText.trim().split(/\s+/)[0]
-}
+
