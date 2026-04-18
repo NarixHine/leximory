@@ -1,22 +1,18 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import Comment from '@/components/comment'
 import { AreaChart } from '@/components/ui/area-chart'
 import type { DayData } from '../data'
-import { parseWord } from '@repo/utils'
 import { momentSH } from '@/lib/moment'
 import { PiCursorClick, PiCalendarCheck } from 'react-icons/pi'
 
 interface TimelineProps {
     days: DayData[]
     maxCount: number
+    onReviewClick: (day: DayData) => void
 }
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
-export function Timeline({ days }: TimelineProps) {
-    // Filter out days with no words
+export function Timeline({ days, onReviewClick }: TimelineProps) {
     const daysWithWords = days.filter(day => day.words.length > 0)
 
     const chartData = days.map(day => ({
@@ -43,13 +39,13 @@ export function Timeline({ days }: TimelineProps) {
 
             {/* Timeline */}
             <div className="relative">
-                {/* Rows */}
                 <div className="space-y-4">
                     {daysWithWords.map((day, index) => (
                         <TimelineRow
                             key={day.date}
                             day={day}
                             isToday={index === 0}
+                            onReviewClick={() => onReviewClick(day)}
                         />
                     ))}
                 </div>
@@ -58,52 +54,48 @@ export function Timeline({ days }: TimelineProps) {
     )
 }
 
-function TimelineRow({ day, isToday }: { day: DayData; isToday: boolean }) {
-    const dateObj = new Date(day.date)
-
+function TimelineRow({ day, isToday, onReviewClick }: { 
+    day: DayData
+    isToday: boolean
+    onReviewClick: () => void 
+}) {
     if (isToday) {
-        return <TodayRow day={day} />
+        return <TodayRow day={day} onReviewClick={onReviewClick} />
     }
 
     return (
         <div className="group flex items-start gap-6 py-2">
-            {/* Date - right aligned */}
             <div className="w-16 shrink-0 text-right pt-1">
                 <div className="text-xs text-default-400">{momentSH(day.date).format('ddd')}</div>
                 <div className="text-sm text-default-600 tabular-nums">{momentSH(day.date).format('MM/DD')}</div>
             </div>
 
-            {/* Content - left aligned */}
             <div className="flex-1 min-w-0 space-y-2">
-                {/* Words */}
                 <div className="flex flex-wrap items-center gap-2">
                     {day.words.map((word) => (
                         <WordPill key={word.id} word={word.word} />
                     ))}
                 </div>
 
-                {/* Progress */}
                 <DiscreteProgress 
                     value={day.progress} 
-                    onClick={() => console.log('Review progress:', day.progress)}
+                    onClick={onReviewClick}
                 />
             </div>
         </div>
     )
 }
 
-function TodayRow({ day }: { day: DayData }) {
+function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => void }) {
     return (
         <div className="relative -mx-4 my-2">
             <div className="bg-primary-50/60 rounded-2xl p-5 border border-primary-100/50">
                 <div className="flex items-start gap-6">
-                    {/* Date */}
                     <div className="w-16 shrink-0 text-right pt-1">
                         <div className="text-xs font-medium text-primary">{momentSH(day.date).format('ddd')}</div>
                         <div className="text-xl font-light text-primary tabular-nums">{momentSH(day.date).format('MM/DD')}</div>
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0 space-y-3">
                         <p className="text-sm font-medium text-default-700">
                             今日 {day.words.length} 词
@@ -114,6 +106,11 @@ function TodayRow({ day }: { day: DayData }) {
                                 <WordPill key={word.id} word={word.word} isToday />
                             ))}
                         </div>
+                        
+                        <DiscreteProgress 
+                            value={day.progress} 
+                            onClick={onReviewClick}
+                        />
                     </div>
                 </div>
             </div>
@@ -123,30 +120,19 @@ function TodayRow({ day }: { day: DayData }) {
 
 function WordPill({ word, isToday }: { word: string; isToday?: boolean }) {
     const cleanWord = extractWord(word)
-    const params = encodeParams(word)
 
     return (
-        <Comment
-            params={params}
-            disableSave
-            onlyComments
-            trigger={{
-                className: cn(
-                    isToday ? 'text-lg' : 'text-sm',
-                ),
-                variant: 'flat',
-                color: 'default',
-                size: isToday ? 'md' : 'sm',
-                radius: 'lg',
-                children: parseWord(word)[0]
-            }}
+        <span
+            className={cn(
+                "inline-flex items-center px-2 py-1 rounded-lg bg-default-100 text-default-700",
+                isToday && "bg-primary-100 text-primary-700"
+            )}
         >
             {cleanWord}
-        </Comment>
+        </span>
     )
 }
 
-// 4-state progress: empty, 1/3, 2/3, full
 function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => void }) {
     const state = value === 0 ? 0 : value < 34 ? 1 : value < 67 ? 2 : 3
     const isCompleted = state === 3
@@ -186,13 +172,4 @@ function extractWord(wordText: string): string {
         return parts[0]?.trim() || wordText
     }
     return wordText.trim().split(/\s+/)[0]
-}
-
-function encodeParams(wordText: string): string[] {
-    if (wordText.startsWith('{{') && wordText.includes('||')) {
-        const inner = wordText.slice(2, -2)
-        const parts = inner.split('||')
-        return parts.map(p => encodeURIComponent(p.trim()))
-    }
-    return [encodeURIComponent(wordText.trim())]
 }

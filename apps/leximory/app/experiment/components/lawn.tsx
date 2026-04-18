@@ -1,9 +1,7 @@
 'use client'
 
-import { useRef, useCallback, useEffect, useReducer, useState } from 'react'
+import { useRef, useCallback, useEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
-import { playSound, SoundPlayback } from '@/lib/sound-engine'
-import { footstepSnow000Sound } from '@/lib/soundcn/sounds/footstep-grass'
 
 // Sprite sheet: 1408x768, 3 columns × 3 rows
 const FRAME_ASPECT = 469 / 256
@@ -64,6 +62,22 @@ interface Particle {
     rotation: number
 }
 
+interface FruitItem {
+    id: string
+    x: number
+    y: number
+}
+
+interface LawnProps {
+    onFruitReached?: (fruitId: string) => void
+    fruits?: FruitItem[]
+}
+
+export interface LawnRef {
+    moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => void
+    moveNear: (xPercent: number, yPercent: number, bufferPx?: number, onArrive?: () => void) => void
+}
+
 function catReducer(state: CatState, action: CatAction): CatState {
     switch (action.type) {
         case 'START_MOVING':
@@ -90,7 +104,7 @@ function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: num
     }
 }
 
-export function Lawn() {
+export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReached, fruits = [] }, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const spriteRef = useRef<HTMLDivElement>(null)
     const controls = useAnimationControls()
@@ -99,8 +113,8 @@ export function Lawn() {
     const initializedRef = useRef(false)
     const phaseRef = useRef<Phase>('idle')
     const animationFrameRef = useRef<number>(0)
-    const currentSoundRef = useRef<SoundPlayback | null>(null)
     const particleIdRef = useRef(0)
+    const reachedFruitsRef = useRef<Set<string>>(new Set())
 
     const [particles, setParticles] = useState<Particle[]>([])
 
@@ -118,26 +132,6 @@ export function Lawn() {
         }
     }
 
-    // Play footstep sound (short clip, will be called repeatedly)
-    const playFootstep = useCallback(async () => {
-        if (!AUDIO_ENABLED) return
-        try {
-            currentSoundRef.current = await playSound(footstepSnow000Sound.dataUri, {
-                volume: AUDIO_VOLUME,
-                playbackRate: AUDIO_PLAYBACK_RATE,
-            })
-        } catch {
-            // Audio context may not be ready
-        }
-    }, [])
-
-    const stopFootstep = useCallback(() => {
-        if (currentSoundRef.current) {
-            currentSoundRef.current.stop()
-            currentSoundRef.current = null
-        }
-    }, [])
-
     // Spawn dust particles behind the cat
     const spawnDustParticles = useCallback((x: number, y: number, dirX: number, dirY: number, facingLeft: boolean, rotationAngle: number) => {
         if (!DUST_ENABLED) return
@@ -147,11 +141,11 @@ export function Lawn() {
 
         // Convert rotation angle to radians
         const rotRad = (rotationAngle * Math.PI) / 180
-        
+
         // Base offset from cat center (behind the cat)
         const baseOffsetX = -catWidth * 0.2 // behind
         const baseOffsetY = catHeight * 0.3 // near bottom
-        
+
         // Rotate the offset based on cat's rotation
         // If facing left, we need to account for the flip
         const flipMultiplier = facingLeft ? -1 : 1
@@ -185,6 +179,33 @@ export function Lawn() {
         }, DUST_LIFETIME)
     }, [catWidth, catHeight])
 
+    // Check if cat reached any fruits
+    const checkFruitCollisions = useCallback((currentX: number, currentY: number) => {
+        if (!containerRef.current) return
+
+        const rect = containerRef.current.getBoundingClientRect()
+        const collisionRadius = catWidth * 0.6 // Collision radius around cat center
+
+        fruits.forEach(fruit => {
+            if (reachedFruitsRef.current.has(fruit.id)) return
+
+            // Convert fruit percentage position to pixels
+            const fruitX = (fruit.x / 100) * rect.width - catWidth / 2
+            const fruitY = (fruit.y / 100) * rect.height - catHeight / 2
+
+            // Calculate distance
+            const dx = fruitX - currentX
+            const dy = fruitY - currentY
+            const distance = Math.sqrt(dx * dx + dy * dy)
+
+            // Check collision
+            if (distance < collisionRadius) {
+                reachedFruitsRef.current.add(fruit.id)
+                onFruitReached?.(fruit.id)
+            }
+        })
+    }, [fruits, catWidth, catHeight, onFruitReached])
+
     useEffect(() => {
         if (containerRef.current && !initializedRef.current) {
             const rect = containerRef.current.getBoundingClientRect()
@@ -196,19 +217,19 @@ export function Lawn() {
         }
     }, [controls, catWidth, catHeight])
 
-    const handleClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
+    // Core movement function - can be called from click handler or ref
+    const moveToPosition = useCallback(async (targetX: number, targetY: number, onArrive?: () => void) => {
         if (!containerRef.current || isAnimatingRef.current) return
-
-        const rect = containerRef.current.getBoundingClientRect()
-        const targetX = e.clientX - rect.left - catWidth / 2
-        const targetY = e.clientY - rect.top - catHeight / 2
 
         const currentPos = positionRef.current
         const dx = targetX - currentPos.x
         const dy = targetY - currentPos.y
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (distance < 20) return
+        if (distance < 20) {
+            onArrive?.()
+            return
+        }
 
         isAnimatingRef.current = true
 
@@ -263,9 +284,6 @@ export function Lawn() {
         let decelFrame = 0
         const decelFrames = [FRAMES.run3, FRAMES.run2, FRAMES.run1, FRAMES.land1]
 
-        // Footstep interval based on sound duration
-        const footstepInterval = footstepSnow000Sound.duration * 1000
-
         const startX = currentPos.x
         const startY = currentPos.y
         let currentX = startX
@@ -295,16 +313,14 @@ export function Lawn() {
 
                 controls.set({ x: currentX, y: currentY })
 
+                // Check for fruit collisions
+                checkFruitCollisions(currentX, currentY)
+
                 // Spawn dust particles while running
                 if (phaseRef.current === 'running' || phaseRef.current === 'accelerating') {
                     if (now - lastDustTime >= DUST_SPAWN_RATE) {
                         spawnDustParticles(currentX, currentY, dirX, dirY, goingLeft, angle)
                         lastDustTime = now
-                    }
-                    // Play footstep sounds
-                    if (now - lastFootstepTime >= footstepInterval) {
-                        playFootstep()
-                        lastFootstepTime = now
                     }
                 }
 
@@ -312,13 +328,6 @@ export function Lawn() {
                 if (progress < accelEnd) {
                     phaseRef.current = 'accelerating'
                 } else if (progress < decelStart) {
-                    if (phaseRef.current !== 'running') {
-                        phaseRef.current = 'running'
-                        clearInterval(scrambleInterval)
-                        // Play first footstep when running starts
-                        playFootstep()
-                        lastFootstepTime = now
-                    }
                     if (now - lastRunFrameTime >= RUN_FRAME_TIME) {
                         setFrame(runFrames[runFrame % 3])
                         runFrame++
@@ -343,6 +352,7 @@ export function Lawn() {
             } else {
                 // Arrived
                 controls.set({ x: targetX, y: targetY })
+                checkFruitCollisions(targetX, targetY)
                 finishMovement()
             }
         }
@@ -350,7 +360,6 @@ export function Lawn() {
         const finishMovement = async () => {
             clearInterval(scrambleInterval)
             cancelAnimationFrame(animationFrameRef.current)
-            stopFootstep()
 
             // Landing sequence
             setFrame(FRAMES.land1)
@@ -363,14 +372,71 @@ export function Lawn() {
             positionRef.current = { x: targetX, y: targetY }
             dispatch({ type: 'STOP_MOVING' })
             isAnimatingRef.current = false
+
+            // Call the arrive callback
+            onArrive?.()
         }
 
         animationFrameRef.current = requestAnimationFrame(animateMovement)
-    }, [controls, catWidth, catHeight, spawnDustParticles, playFootstep, stopFootstep])
+    }, [controls, catWidth, catHeight, spawnDustParticles, checkFruitCollisions])
+
+    // Expose moveTo method via ref
+    useImperativeHandle(ref, () => ({
+        moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => {
+            if (!containerRef.current) return
+
+            const rect = containerRef.current.getBoundingClientRect()
+            // Convert percentage to pixel coordinates (centered on the percentage point)
+            const targetX = (xPercent / 100) * rect.width - catWidth / 2
+            const targetY = (yPercent / 100) * rect.height - catHeight / 2
+
+            moveToPosition(targetX, targetY, onArrive)
+        },
+        moveNear: (xPercent: number, yPercent: number, bufferPx: number = 80, onArrive?: () => void) => {
+            if (!containerRef.current) return
+
+            const rect = containerRef.current.getBoundingClientRect()
+            // Convert percentage to pixel coordinates
+            const targetX = (xPercent / 100) * rect.width - catWidth / 2
+            const targetY = (yPercent / 100) * rect.height - catHeight / 2
+
+            // Calculate current position
+            const currentX = positionRef.current.x
+            const currentY = positionRef.current.y
+
+            // Calculate direction vector
+            const dx = targetX - currentX
+            const dy = targetY - currentY
+            const distance = Math.sqrt(dx * dx + dy * dy)
+
+            if (distance <= bufferPx) {
+                // Already close enough, just call callback
+                onArrive?.()
+                return
+            }
+
+            // Calculate stop position (buffer distance away from target)
+            const ratio = (distance - bufferPx) / distance
+            const stopX = currentX + dx * ratio
+            const stopY = currentY + dy * ratio
+
+            moveToPosition(stopX, stopY, onArrive)
+        }
+    }), [moveToPosition, catWidth, catHeight])
+
+    const handleClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!containerRef.current) return
+
+        const rect = containerRef.current.getBoundingClientRect()
+        const targetX = e.clientX - rect.left - catWidth / 2
+        const targetY = e.clientY - rect.top - catHeight / 2
+
+        moveToPosition(targetX, targetY)
+    }, [moveToPosition, catWidth, catHeight])
 
     return (
         <section
-            className="relative w-full max-w-5xl aspect-video select-none pointer-events-none"
+            className="relative w-full h-full select-none pointer-events-none"
             style={{
                 backgroundImage: 'url(/assets/lawn.png)',
                 backgroundSize: 'contain',
@@ -381,13 +447,7 @@ export function Lawn() {
             <div
                 ref={containerRef}
                 onClick={handleClick}
-                className="absolute cursor-pointer pointer-events-auto"
-                style={{
-                    top: '12%',
-                    left: '8%',
-                    right: '8%',
-                    bottom: '12%',
-                }}
+                className="absolute inset-[5%] cursor-pointer pointer-events-auto"
             >
                 {/* Dust particles layer */}
                 <AnimatePresence>
@@ -427,7 +487,7 @@ export function Lawn() {
                 {/* Cat sprite */}
                 <motion.div
                     animate={controls}
-                    className="absolute origin-center pointer-events-none"
+                    className="absolute origin-center pointer-events-none z-50"
                     style={{
                         width: catWidth,
                         height: catHeight,
@@ -450,4 +510,4 @@ export function Lawn() {
             </div>
         </section>
     )
-}
+})

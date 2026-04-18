@@ -1,7 +1,7 @@
 'use client'
 
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger } from '@heroui/dropdown'
-import { prefixUrl, ACTION_QUOTA_COST } from '@repo/env/config'
+import { prefixUrl } from '@repo/env/config'
 import { createClient } from '@repo/supabase/client'
 import { useRouter } from 'next/navigation'
 import React, { Suspense, Usable, use } from 'react'
@@ -9,11 +9,9 @@ import { PiSignIn, PiSignOut } from 'react-icons/pi'
 import { Progress } from '@heroui/progress'
 import { Spinner } from '@heroui/spinner'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/table'
 import { Button } from '@heroui/button'
 import { getCommentaryQuota } from '@repo/user/quota'
 import moment from 'moment'
-import 'moment/locale/zh-cn'
 
 type QuotaPromise = Usable<Awaited<ReturnType<typeof getCommentaryQuota>>>
 
