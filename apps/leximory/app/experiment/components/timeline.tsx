@@ -6,6 +6,7 @@ import { AreaChart } from '@/components/ui/area-chart'
 import type { DayData } from '../data'
 import { parseWord } from '@repo/utils'
 import { momentSH } from '@/lib/moment'
+import { PiCursorClick, PiCalendarCheck } from 'react-icons/pi'
 
 interface TimelineProps {
     days: DayData[]
@@ -59,11 +60,9 @@ export function Timeline({ days }: TimelineProps) {
 
 function TimelineRow({ day, isToday }: { day: DayData; isToday: boolean }) {
     const dateObj = new Date(day.date)
-    const weekday = WEEKDAYS[dateObj.getDay()]
-    const dateNum = dateObj.getDate()
 
     if (isToday) {
-        return <TodayRow day={day} weekday={weekday} dateNum={dateNum} />
+        return <TodayRow day={day} />
     }
 
     return (
@@ -84,13 +83,16 @@ function TimelineRow({ day, isToday }: { day: DayData; isToday: boolean }) {
                 </div>
 
                 {/* Progress */}
-                <DiscreteProgress value={day.progress} />
+                <DiscreteProgress 
+                    value={day.progress} 
+                    onClick={() => console.log('Review progress:', day.progress)}
+                />
             </div>
         </div>
     )
 }
 
-function TodayRow({ day, weekday, dateNum }: { day: DayData; weekday: string; dateNum: number }) {
+function TodayRow({ day }: { day: DayData }) {
     return (
         <div className="relative -mx-4 my-2">
             <div className="bg-primary-50/60 rounded-2xl p-5 border border-primary-100/50">
@@ -112,8 +114,6 @@ function TodayRow({ day, weekday, dateNum }: { day: DayData; weekday: string; da
                                 <WordPill key={word.id} word={word.word} isToday />
                             ))}
                         </div>
-
-                        <DiscreteProgress value={day.progress} />
                     </div>
                 </div>
             </div>
@@ -147,24 +147,35 @@ function WordPill({ word, isToday }: { word: string; isToday?: boolean }) {
 }
 
 // 4-state progress: empty, 1/3, 2/3, full
-function DiscreteProgress({ value }: { value: number }) {
+function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => void }) {
     const state = value === 0 ? 0 : value < 34 ? 1 : value < 67 ? 2 : 3
+    const isCompleted = state === 3
 
     return (
-        <div className="flex items-center gap-1">
-            <div className={cn(
-                "h-2 w-8 rounded-l transition-colors",
-                state >= 1 ? "bg-default-400" : "bg-default-200"
-            )} />
-            <div className={cn(
-                "h-2 w-8 rounded-none transition-colors",
-                state >= 2 ? "bg-default-400" : "bg-default-200"
-            )} />
-            <div className={cn(
-                "h-2 w-8 rounded-r transition-colors",
-                state >= 3 ? "bg-default-400" : "bg-default-200"
-            )} />
-        </div>
+        <button 
+            onClick={onClick}
+            className="flex items-center gap-2 group cursor-pointer"
+        >
+            <div className="flex items-center gap-0.5">
+                <div className={cn(
+                    "h-2 w-8 rounded-l transition-colors",
+                    state >= 1 ? "bg-default-400" : "bg-default-200"
+                )} />
+                <div className={cn(
+                    "h-2 w-8 rounded-none transition-colors",
+                    state >= 2 ? "bg-default-400" : "bg-default-200"
+                )} />
+                <div className={cn(
+                    "h-2 w-8 rounded-r transition-colors",
+                    state >= 3 ? "bg-default-400" : "bg-default-200"
+                )} />
+            </div>
+            {isCompleted ? (
+                <PiCalendarCheck className="w-4 h-4 text-primary" />
+            ) : (
+                <PiCursorClick className="w-4 h-4 text-default-300 group-hover:text-default-400 transition-colors" />
+            )}
+        </button>
     )
 }
 
