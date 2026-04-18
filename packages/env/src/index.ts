@@ -15,6 +15,10 @@ const env = createEnv({
         SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
         AI_GATEWAY_API_KEY: z.string().min(1),
         TABSTACK_API_KEY: z.string().min(1),
+        QSTASH_URL: z.string().min(1),
+        QSTASH_TOKEN: z.string().min(1),
+        QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
+        QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
     },
 
     client: {
@@ -48,6 +52,11 @@ const env = createEnv({
         NEXT_PUBLIC_SIGN_IN_URL: process.env.NEXT_PUBLIC_SIGN_IN_URL,
         // AI Gateway
         AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+        // QStash
+        QSTASH_URL: process.env.QSTASH_URL,
+        QSTASH_TOKEN: process.env.QSTASH_TOKEN,
+        QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
+        QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
     },
 })
 
