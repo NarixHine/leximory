@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently 'next dev -p 3001' 'npx inngest-cli@latest dev'",
+    "dev": "concurrently 'next dev -p 3001' 'pnpx inngest-cli@latest dev' 'pnpx @upstash/qstash-cli dev'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -85,6 +85,7 @@
     "@tiptap/react": "3.15.3",
     "@tiptap/starter-kit": "3.15.3",
     "@upstash/redis": "^1.34.4",
+    "@upstash/workflow": "^1.2.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "ai": "^6.0.3",

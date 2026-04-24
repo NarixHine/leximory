@@ -70,6 +70,7 @@ interface FruitItem {
 
 interface LawnProps {
     onFruitReached?: (fruitId: string) => void
+    onBackgroundClick?: () => void
     fruits?: FruitItem[]
 }
 
@@ -104,7 +105,7 @@ function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: num
     }
 }
 
-export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReached, fruits = [] }, ref) {
+export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReached, onBackgroundClick, fruits = [] }, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const spriteRef = useRef<HTMLDivElement>(null)
     const controls = useAnimationControls()
@@ -432,7 +433,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
         const targetY = e.clientY - rect.top - catHeight / 2
 
         moveToPosition(targetX, targetY)
-    }, [moveToPosition, catWidth, catHeight])
+        onBackgroundClick?.()
+    }, [moveToPosition, catWidth, catHeight, onBackgroundClick])
 
     return (
         <section

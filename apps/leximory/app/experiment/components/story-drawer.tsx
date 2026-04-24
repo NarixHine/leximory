@@ -3,14 +3,19 @@
 import { Drawer } from 'vaul'
 import { motion } from 'framer-motion'
 import Markdown from '@/components/markdown'
+import { ScopeProvider } from 'jotai-scope'
+import { HydrationBoundary } from 'jotai-ssr'
+import { langAtom } from '@/app/library/[lib]/atoms'
+import { Lang } from '@repo/env/config'
 
 interface StoryDrawerProps {
     isOpen: boolean
     onClose: () => void
     content?: string
+    lang: string
 }
 
-export function StoryDrawer({ isOpen, onClose, content }: StoryDrawerProps) {
+export function StoryDrawer({ isOpen, onClose, content, lang }: StoryDrawerProps) {
     return (
         <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <Drawer.Portal>
@@ -20,12 +25,7 @@ export function StoryDrawer({ isOpen, onClose, content }: StoryDrawerProps) {
                 >
                     <div className="px-8 pt-5 pb-10 bg-background mx-auto max-w-xl rounded-t-4xl border border-default-200">
                         {/* Handle bar */}
-                        <div className="mx-auto w-12 h-1.5 bg-default-200 rounded-full mb-6" />
-
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4 max-w-160 mx-auto">
-                            <h2 className="text-xl font-semibold text-default-800">Story</h2>
-                        </div>
+                        <div className="mx-auto w-12 h-1.5 bg-default-200 rounded-full -mb-2" />
 
                         {/* Content with max-width like article page */}
                         <motion.div
@@ -35,10 +35,14 @@ export function StoryDrawer({ isOpen, onClose, content }: StoryDrawerProps) {
                             className="mx-auto"
                         >
                             {content ? (
-                                <Markdown
-                                    md={`<article>\n${content}\n</article>`}
-                                    disableSave
-                                />
+                                <ScopeProvider atoms={[langAtom]}>
+                                    <HydrationBoundary hydrateAtoms={[[langAtom, lang as Lang]]}>
+                                        <Markdown
+                                            md={`<article>\n${content}\n</article>`}
+                                            disableSave
+                                        />
+                                    </HydrationBoundary>
+                                </ScopeProvider>
                             ) : (
                                 <div className="flex items-center justify-center py-12">
                                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />

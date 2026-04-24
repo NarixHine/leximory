@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Lawn, LawnRef } from './lawn'
 import { WordPill, StoryPill } from './lawn-items'
@@ -8,6 +8,9 @@ import { StoryDrawer } from './story-drawer'
 import { TranslationExercise } from './translation-popover'
 import { useReviewProgress } from '../hooks/use-review-progress'
 import { PiX } from 'react-icons/pi'
+import { Spinner } from '@heroui/spinner'
+import { Card, CardBody } from '@heroui/card'
+import { Button } from '@heroui/button'
 
 interface LawnItem {
     id: string
@@ -25,80 +28,78 @@ interface ReviewFlowProps {
 }
 
 export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
-    const [items, setItems] = useState<LawnItem[]>([])
     const [selectedItem, setSelectedItem] = useState<LawnItem | null>(null)
     const [showStory, setShowStory] = useState(false)
     const [showTranslation, setShowTranslation] = useState(false)
     const [pendingItem, setPendingItem] = useState<LawnItem | null>(null)
-    const addedIdsRef = useRef<Set<string>>(new Set())
 
     const lawnRef = useRef<LawnRef>(null)
 
     const { progress, story, translations } = useReviewProgress({ date, lang })
 
-    // Generate random position that doesn't overlap too much
-    const generatePosition = useCallback((existingItems: LawnItem[]) => {
-        let attempts = 0
-        let x: number, y: number
-        do {
-            x = 15 + Math.random() * 70
-            y = 20 + Math.random() * 60
-            attempts++
-        } while (attempts < 10 && existingItems.some(item => {
-            const dx = item.x - x
-            const dy = item.y - y
-            return Math.sqrt(dx * dx + dy * dy) < 12
-        }))
-        return { x, y }
-    }, [])
+    // Stable random positions stored in a ref, cleared when date/lang change
+    const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
+    const dateLangRef = useRef(`${date}-${lang}`)
+    if (dateLangRef.current !== `${date}-${lang}`) {
+        positionsRef.current.clear()
+        dateLangRef.current = `${date}-${lang}`
+    }
 
-    useEffect(() => {
-        if (story && !addedIdsRef.current.has('story')) {
-            addedIdsRef.current.add('story')
-            const { x, y } = generatePosition(items)
-            setItems(prev => [...prev, { id: 'story', type: 'story', label: '故事', x, y, data: story }])
-        }
-    }, [story, items, generatePosition])
+    // Derive items directly from data — no useEffect state syncing needed
+    const items = useMemo(() => {
+        const result: LawnItem[] = []
 
-    useEffect(() => {
-        if (!translations) return
-
-        translations.forEach((translation: any, index: number) => {
-            const id = `translation-${index}`
-            if (!addedIdsRef.current.has(id)) {
-                addedIdsRef.current.add(id)
-                setTimeout(() => {
-                    setItems(prev => {
-                        const { x, y } = generatePosition(prev)
-                        return [...prev, {
-                            id,
-                            type: 'translation',
-                            label: translation.keyword,
-                            x, y,
-                            data: translation
-                        }]
+        const getPosition = (id: string) => {
+            let pos = positionsRef.current.get(id)
+            if (!pos) {
+                let attempts = 0
+                let x: number, y: number
+                do {
+                    x = 15 + Math.random() * 70
+                    y = 20 + Math.random() * 60
+                    attempts++
+                } while (
+                    attempts < 10 &&
+                    result.some(item => {
+                        const dx = item.x - x
+                        const dy = item.y - y
+                        return Math.sqrt(dx * dx + dy * dy) < 12
                     })
-                }, index * 200)
+                )
+                pos = { x, y }
+                positionsRef.current.set(id, pos)
             }
-        })
-    }, [translations, generatePosition])
+            return pos
+        }
 
-    // Handle item click - move cat NEAR the item (stops short)
+        if (story) {
+            const pos = getPosition('story')
+            result.push({ id: 'story', type: 'story', label: '故事', x: pos.x, y: pos.y, data: story })
+        }
+
+        if (translations) {
+            translations.forEach((translation, index) => {
+                const id = `translation-${index}`
+                const pos = getPosition(id)
+                result.push({
+                    id,
+                    type: 'translation',
+                    label: translation.keyword,
+                    x: pos.x,
+                    y: pos.y,
+                    data: translation
+                })
+            })
+        }
+
+        return result
+    }, [story, translations])
+
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
 
-        setPendingItem(item)
-
-        // Move cat NEAR the item with buffer distance (stops short)
-        lawnRef.current.moveNear(item.x, item.y, 60, () => {
-            handleCatArrived(item)
-        })
-    }, [])
-
-    // Called when cat arrives near an item
-    const handleCatArrived = useCallback((item: LawnItem) => {
         setSelectedItem(item)
-        setPendingItem(null)
+        setPendingItem(item)
 
         if (item.type === 'story') {
             setShowStory(true)
@@ -107,19 +108,33 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             setShowTranslation(true)
             setShowStory(false)
         }
+
+        lawnRef.current.moveTo(item.x, item.y)
     }, [])
 
     const handleClose = useCallback(() => {
         setShowStory(false)
         setShowTranslation(false)
-        // set null with a delay to allow popover exit animation to finish
         setTimeout(() => {
             setSelectedItem(null)
             setPendingItem(null)
-        }, 300)
+        }, 500)
     }, [])
 
+    const handleBackgroundClick = useCallback(() => {
+        if (selectedItem || showStory || showTranslation) {
+            handleClose()
+        }
+    }, [selectedItem, showStory, showTranslation, handleClose])
+
     const isGenerating = progress?.stage !== 'complete'
+
+    const statusText = {
+        init: 'Initializing...',
+        story: 'Generating story...',
+        translations: 'Generating exercises...',
+        complete: ''
+    }[progress?.stage ?? 'init']
 
     return (
         <motion.div
@@ -129,37 +144,45 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="h-dvh w-full relative flex flex-col"
         >
-            {/* Header */}
-            <button
-                onClick={onExit}
-                className="absolute top-6 left-6 z-50 px-4 py-2 bg-background/80 backdrop-blur rounded-full text-sm text-default-600 hover:bg-background transition-colors flex items-center gap-2"
+            <Button
+                radius='full'
+                onPress={onExit}
+                variant='flat'
+                startContent={<PiX className="w-4 h-4" />}
+                className="absolute top-6 left-6 z-50 px-4 py-2 backdrop-blur"
             >
-                <PiX className="w-4 h-4" />
-                <span>返回</span>
-            </button>
+                返回
+            </Button>
 
             <AnimatePresence>
                 {isGenerating && (
-                    <div className="absolute top-6 right-6 z-50 flex items-center gap-3 px-4 py-2 bg-background/80 backdrop-blur rounded-full">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm text-default-600">
-                            {progress?.stage === 'story' ? '编写故事中...' :
-                                progress?.stage === 'translations' ? '创建练习...' :
-                                    '准备中...'}
-                        </span>
-                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4"
+                    >
+                        <Card shadow="none" className="bg-default-50 p-2 shadow-none border-7 border-default-200 rounded-4xl w-64 max-w-full">
+                            <CardBody className="flex flex-row items-center gap-3 py-2 px-4">
+                                <Spinner variant='spinner' size='sm' color='secondary' />
+                                <span className="text-xs text-default-400 uppercase tracking-wide font-mono">
+                                    {statusText}
+                                </span>
+                            </CardBody>
+                        </Card>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Lawn with items on it */}
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="relative w-full h-full max-w-4xl aspect-video">
                     <Lawn
                         ref={lawnRef}
                         fruits={[]}
+                        onBackgroundClick={handleBackgroundClick}
                     />
 
-                    {/* Items positioned on the lawn */}
                     <AnimatePresence>
                         {items.map((item, index) => (
                             item.type === 'story' ? (
@@ -193,6 +216,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 isOpen={showStory}
                 onClose={handleClose}
                 content={selectedItem?.data}
+                lang={lang}
             />
 
             <TranslationExercise
