@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { connection, NextRequest, NextResponse } from 'next/server'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
 import { getFlashback } from '@/server/db/flashback'
@@ -6,6 +6,7 @@ import { normalizeReviewTranslations } from '@/lib/review'
 
 export async function GET(req: NextRequest) {
     try {
+        await connection()
         const { userId } = await getUserOrThrow()
         const { searchParams } = new URL(req.url)
         const date = searchParams.get('date')

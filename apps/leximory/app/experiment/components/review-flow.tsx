@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Lawn, LawnRef } from './lawn'
 import { WordPill, StoryPill } from './lawn-items'
@@ -41,11 +41,9 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
     // Stable random positions stored in a ref, cleared when date/lang change
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
-    const hasPlacedItemsRef = useRef(false)
     const dateLangRef = useRef(`${date}-${lang}`)
     if (dateLangRef.current !== `${date}-${lang}`) {
         positionsRef.current.clear()
-        hasPlacedItemsRef.current = false
         dateLangRef.current = `${date}-${lang}`
     }
 
@@ -104,12 +102,6 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         () => items.find(item => item.id === selectedItemId) ?? null,
         [items, selectedItemId]
     )
-
-    useEffect(() => {
-        if (items.length > 0 && !hasPlacedItemsRef.current) {
-            hasPlacedItemsRef.current = true
-        }
-    }, [items.length])
 
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
@@ -208,7 +200,6 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     x={item.x}
                                     y={item.y}
                                     delay={index * 0.1}
-                                    shouldAnimate={hasPlacedItemsRef.current}
                                     onClick={() => handleItemClick(item)}
                                     isActive={pendingItemId === item.id}
                                 />
@@ -220,7 +211,6 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     x={item.x}
                                     y={item.y}
                                     delay={index * 0.1}
-                                    shouldAnimate={hasPlacedItemsRef.current}
                                     onClick={() => handleItemClick(item)}
                                     isCompleted={item.type === 'translation' && isTranslationCompleted(item.data as ReviewTranslation)}
                                     isActive={pendingItemId === item.id}
