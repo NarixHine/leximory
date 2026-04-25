@@ -26,7 +26,14 @@
                 "NEXT_PUBLIC_SUPABASE_URL",
                 "NEXT_PUBLIC_SUPABASE_ANON_KEY",
                 "AI_GATEWAY_API_KEY",
-                "TABSTACK_API_KEY"
+                "TABSTACK_API_KEY",
+                "REDIS_URL",
+                "INNGEST_SIGNING_KEY",
+                "INNGEST_EVENT_KEY",
+                "QSTASH_URL",
+                "QSTASH_TOKEN",
+                "QSTASH_CURRENT_SIGNING_KEY",
+                "QSTASH_NEXT_SIGNING_KEY"
             ]
         },
         "check-types": {
