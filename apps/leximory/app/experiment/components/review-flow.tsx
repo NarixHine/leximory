@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Lawn, LawnRef } from './lawn'
 import { WordPill, StoryPill } from './lawn-items'
@@ -11,6 +11,7 @@ import { PiX } from 'react-icons/pi'
 import { Spinner } from '@heroui/spinner'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
+import { isTranslationCompleted, type ReviewTranslation } from '@/lib/review'
 
 interface LawnItem {
     id: string
@@ -18,6 +19,7 @@ interface LawnItem {
     label: string
     x: number
     y: number
+    index?: number
     data: any
 }
 
@@ -28,10 +30,10 @@ interface ReviewFlowProps {
 }
 
 export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
-    const [selectedItem, setSelectedItem] = useState<LawnItem | null>(null)
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
     const [showStory, setShowStory] = useState(false)
     const [showTranslation, setShowTranslation] = useState(false)
-    const [pendingItem, setPendingItem] = useState<LawnItem | null>(null)
+    const [pendingItemId, setPendingItemId] = useState<string | null>(null)
 
     const lawnRef = useRef<LawnRef>(null)
 
@@ -39,9 +41,11 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
     // Stable random positions stored in a ref, cleared when date/lang change
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
+    const hasPlacedItemsRef = useRef(false)
     const dateLangRef = useRef(`${date}-${lang}`)
     if (dateLangRef.current !== `${date}-${lang}`) {
         positionsRef.current.clear()
+        hasPlacedItemsRef.current = false
         dateLangRef.current = `${date}-${lang}`
     }
 
@@ -55,8 +59,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 let attempts = 0
                 let x: number, y: number
                 do {
-                    x = 15 + Math.random() * 70
-                    y = 20 + Math.random() * 60
+                    x = 24 + Math.random() * 52
+                    y = 28 + Math.random() * 44
                     attempts++
                 } while (
                     attempts < 10 &&
@@ -87,7 +91,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                     label: translation.keyword,
                     x: pos.x,
                     y: pos.y,
-                    data: translation
+                    index,
+                    data: translation satisfies ReviewTranslation,
                 })
             })
         }
@@ -95,11 +100,22 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         return result
     }, [story, translations])
 
+    const selectedItem = useMemo(
+        () => items.find(item => item.id === selectedItemId) ?? null,
+        [items, selectedItemId]
+    )
+
+    useEffect(() => {
+        if (items.length > 0 && !hasPlacedItemsRef.current) {
+            hasPlacedItemsRef.current = true
+        }
+    }, [items.length])
+
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
 
-        setSelectedItem(item)
-        setPendingItem(item)
+        setSelectedItemId(item.id)
+        setPendingItemId(item.id)
 
         if (item.type === 'story') {
             setShowStory(true)
@@ -116,16 +132,16 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         setShowStory(false)
         setShowTranslation(false)
         setTimeout(() => {
-            setSelectedItem(null)
-            setPendingItem(null)
+            setSelectedItemId(null)
+            setPendingItemId(null)
         }, 500)
     }, [])
 
     const handleBackgroundClick = useCallback(() => {
-        if (selectedItem || showStory || showTranslation) {
+        if (selectedItemId || showStory || showTranslation) {
             handleClose()
         }
-    }, [selectedItem, showStory, showTranslation, handleClose])
+    }, [selectedItemId, showStory, showTranslation, handleClose])
 
     const isGenerating = progress?.stage !== 'complete'
 
@@ -192,8 +208,9 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     x={item.x}
                                     y={item.y}
                                     delay={index * 0.1}
+                                    shouldAnimate={hasPlacedItemsRef.current}
                                     onClick={() => handleItemClick(item)}
-                                    isActive={pendingItem?.id === item.id}
+                                    isActive={pendingItemId === item.id}
                                 />
                             ) : (
                                 <WordPill
@@ -203,8 +220,10 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     x={item.x}
                                     y={item.y}
                                     delay={index * 0.1}
+                                    shouldAnimate={hasPlacedItemsRef.current}
                                     onClick={() => handleItemClick(item)}
-                                    isActive={pendingItem?.id === item.id}
+                                    isCompleted={item.type === 'translation' && isTranslationCompleted(item.data as ReviewTranslation)}
+                                    isActive={pendingItemId === item.id}
                                 />
                             )
                         ))}
@@ -215,14 +234,17 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             <StoryDrawer
                 isOpen={showStory}
                 onClose={handleClose}
-                content={selectedItem?.data}
+                content={selectedItem?.type === 'story' ? selectedItem.data : undefined}
                 lang={lang}
             />
 
             <TranslationExercise
+                date={date}
+                lang={lang}
                 isOpen={showTranslation}
                 onClose={handleClose}
-                data={selectedItem?.data}
+                index={selectedItem?.type === 'translation' ? selectedItem.index : undefined}
+                data={selectedItem?.type === 'translation' ? selectedItem.data : undefined}
             />
         </motion.div>
     )

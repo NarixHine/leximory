@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import type { ReviewTranslation } from '@/lib/review'
 
 interface ReviewProgress {
     stage: 'init' | 'story' | 'translations' | 'complete'
     story?: string
-    translations?: Array<{
-        chinese: string
-        answer: string
-        keyword: string
-    }>
+    translations?: ReviewTranslation[]
 }
 
 interface CheckResponse {
@@ -42,7 +39,12 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
         queryKey: ['review', 'check', date, lang],
         queryFn: () => checkReviewData(date!, lang!),
         enabled: !!date && !!lang,
-        staleTime: Infinity,
+        staleTime: 0,
+        refetchInterval: (query) => {
+            const data = query.state.data
+            if (!data?.exists) return false
+            return data.translations?.some(translation => translation.status === 'pending') ? 1500 : false
+        },
     })
 
     const startMutation = useMutation({

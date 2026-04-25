@@ -1,15 +1,12 @@
 import { supabase } from '@repo/supabase'
+import { normalizeReviewTranslations, type ReviewTranslation } from '@/lib/review'
 
 interface FlashbackData {
     user: string
     date: string
     lang: string
     story: string
-    translations: Array<{
-        chinese: string
-        answer: string
-        keyword: string
-    }>
+    translations: ReviewTranslation[]
     created_at: string
 }
 
@@ -18,11 +15,14 @@ interface CreateFlashbackParams {
     date: string
     lang: string
     story: string
-    translations: Array<{
-        chinese: string
-        answer: string
-        keyword: string
-    }>
+    translations: ReviewTranslation[]
+}
+
+interface UpdateFlashbackTranslationsParams {
+    userId: string
+    date: string
+    lang: string
+    translations: ReviewTranslation[]
 }
 
 export async function getFlashback({
@@ -57,7 +57,7 @@ export async function getFlashback({
         date: data.date,
         lang: data.lang,
         story: data.story || '',
-        translations: (data.translations as FlashbackData['translations']) || [],
+        translations: normalizeReviewTranslations(data.translations),
         created_at: data.created_at,
     }
 }
@@ -69,6 +69,8 @@ export async function createFlashback({
     story,
     translations,
 }: CreateFlashbackParams) {
+    const normalizedTranslations = normalizeReviewTranslations(translations)
+
     const { data, error } = await supabase
         .from('flashbacks')
         .upsert({
@@ -76,9 +78,35 @@ export async function createFlashback({
             date,
             lang,
             story,
-            translations: translations as any,
+            translations: normalizedTranslations as any,
             created_at: new Date().toISOString(),
         })
+        .select()
+        .single()
+
+    if (error) {
+        throw error
+    }
+
+    return data
+}
+
+export async function updateFlashbackTranslations({
+    userId,
+    date,
+    lang,
+    translations,
+}: UpdateFlashbackTranslationsParams) {
+    const normalizedTranslations = normalizeReviewTranslations(translations)
+
+    const { data, error } = await supabase
+        .from('flashbacks')
+        .update({
+            translations: normalizedTranslations as any,
+        })
+        .eq('user', userId)
+        .eq('date', date)
+        .eq('lang', lang)
         .select()
         .single()
 

@@ -59,10 +59,10 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
     )
 }
 
-function TimelineRow({ day, isToday, onReviewClick }: { 
+function TimelineRow({ day, isToday, onReviewClick }: {
     day: DayData
     isToday: boolean
-    onReviewClick: () => void 
+    onReviewClick: () => void
 }) {
     if (isToday) {
         return <TodayRow day={day} onReviewClick={onReviewClick} />
@@ -75,15 +75,15 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                 <div className="text-sm text-default-600 tabular-nums">{momentSH(day.date).format('MM/DD')}</div>
             </div>
 
-                <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                     {day.words.map((word) => (
                         <WordPill key={word.id} word={word.word} lang={word.lang} />
                     ))}
                 </div>
 
-                <DiscreteProgress 
-                    value={day.progress} 
+                <DiscreteProgress
+                    value={day.progress}
                     onClick={onReviewClick}
                 />
             </div>
@@ -111,11 +111,6 @@ function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => v
                                 <WordPill key={word.id} word={word.word} isToday lang={word.lang} />
                             ))}
                         </div>
-                        
-                        <DiscreteProgress 
-                            value={day.progress} 
-                            onClick={onReviewClick}
-                        />
                     </div>
                 </div>
             </div>
@@ -151,11 +146,11 @@ function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; la
 }
 
 function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => void }) {
-    const state = value === 0 ? 0 : value < 34 ? 1 : value < 67 ? 2 : 3
+    const state = value < 33 ? 0 : value < 66 ? 1 : value < 99 ? 2 : 3
     const isCompleted = state === 3
 
     return (
-        <button 
+        <button
             onClick={onClick}
             className="flex items-center gap-2 group cursor-pointer"
         >
@@ -176,7 +171,7 @@ function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => v
             {isCompleted ? (
                 <PiCalendarCheck className="w-4 h-4 text-primary" />
             ) : (
-                <PiCursorClick className="w-4 h-4 text-default-300 group-hover:text-default-400 transition-colors" />
+                <PiCursorClick className="w-4 h-4 text-default-400 group-hover:text-default-500 transition-colors" />
             )}
         </button>
     )

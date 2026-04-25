@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
 import { getFlashback } from '@/server/db/flashback'
+import { normalizeReviewTranslations } from '@/lib/review'
 
 export async function GET(req: NextRequest) {
     try {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({
                 exists: true,
                 story: cached.story,
-                translations: cached.translations,
+                translations: normalizeReviewTranslations(cached.translations),
             })
         }
 

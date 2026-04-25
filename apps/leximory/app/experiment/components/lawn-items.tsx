@@ -15,14 +15,16 @@ interface LawnItemProps {
 
 interface WordPillProps extends LawnItemProps {
     word: string
+    isCompleted?: boolean
+    shouldAnimate?: boolean
 }
 
-export function WordPill({ id, x, y, delay = 0, onClick, word }: WordPillProps) {
+export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = false, shouldAnimate = true }: WordPillProps) {
     return (
         <motion.button
             id={id}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={shouldAnimate ? { opacity: 0, scale: 0 } : false}
+            animate={{ opacity: isCompleted ? 0.62 : 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
             transition={{
                 delay,
@@ -30,14 +32,15 @@ export function WordPill({ id, x, y, delay = 0, onClick, word }: WordPillProps) 
                 stiffness: 300,
                 damping: 20
             }}
-            whileHover={{ scale: 1.08 }}
+            whileHover={{ scale: isCompleted ? 1.03 : 1.08 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClick}
             className={cn(
-                "absolute px-3 py-1.5 text-sm font-medium rounded-full font-mono",
-                "transition-colors duration-200",
+                "absolute px-3 py-1.5 text-sm font-medium rounded-full font-mono overflow-hidden",
+                "duration-200 transition-opacity",
                 "cursor-pointer select-none",
-                'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl'
+                'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl',
+                isCompleted && 'border-default-300 bg-default-100/90 text-content1-foreground/50'
             )}
             style={{
                 left: `${x}%`,
@@ -45,7 +48,14 @@ export function WordPill({ id, x, y, delay = 0, onClick, word }: WordPillProps) 
                 transform: 'translate(-50%, -50%)',
             }}
         >
-            {word}
+            <span className="relative z-10">{word}</span>
+            <motion.span
+                aria-hidden
+                initial={false}
+                animate={{ scaleX: isCompleted ? 1 : 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute left-2 right-2 top-1/2 z-20 h-0.5 -translate-y-1/2 origin-left rounded-full bg-primary-400"
+            />
         </motion.button>
     )
 }
@@ -53,13 +63,14 @@ export function WordPill({ id, x, y, delay = 0, onClick, word }: WordPillProps) 
 interface StoryPillProps extends LawnItemProps {
     onClick?: () => void
     isActive?: boolean
+    shouldAnimate?: boolean
 }
 
-export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
+export function StoryPill({ id, x, y, delay = 0, onClick, shouldAnimate = true }: StoryPillProps) {
     return (
         <motion.button
             id={id}
-            initial={{ opacity: 0, scale: 0 }}
+            initial={shouldAnimate ? { opacity: 0, scale: 0 } : false}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
             transition={{

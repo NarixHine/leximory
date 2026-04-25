@@ -3,6 +3,8 @@ import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram, getWordsWithin } from '@/server/db/word'
 import { Lang } from '@repo/env/config'
 import { stdMoment } from '@repo/utils'
+import { getFlashback } from '@/server/db/flashback'
+import { getReviewCompletion } from '@/lib/review'
 
 export interface DayData {
     date: string
@@ -15,7 +17,7 @@ export interface DayData {
         lib: string
     }>
     count: number
-    progress: number // 0-100 random progress for review
+    progress: number
     isToday: boolean
 }
 
@@ -49,8 +51,15 @@ export async function getTimelineData(): Promise<TimelineData> {
         const date = stdMoment().subtract(i, 'days')
         const dateStr = date.format('YYYY-MM-DD')
         
-        // Random progress for now (0-100)
-        const progress = Math.floor(Math.random() * 101)
+        const flashback = await getFlashback({
+            userId,
+            date: dateStr,
+            lang: words[0]?.lang ?? 'en',
+        })
+        const progress = getReviewCompletion({
+            story: flashback?.story,
+            translations: flashback?.translations,
+        }).percentage
         
         days.push({
             date: dateStr,
