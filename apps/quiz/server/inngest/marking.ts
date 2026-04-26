@@ -1,4 +1,4 @@
-import { inngest } from './client'
+import { inngest, submissionMarking } from './client'
 import { getPaper, getSubmissionById, updateSubmissionFeedback } from '@repo/supabase/paper'
 import { generateObject } from 'ai'
 import { FLASH_AI } from '@repo/service/ai/config'
@@ -22,8 +22,7 @@ import { computeTotalScore } from '@repo/ui/paper/utils'
  * of a quiz submission asynchronously. Updates the submission's feedback and score.
  */
 export const markSubjectiveSections = inngest.createFunction(
-    { id: 'mark-subjective-sections', retries: 2, idempotency: 'event.data.submissionId' },
-    { event: 'quiz/submission.marking' },
+    { id: 'mark-subjective-sections', retries: 2, idempotency: 'event.data.submissionId', triggers: [submissionMarking] },
     async ({ event, step }) => {
         const { submissionId, paperId } = event.data
 

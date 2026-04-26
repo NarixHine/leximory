@@ -1,18 +1,15 @@
-import { EventSchemas, Inngest } from 'inngest'
+import { Inngest, eventType, staticSchema } from 'inngest'
 
-interface SubmissionMarking {
-    data: {
-        submissionId: number
-        paperId: number
-        userId: string
-    }
+type SubmissionMarking = {
+    submissionId: number
+    paperId: number
+    userId: string
 }
 
-type Events = {
-    'quiz/submission.marking': SubmissionMarking
-}
+export const submissionMarking = eventType('quiz/submission.marking', {
+    schema: staticSchema<SubmissionMarking>(),
+})
 
 export const inngest = new Inngest({
     id: 'quiz',
-    schemas: new EventSchemas().fromRecord<Events>(),
 })

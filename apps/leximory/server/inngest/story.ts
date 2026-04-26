@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import { inngest } from './client'
+import { inngest, articleImported, storyRequested } from './client'
 import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import { createTextWithData, getLibIdAndLangOfText } from '../db/text'
@@ -33,8 +33,7 @@ const storyPrompt = async (comments: string[], lang: Lang, userId: string, story
 })
 
 export const generateStory = inngest.createFunction(
-    { id: 'generate-daily-story' },
-    { event: 'app/story.requested' },
+    { id: 'generate-daily-story', triggers: [storyRequested] },
     async ({ step, event }) => {
         const { comments, userId, storyStyle } = event.data
         let textId: string
@@ -52,7 +51,6 @@ export const generateStory = inngest.createFunction(
             return await getLibIdAndLangOfText({ id: textId })
         })
 
-        // Generate the story
         const storyConfig = await step.run('get-story-prompt', async () => {
             return await storyPrompt(comments, lang, userId, storyStyle)
         })
@@ -60,17 +58,12 @@ export const generateStory = inngest.createFunction(
         const { steps: [{ content }] } = await step.ai.wrap('generate-story', generateText, storyConfig)
         const text = content[0].type === 'text' ? content[0].text : ''
 
-        // Trigger annotation process
-        await step.sendEvent('annotate-story', {
-            name: 'app/article.imported',
-            data: {
-                article: text,
-                lang,
-                textId,
-                onlyComments: false,
-                userId
-            }
-        })
+        await step.sendEvent('annotate-story', articleImported.create({
+            article: text,
+            textId,
+            onlyComments: false,
+            userId,
+        }))
 
         return { success: true }
     }

@@ -5,8 +5,6 @@ import { redis } from '@repo/kv/redis'
 import { getFlashback, updateFlashbackTranslations } from '@/server/db/flashback'
 import { evaluateReviewTranslation } from '@/server/ai/evaluate-review-translation'
 
-export const maxDuration = 60
-
 const submitTranslationSchema = z.object({
     date: z.string().min(1),
     lang: z.string().min(1),
