@@ -288,7 +288,7 @@ export function TranslationExercise({
                                             className='overflow-hidden'
                                         >
                                             <p className='text-xs uppercase text-warning font-mono'>Feedback</p>
-                                            <p className='mt-2 font-kaiti text-sm'>
+                                            <p className='mt-2 font-kaiti'>
                                                 {selectedBadPair.improved}
                                             </p>
                                         </motion.div>

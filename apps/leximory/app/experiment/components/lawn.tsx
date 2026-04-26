@@ -438,18 +438,12 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
 
     return (
         <section
-            className="relative w-full h-full select-none pointer-events-none"
-            style={{
-                backgroundImage: 'url(/assets/lawn.png)',
-                backgroundSize: 'contain',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-            }}
+            className="relative w-full h-full select-none pointer-events-none bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
         >
             <div
                 ref={containerRef}
                 onClick={handleClick}
-                className="absolute inset-[5%] cursor-pointer pointer-events-auto"
+                className="absolute inset-[15%] cursor-pointer pointer-events-auto"
             >
                 {/* Dust particles layer */}
                 <AnimatePresence>
@@ -498,14 +492,10 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
                 >
                     <div
                         ref={spriteRef}
-                        className="pointer-events-none"
+                        className="pointer-events-none w-full h-full bg-no-repeat bg-[url('/assets/cat.webp')] dark:bg-[url('/assets/cat-night.webp')]"
                         style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundImage: 'url(/assets/cat.png)',
                             backgroundSize: '300% 300%',
                             backgroundPosition: FRAMES.idle,
-                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.12))',
                         }}
                     />
                 </motion.div>
