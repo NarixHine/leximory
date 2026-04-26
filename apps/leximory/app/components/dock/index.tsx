@@ -1,5 +1,4 @@
-import { PiChatCircleDotsDuotone, PiUserCircleGearDuotone } from 'react-icons/pi'
-import { PiBooksDuotone, PiRewindDuotone, PiStorefrontDuotone } from 'react-icons/pi'
+import { PiBooksDuotone, PiRewindDuotone, PiStorefrontDuotone, PiUserCircleGearDuotone } from 'react-icons/pi'
 import { FloatingDock } from './floating-dock'
 
 export default function ServerDock() {
@@ -8,13 +7,10 @@ export default function ServerDock() {
         href: '/library'
     }, {
         icon: <PiRewindDuotone />,
-        href: '/daily'
+        href: '/review'
     }, {
         icon: <PiStorefrontDuotone />,
         href: '/marketplace/1'
-    }, {
-        icon: <PiChatCircleDotsDuotone />,
-        href: '/library/chat'
     }, {
         icon: <PiUserCircleGearDuotone />,
         href: '/settings'

@@ -116,17 +116,6 @@ function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => v
                                 <WordPill key={word.id} word={word.word} isToday lang={word.lang} />
                             ))}
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            {Object.entries(day.progressByLang).map(([lang, progress]) => (
-                                <DiscreteProgress
-                                    key={lang}
-                                    value={progress}
-                                    lang={lang as Lang}
-                                    onClick={onReviewClick}
-                                />
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -191,7 +180,7 @@ function DiscreteProgress({ value, lang, onClick }: { value: number; lang?: Lang
                 )} />
             </div>
             {isCompleted ? (
-                <PiCalendarCheck className="w-4 h-4 text-primary" />
+                <PiCalendarCheck className="w-4 h-4 text-default-400" />
             ) : (
                 <PiCursorClick className="w-4 h-4 text-default-400 group-hover:text-default-500 transition-colors" />
             )}

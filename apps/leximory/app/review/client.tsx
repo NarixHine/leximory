@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Timeline } from './components/timeline'
 import { ReviewFlow } from './components/review-flow'
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
 import Main from '@/components/ui/main'
 import type { DayData } from './data'
+import { momentSH } from '@/lib/moment'
 
 interface ExperimentClientProps {
     days: DayData[]
@@ -26,7 +27,7 @@ export default function ExperimentClient({ days }: ExperimentClientProps) {
     const primaryLang = selectedDay?.words[0]?.lang || 'en'
 
     return (
-        <Main>
+        <Main className='pt-4 sm:pt-8'>
             <AnimatePresence mode='sync'>
                 {!selectedDay ? (
                     <motion.div
@@ -38,9 +39,11 @@ export default function ExperimentClient({ days }: ExperimentClientProps) {
                         className="max-w-2xl mx-auto px-6 py-10"
                     >
                         {/* Title */}
-                        <header className="mb-10">
+                        <header className="mb-4 sm:mb-8">
                             <h1 className="text-4xl sm:text-5xl font-serif font-normal text-default-800 tracking-tight">
-                                Apr &rsquo;26
+                                <Suspense>
+                                    {momentSH().locale(primaryLang).format('MMM’ DD')}
+                                </Suspense>
                             </h1>
                         </header>
 
