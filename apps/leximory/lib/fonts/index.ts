@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji } from 'next/font/google'
 import localFont from 'next/font/local'
 import { GeistMono } from 'geist/font/mono'
 
@@ -8,6 +8,11 @@ export const MINCHO = localFont({
 })
 
 export const EMOJI = Noto_Emoji({
+    weight: '400',
+    preload: false,
+})
+
+export const EMOJI_COLOR = Noto_Color_Emoji({
     weight: '400',
     preload: false,
 })

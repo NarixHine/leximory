@@ -185,6 +185,9 @@ importers:
       '@repo/kv':
         specifier: workspace:^
         version: link:../../packages/kv
+      '@repo/languages':
+        specifier: workspace:^
+        version: link:../../packages/languages
       '@repo/schema':
         specifier: workspace:^
         version: link:../../packages/schema

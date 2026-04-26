@@ -10,16 +10,15 @@ import { ScopeProvider } from 'jotai-scope'
 import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
+import { EMOJI_COLOR } from '@/lib/fonts'
 
 interface TimelineProps {
     days: DayData[]
-    maxCount: number
     onReviewClick: (day: DayData) => void
 }
 
 export function Timeline({ days, onReviewClick }: TimelineProps) {
-    const daysWithWords = days.filter(day => day.words.length > 0)
-
     const chartData = days.map(day => ({
         date: day.displayDate,
         '词汇': day.count
@@ -45,11 +44,11 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
             {/* Timeline */}
             <div className="relative">
                 <div className="space-y-4">
-                    {daysWithWords.map((day, index) => (
+                    {days.map((day) => (
                         <TimelineRow
                             key={day.date}
                             day={day}
-                            isToday={index === 0}
+                            isToday={day.isToday}
                             onReviewClick={() => onReviewClick(day)}
                         />
                     ))}
@@ -82,10 +81,16 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                     ))}
                 </div>
 
-                <DiscreteProgress
-                    value={day.progress}
-                    onClick={onReviewClick}
-                />
+                <div className="flex flex-wrap items-center gap-3">
+                    {Object.entries(day.progressByLang).map(([lang, progress]) => (
+                        <DiscreteProgress
+                            key={lang}
+                            value={progress}
+                            lang={lang as Lang}
+                            onClick={onReviewClick}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     )
@@ -109,6 +114,17 @@ function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => v
                         <div className="flex flex-wrap items-center gap-2">
                             {day.words.map((word) => (
                                 <WordPill key={word.id} word={word.word} isToday lang={word.lang} />
+                            ))}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            {Object.entries(day.progressByLang).map(([lang, progress]) => (
+                                <DiscreteProgress
+                                    key={lang}
+                                    value={progress}
+                                    lang={lang as Lang}
+                                    onClick={onReviewClick}
+                                />
                             ))}
                         </div>
                     </div>
@@ -145,15 +161,21 @@ function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; la
     return commentElement
 }
 
-function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => void }) {
-    const state = value < 33 ? 0 : value < 66 ? 1 : value < 99 ? 2 : 3
+function DiscreteProgress({ value, lang, onClick }: { value: number; lang?: Lang; onClick?: () => void }) {
+    const state = value < 1 ? 0 : value < 40 ? 1 : value < 80 ? 2 : 3
     const isCompleted = state === 3
+    const emoji = lang ? getLanguageStrategy(lang).emoji : null
 
     return (
         <button
             onClick={onClick}
             className="flex items-center gap-2 group cursor-pointer"
         >
+            {emoji && (
+                <span className={cn("text-sm", EMOJI_COLOR.className)}>
+                    {emoji}
+                </span>
+            )}
             <div className="flex items-center gap-0.5">
                 <div className={cn(
                     "h-2 w-8 rounded-l transition-colors",
@@ -176,5 +198,3 @@ function DiscreteProgress({ value, onClick }: { value: number; onClick?: () => v
         </button>
     )
 }
-
-

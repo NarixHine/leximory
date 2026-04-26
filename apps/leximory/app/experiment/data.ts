@@ -1,10 +1,9 @@
 import { getUserOrThrow } from '@repo/user'
-import { listLibs } from '@/server/db/lib'
-import { aggrWordHistogram, getWordsWithin } from '@/server/db/word'
 import { Lang } from '@repo/env/config'
 import { stdMoment } from '@repo/utils'
-import { getFlashback } from '@/server/db/flashback'
-import { getReviewCompletion } from '@/lib/review'
+import { getReviewCompletion, type ReviewTranslation } from '@/lib/review'
+import { getTimelineWords } from '@/server/db/word'
+import { listFlashbacksWithin } from '@/server/db/flashback'
 
 export interface DayData {
     date: string
@@ -17,62 +16,73 @@ export interface DayData {
         lib: string
     }>
     count: number
-    progress: number
+    progressByLang: Record<Lang, number>
     isToday: boolean
 }
 
 export interface TimelineData {
     days: DayData[]
-    maxCount: number
 }
 
 export async function getTimelineData(): Promise<TimelineData> {
     const { userId } = await getUserOrThrow()
-    const libs = await listLibs({ owner: userId })
-    
-    // Get histogram data for the last 15 days
-    const histogram = await aggrWordHistogram({ libs, size: 15 })
-    const countMap = new Map(histogram.map(h => [h.date, h.count]))
-    
-    // Generate last 15 days - today first (at top), then going back
-    const days: DayData[] = []
-    
-    for (let i = 0; i < 15; i++) {
-        // i=0 is today, i=1 is yesterday, etc.
-        const fromDayAgo = i
-        const toDayAgo = i - 1  // to get a single day's range
-        
-        const words = await getWordsWithin({
-            fromDayAgo,
-            toDayAgo,
-            userId
+    const wordRows = await getTimelineWords({ userId, limit: 100 })
+
+    const wordsByDate = new Map<string, DayData['words']>()
+    for (const row of wordRows) {
+        const date = stdMoment(row.createdAt).format('YYYY-MM-DD')
+        const words = wordsByDate.get(date) ?? []
+        words.push({
+            id: row.id,
+            word: row.word,
+            lang: row.lang,
+            lib: row.lib,
         })
-        
-        const date = stdMoment().subtract(i, 'days')
-        const dateStr = date.format('YYYY-MM-DD')
-        
-        const flashback = await getFlashback({
-            userId,
-            date: dateStr,
-            lang: words[0]?.lang ?? 'en',
-        })
-        const progress = getReviewCompletion({
-            story: flashback?.story,
-            translations: flashback?.translations,
-        }).percentage
-        
-        days.push({
-            date: dateStr,
-            displayDate: date.format('M月D日'),
-            dayOfWeek: date.format('ddd'),
-            words: words.map(w => ({ ...w, lang: w.lang as Lang })),
-            count: countMap.get(dateStr) || words.length, // fallback to words.length if histogram missing
-            progress,
-            isToday: i === 0
+        wordsByDate.set(date, words)
+    }
+
+    const dates = Array.from(wordsByDate.keys()).sort((left, right) => right.localeCompare(left))
+    if (dates.length === 0) {
+        return { days: [] }
+    }
+
+    const flashbackRows = await listFlashbacksWithin({
+        userId,
+        startDate: dates[dates.length - 1],
+        endDate: dates[0],
+    })
+
+    const flashbackByDateAndLang = new Map<string, { story: string; translations: ReviewTranslation[] }>()
+    for (const row of flashbackRows) {
+        flashbackByDateAndLang.set(`${row.date}:${row.lang}`, {
+            story: row.story,
+            translations: row.translations,
         })
     }
-    
-    const maxCount = Math.max(...days.map(d => d.count), 1)
-    
-    return { days, maxCount }
+
+    const days = dates.map((date) => {
+        const momentDate = stdMoment(date)
+        const words = wordsByDate.get(date) ?? []
+        const langs = [...new Set(words.map(w => w.lang))]
+        const progressByLang = {} as Record<Lang, number>
+        for (const lang of langs) {
+            const flashback = flashbackByDateAndLang.get(`${date}:${lang}`)
+            progressByLang[lang] = getReviewCompletion({
+                story: flashback?.story,
+                translations: flashback?.translations,
+            }).percentage
+        }
+
+        return {
+            date,
+            displayDate: momentDate.format('M月D日'),
+            dayOfWeek: momentDate.format('ddd'),
+            words,
+            count: words.length,
+            progressByLang,
+            isToday: stdMoment().isSame(momentDate, 'day'),
+        }
+    })
+
+    return { days }
 }

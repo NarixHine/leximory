@@ -224,7 +224,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             <StoryDrawer
                 isOpen={showStory}
                 onClose={handleClose}
-                content={selectedItem?.type === 'story' ? selectedItem.data : undefined}
+                content={story}
                 lang={lang}
             />
 

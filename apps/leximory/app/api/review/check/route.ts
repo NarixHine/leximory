@@ -5,8 +5,8 @@ import { getFlashback } from '@/server/db/flashback'
 import { normalizeReviewTranslations } from '@/lib/review'
 
 export async function GET(req: NextRequest) {
+    await connection()
     try {
-        await connection()
         const { userId } = await getUserOrThrow()
         const { searchParams } = new URL(req.url)
         const date = searchParams.get('date')

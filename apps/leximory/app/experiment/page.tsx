@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 }
 
 export default async function ExperimentPage() {
-    const { days, maxCount } = await getTimelineData()
+    const { days } = await getTimelineData()
     
-    return <ExperimentClient days={days} maxCount={maxCount} />
+    return <ExperimentClient days={days} />
 }

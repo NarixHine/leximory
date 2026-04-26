@@ -116,3 +116,28 @@ export async function updateFlashbackTranslations({
 
     return data
 }
+
+export async function listFlashbacksWithin({
+    userId,
+    startDate,
+    endDate,
+}: {
+    userId: string
+    startDate: string
+    endDate: string
+}): Promise<Array<Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations'>>> {
+    const { data } = await supabase
+        .from('flashbacks')
+        .select('date, lang, story, translations')
+        .eq('user', userId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .throwOnError()
+
+    return data.map((row) => ({
+        date: row.date,
+        lang: row.lang,
+        story: row.story || '',
+        translations: normalizeReviewTranslations(row.translations),
+    }))
+}

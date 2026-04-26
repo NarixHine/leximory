@@ -71,6 +71,7 @@
     "@repo/scrape": "workspace:^",
     "@repo/service": "workspace:^",
     "@repo/supabase": "workspace:^",
+    "@repo/languages": "workspace:^",
     "@repo/ui": "workspace:^",
     "@repo/user": "workspace:^",
     "@repo/utils": "workspace:^",
