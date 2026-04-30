@@ -258,8 +258,8 @@ export function TranslationExercise({
                                                             type='button'
                                                             onClick={() => setSelectedBadPairIndex(segment.badPairIndex)}
                                                             className={`rounded-sm px-1 py-px transition-colors ${selectedBadPairIndex === segment.badPairIndex
-                                                                ? 'bg-warning/40'
-                                                                : 'bg-warning/20 hover:bg-warning/30'
+                                                                ? 'bg-warning-300'
+                                                                : 'bg-warning-200 hover:bg-warning-200'
                                                                 }`}
                                                         >
                                                             {segment.text}
