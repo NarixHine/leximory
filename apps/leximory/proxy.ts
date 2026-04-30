@@ -4,7 +4,7 @@ const PROTECTED_ROUTE_PREFIXES = [
     '/library',
     '/settings',
     '/marketplace',
-    '/daily',
+    '/review',
     '/admin',
     '/memories'
 ]

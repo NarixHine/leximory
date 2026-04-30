@@ -68,7 +68,7 @@ function ConfigDependent({ start, end, lib, isReadOnly }: {
                                             action: {
                                                 label: '设置提醒',
                                                 onClick: () => {
-                                                    router.push(`/daily`)
+                                                    router.push(`/review`)
                                                 }
                                             }
                                         })

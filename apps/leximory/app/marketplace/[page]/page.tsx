@@ -43,11 +43,20 @@ export default async function MarketplacePage({ params }: {
     const page = parseInt((await params).page)
 
     return (
-        <Main className='max-w-(--breakpoint-lg) flex flex-col mx-auto pt-15'>
-            <header className='mb-2 mx-auto w-full max-w-108 sm:max-w-133 flex items-start gap-3 sm:items-center flex-col sm:flex-row sm:gap-6'>
-                <h1 className='text-3xl flex items-center gap-1 font-formal text-default-500 ml-5 sm:ml-0 font-bold'>
-                    <PiStorefrontDuotone className='size-8' /> 文库集市
-                </h1>
+        <Main className='max-w-(--breakpoint-lg) flex flex-col'>
+            {/* Header */}
+            <header className='mb-6 mx-auto w-full px-7 max-w-125 sm:max-w-150 space-y-1'>
+                <div className='flex items-center gap-2 text-default-400'>
+                    <PiStorefrontDuotone className='size-5' />
+                    <span className='text-xs font-mono font-semibold uppercase tracking-widest'>
+                        Library Exchange
+                    </span> 
+                </div>
+                <div className='flex items-end gap-0.5'>
+                    <h1 className='font-kaiti text-3xl'>
+                        文库交换所
+                    </h1>
+                </div>
             </header>
             <Spacer y={5} />
             <Suspense fallback={<SuspenseLibraryList />}>

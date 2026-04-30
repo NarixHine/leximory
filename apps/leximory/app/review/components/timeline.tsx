@@ -69,7 +69,7 @@ function TimelineRow({ day, isToday, onReviewClick }: {
 
     return (
         <div className="group flex items-start gap-6 py-2">
-            <div className="w-16 shrink-0 text-right pt-1">
+            <div className="w-10 sm:w-16 shrink-0 text-right pt-1">
                 <div className="text-xs text-default-400">{momentSH(day.date).format('ddd')}</div>
                 <div className="text-sm text-default-600 tabular-nums">{momentSH(day.date).format('MM/DD')}</div>
             </div>

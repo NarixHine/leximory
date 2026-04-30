@@ -26,7 +26,7 @@ export const fanNotification = inngest.createFunction(
             .map(({ subscription, uid }) => notifyEvent.create({
                 title: '今日词汇复盘',
                 body: '📝 回顾你最近在 Leximory 上学习的语汇',
-                url: prefixUrl('/daily'),
+                url: prefixUrl('/review'),
                 subscription: JSON.stringify(subscription),
                 uid,
             }))

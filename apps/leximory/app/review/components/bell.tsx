@@ -1,10 +1,10 @@
 'use client'
 
 import { Button } from "@heroui/button"
-import { PiClockClockwiseDuotone } from 'react-icons/pi'
+import { PiClockClockwise } from 'react-icons/pi'
 import { toast } from 'sonner'
 import env from '@repo/env'
-import { save, remove } from '../actions'
+import { save, remove } from './actions'
 import { PushSubscription } from 'web-push'
 import { useState } from 'react'
 import { Select, SelectItem } from '@heroui/select'
@@ -70,24 +70,27 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
     }
 
     return (
-        <div className='flex gap-2 items-center justify-center'>
+        <div className='flex gap-1 items-center justify-center'>
             <Button
-                variant={hasSubs ? 'flat' : 'light'}
+                variant={hasSubs ? 'light' : 'solid'}
                 isLoading={isLoading}
                 isDisabled={isDisabled}
                 onPress={handleToggle} // Direct call
                 radius='full'
                 color='default'
-                startContent={isLoading ? null : <PiClockClockwiseDuotone size={32} />}
+                size='sm'
+                startContent={isLoading ? null : <PiClockClockwise size={20} />}
             >
-                {`${hasSubs ? '关闭' : '开启'}每日复习提醒`}
+                {`${hasSubs ? '关闭' : '开启'}提醒`}
             </Button>
             <Select
                 size='sm'
                 selectedKeys={[selectedHour.toString()]}
                 onSelectionChange={(e) => setSelectedHour(parseInt(e.currentKey ?? '22'))}
                 className='w-28'
+                radius='full'
                 startContent='于'
+                variant='bordered'
                 endContent={<span className='text-sm'>时</span>}
                 isDisabled={hasSubs || isDisabled}
             >

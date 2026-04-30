@@ -28,14 +28,14 @@ export default function Page() {
         <Main>
             {/* Header */}
             <header className='mb-6 mx-auto w-full px-7 max-w-125 sm:max-w-150'>
-                <div className='mb-1 flex items-center gap-2'>
+                <div className='flex items-center gap-2'>
                     <PiBooksDuotone className='h-5 w-5 text-default-500' />
-                    <span className='text-xs font-semibold uppercase tracking-widest text-default-400'>
+                    <span className='text-xs font-mono font-semibold uppercase tracking-widest text-default-400'>
                         My Libraries
                     </span>
                 </div>
                 <div className='flex items-end gap-0.5'>
-                    <h1 className='font-formal text-3xl text-foreground font-bold'>
+                    <h1 className='font-kaiti text-3xl'>
                         我的文库
                     </h1>
                     <div className='flex-1' />
