@@ -192,7 +192,7 @@ export function ConversationExercise({
                         <PiSealCheckFill className='h-4 w-4' />
                     </div>
                     <div className='flex-1 space-y-1'>
-                        <p className='font-mono text-xs uppercase tracking-wide text-[#7e7370]'>Conversation</p>
+                        <p className='font-mono text-xs uppercase tracking-wide text-[#7e7370]'>Writing Practice</p>
                         {isLocked ? (
                             <div className='space-y-3'>
                                 <p className='font-kaiti text-base text-[#4c4443]'>{lockMessage}</p>
@@ -205,9 +205,9 @@ export function ConversationExercise({
                             </div>
                         ) : (
                             <>
-                                <p className='font-formal text-base leading-7 text-[#433a39]'>{data?.prompt || '...'}</p>
+                                <p className='font-formal italic text-base text-[#433a39]'>{data?.prompt || '...'}</p>
                                 {data?.keywords?.length ? (
-                                    <p className='text-sm'>
+                                    <p className='font-mono text-primary-500'>
                                         试着带上 {data.keywords.slice(0, 6).join(' / ')}
                                     </p>
                                 ) : null}
@@ -268,12 +268,8 @@ export function ConversationExercise({
                             <motion.div
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className='rounded-4xl border border-[#d9ceca] bg-[#fbf7f4] px-4 py-3'
                             >
-                                <p className='font-formal text-[#433a39]'>{data.reply}</p>
-                                <div className='mt-3 rounded-2xl bg-[#efe6e2] px-3 py-2 text-xs text-[#756967]'>
-                                    今日目标已完成，你可以继续复习单词了。
-                                </div>
+                                <p className='font-formal italic'>{data.reply}</p>
                             </motion.div>
                         ) : null}
                     </div>
@@ -290,7 +286,7 @@ export function ConversationExercise({
                 canSubmit={canSubmit}
                 isLoading={submitMutation.isPending}
                 rows={4}
-                className='border-[#d8ccc7] bg-[#f6eeea]'
+                className='border-[#d8ccc7] bg-[#fbf8f7]'
                 textareaClassName='font-formal text-[#433a39] placeholder:text-[#9d8d88]'
             />
         </>
