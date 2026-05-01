@@ -13,7 +13,8 @@ export const ReviewTranslationFeedbackSchema = z.object({
 export type ReviewTranslationFeedback = z.infer<typeof ReviewTranslationFeedbackSchema>
 
 export const ReviewTranslationSchema = z.object({
-    chinese: z.string(),
+    prompt: z.string().optional(),
+    chinese: z.string().optional(),
     answer: z.string(),
     keyword: z.string(),
     submission: z.string().nullable().optional(),
@@ -22,14 +23,22 @@ export const ReviewTranslationSchema = z.object({
     submittedAt: z.string().nullable().optional(),
     evaluatedAt: z.string().nullable().optional(),
 })
-export type ReviewTranslation = z.infer<typeof ReviewTranslationSchema>
+type ReviewTranslationSchemaData = z.infer<typeof ReviewTranslationSchema>
+
+export type ReviewTranslation = Omit<ReviewTranslationSchemaData, 'prompt' | 'chinese'> & {
+    prompt: string
+}
 
 export function normalizeReviewTranslation(raw: unknown): ReviewTranslation | null {
     const parsed = ReviewTranslationSchema.safeParse(raw)
     if (!parsed.success) return null
 
+    const prompt = parsed.data.prompt ?? parsed.data.chinese ?? ''
+
     return {
-        ...parsed.data,
+        answer: parsed.data.answer,
+        keyword: parsed.data.keyword,
+        prompt,
         submission: parsed.data.submission ?? null,
         status: parsed.data.status ?? 'idle',
         feedback: parsed.data.feedback ?? null,

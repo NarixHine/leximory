@@ -23,6 +23,12 @@ interface LawnItem {
     data: any
 }
 
+interface TranslationSession {
+    id: string
+    index: number
+    data: ReviewTranslation
+}
+
 interface ReviewFlowProps {
     date: string
     lang: string
@@ -34,8 +40,10 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const [showStory, setShowStory] = useState(false)
     const [showTranslation, setShowTranslation] = useState(false)
     const [pendingItemId, setPendingItemId] = useState<string | null>(null)
+    const [activeTranslation, setActiveTranslation] = useState<TranslationSession | null>(null)
 
     const lawnRef = useRef<LawnRef>(null)
+    const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const { progress, story, translations } = useReviewProgress({ date, lang })
 
@@ -51,38 +59,67 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const items = useMemo(() => {
         const result: LawnItem[] = []
 
-        const getPosition = (id: string) => {
+        const getItemFootprint = (item: Pick<LawnItem, 'type' | 'label'>) => ({
+            width: item.type === 'story'
+                ? 20
+                : Math.min(28, Math.max(12, 8 + item.label.length * 1.15)),
+            height: item.type === 'story' ? 9 : 7,
+        })
+
+        const overlaps = (
+            candidate: { type: LawnItem['type']; label: string; x: number; y: number },
+            existing: LawnItem
+        ) => {
+            const candidateSize = getItemFootprint(candidate)
+            const existingSize = getItemFootprint(existing)
+
+            return (
+                Math.abs(candidate.x - existing.x) < (candidateSize.width + existingSize.width) / 2 &&
+                Math.abs(candidate.y - existing.y) < (candidateSize.height + existingSize.height) / 2
+            )
+        }
+
+        const getPosition = (id: string, type: LawnItem['type'], label: string) => {
             let pos = positionsRef.current.get(id)
             if (!pos) {
                 let attempts = 0
-                let x: number, y: number
-                do {
-                    x = 24 + Math.random() * 52
-                    y = 28 + Math.random() * 44
+                let bestCandidate = { x: 50, y: 50, overlapCount: Number.POSITIVE_INFINITY }
+
+                while (attempts < 40) {
+                    const candidate = {
+                        type,
+                        label,
+                        x: 16 + Math.random() * 68,
+                        y: 22 + Math.random() * 54,
+                    }
+                    const overlapCount = result.filter((item) => overlaps(candidate, item)).length
+
+                    if (overlapCount < bestCandidate.overlapCount) {
+                        bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
+                    }
+
+                    if (overlapCount === 0) {
+                        bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
+                        break
+                    }
+
                     attempts++
-                } while (
-                    attempts < 10 &&
-                    result.some(item => {
-                        const dx = item.x - x
-                        const dy = item.y - y
-                        return Math.sqrt(dx * dx + dy * dy) < 12
-                    })
-                )
-                pos = { x, y }
+                }
+                pos = { x: bestCandidate.x, y: bestCandidate.y }
                 positionsRef.current.set(id, pos)
             }
             return pos
         }
 
         if (story) {
-            const pos = getPosition('story')
+            const pos = getPosition('story', 'story', '故事')
             result.push({ id: 'story', type: 'story', label: '故事', x: pos.x, y: pos.y, data: story })
         }
 
         if (translations) {
             translations.forEach((translation, index) => {
                 const id = `translation-${index}`
-                const pos = getPosition(id)
+                const pos = getPosition(id, 'translation', translation.keyword)
                 result.push({
                     id,
                     type: 'translation',
@@ -98,21 +135,27 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         return result
     }, [story, translations])
 
-    const selectedItem = useMemo(
-        () => items.find(item => item.id === selectedItemId) ?? null,
-        [items, selectedItemId]
-    )
-
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
+
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+            closeTimeoutRef.current = null
+        }
 
         setSelectedItemId(item.id)
         setPendingItemId(item.id)
 
         if (item.type === 'story') {
+            setActiveTranslation(null)
             setShowStory(true)
             setShowTranslation(false)
         } else {
+            setActiveTranslation({
+                id: item.id,
+                index: item.index!,
+                data: item.data as ReviewTranslation,
+            })
             setShowTranslation(true)
             setShowStory(false)
         }
@@ -123,9 +166,13 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const handleClose = useCallback(() => {
         setShowStory(false)
         setShowTranslation(false)
-        setTimeout(() => {
+        if (closeTimeoutRef.current) {
+            clearTimeout(closeTimeoutRef.current)
+        }
+        closeTimeoutRef.current = setTimeout(() => {
             setSelectedItemId(null)
             setPendingItemId(null)
+            closeTimeoutRef.current = null
         }, 500)
     }, [])
 
@@ -136,11 +183,24 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     }, [selectedItemId, showStory, showTranslation, handleClose])
 
     const isGenerating = progress?.stage !== 'complete'
+    const liveTranslation = useMemo(() => {
+        if (!activeTranslation) return null
+        const nextItem = items.find((item) => item.id === activeTranslation.id && item.type === 'translation')
+        if (!nextItem || nextItem.type !== 'translation') {
+            return activeTranslation
+        }
+
+        return {
+            id: nextItem.id,
+            index: nextItem.index!,
+            data: nextItem.data as ReviewTranslation,
+        }
+    }, [activeTranslation, items])
 
     const statusText = {
         init: 'Initializing...',
-        story: 'Generating story...',
-        translations: 'Generating exercises...',
+        story: 'Writing story...',
+        translations: 'Preparing translations...',
         complete: ''
     }[progress?.stage ?? 'init']
 
@@ -232,9 +292,9 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 date={date}
                 lang={lang}
                 isOpen={showTranslation}
-                onClose={handleClose}
-                index={selectedItem?.type === 'translation' ? selectedItem.index : undefined}
-                data={selectedItem?.type === 'translation' ? selectedItem.data : undefined}
+                itemId={liveTranslation?.id}
+                index={liveTranslation?.index}
+                data={liveTranslation?.data}
             />
         </motion.div>
     )

@@ -12,6 +12,7 @@ import { articleAnnotationPrompt } from '@/server/ai/annotate'
 import { fixDumbPunctuation } from '@repo/utils'
 import { redis } from '@repo/kv/redis'
 import { createFlashback } from '@/server/db/flashback'
+import { getReviewLanguageCopy } from '@/lib/review-language'
 
 interface StoryWorkflowPayload {
     date: string
@@ -128,7 +129,9 @@ const chunkText = (text: string, maxLength: number): string[] => {
 
 export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
     const { date, lang, userId, storyStyle, progressKey } = context.requestPayload
-    const languageStrategy = getLanguageStrategy(lang as Lang)
+    const reviewLang = lang as Lang
+    const languageStrategy = getLanguageStrategy(reviewLang)
+    const reviewCopy = getReviewLanguageCopy(reviewLang)
 
     // Step 1: Get words once and check quotas up-front (fail fast for story)
     const { comments, words, translationQuotaExceeded } = await context.run('get-words-and-check-quotas', async () => {
@@ -140,11 +143,13 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         const today = new Date()
         const daysDiff = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24))
 
-        const words = await getWordsWithin({
+        const allWords = await getWordsWithin({
             fromDayAgo: daysDiff,
             toDayAgo: daysDiff - 1,
             userId,
         })
+
+        const words = allWords.filter((word) => word.lang === reviewLang)
 
         if (words.length === 0) {
             throw new Error('No words found for the specified date')
@@ -161,7 +166,7 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
 
     // Step 2: Generate story and translations in parallel — they only depend on words.
     const storyPromise = context.run('generate-story', async () => {
-        const config = await buildStoryConfig(comments, lang as Lang, userId, storyStyle)
+        const config = await buildStoryConfig(comments, reviewLang, userId, storyStyle)
         const { text } = await generateText(config)
         const { rawStory, title } = extractTitleAndStory(text)
         return { rawStory, title }
@@ -176,15 +181,16 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         const selectedWords = [...words].sort(() => 0.5 - Math.random()).slice(0, Math.min(5, words.length))
 
         const { text } = await generateText({
-            system: `Create translation exercises for language learners. Return ONLY a JSON array, no markdown, no explanation.
+            system: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
 
 For each vocabulary word:
-1. Create a natural Chinese sentence that includes the word's meaning
-2. Provide the correct English translation
-3. Identify the key word being tested
+1. Create a natural Chinese sentence that conveys the word's meaning clearly.
+2. Provide the correct ${reviewCopy.targetLanguageName} translation of that sentence.
+3. Ensure the ${reviewCopy.targetLanguageName} translation naturally includes the keyword or a grammatically correct inflected form of it.
+4. Identify the key word being tested.
 
-Format: [{"chinese": "...", "answer": "...", "keyword": "..."}]`,
-            prompt: `Create ${selectedWords.length} translation exercises for these words:
+Format: [{"prompt": "...", "answer": "...", "keyword": "..."}]`,
+            prompt: `Create ${selectedWords.length} translation exercises for these ${reviewCopy.targetLanguageName} vocabulary words:
 ${selectedWords.map((w, i) => {
                 const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
                 return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
@@ -211,7 +217,7 @@ ${selectedWords.map((w, i) => {
     const annotationConfigs = await context.run('build-annotation-configs', async () => {
         const chunks = chunkText(rawStory, languageStrategy.maxChunkSize)
         return Promise.all(
-            chunks.map((chunk, index) => articleAnnotationPrompt(lang as Lang, chunk, false, userId, true, index === 0))
+            chunks.map((chunk, index) => articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0))
         )
     })
 

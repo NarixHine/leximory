@@ -492,7 +492,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
                 >
                     <div
                         ref={spriteRef}
-                        className="pointer-events-none w-full h-full bg-no-repeat bg-[url('/assets/cat.webp')] dark:bg-[url('/assets/cat-night.webp')]"
+                        className="pointer-events-none w-full h-full bg-no-repeat bg-[url('/assets/cat.webp')]"
                         style={{
                             backgroundSize: '300% 300%',
                             backgroundPosition: FRAMES.idle,

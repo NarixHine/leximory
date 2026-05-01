@@ -1,4 +1,5 @@
 import { after, NextResponse } from 'next/server'
+import { Lang } from '@repo/env/config'
 import { z } from '@repo/schema'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
@@ -67,10 +68,11 @@ export async function POST(request: Request) {
         after(async () => {
             try {
                 const feedback = await evaluateReviewTranslation({
-                    chinese: translation.chinese,
+                    prompt: translation.prompt,
                     answer: translation.answer,
                     keyword: translation.keyword,
                     submission,
+                    lang: lang as Lang,
                 })
 
                 const latestFlashback = await getFlashback({ userId, date, lang })

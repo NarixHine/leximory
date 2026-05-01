@@ -2,7 +2,7 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import { isListedFilter, OrFilter } from '@/server/auth/role'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PiBooksDuotone, PiInfo } from 'react-icons/pi'
+import { PiBooks, PiBooksDuotone, PiInfo } from 'react-icons/pi'
 import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'
@@ -29,8 +29,8 @@ export default function Page() {
             {/* Header */}
             <header className='mb-6 mx-auto w-full px-7 max-w-125 sm:max-w-150'>
                 <div className='flex items-center gap-2'>
-                    <PiBooksDuotone className='h-5 w-5 text-default-500' />
-                    <span className='text-xs font-mono font-semibold uppercase tracking-widest text-default-400'>
+                    <PiBooks className='size-4 text-default-500' />
+                    <span className='text-xs font-mono uppercase tracking-wider text-default-400'>
                         My Libraries
                     </span>
                 </div>

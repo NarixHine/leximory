@@ -1,19 +1,19 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@heroui/button'
 import { Card, CardBody } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
-import { PiArrowUp, PiCheck, PiSealCheck } from 'react-icons/pi'
+import { PiArrowUp, PiSealCheck } from 'react-icons/pi'
 import type { ReviewTranslation, ReviewTranslationFeedback } from '@/lib/review'
 
 interface TranslationExerciseProps {
     date: string
     lang: string
     isOpen: boolean
-    onClose: () => void
+    itemId?: string
     index?: number
     data?: ReviewTranslation
 }
@@ -108,7 +108,7 @@ export function TranslationExercise({
     date,
     lang,
     isOpen,
-    onClose,
+    itemId,
     index,
     data,
 }: TranslationExerciseProps) {
@@ -116,13 +116,17 @@ export function TranslationExercise({
     const [draft, setDraft] = useState('')
     const [optimisticSubmission, setOptimisticSubmission] = useState<string | null>(null)
     const [selectedBadPairIndex, setSelectedBadPairIndex] = useState<number | null>(null)
+    const [submittingItemIds, setSubmittingItemIds] = useState<Set<string>>(() => new Set())
+    const activeItemIdRef = useRef<string | undefined>(itemId)
+
+    activeItemIdRef.current = itemId
 
     useEffect(() => {
-        if (!isOpen) return
+        if (!isOpen || !itemId) return
         setDraft(data?.submission ?? '')
         setOptimisticSubmission(data?.submission ?? null)
         setSelectedBadPairIndex(null)
-    }, [isOpen, data?.submission, data?.keyword])
+    }, [isOpen, itemId, data?.submission])
 
     useEffect(() => {
         if (!isOpen || data?.status !== 'complete') return
@@ -139,13 +143,13 @@ export function TranslationExercise({
     }, [isOpen, data?.status, data?.feedback])
 
     const submitMutation = useMutation({
-        mutationFn: (submission: string) => submitTranslation({
+        mutationFn: ({ index, submission }: { itemId: string; index: number; submission: string }) => submitTranslation({
             date,
             lang,
-            index: index!,
+            index,
             submission,
         }),
-        onSuccess: ({ translation }) => {
+        onSuccess: ({ translation }, variables) => {
             queryClient.setQueryData(
                 ['review', 'check', date, lang],
                 (previous: {
@@ -153,30 +157,46 @@ export function TranslationExercise({
                     story?: string
                     translations?: ReviewTranslation[]
                 } | undefined) => {
-                    if (!previous?.translations || index === undefined) return previous
+                    if (!previous?.translations) return previous
                     return {
                         ...previous,
                         translations: previous.translations.map((item, itemIndex) =>
-                            itemIndex === index ? translation : item
+                            itemIndex === variables.index ? translation : item
                         ),
                     }
                 }
             )
             queryClient.invalidateQueries({ queryKey: ['review', 'check', date, lang] })
+
+            if (activeItemIdRef.current !== variables.itemId) {
+                return
+            }
+
             setDraft(translation.submission ?? '')
             setOptimisticSubmission(translation.submission ?? null)
             setSelectedBadPairIndex(null)
         },
-        onError: () => {
+        onError: (_, variables) => {
+            if (activeItemIdRef.current !== variables.itemId) {
+                return
+            }
             setOptimisticSubmission(null)
+        },
+        onSettled: (_, __, variables) => {
+            setSubmittingItemIds((current) => {
+                const next = new Set(current)
+                next.delete(variables.itemId)
+                return next
+            })
         },
     })
 
     const displayedSubmission = data?.submission ?? optimisticSubmission
+    const isSubmittingCurrentItem = itemId ? submittingItemIds.has(itemId) : false
     const isPendingEvaluation = data?.status === 'pending'
     const isEvaluated = data?.status === 'complete'
     const hasFeedback = Boolean(data?.feedback?.badPairs.length)
-    const canSubmit = index !== undefined && draft.trim().length > 0 && !submitMutation.isPending
+    const canSubmit = index !== undefined && draft.trim().length > 0 && !isSubmittingCurrentItem
     const highlightSegments = useMemo(
         () => buildHighlightSegments(displayedSubmission ?? '', data?.feedback),
         [displayedSubmission, data?.feedback]
@@ -184,9 +204,16 @@ export function TranslationExercise({
     const selectedBadPair = selectedBadPairIndex !== null ? data?.feedback?.badPairs[selectedBadPairIndex] : null
 
     const handleSubmit = () => {
-        if (!canSubmit) return
-        setOptimisticSubmission(draft.trim())
-        submitMutation.mutate(draft.trim())
+        if (!canSubmit || index === undefined || !itemId) return
+
+        const submission = draft.trim()
+        setOptimisticSubmission(submission)
+        setSubmittingItemIds((current) => {
+            const next = new Set(current)
+            next.add(itemId)
+            return next
+        })
+        submitMutation.mutate({ itemId, index, submission })
     }
 
     return (
@@ -205,7 +232,7 @@ export function TranslationExercise({
                                 <div className='flex flex-col gap-2'>
                                     <p className='text-xs text-default-400 uppercase font-mono'>Translation</p>
                                     <p className='text-base text-default-800'>
-                                        {data?.chinese || 'Loading...'}
+                                        {data?.prompt || 'Loading...'}
                                         <span className='font-formal ml-2'>({data?.keyword})</span>
                                     </p>
                                     <AnimatePresence initial={false}>
@@ -229,7 +256,7 @@ export function TranslationExercise({
                                 <AnimatePresence initial={false}>
                                     {displayedSubmission ? (
                                         <motion.div
-                                            key='submission'
+                                                key='submission'
                                             initial={{ opacity: 0, height: 0, y: -8 }}
                                             animate={{ opacity: 1, height: 'auto', y: 0 }}
                                             exit={{ opacity: 0, height: 0, y: -8 }}
@@ -238,7 +265,7 @@ export function TranslationExercise({
                                         >
                                             <div className='flex items-start justify-between gap-3'>
                                                 <p className='text-xs uppercase text-default-400 font-mono'>Your translation</p>
-                                                {(submitMutation.isPending || isPendingEvaluation) && (
+                                                {(isSubmittingCurrentItem || isPendingEvaluation) && (
                                                     <div className='flex items-center gap-2 text-xs text-default-400 font-mono'>
                                                         <Spinner size='sm' variant='spinner' color='secondary' />
                                                         <span>Evaluating</span>
@@ -314,7 +341,7 @@ export function TranslationExercise({
                                         className='w-full px-3 py-2 text-primary-700 placeholder:text-primary-400 resize-none focus:outline-none bg-transparent border-0 font-mono'
                                         rows={2}
                                         placeholder='Write your translation...'
-                                        disabled={submitMutation.isPending}
+                                        disabled={isSubmittingCurrentItem}
                                         onKeyDown={(event) => {
                                             if (event.key === 'Enter' && !event.shiftKey) {
                                                 event.preventDefault()
@@ -329,7 +356,7 @@ export function TranslationExercise({
                                             radius='full'
                                             size='sm'
                                             onPress={handleSubmit}
-                                            isLoading={submitMutation.isPending}
+                                            isLoading={isSubmittingCurrentItem}
                                             isDisabled={!canSubmit}
                                         >
                                             <PiArrowUp className='w-4 h-4' />

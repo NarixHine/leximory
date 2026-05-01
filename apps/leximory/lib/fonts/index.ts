@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji, Space_Mono, IBM_Plex_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 import { GeistMono } from 'geist/font/mono'
 
@@ -38,7 +38,12 @@ export const ENGLISH_SANS = DM_Sans({
     preload: false,
 })
 
-export const ENGLISH_MONO = GeistMono
+export const ENGLISH_MONO = IBM_Plex_Mono({
+    weight: ['400', '500', '700'],
+    subsets: ['latin'],
+    style: ['normal', 'italic'],
+    variable: '--font-english-mono',
+})
 
 export const ENGLISH_IPA = Source_Code_Pro({
     subsets: ['latin'],

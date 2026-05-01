@@ -48,7 +48,7 @@ export default async function MarketplacePage({ params }: {
             <header className='mb-6 mx-auto w-full px-7 max-w-125 sm:max-w-150 space-y-1'>
                 <div className='flex items-center gap-2 text-default-400'>
                     <PiStorefrontDuotone className='size-5' />
-                    <span className='text-xs font-mono font-semibold uppercase tracking-widest'>
+                    <span className='text-xs font-mono uppercase tracking-wide'>
                         Library Exchange
                     </span> 
                 </div>

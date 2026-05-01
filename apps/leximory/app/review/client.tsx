@@ -6,6 +6,12 @@ import { Timeline } from './components/timeline'
 import { ReviewFlow } from './components/review-flow'
 import Main from '@/components/ui/main'
 import type { DayData } from './data'
+import { Lang } from '@repo/env/config'
+
+interface SelectedReviewDay {
+    date: string
+    lang: Lang
+}
 
 interface ExperimentClientProps {
     days: DayData[]
@@ -13,17 +19,18 @@ interface ExperimentClientProps {
 }
 
 export default function ExperimentClient({ days, Header }: ExperimentClientProps) {
-    const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
+    const [selectedDay, setSelectedDay] = useState<SelectedReviewDay | null>(null)
 
-    const handleReviewClick = (day: DayData) => {
-        setSelectedDay(day)
+    const handleReviewClick = (day: DayData, lang: Lang) => {
+        setSelectedDay({
+            date: day.date,
+            lang,
+        })
     }
 
     const handleExitReview = () => {
         setSelectedDay(null)
     }
-
-    const primaryLang = selectedDay?.words[0]?.lang || 'en'
 
     return (
         <Main>
@@ -57,7 +64,7 @@ export default function ExperimentClient({ days, Header }: ExperimentClientProps
                     >
                         <ReviewFlow
                             date={selectedDay.date}
-                            lang={primaryLang}
+                            lang={selectedDay.lang}
                             onExit={handleExitReview}
                         />
                     </motion.div>

@@ -14,13 +14,13 @@ export default async function ExperimentPage() {
 
     return <ExperimentClient days={days} Header={
         <header className="mb-1 sm:ml-22">
-            <div className='mb-1 flex items-center gap-2'>
-                <span className='text-sm font-semibold font-mono uppercase tracking-widest text-default-400'>
+            <div className='flex items-center gap-2'>
+                <span className='text-sm font-mono uppercase tracking-wide text-default-400'>
                     <PiCableCar className='inline-block size-5' /> Forming Connections
                 </span>
             </div>
             <h1 className="flex items-center flex-wrap gap-2">
-                <div className='text-2xl font-kaiti'>回忆旧知，创造新知</div>
+                <div className='text-[22px] font-kaiti'>回忆旧知，创造新知</div>
                 <div className='flex-1' />
                 <Suspense>
                     <Bell />

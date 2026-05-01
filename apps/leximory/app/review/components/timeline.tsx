@@ -15,7 +15,7 @@ import { EMOJI_COLOR } from '@/lib/fonts'
 
 interface TimelineProps {
     days: DayData[]
-    onReviewClick: (day: DayData) => void
+    onReviewClick: (day: DayData, lang: Lang) => void
 }
 
 export function Timeline({ days, onReviewClick }: TimelineProps) {
@@ -49,7 +49,7 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
                             key={day.date}
                             day={day}
                             isToday={day.isToday}
-                            onReviewClick={() => onReviewClick(day)}
+                            onReviewClick={(lang) => onReviewClick(day, lang)}
                         />
                     ))}
                 </div>
@@ -61,10 +61,10 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
 function TimelineRow({ day, isToday, onReviewClick }: {
     day: DayData
     isToday: boolean
-    onReviewClick: () => void
+    onReviewClick: (lang: Lang) => void
 }) {
     if (isToday) {
-        return <TodayRow day={day} onReviewClick={onReviewClick} />
+        return <TodayRow day={day} />
     }
 
     return (
@@ -87,7 +87,7 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                             key={lang}
                             value={progress}
                             lang={lang as Lang}
-                            onClick={onReviewClick}
+                            onClick={() => onReviewClick(lang as Lang)}
                         />
                     ))}
                 </div>
@@ -96,7 +96,7 @@ function TimelineRow({ day, isToday, onReviewClick }: {
     )
 }
 
-function TodayRow({ day, onReviewClick }: { day: DayData; onReviewClick: () => void }) {
+function TodayRow({ day }: { day: DayData }) {
     return (
         <div className="relative -mx-4 my-2">
             <div className="bg-primary-50/60 rounded-2xl p-5 border border-primary-100/50">
