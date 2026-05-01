@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@heroui/spinner'
-import { PiLockKey, PiSealCheckFill, PiStarFill } from 'react-icons/pi'
+import { PiLockKey, PiSealCheckFill } from 'react-icons/pi'
 import {
     getConversationUnlockProgress,
     type ReviewConversation,

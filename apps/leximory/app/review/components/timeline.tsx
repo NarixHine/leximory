@@ -190,7 +190,7 @@ function DiscreteProgress({
                 )} />
             </div>
             {conversationCompleted ? (
-                <PiStarFill className="w-4 h-4 text-warning-500" />
+                <PiStarFill className="w-4 h-4 text-default-400" />
             ) : state >= 3 ? (
                 <PiStar className="w-4 h-4 text-default-400" />
             ) : (
