@@ -1,5 +1,11 @@
 import { supabase } from '@repo/supabase'
-import { normalizeReviewTranslations, type ReviewTranslation } from '@/lib/review'
+import {
+    normalizeReviewConversationPayload,
+    normalizeReviewConversation,
+    normalizeReviewTranslations,
+    type ReviewConversation,
+    type ReviewTranslation,
+} from '@/lib/review'
 
 interface FlashbackData {
     user: string
@@ -7,6 +13,7 @@ interface FlashbackData {
     lang: string
     story: string
     translations: ReviewTranslation[]
+    conversation: ReviewConversation | null
     created_at: string
 }
 
@@ -16,13 +23,15 @@ interface CreateFlashbackParams {
     lang: string
     story: string
     translations: ReviewTranslation[]
+    conversation?: ReviewConversation | null
 }
 
-interface UpdateFlashbackTranslationsParams {
+interface UpdateFlashbackReviewParams {
     userId: string
     date: string
     lang: string
     translations: ReviewTranslation[]
+    conversation?: ReviewConversation | null
 }
 
 export async function getFlashback({
@@ -57,7 +66,7 @@ export async function getFlashback({
         date: data.date,
         lang: data.lang,
         story: data.story || '',
-        translations: normalizeReviewTranslations(data.translations),
+        ...normalizeReviewConversationPayload(data.translations, data.conversation),
         created_at: data.created_at,
     }
 }
@@ -68,8 +77,12 @@ export async function createFlashback({
     lang,
     story,
     translations,
+    conversation,
 }: CreateFlashbackParams) {
     const normalizedTranslations = normalizeReviewTranslations(translations)
+    const normalizedConversation = conversation
+        ? normalizeReviewConversation(conversation)
+        : null
 
     const { data, error } = await supabase
         .from('flashbacks')
@@ -79,6 +92,7 @@ export async function createFlashback({
             lang,
             story,
             translations: normalizedTranslations as any,
+            conversation: normalizedConversation as any,
             created_at: new Date().toISOString(),
         })
         .select()
@@ -91,18 +105,23 @@ export async function createFlashback({
     return data
 }
 
-export async function updateFlashbackTranslations({
+export async function updateFlashbackReview({
     userId,
     date,
     lang,
     translations,
-}: UpdateFlashbackTranslationsParams) {
+    conversation,
+}: UpdateFlashbackReviewParams) {
     const normalizedTranslations = normalizeReviewTranslations(translations)
+    const normalizedConversation = conversation
+        ? normalizeReviewConversation(conversation)
+        : null
 
     const { data, error } = await supabase
         .from('flashbacks')
         .update({
             translations: normalizedTranslations as any,
+            conversation: normalizedConversation as any,
         })
         .eq('user', userId)
         .eq('date', date)
@@ -125,10 +144,10 @@ export async function listFlashbacksWithin({
     userId: string
     startDate: string
     endDate: string
-}): Promise<Array<Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations'>>> {
+}): Promise<Array<Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>>> {
     const { data } = await supabase
         .from('flashbacks')
-        .select('date, lang, story, translations')
+        .select('date, lang, story, translations, conversation')
         .eq('user', userId)
         .gte('date', startDate)
         .lte('date', endDate)
@@ -138,6 +157,6 @@ export async function listFlashbacksWithin({
         date: row.date,
         lang: row.lang,
         story: row.story || '',
-        translations: normalizeReviewTranslations(row.translations),
+        ...normalizeReviewConversationPayload(row.translations, row.conversation),
     }))
 }

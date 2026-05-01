@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
 
         const progressKey = `review:${userId}:${date}:${lang}`
 
+        const existingProgress = await redis.get(progressKey) as { stage?: string } | null
+        if (existingProgress && existingProgress.stage !== 'complete') {
+            return NextResponse.json({ success: true, inProgress: true })
+        }
+
         // Check if we already have a flashback for this date
         const existingFlashback = await getFlashback({ userId, date, lang })
 
@@ -24,6 +29,7 @@ export async function POST(req: NextRequest) {
                 stage: 'complete',
                 story: existingFlashback.story,
                 translations: existingFlashback.translations,
+                conversation: existingFlashback.conversation,
             })
             console.log('Returning cached flashback for review generation')
             return NextResponse.json({ success: true, cached: true })
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
             stage: 'story',
             story: null,
             translations: null,
+            conversation: null,
         })
 
         // Trigger Upstash Workflow

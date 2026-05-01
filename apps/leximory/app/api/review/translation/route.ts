@@ -3,7 +3,7 @@ import { Lang } from '@repo/env/config'
 import { z } from '@repo/schema'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
-import { getFlashback, updateFlashbackTranslations } from '@/server/db/flashback'
+import { getFlashback, updateFlashbackReview } from '@/server/db/flashback'
 import { evaluateReviewTranslation } from '@/server/ai/evaluate-review-translation'
 
 const submitTranslationSchema = z.object({
@@ -51,11 +51,12 @@ export async function POST(request: Request) {
             }
         })
 
-        await updateFlashbackTranslations({
+        await updateFlashbackReview({
             userId,
             date,
             lang,
             translations: nextTranslations,
+            conversation: flashback.conversation,
         })
 
         const progressKey = getReviewProgressKey(userId, date, lang)
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
             stage: 'complete',
             story: flashback.story,
             translations: nextTranslations,
+            conversation: flashback.conversation,
         })
 
         after(async () => {
@@ -91,17 +93,19 @@ export async function POST(request: Request) {
                     }
                 })
 
-                await updateFlashbackTranslations({
+                await updateFlashbackReview({
                     userId,
                     date,
                     lang,
                     translations: completedTranslations,
+                    conversation: latestFlashback.conversation,
                 })
 
                 await redis.set(progressKey, {
                     stage: 'complete',
                     story: latestFlashback.story,
                     translations: completedTranslations,
+                    conversation: latestFlashback.conversation,
                 })
             } catch (error) {
                 console.error('Failed to evaluate review translation:', error)
@@ -122,17 +126,19 @@ export async function POST(request: Request) {
                     }
                 })
 
-                await updateFlashbackTranslations({
+                await updateFlashbackReview({
                     userId,
                     date,
                     lang,
                     translations: failedTranslations,
+                    conversation: latestFlashback.conversation,
                 })
 
                 await redis.set(progressKey, {
                     stage: 'complete',
                     story: latestFlashback.story,
                     translations: failedTranslations,
+                    conversation: latestFlashback.conversation,
                 })
             }
         })

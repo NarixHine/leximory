@@ -2,7 +2,7 @@ import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@
 import { isListedFilter, OrFilter } from '@/server/auth/role'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PiBooks, PiBooksDuotone, PiInfo } from 'react-icons/pi'
+import { PiBooks, PiInfo } from 'react-icons/pi'
 import { listLibsWithFullInfo } from '@/server/db/lib'
 import { getArchivedLibs } from '@/server/db/lib'
 import { cacheTag, cacheLife } from 'next/cache'

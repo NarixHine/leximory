@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { AreaChart } from '@/components/ui/area-chart'
 import type { DayData } from '../data'
 import { momentSH } from '@/lib/moment'
-import { PiCursorClick, PiCalendarCheck } from 'react-icons/pi'
+import { PiCursorClick, PiStar, PiStarFill } from 'react-icons/pi'
 import Comment from '@/components/comment'
 import { ScopeProvider } from 'jotai-scope'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -85,7 +85,8 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                     {Object.entries(day.progressByLang).map(([lang, progress]) => (
                         <DiscreteProgress
                             key={lang}
-                            value={progress}
+                            value={progress?.percentage ?? 0}
+                            conversationCompleted={progress?.conversationCompleted ?? false}
                             lang={lang as Lang}
                             onClick={() => onReviewClick(lang as Lang)}
                         />
@@ -150,9 +151,18 @@ function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; la
     return commentElement
 }
 
-function DiscreteProgress({ value, lang, onClick }: { value: number; lang?: Lang; onClick?: () => void }) {
-    const state = value < 1 ? 0 : value < 40 ? 1 : value < 80 ? 2 : 3
-    const isCompleted = state === 3
+function DiscreteProgress({
+    value,
+    lang,
+    onClick,
+    conversationCompleted,
+}: {
+    value: number
+    lang?: Lang
+    onClick?: () => void
+    conversationCompleted?: boolean
+}) {
+    const state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
     const emoji = lang ? getLanguageStrategy(lang).emoji : null
 
     return (
@@ -179,8 +189,10 @@ function DiscreteProgress({ value, lang, onClick }: { value: number; lang?: Lang
                     state >= 3 ? "bg-default-400" : "bg-default-200"
                 )} />
             </div>
-            {isCompleted ? (
-                <PiCalendarCheck className="w-4 h-4 text-default-400" />
+            {conversationCompleted ? (
+                <PiStarFill className="w-4 h-4 text-warning-500" />
+            ) : state >= 3 ? (
+                <PiStar className="w-4 h-4 text-default-400" />
             ) : (
                 <PiCursorClick className="w-4 h-4 text-default-400 group-hover:text-default-500 transition-colors" />
             )}

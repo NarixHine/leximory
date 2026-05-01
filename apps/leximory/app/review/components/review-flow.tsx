@@ -3,19 +3,27 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Lawn, LawnRef } from './lawn'
-import { WordPill, StoryPill } from './lawn-items'
+import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
 import { StoryDrawer } from './story-drawer'
 import { TranslationExercise } from './translation-popover'
+import { ConversationExercise } from './conversation-popover'
 import { useReviewProgress } from '../hooks/use-review-progress'
 import { PiX } from 'react-icons/pi'
 import { Spinner } from '@heroui/spinner'
 import { Card, CardBody } from '@heroui/card'
 import { Button } from '@heroui/button'
-import { isTranslationCompleted, type ReviewTranslation } from '@/lib/review'
+import {
+    getConversationUnlockProgress,
+    getReviewCompletion,
+    isConversationCompleted,
+    isTranslationCompleted,
+    type ReviewConversation,
+    type ReviewTranslation,
+} from '@/lib/review'
 
 interface LawnItem {
     id: string
-    type: 'story' | 'translation'
+    type: 'story' | 'translation' | 'conversation'
     label: string
     x: number
     y: number
@@ -39,13 +47,14 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
     const [showStory, setShowStory] = useState(false)
     const [showTranslation, setShowTranslation] = useState(false)
+    const [showConversation, setShowConversation] = useState(false)
     const [pendingItemId, setPendingItemId] = useState<string | null>(null)
     const [activeTranslation, setActiveTranslation] = useState<TranslationSession | null>(null)
 
     const lawnRef = useRef<LawnRef>(null)
     const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const { progress, story, translations } = useReviewProgress({ date, lang })
+    const { progress, story, translations, conversation } = useReviewProgress({ date, lang })
 
     // Stable random positions stored in a ref, cleared when date/lang change
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
@@ -62,8 +71,10 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         const getItemFootprint = (item: Pick<LawnItem, 'type' | 'label'>) => ({
             width: item.type === 'story'
                 ? 20
-                : Math.min(28, Math.max(12, 8 + item.label.length * 1.15)),
-            height: item.type === 'story' ? 9 : 7,
+                : item.type === 'conversation'
+                    ? 26
+                    : Math.min(28, Math.max(12, 8 + item.label.length * 1.15)),
+            height: item.type === 'story' ? 9 : item.type === 'conversation' ? 12 : 7,
         })
 
         const overlaps = (
@@ -132,8 +143,28 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             })
         }
 
+        if (conversation) {
+            result.push({
+                id: 'conversation',
+                type: 'conversation',
+                label: '每日练笔',
+                x: 76,
+                y: 68,
+                data: conversation,
+            })
+        }
+
         return result
-    }, [story, translations])
+    }, [story, translations, conversation])
+
+    const unlockProgress = useMemo(
+        () => getConversationUnlockProgress(translations),
+        [translations]
+    )
+    const reviewCompletion = useMemo(
+        () => getReviewCompletion({ story, translations, conversation }),
+        [story, translations, conversation]
+    )
 
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
@@ -150,6 +181,12 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             setActiveTranslation(null)
             setShowStory(true)
             setShowTranslation(false)
+            setShowConversation(false)
+        } else if (item.type === 'conversation') {
+            setActiveTranslation(null)
+            setShowConversation(true)
+            setShowStory(false)
+            setShowTranslation(false)
         } else {
             setActiveTranslation({
                 id: item.id,
@@ -158,6 +195,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             })
             setShowTranslation(true)
             setShowStory(false)
+            setShowConversation(false)
         }
 
         lawnRef.current.moveTo(item.x, item.y)
@@ -166,6 +204,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const handleClose = useCallback(() => {
         setShowStory(false)
         setShowTranslation(false)
+        setShowConversation(false)
         if (closeTimeoutRef.current) {
             clearTimeout(closeTimeoutRef.current)
         }
@@ -177,10 +216,10 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     }, [])
 
     const handleBackgroundClick = useCallback(() => {
-        if (selectedItemId || showStory || showTranslation) {
+        if (selectedItemId || showStory || showTranslation || showConversation) {
             handleClose()
         }
-    }, [selectedItemId, showStory, showTranslation, handleClose])
+    }, [selectedItemId, showStory, showTranslation, showConversation, handleClose])
 
     const isGenerating = progress?.stage !== 'complete'
     const liveTranslation = useMemo(() => {
@@ -201,6 +240,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         init: 'Initializing...',
         story: 'Writing story...',
         translations: 'Preparing translations...',
+        conversation: 'Waiting for the dark cat...',
         complete: ''
     }[progress?.stage ?? 'init']
 
@@ -263,6 +303,17 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     onClick={() => handleItemClick(item)}
                                     isActive={pendingItemId === item.id}
                                 />
+                            ) : item.type === 'conversation' ? (
+                                <CatTaskPill
+                                    key={item.id}
+                                    id={item.id}
+                                    x={item.x}
+                                    y={item.y}
+                                    delay={index * 0.1}
+                                    onClick={() => handleItemClick(item)}
+                                    isLocked={!unlockProgress.isUnlocked}
+                                    isCompleted={isConversationCompleted(item.data as ReviewConversation)}
+                                />
                             ) : (
                                 <WordPill
                                     key={item.id}
@@ -295,6 +346,15 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 itemId={liveTranslation?.id}
                 index={liveTranslation?.index}
                 data={liveTranslation?.data}
+            />
+
+            <ConversationExercise
+                date={date}
+                lang={lang}
+                isOpen={showConversation}
+                data={conversation}
+                translations={translations}
+                isLocked={!unlockProgress.isUnlocked}
             />
         </motion.div>
     )

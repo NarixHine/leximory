@@ -1,7 +1,7 @@
 import { getUserOrThrow } from '@repo/user'
 import { Lang } from '@repo/env/config'
 import { stdMoment } from '@repo/utils'
-import { getReviewCompletion, type ReviewTranslation } from '@/lib/review'
+import { getReviewCompletion, type ReviewConversation, type ReviewTranslation } from '@/lib/review'
 import { getTimelineWords } from '@/server/db/word'
 import { listFlashbacksWithin } from '@/server/db/flashback'
 
@@ -16,7 +16,10 @@ export interface DayData {
         lib: string
     }>
     count: number
-    progressByLang: Record<Lang, number>
+    progressByLang: Partial<Record<Lang, {
+        percentage: number
+        conversationCompleted: boolean
+    }>>
     isToday: boolean
 }
 
@@ -52,11 +55,16 @@ export async function getTimelineData(): Promise<TimelineData> {
         endDate: dates[0],
     })
 
-    const flashbackByDateAndLang = new Map<string, { story: string; translations: ReviewTranslation[] }>()
+    const flashbackByDateAndLang = new Map<string, {
+        story: string
+        translations: ReviewTranslation[]
+        conversation: ReviewConversation | null
+    }>()
     for (const row of flashbackRows) {
         flashbackByDateAndLang.set(`${row.date}:${row.lang}`, {
             story: row.story,
             translations: row.translations,
+            conversation: row.conversation,
         })
     }
 
@@ -64,13 +72,18 @@ export async function getTimelineData(): Promise<TimelineData> {
         const momentDate = stdMoment(date)
         const words = wordsByDate.get(date) ?? []
         const langs = [...new Set(words.map(w => w.lang))]
-        const progressByLang = {} as Record<Lang, number>
+        const progressByLang: DayData['progressByLang'] = {}
         for (const lang of langs) {
             const flashback = flashbackByDateAndLang.get(`${date}:${lang}`)
-            progressByLang[lang] = getReviewCompletion({
+            const completion = getReviewCompletion({
                 story: flashback?.story,
                 translations: flashback?.translations,
-            }).percentage
+                conversation: flashback?.conversation,
+            })
+            progressByLang[lang] = {
+                percentage: completion.percentage,
+                conversationCompleted: completion.conversationCompleted,
+            }
         }
 
         return {

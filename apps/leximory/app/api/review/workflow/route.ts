@@ -1,6 +1,7 @@
 import { serve } from '@upstash/workflow/nextjs'
-import { generateText } from 'ai'
+import { generateObject, generateText } from 'ai'
 import { getWordsWithin } from '@repo/supabase/word'
+import { z } from '@repo/schema'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { parseCommentParams } from '@/lib/comment'
 import { miniAI } from '@/server/ai/configs'
@@ -13,6 +14,7 @@ import { fixDumbPunctuation } from '@repo/utils'
 import { redis } from '@repo/kv/redis'
 import { createFlashback } from '@/server/db/flashback'
 import { getReviewLanguageCopy } from '@/lib/review-language'
+import { LEXIMORY_WORLD_VIEW, type ReviewConversation } from '@/lib/review'
 
 interface StoryWorkflowPayload {
     date: string
@@ -21,6 +23,23 @@ interface StoryWorkflowPayload {
     storyStyle?: string
     progressKey: string
 }
+
+interface GeneratedConversation {
+    prompt: string
+    keywords: string[]
+}
+
+interface ReviewGenerationProgress {
+    stage: 'story' | 'translations' | 'conversation' | 'complete'
+    story: string | null
+    translations: Array<{ prompt: string; answer: string; keyword: string }> | null
+    conversation: ReviewConversation | null
+}
+
+type PendingReviewResult =
+    | { kind: 'story'; value: string }
+    | { kind: 'translations'; value: Array<{ prompt: string; answer: string; keyword: string }> }
+    | { kind: 'conversation'; value: GeneratedConversation | null }
 
 const buildStoryConfig = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
     system: `
@@ -164,13 +183,61 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         }
     })
 
-    // Step 2: Generate story and translations in parallel — they only depend on words.
-    const storyPromise = context.run('generate-story', async () => {
-        const config = await buildStoryConfig(comments, reviewLang, userId, storyStyle)
-        const { text } = await generateText(config)
-        const { rawStory, title } = extractTitleAndStory(text)
-        return { rawStory, title }
-    })
+    const progress: ReviewGenerationProgress = {
+        stage: 'story',
+        story: null,
+        translations: null,
+        conversation: null,
+    }
+
+    let storyReady = false
+    let translationsReady = false
+    let conversationReady = false
+
+    const getStage = (): ReviewGenerationProgress['stage'] => {
+        if (!storyReady) return 'story'
+        if (!translationsReady) return 'translations'
+        if (!conversationReady) return 'conversation'
+        return 'complete'
+    }
+
+    const updateProgress = async (patch: Partial<Omit<ReviewGenerationProgress, 'stage'>>) => {
+        Object.assign(progress, patch)
+        progress.stage = getStage()
+        await redis.set(progressKey, progress)
+    }
+
+    // Step 2: Generate the three visible review items in parallel.
+    const storyPromise = (async () => {
+        const { rawStory, title } = await context.run('generate-story', async () => {
+            const config = await buildStoryConfig(comments, reviewLang, userId, storyStyle)
+            const { text } = await generateText(config)
+            return extractTitleAndStory(text)
+        })
+
+        const annotationConfigs = await context.run('build-annotation-configs', async () => {
+            const chunks = chunkText(rawStory, languageStrategy.maxChunkSize)
+            return Promise.all(
+                chunks.map((chunk, index) => articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0))
+            )
+        })
+
+        const annotatedChunks = await Promise.all(
+            annotationConfigs.map((config, index) =>
+                context.run(`annotate-chunk-${index}`, async () => {
+                    const { text } = await generateText(config)
+                    return text
+                })
+            )
+        )
+
+        const annotatedStory = await context.run('combine-annotations', async () => {
+            const content = annotatedChunks.join('\n\n')
+            return fixDumbPunctuation(content)
+        })
+
+        return `## ${title}\n\n${annotatedStory}`
+    })()
 
     const translationsPromise = context.run('generate-translations', async () => {
         if (translationQuotaExceeded) {
@@ -211,48 +278,102 @@ ${selectedWords.map((w, i) => {
         }
     })
 
-    const [{ rawStory, title }, translations] = await Promise.all([storyPromise, translationsPromise])
+    const conversationPromise = context.run('generate-conversation', async (): Promise<GeneratedConversation | null> => {
+        const selectedWords = [...words].sort(() => 0.5 - Math.random()).slice(0, Math.min(8, words.length))
+        const selectedKeywords = selectedWords.map((word) => {
+            const parts = word.word.replace(/\{\{|\}\}/g, '').split('||')
+            return parts[1] || parts[0]
+        }).filter(Boolean)
 
-    // Step 3: Build annotation configs
-    const annotationConfigs = await context.run('build-annotation-configs', async () => {
-        const chunks = chunkText(rawStory, languageStrategy.maxChunkSize)
-        return Promise.all(
-            chunks.map((chunk, index) => articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0))
-        )
-    })
+        const { object } = await generateObject({
+            ...miniAI,
+            schema: z.object({
+                prompt: z.string(),
+            }),
+            prompt: `
+${LEXIMORY_WORLD_VIEW}
 
-    // Step 4: Annotate chunks in parallel (each AI call is its own durable step)
-    const annotatedChunks = await Promise.all(
-        annotationConfigs.map((config, index) =>
-            context.run(`annotate-chunk-${index}`, async () => {
-                const { text } = await generateText(config)
-                return text
-            })
-        )
-    )
+你要为 Leximory 语言学习软件的每日练笔生成一个简明而有新意的写作情境，供用户回答小黑猫。
 
-    // Step 5: Combine annotations and push the story to the client
-    const annotatedStory = await context.run('combine-annotations', async () => {
-        const content = annotatedChunks.join('\n\n')
-        return fixDumbPunctuation(content)
-    })
-
-    await context.run('update-progress-story', async () => {
-        await redis.set(progressKey, {
-            stage: 'translations',
-            story: annotatedStory,
-            translations: null,
+严格要求：
+1. 输出内容必须使用用户正在学习词汇的目标语言：${reviewCopy.targetLanguageName}。
+2. 叙述口吻必须是小黑猫，语气娴静、内敛、探问、温存。
+3. 情境必须围绕这些关键词，尽量与尽可能多的关键词产生自然关联：${selectedKeywords.join(' / ')}；但是禁止刻意堆砌场景设定，并且请勿在你的情境描述本身中出现这些关键词！
+4. 情境要贴近现实生活，可以涉及小白猫生活中的点滴思考、对自身生活方方面面的介绍，如家中的陈设、学校里的社团、参与的社会实践课题，或对社会热点和新闻事件的倡议或异议。
+5. 构建设定必须基于一个类人类社会，但禁止脱离猫忆世界的大体世界观。
+6. 鼓励用户选用新学习的关键词，但不要把要求写得像考试说明。语气、句式要自然，可以多样。
+7. 成品要简明，像小黑猫轻声发来的一个练笔邀约，不要超过140个目标语言字符为宜。
+8. 只生成练笔情境本身，不要添加标题、编号、解释或中文。
+`,
         })
+
+        return {
+            prompt: object.prompt.trim(),
+            keywords: selectedKeywords,
+        }
     })
 
-    // Step 6: Save final result with translations
-    await context.run('save-flashback', async () => {
-        const fullStory = `## ${title}\n\n${annotatedStory}`
+    const pending = new Map<string, Promise<PendingReviewResult>>([
+        ['story', storyPromise.then((story) => ({ kind: 'story' as const, value: story }))],
+        ['translations', translationsPromise.then((translations) => ({ kind: 'translations' as const, value: translations }))],
+        ['conversation', conversationPromise.then((generatedConversation) => ({ kind: 'conversation' as const, value: generatedConversation }))],
+    ])
 
+    let fullStory = ''
+    let translations: Array<{ prompt: string; answer: string; keyword: string }> = []
+    let conversation: ReviewConversation | null = null
+
+    while (pending.size > 0) {
+        const settled = await Promise.race(pending.values())
+        pending.delete(settled.kind)
+
+        if (settled.kind === 'story') {
+            fullStory = settled.value
+            storyReady = true
+
+            await context.run('update-progress-story', async () => {
+                await updateProgress({ story: fullStory })
+            })
+            continue
+        }
+
+        if (settled.kind === 'translations') {
+            translations = settled.value
+            translationsReady = true
+
+            await context.run('update-progress-translations', async () => {
+                await updateProgress({ translations })
+            })
+            continue
+        }
+
+        conversation = settled.value
+            ? {
+                worldView: LEXIMORY_WORLD_VIEW,
+                prompt: settled.value.prompt,
+                keywords: settled.value.keywords,
+                submission: null,
+                status: 'idle',
+                feedback: null,
+                reply: null,
+                submittedAt: null,
+                evaluatedAt: null,
+            }
+            : null
+        conversationReady = true
+
+        await context.run('update-progress-conversation', async () => {
+            await updateProgress({ conversation })
+        })
+    }
+
+    // Step 3: Save final result once all items are ready.
+    await context.run('save-flashback', async () => {
         await redis.set(progressKey, {
             stage: 'complete',
             story: fullStory,
             translations,
+            conversation,
         })
 
         await createFlashback({
@@ -261,6 +382,7 @@ ${selectedWords.map((w, i) => {
             lang,
             story: fullStory,
             translations,
+            conversation,
         })
     })
     console.log('Saved flashback and updated progress for workflow')

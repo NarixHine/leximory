@@ -2,7 +2,14 @@ import { connection, NextRequest, NextResponse } from 'next/server'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
 import { getFlashback } from '@/server/db/flashback'
-import { normalizeReviewTranslations } from '@/lib/review'
+import { normalizeReviewConversation, normalizeReviewConversationPayload, normalizeReviewTranslations } from '@/lib/review'
+
+type CachedReviewProgress = {
+    stage: string
+    story?: string | null
+    translations?: unknown
+    conversation?: unknown
+}
 
 export async function GET(req: NextRequest) {
     await connection()
@@ -19,12 +26,28 @@ export async function GET(req: NextRequest) {
         const progressKey = `review:${userId}:${date}:${lang}`
 
         // Check Redis first (fast path)
-        const cached = await redis.get(progressKey) as { stage: string; story?: string; translations?: any[] } | null
-        if (cached && cached.stage === 'complete') {
+        const cached = await redis.get(progressKey) as CachedReviewProgress | null
+        if (cached) {
+            const normalized = normalizeReviewConversationPayload(cached.translations, cached.conversation)
+
+            if (cached.stage === 'complete') {
+                return NextResponse.json({
+                    exists: true,
+                    inProgress: false,
+                    stage: cached.stage,
+                    story: cached.story,
+                    translations: normalized.translations,
+                    conversation: normalized.conversation,
+                })
+            }
+
             return NextResponse.json({
-                exists: true,
+                exists: false,
+                inProgress: true,
+                stage: cached.stage,
                 story: cached.story,
-                translations: normalizeReviewTranslations(cached.translations),
+                translations: normalized.translations,
+                conversation: normalized.conversation,
             })
         }
 
@@ -36,15 +59,19 @@ export async function GET(req: NextRequest) {
                 stage: 'complete',
                 story: existingFlashback.story,
                 translations: existingFlashback.translations,
+                conversation: existingFlashback.conversation,
             })
             return NextResponse.json({
                 exists: true,
+                inProgress: false,
+                stage: 'complete',
                 story: existingFlashback.story,
                 translations: existingFlashback.translations,
+                conversation: normalizeReviewConversation(existingFlashback.conversation),
             })
         }
 
-        return NextResponse.json({ exists: false })
+        return NextResponse.json({ exists: false, inProgress: false })
     } catch (error) {
         console.error('Error checking flashback:', error)
         return NextResponse.json({ error: 'Failed to check flashback' }, { status: 500 })

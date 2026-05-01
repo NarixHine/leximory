@@ -20,17 +20,25 @@ export async function GET(req: NextRequest) {
 
             controller.enqueue(encoder.encode('data: {"type":"connected"}\n\n'))
 
+            const pushSnapshot = async () => {
+                const data = await redis.get(progressKey)
+
+                if (!data) return false
+
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+                return (data as any).stage === 'complete'
+            }
+
+            if (await pushSnapshot()) {
+                controller.close()
+                return
+            }
+
             const interval = setInterval(async () => {
                 try {
-                    const data = await redis.get(progressKey)
-
-                    if (data) {
-                        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-
-                        if ((data as any).stage === 'complete') {
-                            clearInterval(interval)
-                            controller.close()
-                        }
+                    if (await pushSnapshot()) {
+                        clearInterval(interval)
+                        controller.close()
                     }
                 } catch (error) {
                     console.error('Error fetching progress:', error)

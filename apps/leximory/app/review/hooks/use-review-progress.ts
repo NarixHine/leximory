@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import type { ReviewTranslation } from '@/lib/review'
+import type { ReviewConversation, ReviewTranslation } from '@/lib/review'
 
 interface ReviewProgress {
-    stage: 'init' | 'story' | 'translations' | 'complete'
+    stage: 'init' | 'story' | 'translations' | 'conversation' | 'complete'
     story?: string
     translations?: ReviewTranslation[]
+    conversation?: ReviewConversation | null
 }
 
 interface CheckResponse {
     exists: boolean
+    inProgress?: boolean
+    stage?: ReviewProgress['stage']
     story?: string
     translations?: ReviewProgress['translations']
+    conversation?: ReviewProgress['conversation']
 }
 
 async function checkReviewData(date: string, lang: string): Promise<CheckResponse> {
@@ -35,6 +39,10 @@ async function startReviewGeneration(date: string, lang: string) {
 export function useReviewProgress({ date, lang }: { date: string | null; lang: string | null }) {
     const [sseProgress, setSseProgress] = useState<ReviewProgress | null>(null)
 
+    useEffect(() => {
+        setSseProgress(null)
+    }, [date, lang])
+
     const checkQuery = useQuery({
         queryKey: ['review', 'check', date, lang],
         queryFn: () => checkReviewData(date!, lang!),
@@ -43,7 +51,9 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
         refetchInterval: (query) => {
             const data = query.state.data
             if (!data?.exists) return false
-            return data.translations?.some(translation => translation.status === 'pending') ? 1500 : false
+            const hasPendingTranslation = data.translations?.some(translation => translation.status === 'pending')
+            const hasPendingConversation = data.conversation?.status === 'pending'
+            return hasPendingTranslation || hasPendingConversation ? 1500 : false
         },
     })
 
@@ -56,7 +66,7 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
     // Mutation state guards against duplicate start calls.
     useEffect(() => {
         if (!checkQuery.isSuccess || !checkQuery.data) return
-        if (checkQuery.data.exists) return
+        if (checkQuery.data.exists || checkQuery.data.inProgress) return
         if (startMutation.isPending || startMutation.isSuccess) return
 
         startMutation.mutate()
@@ -66,7 +76,7 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
     useEffect(() => {
         if (!date || !lang) return
 
-        const shouldConnect = checkQuery.data?.exists || startMutation.isSuccess
+        const shouldConnect = checkQuery.data?.exists || checkQuery.data?.inProgress || startMutation.isSuccess
         if (!shouldConnect) return
 
         const eventSource = new EventSource(`/api/review/progress?date=${date}&lang=${lang}`)
@@ -75,7 +85,12 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
             try {
                 const data = JSON.parse(event.data)
                 if (data.type === 'connected') return
-                setSseProgress(data)
+                setSseProgress((previous) => ({
+                    stage: data.stage ?? previous?.stage ?? 'init',
+                    story: data.story ?? previous?.story,
+                    translations: data.translations ?? previous?.translations,
+                    conversation: data.conversation ?? previous?.conversation,
+                }))
             } catch (error) {
                 console.error('Error parsing SSE data:', error)
             }
@@ -88,17 +103,36 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
         return () => {
             eventSource.close()
         }
-    }, [date, lang, checkQuery.data?.exists, startMutation.isSuccess])
+    }, [date, lang, checkQuery.data?.exists, checkQuery.data?.inProgress, startMutation.isSuccess])
 
-    const progress: ReviewProgress = checkQuery.data?.exists
-        ? { stage: 'complete', story: checkQuery.data.story, translations: checkQuery.data.translations }
+    const queryProgress: ReviewProgress | null = checkQuery.data?.exists || checkQuery.data?.inProgress
+        ? {
+            stage: checkQuery.data.stage ?? (checkQuery.data.exists ? 'complete' : 'init'),
+            story: checkQuery.data.story,
+            translations: checkQuery.data.translations,
+            conversation: checkQuery.data.conversation,
+        }
+        : null
+
+    const liveProgress: ReviewProgress = queryProgress
+        ? {
+            stage: sseProgress?.stage ?? queryProgress.stage,
+            story: sseProgress?.story ?? queryProgress.story,
+            translations: sseProgress?.translations ?? queryProgress.translations,
+            conversation: sseProgress?.conversation ?? queryProgress.conversation,
+        }
         : (sseProgress ?? { stage: 'init' })
 
+    if (queryProgress?.stage === 'complete' && sseProgress?.stage === 'complete') {
+        liveProgress.stage = 'complete'
+    }
+
     return {
-        progress,
+        progress: liveProgress,
         isLoading: checkQuery.isLoading || startMutation.isPending,
         hasCheckedCache: checkQuery.isSuccess,
-        story: progress.story,
-        translations: progress.translations,
+        story: liveProgress.story,
+        translations: liveProgress.translations,
+        conversation: liveProgress.conversation,
     }
 }

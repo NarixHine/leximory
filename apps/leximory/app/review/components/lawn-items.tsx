@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { PiBookOpen } from 'react-icons/pi'
+import { PiLockKey, PiSparkleFill, PiBookOpen } from 'react-icons/pi'
+import { CAT_FRAME_ASPECT, CatSprite } from './cat-sprite'
 
 interface LawnItemProps {
     id: string
@@ -68,6 +69,11 @@ interface StoryPillProps extends LawnItemProps {
     isActive?: boolean
 }
 
+interface CatTaskPillProps extends LawnItemProps {
+    isLocked?: boolean
+    isCompleted?: boolean
+}
+
 export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
     return (
         <motion.div
@@ -102,6 +108,54 @@ export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
             >
                 <PiBookOpen className="w-4 h-4" />
                 <span>连词成文</span>
+            </motion.button>
+        </motion.div>
+    )
+}
+
+export function CatTaskPill({
+    id,
+    x,
+    y,
+    delay = 0,
+    onClick,
+    isLocked = false,
+    isCompleted = false,
+}: CatTaskPillProps) {
+    const catHeightRem = 3.5
+    const catWidthRem = catHeightRem * CAT_FRAME_ASPECT
+
+    return (
+        <motion.div
+            id={id}
+            initial={{ opacity: 0, scale: 1, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 12 }}
+            transition={{ delay, type: 'spring', stiffness: 280, damping: 24 }}
+            className="absolute"
+            style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                transform: 'translate(-50%, -50%)',
+            }}
+        >
+            <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onClick}
+                className='group relative cursor-pointer select-none'
+            >
+                <div
+                    className='relative'
+                    style={{
+                        height: `${catHeightRem}rem`,
+                        width: `${catWidthRem}rem`,
+                    }}
+                >
+                    <div className='absolute inset-0'>
+                        <CatSprite variant='black' frame='idle' />
+                    </div>
+                </div>
             </motion.button>
         </motion.div>
     )

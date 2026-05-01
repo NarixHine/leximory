@@ -2,9 +2,7 @@
 
 import { useRef, useCallback, useEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
-
-// Sprite sheet: 1408x768, 3 columns × 3 rows
-const FRAME_ASPECT = 469 / 256
+import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
 
 // Tuned animation parameters
 const CAT_SIZE = 100
@@ -29,17 +27,6 @@ const AUDIO_VOLUME = 0.2
 const AUDIO_PLAYBACK_RATE = 1
 
 // Frame positions in the 3x3 grid
-const FRAMES = {
-    idle: '0% 0%',
-    scramble1: '50% 0%',
-    scramble2: '100% 0%',
-    run1: '0% 50%',
-    run2: '50% 50%',
-    run3: '100% 50%',
-    land1: '0% 100%',
-    land2: '50% 100%',
-}
-
 type Phase = 'idle' | 'accelerating' | 'running' | 'decelerating' | 'landing'
 
 type CatAction =
@@ -120,7 +107,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
     const [particles, setParticles] = useState<Particle[]>([])
 
     const catHeight = CAT_SIZE
-    const catWidth = catHeight * FRAME_ASPECT
+    const catWidth = catHeight * CAT_FRAME_ASPECT
 
     const [catState, dispatch] = useReducer(catReducer, {
         isRunning: false,
@@ -260,7 +247,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
         // === ACCELERATION PHASE (during turn) ===
         phaseRef.current = 'accelerating'
         let scrambleFrame = 0
-        const scrambleFrames = [FRAMES.scramble1, FRAMES.scramble2]
+        const scrambleFrames = [CAT_FRAMES.scramble1, CAT_FRAMES.scramble2]
 
         const scrambleInterval = setInterval(() => {
             if (phaseRef.current === 'accelerating') {
@@ -277,13 +264,13 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
 
         // === MOVEMENT WITH TRUE PHASED VELOCITY ===
         let runFrame = 0
-        const runFrames = [FRAMES.run1, FRAMES.run2, FRAMES.run3]
+        const runFrames = [CAT_FRAMES.run1, CAT_FRAMES.run2, CAT_FRAMES.run3]
         let lastRunFrameTime = performance.now()
         let lastDecelFrameTime = performance.now()
         let lastDustTime = performance.now()
         let lastFootstepTime = performance.now()
         let decelFrame = 0
-        const decelFrames = [FRAMES.run3, FRAMES.run2, FRAMES.run1, FRAMES.land1]
+        const decelFrames = [CAT_FRAMES.run3, CAT_FRAMES.run2, CAT_FRAMES.run1, CAT_FRAMES.land1]
 
         const startX = currentPos.x
         const startY = currentPos.y
@@ -363,11 +350,11 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
             cancelAnimationFrame(animationFrameRef.current)
 
             // Landing sequence
-            setFrame(FRAMES.land1)
+            setFrame(CAT_FRAMES.land1)
             phaseRef.current = 'landing'
             await new Promise(resolve => setTimeout(resolve, landHoldTime))
 
-            setFrame(FRAMES.idle)
+            setFrame(CAT_FRAMES.idle)
             phaseRef.current = 'idle'
 
             positionRef.current = { x: targetX, y: targetY }
@@ -490,12 +477,11 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
                         scaleX: catState.facingLeft ? -1 : 1,
                     }}
                 >
-                    <div
+                    <CatSprite
                         ref={spriteRef}
-                        className="pointer-events-none w-full h-full bg-no-repeat bg-[url('/assets/cat.webp')]"
+                        className="pointer-events-none w-full h-full"
                         style={{
-                            backgroundSize: '300% 300%',
-                            backgroundPosition: FRAMES.idle,
+                            backgroundPosition: CAT_FRAMES.idle,
                         }}
                     />
                 </motion.div>
