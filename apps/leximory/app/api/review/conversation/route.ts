@@ -83,7 +83,6 @@ export async function POST(request: Request) {
                     ...latestFlashback.conversation,
                     status: 'complete' as const,
                     feedback: {
-                        rationale: evaluation.rationale,
                         goodPairs: evaluation.goodPairs,
                         badPairs: evaluation.badPairs,
                     },

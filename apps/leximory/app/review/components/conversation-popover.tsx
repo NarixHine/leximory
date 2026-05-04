@@ -1,15 +1,18 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@heroui/spinner'
-import { PiLockKey, PiSealCheckFill } from 'react-icons/pi'
+import { PiLockKey } from 'react-icons/pi'
 import {
     getConversationUnlockProgress,
     type ReviewConversation,
 } from '@/lib/review'
 import type { ReviewTranslation } from '@/lib/review'
+import { cn } from '@/lib/utils'
+import { CAT_FRAME_ASPECT, CatSprite } from './cat-sprite'
 import { ReviewComposer } from './review-composer'
 import { ReviewDialogShell } from './review-dialog-shell'
 
@@ -33,6 +36,14 @@ interface HighlightSegment {
     text: string
     tone: SegmentTone | null
     pairIndex: number | null
+}
+
+interface ConversationMessageProps {
+    variant: 'white' | 'black'
+    content: ReactNode
+    accent?: ReactNode
+    pendingLabel?: string | null
+    bodyClassName?: string
 }
 
 async function submitConversation({
@@ -102,6 +113,45 @@ function buildConversationSegments(answer: string, feedback: ReviewConversation[
     return segments
 }
 
+function ConversationMessage({
+    variant,
+    content,
+    accent,
+    pendingLabel,
+    bodyClassName,
+}: ConversationMessageProps) {
+    const avatarVariant = variant === 'black' ? 'black' : 'white'
+    const avatarHeightRem = 3
+    const avatarWidthRem = avatarHeightRem * CAT_FRAME_ASPECT
+
+    return (
+        <div className='text-heimao-800'>
+            <div className={cn('overflow-hidden', bodyClassName)}>
+                <div
+                    className='float-left mt-1 -ml-2 -mr-4'
+                    style={{
+                        height: `${avatarHeightRem}rem`,
+                        width: `${avatarWidthRem}rem`,
+                    }}
+                >
+                    <CatSprite variant={avatarVariant} frame='idle' />
+                </div>
+
+                {content}
+            </div>
+
+            {pendingLabel ? (
+                <div className='mt-2 flex clear-left items-center gap-2 text-xs text-heimao-500'>
+                    <Spinner size='sm' variant='spinner' color='secondary' />
+                    <span className='font-mono uppercase tracking-[0.2em]'>{pendingLabel}</span>
+                </div>
+            ) : null}
+
+            {accent ? <div className='mt-2 clear-left text-sm text-heimao-600'>{accent}</div> : null}
+        </div>
+    )
+}
+
 export function ConversationExercise({
     date,
     lang,
@@ -115,9 +165,6 @@ export function ConversationExercise({
     const [optimisticSubmission, setOptimisticSubmission] = useState<string | null>(null)
     const [selectedTone, setSelectedTone] = useState<SegmentTone | null>(null)
     const [selectedPairIndex, setSelectedPairIndex] = useState<number | null>(null)
-    const activeRef = useRef(isOpen)
-
-    activeRef.current = isOpen
 
     useEffect(() => {
         if (!isOpen) return
@@ -141,15 +188,12 @@ export function ConversationExercise({
             )
             queryClient.invalidateQueries({ queryKey: ['review', 'check', date, lang] })
 
-            if (!activeRef.current) return
-
             setDraft(conversation.submission ?? '')
             setOptimisticSubmission(conversation.submission ?? null)
             setSelectedTone(null)
             setSelectedPairIndex(null)
         },
         onError: () => {
-            if (!activeRef.current) return
             setOptimisticSubmission(null)
         },
     })
@@ -185,95 +229,103 @@ export function ConversationExercise({
         <>
             <ReviewDialogShell
                 isOpen={isOpen}
-                cardClassName='border-[#b9b0ad] bg-[#f1ebe8]/95 p-2'
+                cardClassName='bg-heimao-50 border-heimao-200 p-2 shadow-none'
             >
-                <div className='flex items-start gap-3'>
-                    <div className='mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#403c43] text-[#f8f0ea]'>
-                        <PiSealCheckFill className='h-4 w-4' />
-                    </div>
-                    <div className='flex-1 space-y-1'>
-                        <p className='font-mono text-xs uppercase tracking-wide text-[#7e7370]'>Writing Practice</p>
-                        {isLocked ? (
-                            <div className='space-y-3'>
-                                <p className='font-kaiti text-base text-[#4c4443]'>{lockMessage}</p>
-                                <div className='inline-flex items-center gap-2 rounded-full bg-[#e6ddda] px-3 py-1 text-xs text-[#6a605d]'>
-                                    <PiLockKey className='h-4 w-4' />
-                                    <span>
-                                        完成翻译 {unlockProgress.completedTranslations}/{unlockProgress.requiredTranslations}
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                <p className='font-formal italic text-base text-[#433a39]'>{data?.prompt || '...'}</p>
-                                {data?.keywords?.length ? (
-                                    <p className='font-mono text-primary-500'>
-                                        试着带上 {data.keywords.slice(0, 6).join(' / ')}
-                                    </p>
-                                ) : null}
-                            </>
-                        )}
-                    </div>
-                </div>
+                <div className='space-y-4'>
+                    {isLocked ? (
+                        <div className='space-y-3'>
+                            <ConversationMessage
+                                variant='black'
+                                content={<p className='font-kaiti text-base leading-relaxed text-heimao-700'>{lockMessage}</p>}
+                                accent={(
+                                    <div className='inline-flex items-center gap-2 text-xs text-heimao-500'>
+                                        <PiLockKey className='h-4 w-4' />
+                                        <span>
+                                            完成翻译 {unlockProgress.completedTranslations}/{unlockProgress.requiredTranslations}
+                                        </span>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    ) : (
+                        <ConversationMessage
+                            variant='black'
+                            content={<p className='font-cute text-2xl leading-tight text-heimao-700 mb-1'>{data?.prompt || '...'}</p>}
+                            accent={data?.keywords?.length
+                                ? <p className='font-mono text-sm text-center text-balance tracking-wide'>试着使用 {data.keywords.slice(0, 6).join(' / ')}</p>
+                                : null}
+                        />
+                    )}
 
-                {!isLocked && displayedSubmission ? (
-                    <div className='space-y-4'>
-                        <div>
-                            <div className='flex items-center justify-between gap-3'>
-                                <p className='font-mono text-xs uppercase text-[#7e7370]'>Your reply</p>
-                                {isPendingEvaluation ? (
-                                    <div className='flex items-center gap-2 font-mono text-xs text-[#7e7370]'>
-                                        <Spinner size='sm' variant='spinner' color='secondary' />
-                                        <span>Listening</span>
+                    {!isLocked && displayedSubmission ? (
+                        <div className='space-y-4'>
+                            <ConversationMessage
+                                variant='white'
+                                pendingLabel={isPendingEvaluation ? '聆听中' : null}
+                                content={(
+                                    <div className='whitespace-pre-wrap font-mono leading-7'>
+                                        {highlightSegments.map((segment, index) => {
+                                            if (!segment.tone) {
+                                                return <span key={`${segment.text}-${index}`}>{segment.text}</span>
+                                            }
+
+                                            const active = selectedTone === segment.tone && selectedPairIndex === segment.pairIndex
+                                            const toneClass = segment.tone === 'good'
+                                                ? active
+                                                    ? 'decoration-heimao-700 text-heimao-900'
+                                                    : 'decoration-heimao-400 hover:decoration-heimao-600'
+                                                : active
+                                                    ? 'decoration-warning-700 text-heimao-900'
+                                                    : 'decoration-warning-500 hover:decoration-warning-600'
+
+                                            return (
+                                                <span
+                                                    key={`${segment.text}-${index}`}
+                                                    onClick={() => {
+                                                        setSelectedTone(segment.tone)
+                                                        setSelectedPairIndex(segment.pairIndex)
+                                                    }}
+                                                    className={cn(
+                                                        'cursor-pointer underline decoration-2 underline-offset-[0.28em] transition-colors',
+                                                        toneClass
+                                                    )}
+                                                >
+                                                    {segment.text}
+                                                </span>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                                accent={data?.feedback ? (
+                                    <div className='space-y-2 text-left'>
+                                        {selectedGoodPair ? (
+                                            <p className='font-kaiti text-sm text-heimao-700'>
+                                                {selectedGoodPair.note}
+                                            </p>
+                                        ) : null}
+                                        {selectedBadPair ? (
+                                            <p className='font-kaiti text-sm text-warning-700'>
+                                                {selectedBadPair.improved}
+                                            </p>
+                                        ) : null}
                                     </div>
                                 ) : null}
-                            </div>
-                            <div className='mt-2 whitespace-pre-wrap font-mono text-[#4a4140]'>
-                                {highlightSegments.map((segment, index) => {
-                                    if (!segment.tone) {
-                                        return <span key={`${segment.text}-${index}`}>{segment.text}</span>
-                                    }
+                            />
 
-                                    const active = selectedTone === segment.tone && selectedPairIndex === segment.pairIndex
-                                    const toneClass = segment.tone === 'good'
-                                        ? active ? 'bg-success-200' : 'bg-success-100 hover:bg-success-200'
-                                        : active ? 'bg-warning-300' : 'bg-warning-200 hover:bg-warning-300/80'
-
-                                    return (
-                                        <button
-                                            key={`${segment.text}-${index}`}
-                                            type='button'
-                                            onClick={() => {
-                                                setSelectedTone(segment.tone)
-                                                setSelectedPairIndex(segment.pairIndex)
-                                            }}
-                                            className={`rounded-sm px-1 py-px transition-colors ${toneClass}`}
-                                        >
-                                            {segment.text}
-                                        </button>
-                                    )
-                                })}
-                            </div>
+                            {data?.reply ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                >
+                                    <ConversationMessage
+                                        variant='black'
+                                        content={<p className='font-cute text-2xl leading-tight text-heimao-700'>{data.reply}</p>}
+                                    />
+                                </motion.div>
+                            ) : null}
                         </div>
-
-                        {data?.feedback ? (
-                            <div className='space-y-2'>
-                                <p className='font-kaiti text-sm text-[#5f5553]'>{data.feedback.rationale}</p>
-                                {selectedGoodPair ? <p className='font-kaiti text-sm text-success-700'>{selectedGoodPair.note}</p> : null}
-                                {selectedBadPair ? <p className='font-kaiti text-sm text-warning-700'>{selectedBadPair.improved}</p> : null}
-                            </div>
-                        ) : null}
-
-                        {data?.reply ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                            >
-                                <p className='font-formal italic'>{data.reply}</p>
-                            </motion.div>
-                        ) : null}
-                    </div>
-                ) : null}
+                    ) : null}
+                </div>
             </ReviewDialogShell>
 
             <ReviewComposer
@@ -281,13 +333,13 @@ export function ConversationExercise({
                 value={draft}
                 onChange={setDraft}
                 onSubmit={handleSubmit}
-                placeholder='Reply to the dark cat...'
+                placeholder='写给小黑猫的话……'
                 disabled={submitMutation.isPending}
                 canSubmit={canSubmit}
                 isLoading={submitMutation.isPending}
                 rows={4}
-                className='border-[#d8ccc7] bg-[#fbf8f7]'
-                textareaClassName='font-formal text-[#433a39] placeholder:text-[#9d8d88]'
+                className='rounded-none border-0 bg-heimao-50 shadow-none'
+                textareaClassName='font-formal text-heimao-800 placeholder:text-heimao-400'
             />
         </>
     )

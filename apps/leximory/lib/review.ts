@@ -39,7 +39,6 @@ export type ReviewTranslation = Omit<ReviewTranslationSchemaData, 'prompt' | 'ch
 }
 
 export const ReviewConversationFeedbackSchema = z.object({
-    rationale: z.string(),
     goodPairs: z.array(z.object({
         original: z.string(),
         note: z.string(),
