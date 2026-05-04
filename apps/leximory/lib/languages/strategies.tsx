@@ -23,6 +23,11 @@ export const englishStrategy = createLanguageStrategy({
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
     },
+    reviewLabels: {
+        lockMessage: (requiredTranslations) => requiredTranslations > 0
+            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, and then come back to me. We will have a chat.</span>
+            : <span className='font-cute text-2xl leading-tight'>There are no translation exercises available to unlock today.</span>
+    },
     articleTitleFont: 'font-formal leading-tight italic'
 })
 
@@ -46,6 +51,11 @@ export const chineseStrategy = createLanguageStrategy({
     dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`,
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>正在阅读<span className='text-white/90'>此 Leximory 文库</span>来<span className='text-white/90'>学习文言文</span> ↓</span>
+    },
+    reviewLabels: {
+        lockMessage: (requiredTranslations) => requiredTranslations > 0
+            ? <span className='font-cute text-base leading-relaxed'>需完成 60% 词汇复习，小黑猫才会轻轻开口。</span>
+            : <span className='font-cute text-base leading-relaxed'>今日没有可用于解锁的翻译题。</span>
     },
     articleTitleFont: 'font-kaiti'
 })
@@ -73,6 +83,11 @@ export const japaneseStrategy = createLanguageStrategy({
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>は<span className='text-white/85'>Leximory</span>で<span className='text-white/85'>日本語を勉強</span>している ↓</span>
     },
+    reviewLabels: {
+        lockMessage: (requiredTranslations) => requiredTranslations > 0
+            ? <span className='font-cute text-base leading-tight'>今日の語彙復習を 60% 完了すると、黒猫がそっと話してくれます。</span>
+            : <span className='font-cute text-base leading-tight'>今日は解除に使える翻訳問題がありません。</span>
+    },
     articleTitleFont: 'font-kaiti'
 })
 
@@ -86,6 +101,11 @@ export const notListedStrategy = createLanguageStrategy({
     exampleSentencePrompt: '',
     libraryCardLabels: {
         learningWith: <span className='text-white/65'>is <span className='text-white/95'>learning</span> with the <span className='text-white/95'>Leximory Library</span> ↓</span>
+    },
+    reviewLabels: {
+        lockMessage: (requiredTranslations) => requiredTranslations > 0
+            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, then come back to me.</span>
+            : <span className='font-cute text-2xl leading-tight'>There are no translation exercises available to unlock today.</span>
     },
     articleTitleFont: 'font-mono'
 })

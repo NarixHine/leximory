@@ -6,10 +6,12 @@ import { motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@heroui/spinner'
 import { PiLockKey } from 'react-icons/pi'
+import { Lang } from '@repo/env/config'
 import {
     getConversationUnlockProgress,
     type ReviewConversation,
 } from '@/lib/review'
+import { getLanguageStrategy } from '@/lib/languages/strategies'
 import type { ReviewTranslation } from '@/lib/review'
 import { cn } from '@/lib/utils'
 import { CAT_FRAME_ASPECT, CatSprite } from './cat-sprite'
@@ -199,6 +201,7 @@ export function ConversationExercise({
     })
 
     const unlockProgress = getConversationUnlockProgress(translations)
+    const languageStrategy = getLanguageStrategy(lang as Lang)
     const displayedSubmission = data?.submission ?? optimisticSubmission
     const isPendingEvaluation = data?.status === 'pending'
     const canSubmit = draft.trim().length > 0 && !submitMutation.isPending && !isLocked
@@ -221,9 +224,13 @@ export function ConversationExercise({
         submitMutation.mutate({ submission })
     }
 
-    const lockMessage = unlockProgress.requiredTranslations > 0
-        ? `需完成 60% 词汇复习，小黑猫才会轻轻开口。`
-        : '今日没有可用于解锁的翻译题。'
+    const lockMessage = languageStrategy.reviewLabels?.lockMessage(unlockProgress.requiredTranslations) ?? (
+        <>
+            {unlockProgress.requiredTranslations > 0
+                ? 'Complete 60% of your vocabulary reviews before the little black cat will speak softly.'
+                : 'There are no translation exercises available to unlock today.'}
+        </>
+    )
 
     return (
         <>
@@ -236,15 +243,12 @@ export function ConversationExercise({
                         <div className='space-y-3'>
                             <ConversationMessage
                                 variant='black'
-                                content={<p className='font-kaiti text-base leading-relaxed text-heimao-700'>{lockMessage}</p>}
-                                accent={(
-                                    <div className='inline-flex items-center gap-2 text-xs text-heimao-500'>
-                                        <PiLockKey className='h-4 w-4' />
-                                        <span>
-                                            完成翻译 {unlockProgress.completedTranslations}/{unlockProgress.requiredTranslations}
-                                        </span>
-                                    </div>
-                                )}
+                                content={<p className='text-heimao-700'>{lockMessage}
+                                    <span className='font-kaiti'>
+                                        <PiLockKey className='h-4 w-4 inline-block mx-2' />
+                                        完成翻译 {unlockProgress.completedTranslations}/{unlockProgress.requiredTranslations}
+                                    </span>
+                                </p>}
                             />
                         </div>
                     ) : (
@@ -252,7 +256,7 @@ export function ConversationExercise({
                             variant='black'
                             content={<p className='font-cute text-2xl leading-tight text-heimao-700 mb-1'>{data?.prompt || '...'}</p>}
                             accent={data?.keywords?.length
-                                ? <p className='font-mono text-sm text-center text-balance tracking-wide'>试着使用 {data.keywords.slice(0, 6).join(' / ')}</p>
+                                ? <p className='font-mono text-sm text-center text-balance tracking-wide'>不妨试试选用 {data.keywords.slice(0, 6).join(' / ')}</p>
                                 : null}
                         />
                     )}
@@ -338,8 +342,8 @@ export function ConversationExercise({
                 canSubmit={canSubmit}
                 isLoading={submitMutation.isPending}
                 rows={4}
-                className='rounded-none border-0 bg-heimao-50 shadow-none'
-                textareaClassName='font-formal text-heimao-800 placeholder:text-heimao-400'
+                className='border-default-200 bg-primary-50'
+                textareaClassName='font-mono text-primary-700 placeholder:text-primary-400'
             />
         </>
     )
