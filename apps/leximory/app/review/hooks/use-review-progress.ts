@@ -20,6 +20,67 @@ interface CheckResponse {
     conversation?: ReviewProgress['conversation']
 }
 
+const reviewStatusPriority: Record<string, number> = {
+    idle: 0,
+    pending: 1,
+    failed: 2,
+    complete: 3,
+}
+
+function pickFresherTranslation(
+    sseTranslation: ReviewTranslation | undefined,
+    queryTranslation: ReviewTranslation | undefined
+) {
+    if (!sseTranslation) return queryTranslation
+    if (!queryTranslation) return sseTranslation
+
+    const ssePriority = reviewStatusPriority[sseTranslation.status ?? 'idle'] ?? 0
+    const queryPriority = reviewStatusPriority[queryTranslation.status ?? 'idle'] ?? 0
+
+    if (queryPriority !== ssePriority) {
+        return queryPriority > ssePriority ? queryTranslation : sseTranslation
+    }
+
+    const sseTime = sseTranslation.evaluatedAt ?? sseTranslation.submittedAt ?? ''
+    const queryTime = queryTranslation.evaluatedAt ?? queryTranslation.submittedAt ?? ''
+
+    return queryTime >= sseTime ? queryTranslation : sseTranslation
+}
+
+function mergeTranslations(
+    sseTranslations: ReviewTranslation[] | undefined,
+    queryTranslations: ReviewTranslation[] | undefined
+) {
+    if (!sseTranslations) return queryTranslations
+    if (!queryTranslations) return sseTranslations
+
+    const maxLength = Math.max(sseTranslations.length, queryTranslations.length)
+
+    return Array.from({ length: maxLength }, (_, index) =>
+        pickFresherTranslation(sseTranslations[index], queryTranslations[index])
+    ).filter((translation): translation is ReviewTranslation => Boolean(translation))
+}
+
+function pickFresherConversation(
+    sseConversation: ReviewConversation | null | undefined,
+    queryConversation: ReviewConversation | null | undefined
+) {
+    if (!sseConversation) return queryConversation
+    if (!queryConversation) return sseConversation
+
+    const ssePriority = reviewStatusPriority[sseConversation.status ?? 'idle'] ?? 0
+    const queryPriority = reviewStatusPriority[queryConversation.status ?? 'idle'] ?? 0
+
+    if (queryPriority !== ssePriority) {
+        return queryPriority > ssePriority ? queryConversation : sseConversation
+    }
+
+    const sseTime = sseConversation.evaluatedAt ?? sseConversation.submittedAt ?? ''
+    const queryTime = queryConversation.evaluatedAt ?? queryConversation.submittedAt ?? ''
+
+    return queryTime >= sseTime ? queryConversation : sseConversation
+}
+
 async function checkReviewData(date: string, lang: string): Promise<CheckResponse> {
     const res = await fetch(`/api/review/check?date=${date}&lang=${lang}`)
     if (!res.ok) throw new Error('Failed to check review data')
@@ -116,10 +177,10 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
 
     const liveProgress: ReviewProgress = queryProgress
         ? {
-            stage: sseProgress?.stage ?? queryProgress.stage,
+            stage: queryProgress.stage === 'complete' ? 'complete' : (sseProgress?.stage ?? queryProgress.stage),
             story: sseProgress?.story ?? queryProgress.story,
-            translations: sseProgress?.translations ?? queryProgress.translations,
-            conversation: sseProgress?.conversation ?? queryProgress.conversation,
+            translations: mergeTranslations(sseProgress?.translations, queryProgress.translations),
+            conversation: pickFresherConversation(sseProgress?.conversation, queryProgress.conversation),
         }
         : (sseProgress ?? { stage: 'init' })
 

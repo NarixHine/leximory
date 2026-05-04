@@ -1,4 +1,4 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji, Space_Mono, IBM_Plex_Mono, Caveat } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji, Space_Mono, IBM_Plex_Mono, Caveat, Indie_Flower } from 'next/font/google'
 import localFont from 'next/font/local'
 import { GeistMono } from 'geist/font/mono'
 
@@ -38,7 +38,7 @@ export const ENGLISH_SANS = DM_Sans({
     preload: false,
 })
 
-export const ENGLISH_CUTE = Caveat({
+export const ENGLISH_CUTE = Indie_Flower({
     subsets: ['latin'],
     weight: '400',
     style: ['normal'],

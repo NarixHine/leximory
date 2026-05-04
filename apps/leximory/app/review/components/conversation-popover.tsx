@@ -128,7 +128,7 @@ function ConversationMessage({
 
     return (
         <div className='text-heimao-800'>
-            <div className={cn('overflow-hidden', bodyClassName)}>
+            <div className={cn('max-h-50 overflow-auto', bodyClassName)}>
                 <div
                     className='float-left mt-1 -ml-2 -mr-4'
                     style={{
@@ -144,7 +144,7 @@ function ConversationMessage({
 
             {pendingLabel ? (
                 <div className='mt-2 flex clear-left items-center gap-2 text-xs text-heimao-500'>
-                    <Spinner size='sm' variant='spinner' color='secondary' />
+                    <Spinner size='sm' variant='dots' color='secondary' />
                     <span className='font-mono uppercase tracking-[0.2em]'>{pendingLabel}</span>
                 </div>
             ) : null}
@@ -265,7 +265,7 @@ export function ConversationExercise({
                         <div className='space-y-4'>
                             <ConversationMessage
                                 variant='white'
-                                pendingLabel={isPendingEvaluation ? '聆听中' : null}
+                                pendingLabel={isPendingEvaluation ? '思考中' : null}
                                 content={(
                                     <div className='whitespace-pre-wrap font-mono leading-7'>
                                         {highlightSegments.map((segment, index) => {
