@@ -23,7 +23,7 @@ const GradientCard = ({ text, className, title, children, caption }: {
             }
             {
                 text
-                    ? <div className='opacity-60'>{text}</div>
+                    ? <div className='text-xl text-default-700'>{text}</div>
                     : <div className='h-2 w-24 my-2 animate-pulse rounded-full bg-default-200/60' />
             }
             <div className='absolute bottom-0 right-0 p-3'>

@@ -77,7 +77,7 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
                 isDisabled={isDisabled}
                 onPress={handleToggle} // Direct call
                 radius='full'
-                color='default'
+                color='primary'
                 size='sm'
                 startContent={isLoading ? null : <PiClockClockwise size={20} />}
             >
