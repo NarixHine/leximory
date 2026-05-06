@@ -47,7 +47,7 @@ const buildStoryConfig = async (comments: string[], lang: Lang, userId: string, 
         
         规则：
         1. 必须使用所有给定的词汇
-        2. 故事长度尽可能短
+        2. 故事长度无需过长，但故事性、可读性必须高且不落俗套，语言生动有趣且毫无LLM风写作痕迹
         3. 故事要有趣且符合逻辑，易读性高
         4. 可以对词汇根据语境进行屈折变化，但不要改变词性；可以把诸如someone之类的代词用him/her/it/them等词代替
         5. 故事全文使用关键词所属语言

@@ -40,7 +40,7 @@ export function ReviewComposer({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    className='fixed bottom-6 left-0 right-0 z-50 px-4'
+                    className='fixed bottom-6 left-0 right-0 z-51 px-4'
                 >
                     <div className='mx-auto max-w-2xl'>
                         <div className={cn('rounded-4xl border p-3 pt-2', className)}>

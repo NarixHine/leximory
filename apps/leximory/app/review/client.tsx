@@ -60,7 +60,7 @@ export default function ExperimentClient({ days, Header }: ExperimentClientProps
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="fixed inset-0 z-50 bg-background"
+                        className="fixed inset-0 z-51 bg-background"
                     >
                         <ReviewFlow
                             date={selectedDay.date}

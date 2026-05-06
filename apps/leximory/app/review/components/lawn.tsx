@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
 
@@ -59,6 +59,7 @@ interface LawnProps {
     onFruitReached?: (fruitId: string) => void
     onBackgroundClick?: () => void
     fruits?: FruitItem[]
+    isPortrait?: boolean
 }
 
 export interface LawnRef {
@@ -92,11 +93,19 @@ function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: num
     }
 }
 
-export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReached, onBackgroundClick, fruits = [] }, ref) {
+export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
+    onFruitReached,
+    onBackgroundClick,
+    fruits = [],
+    isPortrait = false,
+}, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const spriteRef = useRef<HTMLDivElement>(null)
     const controls = useAnimationControls()
     const positionRef = useRef({ x: 0, y: 0 })
+    const containerSizeRef = useRef({ width: 0, height: 0 })
+    const resizeObserverRef = useRef<ResizeObserver | null>(null)
+    const controlsFrameRef = useRef<number | null>(null)
     const isAnimatingRef = useRef(false)
     const initializedRef = useRef(false)
     const phaseRef = useRef<Phase>('idle')
@@ -113,6 +122,17 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
         isRunning: false,
         facingLeft: false,
     })
+
+    const setControlsAfterMount = useCallback((position: { x: number; y: number; rotate?: number }) => {
+        if (controlsFrameRef.current !== null) {
+            cancelAnimationFrame(controlsFrameRef.current)
+        }
+
+        controlsFrameRef.current = requestAnimationFrame(() => {
+            controls.set(position)
+            controlsFrameRef.current = null
+        })
+    }, [controls])
 
     const setFrame = (frame: string) => {
         if (spriteRef.current) {
@@ -194,16 +214,58 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
         })
     }, [fruits, catWidth, catHeight, onFruitReached])
 
-    useEffect(() => {
-        if (containerRef.current && !initializedRef.current) {
-            const rect = containerRef.current.getBoundingClientRect()
-            const startX = rect.width / 2 - catWidth / 2
-            const startY = rect.height / 2 - catHeight / 2
+    const syncContainerSize = useCallback((width: number, height: number) => {
+        if (!initializedRef.current) {
+            const startX = width / 2 - catWidth / 2
+            const startY = height / 2 - catHeight / 2
             positionRef.current = { x: startX, y: startY }
-            controls.set({ x: startX, y: startY, rotate: 0 })
+            containerSizeRef.current = { width, height }
+            setControlsAfterMount({ x: startX, y: startY, rotate: 0 })
             initializedRef.current = true
+            return
         }
-    }, [controls, catWidth, catHeight])
+
+        const prevSize = containerSizeRef.current
+
+        if (!prevSize.width || !prevSize.height || isAnimatingRef.current) {
+            containerSizeRef.current = { width, height }
+            return
+        }
+
+        const widthRatio = width / prevSize.width
+        const heightRatio = height / prevSize.height
+        const nextX = positionRef.current.x * widthRatio
+        const nextY = positionRef.current.y * heightRatio
+
+        positionRef.current = { x: nextX, y: nextY }
+        containerSizeRef.current = { width, height }
+        setControlsAfterMount({ x: nextX, y: nextY })
+    }, [setControlsAfterMount, catWidth, catHeight])
+
+    const setContainerNode = useCallback((node: HTMLDivElement | null) => {
+        resizeObserverRef.current?.disconnect()
+        resizeObserverRef.current = null
+        if (controlsFrameRef.current !== null) {
+            cancelAnimationFrame(controlsFrameRef.current)
+            controlsFrameRef.current = null
+        }
+        containerRef.current = node
+
+        if (!node) return
+
+        const rect = node.getBoundingClientRect()
+        syncContainerSize(rect.width, rect.height)
+
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0]
+            if (!entry) return
+
+            syncContainerSize(entry.contentRect.width, entry.contentRect.height)
+        })
+
+        observer.observe(node)
+        resizeObserverRef.current = observer
+    }, [syncContainerSize])
 
     // Core movement function - can be called from click handler or ref
     const moveToPosition = useCallback(async (targetX: number, targetY: number, onArrive?: () => void) => {
@@ -424,13 +486,24 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({ onFruitReache
     }, [moveToPosition, catWidth, catHeight, onBackgroundClick])
 
     return (
-        <section
-            className="relative w-full h-full select-none pointer-events-none bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
-        >
+        <section className="relative h-full w-full select-none pointer-events-none overflow-visible">
+            {isPortrait ? (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible">
+                    <div
+                        className="w-full aspect-43/24 rotate-90 scale-160 sm:scale-150 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
+                    />
+                </div>
+            ) : (
+                <div className="pointer-events-none absolute inset-0 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat" />
+            )}
             <div
-                ref={containerRef}
+                ref={setContainerNode}
                 onClick={handleClick}
-                className="absolute inset-[15%] cursor-pointer pointer-events-auto"
+                className={
+                    isPortrait
+                        ? 'absolute inset-[10%] cursor-pointer pointer-events-auto'
+                        : 'absolute inset-x-[11%] inset-y-[14%] sm:inset-x-[12%] sm:inset-y-[15%] md:inset-[15%] cursor-pointer pointer-events-auto'
+                }
             >
                 {/* Dust particles layer */}
                 <AnimatePresence>

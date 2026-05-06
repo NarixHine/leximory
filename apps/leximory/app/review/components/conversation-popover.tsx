@@ -123,14 +123,14 @@ function ConversationMessage({
     bodyClassName,
 }: ConversationMessageProps) {
     const avatarVariant = variant === 'black' ? 'black' : 'white'
-    const avatarHeightRem = 5
+    const avatarHeightRem = 4.6
     const avatarWidthRem = avatarHeightRem * CAT_FRAME_ASPECT
 
     return (
         <div className='text-heimao-800'>
             <div className={cn('max-h-50 overflow-auto', bodyClassName)}>
                 <div
-                    className='float-left -my-3 -ml-6 -mr-8'
+                    className='float-left -mb-3 -mt-2 -ml-6 -mr-8 overflow-visible'
                     style={{
                         height: `${avatarHeightRem}rem`,
                         width: `${avatarWidthRem}rem`,

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useMediaQuery } from 'usehooks-ts'
 import { Lawn, LawnRef } from './lawn'
 import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
 import { StoryDrawer } from './story-drawer'
@@ -43,6 +44,13 @@ interface ReviewFlowProps {
     onExit: () => void
 }
 
+function rotateLandscapePointToPortrait(x: number, y: number) {
+    return {
+        x: 100 - y,
+        y: x,
+    }
+}
+
 export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
     const [showStory, setShowStory] = useState(false)
@@ -53,6 +61,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
     const lawnRef = useRef<LawnRef>(null)
     const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const usePortraitLawn = useMediaQuery('(max-width: 767px)')
 
     const { progress, story, translations, conversation } = useReviewProgress({ date, lang })
 
@@ -64,7 +73,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         dateLangRef.current = `${date}-${lang}`
     }
 
-    // Derive items directly from data — no useEffect state syncing needed
+    // Derive items directly from data — no state syncing needed
     const items = useMemo(() => {
         const result: LawnItem[] = []
 
@@ -166,6 +175,21 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         [story, translations, conversation]
     )
 
+    const displayItems = useMemo(
+        () => items.map((item) => {
+            const rotated = usePortraitLawn
+                ? rotateLandscapePointToPortrait(item.x, item.y)
+                : { x: item.x, y: item.y }
+
+            return {
+                item,
+                displayX: rotated.x,
+                displayY: rotated.y,
+            }
+        }),
+        [items, usePortraitLawn]
+    )
+
     const handleItemClick = useCallback((item: LawnItem) => {
         if (!lawnRef.current) return
 
@@ -198,8 +222,12 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             setShowConversation(false)
         }
 
-        lawnRef.current.moveTo(item.x, item.y)
-    }, [])
+        const targetPosition = usePortraitLawn
+            ? rotateLandscapePointToPortrait(item.x, item.y)
+            : { x: item.x, y: item.y }
+
+        lawnRef.current.moveTo(targetPosition.x, targetPosition.y)
+    }, [usePortraitLawn])
 
     const handleClose = useCallback(() => {
         setShowStory(false)
@@ -283,22 +311,24 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex items-center justify-center p-4">
-                <div className="relative w-full h-full max-w-4xl aspect-video">
+            <div className="flex-1 flex items-center justify-center px-3 py-4 sm:p-4">
+                <div className="relative w-full max-w-136 max-h-full aspect-3/4 md:h-full md:max-w-4xl md:aspect-video">
                     <Lawn
+                        key={usePortraitLawn ? 'portrait-lawn' : 'landscape-lawn'}
                         ref={lawnRef}
                         fruits={[]}
                         onBackgroundClick={handleBackgroundClick}
+                        isPortrait={usePortraitLawn}
                     />
 
                     <AnimatePresence>
-                        {items.map((item, index) => (
+                        {displayItems.map(({ item, displayX, displayY }, index) => (
                             item.type === 'story' ? (
                                 <StoryPill
                                     key={item.id}
                                     id={item.id}
-                                    x={item.x}
-                                    y={item.y}
+                                    x={displayX}
+                                    y={displayY}
                                     delay={index * 0.1}
                                     onClick={() => handleItemClick(item)}
                                     isActive={pendingItemId === item.id}
@@ -307,8 +337,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                 <CatTaskPill
                                     key={item.id}
                                     id={item.id}
-                                    x={item.x}
-                                    y={item.y}
+                                    x={displayX}
+                                    y={displayY}
                                     delay={index * 0.1}
                                     onClick={() => handleItemClick(item)}
                                     isLocked={!unlockProgress.isUnlocked}
@@ -319,8 +349,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                                     key={item.id}
                                     id={item.id}
                                     word={item.label}
-                                    x={item.x}
-                                    y={item.y}
+                                    x={displayX}
+                                    y={displayY}
                                     delay={index * 0.1}
                                     onClick={() => handleItemClick(item)}
                                     isCompleted={item.type === 'translation' && isTranslationCompleted(item.data as ReviewTranslation)}
