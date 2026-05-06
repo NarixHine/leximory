@@ -71,18 +71,6 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
 
     return (
         <div className='flex gap-1 items-center justify-center'>
-            <Button
-                variant={hasSubs ? 'light' : 'solid'}
-                isLoading={isLoading}
-                isDisabled={isDisabled}
-                onPress={handleToggle} // Direct call
-                radius='full'
-                color='primary'
-                size='sm'
-                startContent={isLoading ? null : <PiClockClockwise size={20} />}
-            >
-                {`${hasSubs ? '关闭' : '开启'}提醒`}
-            </Button>
             <Select
                 size='sm'
                 selectedKeys={[selectedHour.toString()]}
@@ -98,6 +86,18 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
                     <SelectItem key={i}>{i.toString()}</SelectItem>
                 ))}
             </Select>
+            <Button
+                variant={hasSubs ? 'light' : 'solid'}
+                isLoading={isLoading}
+                isDisabled={isDisabled}
+                onPress={handleToggle} // Direct call
+                radius='full'
+                color='primary'
+                size='sm'
+                startContent={isLoading ? null : <PiClockClockwise size={20} />}
+            >
+                {`${hasSubs ? '关闭' : '开启'}提醒`}
+            </Button>
         </div>
     )
 }

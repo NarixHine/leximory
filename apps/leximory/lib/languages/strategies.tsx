@@ -25,7 +25,7 @@ export const englishStrategy = createLanguageStrategy({
     },
     reviewLabels: {
         lockMessage: (requiredTranslations) => requiredTranslations > 0
-            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, and then come back to me. We will have a chat.</span>
+            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, and then come back to me. Meow.</span>
             : <span className='font-cute text-2xl leading-tight'>There are no translation exercises available to unlock today.</span>
     },
     articleTitleFont: 'font-formal leading-tight italic'

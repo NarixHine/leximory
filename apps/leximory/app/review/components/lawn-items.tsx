@@ -51,13 +51,13 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
                     isCompleted && 'opacity-60 border-default-300 bg-default-100/90 text-content1-foreground/50'
                 )}
             >
-                <span className="relative z-10 text-nowrap truncate block max-w-50">{word}</span>
+                <span className="relative \text-nowrap truncate block max-w-50">{word}</span>
                 <motion.span
                     aria-hidden
                     initial={false}
                     animate={{ scaleX: isCompleted ? 1 : 0 }}
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute left-2 right-2 top-1/2 z-20 h-0.5 -translate-y-1/2 origin-left rounded-full bg-primary-400"
+                    className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 origin-left rounded-full bg-primary-400"
                 />
             </motion.button>
         </motion.div>

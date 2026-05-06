@@ -154,7 +154,7 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
 
     // Step 1: Get words once and check quotas up-front (fail fast for story)
     const { comments, words, translationQuotaExceeded } = await context.run('get-words-and-check-quotas', async () => {
-        if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId, true)) {
+        if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId, true)) {
             throw new Error('Daily quota exceeded')
         }
 

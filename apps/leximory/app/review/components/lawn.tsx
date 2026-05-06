@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, useLayoutEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
 
@@ -103,7 +103,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     const positionRef = useRef({ x: 0, y: 0 })
     const containerSizeRef = useRef({ width: 0, height: 0 })
     const resizeObserverRef = useRef<ResizeObserver | null>(null)
-    const controlsFrameRef = useRef<number | null>(null)
     const isAnimatingRef = useRef(false)
     const initializedRef = useRef(false)
     const phaseRef = useRef<Phase>('idle')
@@ -120,17 +119,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         isRunning: false,
         facingLeft: false,
     })
-
-    const setControlsAfterMount = useCallback((position: { x: number; y: number; rotate?: number }) => {
-        if (controlsFrameRef.current !== null) {
-            cancelAnimationFrame(controlsFrameRef.current)
-        }
-
-        controlsFrameRef.current = requestAnimationFrame(() => {
-            controls.set(position)
-            controlsFrameRef.current = null
-        })
-    }, [controls])
 
     const setFrame = (frame: string) => {
         if (spriteRef.current) {
@@ -213,15 +201,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     }, [fruits, catWidth, catHeight, onFruitReached])
 
     const syncContainerSize = useCallback((width: number, height: number) => {
-        if (!initializedRef.current) {
-            const startX = width / 2 - catWidth / 2
-            const startY = height / 2 - catHeight / 2
-            positionRef.current = { x: startX, y: startY }
-            containerSizeRef.current = { width, height }
-            setControlsAfterMount({ x: startX, y: startY, rotate: 0 })
-            initializedRef.current = true
-            return
-        }
+        if (!initializedRef.current) return
 
         const prevSize = containerSizeRef.current
 
@@ -237,22 +217,15 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
         positionRef.current = { x: nextX, y: nextY }
         containerSizeRef.current = { width, height }
-        setControlsAfterMount({ x: nextX, y: nextY })
-    }, [setControlsAfterMount, catWidth, catHeight])
+        controls.set({ x: nextX, y: nextY })
+    }, [catWidth, catHeight])
 
     const setContainerNode = useCallback((node: HTMLDivElement | null) => {
         resizeObserverRef.current?.disconnect()
         resizeObserverRef.current = null
-        if (controlsFrameRef.current !== null) {
-            cancelAnimationFrame(controlsFrameRef.current)
-            controlsFrameRef.current = null
-        }
         containerRef.current = node
 
         if (!node) return
-
-        const rect = node.getBoundingClientRect()
-        syncContainerSize(rect.width, rect.height)
 
         const observer = new ResizeObserver((entries) => {
             const entry = entries[0]
@@ -264,6 +237,20 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         observer.observe(node)
         resizeObserverRef.current = observer
     }, [syncContainerSize])
+
+    // Initial center positioning — fires synchronously after DOM commit, before paint
+    useLayoutEffect(() => {
+        const node = containerRef.current
+        if (!node || initializedRef.current) return
+
+        const rect = node.getBoundingClientRect()
+        const startX = rect.width / 2 - catWidth / 2
+        const startY = rect.height / 2 - catHeight / 2
+        positionRef.current = { x: startX, y: startY }
+        containerSizeRef.current = { width: rect.width, height: rect.height }
+        controls.set({ x: startX, y: startY, rotate: 0 })
+        initializedRef.current = true
+    }, [catWidth, catHeight])
 
     // Core movement function - can be called from click handler or ref
     const moveToPosition = useCallback(async (targetX: number, targetY: number, onArrive?: () => void) => {
@@ -487,7 +474,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             {isPortrait ? (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible">
                     <div
-                        className="w-full aspect-43/24 rotate-90 scale-160 sm:scale-150 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
+                        className="w-full aspect-43/24 rotate-90 max-[500px]:scale-180 scale-150 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
                     />
                 </div>
             ) : (

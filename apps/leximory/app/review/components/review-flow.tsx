@@ -47,6 +47,22 @@ function rotateLandscapePointToPortrait(x: number, y: number) {
     }
 }
 
+function hashSeed(str: string): number {
+    let h = 0
+    for (let i = 0; i < str.length; i++) {
+        h = Math.imul(31, h) + str.charCodeAt(i) | 0
+    }
+    return h
+}
+
+function makeRng(seed: number): () => number {
+    let s = seed | 0
+    return () => {
+        s = (s * 1664525 + 1013904223) | 0
+        return (s >>> 0) / 4294967296
+    }
+}
+
 export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const [openPanel, setOpenPanel] = useState<OpenPanel>(null)
     const [pendingItemId, setPendingItemId] = useState<string | null>(null)
@@ -57,15 +73,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
     const { progress, story, translations, conversation } = useReviewProgress({ date, lang })
 
-    // Stable random positions stored in a ref, cleared when date/lang change
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
-    const dateLangRef = useRef(`${date}-${lang}`)
-    if (dateLangRef.current !== `${date}-${lang}`) {
-        positionsRef.current.clear()
-        dateLangRef.current = `${date}-${lang}`
-    }
 
-    // Derive items directly from data — no state syncing needed
     const items = useMemo(() => {
         const result: LawnItem[] = []
 
@@ -84,42 +93,46 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         ) => {
             const candidateSize = getItemFootprint(candidate)
             const existingSize = getItemFootprint(existing)
+            const buffer = 10
 
             return (
-                Math.abs(candidate.x - existing.x) < (candidateSize.width + existingSize.width) / 2 &&
-                Math.abs(candidate.y - existing.y) < (candidateSize.height + existingSize.height) / 2
+                Math.abs(candidate.x - existing.x) < (candidateSize.width + existingSize.width) / 2 + buffer &&
+                Math.abs(candidate.y - existing.y) < (candidateSize.height + existingSize.height) / 2 + buffer
             )
         }
 
+        const dayHash = hashSeed(`${date}-${lang}`)
+
         const getPosition = (id: string, type: LawnItem['type'], label: string) => {
-            let pos = positionsRef.current.get(id)
-            if (!pos) {
-                let attempts = 0
-                let bestCandidate = { x: 50, y: 50, overlapCount: Number.POSITIVE_INFINITY }
+            const cached = positionsRef.current.get(id)
+            if (cached) return cached
 
-                while (attempts < 40) {
-                    const candidate = {
-                        type,
-                        label,
-                        x: 16 + Math.random() * 68,
-                        y: 22 + Math.random() * 54,
-                    }
-                    const overlapCount = result.filter((item) => overlaps(candidate, item)).length
+            const rng = makeRng(hashSeed(`${dayHash}-${id}`))
+            let attempts = 0
+            let bestCandidate = { x: 50, y: 50, overlapCount: Number.POSITIVE_INFINITY }
 
-                    if (overlapCount < bestCandidate.overlapCount) {
-                        bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
-                    }
-
-                    if (overlapCount === 0) {
-                        bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
-                        break
-                    }
-
-                    attempts++
+            while (attempts < 60) {
+                const candidate = {
+                    type,
+                    label,
+                    x: usePortraitLawn ? 10 + rng() * 80 : 20 + rng() * 60,
+                    y: usePortraitLawn ? 46 + rng() * 40 : 26 + rng() * 40,
                 }
-                pos = { x: bestCandidate.x, y: bestCandidate.y }
-                positionsRef.current.set(id, pos)
+                const overlapCount = result.filter((item) => overlaps(candidate, item)).length
+
+                if (overlapCount < bestCandidate.overlapCount) {
+                    bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
+                }
+
+                if (overlapCount === 0) {
+                    bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
+                    break
+                }
+
+                attempts++
             }
+            const pos = { x: bestCandidate.x, y: bestCandidate.y }
+            positionsRef.current.set(id, pos)
             return pos
         }
 
@@ -145,18 +158,19 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         }
 
         if (conversation) {
+            const pos = getPosition('conversation', 'conversation', '每日练笔')
             result.push({
                 id: 'conversation',
                 type: 'conversation',
                 label: '每日练笔',
-                x: 76,
-                y: 68,
+                x: pos.x,
+                y: pos.y,
                 data: conversation,
             })
         }
 
         return result
-    }, [story, translations, conversation])
+    }, [date, lang, story, translations, conversation])
 
     const unlockProgress = useMemo(
         () => getConversationUnlockProgress(translations),
