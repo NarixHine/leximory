@@ -13,11 +13,9 @@ import ContinuousNumberFlow from '@/components/ui/continuous-number-flow'
 import Upgrade from './components/upgrade'
 import { UserWordHeatmap } from '@/components/stats'
 import { HeatmapSkeleton } from '@/components/stats/calendar'
-import 'moment/locale/zh-cn'
 import { getPlan, getUserOrThrow } from '@repo/user'
 import UpdateProfile, { UpdateProfileSkeleton } from './components/update-profile'
 import { momentSH } from '@/lib/moment'
-import Streak from '@/components/streak'
 import { CommentaryQuotaUI, AudioQuotaUI } from './components/cards'
 
 export const metadata: Metadata = { title: '设置' }
@@ -121,8 +119,6 @@ export default async function Settings() {
                     <UserSection />
                 </Suspense>
             </section>
-
-            <Streak />
         </Main>
     )
 }

@@ -130,7 +130,7 @@ function ConversationMessage({
         <div className='text-heimao-800'>
             <div className={cn('max-h-50 overflow-auto', bodyClassName)}>
                 <div
-                    className='float-left -mb-3 -mt-2 -ml-6 -mr-8 overflow-visible'
+                    className={cn('float-left -mb-3 -mt-2 -ml-6 overflow-visible', avatarVariant === 'black' ? ' -mr-7' : ' -mr-10')}
                     style={{
                         height: `${avatarHeightRem}rem`,
                         width: `${avatarWidthRem}rem`,
