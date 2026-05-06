@@ -19,6 +19,9 @@ export interface LanguageStrategy {
     defineClassName: string
     dictionaryLink?: (word: string) => string
     isDropcapEnabled: boolean
+    reviewLabels?: {
+        lockMessage: (requiredTranslations: number) => ReactNode
+    }
     // for library card
     libraryCardLabels: {
         learningWith: ReactNode

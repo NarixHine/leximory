@@ -314,7 +314,7 @@ function GeneratingView() {
       />
       <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', 'text-md')}>
         <li className='flex items-center gap-2'><PiChatDots /><span>生成完成后注解版会自动出现</span></li>
-        <li className='flex items-center gap-2'><PiBell /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/daily'>通知</Link>以立刻接收生成结果</span></li>
+        <li className='flex items-center gap-2'><PiBell /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/review'>通知</Link>以立刻接收生成结果</span></li>
       </ul>
     </div>
   )

@@ -1,7 +1,6 @@
 'use client'
 
 import { Button } from '@heroui/button'
-import { Divider } from '@heroui/divider'
 import { Input } from '@heroui/input'
 import { Switch } from '@heroui/switch'
 import { Textarea } from '@heroui/input'
@@ -10,8 +9,8 @@ import isUrl from 'is-url'
 import { MAX_FILE_SIZE } from '@repo/env/config'
 import { toast } from 'sonner'
 import { FileUpload } from '@/components/ui/upload'
-import { saveEbook, generate, saveText, setAnnotationProgressAction, generateStory, extractWords } from '@/service/text'
-import { PiAirplaneInFlight, PiFileMagnifyingGlass, PiFileMagnifyingGlassFill, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill, PiPlusCircle, PiTornado } from 'react-icons/pi'
+import { saveEbook, generate, saveText, setAnnotationProgressAction } from '@/service/text'
+import { PiAirplaneInFlight, PiKanban, PiKanbanFill, PiLinkSimpleHorizontal, PiMagicWand, PiOption, PiOptionFill } from 'react-icons/pi'
 import PhotoImportTab from './photo-import'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { inputAtom, isLoadingAtom, isEditingAtom, ebookAtom, textAtom, hideTextAtom, titleAtom, inlineModeAtom } from '../../atoms'
@@ -71,8 +70,8 @@ export default function ImportModal() {
         <Button
             isDisabled={isReadOnly}
             onPress={onOpen}
-            className='flex-1'
             radius='full'
+            fullWidth
             variant={'solid'}
             color={editing ? 'default' : 'primary'}
             startContent={<PiMagicWand className='text-lg' />}
@@ -97,16 +96,15 @@ export default function ImportModal() {
     )
 
     return (<>
-        {editing && <div className='text-base text-secondary-500 mx-auto text-center'>保存按钮固定于右上角</div>}
+        {editing && <div className='text-base font-semibold text-secondary-500 mx-auto text-center'>按右上角保存</div>}
         <div className='flex flex-col gap-2 mt-2'>
-            <div className='flex gap-2'>
+            <div>
                 <ImportButton />
-                <EditSwitch />
             </div>
-            {!ebook && <div className='flex gap-2'>
+            <div className='flex gap-2 justify-center'>
+                <EditSwitch />
                 <KanbanSwitch />
-                <StoryModal />
-            </div>}
+            </div>
         </div>
         <Drawer hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
             <DrawerContent className='max-h-dvh rounded-t-4xl'>
@@ -203,114 +201,4 @@ export default function ImportModal() {
             </DrawerContent>
         </Drawer>
     </>)
-}
-
-function StoryModal() {
-    const { isOpen, onOpenChange, onOpen } = useDisclosure()
-    const [words, setWords] = useState<string[]>([''])
-    const isReadOnly = useAtomValue(isReadOnlyAtom)
-    const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
-    const [isGenerating, startGenerating] = useTransition()
-    const text = useAtomValue(textAtom)
-    const [storyStyle, setStoryStyle] = useState('')
-    return <>
-        <Button
-            className='flex-1'
-            isDisabled={isReadOnly}
-            isLoading={isLoading}
-            radius='full'
-            color='default'
-            startContent={<PiTornado className='text-lg' />}
-            onPress={onOpen}
-        >
-            连词成文
-        </Button>
-        <Drawer hideCloseButton isOpen={isOpen} onOpenChange={onOpenChange} placement='bottom' className='bg-default-50'>
-            <DrawerContent className='max-h-dvh rounded-4xl'>
-                {(onClose) => (
-                    <>
-                        <DrawerHeader className='flex flex-col gap-1'>连词成文</DrawerHeader>
-                        <DrawerBody className='flex flex-col gap-4 max-w-md mx-auto'>
-                            <div className='prose dark:prose-invert'>
-                                <blockquote className='not-italic border-l-secondary-300'>
-                                    连词成文通过将目标单词串联为故事辅助深度记忆。
-                                </blockquote>
-                            </div>
-                            <p className='text-center font-bold text-xl -mb-10 mt-4'>从图像或文件中提取词汇</p>
-                            <FileUpload onChange={async ([file]) => {
-                                const form = new FormData()
-                                form.append('file', file)
-                                const wordsPromise = extractWords(form)
-                                toast.promise(wordsPromise, {
-                                    loading: '提取重点词汇中……',
-                                    success: (words) => {
-                                        setWords(words)
-                                        return '提取完毕'
-                                    },
-                                    error: '提取失败'
-                                })
-                            }}></FileUpload>
-                            <div className='flex gap-2 -mt-2 mb-2 items-center'>
-                                <Divider className='flex-1'></Divider>
-                                <span className='opacity-60'>或</span>
-                                <Divider className='flex-1'></Divider>
-                            </div>
-                            <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 w-full items-center'>
-                                {
-                                    words.map((word, index) => (
-                                        <Input
-                                            key={index}
-                                            value={word}
-                                            variant='flat'
-                                            className='col-span-1'
-                                            onValueChange={(value) => setWords(words.map((w, i) => i === index ? value : w))}
-                                        />
-                                    ))
-                                }
-                                <Button variant='flat' startContent={<PiPlusCircle />} onPress={() => {
-                                    setWords([...words, ''])
-                                }}>
-                                    手动录入
-                                </Button>
-                            </div>
-                            <Input
-                                fullWidth
-                                variant='faded'
-                                label='故事风格/内容（可选）'
-                                value={storyStyle}
-                                onValueChange={setStoryStyle}
-                            />
-                            <Button
-                                className='my-2 shrink-0'
-                                fullWidth
-                                isLoading={isGenerating}
-                                color='secondary'
-                                startContent={<PiTornado />}
-                                onPress={() => {
-                                    startGenerating(async () => {
-                                        setIsLoading(true)
-                                        const { success, message } = await generateStory({
-                                            comments: words.map(word => `{{${word}||${word}||略}}`),
-                                            textId: text,
-                                            storyStyle
-                                        })
-                                        if (success) {
-                                            await setAnnotationProgressAction({ id: text, progress: 'annotating' })
-                                            toast.success(message)
-                                            onClose()
-                                        } else {
-                                            toast.error(message)
-                                            setIsLoading(false)
-                                        }
-                                        onClose()
-                                    })
-                                }}>
-                                生成
-                            </Button>
-                        </DrawerBody>
-                    </>
-                )}
-            </DrawerContent>
-        </Drawer>
-    </>
 }

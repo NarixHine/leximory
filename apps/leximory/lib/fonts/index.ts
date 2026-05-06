@@ -1,6 +1,5 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji } from 'next/font/google'
+import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Noto_Color_Emoji, Space_Mono, Indie_Flower, Life_Savers } from 'next/font/google'
 import localFont from 'next/font/local'
-import { GeistMono } from 'geist/font/mono'
 
 export const MINCHO = localFont({
     src: './mincho.woff2',
@@ -8,6 +7,11 @@ export const MINCHO = localFont({
 })
 
 export const EMOJI = Noto_Emoji({
+    weight: '400',
+    preload: false,
+})
+
+export const EMOJI_COLOR = Noto_Color_Emoji({
     weight: '400',
     preload: false,
 })
@@ -33,7 +37,20 @@ export const ENGLISH_SANS = DM_Sans({
     preload: false,
 })
 
-export const ENGLISH_MONO = GeistMono
+export const ENGLISH_CUTE = Life_Savers({
+    subsets: ['latin'],
+    weight: '400',
+    style: ['normal'],
+    variable: '--font-english-cute',
+    preload: false,
+})
+
+export const ENGLISH_MONO = Space_Mono({
+    weight: ['400', '700'],
+    subsets: ['latin'],
+    style: ['normal', 'italic'],
+    variable: '--font-english-mono',
+})
 
 export const ENGLISH_IPA = Source_Code_Pro({
     subsets: ['latin'],

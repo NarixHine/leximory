@@ -1,6 +1,32 @@
 import { heroui } from '@heroui/react'
 import type { Config } from 'tailwindcss'
 
+const heimaoPalette = {
+  50: '#eff1f3',
+  100: '#dce0e6',
+  200: '#bfc6d1',
+  300: '#a5b0c0',
+  400: '#8e9bae',
+  500: '#7d899a',
+  600: '#67707e',
+  700: '#4e5661',
+  800: '#353a42',
+  900: '#1b1f24',
+} as const
+
+const heimaoDarkPalette = {
+  50: '#1b1f24',
+  100: '#353a42',
+  200: '#4e5661',
+  300: '#67707e',
+  400: '#7d899a',
+  500: '#8e9bae',
+  600: '#a5b0c0',
+  700: '#bfc6d1',
+  800: '#dce0e6',
+  900: '#eff1f3',
+} as const
+
 const config: Config = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -156,7 +182,27 @@ const config: Config = {
               800: '#22292b',
               900: '#161b1d',
             },
-          }
+
+            warning: {
+              DEFAULT: '#E8B3D5',
+              50: '#FEF8FA',
+              100: '#FDF2F5',
+              200: '#FCE5ED',
+              300: '#F8D6E5',
+              400: '#F1C7DE',
+              500: '#E8B3D5',
+              600: '#C782B5',
+              700: '#A75A9A',
+              800: '#A75A9A',
+              900: '#6C226F',
+            },
+
+            heimao: {
+              DEFAULT: heimaoPalette[500],
+              foreground: heimaoPalette[900],
+              ...heimaoPalette,
+            },
+          } as any
         },
 
         dark: {
@@ -220,7 +266,13 @@ const config: Config = {
               800: '#F1F3F3',
               900: '#F9FBFB',
             },
-          }
+
+            heimao: {
+              DEFAULT: heimaoDarkPalette[500],
+              foreground: heimaoDarkPalette[900],
+              ...heimaoDarkPalette,
+            },
+          } as any
         }
       },
     }),

@@ -8,6 +8,7 @@ import { nanoAI } from '../ai/configs'
 import { generateText } from 'ai'
 import { revalidateTag } from 'next/cache'
 import { fixDumbPunctuation } from '@repo/utils'
+import { articleImported, notifyEvent } from './client'
 
 const topicsPrompt = (input: string) => ({
     system: `
@@ -97,10 +98,9 @@ const chunkText = (text: string, maxLength: number): string[] => {
 }
 
 export const annotateFullArticle = inngest.createFunction(
-    { id: 'annotate-article' },
-    { event: 'app/article.imported' },
+    { id: 'annotate-article', triggers: [articleImported] },
     async ({ step, event }) => {
-        const { data: { article, textId, onlyComments, userId, generateTitle } } = event
+        const { article, textId, onlyComments, userId, generateTitle } = event.data
 
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
@@ -165,16 +165,13 @@ export const annotateFullArticle = inngest.createFunction(
         })
 
         if (hasSubs && subscription) {
-            await step.sendEvent('notify-user-on-article-imported', {
-                name: 'app/notify',
-                data: {
-                    title: 'Leximory',
-                    body: '😎 导入文章注解完毕啦！',
-                    url: prefixUrl(textUrl),
-                    subscription
-                },
-                user: { uid: userId }
-            })
+            await step.sendEvent('notify-user-on-article-imported', notifyEvent.create({
+                title: 'Leximory',
+                body: '😎 导入文章注解完毕啦！',
+                url: prefixUrl(textUrl),
+                subscription,
+                uid: userId,
+            }))
         }
     }
 )

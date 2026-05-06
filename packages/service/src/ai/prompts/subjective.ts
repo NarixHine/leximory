@@ -115,7 +115,7 @@ ${itemPrompts}
 For each item, provide:
 1. badPairs: Array of problematic phrases/words from the student's answer and their corrections.
    - "original" must be the EXACT substring from the student's answer (case-sensitive match).
-   - "improved" should contain the corrected version followed by a brief Chinese explanation, e.g. "had planned → 时态应用过去完成时".
+   - "improved" should contain the corrected version followed by a brief Chinese explanation, e.g. "had planned → 时态应用过去完成时". For vocabulary errors, point out why the word/phrase feels off and what it usually denotes, and then provide the correction.
    - Include ALL errors: grammar mistakes, wrong vocabulary, awkward phrasing, missing keywords, etc.
    - Each badPair corresponds to a deduction. The number of badPairs should match the number of deductions.
 2. rationale: A very brief overarching comment (1 short sentence in Chinese) that is NOT about specific errors (those go in badPairs). Focus on overall impression only. If all specific issues are covered by annotations, rationale can be minimal.

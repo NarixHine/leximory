@@ -1,43 +1,35 @@
-import { EventSchemas, Inngest } from 'inngest'
+import { Inngest, eventType, staticSchema } from 'inngest'
 
 type NotifyUser = {
-    data: {
-        title: string
-        body: string
-        url: string
-        subscription: string
-    }
+    title: string
+    body: string
+    url: string
+    subscription: string
+    uid: string
+} | {
+    title: string
+    body: string
+    url: string
+    subscription: null
+    uid: string
 }
 
 type ArticleImported = {
-    data: {
-        article: string
-        textId: string
-        onlyComments: boolean
-        userId: string
-        generateTitle?: boolean
-    }
+    article: string
+    textId: string
+    onlyComments: boolean
+    userId: string
+    generateTitle?: boolean
 }
 
-interface StoryRequested {
-    data: {
-        comments: string[]
-        userId: string
-        storyStyle?: string
-    } & ({
-        textId: string
-    } | {
-        libId: string
-    })
-}
+export const notifyEvent = eventType('app/notify', {
+    schema: staticSchema<NotifyUser>(),
+})
 
-type Events = {
-    'app/notify': NotifyUser
-    'app/article.imported': ArticleImported
-    'app/story.requested': StoryRequested
-}
+export const articleImported = eventType('app/article.imported', {
+    schema: staticSchema<ArticleImported>(),
+})
 
 export const inngest = new Inngest({
     id: 'leximory',
-    schemas: new EventSchemas().fromRecord<Events>(),
 })

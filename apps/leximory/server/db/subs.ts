@@ -39,7 +39,7 @@ export default async function saveSubs({ userId, subs, hour }: { userId: string,
             hour
         })
         .throwOnError()
-    revalidatePath(`/daily`)
+    revalidatePath(`/review`)
 }
 
 export async function delSubs({ userId }: { userId: string }) {
@@ -48,5 +48,5 @@ export async function delSubs({ userId }: { userId: string }) {
         .delete()
         .eq('uid', userId)
         .throwOnError()
-    revalidatePath(`/daily`)
+    revalidatePath(`/review`)
 }

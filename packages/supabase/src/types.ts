@@ -68,6 +68,47 @@ export type Database = {
           },
         ]
       }
+      flashbacks: {
+        Row: {
+          conversation: Json | null
+          created_at: string
+          date: string
+          id: number
+          lang: string
+          story: string | null
+          translations: Json | null
+          user: string | null
+        }
+        Insert: {
+          conversation?: Json | null
+          created_at?: string
+          date: string
+          id?: number
+          lang: string
+          story?: string | null
+          translations?: Json | null
+          user?: string | null
+        }
+        Update: {
+          conversation?: Json | null
+          created_at?: string
+          date?: string
+          id?: number
+          lang?: string
+          story?: string | null
+          translations?: Json | null
+          user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashbacks_user_fkey"
+            columns: ["user"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lexicon: {
         Row: {
           created_at: string | null

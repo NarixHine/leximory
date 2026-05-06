@@ -94,56 +94,6 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
     return text
 }
 
-/** Extracts foreign-language words from an uploaded file via AI. */
-export async function extractWords(form: FormData) {
-    const { userId } = await getUserOrThrow()
-    const file = form.get('file') as File
-
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordList, userId)) {
-        throw new Error('Quota exceeded')
-    }
-
-    const { object } = await generateObject({
-        messages: [{
-            role: 'system',
-            content: '你会看到一些外语词汇和一些相关信息，只保留这些外语词汇并去除其他一切信息（中文也去除）。以字符串数组形式输出。',
-        }, {
-            role: 'user',
-            content: [{
-                type: 'file',
-                data: await file.arrayBuffer(),
-                mediaType: file.type
-            }]
-        }],
-        schema: z.array(z.string()).describe('提取出的字符串数组形式的外语词汇'),
-        maxOutputTokens: 8000,
-        ...nanoAI
-    })
-
-    return object
-}
-
-/** Generates a story from vocabulary comments via Inngest. */
-export async function generateStory({ comments, textId, storyStyle }: { comments: string[], textId: string, storyStyle?: string }) {
-    const { userId } = await getUserOrThrow()
-    const text = await getTextWithLib(textId)
-    await Kilpi.texts.write(text).authorize().assert()
-
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.story, userId)) {
-        return {
-            success: false,
-            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
-        }
-    }
-
-    await inngest.send({
-        name: 'app/story.requested',
-        data: { comments, userId, storyStyle, textId }
-    })
-
-    return { success: true, message: '生成中……' }
-}
-
 /** Returns the latest content and topics of a text, with read authorization. */
 export async function getNewText(id: string) {
     const textWithLib = await getTextWithLib(id)
