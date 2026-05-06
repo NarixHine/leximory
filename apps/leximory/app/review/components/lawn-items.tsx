@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { PiLockKey, PiSparkleFill, PiBookOpen } from 'react-icons/pi'
+import { PiBookOpen } from 'react-icons/pi'
 import { CAT_FRAME_ASPECT, CatSprite } from './cat-sprite'
 
 interface LawnItemProps {
@@ -122,7 +122,7 @@ export function CatTaskPill({
     isLocked = false,
     isCompleted = false,
 }: CatTaskPillProps) {
-    const catHeightRem = 3.5
+    const catHeightRem = 5
     const catWidthRem = catHeightRem * CAT_FRAME_ASPECT
 
     return (
