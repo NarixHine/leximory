@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useOnClickOutside } from 'usehooks-ts'
 import { Spinner } from '@heroui/spinner'
 import { PiSealCheck } from 'react-icons/pi'
 import type { ReviewTranslation, ReviewTranslationFeedback } from '@/lib/review'
@@ -13,6 +14,7 @@ interface TranslationExerciseProps {
     date: string
     lang: string
     isOpen: boolean
+    onClose: () => void
     itemId?: string
     index?: number
     data?: ReviewTranslation
@@ -98,11 +100,13 @@ export function TranslationExercise({
     date,
     lang,
     isOpen,
+    onClose,
     itemId,
     index,
     data,
 }: TranslationExerciseProps) {
     const queryClient = useQueryClient()
+    const popoverRef = useRef<HTMLDivElement>(null)
     const [draft, setDraft] = useState('')
     const [optimisticSubmission, setOptimisticSubmission] = useState<string | null>(null)
     const [selectedBadPairIndex, setSelectedBadPairIndex] = useState<number | null>(null)
@@ -110,6 +114,9 @@ export function TranslationExercise({
     const activeItemIdRef = useRef<string | undefined>(itemId)
 
     activeItemIdRef.current = itemId
+    useOnClickOutside(popoverRef as React.RefObject<HTMLElement>, () => {
+        if (isOpen) onClose()
+    })
 
     useEffect(() => {
         if (!isOpen || !itemId) return
@@ -201,7 +208,7 @@ export function TranslationExercise({
     }
 
     return (
-        <>
+        <div ref={popoverRef}>
             <ReviewDialogShell
                 isOpen={isOpen}
                 cardClassName='border-default-200 bg-default-50/95 p-2'
@@ -310,6 +317,6 @@ export function TranslationExercise({
                 className='border-default-200 bg-primary-50'
                 textareaClassName='font-mono text-primary-700 placeholder:text-primary-400'
             />
-        </>
+        </div>
     )
 }

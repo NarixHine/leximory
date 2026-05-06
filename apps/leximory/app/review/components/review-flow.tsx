@@ -32,17 +32,13 @@ interface LawnItem {
     data: any
 }
 
-interface TranslationSession {
-    id: string
-    index: number
-    data: ReviewTranslation
-}
-
 interface ReviewFlowProps {
     date: string
     lang: string
     onExit: () => void
 }
+
+type OpenPanel = 'story' | 'translation' | 'conversation' | null
 
 function rotateLandscapePointToPortrait(x: number, y: number) {
     return {
@@ -52,12 +48,8 @@ function rotateLandscapePointToPortrait(x: number, y: number) {
 }
 
 export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
-    const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-    const [showStory, setShowStory] = useState(false)
-    const [showTranslation, setShowTranslation] = useState(false)
-    const [showConversation, setShowConversation] = useState(false)
+    const [openPanel, setOpenPanel] = useState<OpenPanel>(null)
     const [pendingItemId, setPendingItemId] = useState<string | null>(null)
-    const [activeTranslation, setActiveTranslation] = useState<TranslationSession | null>(null)
 
     const lawnRef = useRef<LawnRef>(null)
     const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -198,29 +190,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             closeTimeoutRef.current = null
         }
 
-        setSelectedItemId(item.id)
         setPendingItemId(item.id)
-
-        if (item.type === 'story') {
-            setActiveTranslation(null)
-            setShowStory(true)
-            setShowTranslation(false)
-            setShowConversation(false)
-        } else if (item.type === 'conversation') {
-            setActiveTranslation(null)
-            setShowConversation(true)
-            setShowStory(false)
-            setShowTranslation(false)
-        } else {
-            setActiveTranslation({
-                id: item.id,
-                index: item.index!,
-                data: item.data as ReviewTranslation,
-            })
-            setShowTranslation(true)
-            setShowStory(false)
-            setShowConversation(false)
-        }
+        setOpenPanel(item.type)
 
         const targetPosition = usePortraitLawn
             ? rotateLandscapePointToPortrait(item.x, item.y)
@@ -230,39 +201,27 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     }, [usePortraitLawn])
 
     const handleClose = useCallback(() => {
-        setShowStory(false)
-        setShowTranslation(false)
-        setShowConversation(false)
+        setOpenPanel(null)
         if (closeTimeoutRef.current) {
             clearTimeout(closeTimeoutRef.current)
         }
         closeTimeoutRef.current = setTimeout(() => {
-            setSelectedItemId(null)
             setPendingItemId(null)
             closeTimeoutRef.current = null
         }, 500)
     }, [])
 
-    const handleBackgroundClick = useCallback(() => {
-        if (selectedItemId || showStory || showTranslation || showConversation) {
-            handleClose()
-        }
-    }, [selectedItemId, showStory, showTranslation, showConversation, handleClose])
-
     const isGenerating = progress?.stage !== 'complete'
     const liveTranslation = useMemo(() => {
-        if (!activeTranslation) return null
-        const nextItem = items.find((item) => item.id === activeTranslation.id && item.type === 'translation')
-        if (!nextItem || nextItem.type !== 'translation') {
-            return activeTranslation
-        }
-
+        if (openPanel !== 'translation' || !pendingItemId) return null
+        const item = items.find((i) => i.id === pendingItemId && i.type === 'translation')
+        if (!item || item.type !== 'translation') return null
         return {
-            id: nextItem.id,
-            index: nextItem.index!,
-            data: nextItem.data as ReviewTranslation,
+            id: item.id,
+            index: item.index!,
+            data: item.data as ReviewTranslation,
         }
-    }, [activeTranslation, items])
+    }, [openPanel, pendingItemId, items])
 
     const statusText = {
         init: 'Initializing...',
@@ -317,7 +276,6 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                         key={usePortraitLawn ? 'portrait-lawn' : 'landscape-lawn'}
                         ref={lawnRef}
                         fruits={[]}
-                        onBackgroundClick={handleBackgroundClick}
                         isPortrait={usePortraitLawn}
                     />
 
@@ -363,7 +321,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             </div>
 
             <StoryDrawer
-                isOpen={showStory}
+                isOpen={openPanel === 'story'}
                 onClose={handleClose}
                 content={story}
                 lang={lang}
@@ -372,7 +330,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             <TranslationExercise
                 date={date}
                 lang={lang}
-                isOpen={showTranslation}
+                isOpen={openPanel === 'translation'}
+                onClose={handleClose}
                 itemId={liveTranslation?.id}
                 index={liveTranslation?.index}
                 data={liveTranslation?.data}
@@ -381,7 +340,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             <ConversationExercise
                 date={date}
                 lang={lang}
-                isOpen={showConversation}
+                isOpen={openPanel === 'conversation'}
+                onClose={handleClose}
                 data={conversation}
                 translations={translations}
                 isLocked={!unlockProgress.isUnlocked}

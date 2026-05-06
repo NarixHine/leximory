@@ -57,7 +57,6 @@ interface FruitItem {
 
 interface LawnProps {
     onFruitReached?: (fruitId: string) => void
-    onBackgroundClick?: () => void
     fruits?: FruitItem[]
     isPortrait?: boolean
 }
@@ -95,7 +94,6 @@ function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: num
 
 export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     onFruitReached,
-    onBackgroundClick,
     fruits = [],
     isPortrait = false,
 }, ref) {
@@ -482,8 +480,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         const targetY = e.clientY - rect.top - catHeight / 2
 
         moveToPosition(targetX, targetY)
-        onBackgroundClick?.()
-    }, [moveToPosition, catWidth, catHeight, onBackgroundClick])
+    }, [moveToPosition, catWidth, catHeight])
 
     return (
         <section className="relative h-full w-full select-none pointer-events-none overflow-visible">

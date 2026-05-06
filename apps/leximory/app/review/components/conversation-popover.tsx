@@ -1,9 +1,10 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useOnClickOutside } from 'usehooks-ts'
 import { Spinner } from '@heroui/spinner'
 import { PiLockKey } from 'react-icons/pi'
 import { Lang } from '@repo/env/config'
@@ -22,6 +23,7 @@ interface ConversationExerciseProps {
     date: string
     lang: string
     isOpen: boolean
+    onClose: () => void
     data?: ReviewConversation | null
     translations?: ReviewTranslation[]
     isLocked?: boolean
@@ -158,15 +160,21 @@ export function ConversationExercise({
     date,
     lang,
     isOpen,
+    onClose,
     data,
     translations,
     isLocked,
 }: ConversationExerciseProps) {
     const queryClient = useQueryClient()
+    const popoverRef = useRef<HTMLDivElement>(null)
     const [draft, setDraft] = useState('')
     const [optimisticSubmission, setOptimisticSubmission] = useState<string | null>(null)
     const [selectedTone, setSelectedTone] = useState<SegmentTone | null>(null)
     const [selectedPairIndex, setSelectedPairIndex] = useState<number | null>(null)
+
+    useOnClickOutside(popoverRef as React.RefObject<HTMLElement>, () => {
+        if (isOpen) onClose()
+    })
 
     useEffect(() => {
         if (!isOpen) return
@@ -233,7 +241,7 @@ export function ConversationExercise({
     )
 
     return (
-        <>
+        <div ref={popoverRef}>
             <ReviewDialogShell
                 isOpen={isOpen}
                 cardClassName='bg-heimao-50 border-heimao-200 p-2 shadow-none'
@@ -345,6 +353,6 @@ export function ConversationExercise({
                 className='border-default-200 bg-primary-50'
                 textareaClassName='font-mono text-primary-700 placeholder:text-primary-400'
             />
-        </>
+        </div>
     )
 }

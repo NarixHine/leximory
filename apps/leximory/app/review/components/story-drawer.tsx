@@ -20,7 +20,7 @@ export function StoryDrawer({ isOpen, onClose, content, lang }: StoryDrawerProps
         <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <Drawer.Portal>
                 <Drawer.Content
-                    className="fixed inset-x-0 bottom-0 z-50 rounded-t-4xl justify-center flex outline-none"
+                    className="fixed inset-x-0 bottom-0 z-52 rounded-t-4xl justify-center flex outline-none"
                     style={{ maxHeight: '85vh' }}
                 >
                     <div className="px-8 pt-5 pb-10 bg-background mx-auto max-w-xl rounded-t-4xl border border-default-200">
