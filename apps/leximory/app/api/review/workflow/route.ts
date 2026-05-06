@@ -47,7 +47,7 @@ const buildStoryConfig = async (comments: string[], lang: Lang, userId: string, 
         
         规则：
         1. 必须使用所有给定的词汇
-        2. 故事长度无需过长，但故事性、可读性必须高且不落俗套，语言生动有趣且毫无LLM风写作痕迹
+        2. 建议约束故事长度，但故事性、可读性必须高且体裁、叙事、情节不落俗套（且尽可能使中国高中生感兴趣），语言生动且毫无LLM风写作痕迹
         3. 故事要有趣且符合逻辑，易读性高
         4. 可以对词汇根据语境进行屈折变化，但不要改变词性；可以把诸如someone之类的代词用him/her/it/them等词代替
         5. 故事全文使用关键词所属语言
@@ -195,10 +195,10 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
     let conversationReady = false
 
     const getStage = (): ReviewGenerationProgress['stage'] => {
-        if (!storyReady) return 'story'
-        if (!translationsReady) return 'translations'
-        if (!conversationReady) return 'conversation'
-        return 'complete'
+        if (storyReady && translationsReady && conversationReady) return 'complete'
+        if (storyReady && translationsReady) return 'conversation'
+        if (storyReady) return 'translations'
+        return 'story'
     }
 
     const updateProgress = async (patch: Partial<Omit<ReviewGenerationProgress, 'stage'>>) => {
@@ -206,6 +206,11 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         progress.stage = getStage()
         await redis.set(progressKey, progress)
     }
+
+    // Write initial progress so the frontend shows loading UI immediately
+    await context.run('init-progress', async () => {
+        await redis.set(progressKey, { stage: 'story', story: null, translations: null, conversation: null })
+    })
 
     // Step 2: Generate the three visible review items in parallel.
     const storyPromise = (async () => {
@@ -339,6 +344,21 @@ ${LEXIMORY_WORLD_VIEW}
 
         if (settled.kind === 'translations') {
             translations = settled.value
+
+            // Reveal translations one by one through Redis so they appear
+            // incrementally on the frontend instead of all at once.
+            for (let i = 0; i < translations.length; i++) {
+                const partial = translations.slice(0, i + 1)
+                await context.run(`reveal-translation-${i}`, async () => {
+                    const data = await redis.get(progressKey) as any
+                    data.translations = partial
+                    if (storyReady) {
+                        data.stage = getStage()
+                    }
+                    await redis.set(progressKey, data)
+                })
+            }
+
             translationsReady = true
 
             await context.run('update-progress-translations', async () => {
@@ -349,7 +369,6 @@ ${LEXIMORY_WORLD_VIEW}
 
         conversation = settled.value
             ? {
-                worldView: LEXIMORY_WORLD_VIEW,
                 prompt: settled.value.prompt,
                 keywords: settled.value.keywords,
                 submission: null,
@@ -385,5 +404,4 @@ ${LEXIMORY_WORLD_VIEW}
             conversation,
         })
     })
-    console.log('Saved flashback and updated progress for workflow')
 })

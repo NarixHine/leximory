@@ -240,8 +240,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const statusText = {
         init: 'Initializing...',
         story: 'Writing story...',
-        translations: 'Preparing translations...',
-        conversation: 'Waiting for the dark cat...',
+        translations: 'Generating exercises...',
+        conversation: 'Creating conversation...',
         complete: ''
     }[progress?.stage ?? 'init']
 

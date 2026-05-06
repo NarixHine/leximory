@@ -51,7 +51,6 @@ export const ReviewConversationFeedbackSchema = z.object({
 export type ReviewConversationFeedback = z.infer<typeof ReviewConversationFeedbackSchema>
 
 export const ReviewConversationSchema = z.object({
-    worldView: z.string().default(LEXIMORY_WORLD_VIEW),
     prompt: z.string(),
     keywords: z.array(z.string()).default([]),
     submission: z.string().nullable().optional(),
@@ -97,7 +96,6 @@ export function normalizeReviewConversation(raw: unknown): ReviewConversation | 
     if (!parsed.success) return null
 
     return {
-        worldView: parsed.data.worldView || LEXIMORY_WORLD_VIEW,
         prompt: parsed.data.prompt,
         keywords: parsed.data.keywords ?? [],
         submission: parsed.data.submission ?? null,
