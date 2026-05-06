@@ -47,7 +47,7 @@ const buildStoryConfig = async (comments: string[], lang: Lang, userId: string, 
         
         规则：
         1. 必须使用所有给定的词汇
-        2. 建议约束故事长度，但故事性、可读性必须高且体裁、叙事、情节不落俗套（且尽可能使中国高中生感兴趣），语言生动且毫无LLM风写作痕迹
+        2. 建议保持故事精悍短小，但故事性、可读性必须高且体裁、叙事、情节不落俗套（且尽可能使中国高中生感兴趣），语言生动且毫无LLM风写作痕迹
         3. 故事要有趣且符合逻辑，易读性高
         4. 可以对词汇根据语境进行屈折变化，但不要改变词性；可以把诸如someone之类的代词用him/her/it/them等词代替
         5. 故事全文使用关键词所属语言
@@ -175,7 +175,7 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         if (translationQuotaExceeded) {
             throw new Error('Daily quota exceeded')
         }
-        
+
         return {
             comments: words.map(w => w.word),
             words,
@@ -216,7 +216,7 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
     const storyPromise = (async () => {
         const { rawStory, title } = await context.run('generate-story', async () => {
             const config = await buildStoryConfig(comments, reviewLang, userId, storyStyle)
-            const { text } = await generateText(config)
+            const { text } = await generateText({ ...config, temperature: 1.2 }) // Higher temperature for more creative stories
             return extractTitleAndStory(text)
         })
 
@@ -295,6 +295,7 @@ ${selectedWords.map((w, i) => {
             schema: z.object({
                 prompt: z.string(),
             }),
+            temperature: 1.2,
             prompt: `
 ${LEXIMORY_WORLD_VIEW}
 
@@ -302,8 +303,8 @@ ${LEXIMORY_WORLD_VIEW}
 
 严格要求：
 1. 输出内容必须使用用户正在学习词汇的目标语言：${reviewCopy.targetLanguageName}。
-2. 叙述口吻必须是小黑猫，语气娴静、内敛、探问、温存。假定双方并非初次接触。
-3. 情境必须围绕这些关键词，尽量与尽可能多的关键词产生自然关联：${selectedKeywords.join(' / ')}；但是禁止刻意堆砌场景设定。且注意：请勿在你的情境描述本身中出现这些关键词！
+2. 叙述口吻必须是小黑猫，语气娴静、探问、好奇。假定双方并非初次接触。
+3. 情境必须围绕这些关键词，尽量与尽可能多的关键词产生自然关联：${selectedKeywords.join(' / ')}；但是禁止刻意堆砌场景设定。且注意：**禁止在你的情境设定本身中出现这些关键词！**
 4. 情境必须基于现实生活且具体、针对性强，可以邀请小白猫谈谈生活中的点滴思考、关于自身生活方方面面的介绍，如家中的陈设、学校里的社团、参与的社会实践课题，或对社会热点和新闻事件的倡议或异议。
 5. 构建设定必须基于一个类人类社会，但禁止脱离猫忆世界的大体世界观。
 6. 把这当作一次真实交流，鼓励用户选用新学习的关键词，也不要把要求写得像考试说明。语气、句式要自然，可以多样。

@@ -53,11 +53,12 @@ export async function evaluateReviewConversation({
 - \`badPairs\` 仅针对清晰度、语法或地道度上真正值得轻轻润色之处。
 - 如果整体表达已经自然通顺，可以让 \`badPairs\` 为空。
 - \`improved\` 需要给出更顺滑的表达，并附上简短中文说明。
-- \`note\` 需要像小黑猫听到这句话后的轻声回应，用中文简短指出这段表达可爱、真诚、贴切或生动之处。
+- \`note\` 需要像小黑猫听到这句话后的轻声回应，用中文简短指出这段表达的语言优异之处。
 - \`reply\` 绝不能像老师、阅卷人、评审或纠错器。它必须就是小黑猫本人，用目标语言轻声回应刚刚读到的内容。
-- \`reply\` 应短、柔和、温存，可在合适时带一点心动感。但是禁止出现“tell me more“性质的问题，因为流程已结束、用户无法回复。
+- \`reply\` 应短、柔和、温存，可在合适时带一点心动感。Be creative with your reply, and feel free to say anything you want; mere repetition is forbidden. 禁止出现“tell me more“性质的问题，因为流程已结束、用户无法回复。
 </guidelines>
 </prompt>`,
+        temperature: 1.3,
     })
 
     return object

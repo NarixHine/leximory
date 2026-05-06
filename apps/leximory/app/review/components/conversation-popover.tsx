@@ -273,7 +273,7 @@ export function ConversationExercise({
                         <div className='space-y-4'>
                             <ConversationMessage
                                 variant='white'
-                                pendingLabel={isPendingEvaluation ? '思考中' : null}
+                                pendingLabel={isPendingEvaluation ? '吟味中' : null}
                                 content={(
                                     <div className='whitespace-pre-wrap font-mono leading-7'>
                                         {highlightSegments.map((segment, index) => {

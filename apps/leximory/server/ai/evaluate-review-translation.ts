@@ -1,6 +1,5 @@
 import { generateObject } from 'ai'
 import { Lang } from '@repo/env/config'
-import { z } from '@repo/schema'
 import { miniAI } from './configs'
 import { ReviewTranslationFeedbackSchema, type ReviewTranslationFeedback } from '@/lib/review'
 import { getReviewLanguageCopy } from '@/lib/review-language'
@@ -41,7 +40,7 @@ Student's ${reviewCopy.targetLanguageName} translation: ${submission}
 
 <annotation_guidelines>
 - badPairs must point to exact substrings from the student's answer (narrow down to the most precise chunk possible instead of including a large portion).
-- improved should contain a corrected version plus a brief Chinese explanation.
+- improved should contain a corrected version plus a brief Chinese explanation (use symbols like \`→\`; be concrete with the "why").
 - rationale should be one short Chinese sentence about the overall quality.
 </annotation_guidelines>
 

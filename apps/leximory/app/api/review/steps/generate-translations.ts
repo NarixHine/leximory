@@ -26,21 +26,21 @@ export async function generateTranslations({ date, lang, userId }: GenerateTrans
     const targetDate = new Date(date)
     const today = new Date()
     const daysDiff = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24))
-    
+
     const allWords = await getWordsWithin({
         fromDayAgo: daysDiff,
         toDayAgo: daysDiff - 1,
         userId,
     })
     const words = allWords.filter((word) => word.lang === reviewLang)
-    
+
     if (words.length === 0) {
         return []
     }
-    
+
     // Select 3-5 random words for translation exercises
     const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, Math.min(5, words.length))
-    
+
     const { text } = await generateText({
         system: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
 
@@ -53,13 +53,14 @@ For each vocabulary word:
 Format: [{"prompt": "...", "answer": "...", "keyword": "..."}]`,
         prompt: `Create ${selectedWords.length} translation exercises for these ${reviewCopy.targetLanguageName} vocabulary words:
 ${selectedWords.map((w, i) => {
-    const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
-    return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
-}).join('\n')}`,
+            const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
+            return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
+        }).join('\n')}`,
         maxOutputTokens: 2000,
+        temperature: 1.2,
         ...miniAI,
     })
-    
+
     try {
         // Extract JSON from the response
         const match = text.match(/\[[\s\S]*\]/)
