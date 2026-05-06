@@ -152,12 +152,8 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
     const languageStrategy = getLanguageStrategy(reviewLang)
     const reviewCopy = getReviewLanguageCopy(reviewLang)
 
-    // Step 1: Get words once and check quotas up-front (fail fast for story)
+    // Step 1: Get words once
     const { comments, words, translationQuotaExceeded } = await context.run('get-words-and-check-quotas', async () => {
-        if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId, true)) {
-            throw new Error('Daily quota exceeded')
-        }
-
         const targetDate = new Date(date)
         const today = new Date()
         const daysDiff = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -176,6 +172,10 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
 
         const translationQuotaExceeded = await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId, true)
 
+        if (translationQuotaExceeded) {
+            throw new Error('Daily quota exceeded')
+        }
+        
         return {
             comments: words.map(w => w.word),
             words,

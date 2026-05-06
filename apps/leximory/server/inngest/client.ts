@@ -22,30 +22,12 @@ type ArticleImported = {
     generateTitle?: boolean
 }
 
-type StoryRequestedWithTextId = {
-    comments: string[]
-    userId: string
-    storyStyle?: string
-    textId: string
-}
-
-type StoryRequestedWithLibId = {
-    comments: string[]
-    userId: string
-    storyStyle?: string
-    libId: string
-}
-
 export const notifyEvent = eventType('app/notify', {
     schema: staticSchema<NotifyUser>(),
 })
 
 export const articleImported = eventType('app/article.imported', {
     schema: staticSchema<ArticleImported>(),
-})
-
-export const storyRequested = eventType('app/story.requested', {
-    schema: staticSchema<StoryRequestedWithTextId | StoryRequestedWithLibId>(),
 })
 
 export const inngest = new Inngest({
