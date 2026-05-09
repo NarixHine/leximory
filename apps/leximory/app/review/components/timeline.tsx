@@ -4,13 +4,14 @@ import { cn } from '@/lib/utils'
 import { AreaChart } from '@/components/ui/area-chart'
 import type { DayData } from '../data'
 import { momentSH } from '@/lib/moment'
-import { PiCursorClick, PiStar, PiStarFill } from 'react-icons/pi'
 import Comment from '@/components/comment'
 import { ScopeProvider } from 'jotai-scope'
 import { HydrationBoundary } from 'jotai-ssr'
+import { useAtomValue } from 'jotai'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
-import { getLanguageStrategy } from '@/lib/languages/strategies'
+import { DiscreteProgress } from './discrete-progress'
+import { reviewProgressFamily } from '../atoms'
 
 interface TimelineProps {
     days: DayData[]
@@ -82,11 +83,11 @@ function TimelineRow({ day, isToday, onReviewClick }: {
 
                 <div className="flex flex-wrap items-center gap-3">
                     {Object.entries(day.progressByLang).map(([lang, progress]) => (
-                        <DiscreteProgress
+                        <SyncedDiscreteProgress
                             key={lang}
-                            value={progress?.percentage ?? 0}
-                            conversationCompleted={progress?.conversationCompleted ?? false}
+                            date={day.date}
                             lang={lang as Lang}
+                            progress={progress}
                             onClick={() => onReviewClick(lang as Lang)}
                         />
                     ))}
@@ -150,51 +151,30 @@ function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; la
     return commentElement
 }
 
-function DiscreteProgress({
-    value,
+function SyncedDiscreteProgress({
+    date,
     lang,
+    progress,
     onClick,
-    conversationCompleted,
 }: {
-    value: number
-    lang?: Lang
-    onClick?: () => void
-    conversationCompleted?: boolean
+    date: string
+    lang: Lang
+    progress: { percentage: number; conversationCompleted: boolean } | undefined
+    onClick: () => void
 }) {
-    const state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
-    const langCode = lang ? getLanguageStrategy(lang).type : null
+    const atomProgress = useAtomValue(reviewProgressFamily(`${date}:${lang}`))
+
+    const effectiveProgress = atomProgress ?? {
+        percentage: progress?.percentage ?? 0,
+        conversationCompleted: progress?.conversationCompleted ?? false,
+    }
 
     return (
-        <button
+        <DiscreteProgress
+            value={effectiveProgress.percentage}
+            conversationCompleted={effectiveProgress.conversationCompleted}
+            lang={lang}
             onClick={onClick}
-            className="flex items-center gap-2 group cursor-pointer"
-        >
-            {langCode && (
-                <span className={cn('text-sm font-mono uppercase text-default-500')}>
-                    {langCode}
-                </span>
-            )}
-            <div className="flex items-center gap-0.5">
-                <div className={cn(
-                    "h-2 w-8 rounded-l transition-colors",
-                    state >= 1 ? "bg-default-400" : "bg-default-200"
-                )} />
-                <div className={cn(
-                    "h-2 w-8 rounded-none transition-colors",
-                    state >= 2 ? "bg-default-400" : "bg-default-200"
-                )} />
-                <div className={cn(
-                    "h-2 w-8 rounded-r transition-colors",
-                    state >= 3 ? "bg-default-400" : "bg-default-200"
-                )} />
-            </div>
-            {conversationCompleted ? (
-                <PiStarFill className="w-4 h-4 text-default-400" />
-            ) : state >= 3 ? (
-                <PiStar className="w-4 h-4 text-default-400" />
-            ) : (
-                <PiCursorClick className="w-4 h-4 text-default-400 group-hover:text-default-500 transition-colors" />
-            )}
-        </button>
+        />
     )
 }

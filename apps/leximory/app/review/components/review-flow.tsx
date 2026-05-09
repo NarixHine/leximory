@@ -3,12 +3,15 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMediaQuery } from 'usehooks-ts'
+import { useSetAtom } from 'jotai'
 import { Lawn, LawnRef } from './lawn'
 import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
 import { StoryDrawer } from './story-drawer'
 import { TranslationExercise } from './translation-popover'
 import { ConversationExercise } from './conversation-popover'
 import { useReviewProgress } from '../hooks/use-review-progress'
+import { DiscreteProgress } from './discrete-progress'
+import { reviewProgressFamily } from '../atoms'
 import { PiX } from 'react-icons/pi'
 import { Spinner } from '@heroui/spinner'
 import { Card, CardBody } from '@heroui/card'
@@ -21,6 +24,7 @@ import {
     type ReviewConversation,
     type ReviewTranslation,
 } from '@/lib/review'
+import type { Lang } from '@repo/env/config'
 
 interface LawnItem {
     id: string
@@ -181,6 +185,14 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         [story, translations, conversation]
     )
 
+    const progressKey = `${date}:${lang}` as const
+    const setProgress = useSetAtom(reviewProgressFamily(progressKey))
+
+    setProgress({
+        percentage: reviewCompletion.percentage,
+        conversationCompleted: reviewCompletion.conversationCompleted,
+    })
+
     const displayItems = useMemo(
         () => items.map((item) => {
             const rotated = usePortraitLawn
@@ -258,7 +270,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 onPress={onExit}
                 variant='flat'
                 startContent={<PiX className="w-4 h-4" />}
-                className="absolute top-6 left-6 z-50 px-4 py-2 backdrop-blur"
+                className="absolute top-6 left-6 z-50 px-4 py-2"
             >
                 返回
             </Button>
@@ -284,8 +296,18 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex items-center justify-center px-3 py-4 sm:p-4">
+            <div className="flex-1 flex flex-col items-center justify-center px-3 pb-4 sm:p-4">
                 <div className="relative w-full max-w-136 max-h-full aspect-3/4 md:h-full md:max-w-4xl md:aspect-video">
+                    {!isGenerating && reviewCompletion.totalUnits > 0 && (
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
+                            <DiscreteProgress
+                                value={reviewCompletion.percentage}
+                                conversationCompleted={reviewCompletion.conversationCompleted}
+                                lang={lang as Lang}
+                                showLang={false}
+                            />
+                        </div>
+                    )}
                     <Lawn
                         key={usePortraitLawn ? 'portrait-lawn' : 'landscape-lawn'}
                         ref={lawnRef}
