@@ -132,13 +132,13 @@ function ConversationMessage({
         <div className='text-heimao-800'>
             <div className={cn('max-h-50 overflow-auto', bodyClassName)}>
                 <div
-                    className={cn('float-left -mb-3 -mt-2 -ml-6 overflow-visible', avatarVariant === 'black' ? ' -mr-7' : ' -mr-10')}
+                    className={cn('float-left -mb-3 -mt-2 overflow-visible', avatarVariant === 'black' ? ' -mr-7 -ml-6' : ' -mr-9 -ml-4')}
                     style={{
                         height: `${avatarHeightRem}rem`,
                         width: `${avatarWidthRem}rem`,
                     }}
                 >
-                    <CatSprite variant={avatarVariant} frame='idle' />
+                    <CatSprite variant={avatarVariant} frame='idle' className='drop-shadow-2xl' />
                 </div>
 
                 {content}

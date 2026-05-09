@@ -153,7 +153,7 @@ export function CatTaskPill({
                     }}
                 >
                     <div className='absolute inset-0'>
-                        <CatSprite variant='black' frame='idle' />
+                        <CatSprite variant='black' frame='idle' className='drop-shadow-lg' />
                     </div>
                 </div>
             </motion.button>

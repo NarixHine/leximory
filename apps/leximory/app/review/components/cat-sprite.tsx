@@ -37,7 +37,7 @@ export const CatSprite = forwardRef<HTMLDivElement, CatSpriteProps>(function Cat
     return (
         <div
             ref={ref}
-            className={cn('pointer-events-none w-full h-full bg-no-repeat', className)}
+            className={cn('pointer-events-none drop-shadow-xs w-full h-full bg-no-repeat', className)}
             style={{
                 backgroundImage: `url('${variant === 'black' ? '/assets/cat-night.webp' : '/assets/cat.webp'}')`,
                 backgroundSize: '300% 300%',

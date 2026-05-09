@@ -536,7 +536,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                 >
                     <CatSprite
                         ref={spriteRef}
-                        className="pointer-events-none w-full h-full dark:brightness-70"
+                        className="pointer-events-none w-full h-full dark:brightness-60"
                         style={{
                             backgroundPosition: CAT_FRAMES.idle,
                         }}
