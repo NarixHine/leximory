@@ -7,7 +7,6 @@ import env from '@repo/env'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { MINCHO, ENGLISH, ENGLISH_FANCY, ENGLISH_MONO, ENGLISH_SERIF, ENGLISH_IPA, KAITI, ENGLISH_SANS, ENGLISH_CUTE } from '@/lib/fonts'
-import InstallLeximory from './install-leximory'
 import { InterfaceKit } from 'interface-kit/react'
 
 const TITLE_DEFAULT = 'Leximory'
@@ -68,7 +67,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 					<div className='relative flex flex-col print:bg-white'>
 						{children}
 						{process.env.NODE_ENV === 'development' && <InterfaceKit />}
-						<InstallLeximory />
 						<Dock />
 					</div>
 				</Providers>

@@ -344,7 +344,8 @@ export function LibraryAddButton() {
             onPress={onOpen}
             startContent={<PiFolderPlus className='size-6' />}
         >
-            新建文库
+            <span className='text-sm font-medium hidden sm:inline'>新建文库</span>
+            <span className='text-sm font-medium inline sm:hidden'>新建</span>
         </Button>
         <Form
             isOpen={isOpen}

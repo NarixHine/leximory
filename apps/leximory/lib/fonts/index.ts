@@ -14,7 +14,6 @@ export const EMOJI = Noto_Emoji({
 export const KAITI = localFont({
     src: './kaiti.woff2',
     variable: '--font-kaiti',
-    preload: false,
 })
 
 export const ENGLISH = Raleway({
