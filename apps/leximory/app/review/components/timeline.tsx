@@ -77,7 +77,7 @@ function TimelineRow({ day, isToday, onReviewClick }: {
             <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                     {day.words.map((word) => (
-                        <WordPill key={word.id} word={word.word} lang={word.lang} />
+                        <WordPill deleteId={word.id} key={word.id} word={word.word} lang={word.lang} />
                     ))}
                 </div>
 
@@ -114,7 +114,7 @@ function TodayRow({ day }: { day: DayData }) {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {day.words.map((word) => (
-                                <WordPill key={word.id} word={word.word} isToday lang={word.lang} />
+                                <WordPill deleteId={word.id} key={word.id} word={word.word} isToday lang={word.lang} />
                             ))}
                         </div>
                     </div>
@@ -124,12 +124,12 @@ function TodayRow({ day }: { day: DayData }) {
     )
 }
 
-function WordPill({ word, isToday, lang }: { word: string; isToday?: boolean; lang?: string }) {
+function WordPill({ word, isToday, deleteId, lang }: { word: string; isToday?: boolean; lang?: string; deleteId: string }) {
     // Pass the full word params directly to Comment - it already contains {{word||reading||definition}}
     const commentElement = (
         <Comment
             params={word}
-            disableSave
+            deleteId={deleteId}
             preset="pill"
             className={cn(
                 isToday && 'text-lg'

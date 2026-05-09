@@ -265,9 +265,9 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             <Button
                 radius='full'
                 onPress={onExit}
-                variant='flat'
-                startContent={<PiX className="w-4 h-4" />}
-                className="absolute top-6 left-6 z-50 px-4 py-2"
+                variant='light'
+                startContent={<PiX />}
+                className="absolute top-6 left-6 z-50"
             >
                 返回
             </Button>
