@@ -44,7 +44,7 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
-                    "relative px-3 py-1.5 text-sm font-medium rounded-full font-mono overflow-hidden",
+                    "relative px-3 py-1.5 text-sm font-medium rounded-full overflow-hidden",
                     "duration-200 transition-opacity",
                     "cursor-pointer select-none",
                     'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl',

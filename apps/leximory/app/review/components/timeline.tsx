@@ -11,7 +11,6 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
-import { EMOJI_COLOR } from '@/lib/fonts'
 
 interface TimelineProps {
     days: DayData[]
@@ -163,16 +162,16 @@ function DiscreteProgress({
     conversationCompleted?: boolean
 }) {
     const state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
-    const emoji = lang ? getLanguageStrategy(lang).emoji : null
+    const langCode = lang ? getLanguageStrategy(lang).type : null
 
     return (
         <button
             onClick={onClick}
             className="flex items-center gap-2 group cursor-pointer"
         >
-            {emoji && (
-                <span className={cn("text-sm", EMOJI_COLOR.className)}>
-                    {emoji}
+            {langCode && (
+                <span className={cn('text-sm font-mono uppercase text-default-500')}>
+                    {langCode}
                 </span>
             )}
             <div className="flex items-center gap-0.5">
