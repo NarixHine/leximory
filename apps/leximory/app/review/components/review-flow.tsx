@@ -4,13 +4,11 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMediaQuery } from 'usehooks-ts'
 import { useSetAtom } from 'jotai'
-import { Lawn, LawnRef } from './lawn'
-import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
+import { Lawn, LawnRef, type LawnItem } from './lawn'
 import { StoryDrawer } from './story-drawer'
 import { TranslationExercise } from './translation-popover'
 import { ConversationExercise } from './conversation-popover'
 import { useReviewProgress } from '../hooks/use-review-progress'
-import { DiscreteProgress } from './discrete-progress'
 import { reviewProgressFamily } from '../atoms'
 import { PiX } from 'react-icons/pi'
 import { Spinner } from '@heroui/spinner'
@@ -24,9 +22,8 @@ import {
     type ReviewConversation,
     type ReviewTranslation,
 } from '@/lib/review'
-import type { Lang } from '@repo/env/config'
 
-interface LawnItem {
+interface ReviewItem {
     id: string
     type: 'story' | 'translation' | 'conversation'
     label: string
@@ -80,7 +77,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
 
     const items = useMemo(() => {
-        const result: LawnItem[] = []
+        const result: ReviewItem[] = []
 
         const getItemFootprint = (item: Pick<LawnItem, 'type' | 'label'>) => ({
             width: item.type === 'story'
@@ -92,8 +89,8 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         })
 
         const overlaps = (
-            candidate: { type: LawnItem['type']; label: string; x: number; y: number },
-            existing: LawnItem
+            candidate: { type: ReviewItem['type']; label: string; x: number; y: number },
+            existing: ReviewItem
         ) => {
             const candidateSize = getItemFootprint(candidate)
             const existingSize = getItemFootprint(existing)
@@ -107,7 +104,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
         const dayHash = hashSeed(`${date}-${lang}`)
 
-        const getPosition = (id: string, type: LawnItem['type'], label: string) => {
+        const getPosition = (id: string, type: ReviewItem['type'], label: string) => {
             const cached = positionsRef.current.get(id)
             if (cached) return cached
 
@@ -298,61 +295,34 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
             <div className="flex-1 flex flex-col items-center justify-center px-3 pb-4 sm:p-4">
                 <div className="relative w-full max-w-136 max-h-full aspect-3/4 md:h-full md:max-w-4xl md:aspect-video">
-                    {!isGenerating && reviewCompletion.totalUnits > 0 && (
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
-                            <DiscreteProgress
-                                value={reviewCompletion.percentage}
-                                conversationCompleted={reviewCompletion.conversationCompleted}
-                                lang={lang as Lang}
-                                showLang={false}
-                            />
-                        </div>
-                    )}
                     <Lawn
                         key={usePortraitLawn ? 'portrait-lawn' : 'landscape-lawn'}
                         ref={lawnRef}
-                        fruits={[]}
                         isPortrait={usePortraitLawn}
+                        progress={!isGenerating && reviewCompletion.totalUnits > 0 ? {
+                            value: reviewCompletion.percentage,
+                            conversationCompleted: reviewCompletion.conversationCompleted,
+                            lang: lang,
+                        } : undefined}
+                        items={displayItems.map(({ item, displayX, displayY }, index) => ({
+                            id: item.id,
+                            type: item.type,
+                            label: item.label,
+                            x: item.x,
+                            y: item.y,
+                            displayX,
+                            displayY,
+                            delay: index * 0.1,
+                            isLocked: item.type === 'conversation' ? !unlockProgress.isUnlocked : undefined,
+                            isCompleted: item.type === 'conversation'
+                                ? isConversationCompleted(item.data as ReviewConversation)
+                                : item.type === 'translation'
+                                    ? isTranslationCompleted(item.data as ReviewTranslation)
+                                    : undefined,
+                            isActive: pendingItemId === item.id,
+                        }))}
+                        onItemClick={handleItemClick}
                     />
-
-                    <AnimatePresence>
-                        {displayItems.map(({ item, displayX, displayY }, index) => (
-                            item.type === 'story' ? (
-                                <StoryPill
-                                    key={item.id}
-                                    id={item.id}
-                                    x={displayX}
-                                    y={displayY}
-                                    delay={index * 0.1}
-                                    onClick={() => handleItemClick(item)}
-                                    isActive={pendingItemId === item.id}
-                                />
-                            ) : item.type === 'conversation' ? (
-                                <CatTaskPill
-                                    key={item.id}
-                                    id={item.id}
-                                    x={displayX}
-                                    y={displayY}
-                                    delay={index * 0.1}
-                                    onClick={() => handleItemClick(item)}
-                                    isLocked={!unlockProgress.isUnlocked}
-                                    isCompleted={isConversationCompleted(item.data as ReviewConversation)}
-                                />
-                            ) : (
-                                <WordPill
-                                    key={item.id}
-                                    id={item.id}
-                                    word={item.label}
-                                    x={displayX}
-                                    y={displayY}
-                                    delay={index * 0.1}
-                                    onClick={() => handleItemClick(item)}
-                                    isCompleted={item.type === 'translation' && isTranslationCompleted(item.data as ReviewTranslation)}
-                                    isActive={pendingItemId === item.id}
-                                />
-                            )
-                        ))}
-                    </AnimatePresence>
                 </div>
             </div>
 

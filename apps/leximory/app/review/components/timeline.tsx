@@ -81,7 +81,7 @@ function TimelineRow({ day, isToday, onReviewClick }: {
                     ))}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center space-x-3">
                     {Object.entries(day.progressByLang).map(([lang, progress]) => (
                         <SyncedDiscreteProgress
                             key={lang}

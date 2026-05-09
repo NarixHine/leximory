@@ -3,6 +3,9 @@
 import { useRef, useCallback, useLayoutEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
+import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
+import { DiscreteProgress } from './discrete-progress'
+import type { Lang } from '@repo/env/config'
 
 // Tuned animation parameters
 const CAT_SIZE = 100
@@ -49,22 +52,39 @@ interface Particle {
     rotation: number
 }
 
-interface FruitItem {
+export interface LawnItem {
     id: string
+    type: 'story' | 'translation' | 'conversation'
+    label: string
     x: number
     y: number
+    displayX: number
+    displayY: number
+    delay: number
+    isLocked?: boolean
+    isCompleted?: boolean
+    isActive?: boolean
+}
+
+interface ProgressData {
+    value: number
+    conversationCompleted?: boolean
+    lang?: string
 }
 
 interface LawnProps {
-    onFruitReached?: (fruitId: string) => void
-    fruits?: FruitItem[]
+    items?: LawnItem[]
+    onItemClick?: (item: LawnItem) => void
     isPortrait?: boolean
+    progress?: ProgressData
 }
 
 export interface LawnRef {
     moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => void
     moveNear: (xPercent: number, yPercent: number, bufferPx?: number, onArrive?: () => void) => void
 }
+
+interface ImgBounds { left: number; top: number; width: number; height: number }
 
 function catReducer(state: CatState, action: CatAction): CatState {
     switch (action.type) {
@@ -92,25 +112,59 @@ function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: num
     }
 }
 
+/**
+ * Calculate the rendered bounds of an image when object-fit: contain is applied
+ * within a container of given dimensions.
+ */
+function calcContainedBounds(
+    containerW: number, containerH: number,
+    naturalW: number, naturalH: number
+): ImgBounds {
+    if (!containerW || !containerH || !naturalW || !naturalH) {
+        return { left: 0, top: 0, width: containerW, height: containerH }
+    }
+    const scale = Math.min(containerW / naturalW, containerH / naturalH)
+    const w = naturalW * scale
+    const h = naturalH * scale
+    const left = (containerW - w) / 2
+    const top = (containerH - h) / 2
+    return { left, top, width: w, height: h }
+}
+
+/**
+ * For portrait mode: the image is inside a flex centering wrapper and may
+ * have rotation + scale transforms. We measure the wrapper's bounding rect.
+ * Since the image is w-full with a fixed aspect ratio inside the wrapper,
+ * and centered with flex, the bounds are simply the wrapper's content area.
+ */
+function calcPortraitBounds(
+    wrapperW: number, wrapperH: number
+): ImgBounds {
+    return { left: 0, top: 0, width: wrapperW, height: wrapperH }
+}
+
 export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
-    onFruitReached,
-    fruits = [],
+    items = [],
+    onItemClick,
     isPortrait = false,
+    progress,
 }, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const spriteRef = useRef<HTMLDivElement>(null)
+    const imgWrapperRef = useRef<HTMLDivElement>(null)
+    const imgRef = useRef<HTMLImageElement>(null)
     const controls = useAnimationControls()
     const positionRef = useRef({ x: 0, y: 0 })
-    const containerSizeRef = useRef({ width: 0, height: 0 })
+    const boundsRef = useRef<ImgBounds>({ left: 0, top: 0, width: 0, height: 0 })
     const resizeObserverRef = useRef<ResizeObserver | null>(null)
     const isAnimatingRef = useRef(false)
     const initializedRef = useRef(false)
     const phaseRef = useRef<Phase>('idle')
     const animationFrameRef = useRef<number>(0)
     const particleIdRef = useRef(0)
-    const reachedFruitsRef = useRef<Set<string>>(new Set())
 
     const [particles, setParticles] = useState<Particle[]>([])
+    const [imgBounds, setImgBounds] = useState<ImgBounds | null>(null)
 
     const catHeight = CAT_SIZE
     const catWidth = catHeight * CAT_FRAME_ASPECT
@@ -126,6 +180,105 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         }
     }
 
+    const updateBounds = useCallback(() => {
+        const prev = boundsRef.current
+
+        if (isPortrait) {
+            const wrapper = imgWrapperRef.current
+            if (!wrapper) return
+            const rect = wrapper.getBoundingClientRect()
+            const bounds = calcPortraitBounds(rect.width, rect.height)
+
+            if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
+                const rx = bounds.width / prev.width
+                const ry = bounds.height / prev.height
+                positionRef.current = { x: positionRef.current.x * rx, y: positionRef.current.y * ry }
+                controls.set({ x: positionRef.current.x, y: positionRef.current.y })
+            }
+            boundsRef.current = bounds
+            setImgBounds(bounds)
+        } else {
+            const node = containerRef.current
+            const img = imgRef.current
+            if (!node) return
+
+            const rect = node.getBoundingClientRect()
+            const bounds = calcContainedBounds(
+                rect.width, rect.height,
+                img?.naturalWidth ?? 0, img?.naturalHeight ?? 0
+            )
+
+            if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
+                const rx = bounds.width / prev.width
+                const ry = bounds.height / prev.height
+                positionRef.current = { x: positionRef.current.x * rx, y: positionRef.current.y * ry }
+                controls.set({ x: positionRef.current.x, y: positionRef.current.y })
+            }
+            boundsRef.current = bounds
+            setImgBounds(bounds)
+        }
+    }, [isPortrait, controls])
+
+    // Bounds measurement: reads container on mount, image dims on load
+    const measureBounds = useCallback(() => {
+        if (isPortrait) {
+            const wrapper = imgWrapperRef.current
+            if (!wrapper) return
+            const rect = wrapper.getBoundingClientRect()
+            boundsRef.current = calcPortraitBounds(rect.width, rect.height)
+            setImgBounds(boundsRef.current)
+        } else {
+            const node = containerRef.current
+            const img = imgRef.current
+            if (!node) return
+            const rect = node.getBoundingClientRect()
+            boundsRef.current = calcContainedBounds(
+                rect.width, rect.height,
+                img?.naturalWidth ?? 0, img?.naturalHeight ?? 0
+            )
+            setImgBounds(boundsRef.current)
+        }
+    }, [isPortrait])
+
+    // ResizeObserver on the outer section — calls measureBounds sync on mount
+    useLayoutEffect(() => {
+        const node = containerRef.current
+        if (!node) return
+
+        measureBounds()
+
+        const observer = new ResizeObserver(() => {
+            updateBounds()
+        })
+        observer.observe(node)
+        resizeObserverRef.current = observer
+
+        return () => observer.disconnect()
+    }, [measureBounds, updateBounds])
+
+
+    const onImgRef = useCallback((el: HTMLImageElement | null) => {
+        imgRef.current = el
+        if (el?.complete && el.naturalWidth > 0) {
+            updateBounds()
+        }
+    }, [updateBounds])
+
+    // Initial positioning after bounds are first measured
+    useLayoutEffect(() => {
+        if (!imgBounds || initializedRef.current) return
+
+        const bw = imgBounds.width
+        const bh = imgBounds.height
+
+        const startX = bw / 2 - catWidth / 2
+        const startY = bh / 2 - catHeight / 2
+
+        positionRef.current = { x: startX, y: startY }
+        controls.set({ x: startX, y: startY, rotate: 0 })
+        initializedRef.current = true
+    }, [imgBounds, catWidth, catHeight, controls])
+
     // Spawn dust particles behind the cat
     const spawnDustParticles = useCallback((x: number, y: number, dirX: number, dirY: number, facingLeft: boolean, rotationAngle: number) => {
         if (!DUST_ENABLED) return
@@ -133,15 +286,11 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         const newParticles: Particle[] = []
         const count = DUST_PARTICLE_COUNT
 
-        // Convert rotation angle to radians
         const rotRad = (rotationAngle * Math.PI) / 180
 
-        // Base offset from cat center (behind the cat)
-        const baseOffsetX = -catWidth * 0.2 // behind
-        const baseOffsetY = catHeight * 0.3 // near bottom
+        const baseOffsetX = -catWidth * 0.2
+        const baseOffsetY = catHeight * 0.3
 
-        // Rotate the offset based on cat's rotation
-        // If facing left, we need to account for the flip
         const flipMultiplier = facingLeft ? -1 : 1
         const rotatedOffsetX = baseOffsetX * Math.cos(rotRad) - baseOffsetY * Math.sin(rotRad)
         const rotatedOffsetY = baseOffsetX * Math.sin(rotRad) + baseOffsetY * Math.cos(rotRad)
@@ -167,92 +316,12 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
         setParticles(prev => [...prev, ...newParticles])
 
-        // Remove particles after lifetime
         setTimeout(() => {
             setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)))
         }, DUST_LIFETIME)
     }, [catWidth, catHeight])
 
-    // Check if cat reached any fruits
-    const checkFruitCollisions = useCallback((currentX: number, currentY: number) => {
-        if (!containerRef.current) return
-
-        const rect = containerRef.current.getBoundingClientRect()
-        const collisionRadius = catWidth * 0.6 // Collision radius around cat center
-
-        fruits.forEach(fruit => {
-            if (reachedFruitsRef.current.has(fruit.id)) return
-
-            // Convert fruit percentage position to pixels
-            const fruitX = (fruit.x / 100) * rect.width - catWidth / 2
-            const fruitY = (fruit.y / 100) * rect.height - catHeight / 2
-
-            // Calculate distance
-            const dx = fruitX - currentX
-            const dy = fruitY - currentY
-            const distance = Math.sqrt(dx * dx + dy * dy)
-
-            // Check collision
-            if (distance < collisionRadius) {
-                reachedFruitsRef.current.add(fruit.id)
-                onFruitReached?.(fruit.id)
-            }
-        })
-    }, [fruits, catWidth, catHeight, onFruitReached])
-
-    const syncContainerSize = useCallback((width: number, height: number) => {
-        if (!initializedRef.current) return
-
-        const prevSize = containerSizeRef.current
-
-        if (!prevSize.width || !prevSize.height || isAnimatingRef.current) {
-            containerSizeRef.current = { width, height }
-            return
-        }
-
-        const widthRatio = width / prevSize.width
-        const heightRatio = height / prevSize.height
-        const nextX = positionRef.current.x * widthRatio
-        const nextY = positionRef.current.y * heightRatio
-
-        positionRef.current = { x: nextX, y: nextY }
-        containerSizeRef.current = { width, height }
-        controls.set({ x: nextX, y: nextY })
-    }, [catWidth, catHeight])
-
-    const setContainerNode = useCallback((node: HTMLDivElement | null) => {
-        resizeObserverRef.current?.disconnect()
-        resizeObserverRef.current = null
-        containerRef.current = node
-
-        if (!node) return
-
-        const observer = new ResizeObserver((entries) => {
-            const entry = entries[0]
-            if (!entry) return
-
-            syncContainerSize(entry.contentRect.width, entry.contentRect.height)
-        })
-
-        observer.observe(node)
-        resizeObserverRef.current = observer
-    }, [syncContainerSize])
-
-    // Initial center positioning — fires synchronously after DOM commit, before paint
-    useLayoutEffect(() => {
-        const node = containerRef.current
-        if (!node || initializedRef.current) return
-
-        const rect = node.getBoundingClientRect()
-        const startX = rect.width / 2 - catWidth / 2
-        const startY = rect.height / 2 - catHeight / 2
-        positionRef.current = { x: startX, y: startY }
-        containerSizeRef.current = { width: rect.width, height: rect.height }
-        controls.set({ x: startX, y: startY, rotate: 0 })
-        initializedRef.current = true
-    }, [catWidth, catHeight])
-
-    // Core movement function - can be called from click handler or ref
+    // Core movement function
     const moveToPosition = useCallback(async (targetX: number, targetY: number, onArrive?: () => void) => {
         if (!containerRef.current || isAnimatingRef.current) return
 
@@ -275,23 +344,19 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         }
         angle = Math.max(-75, Math.min(75, angle))
 
-        // Timing constants
         const accelFrameTime = 350
         const decelFrameTime = 350
         const landHoldTime = 150
         const turnDuration = 0.2
 
-        // Phase thresholds
         const accelEnd = ACCEL_PHASE
         const decelStart = 1 - DECEL_PHASE
 
-        // Direction unit vector
         const dirX = dx / distance
         const dirY = dy / distance
 
         dispatch({ type: 'START_MOVING', facingLeft: goingLeft })
 
-        // === ACCELERATION PHASE (during turn) ===
         phaseRef.current = 'accelerating'
         let scrambleFrame = 0
         const scrambleFrames = [CAT_FRAMES.scramble1, CAT_FRAMES.scramble2]
@@ -303,19 +368,16 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             }
         }, accelFrameTime)
 
-        // Turn toward target
         await controls.start({
             rotate: angle,
             transition: { duration: turnDuration, ease: 'easeOut' }
         })
 
-        // === MOVEMENT WITH TRUE PHASED VELOCITY ===
         let runFrame = 0
         const runFrames = [CAT_FRAMES.run1, CAT_FRAMES.run2, CAT_FRAMES.run3]
         let lastRunFrameTime = performance.now()
         let lastDecelFrameTime = performance.now()
         let lastDustTime = performance.now()
-        let lastFootstepTime = performance.now()
         let decelFrame = 0
         const decelFrames = [CAT_FRAMES.run3, CAT_FRAMES.run2, CAT_FRAMES.run1, CAT_FRAMES.land1]
 
@@ -326,7 +388,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         let lastTime = performance.now()
 
         const animateMovement = (now: number) => {
-            const deltaTime = (now - lastTime) / 1000 // seconds
+            const deltaTime = (now - lastTime) / 1000
             lastTime = now
 
             const traveledDx = currentX - startX
@@ -334,10 +396,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             const traveledDist = Math.sqrt(traveledDx * traveledDx + traveledDy * traveledDy)
             const progress = Math.min(traveledDist / distance, 1)
 
-            // Get velocity for current progress (pixels per second)
             const velocity = getVelocityAtProgress(progress, MAX_SPEED, accelEnd, decelStart)
 
-            // Move cat
             const moveAmount = velocity * deltaTime
             const remainingDist = distance - traveledDist
 
@@ -348,10 +408,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
                 controls.set({ x: currentX, y: currentY })
 
-                // Check for fruit collisions
-                checkFruitCollisions(currentX, currentY)
-
-                // Spawn dust particles while running
                 if (phaseRef.current === 'running' || phaseRef.current === 'accelerating') {
                     if (now - lastDustTime >= DUST_SPAWN_RATE) {
                         spawnDustParticles(currentX, currentY, dirX, dirY, goingLeft, angle)
@@ -359,7 +415,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                     }
                 }
 
-                // Update sprite based on phase
                 if (progress < accelEnd) {
                     phaseRef.current = 'accelerating'
                 } else if (progress < decelStart) {
@@ -385,9 +440,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
                 animationFrameRef.current = requestAnimationFrame(animateMovement)
             } else {
-                // Arrived
                 controls.set({ x: targetX, y: targetY })
-                checkFruitCollisions(targetX, targetY)
                 finishMovement()
             }
         }
@@ -396,7 +449,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             clearInterval(scrambleInterval)
             cancelAnimationFrame(animationFrameRef.current)
 
-            // Landing sequence
             setFrame(CAT_FRAMES.land1)
             phaseRef.current = 'landing'
             await new Promise(resolve => setTimeout(resolve, landHoldTime))
@@ -408,49 +460,43 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             dispatch({ type: 'STOP_MOVING' })
             isAnimatingRef.current = false
 
-            // Call the arrive callback
             onArrive?.()
         }
 
         animationFrameRef.current = requestAnimationFrame(animateMovement)
-    }, [controls, catWidth, catHeight, spawnDustParticles, checkFruitCollisions])
+    }, [controls, catWidth, catHeight, spawnDustParticles])
 
-    // Expose moveTo method via ref
+    // Expose moveTo / moveNear via ref
     useImperativeHandle(ref, () => ({
         moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => {
-            if (!containerRef.current) return
+            const bounds = boundsRef.current
+            if (!bounds.width || !bounds.height) return
 
-            const rect = containerRef.current.getBoundingClientRect()
-            // Convert percentage to pixel coordinates (centered on the percentage point)
-            const targetX = (xPercent / 100) * rect.width - catWidth / 2
-            const targetY = (yPercent / 100) * rect.height - catHeight / 2
+            // Cat is child of the interactive div → use image-relative coords
+            const targetX = (xPercent / 100) * bounds.width - catWidth / 2
+            const targetY = (yPercent / 100) * bounds.height - catHeight / 2
 
             moveToPosition(targetX, targetY, onArrive)
         },
         moveNear: (xPercent: number, yPercent: number, bufferPx: number = 80, onArrive?: () => void) => {
-            if (!containerRef.current) return
+            const bounds = boundsRef.current
+            if (!bounds.width || !bounds.height) return
 
-            const rect = containerRef.current.getBoundingClientRect()
-            // Convert percentage to pixel coordinates
-            const targetX = (xPercent / 100) * rect.width - catWidth / 2
-            const targetY = (yPercent / 100) * rect.height - catHeight / 2
+            const targetX = (xPercent / 100) * bounds.width - catWidth / 2
+            const targetY = (yPercent / 100) * bounds.height - catHeight / 2
 
-            // Calculate current position
             const currentX = positionRef.current.x
             const currentY = positionRef.current.y
 
-            // Calculate direction vector
             const dx = targetX - currentX
             const dy = targetY - currentY
             const distance = Math.sqrt(dx * dx + dy * dy)
 
             if (distance <= bufferPx) {
-                // Already close enough, just call callback
                 onArrive?.()
                 return
             }
 
-            // Calculate stop position (buffer distance away from target)
             const ratio = (distance - bufferPx) / distance
             const stopX = currentX + dx * ratio
             const stopY = currentY + dy * ratio
@@ -460,89 +506,184 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     }), [moveToPosition, catWidth, catHeight])
 
     const handleClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current) return
+        const bounds = boundsRef.current
+        if (!bounds.width || !bounds.height) return
 
-        const rect = containerRef.current.getBoundingClientRect()
+        const rect = e.currentTarget.getBoundingClientRect()
         const targetX = e.clientX - rect.left - catWidth / 2
         const targetY = e.clientY - rect.top - catHeight / 2
 
         moveToPosition(targetX, targetY)
     }, [moveToPosition, catWidth, catHeight])
 
+    const lawnLightSrc = '/assets/lawn.webp'
+    const lawnDarkSrc = '/assets/lawn-night.webp'
+
+    const [isDark, setIsDark] = useState(() => {
+        if (typeof document !== 'undefined') {
+            return document.documentElement.classList.contains('dark')
+        }
+        return false
+    })
+
+    useLayoutEffect(() => {
+        const el = document.documentElement
+        const check = () => setIsDark(el.classList.contains('dark'))
+        const observer = new MutationObserver(() => check())
+        observer.observe(el, { attributes: true, attributeFilter: ['class'] })
+        return () => observer.disconnect()
+    }, [])
+
+    const lawnSrc = isDark ? lawnDarkSrc : lawnLightSrc
+
     return (
-        <section className="relative h-full w-full select-none pointer-events-none overflow-visible">
+        <section
+            ref={containerRef}
+            className="relative h-full w-full select-none overflow-visible"
+        >
+            {/* Lawn image — structural <img>, not a CSS background */}
             {isPortrait ? (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible">
-                    <div
-                        className="w-full aspect-43/24 rotate-90 max-[500px]:scale-180 scale-150 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat"
+                <div
+                    ref={imgWrapperRef}
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible"
+                >
+                    <img
+                        ref={onImgRef}
+                        src={lawnSrc}
+                        alt="Lawn"
+                        className="w-full aspect-43/24 rotate-90 max-[500px]:scale-180 scale-150 object-contain select-none"
+                        onLoad={updateBounds}
                     />
                 </div>
             ) : (
-                <div className="pointer-events-none absolute inset-0 bg-[url('/assets/lawn.webp')] dark:bg-[url('/assets/lawn-night.webp')] bg-contain bg-center bg-no-repeat" />
+                <img
+                    ref={onImgRef}
+                    src={lawnSrc}
+                    alt="Lawn"
+                    className="pointer-events-none absolute inset-0 w-full h-full object-contain select-none"
+                    onLoad={updateBounds}
+                />
             )}
-            <div
-                ref={setContainerNode}
-                onClick={handleClick}
-                className={
-                    isPortrait
-                        ? 'absolute inset-[10%] cursor-pointer pointer-events-auto'
-                        : 'absolute inset-x-[11%] inset-y-[14%] sm:inset-x-[12%] sm:inset-y-[15%] md:inset-[15%] cursor-pointer pointer-events-auto'
-                }
-            >
-                {/* Dust particles layer */}
-                <AnimatePresence>
-                    {particles.map(particle => (
-                        <motion.div
-                            key={particle.id}
-                            initial={{
-                                x: particle.x,
-                                y: particle.y,
-                                opacity: particle.opacity,
-                                scale: 1,
-                                rotate: particle.rotation,
-                            }}
-                            animate={{
-                                x: particle.x + particle.vx * (DUST_LIFETIME / 1000),
-                                y: particle.y + particle.vy * (DUST_LIFETIME / 1000),
-                                opacity: 0,
-                                scale: 0.3,
-                                rotate: particle.rotation + 180,
-                            }}
-                            exit={{ opacity: 0 }}
-                            transition={{
-                                duration: DUST_LIFETIME / 1000,
-                                ease: 'easeOut',
-                            }}
-                            className="absolute pointer-events-none rounded-full"
-                            style={{
-                                width: particle.size,
-                                height: particle.size,
-                                background: 'radial-gradient(circle, rgba(180, 160, 120, 0.8) 0%, rgba(160, 140, 100, 0.4) 50%, transparent 70%)',
-                                filter: 'blur(1px)',
-                            }}
-                        />
-                    ))}
-                </AnimatePresence>
 
-                {/* Cat sprite */}
-                <motion.div
-                    animate={controls}
-                    className="absolute origin-center pointer-events-none z-50"
+            {/* Interactive area — exactly matches the image's rendered bounds */}
+            {imgBounds && (
+                <div
+                    onClick={handleClick}
+                    className="absolute cursor-pointer pointer-events-auto"
                     style={{
-                        width: catWidth,
-                        height: catHeight,
-                        scaleX: catState.facingLeft ? -1 : 1,
+                        left: imgBounds.left,
+                        top: imgBounds.top,
+                        width: imgBounds.width,
+                        height: imgBounds.height,
                     }}
                 >
-                    <CatSprite
-                        ref={spriteRef}
-                        className="pointer-events-none w-full h-full dark:brightness-60"
+                    {/* Dust particles layer */}
+                    <AnimatePresence>
+                        {particles.map(particle => (
+                            <motion.div
+                                key={particle.id}
+                                initial={{
+                                    x: particle.x,
+                                    y: particle.y,
+                                    opacity: particle.opacity,
+                                    scale: 1,
+                                    rotate: particle.rotation,
+                                }}
+                                animate={{
+                                    x: particle.x + particle.vx * (DUST_LIFETIME / 1000),
+                                    y: particle.y + particle.vy * (DUST_LIFETIME / 1000),
+                                    opacity: 0,
+                                    scale: 0.3,
+                                    rotate: particle.rotation + 180,
+                                }}
+                                exit={{ opacity: 0 }}
+                                transition={{
+                                    duration: DUST_LIFETIME / 1000,
+                                    ease: 'easeOut',
+                                }}
+                                className="absolute pointer-events-none rounded-full"
+                                style={{
+                                    width: particle.size,
+                                    height: particle.size,
+                                    background: 'radial-gradient(circle, rgba(180, 160, 120, 0.8) 0%, rgba(160, 140, 100, 0.4) 50%, transparent 70%)',
+                                    filter: 'blur(1px)',
+                                }}
+                            />
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Progress indicator */}
+                    {progress && (
+                        <div className="absolute left-1/2 -top-10 min-[500px]:-top-3 -translate-x-1/2 z-40">
+                            <DiscreteProgress
+                                value={progress.value}
+                                conversationCompleted={progress.conversationCompleted}
+                                lang={progress.lang as Lang}
+                                showLang={false}
+                            />
+                        </div>
+                    )}
+
+                    {/* Items layer */}
+                    <AnimatePresence>
+                        {items.map((item) => (
+                            item.type === 'story' ? (
+                                <StoryPill
+                                    key={item.id}
+                                    id={item.id}
+                                    x={item.displayX}
+                                    y={item.displayY}
+                                    delay={item.delay}
+                                    onClick={() => onItemClick?.(item)}
+                                    isActive={item.isActive}
+                                />
+                            ) : item.type === 'conversation' ? (
+                                <CatTaskPill
+                                    key={item.id}
+                                    id={item.id}
+                                    x={item.displayX}
+                                    y={item.displayY}
+                                    delay={item.delay}
+                                    onClick={() => onItemClick?.(item)}
+                                    isLocked={item.isLocked ?? false}
+                                    isCompleted={item.isCompleted ?? false}
+                                />
+                            ) : (
+                                <WordPill
+                                    key={item.id}
+                                    id={item.id}
+                                    word={item.label}
+                                    x={item.displayX}
+                                    y={item.displayY}
+                                    delay={item.delay}
+                                    onClick={() => onItemClick?.(item)}
+                                    isCompleted={item.isCompleted ?? false}
+                                    isActive={item.isActive}
+                                />
+                            )
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Cat sprite */}
+                    <motion.div
+                        animate={controls}
+                        className="absolute origin-center pointer-events-none z-50"
                         style={{
-                            backgroundPosition: CAT_FRAMES.idle,
+                            width: catWidth,
+                            height: catHeight,
+                            scaleX: catState.facingLeft ? -1 : 1,
                         }}
-                    />
-                </motion.div>
-            </div>
+                    >
+                        <CatSprite
+                            ref={spriteRef}
+                            className="pointer-events-none w-full h-full dark:brightness-60"
+                            style={{
+                                backgroundPosition: CAT_FRAMES.idle,
+                            }}
+                        />
+                    </motion.div>
+                </div>
+            )}
         </section>
     )
 })
