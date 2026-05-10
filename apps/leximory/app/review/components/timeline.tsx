@@ -7,18 +7,18 @@ import { momentSH } from '@/lib/moment'
 import Comment from '@/components/comment'
 import { ScopeProvider } from 'jotai-scope'
 import { HydrationBoundary } from 'jotai-ssr'
-import { useAtomValue } from 'jotai'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
 import { DiscreteProgress } from './discrete-progress'
-import { reviewProgressFamily } from '../atoms'
+import type { ReviewProgressData } from '../atoms'
 
 interface TimelineProps {
     days: DayData[]
+    progressOverrides: Record<string, ReviewProgressData>
     onReviewClick: (day: DayData, lang: Lang) => void
 }
 
-export function Timeline({ days, onReviewClick }: TimelineProps) {
+export function Timeline({ days, progressOverrides, onReviewClick }: TimelineProps) {
     const chartData = days.map(day => ({
         date: day.displayDate,
         '词汇': day.count
@@ -49,6 +49,7 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
                             key={day.date}
                             day={day}
                             isToday={day.isToday}
+                            progressOverrides={progressOverrides}
                             onReviewClick={(lang) => onReviewClick(day, lang)}
                         />
                     ))}
@@ -58,9 +59,10 @@ export function Timeline({ days, onReviewClick }: TimelineProps) {
     )
 }
 
-function TimelineRow({ day, isToday, onReviewClick }: {
+function TimelineRow({ day, isToday, progressOverrides, onReviewClick }: {
     day: DayData
     isToday: boolean
+    progressOverrides: Record<string, ReviewProgressData>
     onReviewClick: (lang: Lang) => void
 }) {
     if (isToday) {
@@ -83,11 +85,11 @@ function TimelineRow({ day, isToday, onReviewClick }: {
 
                 <div className="flex flex-wrap items-center space-x-3">
                     {Object.entries(day.progressByLang).map(([lang, progress]) => (
-                        <SyncedDiscreteProgress
+                        <DiscreteProgress
                             key={lang}
-                            date={day.date}
+                            value={(progressOverrides[`${day.date}:${lang}`] ?? progress)?.percentage ?? 0}
+                            conversationCompleted={(progressOverrides[`${day.date}:${lang}`] ?? progress)?.conversationCompleted ?? false}
                             lang={lang as Lang}
-                            progress={progress}
                             onClick={() => onReviewClick(lang as Lang)}
                         />
                     ))}
@@ -149,32 +151,4 @@ function WordPill({ word, isToday, deleteId, lang }: { word: string; isToday?: b
     }
 
     return commentElement
-}
-
-function SyncedDiscreteProgress({
-    date,
-    lang,
-    progress,
-    onClick,
-}: {
-    date: string
-    lang: Lang
-    progress: { percentage: number; conversationCompleted: boolean } | undefined
-    onClick: () => void
-}) {
-    const atomProgress = useAtomValue(reviewProgressFamily(`${date}:${lang}`))
-
-    const effectiveProgress = atomProgress ?? {
-        percentage: progress?.percentage ?? 0,
-        conversationCompleted: progress?.conversationCompleted ?? false,
-    }
-
-    return (
-        <DiscreteProgress
-            value={effectiveProgress.percentage}
-            conversationCompleted={effectiveProgress.conversationCompleted}
-            lang={lang}
-            onClick={onClick}
-        />
-    )
 }

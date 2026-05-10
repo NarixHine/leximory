@@ -620,6 +620,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                                 conversationCompleted={progress.conversationCompleted}
                                 lang={progress.lang as Lang}
                                 showLang={false}
+                                showThresholdLabels
                             />
                         </div>
                     )}

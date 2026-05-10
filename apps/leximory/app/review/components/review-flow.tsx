@@ -3,13 +3,12 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMediaQuery } from 'usehooks-ts'
-import { useSetAtom } from 'jotai'
 import { Lawn, LawnRef, type LawnItem } from './lawn'
 import { StoryDrawer } from './story-drawer'
 import { TranslationExercise } from './translation-popover'
 import { ConversationExercise } from './conversation-popover'
 import { useReviewProgress } from '../hooks/use-review-progress'
-import { reviewProgressFamily } from '../atoms'
+import type { ReviewProgressData } from '../atoms'
 import { PiX } from 'react-icons/pi'
 import { Spinner } from '@heroui/spinner'
 import { Card, CardBody } from '@heroui/card'
@@ -36,7 +35,7 @@ interface ReviewItem {
 interface ReviewFlowProps {
     date: string
     lang: string
-    onExit: () => void
+    onExit: (progress: ReviewProgressData) => void
 }
 
 type OpenPanel = 'story' | 'translation' | 'conversation' | null
@@ -182,13 +181,14 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         [story, translations, conversation]
     )
 
-    const progressKey = `${date}:${lang}` as const
-    const setProgress = useSetAtom(reviewProgressFamily(progressKey))
-
-    setProgress({
+    const currentProgress = useMemo<ReviewProgressData>(() => ({
         percentage: reviewCompletion.percentage,
         conversationCompleted: reviewCompletion.conversationCompleted,
-    })
+    }), [reviewCompletion.conversationCompleted, reviewCompletion.percentage])
+
+    const handleExit = useCallback(() => {
+        onExit(currentProgress)
+    }, [currentProgress, onExit])
 
     const displayItems = useMemo(
         () => items.map((item) => {
@@ -264,7 +264,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         >
             <Button
                 radius='full'
-                onPress={onExit}
+                onPress={handleExit}
                 variant='light'
                 startContent={<PiX />}
                 className="absolute top-6 left-6 z-50"

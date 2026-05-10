@@ -7,6 +7,7 @@ import { ReviewFlow } from './components/review-flow'
 import Main from '@/components/ui/main'
 import type { DayData } from './data'
 import { Lang } from '@repo/env/config'
+import type { ReviewProgressData } from './atoms'
 
 interface SelectedReviewDay {
     date: string
@@ -20,6 +21,7 @@ interface ExperimentClientProps {
 
 export default function ExperimentClient({ days, Header }: ExperimentClientProps) {
     const [selectedDay, setSelectedDay] = useState<SelectedReviewDay | null>(null)
+    const [progressOverrides, setProgressOverrides] = useState<Record<string, ReviewProgressData>>({})
 
     const handleReviewClick = (day: DayData, lang: Lang) => {
         setSelectedDay({
@@ -28,7 +30,13 @@ export default function ExperimentClient({ days, Header }: ExperimentClientProps
         })
     }
 
-    const handleExitReview = () => {
+    const handleExitReview = (progress: ReviewProgressData) => {
+        if (selectedDay) {
+            setProgressOverrides((current) => ({
+                ...current,
+                [`${selectedDay.date}:${selectedDay.lang}`]: progress,
+            }))
+        }
         setSelectedDay(null)
     }
 
@@ -50,6 +58,7 @@ export default function ExperimentClient({ days, Header }: ExperimentClientProps
                         {/* Timeline */}
                         <Timeline
                             days={days}
+                            progressOverrides={progressOverrides}
                             onReviewClick={handleReviewClick}
                         />
                     </motion.div>

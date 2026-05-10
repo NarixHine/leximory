@@ -9,34 +9,47 @@ interface DiscreteProgressProps {
     value: number
     lang?: Lang
     showLang?: boolean
+    showThresholdLabels?: boolean
     onClick?: () => void
     conversationCompleted?: boolean
 }
+
+const thresholdLabels = ['1%', '30%', '60%'] as const
 
 export function DiscreteProgress({
     value,
     lang,
     showLang = true,
+    showThresholdLabels = false,
     onClick,
     conversationCompleted,
 }: DiscreteProgressProps) {
     const state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
     const langCode = lang ? getLanguageStrategy(lang).type : null
 
+    const segments = [1, 2, 3] as const
     const bar = (
-        <div className="flex items-center gap-0.5">
-            <div className={cn(
-                "h-2 w-8 rounded-l transition-colors",
-                state >= 1 ? "bg-default-400" : "bg-default-200"
-            )} />
-            <div className={cn(
-                "h-2 w-8 rounded-none transition-colors",
-                state >= 2 ? "bg-default-400" : "bg-default-200"
-            )} />
-            <div className={cn(
-                "h-2 w-8 rounded-r transition-colors",
-                state >= 3 ? "bg-default-400" : "bg-default-200"
-            )} />
+        <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-0.5">
+                {segments.map((segment) => (
+                    <div
+                        key={segment}
+                        className={cn(
+                            "h-2 w-8 transition-colors",
+                            segment === 1 && "rounded-l",
+                            segment === 3 && "rounded-r",
+                            state >= segment ? "bg-default-400" : "bg-default-200"
+                        )}
+                    />
+                ))}
+            </div>
+            {showThresholdLabels && (
+                <div className="grid w-25 grid-cols-3 gap-0.5 text-center font-mono text-xs leading-none text-default-400">
+                    {thresholdLabels.map((label) => (
+                        <span key={label}>{label}</span>
+                    ))}
+                </div>
+            )}
         </div>
     )
 

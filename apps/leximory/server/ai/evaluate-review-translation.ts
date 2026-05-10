@@ -39,7 +39,7 @@ Student's ${reviewCopy.targetLanguageName} translation: ${submission}
 </criteria>
 
 <annotation_guidelines>
-- badPairs must point to exact substrings from the student's answer (narrow down to the most precise chunk possible instead of including a large portion).
+- badPairs must ALWAYS point to the exact substrings from the student's answer (narrow down to the most precise chunk possible instead of including a large portion).
 - improved should contain a corrected version plus a brief Chinese explanation (use symbols like \`→\`; be concrete with the "why").
 - rationale should be one short Chinese sentence about the overall quality.
 </annotation_guidelines>

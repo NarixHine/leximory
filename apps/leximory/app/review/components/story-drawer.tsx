@@ -20,19 +20,20 @@ export function StoryDrawer({ isOpen, onClose, content, lang }: StoryDrawerProps
         <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <Drawer.Portal>
                 <Drawer.Content
-                    className="fixed inset-x-0 bottom-0 z-52 rounded-t-4xl justify-center flex outline-none"
+                    className='fixed inset-x-0 bottom-0 z-52 rounded-t-4xl justify-center flex outline-none'
                     style={{ maxHeight: '85vh' }}
                 >
-                    <div className="px-8 pt-5 pb-10 bg-background mx-auto max-w-xl rounded-t-4xl border border-default-200 overflow-y-auto scrollbar-hide">
+                    <Drawer.Title className='sr-only'>连词成文</Drawer.Title>
+                    <div className='px-8 pt-5 pb-10 bg-background mx-auto max-w-xl rounded-t-4xl border border-default-200 overflow-y-auto scrollbar-hide'>
                         {/* Handle bar */}
-                        <div className="mx-auto w-12 h-1.5 bg-default-200 rounded-full -mb-2" />
+                        <div className='mx-auto w-12 h-1.5 bg-default-200 rounded-full -mb-2' />
 
                         {/* Content with max-width like article page */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="mx-auto"
+                            className='mx-auto'
                         >
                             {content ? (
                                 <ScopeProvider atoms={[langAtom]}>
@@ -44,8 +45,8 @@ export function StoryDrawer({ isOpen, onClose, content, lang }: StoryDrawerProps
                                     </HydrationBoundary>
                                 </ScopeProvider>
                             ) : (
-                                <div className="flex items-center justify-center py-12">
-                                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                <div className='flex items-center justify-center py-12'>
+                                    <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
                                 </div>
                             )}
                         </motion.div>
