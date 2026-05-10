@@ -1,5 +1,6 @@
 'use client'
 
+import type { FormEvent, KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@heroui/button'
 import { PiArrowUp } from 'react-icons/pi'
@@ -32,6 +33,26 @@ export function ReviewComposer({
     className,
     textareaClassName,
 }: ReviewComposerProps) {
+    const submit = () => {
+        if (disabled || isLoading || !canSubmit) {
+            return
+        }
+
+        onSubmit()
+    }
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        submit()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            submit()
+        }
+    }
+
     return (
         <AnimatePresence>
             {isOpen ? (
@@ -43,8 +64,12 @@ export function ReviewComposer({
                     className='fixed bottom-6 left-0 right-0 z-51 px-4'
                 >
                     <div className='mx-auto max-w-2xl'>
-                        <div className={cn('rounded-4xl border p-3 pt-2', className)}>
+                        <form
+                            onSubmit={handleSubmit}
+                            className={cn('rounded-4xl border p-3 pt-2', className)}
+                        >
                             <textarea
+                                name='review-response'
                                 value={value}
                                 onChange={(event) => onChange(event.target.value)}
                                 className={cn(
@@ -54,27 +79,24 @@ export function ReviewComposer({
                                 rows={rows}
                                 placeholder={placeholder}
                                 disabled={disabled}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' && !event.shiftKey) {
-                                        event.preventDefault()
-                                        onSubmit()
-                                    }
-                                }}
+                                enterKeyHint='send'
+                                onKeyDown={handleKeyDown}
                             />
                             <div className='mt-2 flex justify-end pt-2'>
                                 <Button
+                                    type='submit'
                                     isIconOnly
                                     color='primary'
                                     radius='full'
                                     size='sm'
-                                    onPress={onSubmit}
                                     isLoading={isLoading}
                                     isDisabled={!canSubmit}
+                                    aria-label='提交'
                                 >
                                     <PiArrowUp className='h-4 w-4' />
                                 </Button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </motion.div>
             ) : null}
