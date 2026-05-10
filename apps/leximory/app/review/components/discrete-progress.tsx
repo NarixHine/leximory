@@ -10,6 +10,7 @@ interface DiscreteProgressProps {
     lang?: Lang
     showLang?: boolean
     showThresholdLabels?: boolean
+    showIcon?: boolean
     onClick?: () => void
     conversationCompleted?: boolean
 }
@@ -21,6 +22,7 @@ export function DiscreteProgress({
     lang,
     showLang = true,
     showThresholdLabels = false,
+    showIcon = true,
     onClick,
     conversationCompleted,
 }: DiscreteProgressProps) {
@@ -30,6 +32,13 @@ export function DiscreteProgress({
     const segments = [1, 2, 3] as const
     const bar = (
         <div className="flex flex-col items-center gap-1">
+            {showThresholdLabels && (
+                <div className="grid w-25 grid-cols-3 gap-0.5 text-center font-mono text-xs leading-none text-default-400">
+                    {thresholdLabels.map((label) => (
+                        <span key={label}>{label}</span>
+                    ))}
+                </div>
+            )}
             <div className="flex items-center gap-0.5">
                 {segments.map((segment) => (
                     <div
@@ -43,13 +52,6 @@ export function DiscreteProgress({
                     />
                 ))}
             </div>
-            {showThresholdLabels && (
-                <div className="grid w-25 grid-cols-3 gap-0.5 text-center font-mono text-xs leading-none text-default-400">
-                    {thresholdLabels.map((label) => (
-                        <span key={label}>{label}</span>
-                    ))}
-                </div>
-            )}
         </div>
     )
 
@@ -73,7 +75,7 @@ export function DiscreteProgress({
                     </span>
                 )}
                 {bar}
-                {icon}
+                {showIcon && icon}
             </button>
         )
     }
@@ -86,7 +88,7 @@ export function DiscreteProgress({
                 </span>
             )}
             {bar}
-            {icon}
+            {showIcon && icon}
         </div>
     )
 }

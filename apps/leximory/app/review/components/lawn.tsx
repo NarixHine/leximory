@@ -614,8 +614,9 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
                     {/* Progress indicator */}
                     {progress && (
-                        <div className="absolute left-1/2 -top-10 min-[500px]:-top-3 -translate-x-1/2 z-40">
+                        <div className="absolute left-1/2 -top-22 min-[500px]:-top-3 -translate-x-1/2 z-40">
                             <DiscreteProgress
+                                showIcon={false}
                                 value={progress.value}
                                 conversationCompleted={progress.conversationCompleted}
                                 lang={progress.lang as Lang}
