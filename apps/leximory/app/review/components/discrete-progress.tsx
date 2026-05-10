@@ -15,7 +15,7 @@ interface DiscreteProgressProps {
     conversationCompleted?: boolean
 }
 
-const thresholdLabels = ['1%', '30%', '60%'] as const
+const thresholdLabels = ['0%', '1%', '30%', '60%'] as const
 
 export function DiscreteProgress({
     value,
@@ -33,7 +33,7 @@ export function DiscreteProgress({
     const bar = (
         <div className="flex flex-col items-center gap-1">
             {showThresholdLabels && (
-                <div className="grid w-25 grid-cols-3 gap-0.5 text-center font-mono text-xs leading-none text-default-400">
+                <div className="grid w-35 grid-cols-4 gap-1 text-center font-mono text-xs leading-none text-default-400">
                     {thresholdLabels.map((label) => (
                         <span key={label}>{label}</span>
                     ))}
