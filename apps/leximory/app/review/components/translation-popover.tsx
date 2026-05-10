@@ -262,18 +262,24 @@ export function TranslationExercise({
                                     }
 
                                     return (
-                                        <button
+                                        <span
                                             key={`${segment.text}-${segmentIndex}`}
-                                            type='button'
+                                            role='button'
+                                            tabIndex={0}
                                             onClick={() => setSelectedBadPairIndex(segment.badPairIndex)}
-                                            className={`rounded-sm px-1 py-px transition-colors ${
+                                            onKeyDown={(event) => {
+                                                if (event.key !== 'Enter' && event.key !== ' ') return
+                                                event.preventDefault()
+                                                setSelectedBadPairIndex(segment.badPairIndex)
+                                            }}
+                                            className={`cursor-pointer box-decoration-clone rounded-sm px-1 py-px transition-colors ${
                                                 selectedBadPairIndex === segment.badPairIndex
                                                     ? 'bg-warning-300'
                                                     : 'bg-warning-200 hover:bg-warning-300/80'
                                             }`}
                                         >
                                             {segment.text}
-                                        </button>
+                                        </span>
                                     )
                                 })}
                             </div>
