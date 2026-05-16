@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils'
 import { AreaChart } from '@/components/ui/area-chart'
-import type { DayData } from '../data'
 import { momentSH } from '@/lib/moment'
 import Comment from '@/components/comment'
 import { ScopeProvider } from 'jotai-scope'
@@ -10,15 +9,18 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
 import { DiscreteProgress } from './discrete-progress'
+import { ReviewStreak } from './review-streak'
+import type { DayData, ReviewStreakData } from '../data'
 import type { ReviewProgressData } from '../atoms'
 
 interface TimelineProps {
     days: DayData[]
+    streak: ReviewStreakData
     progressOverrides: Record<string, ReviewProgressData>
     onReviewClick: (day: DayData, lang: Lang) => void
 }
 
-export function Timeline({ days, progressOverrides, onReviewClick }: TimelineProps) {
+export function Timeline({ days, streak, progressOverrides, onReviewClick }: TimelineProps) {
     const chartData = days.map(day => ({
         date: day.displayDate,
         '词汇': day.count
@@ -26,7 +28,8 @@ export function Timeline({ days, progressOverrides, onReviewClick }: TimelinePro
 
     return (
         <div className="space-y-10">
-            {/* Chart at top */}
+            <ReviewStreak streak={streak} />
+
             <div className="space-y-4">
                 <AreaChart
                     data={chartData}

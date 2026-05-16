@@ -160,3 +160,33 @@ export async function listFlashbacksWithin({
         ...normalizeReviewConversationPayload(row.translations, row.conversation),
     }))
 }
+
+export async function listFlashbacksForReviewProgress({
+    userId,
+    from = 0,
+    to,
+}: {
+    userId: string
+    from?: number
+    to?: number
+}): Promise<Array<Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>>> {
+    let query = supabase
+        .from('flashbacks')
+        .select('date, lang, story, translations, conversation')
+        .eq('user', userId)
+        .order('date', { ascending: false })
+
+    if (to !== undefined) {
+        query = query.range(from, to)
+    }
+
+    const { data } = await query
+        .throwOnError()
+
+    return data.map((row) => ({
+        date: row.date,
+        lang: row.lang,
+        story: row.story || '',
+        ...normalizeReviewConversationPayload(row.translations, row.conversation),
+    }))
+}

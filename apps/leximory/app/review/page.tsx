@@ -1,18 +1,20 @@
 import { Metadata } from 'next'
-import { getTimelineData } from './data'
+import { getTimelineData } from '@/server/db/review'
 import ExperimentClient from './client'
 import { Suspense } from 'react'
 import { PiCableCar } from 'react-icons/pi'
 import Bell from './components/bell-server'
+import { getUserOrThrow } from '@repo/user'
 
 export const metadata: Metadata = {
     title: '学习轨迹',
 }
 
 export default async function ExperimentPage() {
-    const { days } = await getTimelineData()
+    const { userId } = await getUserOrThrow()
+    const { days, streak } = await getTimelineData(userId)
 
-    return <ExperimentClient days={days} Header={
+    return <ExperimentClient days={days} streak={streak} Header={
         <header className="mb-1 sm:ml-22">
             <div className='flex items-center gap-2'>
                 <span className='text-sm font-mono uppercase tracking-wide text-default-400'>

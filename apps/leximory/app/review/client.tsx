@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Timeline } from './components/timeline'
 import { ReviewFlow } from './components/review-flow'
 import Main from '@/components/ui/main'
-import type { DayData } from './data'
+import type { DayData, ReviewStreakData } from './data'
 import { Lang } from '@repo/env/config'
 import type { ReviewProgressData } from './atoms'
 
@@ -16,10 +16,11 @@ interface SelectedReviewDay {
 
 interface ExperimentClientProps {
     days: DayData[]
+    streak: ReviewStreakData
     Header: ReactNode
 }
 
-export default function ExperimentClient({ days, Header }: ExperimentClientProps) {
+export default function ExperimentClient({ days, streak, Header }: ExperimentClientProps) {
     const [selectedDay, setSelectedDay] = useState<SelectedReviewDay | null>(null)
     const [progressOverrides, setProgressOverrides] = useState<Record<string, ReviewProgressData>>({})
 
@@ -58,6 +59,7 @@ export default function ExperimentClient({ days, Header }: ExperimentClientProps
                         {/* Timeline */}
                         <Timeline
                             days={days}
+                            streak={streak}
                             progressOverrides={progressOverrides}
                             onReviewClick={handleReviewClick}
                         />
