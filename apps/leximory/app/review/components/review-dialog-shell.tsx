@@ -10,6 +10,7 @@ interface ReviewDialogShellProps {
     children: ReactNode
     className?: string
     cardClassName?: string
+    bodyClassName?: string
 }
 
 export function ReviewDialogShell({
@@ -17,6 +18,7 @@ export function ReviewDialogShell({
     children,
     className,
     cardClassName,
+    bodyClassName,
 }: ReviewDialogShellProps) {
     return (
         <AnimatePresence>
@@ -29,7 +31,7 @@ export function ReviewDialogShell({
                     className={cn('fixed top-24 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 px-4', className)}
                 >
                     <Card shadow='none' className={cn('rounded-4xl border-7 shadow-none backdrop-blur', cardClassName)}>
-                        <CardBody className='gap-4'>
+                        <CardBody className={cn('gap-4', bodyClassName)}>
                             {children}
                         </CardBody>
                     </Card>
