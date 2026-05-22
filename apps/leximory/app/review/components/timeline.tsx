@@ -9,28 +9,26 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
 import { DiscreteProgress } from './discrete-progress'
-import { ReviewStreak } from './review-streak'
-import type { DayData, ReviewStreakData } from '../data'
+import type { ReactNode } from 'react'
+import type { DayData } from '../data'
 import type { ReviewProgressData } from '../atoms'
 
 interface TimelineProps {
     days: DayData[]
-    streak: ReviewStreakData
+    streakSlot: ReactNode
     progressOverrides: Record<string, ReviewProgressData>
     onReviewClick: (day: DayData, lang: Lang) => void
 }
 
-export function Timeline({ days, streak, progressOverrides, onReviewClick }: TimelineProps) {
+export function Timeline({ days, streakSlot, progressOverrides, onReviewClick }: TimelineProps) {
     const chartData = days.map(day => ({
         date: day.displayDate,
         '词汇': day.count
     })).reverse()
 
     return (
-        <div className="space-y-10">
-            <ReviewStreak streak={streak} />
-
-            <div className="space-y-4">
+        <div className="space-y-6">
+            <div className="space-y-4 flex flex-col items-center">
                 <AreaChart
                     data={chartData}
                     index="date"
@@ -42,6 +40,7 @@ export function Timeline({ days, streak, progressOverrides, onReviewClick }: Tim
                     allowDecimals={false}
                     className="h-28"
                 />
+                {streakSlot}
             </div>
 
             {/* Timeline */}

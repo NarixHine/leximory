@@ -3,11 +3,11 @@ import { Lang } from '@repo/env/config'
 import { stdMoment } from '@repo/utils'
 import { getReviewCompletion, type ReviewConversation, type ReviewTranslation } from '@/lib/review'
 import { getTimelineWords } from '@/server/db/word'
-import { listFlashbacksForReviewProgress, listFlashbacksWithin } from '@/server/db/flashback'
+import { listFlashbacksWithin, type FlashbackReviewProgress } from '@/server/db/flashback'
 
 const REVIEW_STREAK_THRESHOLD = 60
-const REVIEW_STREAK_PAGE_SIZE = 64
-const REVIEW_STREAK_MARKER_DAYS = 8
+const REVIEW_STREAK_MARKER_DAYS = 7
+const REVIEW_STREAK_LOOKBACK_DAYS = 30
 
 export interface DayData {
     date: string
@@ -29,7 +29,6 @@ export interface DayData {
 
 export interface TimelineData {
     days: DayData[]
-    streak: ReviewStreakData
 }
 
 export interface ReviewStreakData {
@@ -45,10 +44,7 @@ export interface ReviewStreakData {
 }
 
 export async function getTimelineData(userId: string): Promise<TimelineData> {
-    const [wordRows, streak] = await Promise.all([
-        getTimelineWords({ userId, limit: 100 }),
-        getReviewStreakData(userId),
-    ])
+    const wordRows = await getTimelineWords({ userId, limit: 100 })
 
     const wordsByDate = new Map<string, DayData['words']>()
     for (const row of wordRows) {
@@ -65,7 +61,7 @@ export async function getTimelineData(userId: string): Promise<TimelineData> {
 
     const dates = Array.from(wordsByDate.keys()).sort((left, right) => right.localeCompare(left))
     if (dates.length === 0) {
-        return { days: [], streak }
+        return { days: [] }
     }
 
     const startDate = dates[dates.length - 1]
@@ -118,94 +114,33 @@ export async function getTimelineData(userId: string): Promise<TimelineData> {
         }
     })
 
-    return { days, streak }
+    return { days }
 }
 
-async function getReviewStreakData(userId: string): Promise<ReviewStreakData> {
+export async function getReviewStreakData(userId: string): Promise<ReviewStreakData> {
     const today = stdMoment().startOf('day')
     const todayKey = today.format('YYYY-MM-DD')
     const yesterday = today.clone().subtract(1, 'day')
-    const streakDates = new Set<string>()
-    let isTodayActive = false
-    let from = 0
-    let currentDate: string | null = null
-    let currentDateActive = false
-    let expectedDate: ReturnType<typeof stdMoment> | null = null
-    let done = false
-
-    const finishDate = (dateKey: string, active: boolean) => {
-        const date = stdMoment(dateKey).startOf('day')
-
-        if (dateKey === todayKey) {
-            isTodayActive = active
-        }
-
-        if (!expectedDate) {
-            if (date.isSame(today, 'day')) {
-                if (!active) return
-                expectedDate = today.clone()
-            } else if (date.isSame(yesterday, 'day')) {
-                if (!active) {
-                    done = true
-                    return
-                }
-                expectedDate = yesterday.clone()
-            } else {
-                done = true
-                return
-            }
-        }
-
-        if (!date.isSame(expectedDate, 'day') || !active) {
-            done = true
-            return
-        }
-
-        streakDates.add(dateKey)
-        expectedDate = expectedDate.clone().subtract(1, 'day')
-    }
-
-    while (!done) {
-        const rows = await listFlashbacksForReviewProgress({
+    const markerStart = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS - 1, 'day')
+    const reviewedDates = await getReviewedDatesWithin({
+        userId,
+        startDate: markerStart.format('YYYY-MM-DD'),
+        endDate: todayKey,
+    })
+    const isTodayActive = reviewedDates.has(todayKey)
+    const streakStart = isTodayActive
+        ? today.clone()
+        : reviewedDates.has(yesterday.format('YYYY-MM-DD'))
+            ? yesterday.clone()
+            : null
+    const total = streakStart
+        ? await countCurrentReviewStreak({
             userId,
-            from,
-            to: from + REVIEW_STREAK_PAGE_SIZE - 1,
+            startDate: streakStart,
+            reviewedDates,
+            knownRangeStart: markerStart,
         })
-
-        if (rows.length === 0) {
-            if (currentDate) {
-                finishDate(currentDate, currentDateActive)
-            }
-            break
-        }
-
-        for (const row of rows) {
-            if (currentDate && row.date !== currentDate) {
-                finishDate(currentDate, currentDateActive)
-                if (done) break
-                currentDateActive = false
-            }
-
-            currentDate = row.date
-            if (!currentDateActive) {
-                const completion = getReviewCompletion({
-                    story: row.story,
-                    translations: row.translations,
-                    conversation: row.conversation,
-                })
-                currentDateActive = completion.percentage >= REVIEW_STREAK_THRESHOLD
-            }
-        }
-
-        if (done || rows.length < REVIEW_STREAK_PAGE_SIZE) {
-            if (!done && currentDate) {
-                finishDate(currentDate, currentDateActive)
-            }
-            break
-        }
-
-        from += REVIEW_STREAK_PAGE_SIZE
-    }
+        : 0
 
     const checkDays = Array.from({ length: REVIEW_STREAK_MARKER_DAYS }, (_, index) => {
         const date = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS - index - 1, 'day')
@@ -215,14 +150,92 @@ async function getReviewStreakData(userId: string): Promise<ReviewStreakData> {
             date: dateKey,
             displayDate: date.format('M/D'),
             dayOfWeek: date.format('ddd'),
-            completed: streakDates.has(dateKey),
+            completed: reviewedDates.has(dateKey),
         }
     })
 
     return {
-        total: streakDates.size,
+        total,
         checkDays,
         threshold: REVIEW_STREAK_THRESHOLD,
         isTodayActive,
     }
+}
+
+async function countCurrentReviewStreak({
+    userId,
+    startDate,
+    reviewedDates,
+    knownRangeStart,
+}: {
+    userId: string
+    startDate: ReturnType<typeof stdMoment>
+    reviewedDates: Set<string>
+    knownRangeStart: ReturnType<typeof stdMoment>
+}) {
+    let total = 0
+    let cursor = startDate.clone()
+    let earliestKnownDate = knownRangeStart.clone()
+
+    while (true) {
+        if (cursor.isBefore(earliestKnownDate, 'day')) {
+            const nextRangeEnd = earliestKnownDate.clone().subtract(1, 'day')
+            const nextRangeStart = nextRangeEnd.clone().subtract(REVIEW_STREAK_LOOKBACK_DAYS - 1, 'day')
+            const olderReviewedDates = await getReviewedDatesWithin({
+                userId,
+                startDate: nextRangeStart.format('YYYY-MM-DD'),
+                endDate: nextRangeEnd.format('YYYY-MM-DD'),
+            })
+
+            for (const dateKey of olderReviewedDates) {
+                reviewedDates.add(dateKey)
+            }
+            earliestKnownDate = nextRangeStart
+        }
+
+        if (!reviewedDates.has(cursor.format('YYYY-MM-DD'))) {
+            return total
+        }
+
+        total++
+        cursor = cursor.subtract(1, 'day')
+    }
+}
+
+async function getReviewedDatesWithin({
+    userId,
+    startDate,
+    endDate,
+}: {
+    userId: string
+    startDate: string
+    endDate: string
+}) {
+    const rows = await listFlashbacksWithin({ userId, startDate, endDate })
+    return getReviewedDates(rows)
+}
+
+function getReviewedDates(rows: FlashbackReviewProgress[]) {
+    const reviewedDates = new Set<string>()
+    for (const row of rows) {
+        if (reviewedDates.has(row.date)) {
+            continue
+        }
+
+        if (isLanguageReviewCompleted(row)) {
+            reviewedDates.add(row.date)
+        }
+    }
+
+    return reviewedDates
+}
+
+function isLanguageReviewCompleted(row: FlashbackReviewProgress) {
+    const completion = getReviewCompletion({
+        story: row.story,
+        translations: row.translations,
+        conversation: row.conversation,
+    })
+
+    return completion.percentage >= REVIEW_STREAK_THRESHOLD
 }

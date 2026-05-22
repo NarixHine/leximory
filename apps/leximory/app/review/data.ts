@@ -1,1 +1,1 @@
-export type { DayData, ReviewStreakData, TimelineData } from '@/server/db/review'
+export type { DayData, ReviewStreakData } from '@/server/db/review'
