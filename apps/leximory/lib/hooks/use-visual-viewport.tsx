@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-export function useVisualViewport() {
-    const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({})
+export function useSmoothVisualViewport() {
+    const [viewportCoords, setViewportCoords] = useState({ top: 96, scaleWidth: 1 })
 
     useEffect(() => {
         if (typeof window === 'undefined' || !window.visualViewport) return
@@ -10,21 +10,18 @@ export function useVisualViewport() {
             const vv = window.visualViewport
             if (!vv) return
 
-            // Calculate offset if the viewport has shifted due to the keyboard
-            // We pin it relative to the top of the *visual* viewport
-            setViewportStyle({
-                position: 'absolute',
-                top: `${vv.offsetTop + 96}px`, // 96px matches your 'top-24' spacing
-                left: `${vv.offsetLeft + vv.width / 2}px`,
-                transform: 'translateX(-50%)',
-                width: `${vv.width}px`, // Ensures it scales properly to the visible space
+            // 96px matches top-24. Add the offset dynamically.
+            // Grab the scale to handle virtual zoom pinch behaviors if needed.
+            setViewportCoords({
+                top: vv.offsetTop + 96,
+                scaleWidth: vv.width
             })
         }
 
+        // iOS triggers scroll and resize events rapidly while the keyboard opens
         window.visualViewport.addEventListener('resize', handleResize)
         window.visualViewport.addEventListener('scroll', handleResize)
 
-        // Initial call
         handleResize()
 
         return () => {
@@ -33,5 +30,5 @@ export function useVisualViewport() {
         }
     }, [])
 
-    return viewportStyle
+    return viewportCoords
 }
