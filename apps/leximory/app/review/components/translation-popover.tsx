@@ -211,9 +211,7 @@ export function TranslationExercise({
         <div ref={popoverRef}>
             <ReviewDialogShell
                 isOpen={isOpen}
-                className='top-[max(1rem,env(safe-area-inset-top))] max-h-[calc(100dvh-8rem-env(safe-area-inset-top))] overflow-hidden sm:top-24 sm:max-h-[calc(100dvh-8rem)]'
-                cardClassName='max-h-full overflow-hidden border-default-200 bg-default-50/95 p-2'
-                bodyClassName='overflow-y-auto overscroll-contain'
+                cardClassName='border-default-200 bg-default-50/95 p-2'
             >
                 <div className='flex flex-col gap-2'>
                     <p className='font-mono text-xs uppercase text-default-400'>Translation</p>
