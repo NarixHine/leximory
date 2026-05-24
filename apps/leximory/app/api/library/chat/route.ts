@@ -11,7 +11,7 @@ import incrCommentaryQuota from '@repo/user/quota'
 import { getUserOrThrow } from '@repo/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
-import { miniAI, nanoAI } from '@/server/ai/configs'
+import { miniAI, nanoAI } from '@/server/ai/config'
 import { extractArticleFromUrl } from '@repo/scrape'
 import { generate } from '@/service/text'
 

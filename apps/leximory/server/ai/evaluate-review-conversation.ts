@@ -1,7 +1,7 @@
 import { generateObject } from 'ai'
 import { Lang } from '@repo/env/config'
 import { z } from '@repo/schema'
-import { miniAI } from './configs'
+import { miniAI } from './config'
 import { getReviewLanguageCopy } from '@/lib/review-language'
 import { LEXIMORY_WORLD_VIEW, type ReviewConversationFeedback } from '@/lib/review'
 
