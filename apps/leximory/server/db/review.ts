@@ -40,7 +40,6 @@ export interface ReviewStreakData {
         completed: boolean
     }[]
     threshold: number
-    isTodayActive: boolean
 }
 
 export async function getTimelineData(userId: string): Promise<TimelineData> {
@@ -121,7 +120,7 @@ export async function getReviewStreakData(userId: string): Promise<ReviewStreakD
     const today = stdMoment().startOf('day')
     const todayKey = today.format('YYYY-MM-DD')
     const yesterday = today.clone().subtract(1, 'day')
-    const markerStart = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS - 1, 'day')
+    const markerStart = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS, 'day')
     const reviewedDates = await getReviewedDatesWithin({
         userId,
         startDate: markerStart.format('YYYY-MM-DD'),
@@ -143,7 +142,7 @@ export async function getReviewStreakData(userId: string): Promise<ReviewStreakD
         : 0
 
     const checkDays = Array.from({ length: REVIEW_STREAK_MARKER_DAYS }, (_, index) => {
-        const date = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS - index - 1, 'day')
+        const date = today.clone().subtract(REVIEW_STREAK_MARKER_DAYS - index, 'day')
         const dateKey = date.format('YYYY-MM-DD')
 
         return {
@@ -158,7 +157,6 @@ export async function getReviewStreakData(userId: string): Promise<ReviewStreakD
         total,
         checkDays,
         threshold: REVIEW_STREAK_THRESHOLD,
-        isTodayActive,
     }
 }
 

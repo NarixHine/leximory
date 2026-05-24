@@ -15,14 +15,14 @@ export function ReviewStreak({ streak }: ReviewStreakProps) {
             <div className="relative flex flex-wrap flex-row items-end space-x-4 gap-2">
                 <div className="min-w-0">
                     <p className="font-kaiti text-xl tracking-normal text-secondary-400">
-                       连续打卡 <motion.span
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                        className="text-default-600 font-fancy text-3xl"
-                    >
-                        {streak.total}
-                    </motion.span> 天
+                        连续打卡 <motion.span
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                            className="text-default-600 font-fancy text-3xl"
+                        >
+                            {streak.total}
+                        </motion.span> 天
                     </p>
                 </div>
 
@@ -30,21 +30,19 @@ export function ReviewStreak({ streak }: ReviewStreakProps) {
                     className="flex gap-0 self-end"
                     aria-label={`连续打卡 ${streak.total} 天`}
                 >
-                    {streak.checkDays.map((day, index) => (
-                        <motion.div
+                    {streak.checkDays.map((day) => (
+                        <div
                             key={day.date}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.035, duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                             className={cn(
-                                'grid size-8 place-items-center rounded-full transition-opacity'
+                                'grid size-8 place-items-center rounded-full'
                             )}
                         >
-                            {day.completed
-                                ? <PiCheckCircleFill className={cn('size-full text-default-400')} />
-                                : <PiCircleThin className={cn('size-full text-default-300')} />
+                            {
+                                day.completed
+                                    ? <PiCheckCircleFill className={cn('size-full text-default-400')} />
+                                    : <PiCircleThin className={cn('size-full text-default-300')} />
                             }
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>
