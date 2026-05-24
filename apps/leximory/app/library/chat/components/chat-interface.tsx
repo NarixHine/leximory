@@ -25,7 +25,6 @@ import { ScopeProvider } from 'jotai-scope'
 import { langAtom, libAtom } from '../../[lib]/atoms'
 import { HydrationBoundary } from 'jotai-ssr'
 import { toolDescriptions } from '../types'
-import { StreakMemoryDraft } from './streak-memory-draft'
 
 const initialPrompts = [{
     title: '近日造句巩固',
@@ -244,10 +243,6 @@ function ToolResult({ toolName, result }: { toolName: ToolName; result: Awaited<
                     </div>
                 </ToolAccordian>
             )
-
-        case 'requestPublishStreakMemory':
-            const { content, user } = result as ToolResult['requestPublishStreakMemory']
-            return <StreakMemoryDraft content={content} user={user} />
 
         default:
             return null

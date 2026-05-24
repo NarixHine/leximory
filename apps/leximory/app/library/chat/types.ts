@@ -17,8 +17,7 @@ export const toolDescriptions = {
     annotateArticle: 'Creating annotated article ...',
     getForgetCurve: 'Looking for words to review ...',
     annotateParagraph: 'Adding annotations ...',
-    extractArticleFromWebpage: 'Extracting article from webpage ...',
-    requestPublishStreakMemory: 'Drafting streak memory ...'
+    extractArticleFromWebpage: 'Extracting article from webpage ...'
 } as const
 
 export type ToolResult = {
@@ -40,14 +39,6 @@ export type ToolResult = {
         lang: Lang
     }
     extractArticleFromWebpage: Awaited<ReturnType<typeof extractArticleFromUrl>>
-    requestPublishStreakMemory: {
-        content: string
-        user: {
-            id: string
-            username: string | undefined
-            avatar_url: string | undefined
-        }
-    }
 }
 
 export const toolSchemas = {
@@ -70,9 +61,6 @@ export const toolSchemas = {
     extractArticleFromWebpage: z.object({
         url: z.string().describe('The URL of the webpage to extract the article from')
     }),
-    requestPublishStreakMemory: z.object({
-        content: z.string().describe("The user's summary of what they learned today.")
-    })
 } as const
 
 export type ToolName = keyof ToolResult

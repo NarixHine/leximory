@@ -3,7 +3,7 @@ import { Lang } from '@repo/env/config'
 import { generateText } from 'ai'
 import { instruction } from '@/lib/prompt'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
-import { miniAI } from './configs'
+import { miniAI } from './config'
 
 export const articleAnnotationPrompt = async (lang: Lang, input: string, onlyComments: boolean, userId: string, autoTrim: boolean = true, isFirstChunk: boolean = true) => ({
     system: `

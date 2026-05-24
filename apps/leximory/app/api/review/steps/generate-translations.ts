@@ -1,6 +1,6 @@
 import { generateText } from 'ai'
 import { getWordsWithin } from '@repo/supabase/word'
-import { miniAI } from '@/server/ai/configs'
+import { miniAI } from '@/server/ai/config'
 import { Lang } from '@repo/env/config'
 import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'

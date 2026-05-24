@@ -1,6 +1,5 @@
 import { TranslationDemo } from '../ai-agent/showcases'
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
-import { AdminMemoryFeed, Streak } from './showcases'
 
 export const metadata = {
     title: 'Leximory 漫游指南',
@@ -53,30 +52,6 @@ Leximory 的注解功能可以：
 - 让你无需离开当前页面，将查词的打扰降至最低。
 
 为了将听觉和视觉输入相结合，我们提供了“边听边读”的功能。它并非预置的全篇朗读，而是让你能按需为文本块生成音频。详见 [AI 朗读功能](/blog/reading-while-listening)。
-
-### *AI Agent*
-
-AI 智能体是一个强大的交互式学习工具，你可以把它看作是“与文库对话”的接口。
-
-你可以向它提出复杂的需求，例如“针对我近两日学习的英语单词，出五道翻译题来巩固掌握”，或者“帮我注解以下文本”“将该文本导入文库”。AI 智能体能够调用一系列工具来完成任务，比如查询你的文库、获取文章内容，甚至还能够生成小测验。
-
-<TranslationDemo />
-
-详见 [Talk to Your Library 介绍](/blog/ai-agent)。
-
-### *Memories*
-
-Memories 是一个“学习日记本”。你可以**记录**下你的学习点滴，也可以通过**打卡**来激励自己坚持学习。它包含两个信息流：一个展示你自己的学习记录，另一个则是一个公开的动态，让你能看到其他学习者正在记录什么。
-
-<AdminMemoryFeed />
-
-你不仅可以手动创建新的 Memory，还可以在每次和 AI 智能体互动时自动生成。一个推荐的使用路径是：每天通过 AI 智能体进行一次翻译巩固，然后在完成后让 AI 总结一条打卡 Memory。
-
-<div className='not-prose font-mono my-8'>
-    <Streak />
-</div>
-
-打卡类型的 Memories 累积起的学习“连续打卡天数”会在设定页面显示，你可以通过点击设定页面的卡片来进入 Memories 页面。
 
 ### *iOS Shortcut*
 

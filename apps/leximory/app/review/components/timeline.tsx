@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils'
 import { AreaChart } from '@/components/ui/area-chart'
-import type { DayData } from '../data'
 import { momentSH } from '@/lib/moment'
 import Comment from '@/components/comment'
 import { ScopeProvider } from 'jotai-scope'
@@ -10,24 +9,26 @@ import { HydrationBoundary } from 'jotai-ssr'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { Lang } from '@repo/env/config'
 import { DiscreteProgress } from './discrete-progress'
+import type { ReactNode } from 'react'
+import type { DayData } from '../data'
 import type { ReviewProgressData } from '../atoms'
 
 interface TimelineProps {
     days: DayData[]
+    streakSlot: ReactNode
     progressOverrides: Record<string, ReviewProgressData>
     onReviewClick: (day: DayData, lang: Lang) => void
 }
 
-export function Timeline({ days, progressOverrides, onReviewClick }: TimelineProps) {
+export function Timeline({ days, streakSlot, progressOverrides, onReviewClick }: TimelineProps) {
     const chartData = days.map(day => ({
         date: day.displayDate,
         '词汇': day.count
     })).reverse()
 
     return (
-        <div className="space-y-10">
-            {/* Chart at top */}
-            <div className="space-y-4">
+        <div className="space-y-6">
+            <div className="space-y-4 flex flex-col items-center">
                 <AreaChart
                     data={chartData}
                     index="date"
@@ -39,6 +40,7 @@ export function Timeline({ days, progressOverrides, onReviewClick }: TimelinePro
                     allowDecimals={false}
                     className="h-28"
                 />
+                {streakSlot}
             </div>
 
             {/* Timeline */}

@@ -1,5 +1,5 @@
 import { Lang } from '@repo/env/config'
-import { elevenLabsVoiceConfig } from '@/server/ai/configs'
+import { elevenLabsVoiceConfig } from '@/server/ai/config'
 import { elevenlabs } from '@ai-sdk/elevenlabs'
 import { getAccentPreference } from '../db/preference'
 import { experimental_generateSpeech as generateSpeech } from 'ai'

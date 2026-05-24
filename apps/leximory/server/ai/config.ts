@@ -5,7 +5,7 @@ export const nanoAI = {
 } as const
 
 export const miniAI = {
-    model: 'openai/gpt-5.4-mini',
+    model: 'google/gemini-3.5-flash',
     providerOptions: {
         google: {
             thinkingConfig: {
@@ -43,7 +43,7 @@ export const miniAI = {
 } as const
 
 export const thinkAI = {
-    model: 'openai/gpt-5.4-mini',
+    model: 'google/gemini-3.5-flash',
     providerOptions: {
         google: {
             safetySettings: [
@@ -78,7 +78,7 @@ export const thinkAI = {
 
 export const elevenLabsVoiceConfig = {
     'BrE': {
-        voice: 'k9kxNvqF1UqyrwvqNxtp',
+        voice: 'rfkTsdZrVWEVhDycUYn9',
         options: {
             voice_settings: {
                 stability: 0.45,
@@ -88,7 +88,7 @@ export const elevenLabsVoiceConfig = {
         }
     },
     'AmE': {
-        voice: 'Z3R5wn05IrDiVCyEkUrK',
+        voice: 'RaFzMbMIfqBcIurH6XF9',
         options: {
             voice_settings: {
                 stability: 0.3,

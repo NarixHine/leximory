@@ -18,21 +18,21 @@ declare module '@tiptap/core' {
 function AudioSectionView({ editor }: NodeViewProps) {
     return (
         <NodeViewWrapper className='border-l-3 border-primary/50 pl-4 my-4 relative group'>
-            <div className='flex items-center gap-1.5 mb-1'>
-                <PiHeadphones className='size-4 text-primary/50' />
-                <span className='text-xs font-mono text-primary/50'>Audio</span>
-                <Button
-                    isIconOnly
-                    size='sm'
-                    variant='light'
-                    color='danger'
-                    radius='full'
-                    onPress={() => {
-                        editor.chain().focus().removeAudioSection().run()
-                    }}
-                >
-                    <PiXCircle className='size-4' />
-                </Button>
+            <div>
+                <span className='text-lg font-mono flex items-center text-primary/50 gap-0.5'>
+                    <PiHeadphones className='text-primary/50 inline-block mr-2' /> Audio
+                    <Button
+                        isIconOnly
+                        size='sm'
+                        variant='light'
+                        color='danger'
+                        radius='full'
+                        onPress={() => {
+                            editor.chain().focus().removeAudioSection().run()
+                        }}
+                        startContent={<PiXCircle className='size-4' />}
+                    ></Button>
+                </span>
             </div>
             <NodeViewContent />
         </NodeViewWrapper>

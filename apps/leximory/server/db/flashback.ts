@@ -17,6 +17,8 @@ interface FlashbackData {
     created_at: string
 }
 
+export type FlashbackReviewProgress = Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>
+
 interface CreateFlashbackParams {
     userId: string
     date: string
@@ -144,7 +146,7 @@ export async function listFlashbacksWithin({
     userId: string
     startDate: string
     endDate: string
-}): Promise<Array<Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>>> {
+}): Promise<FlashbackReviewProgress[]> {
     const { data } = await supabase
         .from('flashbacks')
         .select('date, lang, story, translations, conversation')

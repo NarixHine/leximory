@@ -11,7 +11,7 @@ import incrCommentaryQuota from '@repo/user/quota'
 import { getUserOrThrow } from '@repo/user'
 import { annotateParagraph } from '@/server/ai/annotate'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompt'
-import { miniAI, nanoAI } from '@/server/ai/configs'
+import { miniAI, nanoAI } from '@/server/ai/config'
 import { extractArticleFromUrl } from '@repo/scrape'
 import { generate } from '@/service/text'
 
@@ -124,21 +124,6 @@ ${content}`,
             })
 
             return { title, content: distilledContent }
-        }
-    },
-    requestPublishStreakMemory: {
-        description: "Presents the user's summary of what they learned today as a draft that they can publish.",
-        inputSchema: toolSchemas.requestPublishStreakMemory,
-        execute: async ({ content }: { content: string }) => {
-            const { userId, username, image } = await getUserOrThrow()
-            return {
-                content,
-                user: {
-                    id: userId,
-                    username: username,
-                    avatar_url: image
-                }
-            }
         }
     }
 }

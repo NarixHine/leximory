@@ -4,8 +4,6 @@ import { Suspense } from 'react'
 import PublicLibraries from './components/public-libraries'
 import UserInfo from './components/user-info'
 import WordStatsSection from './components/word-stats'
-import { UserPublicFeed } from '@/app/memories/components/user-public-feed'
-import { Spacer } from '@heroui/spacer'
 import { LibrarySkeleton } from '@/app/library/components/lib'
 
 type ProfilePageProps = {
@@ -39,8 +37,6 @@ async function ProfilePageContent({ params }: ProfilePageProps) {
                 }>
                     <PublicLibraries uid={uid} />
                 </Suspense>
-                <Spacer y={10} />
-                <UserPublicFeed userId={uid} />
             </div>
         </div>
     </Center>

@@ -7,7 +7,7 @@ import { generateText } from 'ai'
 import { getUserOrThrow } from '@repo/user'
 import { MAX_TTS_LENGTH } from '@repo/env/config'
 import { speak } from '@/server/ai/speak'
-import { nanoAI } from '@/server/ai/configs'
+import { nanoAI } from '@/server/ai/config'
 import { getLib } from '@/server/db/lib'
 
 /** Retrieves a signed audio URL for the given audio id (NO authorization). */
