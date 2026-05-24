@@ -1,7 +1,7 @@
 import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
-    model: 'xai/grok-4-fast-non-reasoning',
+    model: 'openai/gpt-5.4-mini',
 } as const
 
 export const miniAI = {

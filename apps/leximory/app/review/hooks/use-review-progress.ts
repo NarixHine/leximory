@@ -27,12 +27,23 @@ const reviewStatusPriority: Record<string, number> = {
     complete: 3,
 }
 
+function getReviewTimestamp(item: Pick<ReviewTranslation | ReviewConversation, 'evaluatedAt' | 'submittedAt'>) {
+    return item.evaluatedAt ?? item.submittedAt ?? ''
+}
+
 function pickFresherTranslation(
     sseTranslation: ReviewTranslation | undefined,
     queryTranslation: ReviewTranslation | undefined
 ) {
     if (!sseTranslation) return queryTranslation
     if (!queryTranslation) return sseTranslation
+
+    const sseTime = getReviewTimestamp(sseTranslation)
+    const queryTime = getReviewTimestamp(queryTranslation)
+
+    if (queryTime !== sseTime) {
+        return queryTime > sseTime ? queryTranslation : sseTranslation
+    }
 
     const ssePriority = reviewStatusPriority[sseTranslation.status ?? 'idle'] ?? 0
     const queryPriority = reviewStatusPriority[queryTranslation.status ?? 'idle'] ?? 0
@@ -41,10 +52,7 @@ function pickFresherTranslation(
         return queryPriority > ssePriority ? queryTranslation : sseTranslation
     }
 
-    const sseTime = sseTranslation.evaluatedAt ?? sseTranslation.submittedAt ?? ''
-    const queryTime = queryTranslation.evaluatedAt ?? queryTranslation.submittedAt ?? ''
-
-    return queryTime >= sseTime ? queryTranslation : sseTranslation
+    return queryTranslation
 }
 
 function mergeTranslations(
@@ -68,6 +76,13 @@ function pickFresherConversation(
     if (!sseConversation) return queryConversation
     if (!queryConversation) return sseConversation
 
+    const sseTime = getReviewTimestamp(sseConversation)
+    const queryTime = getReviewTimestamp(queryConversation)
+
+    if (queryTime !== sseTime) {
+        return queryTime > sseTime ? queryConversation : sseConversation
+    }
+
     const ssePriority = reviewStatusPriority[sseConversation.status ?? 'idle'] ?? 0
     const queryPriority = reviewStatusPriority[queryConversation.status ?? 'idle'] ?? 0
 
@@ -75,10 +90,7 @@ function pickFresherConversation(
         return queryPriority > ssePriority ? queryConversation : sseConversation
     }
 
-    const sseTime = sseConversation.evaluatedAt ?? sseConversation.submittedAt ?? ''
-    const queryTime = queryConversation.evaluatedAt ?? queryConversation.submittedAt ?? ''
-
-    return queryTime >= sseTime ? queryConversation : sseConversation
+    return queryConversation
 }
 
 async function checkReviewData(date: string, lang: string): Promise<CheckResponse> {

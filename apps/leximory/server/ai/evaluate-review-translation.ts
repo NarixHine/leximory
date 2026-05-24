@@ -34,7 +34,8 @@ Student's ${reviewCopy.targetLanguageName} translation: ${submission}
 </task>
 
 <criteria>
-- Always accept natural variants when they preserve the meaning of the Chinese prompt and use the keyword appropriately. Refrain from nitpicking over minor differences if the usage is standard and natural. Be EXTREMELY FLEXIBLE with expressions, in particular word choices, tones and tenses, as long as they are reasonable (regardless of the reference translation answer).
+- ALWAYS accept natural variants when they preserve the meaning of the Chinese prompt and use the keyword appropriately. NEVER penalize for minor differences if the usage is standard and natural. 
+- Be EXTREMELY FLEXIBLE with expressions, in particular word choices, tones and tenses, as long as they are reasonable (regardless of the reference translation answer).
 - Look for mistranslations, missing meaning, incorrect grammar, unnatural keyword usage, or omitting the keyword when it should appear.
 </criteria>
 
@@ -53,8 +54,6 @@ Return a JSON object: {
 </prompt>`,
         schema: ReviewTranslationFeedbackSchema,
     })
-
-    console.log('Evaluation result:', object)
 
     return object
 }
