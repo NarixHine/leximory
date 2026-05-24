@@ -78,7 +78,7 @@ export const thinkAI = {
 
 export const elevenLabsVoiceConfig = {
     'BrE': {
-        voice: 'k9kxNvqF1UqyrwvqNxtp',
+        voice: 'rfkTsdZrVWEVhDycUYn9',
         options: {
             voice_settings: {
                 stability: 0.45,
@@ -88,7 +88,7 @@ export const elevenLabsVoiceConfig = {
         }
     },
     'AmE': {
-        voice: 'Z3R5wn05IrDiVCyEkUrK',
+        voice: 'RaFzMbMIfqBcIurH6XF9',
         options: {
             voice_settings: {
                 stability: 0.3,
