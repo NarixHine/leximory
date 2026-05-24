@@ -56,7 +56,7 @@ export function ReviewStreakSkeleton() {
             <div className="relative flex flex-wrap flex-row items-end space-x-4 gap-2">
                 <div className="min-w-0">
                     <p className="font-kaiti text-xl tracking-normal text-secondary-300/70">
-                        连续打卡 <span className="inline-block h-8 w-10 translate-y-1 rounded-md bg-default-200/80 align-baseline animate-pulse" /> 天
+                        连续打卡 <span className="inline-block h-7.25 w-10 translate-y-1 rounded-md bg-default-200/80 align-baseline animate-pulse" /> 天
                     </p>
                 </div>
 

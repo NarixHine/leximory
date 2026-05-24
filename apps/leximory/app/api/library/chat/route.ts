@@ -125,21 +125,6 @@ ${content}`,
 
             return { title, content: distilledContent }
         }
-    },
-    requestPublishStreakMemory: {
-        description: "Presents the user's summary of what they learned today as a draft that they can publish.",
-        inputSchema: toolSchemas.requestPublishStreakMemory,
-        execute: async ({ content }: { content: string }) => {
-            const { userId, username, image } = await getUserOrThrow()
-            return {
-                content,
-                user: {
-                    id: userId,
-                    username: username,
-                    avatar_url: image
-                }
-            }
-        }
     }
 }
 
