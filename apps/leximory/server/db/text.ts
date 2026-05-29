@@ -220,25 +220,3 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
     cacheTag(`texts:${text.lib!.id}`)
     return { libId: text.lib!.id, lang: text.lib!.lang as Lang }
 }
-
-export async function updateTextOrder({ lib, ids }: { lib: string, ids: string[] }) {
-    const { count } = await supabase
-        .from('texts')
-        .select('id', { count: 'exact', head: true })
-        .in('id', ids)
-        .eq('lib', lib)
-        .throwOnError()
-
-    if (count !== ids.length) {
-        throw new Error('Access denied. Not all texts belong to the specified library.')
-    }
-
-    const updates = ids.map((id, index) =>
-        supabase
-            .from('texts')
-            .update({ no: index })
-            .eq('id', id)
-    )
-
-    await Promise.all(updates)
-}
