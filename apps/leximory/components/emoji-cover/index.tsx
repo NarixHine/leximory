@@ -4,6 +4,7 @@ import { cn } from '@heroui/theme'
 import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
 import { useDarkMode } from 'usehooks-ts'
+import { EMOJI } from '@/lib/fonts'
 
 // --- WEBGL CONTEXT UTILS ---
 function createWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | null {
@@ -366,7 +367,7 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false, v
             )}
 
             <div className='w-full h-full flex items-center justify-center z-10'>
-                <span className='select-none leading-none' style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+                <span className={cn('select-none leading-none text-default-400', EMOJI.className)} style={{ fontSize: 'min(35cqi, 35cqb)' }}>
                     {isLink ? (
                         <LoadingIndicatorWrapper variant='spinner' classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}>
                             {emoji}
