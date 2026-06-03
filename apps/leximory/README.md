@@ -221,7 +221,7 @@ You will need to populate this file with credentials. For more information, refe
 To start the development server, which also runs the Inngest development server concurrently:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
