@@ -2,15 +2,11 @@
 	"name": "ink",
 	"version": "0.1.0",
 	"private": true,
-	"packageManager": "bun@1.3.14",
+	"packageManager": "pnpm@10.8.1",
 	"scripts": {
 		"dev": "turbo dev --concurrency=15"
 	},
 	"devDependencies": {
 		"turbo": "^2.7.3"
-	},
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	]
+	}
 }
