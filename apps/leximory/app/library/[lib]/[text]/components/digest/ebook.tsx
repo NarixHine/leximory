@@ -14,7 +14,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
 import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
-import { useDarkMode } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { getChapterName } from '@/lib/epub'
 import Define from '@/components/define'
@@ -95,7 +95,8 @@ export default function Ebook() {
     const [savingBookmark, startSavingBookmark] = useTransition()
     const themeRendition = useRef<Rendition | null>(null)
 
-    const { isDarkMode } = useDarkMode()
+    const { resolvedTheme } = useTheme()
+    const isDarkMode = resolvedTheme === 'dark'
     const isDarkModeRef = useRef(isDarkMode)
     isDarkModeRef.current = isDarkMode
     useEffect(() => {

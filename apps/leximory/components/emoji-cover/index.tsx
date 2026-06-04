@@ -3,7 +3,7 @@
 import { cn } from '@heroui/theme'
 import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import LoadingIndicatorWrapper from '../ui/loading-indicator-wrapper'
-import { useDarkMode } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
 import { EMOJI } from '@/lib/fonts'
 
 // --- WEBGL CONTEXT UTILS ---
@@ -313,7 +313,8 @@ function useShaderCanvas(
 
 export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
-    const { isDarkMode } = useDarkMode({ initializeWithValue: false })
+    const { resolvedTheme } = useTheme()
+    const isDarkMode = resolvedTheme === 'dark'
     const [isVisible, setIsVisible] = useState(false)
     const [retryKey, setRetryKey] = useState(0)
     const containerRef = useRef<HTMLDivElement>(null)

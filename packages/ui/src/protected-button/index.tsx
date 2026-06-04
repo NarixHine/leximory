@@ -7,11 +7,12 @@ import { prefixPathname } from '@repo/env/config'
 import { PiSignIn } from 'react-icons/pi'
 import Link from 'next/link'
 import ShinyText from '../shiny-text'
-import { useDarkMode } from 'usehooks-ts'
+import { useTheme } from 'next-themes'
 
 export function ProtectedButton({ label, ...props }: { label?: string } & ButtonProps) {
     const { isLoggedIn, isLoading } = useUser()
-    const { isDarkMode } = useDarkMode()
+    const { resolvedTheme } = useTheme()
+    const isDarkMode = resolvedTheme === 'dark'
 
     if (isLoading) {
         return <Button {...props} isLoading />
