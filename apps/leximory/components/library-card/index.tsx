@@ -25,7 +25,7 @@ export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardB
                 isPressable
                 shadow='none'
                 href={`/library/${id}`}
-                className='p-0 bg-transparent'
+                className='p-0 bg-transparent rounded-4xl'
             >
                 <CardBody className='p-0 bg-default-100 rounded-4xl px-6 pb-7 pt-5'>
                     <span className='mb-2 inline-block font-semibold text-default-400'>

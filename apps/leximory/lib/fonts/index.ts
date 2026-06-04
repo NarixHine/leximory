@@ -7,8 +7,7 @@ export const MINCHO = localFont({
 })
 
 export const EMOJI = Noto_Emoji({
-    weight: '400',
-    preload: false,
+    weight: '400'
 })
 
 export const KAITI = localFont({
