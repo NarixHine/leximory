@@ -8,13 +8,13 @@ type AIConfig = {
 }
 
 export const FLASH_AI: AIConfig = {
-    model: gateway('xai/grok-4-fast-non-reasoning'),
+    model: gateway('xai/grok-4.20-non-reasoning'),
 }
 
 export const FILE_AI: AIConfig = {
-    model: gateway('google/gemini-3-flash'),
+    model: gateway('xai/grok-4.20-non-reasoning'),
 }
 
 export const SMART_AI: AIConfig = {
-    model: gateway('google/gemini-3-flash'),
+    model: gateway('openai/gpt-5.4-mini'),
 }
