@@ -4,7 +4,7 @@ import Bell from './bell-server'
 
 export function ReviewHeader() {
     return (
-        <header className="mb-1 sm:ml-22">
+        <header className="mb-4 sm:ml-22">
             <div className='flex items-center gap-2'>
                 <span className='text-sm font-mono uppercase tracking-wide text-default-400'>
                     <PiCableCar className='inline-block size-5' /> Forming Connections

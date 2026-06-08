@@ -26,7 +26,7 @@ export default function LibraryCard({ library, isStarred, hideFooter, isOwner }:
             lang={library.lang}
             footer={!hideFooter ? <>
                 {typeof library.readers === 'number' ? (
-                    <div className='text-default-400 text-xs'>
+                    <div className='text-default-400 text-xs pl-4'>
                         <span className='font-mono text-sm'>{library.readers}</span> 个读者
                     </div>
                 ) : <div />}
