@@ -19,6 +19,8 @@ const env = createEnv({
         QSTASH_TOKEN: z.string().min(1),
         QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
         QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
+        INNGEST_EVENT_KEY: z.string().min(1),
+        INNGEST_SIGNING_KEY: z.string().min(1),
     },
 
     client: {
@@ -57,6 +59,8 @@ const env = createEnv({
         QSTASH_TOKEN: process.env.QSTASH_TOKEN,
         QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
         QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
+        INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY,
+        INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
     },
 })
 
