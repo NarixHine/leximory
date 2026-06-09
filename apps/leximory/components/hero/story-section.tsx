@@ -21,13 +21,13 @@ export default function StorySection() {
 	})
 
 	return (
-		<section ref={containerRef} className='relative' style={{ height: `${LINES.length * 100}vh` }}>
+		<section ref={containerRef} className='relative' style={{ height: `${LINES.length * 150}vh` }}>
 			<div className='sticky top-0 h-screen flex items-center justify-center overflow-hidden'>
 				{LINES.map((line, i) => {
 					const totalLines = LINES.length
 					const segmentStart = i / totalLines
 					const segmentEnd = (i + 1) / totalLines
-					const fadeFraction = 0.3
+					const fadeFraction = 0.4
 					const fadeInEnd = segmentStart + fadeFraction / totalLines
 					const fadeOutStart = segmentEnd - fadeFraction / totalLines
 
