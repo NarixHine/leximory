@@ -2,7 +2,7 @@
 
 import HeroLawn from './hero-lawn'
 import LinkButton from '@repo/ui/link-button'
-import { PiShootingStarDuotone, PiEnvelopeDuotone } from 'react-icons/pi'
+import { PiShootingStarDuotone, PiEnvelopeOpenDuotone } from 'react-icons/pi'
 import { SIGN_IN_URL } from '@repo/env/config'
 
 export default function HeroSection() {
@@ -22,7 +22,7 @@ export default function HeroSection() {
 						<h1 className='text-4xl sm:text-5xl font-fancy tracking-tight text-default-800'>
 							<span>Leximory</span> <span className='text-xl sm:text-[1.72rem] font-bold'>猫忆</span>
 						</h1>
-						<p className='text-lg text-default-500 font-kaiti'>
+						<p className='text-xl text-default-500 font-kaiti'>
 							语言学地学语言
 						</p>
 					</div>
@@ -44,7 +44,7 @@ export default function HeroSection() {
 				</div>
 
 				<div className='flex gap-3 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both' style={{ animationDelay: '300ms' }}>
-					<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='font-semibold'>
+					<LinkButton startContent={<PiShootingStarDuotone className='text-xl' />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='font-semibold'>
 						开始学习
 					</LinkButton>
 					<LinkButton
@@ -54,7 +54,7 @@ export default function HeroSection() {
 						color='default'
 						size='lg'
 						className='font-semibold'
-						startContent={<PiEnvelopeDuotone />}
+						startContent={<PiEnvelopeOpenDuotone className='text-xl' />}
 					>
 						了解更多
 					</LinkButton>

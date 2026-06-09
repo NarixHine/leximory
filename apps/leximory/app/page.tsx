@@ -154,9 +154,9 @@ export default async function Home() {
 
 					<Spacer y={12}></Spacer>
 
-					<div className='flex justify-center items-center'>
-						<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} className='font-semibold'>
-							<span className='text-lg'>开始</span>
+					<div className='flex justify-center items-center flex-wrap'>
+						<LinkButton startContent={<PiShootingStarDuotone className='text-lg' />} radius='full' color='primary' href={SIGN_IN_URL} className='font-semibold'>
+							开始
 						</LinkButton>
 						<div className='text-lg font-semibold ml-2 flex justify-center items-center'>和小白猫<div className='h-16 w-30 -ml-3 -mr-9 inline-block'>
 							<CatSprite variant={'white'} frame='idle' className='drop-shadow-2xl' />

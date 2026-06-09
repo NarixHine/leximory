@@ -12,11 +12,11 @@ import {
 } from '@/lib/hooks/use-cat-movement'
 
 const PILLS = [
-    { label: 'feline', x: 22, y: 32 },
-    { label: 'linguistics', x: 50, y: 40 },
-    { label: 'purity', x: 78, y: 23 },
-    { label: 'knowledge', x: 60, y: 70 },
-    { label: 'naïveté', x: 38, y: 72 },
+    { label: 'feline', x: 15, y: 32 },
+    { label: 'linguistics', x: 43, y: 40 },
+    { label: 'purity', x: 70, y: 23 },
+    { label: 'knowledge', x: 50, y: 70 },
+    { label: 'naïveté', x: 27, y: 72 },
 ] as const
 
 const IDLE_WAIT_MIN = 2000
