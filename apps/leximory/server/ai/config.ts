@@ -5,7 +5,7 @@ export const nanoAI = {
 } as const
 
 export const miniAI = {
-    model: 'openai/gpt-5.4-mini',
+    model: 'google/gemini-3.5-flash',
     providerOptions: {
         google: {
             thinkingConfig: {
@@ -43,7 +43,7 @@ export const miniAI = {
 } as const
 
 export const thinkAI = {
-    model: 'openai/gpt-5.4-mini',
+    model: 'google/gemini-3.5-flash',
     providerOptions: {
         google: {
             safetySettings: [
