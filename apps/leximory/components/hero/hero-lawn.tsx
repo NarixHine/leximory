@@ -206,7 +206,7 @@ export default function HeroLawn() {
     return (
         <Card
             shadow='none'
-            className='w-full bg-[#eff8ef] dark:bg-secondary-100 rounded-4xl overflow-hidden p-10'
+            className='w-full bg-[#eff8ef] dark:bg-secondary-100 rounded-4xl overflow-hidden sm:p-10'
         >
             <CardBody className='p-0'>
                 <section
