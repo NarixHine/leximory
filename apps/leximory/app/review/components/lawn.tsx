@@ -1,56 +1,17 @@
 'use client'
 
-import { useRef, useCallback, useLayoutEffect, useReducer, useState, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useCallback, useLayoutEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
 import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
 import { DiscreteProgress } from './discrete-progress'
+import {
+    useCatMovement,
+    CAT_SIZE,
+    DUST_LIFETIME,
+    DUST_PARTICLE_SIZE,
+} from '@/lib/hooks/use-cat-movement'
 import type { Lang } from '@repo/env/config'
-
-// Tuned animation parameters
-const CAT_SIZE = 100
-const MAX_SPEED = 350
-const RUN_FRAME_TIME = 90
-const ACCEL_PHASE = 0.05
-const DECEL_PHASE = 0.09
-
-// Tuned dust particle parameters
-const DUST_ENABLED = true
-const DUST_SPAWN_RATE = 80
-const DUST_PARTICLE_SIZE = 7
-const DUST_PARTICLE_COUNT = 8
-const DUST_SPREAD_ANGLE = 45
-const DUST_VELOCITY = 60
-const DUST_LIFETIME = 400
-const DUST_OPACITY = 0.5
-
-// Tuned audio parameters
-const AUDIO_ENABLED = true
-const AUDIO_VOLUME = 0.2
-const AUDIO_PLAYBACK_RATE = 1
-
-// Frame positions in the 3x3 grid
-type Phase = 'idle' | 'accelerating' | 'running' | 'decelerating' | 'landing'
-
-type CatAction =
-    | { type: 'START_MOVING'; facingLeft: boolean }
-    | { type: 'STOP_MOVING' }
-
-interface CatState {
-    isRunning: boolean
-    facingLeft: boolean
-}
-
-interface Particle {
-    id: number
-    x: number
-    y: number
-    vx: number
-    vy: number
-    size: number
-    opacity: number
-    rotation: number
-}
 
 export interface LawnItem {
     id: string
@@ -86,36 +47,6 @@ export interface LawnRef {
 
 interface ImgBounds { left: number; top: number; width: number; height: number }
 
-function catReducer(state: CatState, action: CatAction): CatState {
-    switch (action.type) {
-        case 'START_MOVING':
-            return { isRunning: true, facingLeft: action.facingLeft }
-        case 'STOP_MOVING':
-            return { ...state, isRunning: false }
-        default:
-            return state
-    }
-}
-
-// Custom velocity curve: accelerate → constant → decelerate
-function getVelocityAtProgress(progress: number, maxSpeed: number, accelEnd: number, decelStart: number): number {
-    if (progress < accelEnd) {
-        const t = progress / accelEnd
-        const minSpeed = maxSpeed * 0.15
-        return minSpeed + (maxSpeed - minSpeed) * (t * t)
-    } else if (progress < decelStart) {
-        return maxSpeed
-    } else {
-        const t = (progress - decelStart) / (1 - decelStart)
-        const minSpeed = maxSpeed * 0.1
-        return minSpeed + (maxSpeed - minSpeed) * (1 - t * t)
-    }
-}
-
-/**
- * Calculate the rendered bounds of an image when object-fit: contain is applied
- * within a container of given dimensions.
- */
 function calcContainedBounds(
     containerW: number, containerH: number,
     naturalW: number, naturalH: number
@@ -131,12 +62,6 @@ function calcContainedBounds(
     return { left, top, width: w, height: h }
 }
 
-/**
- * For portrait mode: the image is inside a flex centering wrapper and may
- * have rotation + scale transforms. We measure the wrapper's bounding rect.
- * Since the image is w-full with a fixed aspect ratio inside the wrapper,
- * and centered with flex, the bounds are simply the wrapper's content area.
- */
 function calcPortraitBounds(
     wrapperW: number, wrapperH: number
 ): ImgBounds {
@@ -154,31 +79,32 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     const imgWrapperRef = useRef<HTMLDivElement>(null)
     const imgRef = useRef<HTMLImageElement>(null)
     const controls = useAnimationControls()
-    const positionRef = useRef({ x: 0, y: 0 })
     const boundsRef = useRef<ImgBounds>({ left: 0, top: 0, width: 0, height: 0 })
     const resizeObserverRef = useRef<ResizeObserver | null>(null)
-    const isAnimatingRef = useRef(false)
     const initializedRef = useRef(false)
-    const phaseRef = useRef<Phase>('idle')
-    const animationFrameRef = useRef<number>(0)
-    const particleIdRef = useRef(0)
 
-    const [particles, setParticles] = useState<Particle[]>([])
     const [imgBounds, setImgBounds] = useState<ImgBounds | null>(null)
 
     const catHeight = CAT_SIZE
     const catWidth = catHeight * CAT_FRAME_ASPECT
 
-    const [catState, dispatch] = useReducer(catReducer, {
-        isRunning: false,
-        facingLeft: false,
+    const catMovement = useCatMovement({
+        catWidth,
+        catHeight,
+        setPosition: useCallback((x: number, y: number, rotation?: number) => {
+            controls.set(rotation !== undefined ? { x, y, rotate: rotation } : { x, y })
+        }, [controls]),
+        animateRotation: useCallback(async (angle: number) => {
+            await controls.start({ rotate: angle, transition: { duration: 0.2, ease: 'easeOut' } })
+        }, [controls]),
+        setFrame: useCallback((frame: string) => {
+            if (spriteRef.current) {
+                spriteRef.current.style.backgroundPosition = frame
+            }
+        }, []),
     })
 
-    const setFrame = (frame: string) => {
-        if (spriteRef.current) {
-            spriteRef.current.style.backgroundPosition = frame
-        }
-    }
+    const isAnimatingRef = catMovement.isAnimatingRef
 
     const updateBounds = useCallback(() => {
         const prev = boundsRef.current
@@ -192,8 +118,11 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
                 const rx = bounds.width / prev.width
                 const ry = bounds.height / prev.height
-                positionRef.current = { x: positionRef.current.x * rx, y: positionRef.current.y * ry }
-                controls.set({ x: positionRef.current.x, y: positionRef.current.y })
+                catMovement.positionRef.current = {
+                    x: catMovement.positionRef.current.x * rx,
+                    y: catMovement.positionRef.current.y * ry,
+                }
+                controls.set({ x: catMovement.positionRef.current.x, y: catMovement.positionRef.current.y })
             }
             boundsRef.current = bounds
             setImgBounds(bounds)
@@ -211,15 +140,17 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
                 const rx = bounds.width / prev.width
                 const ry = bounds.height / prev.height
-                positionRef.current = { x: positionRef.current.x * rx, y: positionRef.current.y * ry }
-                controls.set({ x: positionRef.current.x, y: positionRef.current.y })
+                catMovement.positionRef.current = {
+                    x: catMovement.positionRef.current.x * rx,
+                    y: catMovement.positionRef.current.y * ry,
+                }
+                controls.set({ x: catMovement.positionRef.current.x, y: catMovement.positionRef.current.y })
             }
             boundsRef.current = bounds
             setImgBounds(bounds)
         }
-    }, [isPortrait, controls])
+    }, [isPortrait, controls, catMovement.positionRef, isAnimatingRef])
 
-    // Bounds measurement: reads container on mount, image dims on load
     const measureBounds = useCallback(() => {
         if (isPortrait) {
             const wrapper = imgWrapperRef.current
@@ -240,7 +171,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         }
     }, [isPortrait])
 
-    // ResizeObserver on the outer section — calls measureBounds sync on mount
     useLayoutEffect(() => {
         const node = containerRef.current
         if (!node) return
@@ -256,7 +186,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         return () => observer.disconnect()
     }, [measureBounds, updateBounds])
 
-
     const onImgRef = useCallback((el: HTMLImageElement | null) => {
         imgRef.current = el
         if (el?.complete && el.naturalWidth > 0) {
@@ -264,7 +193,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         }
     }, [updateBounds])
 
-    // Initial positioning after bounds are first measured
     useLayoutEffect(() => {
         if (!imgBounds || initializedRef.current) return
 
@@ -274,209 +202,20 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         const startX = bw / 2 - catWidth / 2
         const startY = bh / 2 - catHeight / 2
 
-        positionRef.current = { x: startX, y: startY }
+        catMovement.setInitialPosition(startX, startY)
         controls.set({ x: startX, y: startY, rotate: 0 })
         initializedRef.current = true
-    }, [imgBounds, catWidth, catHeight, controls])
+    }, [imgBounds, catWidth, catHeight, controls, catMovement])
 
-    // Spawn dust particles behind the cat
-    const spawnDustParticles = useCallback((x: number, y: number, dirX: number, dirY: number, facingLeft: boolean, rotationAngle: number) => {
-        if (!DUST_ENABLED) return
-
-        const newParticles: Particle[] = []
-        const count = DUST_PARTICLE_COUNT
-
-        const rotRad = (rotationAngle * Math.PI) / 180
-
-        const baseOffsetX = -catWidth * 0.2
-        const baseOffsetY = catHeight * 0.3
-
-        const flipMultiplier = facingLeft ? -1 : 1
-        const rotatedOffsetX = baseOffsetX * Math.cos(rotRad) - baseOffsetY * Math.sin(rotRad)
-        const rotatedOffsetY = baseOffsetX * Math.sin(rotRad) + baseOffsetY * Math.cos(rotRad)
-
-        for (let i = 0; i < count; i++) {
-            const spreadRad = (DUST_SPREAD_ANGLE * Math.PI) / 180
-            const baseAngle = Math.atan2(-dirY, -dirX)
-            const angle = baseAngle + (Math.random() - 0.5) * spreadRad
-
-            const speed = DUST_VELOCITY * (0.5 + Math.random() * 0.5)
-
-            newParticles.push({
-                id: particleIdRef.current++,
-                x: x + catWidth / 2 + rotatedOffsetX * flipMultiplier + (Math.random() - 0.5) * 10,
-                y: y + catHeight / 2 + rotatedOffsetY + (Math.random() - 0.5) * 5,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed - 20,
-                size: DUST_PARTICLE_SIZE * (0.6 + Math.random() * 0.8),
-                opacity: DUST_OPACITY * (0.6 + Math.random() * 0.4),
-                rotation: Math.random() * 360,
-            })
-        }
-
-        setParticles(prev => [...prev, ...newParticles])
-
-        setTimeout(() => {
-            setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)))
-        }, DUST_LIFETIME)
-    }, [catWidth, catHeight])
-
-    // Core movement function
-    const moveToPosition = useCallback(async (targetX: number, targetY: number, onArrive?: () => void) => {
-        if (!containerRef.current || isAnimatingRef.current) return
-
-        const currentPos = positionRef.current
-        const dx = targetX - currentPos.x
-        const dy = targetY - currentPos.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-
-        if (distance < 20) {
-            onArrive?.()
-            return
-        }
-
-        isAnimatingRef.current = true
-
-        const goingLeft = dx < 0
-        let angle = Math.atan2(dy, dx) * (180 / Math.PI)
-        if (goingLeft) {
-            angle = Math.atan2(dy, -dx) * (180 / Math.PI)
-        }
-        angle = Math.max(-75, Math.min(75, angle))
-
-        const accelFrameTime = 350
-        const decelFrameTime = 350
-        const landHoldTime = 150
-        const turnDuration = 0.2
-
-        const accelEnd = ACCEL_PHASE
-        const decelStart = 1 - DECEL_PHASE
-
-        const dirX = dx / distance
-        const dirY = dy / distance
-
-        dispatch({ type: 'START_MOVING', facingLeft: goingLeft })
-
-        phaseRef.current = 'accelerating'
-        let scrambleFrame = 0
-        const scrambleFrames = [CAT_FRAMES.scramble1, CAT_FRAMES.scramble2]
-
-        const scrambleInterval = setInterval(() => {
-            if (phaseRef.current === 'accelerating') {
-                setFrame(scrambleFrames[scrambleFrame % 2])
-                scrambleFrame++
-            }
-        }, accelFrameTime)
-
-        await controls.start({
-            rotate: angle,
-            transition: { duration: turnDuration, ease: 'easeOut' }
-        })
-
-        let runFrame = 0
-        const runFrames = [CAT_FRAMES.run1, CAT_FRAMES.run2, CAT_FRAMES.run3]
-        let lastRunFrameTime = performance.now()
-        let lastDecelFrameTime = performance.now()
-        let lastDustTime = performance.now()
-        let decelFrame = 0
-        const decelFrames = [CAT_FRAMES.run3, CAT_FRAMES.run2, CAT_FRAMES.run1, CAT_FRAMES.land1]
-
-        const startX = currentPos.x
-        const startY = currentPos.y
-        let currentX = startX
-        let currentY = startY
-        let lastTime = performance.now()
-
-        const animateMovement = (now: number) => {
-            const deltaTime = (now - lastTime) / 1000
-            lastTime = now
-
-            const traveledDx = currentX - startX
-            const traveledDy = currentY - startY
-            const traveledDist = Math.sqrt(traveledDx * traveledDx + traveledDy * traveledDy)
-            const progress = Math.min(traveledDist / distance, 1)
-
-            const velocity = getVelocityAtProgress(progress, MAX_SPEED, accelEnd, decelStart)
-
-            const moveAmount = velocity * deltaTime
-            const remainingDist = distance - traveledDist
-
-            if (remainingDist > 1 && progress < 1) {
-                const actualMove = Math.min(moveAmount, remainingDist)
-                currentX += dirX * actualMove
-                currentY += dirY * actualMove
-
-                controls.set({ x: currentX, y: currentY })
-
-                if (phaseRef.current === 'running' || phaseRef.current === 'accelerating') {
-                    if (now - lastDustTime >= DUST_SPAWN_RATE) {
-                        spawnDustParticles(currentX, currentY, dirX, dirY, goingLeft, angle)
-                        lastDustTime = now
-                    }
-                }
-
-                if (progress < accelEnd) {
-                    phaseRef.current = 'accelerating'
-                } else if (progress < decelStart) {
-                    if (now - lastRunFrameTime >= RUN_FRAME_TIME) {
-                        setFrame(runFrames[runFrame % 3])
-                        runFrame++
-                        lastRunFrameTime = now
-                    }
-                } else {
-                    if (phaseRef.current !== 'decelerating') {
-                        phaseRef.current = 'decelerating'
-                        decelFrame = 0
-                        lastDecelFrameTime = now
-                    }
-                    if (now - lastDecelFrameTime >= decelFrameTime) {
-                        if (decelFrame < decelFrames.length) {
-                            setFrame(decelFrames[decelFrame])
-                            decelFrame++
-                        }
-                        lastDecelFrameTime = now
-                    }
-                }
-
-                animationFrameRef.current = requestAnimationFrame(animateMovement)
-            } else {
-                controls.set({ x: targetX, y: targetY })
-                finishMovement()
-            }
-        }
-
-        const finishMovement = async () => {
-            clearInterval(scrambleInterval)
-            cancelAnimationFrame(animationFrameRef.current)
-
-            setFrame(CAT_FRAMES.land1)
-            phaseRef.current = 'landing'
-            await new Promise(resolve => setTimeout(resolve, landHoldTime))
-
-            setFrame(CAT_FRAMES.idle)
-            phaseRef.current = 'idle'
-
-            positionRef.current = { x: targetX, y: targetY }
-            dispatch({ type: 'STOP_MOVING' })
-            isAnimatingRef.current = false
-
-            onArrive?.()
-        }
-
-        animationFrameRef.current = requestAnimationFrame(animateMovement)
-    }, [controls, catWidth, catHeight, spawnDustParticles])
-
-    // Expose moveTo / moveNear via ref
     useImperativeHandle(ref, () => ({
         moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => {
             const bounds = boundsRef.current
             if (!bounds.width || !bounds.height) return
 
-            // Cat is child of the interactive div → use image-relative coords
             const targetX = (xPercent / 100) * bounds.width - catWidth / 2
             const targetY = (yPercent / 100) * bounds.height - catHeight / 2
 
-            moveToPosition(targetX, targetY, onArrive)
+            catMovement.moveToPosition(targetX, targetY, onArrive)
         },
         moveNear: (xPercent: number, yPercent: number, bufferPx: number = 80, onArrive?: () => void) => {
             const bounds = boundsRef.current
@@ -485,8 +224,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             const targetX = (xPercent / 100) * bounds.width - catWidth / 2
             const targetY = (yPercent / 100) * bounds.height - catHeight / 2
 
-            const currentX = positionRef.current.x
-            const currentY = positionRef.current.y
+            const currentX = catMovement.positionRef.current.x
+            const currentY = catMovement.positionRef.current.y
 
             const dx = targetX - currentX
             const dy = targetY - currentY
@@ -501,9 +240,9 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             const stopX = currentX + dx * ratio
             const stopY = currentY + dy * ratio
 
-            moveToPosition(stopX, stopY, onArrive)
+            catMovement.moveToPosition(stopX, stopY, onArrive)
         }
-    }), [moveToPosition, catWidth, catHeight])
+    }), [catMovement, catWidth, catHeight])
 
     const handleClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
         const bounds = boundsRef.current
@@ -513,8 +252,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         const targetX = e.clientX - rect.left - catWidth / 2
         const targetY = e.clientY - rect.top - catHeight / 2
 
-        moveToPosition(targetX, targetY)
-    }, [moveToPosition, catWidth, catHeight])
+        catMovement.moveToPosition(targetX, targetY)
+    }, [catMovement, catWidth, catHeight])
 
     const lawnLightSrc = '/assets/lawn.webp'
     const lawnDarkSrc = '/assets/lawn-night.webp'
@@ -541,7 +280,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             ref={containerRef}
             className="relative h-full w-full select-none overflow-visible"
         >
-            {/* Lawn image — structural <img>, not a CSS background */}
             {isPortrait ? (
                 <div
                     ref={imgWrapperRef}
@@ -565,7 +303,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                 />
             )}
 
-            {/* Interactive area — exactly matches the image's rendered bounds */}
             {imgBounds && (
                 <div
                     onClick={handleClick}
@@ -577,9 +314,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                         height: imgBounds.height,
                     }}
                 >
-                    {/* Dust particles layer */}
                     <AnimatePresence>
-                        {particles.map(particle => (
+                        {catMovement.particles.map(particle => (
                             <motion.div
                                 key={particle.id}
                                 initial={{
@@ -612,7 +348,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                         ))}
                     </AnimatePresence>
 
-                    {/* Progress indicator */}
                     {progress && (
                         <div className="absolute left-1/2 -top-22 min-[500px]:-top-3 -translate-x-1/2 z-40">
                             <DiscreteProgress
@@ -626,7 +361,6 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                         </div>
                     )}
 
-                    {/* Items layer */}
                     <AnimatePresence>
                         {items.map((item) => (
                             item.type === 'story' ? (
@@ -666,14 +400,13 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                         ))}
                     </AnimatePresence>
 
-                    {/* Cat sprite */}
                     <motion.div
                         animate={controls}
                         className="absolute origin-center pointer-events-none z-50"
                         style={{
                             width: catWidth,
                             height: catHeight,
-                            scaleX: catState.facingLeft ? -1 : 1,
+                            scaleX: catMovement.facingLeft ? -1 : 1,
                         }}
                     >
                         <CatSprite

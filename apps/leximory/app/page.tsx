@@ -1,10 +1,8 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
 import Markdown from '@/components/markdown'
-import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
 import {
 	PiLinkSimpleHorizontalDuotone,
-	PiShootingStarDuotone,
 	PiNewspaperDuotone,
 } from 'react-icons/pi'
 import { ReactNode } from 'react'
@@ -19,56 +17,22 @@ import { Card, CardBody } from '@heroui/card'
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
-import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
+import { EXAMPLE_SHARED_LIB } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
-import { TextHoverEffect } from '@/components/ui/text-hover-effect'
-import LinkButton from '@repo/ui/link-button'
 import LinkCard from '@/components/ui/link-card'
-import HeroImportUI from '@/components/ui/hero-import'
+import HeroSection from '@/components/hero'
 
 export default async function Home() {
 
 	return (
-		<div className='min-h-screen'>
-			{/* Hero Section - Full Viewport Height */}
-			<section className='h-screen flex items-center justify-center'>
-				<div className='w-full max-w-4xl px-6'>
-					<div className='flex flex-col items-center justify-center min-h-full'>
-						<div className='flex-1 flex items-center'>
-							<HeroImportUI />
-						</div>
-					</div>
-				</div>
-			</section>
+		<div>
+			<HeroSection />
 
 			{/* Rest of the Current Landing Page */}
 			<section id='content-section' className='bg-background'>
 				<Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
 					<div>
-						<H className={'text-default-400 text-8xl lg:text-9xl italic text-center'} fancy>
-							Leximory
-						</H>
-
-						<Spacer y={5}></Spacer>
-
-						<div className='flex flex-col sm:flex-row justify-center items-center gap-3'>
-							<div>
-								<H className={'text-2xl font-bold sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
-									语言学地学语言。
-								</H>
-								<H className={'text-base sm:text-lg animate-in fade-in slide-in-from-bottom-10 duration-1000 hidden sm:block'}>
-									集中输入、轻松复盘、听读结合
-								</H>
-							</div>
-							<div className='flex justify-center items-center'>
-								<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='animate-bounce font-semibold'>
-									开始学习
-								</LinkButton>
-							</div>
-						</div>
-
-						<Spacer y={10}></Spacer>
-
+		
 						<div className='grid w-full gap-3'>
 							<div className='grid grid-cols-1 sm:grid-cols-5 gap-3'>
 								<div className='col-span-2'>
@@ -186,20 +150,6 @@ export default async function Home() {
 							</div>
 						</div>
 
-						<Spacer y={12}></Spacer>
-
-						<div className='prose prose-lg dark:prose-invert max-w-xl mx-auto'>
-							<Methodology />
-						</div>
-
-						<Spacer y={5}></Spacer>
-
-						<LinkCard shadow='none' isBlurred isPressable prefetch href={SIGN_IN_URL}>
-							<CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
-								<TextHoverEffect text={'从记忆'} />
-								<TextHoverEffect text={'到心会'} />
-							</CardBody>
-						</LinkCard>
 					</div>
 				</Main>
 			</section>
