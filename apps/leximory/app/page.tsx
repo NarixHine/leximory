@@ -1,11 +1,10 @@
 import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
 import Markdown from '@/components/markdown'
-import Methodology from './blog/(posts)/from-memorisation-to-acquisition/methodology.mdx'
 import {
 	PiLinkSimpleHorizontalDuotone,
-	PiShootingStarDuotone,
 	PiNewspaperDuotone,
+	PiShootingStarDuotone,
 } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -21,54 +20,24 @@ import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
 import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
-import { TextHoverEffect } from '@/components/ui/text-hover-effect'
-import LinkButton from '@repo/ui/link-button'
 import LinkCard from '@/components/ui/link-card'
-import HeroImportUI from '@/components/ui/hero-import'
+import HeroSection from '@/components/hero'
+import StorySection from '@/components/hero/story-section'
+import LinkButton from '@repo/ui/link-button'
+import { CatSprite } from './review/components/cat-sprite'
 
 export default async function Home() {
 
 	return (
-		<div className='min-h-screen'>
-			{/* Hero Section - Full Viewport Height */}
-			<section className='h-screen flex items-center justify-center'>
-				<div className='w-full max-w-4xl px-6'>
-					<div className='flex flex-col items-center justify-center min-h-full'>
-						<div className='flex-1 flex items-center'>
-							<HeroImportUI />
-						</div>
-					</div>
-				</div>
-			</section>
+		<div>
+			<HeroSection />
+			<StorySection />
 
 			{/* Rest of the Current Landing Page */}
-			<section id='content-section' className='bg-background'>
+			<section>
 				<Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
+					<H className='text-3xl sm:text-4xl mb-4'>Leximory&nbsp;<span className='font-semibold'>助你一臂之力。</span></H>
 					<div>
-						<H className={'text-default-400 text-8xl lg:text-9xl italic text-center'} fancy>
-							Leximory
-						</H>
-
-						<Spacer y={5}></Spacer>
-
-						<div className='flex flex-col sm:flex-row justify-center items-center gap-3'>
-							<div>
-								<H className={'text-2xl font-bold sm:text-3xl animate-in fade-in slide-in-from-bottom-10 duration-1000'}>
-									语言学地学语言。
-								</H>
-								<H className={'text-base sm:text-lg animate-in fade-in slide-in-from-bottom-10 duration-1000 hidden sm:block'}>
-									集中输入、轻松复盘、听读结合
-								</H>
-							</div>
-							<div className='flex justify-center items-center'>
-								<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='animate-bounce font-semibold'>
-									开始学习
-								</LinkButton>
-							</div>
-						</div>
-
-						<Spacer y={10}></Spacer>
-
 						<div className='grid w-full gap-3'>
 							<div className='grid grid-cols-1 sm:grid-cols-5 gap-3'>
 								<div className='col-span-2'>
@@ -175,31 +144,23 @@ export default async function Home() {
 
 						<Spacer y={12}></Spacer>
 
-						<div className='flex justify-center items-center gap-4 lg:flex-row flex-col'>
+						<div className='flex justify-center items-center'>
 							<div className='w-full'>
-								<H className='text-3xl mb-2 font-bold'>核心功能</H>
+								<H className='text-3xl mb-2 font-bold'>核心功能演示</H>
 								<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
 							</div>
-							<div className='w-full'>
-								<H className='text-3xl mb-2 font-semibold' fancy>AI Agent</H>
-								<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114606102153816&bvid=BV1g873z5EPJ&cid=30261575913&p=1&muted=true' allowFullScreen></iframe>
-							</div>
 						</div>
+					</div>
 
-						<Spacer y={12}></Spacer>
+					<Spacer y={12}></Spacer>
 
-						<div className='prose prose-lg dark:prose-invert max-w-xl mx-auto'>
-							<Methodology />
-						</div>
-
-						<Spacer y={5}></Spacer>
-
-						<LinkCard shadow='none' isBlurred isPressable prefetch href={SIGN_IN_URL}>
-							<CardBody className='flex flex-col items-center justify-center pb-0 pt-6 md:pt-8'>
-								<TextHoverEffect text={'从记忆'} />
-								<TextHoverEffect text={'到心会'} />
-							</CardBody>
-						</LinkCard>
+					<div className='flex justify-center items-center flex-wrap'>
+						<LinkButton startContent={<PiShootingStarDuotone className='text-lg' />} radius='full' color='primary' href={SIGN_IN_URL} className='font-semibold'>
+							开始
+						</LinkButton>
+						<div className='text-lg font-semibold ml-2 flex justify-center items-center'>和小白猫<div className='h-16 w-30 -ml-3 -mr-9 inline-block'>
+							<CatSprite variant={'white'} frame='idle' className='drop-shadow-2xl' />
+						</div>一起学习语言。</div>
 					</div>
 				</Main>
 			</section>
@@ -217,7 +178,7 @@ const BentoCard = ({ title, children, description, }: {
 			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}
 			</H>
-			{description && <div className='text-sm mb-2'>{description}</div>}
+			{description && <div className='text-sm mb-2 text-secondary-400'>{description}</div>}
 			<div className='w-full h-full flex justify-center items-center'>
 				{children}
 			</div>

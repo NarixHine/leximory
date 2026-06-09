@@ -29,8 +29,8 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
             transition={{
                 delay,
                 type: 'spring',
-                stiffness: 300,
-                damping: 20
+                stiffness: 200,
+                damping: 28
             }}
             className="absolute"
             style={{
@@ -40,7 +40,7 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
             }}
         >
             <motion.button
-                whileHover={{ scale: isCompleted ? 1.03 : 1.08 }}
+                whileHover={{ scale: isCompleted ? 1.03 : 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
@@ -84,8 +84,8 @@ export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
             transition={{
                 delay,
                 type: 'spring',
-                stiffness: 300,
-                damping: 20
+                stiffness: 200,
+                damping: 28
             }}
             className="absolute"
             style={{
@@ -95,7 +95,7 @@ export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
             }}
         >
             <motion.button
-                whileHover={{ scale: 1.08 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
