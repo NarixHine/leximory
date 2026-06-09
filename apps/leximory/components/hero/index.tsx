@@ -2,8 +2,7 @@
 
 import HeroLawn from './hero-lawn'
 import LinkButton from '@repo/ui/link-button'
-import { Button } from '@heroui/button'
-import { PiShootingStarDuotone, PiArrowDownDuotone } from 'react-icons/pi'
+import { PiShootingStarDuotone, PiEnvelopeDuotone } from 'react-icons/pi'
 import { SIGN_IN_URL } from '@repo/env/config'
 
 export default function HeroSection() {
@@ -33,14 +32,14 @@ export default function HeroSection() {
 					className='text-lg text-foreground-400 text-balance max-w-xl leading-relaxed mb-4 animate-blur-in font-ui font-semibold'
 					style={{ animationDelay: '150ms' }}
 				>
-					<span className='font-fancy text-xl font-normal text-primary'>Leximory</span> 是一个搭载
+					<span className='font-fancy text-xl text-primary-800 font-normal [font-variant-caps:small-caps]'>Leximory</span> 是一个搭载
 					<span className='font-fancy text-xl italic bg-linear-to-r from-pink-300 to-sky-400 bg-clip-text text-transparent'> AI </span>
 					的语言学习平台，旨在通过整合
-					<span className='text-primary underline underline-offset-4'>文本泛读</span>
+					<span className='text-primary-800 underline underline-offset-4'>文本泛读</span>
 					、
-					<span className='text-primary underline underline-offset-4'>生词释义</span>
+					<span className='text-primary-800 underline underline-offset-4'>生词释义</span>
 					和
-					<span className='text-primary underline underline-offset-4'>词汇复习</span>
+					<span className='text-primary-800 underline underline-offset-4'>词汇复习</span>
 					以最大化语言习得效率。
 				</p>
 
@@ -48,17 +47,17 @@ export default function HeroSection() {
 					<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='font-semibold'>
 						开始学习
 					</LinkButton>
-					<Button
+					<LinkButton
+						href={'/blog/from-memorisation-to-acquisition'}
 						radius='full'
 						variant='flat'
 						color='default'
 						size='lg'
 						className='font-semibold'
-						endContent={<PiArrowDownDuotone />}
-						onPress={() => document.getElementById('content-section')?.scrollIntoView({ behavior: 'smooth' })}
+						startContent={<PiEnvelopeDuotone />}
 					>
 						了解更多
-					</Button>
+					</LinkButton>
 				</div>
 
 				<div className='w-full animate-in fade-in slide-in-from-bottom-6 duration-800 fill-mode-both' style={{ animationDelay: '550ms' }}>
