@@ -7,7 +7,7 @@ import { SIGN_IN_URL } from '@repo/env/config'
 
 export default function HeroSection() {
 	return (
-		<section className='min-h-[85dvh] flex flex-col justify-center px-6 pt-24 pb-12'>
+		<section className='min-h-[85dvh] flex flex-col justify-center px-6 pt-[30vh] pb-12'>
 			<div className='max-w-5xl w-full mx-auto'>
 				<div className='flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 mb-4'>
 					<div className='size-24 rounded-4xl border-5 border-default-100 dark:border-default-400/40 flex items-center justify-center shrink-0 overflow-hidden bg-default-100 dark:bg-default-100/20'>
@@ -43,7 +43,7 @@ export default function HeroSection() {
 					以最大化语言习得效率。
 				</div>
 
-				<div className='flex gap-3 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both' style={{ animationDelay: '300ms' }}>
+				<div className='flex gap-3 mb-20 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both' style={{ animationDelay: '300ms' }}>
 					<LinkButton startContent={<PiShootingStarDuotone className='text-xl' />} radius='full' color='primary' href={SIGN_IN_URL} size='lg' className='font-semibold'>
 						开始学习
 					</LinkButton>
