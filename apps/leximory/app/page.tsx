@@ -4,6 +4,7 @@ import Markdown from '@/components/markdown'
 import {
 	PiLinkSimpleHorizontalDuotone,
 	PiNewspaperDuotone,
+	PiShootingStarDuotone,
 } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -17,22 +18,26 @@ import { Card, CardBody } from '@heroui/card'
 import ShowcaseAnnotation from '@/components/ui/showcase-annotation'
 import Test from './library/[lib]/corpus/components/test'
 import LibraryCard from './marketplace/[page]/components/card'
-import { EXAMPLE_SHARED_LIB } from '@repo/env/config'
+import { EXAMPLE_SHARED_LIB, SIGN_IN_URL } from '@repo/env/config'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import LinkCard from '@/components/ui/link-card'
 import HeroSection from '@/components/hero'
+import StorySection from '@/components/hero/story-section'
+import LinkButton from '@repo/ui/link-button'
+import { CatSprite } from './review/components/cat-sprite'
 
 export default async function Home() {
 
 	return (
 		<div>
 			<HeroSection />
+			<StorySection />
 
 			{/* Rest of the Current Landing Page */}
-			<section id='content-section' className='bg-background'>
+			<section>
 				<Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
+					<H className='text-3xl sm:text-4xl mb-4'>Leximory&nbsp;<span className='font-semibold'>助你一臂之力。</span></H>
 					<div>
-		
 						<div className='grid w-full gap-3'>
 							<div className='grid grid-cols-1 sm:grid-cols-5 gap-3'>
 								<div className='col-span-2'>
@@ -141,11 +146,21 @@ export default async function Home() {
 
 						<div className='flex justify-center items-center'>
 							<div className='w-full'>
-								<H className='text-3xl mb-2 font-bold'>核心功能</H>
+								<H className='text-3xl mb-2 font-bold'>核心功能演示</H>
 								<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
 							</div>
 						</div>
+					</div>
 
+					<Spacer y={12}></Spacer>
+
+					<div className='flex justify-center items-center'>
+						<LinkButton startContent={<PiShootingStarDuotone />} radius='full' color='primary' href={SIGN_IN_URL} className='font-semibold'>
+							<span className='text-lg'>开始</span>
+						</LinkButton>
+						<div className='text-lg font-semibold ml-2 flex justify-center items-center'>和小白猫<div className='h-16 w-30 -ml-3 -mr-9 inline-block'>
+							<CatSprite variant={'white'} frame='idle' className='drop-shadow-2xl' />
+						</div>一起学习语言。</div>
 					</div>
 				</Main>
 			</section>
@@ -163,7 +178,7 @@ const BentoCard = ({ title, children, description, }: {
 			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
 				{title}
 			</H>
-			{description && <div className='text-sm mb-2'>{description}</div>}
+			{description && <div className='text-sm mb-2 text-secondary-400'>{description}</div>}
 			<div className='w-full h-full flex justify-center items-center'>
 				{children}
 			</div>
