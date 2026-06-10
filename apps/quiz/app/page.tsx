@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 export default function Page() {
     return (
         <Main>
-            <div className='mb-6 mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3'>
-                <Logo className='size-13' />
+            <div className='mb-6 mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1'>
+                <Logo className='size-12' />
                 <h1 className='text-4xl'>猫谜</h1>
                 <p className='text-default-700 text-sm col-span-2'>陪你一起揭开英语之谜</p>
             </div>
