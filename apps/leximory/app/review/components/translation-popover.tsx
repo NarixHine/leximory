@@ -316,7 +316,7 @@ export function TranslationExercise({
                 value={draft}
                 onChange={setDraft}
                 onSubmit={handleSubmit}
-                placeholder='Write your translation...'
+                placeholder='Your translation here ...'
                 disabled={isSubmittingCurrentItem}
                 canSubmit={canSubmit}
                 isLoading={isSubmittingCurrentItem}

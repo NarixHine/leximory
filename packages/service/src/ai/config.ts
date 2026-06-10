@@ -8,7 +8,7 @@ type AIConfig = {
 }
 
 export const FLASH_AI: AIConfig = {
-    model: gateway('openai/gpt-5.4-mini'),
+    model: gateway('google/gemini-3-flash'),
 }
 
 export const FILE_AI: AIConfig = {
