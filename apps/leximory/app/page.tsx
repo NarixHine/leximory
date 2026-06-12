@@ -116,15 +116,13 @@ export default async function Home() {
 
 							<div className='grid grid-cols-1 gap-3 md:grid-cols-3 w-full'>
 								<div className='col-span-1 sm:col-span-2'>
-									<BentoCard title='多语言' description='日语、文言文……'>
+									<BentoCard title='多语言' description='文言文、日文……'>
 										<ScopeProvider atoms={[langAtom]}>
-											<HydrationBoundary hydrateAtoms={[[langAtom, 'ja']]}>
+											<HydrationBoundary hydrateAtoms={[[langAtom, 'zh']]}>
 												<Markdown
+													inlineMode
 													disableSave
-													md={
-														'<div/>\n' +
-														'> 自分は{{透き徹る||透き徹る||**［動］（すきとおる／透彻）**光が完全に通る。}}ほど深く見えるこの黒眼の色沢を眺めて、これでも死ぬのかと思った。それで、{{ねんごろ||ねんごろ||**［形動］（懇ろ／亲切）**心がこもっているさま。親切であるさま。}}に枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうね、とまた聞き返した。すると女は黒い眼を眠そうに{{見張た||見張る||**［動］（みはる／睁眼）**目を見開く。}}まま、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。\n\n'
-													}
+													md={'> 屈原曰：“吾闻之，新{{沐||沐||`mù` 洗头发。}}者必{{弹冠||弹冠||`tánguān` 弹去帽子上的灰尘。}}，新{{浴||浴||`yù` 洗身体。}}者必{{振衣||振衣||`zhènyī` 抖落衣服上的泥沙。}}，人又谁能以身之{{察察||察察||`cháchá` 洁净的样子。}}，受物之{{汶汶||汶汶||`mènmèn` 肮脏，浑浊。}}者乎！{{宁||宁||`nìng` 宁可。}}赴{{常流||常流||`chángliú` 指长流不息的江水。}}而葬乎江鱼腹中耳，又安能以{{皓皓||皓皓||`hàohào` 洁白的样子。}}之白而蒙世俗之{{温蠖||温蠖||`wēnhuò` 尘垢。}}乎！”'}
 												/>
 											</HydrationBoundary>
 										</ScopeProvider>
