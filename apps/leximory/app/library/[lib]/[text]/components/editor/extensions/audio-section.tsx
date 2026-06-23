@@ -72,15 +72,15 @@ export const AudioSection = Node.create({
     addCommands() {
         return {
             setAudioSection:
-                (attributes) =>
-                    ({ commands }) => {
-                        return commands.wrapIn(this.name, attributes)
-                    },
+                attributes =>
+                ({ commands }) => {
+                    return commands.wrapIn(this.name, attributes)
+                },
             removeAudioSection:
                 () =>
-                    ({ commands }) => {
-                        return commands.lift(this.name)
-                    },
+                ({ commands }) => {
+                    return commands.lift(this.name)
+                },
         }
     },
 })

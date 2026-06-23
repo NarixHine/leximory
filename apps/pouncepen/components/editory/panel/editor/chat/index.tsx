@@ -10,7 +10,15 @@ import { useChat } from '@ai-sdk/react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Streamdown } from 'streamdown'
-import { ArrowCounterClockwiseIcon, ChatCircleDotsIcon, PaperPlaneRightIcon, StopCircleIcon, WarningCircleIcon, NavigationArrowIcon, ArrowsClockwiseIcon } from '@phosphor-icons/react'
+import {
+    ArrowCounterClockwiseIcon,
+    ChatCircleDotsIcon,
+    PaperPlaneRightIcon,
+    StopCircleIcon,
+    WarningCircleIcon,
+    NavigationArrowIcon,
+    ArrowsClockwiseIcon,
+} from '@phosphor-icons/react'
 import { ToolName, toolDescriptions, ToolResult, toolSchemas } from './tool-types'
 import { useAtom } from 'jotai'
 import { editoryItemsAtom } from '@repo/ui/paper/atoms'
@@ -20,9 +28,7 @@ import { ProtectedButton } from '@repo/ui/protected-button'
 type MessagePart = UIMessage['parts'][number]
 
 function ToolMessageWrapper({ children }: { children: React.ReactNode }) {
-    return <div className='flex items-center gap-2 text-default-600 ml-2'>
-        {children}
-    </div>
+    return <div className='flex items-center gap-2 text-default-600 ml-2'>{children}</div>
 }
 
 function ToolLoading({ toolName }: { toolName: ToolName }) {
@@ -34,8 +40,12 @@ function ToolLoading({ toolName }: { toolName: ToolName }) {
     )
 }
 
-
-function ToolResultDisplay({ toolName }: { toolName: ToolName; result: Awaited<ToolResult[ToolName]> }) {
+function ToolResultDisplay({
+    toolName,
+}: {
+    toolName: ToolName
+    result: Awaited<ToolResult[ToolName]>
+}) {
     return (
         <ToolMessageWrapper>
             <NavigationArrowIcon size={16} />
@@ -63,31 +73,35 @@ function MessagePart({ part, isUser }: { part: MessagePart; isUser: boolean }) {
                     />
                 )
             case 'output-error':
-                return <ToolMessageWrapper>
-                    <WarningCircleIcon size={16} /> Error: {toolDescriptions[toolName].loading}
-                </ToolMessageWrapper>
+                return (
+                    <ToolMessageWrapper>
+                        <WarningCircleIcon size={16} /> Error: {toolDescriptions[toolName].loading}
+                    </ToolMessageWrapper>
+                )
         }
     }
 
     switch (part.type) {
         case 'text':
             return (
-                <div className={cn(
-                    'rounded-2xl max-w-4/5 prose overflow-x-hidden',
-                    isUser
-                        ? 'bg-default-50 text-default-900 dark:bg-stone-900 px-6'
-                        : 'text-default-900 px-4',
-                )}>
+                <div
+                    className={cn(
+                        'rounded-2xl max-w-4/5 prose overflow-x-hidden',
+                        isUser
+                            ? 'bg-default-50 text-default-900 dark:bg-stone-900 px-6'
+                            : 'text-default-900 px-4',
+                    )}
+                >
                     <Streamdown>{part.text}</Streamdown>
                 </div>
             )
         case 'reasoning':
-            return part.text && (
-                <Streamdown
-                    className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'
-                >
-                    {part.text}
-                </Streamdown>
+            return (
+                part.text && (
+                    <Streamdown className='prose dark:prose-invert max-w-none font-mono text-xs leading-tight'>
+                        {part.text}
+                    </Streamdown>
+                )
             )
         default:
             return <></>
@@ -100,11 +114,11 @@ export function ChatMessage({
     message,
     regenerate,
     isLast,
-    isLoading
+    isLoading,
 }: {
-    message: UIMessage,
-    regenerate?: () => void,
-    isLast?: boolean,
+    message: UIMessage
+    regenerate?: () => void
+    isLast?: boolean
     isLoading?: boolean
 }) {
     const { id, parts, role } = message
@@ -113,12 +127,12 @@ export function ChatMessage({
         <MemoizedMessagePart key={j} part={part as MessagePart} isUser={role === 'user'} />
     ))
 
-    return <div className={cn(
-        'mb-8 flex flex-col',
-        role === 'user' ? 'items-end' : 'items-start'
-    )} data-message-id={id}>
-        {
-            isLast && regenerate ? (
+    return (
+        <div
+            className={cn('mb-8 flex flex-col', role === 'user' ? 'items-end' : 'items-start')}
+            data-message-id={id}
+        >
+            {isLast && regenerate ? (
                 <div className='flex gap-1 justify-end items-end w-full'>
                     <Button
                         isIconOnly
@@ -134,20 +148,36 @@ export function ChatMessage({
                     </Button>
                     {content}
                 </div>
-            ) : content
-        }
-    </div>
+            ) : (
+                content
+            )}
+        </div>
+    )
 }
 
 const MemoizedMessage = memo(ChatMessage)
 
 export const ChatMessages = ({
     messages,
-    isLoading
+    isLoading,
 }: {
     messages: UIMessage[]
     isLoading?: boolean
-}) => <>{messages.map((message, index) => <MemoizedMessage isLoading={isLoading} key={message.id} message={message} isLast={(index === messages.length - 1 || index === messages.length - 2) && message.role === 'user'} />)}</>
+}) => (
+    <>
+        {messages.map((message, index) => (
+            <MemoizedMessage
+                isLoading={isLoading}
+                key={message.id}
+                message={message}
+                isLast={
+                    (index === messages.length - 1 || index === messages.length - 2) &&
+                    message.role === 'user'
+                }
+            />
+        ))}
+    </>
+)
 
 function ChatSession() {
     const [data, setData] = useAtom(editoryItemsAtom)
@@ -185,8 +215,7 @@ function ChatSession() {
                             toolCallId: toolCall.toolCallId,
                             output: JSON.stringify({ success: true, id: newItem.id }),
                         })
-                    }
-                    else {
+                    } else {
                         addToolOutput({
                             tool: 'addQuizItem',
                             toolCallId: toolCall.toolCallId,
@@ -205,8 +234,7 @@ function ChatSession() {
                             toolCallId: toolCall.toolCallId,
                             output: JSON.stringify({ success: true }),
                         })
-                    }
-                    else {
+                    } else {
                         addToolOutput({
                             tool: 'removeQuizItem',
                             toolCallId: toolCall.toolCallId,
@@ -219,14 +247,17 @@ function ChatSession() {
                     const input3 = toolSchemas.updateQuizItem.safeParse(toolCall.input)
                     if (input3.success) {
                         const { id: updateId, data: updateData } = input3.data
-                        setData(prev => prev.map(item => item.id === updateId ? { ...item, ...updateData } : item))
+                        setData(prev =>
+                            prev.map(item =>
+                                item.id === updateId ? { ...item, ...updateData } : item,
+                            ),
+                        )
                         addToolOutput({
                             tool: 'updateQuizItem',
                             toolCallId: toolCall.toolCallId,
                             output: JSON.stringify({ success: true }),
                         })
-                    }
-                    else {
+                    } else {
                         addToolOutput({
                             tool: 'updateQuizItem',
                             toolCallId: toolCall.toolCallId,
@@ -237,14 +268,14 @@ function ChatSession() {
                     break
             }
         },
-        onError: (error) => {
+        onError: error => {
             if (IS_PROD) {
                 toast.error('发生错误')
             } else {
                 toast.error(error.message)
                 console.error(error)
             }
-        }
+        },
     })
     const isLoading = status === 'streaming' || status === 'submitted'
     const [isFirstConversation, setIsFirstConversation] = useState(true)
@@ -252,7 +283,7 @@ function ChatSession() {
     const startNewConversation = (initialInput?: string) => {
         stop()
         setMessages([])
-        setInput(isFirstConversation ? initialInput ?? '' : '')
+        setInput(isFirstConversation ? (initialInput ?? '') : '')
         setIsFirstConversation(false)
     }
 
@@ -262,7 +293,7 @@ function ChatSession() {
 
         sendMessage({
             role: 'user',
-            parts: [{ type: 'text', text: input }]
+            parts: [{ type: 'text', text: input }],
         })
         setInput('')
     }
@@ -277,11 +308,13 @@ function ChatSession() {
 
     return (
         <div className='flex flex-col flex-1'>
-            <div className={cn(
-                'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-2 top-4 z-10 rounded-lg',
-                'border border-slate-300/50 dark:border-stone-600/30',
-                'backdrop-blur backdrop-saturate-150',
-            )}>
+            <div
+                className={cn(
+                    'flex justify-between items-center mb-4 sticky py-2 pl-5 pr-2 top-4 z-10 rounded-lg',
+                    'border border-slate-300/50 dark:border-stone-600/30',
+                    'backdrop-blur backdrop-saturate-150',
+                )}
+            >
                 <h2 className={'text-2xl font-formal'}>
                     <span className='italic'>PouncePen</span> your paper.
                 </h2>
@@ -297,10 +330,7 @@ function ChatSession() {
             </div>
 
             <ChatMessages isLoading={isLoading} messages={messages} />
-            <form
-                onSubmit={handleFormSubmit}
-                className='flex items-center gap-2 mt-auto'
-            >
+            <form onSubmit={handleFormSubmit} className='flex items-center gap-2 mt-auto'>
                 <Textarea
                     autoFocus
                     ref={inputRef}
@@ -321,7 +351,9 @@ function ChatSession() {
                     isDisabled={status === 'ready' && !input.trim()}
                     aria-label={isLoading ? '停止' : '发送'}
                     onPress={handleButtonClick}
-                    startContent={isLoading ? <StopCircleIcon size={22} /> : <PaperPlaneRightIcon size={22} />}
+                    startContent={
+                        isLoading ? <StopCircleIcon size={22} /> : <PaperPlaneRightIcon size={22} />
+                    }
                 ></ProtectedButton>
             </form>
         </div>
@@ -329,7 +361,5 @@ function ChatSession() {
 }
 
 export default function ChatInterface() {
-    return (
-        <ChatSession />
-    )
+    return <ChatSession />
 }

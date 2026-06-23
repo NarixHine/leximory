@@ -14,27 +14,31 @@ const nextConfig: NextConfig = {
         turbopackFileSystemCacheForDev: true,
     },
     images: {
-        remotePatterns: [
-            ...ALLOWED_IMAGE_REMOTE_PATTERNS
-        ],
+        remotePatterns: [...ALLOWED_IMAGE_REMOTE_PATTERNS],
     },
     pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
     async redirects() {
-        return [{
-            source: '/fix',
-            destination: FYP_BLOG_LINK,
-            permanent: true,
-        }, {
-            source: '/chat',
-            destination: '/blog/ai-agent',
-            permanent: true,
-        }]
+        return [
+            {
+                source: '/fix',
+                destination: FYP_BLOG_LINK,
+                permanent: true,
+            },
+            {
+                source: '/chat',
+                destination: '/blog/ai-agent',
+                permanent: true,
+            },
+        ]
     },
     async rewrites() {
-        return [{
-            source: '/ebooks/:token/:id\\.epub',
-            destination: 'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token'
-        }]
+        return [
+            {
+                source: '/ebooks/:token/:id\\.epub',
+                destination:
+                    'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token',
+            },
+        ]
     },
 }
 

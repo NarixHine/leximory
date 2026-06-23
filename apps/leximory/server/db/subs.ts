@@ -10,11 +10,13 @@ export async function getSubsStatus({ userId }: { userId: string }) {
         .eq('uid', userId)
         .single()
 
-    return data ? {
-        hasSubs: true,
-        hour: data.hour,
-        subscription: data.subscription ? JSON.stringify(data.subscription) : undefined
-    } : { hasSubs: false, hour: null, subscription: null }
+    return data
+        ? {
+              hasSubs: true,
+              hour: data.hour,
+              subscription: data.subscription ? JSON.stringify(data.subscription) : undefined,
+          }
+        : { hasSubs: false, hour: null, subscription: null }
 }
 
 export async function getHourlySubs(hour: number) {
@@ -26,27 +28,31 @@ export async function getHourlySubs(hour: number) {
 
     return data.map(({ uid, subscription }) => ({
         uid,
-        subscription: JSON.parse(JSON.stringify(subscription)) as PushSubscription
+        subscription: JSON.parse(JSON.stringify(subscription)) as PushSubscription,
     }))
 }
 
-export default async function saveSubs({ userId, subs, hour }: { userId: string, subs: PushSubscription, hour: number }) {
+export default async function saveSubs({
+    userId,
+    subs,
+    hour,
+}: {
+    userId: string
+    subs: PushSubscription
+    hour: number
+}) {
     await supabase
         .from('subs')
         .insert({
             uid: userId,
             subscription: JSON.parse(JSON.stringify(subs)),
-            hour
+            hour,
         })
         .throwOnError()
     revalidatePath(`/review`)
 }
 
 export async function delSubs({ userId }: { userId: string }) {
-    await supabase
-        .from('subs')
-        .delete()
-        .eq('uid', userId)
-        .throwOnError()
+    await supabase.from('subs').delete().eq('uid', userId).throwOnError()
     revalidatePath(`/review`)
 }

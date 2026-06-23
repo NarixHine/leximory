@@ -48,10 +48,10 @@ const annotateQueryOptions = (prompt: string) =>
     queryOptions({
         queryKey: ['annotate-word', prompt],
         queryFn: streamedQuery({
-            streamFn: () => annotateWordStream(prompt)
+            streamFn: () => annotateWordStream(prompt),
         }),
         staleTime: Infinity,
-        enabled: prompt.length > 0
+        enabled: prompt.length > 0,
     })
 
 const useAnnotate = ({ prompt }: { prompt: string }) => {
@@ -73,36 +73,42 @@ export function Define() {
     }
 
     return (
-        <Drawer.Root
-            direction='top'
-            repositionInputs={false}
-        >
-            {selection && selection.anchorNode?.textContent && selection.toString() && left != null && width != null && rect && (
-                <Drawer.Trigger asChild>
-                    <Button
-                        style={{
-                            left: left + width / 2,
-                            top: buttonTop
-                        }}
-                        className={cn(
-                            'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full',
-                        )}
-                        color='primary'
-                        startContent={<MagnifyingGlassIcon weight='duotone' />}
-                        variant='shadow'
-                    >
-                        Define
-                    </Button>
-                </Drawer.Trigger>
-            )}
+        <Drawer.Root direction='top' repositionInputs={false}>
+            {selection &&
+                selection.anchorNode?.textContent &&
+                selection.toString() &&
+                left != null &&
+                width != null &&
+                rect && (
+                    <Drawer.Trigger asChild>
+                        <Button
+                            style={{
+                                left: left + width / 2,
+                                top: buttonTop,
+                            }}
+                            className={cn(
+                                'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full',
+                            )}
+                            color='primary'
+                            startContent={<MagnifyingGlassIcon weight='duotone' />}
+                            variant='shadow'
+                        >
+                            Define
+                        </Button>
+                    </Drawer.Trigger>
+                )}
             <Drawer.Portal>
-                <Drawer.Overlay className={cn(
-                    'fixed inset-0 z-60',
-                    'bg-linear-to-b to-transparent from-default-600/50 dark:from-stone-950/70',
-                )} />
+                <Drawer.Overlay
+                    className={cn(
+                        'fixed inset-0 z-60',
+                        'bg-linear-to-b to-transparent from-default-600/50 dark:from-stone-950/70',
+                    )}
+                />
                 <Drawer.Content className='h-fit px-2 fixed rounded-t-xl top-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    {lastValidSelection.current && <Annotation prompt={lastValidSelection.current} />}
+                    {lastValidSelection.current && (
+                        <Annotation prompt={lastValidSelection.current} />
+                    )}
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>
@@ -111,9 +117,7 @@ export function Define() {
 
 function Annotation({ prompt }: { prompt: string }) {
     const { portions, isPending } = useAnnotate({ prompt })
-    return (
-        <WordNote portions={portions} isPending={isPending} showSaveButton={true} />
-    )
+    return <WordNote portions={portions} isPending={isPending} showSaveButton={true} />
 }
 
 export * from './utils'

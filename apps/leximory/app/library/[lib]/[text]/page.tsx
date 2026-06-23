@@ -10,7 +10,7 @@ export async function generateMetadata(props: LibAndTextProps) {
     const params = await props.params
     const { title } = await getTextContent({ id: params.text })
     return {
-        title: typeof title === 'string' && title !== '' ? title : '新文本'
+        title: typeof title === 'string' && title !== '' ? title : '新文本',
     }
 }
 
@@ -21,9 +21,11 @@ async function PageContent({ params }: LibAndTextProps) {
 }
 
 export default async function Page(props: LibAndTextProps) {
-    return (<Main className='max-w-none sm:w-full pt-6 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
-        <Suspense fallback={<ArticleSkeleton />}>
-            <PageContent params={props.params} />
-        </Suspense>
-    </Main>)
+    return (
+        <Main className='max-w-none sm:w-full pt-6 md:pt-0 px-0 md:px-0 [counter-reset:sidenote-counter] md:pb-4'>
+            <Suspense fallback={<ArticleSkeleton />}>
+                <PageContent params={props.params} />
+            </Suspense>
+        </Main>
+    )
 }

@@ -13,45 +13,43 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SerwistProvider } from '@serwist/turbopack/react'
 
 interface ProvidersProps {
-	children: ReactNode
-	themeProps?: ThemeProviderProps
+    children: ReactNode
+    themeProps?: ThemeProviderProps
 }
 
 export function Providers({ children, themeProps }: ProvidersProps) {
-	const router = useRouter()
+    const router = useRouter()
 
-	return (<Suspense>
-		<SerwistProvider swUrl='/serwist/sw.js'>
-			<HeroUIProvider navigate={router.push}>
-				<ThemeProvider {...themeProps}>
-					<JotaiProvider>
-						<Toaster toastOptions={{
-							classNames: {
-								toast: cn(
-									'text-foreground! bg-secondary-200/40!',
-									'px-6! rounded-3xl!',
-									'border-none! shadow-none!',
-									'backdrop-blur-lg! backdrop-saturate-150!',
-									MINCHO.className
-								)
-							},
-						}}></Toaster>
-						<QueryProvider>
-							{children}
-						</QueryProvider>
-					</JotaiProvider>
-				</ThemeProvider>
-			</HeroUIProvider>
-		</SerwistProvider>
-	</Suspense>)
+    return (
+        <Suspense>
+            <SerwistProvider swUrl='/serwist/sw.js'>
+                <HeroUIProvider navigate={router.push}>
+                    <ThemeProvider {...themeProps}>
+                        <JotaiProvider>
+                            <Toaster
+                                toastOptions={{
+                                    classNames: {
+                                        toast: cn(
+                                            'text-foreground! bg-secondary-200/40!',
+                                            'px-6! rounded-3xl!',
+                                            'border-none! shadow-none!',
+                                            'backdrop-blur-lg! backdrop-saturate-150!',
+                                            MINCHO.className,
+                                        ),
+                                    },
+                                }}
+                            ></Toaster>
+                            <QueryProvider>{children}</QueryProvider>
+                        </JotaiProvider>
+                    </ThemeProvider>
+                </HeroUIProvider>
+            </SerwistProvider>
+        </Suspense>
+    )
 }
 
 const queryClient = new QueryClient()
 
 function QueryProvider({ children }: { children: ReactNode }) {
-	return (
-		<QueryClientProvider client={queryClient}>
-			{children}
-		</QueryClientProvider>
-	)
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }

@@ -14,14 +14,14 @@ export async function retrieveAudioUrl({ id }: { id: string }) {
     return data.signedUrl
 }
 
-export async function uploadAudio({ id, audio }: { id: string, audio: GeneratedAudioFile }) {
+export async function uploadAudio({ id, audio }: { id: string; audio: GeneratedAudioFile }) {
     const path = `audio/${id}.mp3`
 
     const { data: uploadData } = await supabase.storage
         .from('user-files')
         .upload(path, audio.uint8Array, {
             contentType: audio.mediaType,
-            upsert: true
+            upsert: true,
         })
 
     if (!uploadData?.path) throw new Error('Failed to upload audio')

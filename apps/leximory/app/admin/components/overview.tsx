@@ -38,15 +38,21 @@ export default function AdminOverview({ overview }: AdminOverviewProps) {
                     <h3 className='text-lg font-medium'>Users by Plan</h3>
                     <div className='grid grid-cols-2 gap-3'>
                         {Object.entries(usersByPlan).map(([plan, count]) => (
-                            <div key={plan} className='flex justify-between items-center p-3 rounded-lg border border-divider'>
-                                <Chip 
-                                    size='sm' 
+                            <div
+                                key={plan}
+                                className='flex justify-between items-center p-3 rounded-lg border border-divider'
+                            >
+                                <Chip
+                                    size='sm'
                                     variant='flat'
                                     color={
-                                        plan === 'leximory' ? 'secondary' :
-                                        plan === 'polyglot' ? 'primary' :
-                                        plan === 'bilingual' ? 'success' :
-                                        'default'
+                                        plan === 'leximory'
+                                            ? 'secondary'
+                                            : plan === 'polyglot'
+                                              ? 'primary'
+                                              : plan === 'bilingual'
+                                                ? 'success'
+                                                : 'default'
                                     }
                                     className='capitalize'
                                 >

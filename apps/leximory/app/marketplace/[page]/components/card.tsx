@@ -24,21 +24,27 @@ export default function LibraryCard({ library, isStarred, hideFooter, isOwner }:
             id={library.id}
             name={library.name}
             lang={library.lang}
-            footer={!hideFooter ? <>
-                {typeof library.readers === 'number' ? (
-                    <div className='text-default-400 text-xs pl-4'>
-                        <span className='font-mono text-sm'>{library.readers}</span> 个读者
-                    </div>
-                ) : <div />}
-                <BuyLibrary
-                    isStarred={isStarred}
-                    id={library.id}
-                    price={library.price}
-                    uid={library.owner}
-                    isOwner={isOwner}
-                    color='default'
-                />
-            </> : undefined}
+            footer={
+                !hideFooter ? (
+                    <>
+                        {typeof library.readers === 'number' ? (
+                            <div className='text-default-400 text-xs pl-4'>
+                                <span className='font-mono text-sm'>{library.readers}</span> 个读者
+                            </div>
+                        ) : (
+                            <div />
+                        )}
+                        <BuyLibrary
+                            isStarred={isStarred}
+                            id={library.id}
+                            price={library.price}
+                            uid={library.owner}
+                            isOwner={isOwner}
+                            color='default'
+                        />
+                    </>
+                ) : undefined
+            }
         />
     )
 }

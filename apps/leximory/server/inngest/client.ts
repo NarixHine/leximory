@@ -1,18 +1,20 @@
 import { Inngest, eventType, staticSchema } from 'inngest'
 
-type NotifyUser = {
-    title: string
-    body: string
-    url: string
-    subscription: string
-    uid: string
-} | {
-    title: string
-    body: string
-    url: string
-    subscription: null
-    uid: string
-}
+type NotifyUser =
+    | {
+          title: string
+          body: string
+          url: string
+          subscription: string
+          uid: string
+      }
+    | {
+          title: string
+          body: string
+          url: string
+          subscription: null
+          uid: string
+      }
 
 type ArticleImported = {
     article: string

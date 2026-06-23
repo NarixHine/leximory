@@ -59,7 +59,10 @@ export function StackedCards({
         }
     }
 
-    const handleDragEnd = (_: unknown, info: { offset: { x: number }; velocity: { x: number } }) => {
+    const handleDragEnd = (
+        _: unknown,
+        info: { offset: { x: number }; velocity: { x: number } },
+    ) => {
         const swipeThreshold = 50
         const swipeVelocity = 500
 
@@ -88,7 +91,10 @@ export function StackedCards({
                 return (
                     <motion.div
                         key={theme}
-                        className={cn('absolute', isSelected ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer')}
+                        className={cn(
+                            'absolute',
+                            isSelected ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
+                        )}
                         initial={false}
                         animate={{
                             x: isSelected ? 0 : isLeft ? -80 : 80,
@@ -120,7 +126,9 @@ export function StackedCards({
                                 className='absolute inset-0 w-full h-full object-cover'
                             />
                             {themeOverlayClasses?.[theme] && (
-                                <div className={cn('absolute inset-0', themeOverlayClasses[theme])} />
+                                <div
+                                    className={cn('absolute inset-0', themeOverlayClasses[theme])}
+                                />
                             )}
                             <div className='relative h-full flex flex-col px-8 pb-4 pt-5 z-10'>
                                 {children(theme, isSelected)}
@@ -168,7 +176,7 @@ export function CardModal({ isOpen, onClose, children }: CardModalProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     className='relative w-95 min-h-150'
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
                 >
                     {children}
                 </motion.div>

@@ -10,16 +10,15 @@ import { Spacer } from '@heroui/spacer'
  * subjective sections are still being marked, and a filled score once
  * all marking is complete.
  */
-export function ScoreDisplay({ score, perfectScore }: { score: number, perfectScore: number }) {
+export function ScoreDisplay({ score, perfectScore }: { score: number; perfectScore: number }) {
     const feedback = useAtomValue(feedbackAtom)
     const quizItems = useAtomValue(editoryItemsAtom)
 
-    const subjectiveSections = quizItems.filter(
-        (s) => (SUBJECTIVE_TYPES as readonly string[]).includes(s.type)
+    const subjectiveSections = quizItems.filter(s =>
+        (SUBJECTIVE_TYPES as readonly string[]).includes(s.type),
     )
-    const isMarkingPending = subjectiveSections.length > 0 && subjectiveSections.some(
-        (s) => !feedback?.[s.id]
-    )
+    const isMarkingPending =
+        subjectiveSections.length > 0 && subjectiveSections.some(s => !feedback?.[s.id])
 
     return (
         <h1 className='mt-2 mb-5 text-balance items-baseline-last flex'>
@@ -32,7 +31,14 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
                         <span style={{ visibility: 'hidden' }}>{score}</span>
                         <svg
                             aria-hidden='true'
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                overflow: 'visible',
+                            }}
                         >
                             <text
                                 x='0'
@@ -58,7 +64,8 @@ export function ScoreDisplay({ score, perfectScore }: { score: number, perfectSc
                 <span className='text-5xl font-bold'>{score}</span>
             )}
             <span className='text-default-400 font-semibold text-xl flex items-center font-mono'>
-                <Spacer x={'px'} />/<Spacer x={'px'} />{perfectScore}
+                <Spacer x={'px'} />/<Spacer x={'px'} />
+                {perfectScore}
             </span>
         </h1>
     )

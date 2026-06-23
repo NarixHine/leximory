@@ -16,7 +16,7 @@ export async function load(lib: string, cursor?: string) {
 }
 
 /** Draws vocabulary from a library within a date range after verifying read access. */
-export async function draw({ lib, start, end }: { lib: string, start: Date, end: Date }) {
+export async function draw({ lib, start, end }: { lib: string; start: Date; end: Date }) {
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.read(libData).authorize().assert()
     const words = await retrieveWordsWithRange({ lib, start, end })
@@ -24,15 +24,23 @@ export async function draw({ lib, start, end }: { lib: string, start: Date, end:
 }
 
 /** Retrieves words within a date range (up to 50) after verifying read access. */
-export async function getWithin({ lib, start, end }: { lib: string, start: Date, end: Date }) {
+export async function getWithin({ lib, start, end }: { lib: string; start: Date; end: Date }) {
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.read(libData).authorize().assert()
     const words = await retrieveWordsWithRange({ lib, start, end, size: 50 })
-    return words.map(({ word }) => (word))
+    return words.map(({ word }) => word)
 }
 
 /** Generates a story from vocabulary comments via Inngest, checking quota and library write access. */
-export async function generateCorpusStory({ comments, lib, isShadow = false }: { comments: string[], lib: string, isShadow?: boolean }) {
+export async function generateCorpusStory({
+    comments,
+    lib,
+    isShadow = false,
+}: {
+    comments: string[]
+    lib: string
+    isShadow?: boolean
+}) {
     const { userId } = await getUserOrThrow()
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.write(libData).authorize().assert()
@@ -40,7 +48,7 @@ export async function generateCorpusStory({ comments, lib, isShadow = false }: {
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.story)) {
         return {
             success: false,
-            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`
+            message: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。`,
         }
     }
 
@@ -49,12 +57,12 @@ export async function generateCorpusStory({ comments, lib, isShadow = false }: {
         data: {
             comments,
             userId,
-            libId: lib
-        }
+            libId: lib,
+        },
     })
 
     return {
         success: true,
-        message: `生成后故事会出现在${isShadow ? '词汇仓库' : '本文库'}文本内`
+        message: `生成后故事会出现在${isShadow ? '词汇仓库' : '本文库'}文本内`,
     }
 }

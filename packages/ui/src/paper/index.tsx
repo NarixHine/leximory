@@ -21,12 +21,28 @@ export function Paper({
                 'w-full mx-auto min-h-40 max-w-none focus:outline-none',
                 data?.length === 0 && 'hidden',
                 PAPER_CLASS_NAME,
-                className
+                className,
             )}
         >
-            {highlights
-                ? <QuizPaperRSC quizData={data.map(item => merge(item, 'text' in item ? { text: highlightSubstrings(item.text, highlights[item.id] ?? []) } : {}))}></QuizPaperRSC>
-                : <QuizPaperRSC quizData={data}></QuizPaperRSC>}
+            {highlights ? (
+                <QuizPaperRSC
+                    quizData={data.map(item =>
+                        merge(
+                            item,
+                            'text' in item
+                                ? {
+                                      text: highlightSubstrings(
+                                          item.text,
+                                          highlights[item.id] ?? [],
+                                      ),
+                                  }
+                                : {},
+                        ),
+                    )}
+                ></QuizPaperRSC>
+            ) : (
+                <QuizPaperRSC quizData={data}></QuizPaperRSC>
+            )}
         </div>
     )
 }

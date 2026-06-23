@@ -17,25 +17,20 @@ import { NavIndicator } from '../nav-indicator'
 type ItemProps = {
     title: string
     icon: React.ReactNode
-} & LinkProps & React.AnchorHTMLAttributes<HTMLAnchorElement>
-export const Dock = ({
-    items,
-    className,
-}: {
-    items: ItemProps[]
-    className?: string
-}) => {
+} & LinkProps &
+    React.AnchorHTMLAttributes<HTMLAnchorElement>
+export const Dock = ({ items, className }: { items: ItemProps[]; className?: string }) => {
     const mouseX = useMotionValue(Infinity)
     return (
         <motion.div
-            onMouseMove={(e) => mouseX.set(e.pageX)}
+            onMouseMove={e => mouseX.set(e.pageX)}
             onMouseLeave={() => mouseX.set(Infinity)}
             className={cn(
                 'mx-auto h-16 items-end gap-4 rounded-2xl bg-default-50 px-4 pb-3 flex',
                 className,
             )}
         >
-            {items.map((item) => (
+            {items.map(item => (
                 <IconContainer mouseX={mouseX} key={item.title} {...item} />
             ))}
         </motion.div>
@@ -52,7 +47,7 @@ function IconContainer({
 } & ItemProps) {
     const ref = useRef<HTMLDivElement>(null)
 
-    const distance = useTransform(mouseX, (val) => {
+    const distance = useTransform(mouseX, val => {
         const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 }
 
         return val - bounds.x - bounds.width / 2
@@ -62,11 +57,7 @@ function IconContainer({
     const heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40])
 
     const widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20])
-    const heightTransformIcon = useTransform(
-        distance,
-        [-150, 0, 150],
-        [20, 40, 20],
-    )
+    const heightTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20])
 
     const width = useSpring(widthTransform, {
         mass: 0.1,

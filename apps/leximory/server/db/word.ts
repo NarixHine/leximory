@@ -35,17 +35,19 @@ export async function getTimelineWords({
 
     const { data } = await query.throwOnError()
 
-    return data.flatMap((row) => {
+    return data.flatMap(row => {
         if (!row.created_at) {
             return []
         }
 
-        return [{
-            id: row.id,
-            word: row.word,
-            lang: row.lib.lang as Lang,
-            lib: row.lib.id,
-            createdAt: row.created_at,
-        }]
+        return [
+            {
+                id: row.id,
+                word: row.word,
+                lang: row.lib.lang as Lang,
+                lib: row.lib.id,
+                createdAt: row.created_at,
+            },
+        ]
     })
 }

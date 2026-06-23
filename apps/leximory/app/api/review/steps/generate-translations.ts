@@ -13,7 +13,13 @@ interface GenerateTranslationsParams {
     story: string
 }
 
-export async function generateTranslations({ date, lang, userId }: GenerateTranslationsParams): Promise<Array<{ prompt: string; answer: string; keyword: string }>> {
+export async function generateTranslations({
+    date,
+    lang,
+    userId,
+}: GenerateTranslationsParams): Promise<
+    Array<{ prompt: string; answer: string; keyword: string }>
+> {
     const reviewLang = lang as Lang
     const reviewCopy = getReviewLanguageCopy(reviewLang)
 
@@ -32,7 +38,7 @@ export async function generateTranslations({ date, lang, userId }: GenerateTrans
         toDayAgo: daysDiff - 1,
         userId,
     })
-    const words = allWords.filter((word) => word.lang === reviewLang)
+    const words = allWords.filter(word => word.lang === reviewLang)
 
     if (words.length === 0) {
         return []
@@ -52,10 +58,12 @@ For each vocabulary word:
 
 Format: [{"prompt": "...", "answer": "...", "keyword": "..."}]`,
         prompt: `Create ${selectedWords.length} translation exercises for these ${reviewCopy.targetLanguageName} vocabulary words:
-${selectedWords.map((w, i) => {
-            const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
-            return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
-        }).join('\n')}`,
+${selectedWords
+    .map((w, i) => {
+        const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
+        return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
+    })
+    .join('\n')}`,
         maxOutputTokens: 2000,
         temperature: 1.2,
         ...miniAI,

@@ -12,7 +12,11 @@
  * @returns Array of copied chunks (lowercased, as found in the answer).
  */
 export function findCopiedChunks(source: string, answer: string, minLength = 4): string[] {
-    const strip = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+    const strip = (html: string) =>
+        html
+            .replace(/<[^>]*>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
     const strippedSourceLower = strip(source).toLowerCase()
     const sourceWords = strippedSourceLower.split(/\s+/)
     const answerWords = strip(answer).toLowerCase().split(/\s+/)

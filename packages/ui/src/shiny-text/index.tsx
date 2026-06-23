@@ -39,7 +39,7 @@ const ShinyText: React.FC<ShinyTextProps> = ({
     yoyo = false,
     pauseOnHover = false,
     direction = 'left',
-    delay = 0
+    delay = 0,
 }) => {
     const [isPaused, setIsPaused] = useState(false)
     const progress = useMotionValue(0)
@@ -126,7 +126,7 @@ const ShinyText: React.FC<ShinyTextProps> = ({
         backgroundSize: '200% auto',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
-        WebkitTextFillColor: 'transparent'
+        WebkitTextFillColor: 'transparent',
     }
 
     return (

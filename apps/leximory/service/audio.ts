@@ -34,7 +34,7 @@ export async function generateAudio(id: string, lib: string, text: string) {
         const result = await generateText({
             prompt: `将以下日文文章全部用片假名改写输出：\n\n${text}`,
             temperature: 0,
-            ...nanoAI
+            ...nanoAI,
         })
         return result.text
     }
@@ -43,7 +43,7 @@ export async function generateAudio(id: string, lib: string, text: string) {
     const audio = await speak({
         text: prompt,
         lang,
-        userId
+        userId,
     })
 
     return uploadAudio({ id, audio })

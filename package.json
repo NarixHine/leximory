@@ -1,12 +1,12 @@
 {
-	"name": "ink",
-	"version": "0.1.0",
-	"private": true,
-	"packageManager": "pnpm@10.8.1",
-	"scripts": {
-		"dev": "turbo dev --concurrency=15"
-	},
-	"devDependencies": {
-		"turbo": "^2.7.3"
-	}
+    "name": "ink",
+    "version": "0.1.0",
+    "private": true,
+    "packageManager": "pnpm@10.8.1",
+    "scripts": {
+        "dev": "turbo dev --concurrency=15"
+    },
+    "devDependencies": {
+        "turbo": "^2.7.3"
+    }
 }

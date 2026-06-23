@@ -23,7 +23,13 @@ type BlankIdentifier = {
  * @param sectionId - The section ID
  * @param localNo - The 1-based question number within the section
  */
-export const useCorrectAnswer = ({ sectionId, localNo }: { sectionId: string, localNo: number }) => {
+export const useCorrectAnswer = ({
+    sectionId,
+    localNo,
+}: {
+    sectionId: string
+    localNo: number
+}) => {
     const quizData = useAtomValue(editoryItemsAtom)
     if (!quizData) return null
     const sectionKey = getSectionKey(quizData, sectionId)
@@ -33,21 +39,17 @@ export const useCorrectAnswer = ({ sectionId, localNo }: { sectionId: string, lo
 export const useBlankInfo = ({ localNo, groupId }: BlankIdentifier) => {
     const quizData = useAtomValue(editoryItemsAtom)
     const key = useCorrectAnswer({ sectionId: groupId, localNo })
-    const getQuestionGroup = () => quizData.find((item) => item.id === groupId)!
+    const getQuestionGroup = () => quizData.find(item => item.id === groupId)!
     const getFullInfo = (submittedAnswer: string | null | undefined) => {
         const questionGroup = getQuestionGroup()
-        const clozeOriginal = questionGroup?.type === 'cloze' && getClozeOriginalWord(questionGroup, localNo) || undefined
+        const clozeOriginal =
+            (questionGroup?.type === 'cloze' && getClozeOriginalWord(questionGroup, localNo)) ||
+            undefined
         // With the new structure, submittedAnswer and key are already the full text
         const FormattedFullAnswer = () => (
-            <span className='font-semibold'>
-                {submittedAnswer ?? '∅'}
-            </span>
+            <span className='font-semibold'>{submittedAnswer ?? '∅'}</span>
         )
-        const FormattedFullKey = () => (
-            <span className='font-semibold'>
-                {key}
-            </span>
-        )
+        const FormattedFullKey = () => <span className='font-semibold'>{key}</span>
         return { clozeOriginal, FormattedFullAnswer, FormattedFullKey, key }
     }
     return { localNo, getQuestionGroup, getFullInfo }
@@ -61,7 +63,7 @@ export const useAsk = ({ localNo, groupId }: BlankIdentifier) => {
     const getAskParams = () => {
         const { key } = getFullInfo(submittedAnswer)
         // Build userAnswer conditionally to avoid truthy template string issue
-        const userAnswerDisplay = submittedAnswer 
+        const userAnswerDisplay = submittedAnswer
             ? `${submittedAnswer}${key ? ` (Correct answer: ${key})` : ''}`
             : '[No Answer Submitted]'
         return {
@@ -121,17 +123,19 @@ export const useSaveQuestionNoteParams = ({ localNo, groupId }: BlankIdentifier)
     const submittedAnswer = useAtomValue(submittedAnswersAtom)[groupId]?.[localNo]
     const correctAnswer = useCorrectAnswer({ sectionId: groupId, localNo })
     const paperId = useAtomValue(paperIdAtom)
-    
-    const getQuestionGroup = () => quizData?.find((item) => item.id === groupId)
-    
+
+    const getQuestionGroup = () => quizData?.find(item => item.id === groupId)
+
     const getSaveParams = () => {
         const questionGroup = getQuestionGroup()
         if (!questionGroup || !correctAnswer) return null
-        
+
         const { type } = questionGroup
         const strategy = questionStrategies[type]
-        const isCorrect = submittedAnswer ? strategy.isCorrect(submittedAnswer, correctAnswer) : false
-        
+        const isCorrect = submittedAnswer
+            ? strategy.isCorrect(submittedAnswer, correctAnswer)
+            : false
+
         return {
             quizData: questionGroup,
             questionNo: localNo,
@@ -141,6 +145,6 @@ export const useSaveQuestionNoteParams = ({ localNo, groupId }: BlankIdentifier)
             paperId: paperId ? parseInt(paperId) : undefined,
         }
     }
-    
+
     return { getSaveParams }
 }

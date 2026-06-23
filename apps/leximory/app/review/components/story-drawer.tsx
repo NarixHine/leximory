@@ -17,7 +17,7 @@ interface StoryDrawerProps {
 
 export function StoryDrawer({ isOpen, onClose, content, lang }: StoryDrawerProps) {
     return (
-        <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Drawer.Root open={isOpen} onOpenChange={open => !open && onClose()}>
             <Drawer.Portal>
                 <Drawer.Content
                     className='fixed inset-x-0 bottom-0 z-52 rounded-t-4xl justify-center flex outline-none'

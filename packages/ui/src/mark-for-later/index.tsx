@@ -29,7 +29,7 @@ export function MarkForLater() {
     const handleMark = () => {
         addMarkedItem({
             text: lastValidText.current,
-            xpath: lastValidXpath.current
+            xpath: lastValidXpath.current,
         })
         toast.success('已标记')
     }
@@ -40,7 +40,7 @@ export function MarkForLater() {
                 <Button
                     style={{
                         left: left + width / 2,
-                        top: buttonTop
+                        top: buttonTop,
                     }}
                     className={cn(
                         'absolute -translate-x-1/2 z-50 border border-primary bg-background text-primary flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full',
@@ -91,7 +91,10 @@ function getXPath(element: Element): string | null {
         let sibling = current.previousSibling
 
         while (sibling) {
-            if (sibling.nodeType === Node.ELEMENT_NODE && (sibling as Element).tagName === current.tagName) {
+            if (
+                sibling.nodeType === Node.ELEMENT_NODE &&
+                (sibling as Element).tagName === current.tagName
+            ) {
                 index++
             }
             sibling = sibling.previousSibling

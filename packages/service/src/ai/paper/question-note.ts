@@ -14,7 +14,13 @@ export interface GenerateQuestionNoteParams {
     isCorrect: boolean
 }
 
-export async function generateQuestionNote({ quizData, questionNo, userAnswer, correctAnswer, isCorrect }: GenerateQuestionNoteParams) {
+export async function generateQuestionNote({
+    quizData,
+    questionNo,
+    userAnswer,
+    correctAnswer,
+    isCorrect,
+}: GenerateQuestionNoteParams) {
     const { object } = await generateObject({
         prompt: buildQuestionNotePrompt(quizData, questionNo, userAnswer, correctAnswer, isCorrect),
         system: buildQuestionNoteSystemPrompt(quizData.type as SectionType),

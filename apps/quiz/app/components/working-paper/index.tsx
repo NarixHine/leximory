@@ -9,10 +9,10 @@ import { Button } from '@heroui/button'
 import { CalendarSlashIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
 
-export function AddWorkingPaper({ id, title }: { id: number, title: string }) {
+export function AddWorkingPaper({ id, title }: { id: number; title: string }) {
     const addWorkingPaper = useSetAtom(addWorkingPaperAtom)
 
-    const add = useEffectEvent(({ id, title }: { id: number, title: string }) => {
+    const add = useEffectEvent(({ id, title }: { id: number; title: string }) => {
         addWorkingPaper({ id, title })
     })
     useEffect(() => {
@@ -31,9 +31,16 @@ export function WorkingPapers() {
             <h2 className='font-formal text-4xl block'>你在做</h2>
             <section className='flex flex-wrap gap-3'>
                 {papers.map(({ id, title, isCompleted }) => (
-                    <Card key={id} as={'div'} isPressable shadow='none' className='rounded-3xl' onPress={() => {
-                        router.push(`/paper/${id}`)
-                    }}>
+                    <Card
+                        key={id}
+                        as={'div'}
+                        isPressable
+                        shadow='none'
+                        className='rounded-3xl'
+                        onPress={() => {
+                            router.push(`/paper/${id}`)
+                        }}
+                    >
                         <CardBody className='py-3 pl-4 pr-3 flex flex-row items-center gap-2 relative'>
                             {isCompleted && <CheckCircleIcon className='inline-block size-5' />}
                             <div className='text-2xl font-formal text-pretty'>{title}</div>

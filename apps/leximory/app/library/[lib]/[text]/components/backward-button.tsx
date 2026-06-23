@@ -6,7 +6,7 @@ import { Button, ButtonProps } from '@heroui/button'
 import Link from 'next/link'
 import { PiArrowLeft } from 'react-icons/pi'
 
-export function BackwardButton({ libId, className,...props }: { libId: string }&ButtonProps) {
+export function BackwardButton({ libId, className, ...props }: { libId: string } & ButtonProps) {
     return (
         <Button
             as={Link}
@@ -17,7 +17,11 @@ export function BackwardButton({ libId, className,...props }: { libId: string }&
             radius='full'
             className={cn('text-default-400', className)}
             aria-label='返回'
-            startContent={<LoadingIndicatorWrapper variant='spinner'><PiArrowLeft className='size-6' /></LoadingIndicatorWrapper>}
+            startContent={
+                <LoadingIndicatorWrapper variant='spinner'>
+                    <PiArrowLeft className='size-6' />
+                </LoadingIndicatorWrapper>
+            }
             {...props}
         />
     )

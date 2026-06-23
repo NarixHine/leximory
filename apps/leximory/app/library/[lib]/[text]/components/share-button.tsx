@@ -22,7 +22,13 @@ interface ShareButtonProps extends ButtonProps {
     lang: Lang
 }
 
-export default function ShareButton({ isPublicAndFree, libName, libId, lang, ...props }: ShareButtonProps) {
+export default function ShareButton({
+    isPublicAndFree,
+    libName,
+    libId,
+    lang,
+    ...props
+}: ShareButtonProps) {
     const { lib, text } = useParams() as Awaited<LibAndTextProps['params']>
     const [, copy] = useCopyToClipboard()
     const { isOpen, onOpen, onClose } = useDisclosure({})
@@ -55,7 +61,11 @@ export default function ShareButton({ isPublicAndFree, libName, libId, lang, ...
                         {...props}
                     />
                 </DropdownTrigger>
-                <DropdownMenu aria-label='Share options' variant='faded' disabledKeys={isPublicAndFree ? [] : ['public']}>
+                <DropdownMenu
+                    aria-label='Share options'
+                    variant='faded'
+                    disabledKeys={isPublicAndFree ? [] : ['public']}
+                >
                     <DropdownItem
                         key='original'
                         onPress={handleOriginalCopy}
@@ -67,7 +77,9 @@ export default function ShareButton({ isPublicAndFree, libName, libId, lang, ...
                         key='public'
                         onPress={handlePublicShare}
                         startContent={<PiUsersDuotone className={iconClasses} />}
-                        description={isPublicAndFree ? '供未注册用户访问' : '只有集市免费文库才可公开分享'}
+                        description={
+                            isPublicAndFree ? '供未注册用户访问' : '只有集市免费文库才可公开分享'
+                        }
                     >
                         复制公开链接
                     </DropdownItem>

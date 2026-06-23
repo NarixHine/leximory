@@ -28,11 +28,16 @@ export async function saveQuestionNote({
     relatedPaper?: number
     creator: string
 }) {
-    const content = serializeQuestionNoteContent({ sentence, correctAnswer, wrongAnswer, keyPoints })
-    
+    const content = serializeQuestionNoteContent({
+        sentence,
+        correctAnswer,
+        wrongAnswer,
+        keyPoints,
+    })
+
     const { data } = await supabase
         .from('notes')
-        .insert({ 
+        .insert({
             content,
             type: 'question',
             related_paper: relatedPaper ?? null,
@@ -41,14 +46,14 @@ export async function saveQuestionNote({
         .select()
         .single()
         .throwOnError()
-    
+
     return data
 }
 
 /**
  * Loads question notes with pagination for a specific user.
  */
-export async function loadQuestionNotes({ cursor, creator }: { cursor?: string, creator: string }) {
+export async function loadQuestionNotes({ cursor, creator }: { cursor?: string; creator: string }) {
     const { data } = await supabase
         .from('notes')
         .select('content, id, created_at, related_paper')
@@ -57,7 +62,7 @@ export async function loadQuestionNotes({ cursor, creator }: { cursor?: string, 
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
         .throwOnError()
-    
+
     return {
         notes: data.map(({ content, id, created_at, related_paper }) => ({
             content,
@@ -66,7 +71,7 @@ export async function loadQuestionNotes({ cursor, creator }: { cursor?: string, 
             relatedPaper: related_paper,
         })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
-        more: data.length === 20
+        more: data.length === 20,
     }
 }
 
@@ -74,7 +79,7 @@ export async function loadQuestionNotes({ cursor, creator }: { cursor?: string, 
  * Deletes a question note by ID.
  * Only deletes if the note belongs to the specified creator.
  */
-export async function deleteQuestionNote({ id, creator }: { id: number, creator: string }) {
+export async function deleteQuestionNote({ id, creator }: { id: number; creator: string }) {
     const { data } = await supabase
         .from('notes')
         .delete()
@@ -83,7 +88,7 @@ export async function deleteQuestionNote({ id, creator }: { id: number, creator:
         .select()
         .single()
         .throwOnError()
-    
+
     return data
 }
 
@@ -102,10 +107,10 @@ export async function saveChunkNote({
     creator: string
 }) {
     const content = serializeChunkNoteContent({ english, chinese })
-    
+
     const { data } = await supabase
         .from('notes')
-        .insert({ 
+        .insert({
             content,
             type: 'chunk',
             related_paper: relatedPaper ?? null,
@@ -114,14 +119,14 @@ export async function saveChunkNote({
         .select()
         .single()
         .throwOnError()
-    
+
     return data
 }
 
 /**
  * Loads chunk notes with pagination for a specific user.
  */
-export async function loadChunkNotes({ cursor, creator }: { cursor?: string, creator: string }) {
+export async function loadChunkNotes({ cursor, creator }: { cursor?: string; creator: string }) {
     const { data } = await supabase
         .from('notes')
         .select('content, id, created_at, related_paper')
@@ -130,7 +135,7 @@ export async function loadChunkNotes({ cursor, creator }: { cursor?: string, cre
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
         .throwOnError()
-    
+
     return {
         notes: data.map(({ content, id, created_at, related_paper }) => ({
             content,
@@ -139,14 +144,14 @@ export async function loadChunkNotes({ cursor, creator }: { cursor?: string, cre
             relatedPaper: related_paper,
         })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
-        more: data.length === 20
+        more: data.length === 20,
     }
 }
 
 /**
  * Loads all notes (both question and chunk) with pagination for a specific user.
  */
-export async function loadAllNotes({ cursor, creator }: { cursor?: string, creator: string }) {
+export async function loadAllNotes({ cursor, creator }: { cursor?: string; creator: string }) {
     const { data } = await supabase
         .from('notes')
         .select('content, id, created_at, related_paper, type')
@@ -154,7 +159,7 @@ export async function loadAllNotes({ cursor, creator }: { cursor?: string, creat
         .order('created_at', { ascending: false })
         .range(cursor ? parseInt(cursor) : 0, (cursor ? parseInt(cursor) : 0) + 19)
         .throwOnError()
-    
+
     return {
         notes: data.map(({ content, id, created_at, related_paper, type }) => ({
             content,
@@ -164,7 +169,7 @@ export async function loadAllNotes({ cursor, creator }: { cursor?: string, creat
             type: type as 'question' | 'chunk',
         })),
         cursor: cursor ? (parseInt(cursor) + 20).toString() : '20',
-        more: data.length === 20
+        more: data.length === 20,
     }
 }
 
@@ -172,7 +177,7 @@ export async function loadAllNotes({ cursor, creator }: { cursor?: string, creat
  * Deletes a note (any type) by ID.
  * Only deletes if the note belongs to the specified creator.
  */
-export async function deleteNote({ id, creator }: { id: number, creator: string }) {
+export async function deleteNote({ id, creator }: { id: number; creator: string }) {
     const { data } = await supabase
         .from('notes')
         .delete()
@@ -181,6 +186,6 @@ export async function deleteNote({ id, creator }: { id: number, creator: string 
         .select()
         .single()
         .throwOnError()
-    
+
     return data
 }

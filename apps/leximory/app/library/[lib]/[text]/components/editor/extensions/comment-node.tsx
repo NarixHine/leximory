@@ -22,14 +22,19 @@ function CommentNodeView({ node, updateAttributes, selected, editor, getPos }: N
         const pos = getPos()
         if (pos === undefined) return
         const text = portions[0] || ''
-        editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).insertContentAt(pos, text).run()
+        editor
+            .chain()
+            .focus()
+            .deleteRange({ from: pos, to: pos + node.nodeSize })
+            .insertContentAt(pos, text)
+            .run()
     }
 
     return (
         <NodeViewWrapper as='span' className='inline'>
             <Popover
                 isOpen={isOpen}
-                onOpenChange={(open) => {
+                onOpenChange={open => {
                     setIsOpen(open)
                     if (open) setEditing([...portions])
                 }}
@@ -39,7 +44,7 @@ function CommentNodeView({ node, updateAttributes, selected, editor, getPos }: N
                     <button
                         className={cn(
                             'text-inherit cursor-pointer',
-                            selected && 'ring-2 ring-primary rounded-sm'
+                            selected && 'ring-2 ring-primary rounded-sm',
                         )}
                         style={{ fontStyle: 'inherit' }}
                     >
@@ -57,7 +62,7 @@ function CommentNodeView({ node, updateAttributes, selected, editor, getPos }: N
                                 size='sm'
                                 minRows={1}
                                 value={portion}
-                                onValueChange={(value) => {
+                                onValueChange={value => {
                                     const newEditing = [...editing]
                                     newEditing[i] = value
                                     setEditing(newEditing)
@@ -130,7 +135,9 @@ export const CommentNode = Node.create({
                 default: [],
                 parseHTML: (element: HTMLElement) => {
                     try {
-                        return JSON.parse(decodeURIComponent(element.getAttribute('data-portions') || '[]'))
+                        return JSON.parse(
+                            decodeURIComponent(element.getAttribute('data-portions') || '[]'),
+                        )
                     } catch {
                         return []
                     }

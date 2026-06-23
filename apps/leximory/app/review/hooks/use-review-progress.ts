@@ -27,13 +27,15 @@ const reviewStatusPriority: Record<string, number> = {
     complete: 3,
 }
 
-function getReviewTimestamp(item: Pick<ReviewTranslation | ReviewConversation, 'evaluatedAt' | 'submittedAt'>) {
+function getReviewTimestamp(
+    item: Pick<ReviewTranslation | ReviewConversation, 'evaluatedAt' | 'submittedAt'>,
+) {
     return item.evaluatedAt ?? item.submittedAt ?? ''
 }
 
 function pickFresherTranslation(
     sseTranslation: ReviewTranslation | undefined,
-    queryTranslation: ReviewTranslation | undefined
+    queryTranslation: ReviewTranslation | undefined,
 ) {
     if (!sseTranslation) return queryTranslation
     if (!queryTranslation) return sseTranslation
@@ -57,7 +59,7 @@ function pickFresherTranslation(
 
 function mergeTranslations(
     sseTranslations: ReviewTranslation[] | undefined,
-    queryTranslations: ReviewTranslation[] | undefined
+    queryTranslations: ReviewTranslation[] | undefined,
 ) {
     if (!sseTranslations) return queryTranslations
     if (!queryTranslations) return sseTranslations
@@ -65,13 +67,13 @@ function mergeTranslations(
     const maxLength = Math.max(sseTranslations.length, queryTranslations.length)
 
     return Array.from({ length: maxLength }, (_, index) =>
-        pickFresherTranslation(sseTranslations[index], queryTranslations[index])
+        pickFresherTranslation(sseTranslations[index], queryTranslations[index]),
     ).filter((translation): translation is ReviewTranslation => Boolean(translation))
 }
 
 function pickFresherConversation(
     sseConversation: ReviewConversation | null | undefined,
-    queryConversation: ReviewConversation | null | undefined
+    queryConversation: ReviewConversation | null | undefined,
 ) {
     if (!sseConversation) return queryConversation
     if (!queryConversation) return sseConversation
@@ -103,7 +105,7 @@ async function startReviewGeneration(date: string, lang: string) {
     const res = await fetch('/api/review/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, lang })
+        body: JSON.stringify({ date, lang }),
     })
     if (!res.ok) throw new Error('Failed to start generation')
     return res.json()
@@ -121,10 +123,12 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
         queryFn: () => checkReviewData(date!, lang!),
         enabled: !!date && !!lang,
         staleTime: 0,
-        refetchInterval: (query) => {
+        refetchInterval: query => {
             const data = query.state.data
             if (!data?.exists) return false
-            const hasPendingTranslation = data.translations?.some(translation => translation.status === 'pending')
+            const hasPendingTranslation = data.translations?.some(
+                translation => translation.status === 'pending',
+            )
             const hasPendingConversation = data.conversation?.status === 'pending'
             return hasPendingTranslation || hasPendingConversation ? 1500 : false
         },
@@ -149,16 +153,17 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
     useEffect(() => {
         if (!date || !lang) return
 
-        const shouldConnect = checkQuery.data?.exists || checkQuery.data?.inProgress || startMutation.isSuccess
+        const shouldConnect =
+            checkQuery.data?.exists || checkQuery.data?.inProgress || startMutation.isSuccess
         if (!shouldConnect) return
 
         const eventSource = new EventSource(`/api/review/progress?date=${date}&lang=${lang}`)
 
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = event => {
             try {
                 const data = JSON.parse(event.data)
                 if (data.type === 'connected') return
-                setSseProgress((previous) => ({
+                setSseProgress(previous => ({
                     stage: data.stage ?? previous?.stage ?? 'init',
                     story: data.story ?? previous?.story,
                     translations: data.translations ?? previous?.translations,
@@ -178,22 +183,32 @@ export function useReviewProgress({ date, lang }: { date: string | null; lang: s
         }
     }, [date, lang, checkQuery.data?.exists, checkQuery.data?.inProgress, startMutation.isSuccess])
 
-    const queryProgress: ReviewProgress | null = checkQuery.data?.exists || checkQuery.data?.inProgress
-        ? {
-            stage: checkQuery.data.stage ?? (checkQuery.data.exists ? 'complete' : 'init'),
-            story: checkQuery.data.story,
-            translations: checkQuery.data.translations,
-            conversation: checkQuery.data.conversation,
-        }
-        : null
+    const queryProgress: ReviewProgress | null =
+        checkQuery.data?.exists || checkQuery.data?.inProgress
+            ? {
+                  stage: checkQuery.data.stage ?? (checkQuery.data.exists ? 'complete' : 'init'),
+                  story: checkQuery.data.story,
+                  translations: checkQuery.data.translations,
+                  conversation: checkQuery.data.conversation,
+              }
+            : null
 
     const liveProgress: ReviewProgress = queryProgress
         ? {
-            stage: queryProgress.stage === 'complete' ? 'complete' : (sseProgress?.stage ?? queryProgress.stage),
-            story: sseProgress?.story ?? queryProgress.story,
-            translations: mergeTranslations(sseProgress?.translations, queryProgress.translations),
-            conversation: pickFresherConversation(sseProgress?.conversation, queryProgress.conversation),
-        }
+              stage:
+                  queryProgress.stage === 'complete'
+                      ? 'complete'
+                      : (sseProgress?.stage ?? queryProgress.stage),
+              story: sseProgress?.story ?? queryProgress.story,
+              translations: mergeTranslations(
+                  sseProgress?.translations,
+                  queryProgress.translations,
+              ),
+              conversation: pickFresherConversation(
+                  sseProgress?.conversation,
+                  queryProgress.conversation,
+              ),
+          }
         : (sseProgress ?? { stage: 'init' })
 
     if (queryProgress?.stage === 'complete' && sseProgress?.stage === 'complete') {

@@ -1,4 +1,11 @@
-import { convertToModelMessages, generateText, smoothStream, stepCountIs, streamText, ToolSet } from 'ai'
+import {
+    convertToModelMessages,
+    generateText,
+    smoothStream,
+    stepCountIs,
+    streamText,
+    ToolSet,
+} from 'ai'
 import { getLib, getAllTextsInLib, listLibsWithFullInfo } from '@/server/db/lib'
 import { getTexts, getTextContent, createText, getTextWithLib } from '@/server/db/text'
 import { getAllWordsInLib, getWordsWithin } from '@/server/db/word'
@@ -23,7 +30,7 @@ const tools: ToolSet = {
             const libData = await getLib({ id })
             await Kilpi.libraries.read(libData).authorize().assert()
             return libData
-        }
+        },
     },
     getAllWordsInLib: {
         description: 'Get all words in a library by library id.',
@@ -32,16 +39,17 @@ const tools: ToolSet = {
             const libData = await getLib({ id: lib })
             await Kilpi.libraries.read(libData).authorize().assert()
             return getAllWordsInLib({ lib })
-        }
+        },
     },
     getTexts: {
-        description: 'Get all texts in a library by library id. Use this over getAllTextsInLib wherever possible.',
+        description:
+            'Get all texts in a library by library id. Use this over getAllTextsInLib wherever possible.',
         inputSchema: toolSchemas.getTexts,
         execute: async ({ lib }: { lib: string }) => {
             const libData = await getLib({ id: lib })
             await Kilpi.libraries.read(libData).authorize().assert()
             return getTexts({ lib })
-        }
+        },
     },
     getTextContent: {
         description: 'Get the content and metadata of a text by its id.',
@@ -51,23 +59,25 @@ const tools: ToolSet = {
             await Kilpi.texts.read(textWithLib).authorize().assert()
             const text = await getTextContent({ id })
             return text
-        }
+        },
     },
     getAllTextsInLib: {
-        description: 'Get all texts with their full content in a library. Use getTexts instead if you only need the list of texts.',
+        description:
+            'Get all texts with their full content in a library. Use getTexts instead if you only need the list of texts.',
         inputSchema: toolSchemas.getAllTextsInLib,
         execute: async ({ libId }: { libId: string }) => {
             const libData = await getLib({ id: libId })
             await Kilpi.libraries.read(libData).authorize().assert()
             return getAllTextsInLib({ libId })
-        }
+        },
     },
     listLibs: {
-        description: 'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
+        description:
+            'Get a list of all libraries accessible to the user. Do not repeat the list in your response. The count in the response is the number of saved words in the library.',
         inputSchema: toolSchemas.listLibs,
         execute: async () => {
             return listLibsWithFullInfo({ or: await isListedFilter() })
-        }
+        },
     },
     getForgetCurve: {
         description: 'Get words that the user learned during a certain period of time.',
@@ -80,30 +90,51 @@ const tools: ToolSet = {
                 case 'week':
                     return getWordsWithin({ fromDayAgo: 7, toDayAgo: -1, userId })
             }
-        }
+        },
     },
     annotateArticle: {
-        description: 'Generate annotations for an article. The results will be available a few minutes after the text is created and returned.',
+        description:
+            'Generate annotations for an article. The results will be available a few minutes after the text is created and returned.',
         inputSchema: toolSchemas.annotateArticle,
-        execute: async ({ content, lib, title }: { content: string, lib: string, title: string }) => {
+        execute: async ({
+            content,
+            lib,
+            title,
+        }: {
+            content: string
+            lib: string
+            title: string
+        }) => {
             const libData = await getLib({ id: lib })
             await Kilpi.libraries.write(libData).authorize().assert()
             const id = await createText({ lib, title, content })
-            await generate({ article: content, textId: id, onlyComments: false, delayRevalidate: true })
-            return { id, libId: lib, title, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() }
-        }
+            await generate({
+                article: content,
+                textId: id,
+                onlyComments: false,
+                delayRevalidate: true,
+            })
+            return {
+                id,
+                libId: lib,
+                title,
+                updatedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+            }
+        },
     },
     annotateParagraph: {
-        description: 'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
+        description:
+            'Generate annotations for a short paragraph. This will not be saved. Results will be displayed in the chat interface instantly.',
         inputSchema: toolSchemas.annotateParagraph,
-        execute: async ({ content, lang }: { content: string, lang: Lang }) => {
+        execute: async ({ content, lang }: { content: string; lang: Lang }) => {
             const { userId } = await getUserOrThrow()
             return { annotation: await annotateParagraph({ content, lang, userId }), lang }
-
-        }
+        },
     },
     extractArticleFromWebpage: {
-        description: 'Extract the article from the given webpage. The results will be available in Markdown format.',
+        description:
+            'Extract the article from the given webpage. The results will be available in Markdown format.',
         inputSchema: toolSchemas.extractArticleFromWebpage,
         execute: async ({ url }: { url: string }) => {
             const { title, content } = await extractArticleFromUrl(url)
@@ -120,17 +151,19 @@ const tools: ToolSet = {
 
 ${content}`,
                 maxOutputTokens: 10000,
-                ...nanoAI
+                ...nanoAI,
             })
 
             return { title, content: distilledContent }
-        }
-    }
+        },
+    },
 }
 
 export async function POST(req: NextRequest) {
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.chat, undefined, true)) {
-        return new Response('You have reached the maximum number of commentary quota.', { status: 403 })
+        return new Response('You have reached the maximum number of commentary quota.', {
+            status: 403,
+        })
     }
 
     const body = await req.json()
@@ -144,8 +177,8 @@ export async function POST(req: NextRequest) {
         maxOutputTokens: 30000,
         temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
-        ...miniAI
+        ...miniAI,
     })
 
     return result.toUIMessageStreamResponse()
-} 
+}

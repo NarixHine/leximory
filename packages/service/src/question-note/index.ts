@@ -5,7 +5,13 @@ import { z } from '@repo/schema'
 import { QuizDataSchema } from '@repo/schema/paper'
 import { getUserOrThrow } from '@repo/user'
 import { generateQuestionNote } from '../ai'
-import { saveQuestionNote, loadQuestionNotes, deleteQuestionNote, loadAllNotes, deleteNote } from '@repo/supabase/question-note'
+import {
+    saveQuestionNote,
+    loadQuestionNotes,
+    deleteQuestionNote,
+    loadAllNotes,
+    deleteNote,
+} from '@repo/supabase/question-note'
 import { Kilpi } from '../kilpi'
 import incrCommentaryQuota from '@repo/user/quota'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
@@ -26,44 +32,50 @@ const saveQuestionNoteSchema = z.object({
  */
 export const saveQuestionNoteAction = actionClient
     .inputSchema(saveQuestionNoteSchema)
-    .action(async ({ parsedInput: { quizData, questionNo, userAnswer, correctAnswer, isCorrect, paperId } }) => {
-        await Kilpi.authed().authorize().assert()
-        const { userId } = await getUserOrThrow()
+    .action(
+        async ({
+            parsedInput: { quizData, questionNo, userAnswer, correctAnswer, isCorrect, paperId },
+        }) => {
+            await Kilpi.authed().authorize().assert()
+            const { userId } = await getUserOrThrow()
 
-        // Use AI quota for generating the note
-        if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.genNote, userId)) {
-            throw new Error('Quota exceeded')
-        }
+            // Use AI quota for generating the note
+            if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.genNote, userId)) {
+                throw new Error('Quota exceeded')
+            }
 
-        // Generate the question note using AI
-        const noteData = await generateQuestionNote({
-            quizData,
-            questionNo,
-            userAnswer,
-            correctAnswer,
-            isCorrect,
-        })
+            // Generate the question note using AI
+            const noteData = await generateQuestionNote({
+                quizData,
+                questionNo,
+                userAnswer,
+                correctAnswer,
+                isCorrect,
+            })
 
-        // Save to database with creator
-        const result = await saveQuestionNote({
-            sentence: noteData.sentence,
-            correctAnswer: noteData.correctAnswer,
-            wrongAnswer: noteData.wrongAnswer,
-            keyPoints: noteData.keyPoints,
-            relatedPaper: paperId,
-            creator: userId,
-        })
+            // Save to database with creator
+            const result = await saveQuestionNote({
+                sentence: noteData.sentence,
+                correctAnswer: noteData.correctAnswer,
+                wrongAnswer: noteData.wrongAnswer,
+                keyPoints: noteData.keyPoints,
+                relatedPaper: paperId,
+                creator: userId,
+            })
 
-        return result.id
-    })
+            return result.id
+        },
+    )
 
 /**
  * Retrieves recent question notes saved by the user.
  */
 export const getRecentQuestionNotesAction = actionClient
-    .inputSchema(z.object({
-        cursor: z.string().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            cursor: z.string().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         return await loadQuestionNotes({ cursor, creator: userId })
@@ -73,9 +85,11 @@ export const getRecentQuestionNotesAction = actionClient
  * Deletes a question note by ID.
  */
 export const deleteQuestionNoteAction = actionClient
-    .inputSchema(z.object({
-        id: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            id: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { id } }) => {
         const { userId } = await getUserOrThrow()
         return await deleteQuestionNote({ id, creator: userId })
@@ -85,9 +99,11 @@ export const deleteQuestionNoteAction = actionClient
  * Retrieves all recent notes (both question and chunk) saved by the user.
  */
 export const getAllNotesAction = actionClient
-    .inputSchema(z.object({
-        cursor: z.string().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            cursor: z.string().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         return await loadAllNotes({ cursor, creator: userId })
@@ -97,9 +113,11 @@ export const getAllNotesAction = actionClient
  * Deletes any note by ID.
  */
 export const deleteNoteAction = actionClient
-    .inputSchema(z.object({
-        id: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            id: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { id } }) => {
         const { userId } = await getUserOrThrow()
         return await deleteNote({ id, creator: userId })

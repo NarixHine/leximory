@@ -8,56 +8,56 @@ import { NavDock } from './components/nav-dock'
 import { CostTable } from './components/cost-table'
 
 export const metadata: Metadata = {
-  title: {
-    default: '猫谜',
-    template: '%s | 猫谜',
-  }
+    title: {
+        default: '猫谜',
+        template: '%s | 猫谜',
+    },
 }
 
 export const ENGLISH_MONO = Source_Code_Pro({
-  subsets: ['latin'],
-  weight: 'variable',
-  style: ['normal', 'italic'],
-  variable: '--font-english-mono',
+    subsets: ['latin'],
+    weight: 'variable',
+    style: ['normal', 'italic'],
+    variable: '--font-english-mono',
 })
 
 const ENGLISH_SERIF = Libre_Baskerville({
-  variable: '--font-serif',
-  weight: 'variable',
-  style: ['normal', 'italic'],
-  subsets: ['latin'],
+    variable: '--font-serif',
+    weight: 'variable',
+    style: ['normal', 'italic'],
+    subsets: ['latin'],
 })
 
 const CHINESE = localFont({
-  src: './chinese.woff2',
-  variable: '--font-chinese',
-  display: 'swap',
+    src: './chinese.woff2',
+    variable: '--font-chinese',
+    display: 'swap',
 })
 
 const DISPLAY = localFont({
-  src: './display.woff2',
-  variable: '--font-display',
-  display: 'swap',
+    src: './display.woff2',
+    variable: '--font-display',
+    display: 'swap',
 })
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode
+    children: React.ReactNode
 }>) {
-  return (
-    <html lang='zh-CN' suppressHydrationWarning>
-      <body
-        className={`${CHINESE.variable} ${DISPLAY.variable} ${ENGLISH_SERIF.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
-      >
-        <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
-          {children}
-          <div className='fixed top-3 right-3'>
-            <UserAvatar quotaModalChildren={<CostTable />} />
-          </div>
-          <NavDock />
-        </Providers>
-      </body>
-    </html>
-  )
+    return (
+        <html lang='zh-CN' suppressHydrationWarning>
+            <body
+                className={`${CHINESE.variable} ${DISPLAY.variable} ${ENGLISH_SERIF.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
+            >
+                <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
+                    {children}
+                    <div className='fixed top-3 right-3'>
+                        <UserAvatar quotaModalChildren={<CostTable />} />
+                    </div>
+                    <NavDock />
+                </Providers>
+            </body>
+        </html>
+    )
 }

@@ -22,22 +22,26 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
 async function ProfilePageContent({ params }: ProfilePageProps) {
     const uid = (await params).uid
-    return <Center className='flex-col max-w-(--breakpoint-xl) gap-4'>
-        <UserInfo uid={uid} />
-        <div className='flex flex-col md:flex-row gap-12 w-full mt-3'>
-            <WordStatsSection uid={uid} />
-            <div className='basis-full md:basis-3/5'>
-                <H className='text-2xl font-semibold mb-4'>公开文库</H>
-                <Suspense fallback={
-                    <div className='columns-1 lg:columns-2 gap-4 space-y-4'>
-                        {[...Array(3)].map((_, i) => (
-                            <LibrarySkeleton key={i} />
-                        ))}
-                    </div>
-                }>
-                    <PublicLibraries uid={uid} />
-                </Suspense>
+    return (
+        <Center className='flex-col max-w-(--breakpoint-xl) gap-4'>
+            <UserInfo uid={uid} />
+            <div className='flex flex-col md:flex-row gap-12 w-full mt-3'>
+                <WordStatsSection uid={uid} />
+                <div className='basis-full md:basis-3/5'>
+                    <H className='text-2xl font-semibold mb-4'>公开文库</H>
+                    <Suspense
+                        fallback={
+                            <div className='columns-1 lg:columns-2 gap-4 space-y-4'>
+                                {[...Array(3)].map((_, i) => (
+                                    <LibrarySkeleton key={i} />
+                                ))}
+                            </div>
+                        }
+                    >
+                        <PublicLibraries uid={uid} />
+                    </Suspense>
+                </div>
             </div>
-        </div>
-    </Center>
+        </Center>
+    )
 }

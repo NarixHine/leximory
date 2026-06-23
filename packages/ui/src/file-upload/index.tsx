@@ -31,7 +31,7 @@ const secondaryVariant = {
 export const FileUpload = ({
     onChange,
     acceptableTypes,
-    disabled
+    disabled,
 }: {
     onChange?: (files: File[]) => void
     acceptableTypes?: string[]
@@ -41,7 +41,7 @@ export const FileUpload = ({
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileChange = (newFiles: File[]) => {
-        setFiles((prevFiles) => [...prevFiles, ...newFiles])
+        setFiles(prevFiles => [...prevFiles, ...newFiles])
         if (onChange) onChange(newFiles)
     }
 
@@ -70,7 +70,7 @@ export const FileUpload = ({
                     id='file-upload-handle'
                     type='file'
                     accept={acceptableTypes?.join(',')}
-                    onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
+                    onChange={e => handleFileChange(Array.from(e.target.files || []))}
                     className='hidden'
                     disabled={disabled}
                 />
@@ -119,7 +119,7 @@ export const FileUpload = ({
                                 }}
                                 className={cn(
                                     'relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-32 mx-auto rounded-md',
-                                    'shadow-[0px_10px_50px_rgba(0,0,0,0.1)]'
+                                    'shadow-[0px_10px_50px_rgba(0,0,0,0.1)]',
                                 )}
                             >
                                 {isDragActive ? (

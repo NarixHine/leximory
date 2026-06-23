@@ -15,12 +15,14 @@ export async function getCustomerId(userId: string) {
     return data.creem_id
 }
 
-export async function fillCustomerId({ userId, customerId }: { userId: string, customerId: string }) {
-    await supabase
-        .from('users')
-        .update({ creem_id: customerId })
-        .eq('id', userId)
-        .throwOnError()
+export async function fillCustomerId({
+    userId,
+    customerId,
+}: {
+    userId: string
+    customerId: string
+}) {
+    await supabase.from('users').update({ creem_id: customerId }).eq('id', userId).throwOnError()
 }
 
 export async function getUserIdByCustomerId(customerId: string) {
@@ -33,7 +35,7 @@ export async function getUserIdByCustomerId(customerId: string) {
     return data.id
 }
 
-export async function updateSubscription({ userId, plan }: { userId: string, plan: Plan }) {
+export async function updateSubscription({ userId, plan }: { userId: string; plan: Plan }) {
     await updatePlan(userId, plan)
 }
 
@@ -46,10 +48,9 @@ export async function createRequest(userId: string) {
 }
 
 export async function getRequestUserId(requestId: string) {
-    const userId = await redis.get(`creem:request:${requestId}`) as string | null
+    const userId = (await redis.get(`creem:request:${requestId}`)) as string | null
     if (!userId) {
         throw new Error('Request not found')
     }
     return userId
 }
-

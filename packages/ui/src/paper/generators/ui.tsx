@@ -1,10 +1,7 @@
 import { useMemo } from 'react'
 import { QuizData, QuestionStrategy, SectionAnswers } from '@repo/schema/paper'
 
-const QuestionSection = ({ children, title }: {
-    children: React.ReactNode
-    title?: string
-}) => {
+const QuestionSection = ({ children, title }: { children: React.ReactNode; title?: string }) => {
     return (
         <section className='question-section my-8'>
             {title && <h2>{title}</h2>}
@@ -13,17 +10,33 @@ const QuestionSection = ({ children, title }: {
     )
 }
 
-export const Question = <K extends QuizData['type']>({ strategy, specificData, variant, config, answers }: {
-    strategy: QuestionStrategy<Extract<QuizData, { type: K }>>,
-    specificData: Extract<QuizData, { type: K }>,
+export const Question = <K extends QuizData['type']>({
+    strategy,
+    specificData,
+    variant,
+    config,
+    answers,
+}: {
+    strategy: QuestionStrategy<Extract<QuizData, { type: K }>>
+    specificData: Extract<QuizData, { type: K }>
     variant: 'paper' | 'key'
     config: any
     answers?: SectionAnswers
 }) => {
     const options = useMemo(() => strategy.getOptions?.(specificData), [specificData, strategy])
-    const correctAnswers = useMemo(() => strategy.getCorrectAnswers(specificData, options), [specificData, strategy, options])
+    const correctAnswers = useMemo(
+        () => strategy.getCorrectAnswers(specificData, options),
+        [specificData, strategy, options],
+    )
     const { isCorrect } = strategy
-    const renderProps = { data: specificData, config, answers: answers || {}, options, correctAnswers, isCorrect }
+    const renderProps = {
+        data: specificData,
+        config,
+        answers: answers || {},
+        options,
+        correctAnswers,
+        isCorrect,
+    }
 
     if (variant === 'paper') {
         return (

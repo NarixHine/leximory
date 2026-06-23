@@ -11,7 +11,17 @@ async function PlanProvider({ className }: { className?: string }) {
 
 export default function QuoteInAgent({ className }: { className?: string }) {
     return (
-        <Suspense fallback={<Button isIconOnly variant='light' className={className} startContent={<PiChats />} isDisabled />}>
+        <Suspense
+            fallback={
+                <Button
+                    isIconOnly
+                    variant='light'
+                    className={className}
+                    startContent={<PiChats />}
+                    isDisabled
+                />
+            }
+        >
             <PlanProvider className={className} />
         </Suspense>
     )

@@ -34,14 +34,9 @@ export async function PageContent({ params }: PublicTextPageProps) {
     if (!isPublicAndFree) {
         redirect(SIGN_IN_URL)
     }
-    return <HydrationBoundary hydrateAtoms={[[
-        langAtom, data.lib.lang
-    ]]}>
-        <Article
-            text={text}
-            hideControls
-            isPublicAndFree={isPublicAndFree}
-            {...data}
-        />
-    </HydrationBoundary>
+    return (
+        <HydrationBoundary hydrateAtoms={[[langAtom, data.lib.lang]]}>
+            <Article text={text} hideControls isPublicAndFree={isPublicAndFree} {...data} />
+        </HydrationBoundary>
+    )
 }

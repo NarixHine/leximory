@@ -25,16 +25,21 @@ export async function generateMetadata({ params }: PaperPageProps): Promise<Meta
 }
 
 export default async function PaperPage({ params }: PaperPageProps) {
-    return (<>
-        <ToHome />
-        <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-            <Suspense fallback={<div className='absolute inset-0 flex justify-center items-center'>
-                <CircularProgress />
-            </div>}>
-                <Paper params={params} />
-            </Suspense>
-        </Main>
-    </>
+    return (
+        <>
+            <ToHome />
+            <Main className='max-w-none sm:w-full lg:-translate-x-5'>
+                <Suspense
+                    fallback={
+                        <div className='absolute inset-0 flex justify-center items-center'>
+                            <CircularProgress />
+                        </div>
+                    }
+                >
+                    <Paper params={params} />
+                </Suspense>
+            </Main>
+        </>
     )
 }
 
@@ -43,10 +48,12 @@ async function Paper({ params }: PaperPageProps) {
     const paper = await getPaper({ id: parseInt(id) })
     const data = QuizItemsSchema.parse(paper.content)
     return (
-        <HydrationBoundary hydrateAtoms={[
-            [paperIdAtom, EDITORY_PAPER_ID],
-            [editoryItemsAtom, data]
-        ]}>
+        <HydrationBoundary
+            hydrateAtoms={[
+                [paperIdAtom, EDITORY_PAPER_ID],
+                [editoryItemsAtom, data],
+            ]}
+        >
             <ScopeProvider atoms={[editoryItemsAtom, viewModeAtom]}>
                 <Suspense>
                     <Editory id={id} />

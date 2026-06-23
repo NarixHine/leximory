@@ -15,7 +15,11 @@ export default function Error({
 }) {
     return (
         <Center>
-            <Card className={cn('max-w-lg not-prose', ENGLISH_SERIF.className)} isBlurred shadow='none'>
+            <Card
+                className={cn('max-w-lg not-prose', ENGLISH_SERIF.className)}
+                isBlurred
+                shadow='none'
+            >
                 <CardHeader className='flex flex-col items-center'>
                     <div className='flex items-center justify-center rounded-full'>
                         <PiWarningCircle className='text-5xl text-danger' />
@@ -36,11 +40,7 @@ export default function Error({
                         >
                             Try Again
                         </Button>
-                        <LinkButton
-                            href='/'
-                            radius='full'
-                            className='min-w-30'
-                        >
+                        <LinkButton href='/' radius='full' className='min-w-30'>
                             Return to Library
                         </LinkButton>
                         <Button

@@ -7,7 +7,7 @@ import {
     SubscriptionExpiredEvent,
     SubscriptionPaidEvent,
     WebhookEvent,
-    WebhookHandlers
+    WebhookHandlers,
 } from './types'
 
 /**
@@ -78,7 +78,7 @@ function isRefundCreated(event: WebhookEvent): event is RefundCreatedEvent {
 export function createWebhookHandler(
     creem: CreemSDK,
     webhookSecret: string,
-    handlers: WebhookHandlers
+    handlers: WebhookHandlers,
 ) {
     return async function handler(req: any, res: any) {
         if (req.method !== 'POST') {
@@ -140,4 +140,4 @@ export function createWebhookHandler(
             return res.json({ message: 'Webhook handler failed' }, { status: 500 })
         }
     }
-} 
+}

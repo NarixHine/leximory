@@ -6,6 +6,6 @@ import { allOfItAtom } from './library/[lib]/print/atoms'
 
 export const baseReaderModeAtom = atomWithHash('reader', false)
 export const isReaderModeAtom = atom(
-  (get) => get(baseReaderModeAtom) || get(allOfItAtom),
-  (get, set) => set(baseReaderModeAtom, !get(baseReaderModeAtom) && !get(allOfItAtom))
+    get => get(baseReaderModeAtom) || get(allOfItAtom),
+    (get, set) => set(baseReaderModeAtom, !get(baseReaderModeAtom) && !get(allOfItAtom)),
 )

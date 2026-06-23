@@ -14,7 +14,13 @@ import { startTransition } from 'react'
 import Link from 'next/link'
 
 type NoteData = {
-    notes: Array<{ content: string, id: number, date: string, relatedPaper: number | null, type: 'question' | 'chunk' }>
+    notes: Array<{
+        content: string
+        id: number
+        date: string
+        relatedPaper: number | null
+        type: 'question' | 'chunk'
+    }>
     cursor: string
     more: boolean
 }
@@ -28,12 +34,12 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
         },
         initialPageParam: '0',
         initialData: initialData ? { pages: [initialData], pageParams: ['0'] } : undefined,
-        getNextPageParam: (lastPage) => lastPage?.more ? lastPage.cursor : undefined,
+        getNextPageParam: lastPage => (lastPage?.more ? lastPage.cursor : undefined),
     })
 
     const { ref } = useIntersectionObserver({
         threshold: 0.1,
-        onChange: (isIntersecting) => {
+        onChange: isIntersecting => {
             if (isIntersecting && hasNextPage && !isFetchingNextPage) {
                 fetchNextPage()
             }
@@ -47,7 +53,9 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
             <div className='col-span-full text-center py-12'>
                 <Logo className='mx-auto mb-4 size-20' />
                 <p className='text-primary'>还没有收录任何笔记</p>
-                <p className='text-sm mt-1 text-default-400'>做完试卷后点击「收录题目」或在默写纸中保存表达</p>
+                <p className='text-sm mt-1 text-default-400'>
+                    做完试卷后点击「收录题目」或在默写纸中保存表达
+                </p>
             </div>
         )
     }
@@ -59,28 +67,42 @@ export function NotebookList({ initialData }: { initialData: NoteData | undefine
                     <div className='px-4 py-2 border-b border-divider flex justify-between items-center'>
                         <div className='flex items-center gap-2'>
                             <span className='text-xs text-default-500 font-mono'>{date}</span>
-                            <Chip size='sm' variant='flat' color={type === 'question' ? 'secondary' : 'warning'}>
+                            <Chip
+                                size='sm'
+                                variant='flat'
+                                color={type === 'question' ? 'secondary' : 'warning'}
+                            >
                                 {type === 'question' ? '题目' : '表达'}
                             </Chip>
                         </div>
                         <div className='flex items-center'>
-                            {relatedPaper && <Button
-                                size='sm'
-                                className='size-5'
-                                variant='light'
-                                isIconOnly
-                                as={Link}
-                                href={`/paper/${relatedPaper}`}
-                                startContent={<LinkIcon size={16} />}
-                            />}
+                            {relatedPaper && (
+                                <Button
+                                    size='sm'
+                                    className='size-5'
+                                    variant='light'
+                                    isIconOnly
+                                    as={Link}
+                                    href={`/paper/${relatedPaper}`}
+                                    startContent={<LinkIcon size={16} />}
+                                />
+                            )}
                             <DeleteButton noteId={id} />
                             <Logo className='size-5 grayscale-75 opacity-80 ml-2' />
                         </div>
                     </div>
                     {type === 'question' ? (
-                        <QuestionNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                        <QuestionNoteCard
+                            content={content}
+                            className='bg-transparent'
+                            cardBodyClassName='px-4 py-3'
+                        />
                     ) : (
-                        <ChunkNoteCard content={content} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                        <ChunkNoteCard
+                            content={content}
+                            className='bg-transparent'
+                            cardBodyClassName='px-4 py-3'
+                        />
                     )}
                 </div>
             ))}
@@ -116,7 +138,9 @@ function DeleteButton({ noteId }: { noteId: number }) {
             onPress={() => deleteMutation.mutate(noteId)}
             isLoading={deleteMutation.isPending && deleteMutation.variables === noteId}
             isDisabled={deleteMutation.isSuccess}
-            startContent={deleteMutation.isSuccess ? <CheckCircleIcon size={16} /> : <TrashIcon size={16} />}
+            startContent={
+                deleteMutation.isSuccess ? <CheckCircleIcon size={16} /> : <TrashIcon size={16} />
+            }
         />
     )
-}   
+}

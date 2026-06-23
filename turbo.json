@@ -2,17 +2,9 @@
     "$schema": "https://turborepo.com/schema.json",
     "tasks": {
         "build": {
-            "dependsOn": [
-                "^build"
-            ],
-            "outputs": [
-                ".next/**",
-                "!.next/cache/**"
-            ],
-            "inputs": [
-                "$TURBO_DEFAULT$",
-                ".env"
-            ],
+            "dependsOn": ["^build"],
+            "outputs": [".next/**", "!.next/cache/**"],
+            "inputs": ["$TURBO_DEFAULT$", ".env"],
             "env": [
                 "ELEVENLABS_API_KEY",
                 "UPSTASH_REDIS_REST_URL",
@@ -37,9 +29,7 @@
             ]
         },
         "check-types": {
-            "dependsOn": [
-                "^check-types"
-            ]
+            "dependsOn": ["^check-types"]
         },
         "dev": {
             "persistent": true,

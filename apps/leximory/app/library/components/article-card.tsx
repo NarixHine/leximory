@@ -10,7 +10,15 @@ import { cn } from '@/lib/utils'
 import { EMOJI } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses, themeTextClasses, cardThemes } from './stacked-cards'
+import {
+    StackedCards,
+    CardModal,
+    BgTheme,
+    themeImages,
+    themeOverlayClasses,
+    themeTextClasses,
+    cardThemes,
+} from './stacked-cards'
 import { commentSyntaxRegex } from '@repo/utils/comment'
 import { removeRubyFurigana } from '@/lib/comment'
 import Markdown from '@/components/markdown'
@@ -76,7 +84,9 @@ export function ArticleCard({
     const contentWithoutComments = content.replace(commentSyntaxRegex, (_, p1) => p1 || '')
     const contentWithoutRuby = removeRubyFurigana(contentWithoutComments)
     // get first sentence or first 100 characters as excerpt
-    const excerpt = contentWithoutRuby.split(strategy.periodMark)[0].slice(0, 200) + (contentWithoutRuby.length > 200 ? '...' : '')
+    const excerpt =
+        contentWithoutRuby.split(strategy.periodMark)[0].slice(0, 200) +
+        (contentWithoutRuby.length > 200 ? '...' : '')
 
     const renderCardContent = (theme: BgTheme, isSelected: boolean) => {
         const textClass = themeTextClasses[theme]
@@ -85,33 +95,48 @@ export function ArticleCard({
             <>
                 <div>
                     <div className='grid grid-cols-[0fr_1fr] gap-3 mb-2 mt-2'>
-                        <div className={cn(
-                            'shrink-0 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
-                            EMOJI.className
-                        )}>
+                        <div
+                            className={cn(
+                                'shrink-0 aspect-square h-full text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                                EMOJI.className,
+                            )}
+                        >
                             {emoji || '📄'}
                         </div>
-                        <h2 className={cn(
-                            'font-fancy text-2xl py-2 pl-1 text-white tracking-tight shrink line-clamp-2 leading-tighter',
-                        )}>
+                        <h2
+                            className={cn(
+                                'font-fancy text-2xl py-2 pl-1 text-white tracking-tight shrink line-clamp-2 leading-tighter',
+                            )}
+                        >
                             {title}
                         </h2>
                     </div>
-                    <div className={cn('font-sans text-lg tracking-tight mt-3 text-white/75 text-shadow-xs/30')}>
+                    <div
+                        className={cn(
+                            'font-sans text-lg tracking-tight mt-3 text-white/75 text-shadow-xs/30',
+                        )}
+                    >
                         <div>
-                            <span className='text-white/95 font-sans'>Leximory </span>上的<span className='text-white/95'>{strategy.name}</span>文本
+                            <span className='text-white/95 font-sans'>Leximory </span>上的
+                            <span className='text-white/95'>{strategy.name}</span>文本
                         </div>
-                        {strategy.FormattedReadingTime ? <div className={'truncate line-clamp-1'}>{strategy.FormattedReadingTime(content)}</div> : null}
+                        {strategy.FormattedReadingTime ? (
+                            <div className={'truncate line-clamp-1'}>
+                                {strategy.FormattedReadingTime(content)}
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 
                 <div className='bg-white/60 h-px rounded-lg w-1/3 mt-4 mb-3'></div>
 
                 <div className=''>
-                    <div className={cn(
-                        'text-medium text-balance leading-relaxed text-shadow-lg',
-                        articleTitleFont
-                    )}>
+                    <div
+                        className={cn(
+                            'text-medium text-balance leading-relaxed text-shadow-lg',
+                            articleTitleFont,
+                        )}
+                    >
                         <Markdown md={excerpt} className={cn('not-dropcap', textClass)} />
                     </div>
                 </div>
@@ -138,9 +163,11 @@ export function ArticleCard({
                 </div>
 
                 <footer className='flex mt-3'>
-                    <p className={cn(
-                        'text-center text-sm font-mono text-neutral-300/70 uppercase text-shadow-lg',
-                    )}>
+                    <p
+                        className={cn(
+                            'text-center text-sm font-mono text-neutral-300/70 uppercase text-shadow-lg',
+                        )}
+                    >
                         leximory.com
                     </p>
                     <div className='flex-1'></div>

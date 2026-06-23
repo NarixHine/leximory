@@ -12,14 +12,10 @@ export * from './types'
  * @throws Error if the insertion fails
  */
 export async function createPaper({ data }: { data: TablesInsert<'papers'> }) {
-  const { data: paper, error } = await supabase
-    .from('papers')
-    .insert(data)
-    .select()
-    .single()
+    const { data: paper, error } = await supabase.from('papers').insert(data).select().single()
 
-  if (error) throw error
-  return paper
+    if (error) throw error
+    return paper
 }
 
 /**
@@ -30,16 +26,11 @@ export async function createPaper({ data }: { data: TablesInsert<'papers'> }) {
  * @throws Error if the paper is not found or query fails
  */
 export async function getPaper({ id }: { id: number }) {
-  const { data: paper, error } = await supabase
-    .from('papers')
-    .select('*')
-    .eq('id', id)
-    .single()
+    const { data: paper, error } = await supabase.from('papers').select('*').eq('id', id).single()
 
-  if (error)
-    throw error
+    if (error) throw error
 
-  return { ...paper, content: QuizItemsSchema.parse(paper.content) }
+    return { ...paper, content: QuizItemsSchema.parse(paper.content) }
 }
 
 /**
@@ -50,14 +41,14 @@ export async function getPaper({ id }: { id: number }) {
  * @throws Error if the query fails
  */
 export async function getPapersByCreator({ creator }: { creator: string }) {
-  const { data: papers, error } = await supabase
-    .from('papers')
-    .select('id, public, title, tags, created_at, passcode')
-    .eq('creator', creator)
-    .order('created_at', { ascending: false })
+    const { data: papers, error } = await supabase
+        .from('papers')
+        .select('id, public, title, tags, created_at, passcode')
+        .eq('creator', creator)
+        .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return papers
+    if (error) throw error
+    return papers
 }
 
 /**
@@ -66,15 +57,15 @@ export async function getPapersByCreator({ creator }: { creator: string }) {
  * @throws Error if the query fails
  */
 export async function getPublicPapers() {
-  const { data: papers, error } = await supabase
-    .from('papers')
-    .select('id, public, title, tags, created_at, creator, is_pinned')
-    .eq('public', true)
-    .order('is_pinned', { ascending: false })
-    .order('created_at', { ascending: false })
+    const { data: papers, error } = await supabase
+        .from('papers')
+        .select('id, public, title, tags, created_at, creator, is_pinned')
+        .eq('public', true)
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return papers
+    if (error) throw error
+    return papers
 }
 
 /**
@@ -86,15 +77,15 @@ export async function getPublicPapers() {
  * @throws Error if the update fails
  */
 export async function updatePaper({ id, data }: { id: number; data: TablesUpdate<'papers'> }) {
-  const { data: paper, error } = await supabase
-    .from('papers')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single()
+    const { data: paper, error } = await supabase
+        .from('papers')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single()
 
-  if (error) throw error
-  return paper
+    if (error) throw error
+    return paper
 }
 
 /**
@@ -105,26 +96,26 @@ export async function updatePaper({ id, data }: { id: number; data: TablesUpdate
  * @throws Error if the operation fails
  */
 export async function togglePaperVisibility({ id }: { id: number }) {
-  // First get current visibility
-  const { data: currentPaper, error: fetchError } = await supabase
-    .from('papers')
-    .select('public')
-    .eq('id', id)
-    .single()
+    // First get current visibility
+    const { data: currentPaper, error: fetchError } = await supabase
+        .from('papers')
+        .select('public')
+        .eq('id', id)
+        .single()
 
-  if (fetchError) throw fetchError
+    if (fetchError) throw fetchError
 
-  const newVisibility = !currentPaper.public
+    const newVisibility = !currentPaper.public
 
-  const { data: paper, error } = await supabase
-    .from('papers')
-    .update({ public: newVisibility })
-    .eq('id', id)
-    .select()
-    .single()
+    const { data: paper, error } = await supabase
+        .from('papers')
+        .update({ public: newVisibility })
+        .eq('id', id)
+        .select()
+        .single()
 
-  if (error) throw error
-  return paper
+    if (error) throw error
+    return paper
 }
 
 /**
@@ -136,15 +127,15 @@ export async function togglePaperVisibility({ id }: { id: number }) {
  * @throws Error if the operation fails
  */
 export async function setPaperPasscode({ id, passcode }: { id: number; passcode: string | null }) {
-  const { data: paper, error } = await supabase
-    .from('papers')
-    .update({ passcode })
-    .eq('id', id)
-    .select('id, public, title, tags, created_at, passcode')
-    .single()
+    const { data: paper, error } = await supabase
+        .from('papers')
+        .update({ passcode })
+        .eq('id', id)
+        .select('id, public, title, tags, created_at, passcode')
+        .single()
 
-  if (error) throw error
-  return paper
+    if (error) throw error
+    return paper
 }
 
 /**
@@ -154,12 +145,9 @@ export async function setPaperPasscode({ id, passcode }: { id: number; passcode:
  * @throws Error if the deletion fails
  */
 export async function deletePaper({ id }: { id: number }) {
-  const { error } = await supabase
-    .from('papers')
-    .delete()
-    .eq('id', id)
+    const { error } = await supabase.from('papers').delete().eq('id', id)
 
-  if (error) throw error
+    if (error) throw error
 }
 
 /**
@@ -174,32 +162,32 @@ export async function deletePaper({ id }: { id: number }) {
  * @throws Error if the insertion fails
  */
 export async function submitPaper({
-  paperId,
-  answers,
-  score,
-  perfectScore,
-  userId
+    paperId,
+    answers,
+    score,
+    perfectScore,
+    userId,
 }: {
-  paperId: number
-  answers: Record<string, any>
-  score: number
-  perfectScore: number
-  userId: string
+    paperId: number
+    answers: Record<string, any>
+    score: number
+    perfectScore: number
+    userId: string
 }) {
-  const { data: submission, error } = await supabase
-    .from('submissions')
-    .insert({
-      paper: paperId,
-      answers,
-      score,
-      perfect_score: perfectScore,
-      user: userId
-    })
-    .select()
-    .single()
+    const { data: submission, error } = await supabase
+        .from('submissions')
+        .insert({
+            paper: paperId,
+            answers,
+            score,
+            perfect_score: perfectScore,
+            user: userId,
+        })
+        .select()
+        .single()
 
-  if (error) throw error
-  return submission
+    if (error) throw error
+    return submission
 }
 
 /**
@@ -210,23 +198,21 @@ export async function submitPaper({
  * @returns The submission record or null if not found
  * @throws Error if the query fails
  */
-export async function getPaperSubmission({
-  paperId,
-  userId
-}: {
-  paperId: number
-  userId: string
-}) {
-  const { data: submission, error } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('paper', paperId)
-    .eq('user', userId)
-    .single()
+export async function getPaperSubmission({ paperId, userId }: { paperId: number; userId: string }) {
+    const { data: submission, error } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('paper', paperId)
+        .eq('user', userId)
+        .single()
 
-  if (error && error.code !== 'PGRST116') // PGRST116 is "not found"
-    throw error
-  return { ...submission, answers: submission ? SectionAnswersSchema.parse(submission.answers) : undefined }
+    if (error && error.code !== 'PGRST116')
+        // PGRST116 is "not found"
+        throw error
+    return {
+        ...submission,
+        answers: submission ? SectionAnswersSchema.parse(submission.answers) : undefined,
+    }
 }
 
 /**
@@ -236,19 +222,15 @@ export async function getPaperSubmission({
  * @returns The submission records
  * @throws Error if the query fails
  */
-export async function getAllPaperSubmissions({
-  paperId,
-}: {
-  paperId: number
-}) {
-  const { data: submissions } = await supabase
-    .from('submissions')
-    .select('score, perfect_score, user, created_at')
-    .eq('paper', paperId)
-    .limit(100)
-    .order('score', { ascending: false })
-    .throwOnError()
-  return submissions
+export async function getAllPaperSubmissions({ paperId }: { paperId: number }) {
+    const { data: submissions } = await supabase
+        .from('submissions')
+        .select('score, perfect_score, user, created_at')
+        .eq('paper', paperId)
+        .limit(100)
+        .order('score', { ascending: false })
+        .throwOnError()
+    return submissions
 }
 
 /**
@@ -261,23 +243,23 @@ export async function getAllPaperSubmissions({
  * @throws Error if the update fails
  */
 export async function updateSubmissionFeedback({
-  submissionId,
-  feedback,
-  score,
+    submissionId,
+    feedback,
+    score,
 }: {
-  submissionId: number
-  feedback: { [key: string]: Json | undefined }
-  score: number
+    submissionId: number
+    feedback: { [key: string]: Json | undefined }
+    score: number
 }) {
-  const { data: submission, error } = await supabase
-    .from('submissions')
-    .update({ feedback, score })
-    .eq('id', submissionId)
-    .select()
-    .single()
+    const { data: submission, error } = await supabase
+        .from('submissions')
+        .update({ feedback, score })
+        .eq('id', submissionId)
+        .select()
+        .single()
 
-  if (error) throw error
-  return submission
+    if (error) throw error
+    return submission
 }
 
 /**
@@ -288,12 +270,12 @@ export async function updateSubmissionFeedback({
  * @throws Error if the submission is not found
  */
 export async function getSubmissionById({ id }: { id: number }) {
-  const { data: submission, error } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('id', id)
-    .single()
+    const { data: submission, error } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('id', id)
+        .single()
 
-  if (error) throw error
-  return { ...submission, answers: SectionAnswersSchema.parse(submission.answers) }
+    if (error) throw error
+    return { ...submission, answers: SectionAnswersSchema.parse(submission.answers) }
 }

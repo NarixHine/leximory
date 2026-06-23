@@ -6,14 +6,18 @@ import { getReviewLanguageCopy } from '@/lib/review-language'
 import { LEXIMORY_WORLD_VIEW, type ReviewConversationFeedback } from '@/lib/review'
 
 const ReviewConversationEvaluationSchema = z.object({
-    goodPairs: z.array(z.object({
-        original: z.string(),
-        note: z.string(),
-    })),
-    badPairs: z.array(z.object({
-        original: z.string(),
-        improved: z.string(),
-    })),
+    goodPairs: z.array(
+        z.object({
+            original: z.string(),
+            note: z.string(),
+        }),
+    ),
+    badPairs: z.array(
+        z.object({
+            original: z.string(),
+            improved: z.string(),
+        }),
+    ),
     reply: z.string(),
 })
 

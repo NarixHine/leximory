@@ -1,9 +1,13 @@
 import { drop } from 'es-toolkit'
 
-export const commentSyntaxRegex =  /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
+export const commentSyntaxRegex =
+    /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g
 
 export function validateOrThrow(word: string) {
-    const isValid = /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(word)
+    const isValid =
+        /\{\{([^|}]+)(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?(?:\|\|([^|}]+))?\}\}/g.test(
+            word,
+        )
     if (!isValid) {
         const error = new Error('Invalid word') as Error & { cause: string }
         error.cause = word

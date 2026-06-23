@@ -1,5 +1,30 @@
 import crypto from 'crypto'
-import { ActivateLicenseParams, BillingPortalSession, CancelSubscriptionParams, CheckoutSession, CreateBillingPortalSessionParams, CreateCheckoutSessionParams, CreateDiscountParams, CreateProductParams, Customer, DeactivateLicenseParams, DiscountCode, GetCustomerParams, GetSubscriptionParams, LicenseActivation, LicenseDeactivation, LicenseValidation, Product, ProductListResponse, ProductSearchParams, RedirectParams, Subscription, TransactionListResponse, TransactionSearchParams, ValidateLicenseParams } from './types'
+import {
+    ActivateLicenseParams,
+    BillingPortalSession,
+    CancelSubscriptionParams,
+    CheckoutSession,
+    CreateBillingPortalSessionParams,
+    CreateCheckoutSessionParams,
+    CreateDiscountParams,
+    CreateProductParams,
+    Customer,
+    DeactivateLicenseParams,
+    DiscountCode,
+    GetCustomerParams,
+    GetSubscriptionParams,
+    LicenseActivation,
+    LicenseDeactivation,
+    LicenseValidation,
+    Product,
+    ProductListResponse,
+    ProductSearchParams,
+    RedirectParams,
+    Subscription,
+    TransactionListResponse,
+    TransactionSearchParams,
+    ValidateLicenseParams,
+} from './types'
 
 export class CreemSDK {
     private apiKey: string
@@ -12,15 +37,13 @@ export class CreemSDK {
 
         this.apiKey = apiKey
         const mode = apiKey.startsWith('creem_test_') ? 'test' : 'live'
-        this.baseUrl = mode === 'test'
-            ? 'https://test-api.creem.io'
-            : 'https://api.creem.io'
+        this.baseUrl = mode === 'test' ? 'https://test-api.creem.io' : 'https://api.creem.io'
     }
 
     private async request<T, P = Record<string, unknown>>(
         endpoint: string,
         method: 'GET' | 'POST' = 'GET',
-        data?: P
+        data?: P,
     ): Promise<T> {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method,
@@ -54,7 +77,7 @@ export class CreemSDK {
      * @example
      * const session = await creemSDK.createCheckoutSession({
      *   product_id: 'prod_123', // Required
-     *   request_id: 'user_id', 
+     *   request_id: 'user_id',
      *   customer: {
      *     id: 'cust_123',
      *     email: 'user@example.com'
@@ -63,7 +86,11 @@ export class CreemSDK {
      * });
      */
     async createCheckoutSession(params: CreateCheckoutSessionParams): Promise<CheckoutSession> {
-        return this.request<CheckoutSession, CreateCheckoutSessionParams>('/v1/checkouts', 'POST', params)
+        return this.request<CheckoutSession, CreateCheckoutSessionParams>(
+            '/v1/checkouts',
+            'POST',
+            params,
+        )
     }
 
     /**
@@ -76,7 +103,7 @@ export class CreemSDK {
      * @example
      * // Get customer by ID
      * const customer = await creemSDK.getCustomer({ customer_id: 'cust_123' });
-     * 
+     *
      * // Get customer by email
      * const customer = await creemSDK.getCustomer({ email: 'user@example.com' });
      */
@@ -121,10 +148,7 @@ export class CreemSDK {
      * });
      */
     async cancelSubscription(params: CancelSubscriptionParams): Promise<Subscription> {
-        return this.request<Subscription>(
-            `/v1/subscriptions/${params.id}/cancel`,
-            'POST'
-        )
+        return this.request<Subscription>(`/v1/subscriptions/${params.id}/cancel`, 'POST')
     }
 
     /**
@@ -142,11 +166,7 @@ export class CreemSDK {
      *   'your_webhook_secret'
      * );
      */
-    verifyWebhookSignature(
-        payload: string,
-        signature: string,
-        webhookSecret: string
-    ): boolean {
+    verifyWebhookSignature(payload: string, signature: string, webhookSecret: string): boolean {
         const computedSignature = crypto
             .createHmac('sha256', webhookSecret)
             .update(payload)
@@ -180,10 +200,7 @@ export class CreemSDK {
             .concat(`salt=${this.apiKey}`)
             .join('|')
 
-        const computedSignature = crypto
-            .createHash('sha256')
-            .update(data)
-            .digest('hex')
+        const computedSignature = crypto.createHash('sha256').update(data).digest('hex')
 
         return computedSignature === signature
     }
@@ -204,7 +221,11 @@ export class CreemSDK {
      * });
      */
     async validateLicense(params: ValidateLicenseParams): Promise<LicenseValidation> {
-        return this.request<LicenseValidation, ValidateLicenseParams>('/v1/licenses/validate', 'POST', params)
+        return this.request<LicenseValidation, ValidateLicenseParams>(
+            '/v1/licenses/validate',
+            'POST',
+            params,
+        )
     }
 
     /**
@@ -224,7 +245,7 @@ export class CreemSDK {
         return this.request<LicenseActivation, ActivateLicenseParams>(
             '/v1/licenses/activate',
             'POST',
-            params
+            params,
         )
     }
 
@@ -242,7 +263,11 @@ export class CreemSDK {
      * });
      */
     async deactivateLicense(params: DeactivateLicenseParams): Promise<LicenseDeactivation> {
-        return this.request<LicenseDeactivation, DeactivateLicenseParams>('/v1/licenses/deactivate', 'POST', params)
+        return this.request<LicenseDeactivation, DeactivateLicenseParams>(
+            '/v1/licenses/deactivate',
+            'POST',
+            params,
+        )
     }
 
     // Products
@@ -298,9 +323,7 @@ export class CreemSDK {
                 }
             })
         }
-        return this.request<ProductListResponse>(
-            `/v1/products/search?${queryParams.toString()}`
-        )
+        return this.request<ProductListResponse>(`/v1/products/search?${queryParams.toString()}`)
     }
 
     // Discount Codes
@@ -361,7 +384,7 @@ export class CreemSDK {
             })
         }
         return this.request<TransactionListResponse>(
-            `/v1/transactions/search?${queryParams.toString()}`
+            `/v1/transactions/search?${queryParams.toString()}`,
         )
     }
 
@@ -379,12 +402,12 @@ export class CreemSDK {
      * // Redirect customer to session.customer_portal_link
      */
     async createBillingPortalSession(
-        params: CreateBillingPortalSessionParams
+        params: CreateBillingPortalSessionParams,
     ): Promise<BillingPortalSession> {
         return this.request<BillingPortalSession, CreateBillingPortalSessionParams>(
             '/v1/customers/billing',
             'POST',
-            params
+            params,
         )
     }
 }

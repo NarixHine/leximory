@@ -14,9 +14,7 @@ export const SmallCaps = Mark.create({
     name: 'smallcaps',
 
     parseHTML() {
-        return [
-            { tag: 'span.smallcaps' },
-        ]
+        return [{ tag: 'span.smallcaps' }]
     },
 
     renderHTML({ HTMLAttributes }) {

@@ -20,10 +20,15 @@ export interface DayData {
         lib: string
     }>
     count: number
-    progressByLang: Partial<Record<Lang, {
-        percentage: number
-        conversationCompleted: boolean
-    }>>
+    progressByLang: Partial<
+        Record<
+            Lang,
+            {
+                percentage: number
+                conversationCompleted: boolean
+            }
+        >
+    >
     isToday: boolean
 }
 
@@ -78,11 +83,14 @@ export async function getTimelineData(
         endDate,
     })
 
-    const flashbackByDateAndLang = new Map<string, {
-        story: string
-        translations: ReviewTranslation[]
-        conversation: ReviewConversation | null
-    }>()
+    const flashbackByDateAndLang = new Map<
+        string,
+        {
+            story: string
+            translations: ReviewTranslation[]
+            conversation: ReviewConversation | null
+        }
+    >()
     for (const row of flashbackRows) {
         flashbackByDateAndLang.set(`${row.date}:${row.lang}`, {
             story: row.story,
@@ -91,7 +99,7 @@ export async function getTimelineData(
         })
     }
 
-    const days = dates.map((date) => {
+    const days = dates.map(date => {
         const momentDate = stdMoment(date)
         const words = wordsByDate.get(date) ?? []
         const langs = [...new Set(words.map(w => w.lang))]
@@ -121,9 +129,7 @@ export async function getTimelineData(
     })
 
     const oldestDate = dates[dates.length - 1]
-    const nextCursor = wordRows.length >= limit
-        ? oldestDate
-        : undefined
+    const nextCursor = wordRows.length >= limit ? oldestDate : undefined
 
     return { days, nextCursor }
 }
@@ -142,15 +148,15 @@ export async function getReviewStreakData(userId: string): Promise<ReviewStreakD
     const streakStart = isTodayActive
         ? today.clone()
         : reviewedDates.has(yesterday.format('YYYY-MM-DD'))
-            ? yesterday.clone()
-            : null
+          ? yesterday.clone()
+          : null
     const total = streakStart
         ? await countCurrentReviewStreak({
-            userId,
-            startDate: streakStart,
-            reviewedDates,
-            knownRangeStart: markerStart,
-        })
+              userId,
+              startDate: streakStart,
+              reviewedDates,
+              knownRangeStart: markerStart,
+          })
         : 0
 
     const checkDays = Array.from({ length: REVIEW_STREAK_MARKER_DAYS }, (_, index) => {
@@ -190,7 +196,9 @@ async function countCurrentReviewStreak({
     while (true) {
         if (cursor.isBefore(earliestKnownDate, 'day')) {
             const nextRangeEnd = earliestKnownDate.clone().subtract(1, 'day')
-            const nextRangeStart = nextRangeEnd.clone().subtract(REVIEW_STREAK_LOOKBACK_DAYS - 1, 'day')
+            const nextRangeStart = nextRangeEnd
+                .clone()
+                .subtract(REVIEW_STREAK_LOOKBACK_DAYS - 1, 'day')
             const olderReviewedDates = await getReviewedDatesWithin({
                 userId,
                 startDate: nextRangeStart.format('YYYY-MM-DD'),

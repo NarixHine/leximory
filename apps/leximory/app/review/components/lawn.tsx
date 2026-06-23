@@ -1,6 +1,13 @@
 'use client'
 
-import { useRef, useCallback, useLayoutEffect, useState, forwardRef, useImperativeHandle } from 'react'
+import {
+    useRef,
+    useCallback,
+    useLayoutEffect,
+    useState,
+    forwardRef,
+    useImperativeHandle,
+} from 'react'
 import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { CAT_FRAME_ASPECT, CAT_FRAMES, CatSprite } from './cat-sprite'
 import { CatTaskPill, WordPill, StoryPill } from './lawn-items'
@@ -45,11 +52,18 @@ export interface LawnRef {
     moveNear: (xPercent: number, yPercent: number, bufferPx?: number, onArrive?: () => void) => void
 }
 
-interface ImgBounds { left: number; top: number; width: number; height: number }
+interface ImgBounds {
+    left: number
+    top: number
+    width: number
+    height: number
+}
 
 function calcContainedBounds(
-    containerW: number, containerH: number,
-    naturalW: number, naturalH: number
+    containerW: number,
+    containerH: number,
+    naturalW: number,
+    naturalH: number,
 ): ImgBounds {
     if (!containerW || !containerH || !naturalW || !naturalH) {
         return { left: 0, top: 0, width: containerW, height: containerH }
@@ -62,18 +76,14 @@ function calcContainedBounds(
     return { left, top, width: w, height: h }
 }
 
-function calcPortraitBounds(
-    wrapperW: number, wrapperH: number
-): ImgBounds {
+function calcPortraitBounds(wrapperW: number, wrapperH: number): ImgBounds {
     return { left: 0, top: 0, width: wrapperW, height: wrapperH }
 }
 
-export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
-    items = [],
-    onItemClick,
-    isPortrait = false,
-    progress,
-}, ref) {
+export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn(
+    { items = [], onItemClick, isPortrait = false, progress },
+    ref,
+) {
     const containerRef = useRef<HTMLDivElement>(null)
     const spriteRef = useRef<HTMLDivElement>(null)
     const imgWrapperRef = useRef<HTMLDivElement>(null)
@@ -91,12 +101,21 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     const catMovement = useCatMovement({
         catWidth,
         catHeight,
-        setPosition: useCallback((x: number, y: number, rotation?: number) => {
-            controls.set(rotation !== undefined ? { x, y, rotate: rotation } : { x, y })
-        }, [controls]),
-        animateRotation: useCallback(async (angle: number) => {
-            await controls.start({ rotate: angle, transition: { duration: 0.2, ease: 'easeOut' } })
-        }, [controls]),
+        setPosition: useCallback(
+            (x: number, y: number, rotation?: number) => {
+                controls.set(rotation !== undefined ? { x, y, rotate: rotation } : { x, y })
+            },
+            [controls],
+        ),
+        animateRotation: useCallback(
+            async (angle: number) => {
+                await controls.start({
+                    rotate: angle,
+                    transition: { duration: 0.2, ease: 'easeOut' },
+                })
+            },
+            [controls],
+        ),
         setFrame: useCallback((frame: string) => {
             if (spriteRef.current) {
                 spriteRef.current.style.backgroundPosition = frame
@@ -115,14 +134,22 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             const rect = wrapper.getBoundingClientRect()
             const bounds = calcPortraitBounds(rect.width, rect.height)
 
-            if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
+            if (
+                !isAnimatingRef.current &&
+                prev.width > 0 &&
+                prev.height > 0 &&
+                initializedRef.current
+            ) {
                 const rx = bounds.width / prev.width
                 const ry = bounds.height / prev.height
                 catMovement.positionRef.current = {
                     x: catMovement.positionRef.current.x * rx,
                     y: catMovement.positionRef.current.y * ry,
                 }
-                controls.set({ x: catMovement.positionRef.current.x, y: catMovement.positionRef.current.y })
+                controls.set({
+                    x: catMovement.positionRef.current.x,
+                    y: catMovement.positionRef.current.y,
+                })
             }
             boundsRef.current = bounds
             setImgBounds(bounds)
@@ -133,18 +160,28 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
 
             const rect = node.getBoundingClientRect()
             const bounds = calcContainedBounds(
-                rect.width, rect.height,
-                img?.naturalWidth ?? 0, img?.naturalHeight ?? 0
+                rect.width,
+                rect.height,
+                img?.naturalWidth ?? 0,
+                img?.naturalHeight ?? 0,
             )
 
-            if (!isAnimatingRef.current && prev.width > 0 && prev.height > 0 && initializedRef.current) {
+            if (
+                !isAnimatingRef.current &&
+                prev.width > 0 &&
+                prev.height > 0 &&
+                initializedRef.current
+            ) {
                 const rx = bounds.width / prev.width
                 const ry = bounds.height / prev.height
                 catMovement.positionRef.current = {
                     x: catMovement.positionRef.current.x * rx,
                     y: catMovement.positionRef.current.y * ry,
                 }
-                controls.set({ x: catMovement.positionRef.current.x, y: catMovement.positionRef.current.y })
+                controls.set({
+                    x: catMovement.positionRef.current.x,
+                    y: catMovement.positionRef.current.y,
+                })
             }
             boundsRef.current = bounds
             setImgBounds(bounds)
@@ -164,8 +201,10 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             if (!node) return
             const rect = node.getBoundingClientRect()
             boundsRef.current = calcContainedBounds(
-                rect.width, rect.height,
-                img?.naturalWidth ?? 0, img?.naturalHeight ?? 0
+                rect.width,
+                rect.height,
+                img?.naturalWidth ?? 0,
+                img?.naturalHeight ?? 0,
             )
             setImgBounds(boundsRef.current)
         }
@@ -186,12 +225,15 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         return () => observer.disconnect()
     }, [measureBounds, updateBounds])
 
-    const onImgRef = useCallback((el: HTMLImageElement | null) => {
-        imgRef.current = el
-        if (el?.complete && el.naturalWidth > 0) {
-            updateBounds()
-        }
-    }, [updateBounds])
+    const onImgRef = useCallback(
+        (el: HTMLImageElement | null) => {
+            imgRef.current = el
+            if (el?.complete && el.naturalWidth > 0) {
+                updateBounds()
+            }
+        },
+        [updateBounds],
+    )
 
     useLayoutEffect(() => {
         if (!imgBounds || initializedRef.current) return
@@ -207,53 +249,65 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
         initializedRef.current = true
     }, [imgBounds, catWidth, catHeight, controls, catMovement])
 
-    useImperativeHandle(ref, () => ({
-        moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => {
+    useImperativeHandle(
+        ref,
+        () => ({
+            moveTo: (xPercent: number, yPercent: number, onArrive?: () => void) => {
+                const bounds = boundsRef.current
+                if (!bounds.width || !bounds.height) return
+
+                const targetX = (xPercent / 100) * bounds.width - catWidth / 2
+                const targetY = (yPercent / 100) * bounds.height - catHeight / 2
+
+                catMovement.moveToPosition(targetX, targetY, onArrive)
+            },
+            moveNear: (
+                xPercent: number,
+                yPercent: number,
+                bufferPx: number = 80,
+                onArrive?: () => void,
+            ) => {
+                const bounds = boundsRef.current
+                if (!bounds.width || !bounds.height) return
+
+                const targetX = (xPercent / 100) * bounds.width - catWidth / 2
+                const targetY = (yPercent / 100) * bounds.height - catHeight / 2
+
+                const currentX = catMovement.positionRef.current.x
+                const currentY = catMovement.positionRef.current.y
+
+                const dx = targetX - currentX
+                const dy = targetY - currentY
+                const distance = Math.sqrt(dx * dx + dy * dy)
+
+                if (distance <= bufferPx) {
+                    onArrive?.()
+                    return
+                }
+
+                const ratio = (distance - bufferPx) / distance
+                const stopX = currentX + dx * ratio
+                const stopY = currentY + dy * ratio
+
+                catMovement.moveToPosition(stopX, stopY, onArrive)
+            },
+        }),
+        [catMovement, catWidth, catHeight],
+    )
+
+    const handleClick = useCallback(
+        async (e: React.MouseEvent<HTMLDivElement>) => {
             const bounds = boundsRef.current
             if (!bounds.width || !bounds.height) return
 
-            const targetX = (xPercent / 100) * bounds.width - catWidth / 2
-            const targetY = (yPercent / 100) * bounds.height - catHeight / 2
+            const rect = e.currentTarget.getBoundingClientRect()
+            const targetX = e.clientX - rect.left - catWidth / 2
+            const targetY = e.clientY - rect.top - catHeight / 2
 
-            catMovement.moveToPosition(targetX, targetY, onArrive)
+            catMovement.moveToPosition(targetX, targetY)
         },
-        moveNear: (xPercent: number, yPercent: number, bufferPx: number = 80, onArrive?: () => void) => {
-            const bounds = boundsRef.current
-            if (!bounds.width || !bounds.height) return
-
-            const targetX = (xPercent / 100) * bounds.width - catWidth / 2
-            const targetY = (yPercent / 100) * bounds.height - catHeight / 2
-
-            const currentX = catMovement.positionRef.current.x
-            const currentY = catMovement.positionRef.current.y
-
-            const dx = targetX - currentX
-            const dy = targetY - currentY
-            const distance = Math.sqrt(dx * dx + dy * dy)
-
-            if (distance <= bufferPx) {
-                onArrive?.()
-                return
-            }
-
-            const ratio = (distance - bufferPx) / distance
-            const stopX = currentX + dx * ratio
-            const stopY = currentY + dy * ratio
-
-            catMovement.moveToPosition(stopX, stopY, onArrive)
-        }
-    }), [catMovement, catWidth, catHeight])
-
-    const handleClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
-        const bounds = boundsRef.current
-        if (!bounds.width || !bounds.height) return
-
-        const rect = e.currentTarget.getBoundingClientRect()
-        const targetX = e.clientX - rect.left - catWidth / 2
-        const targetY = e.clientY - rect.top - catHeight / 2
-
-        catMovement.moveToPosition(targetX, targetY)
-    }, [catMovement, catWidth, catHeight])
+        [catMovement, catWidth, catHeight],
+    )
 
     const lawnLightSrc = '/assets/lawn.webp'
     const lawnDarkSrc = '/assets/lawn-night.webp'
@@ -276,20 +330,17 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
     const lawnSrc = isDark ? lawnDarkSrc : lawnLightSrc
 
     return (
-        <section
-            ref={containerRef}
-            className="relative h-full w-full select-none overflow-visible"
-        >
+        <section ref={containerRef} className='relative h-full w-full select-none overflow-visible'>
             {isPortrait ? (
                 <div
                     ref={imgWrapperRef}
-                    className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible"
+                    className='pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible'
                 >
                     <img
                         ref={onImgRef}
                         src={lawnSrc}
-                        alt="Lawn"
-                        className="w-full aspect-43/24 rotate-90 max-[500px]:scale-180 scale-150 object-contain select-none"
+                        alt='Lawn'
+                        className='w-full aspect-43/24 rotate-90 max-[500px]:scale-180 scale-150 object-contain select-none'
                         onLoad={updateBounds}
                     />
                 </div>
@@ -297,8 +348,8 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                 <img
                     ref={onImgRef}
                     src={lawnSrc}
-                    alt="Lawn"
-                    className="pointer-events-none absolute inset-0 w-full h-full object-contain select-none"
+                    alt='Lawn'
+                    className='pointer-events-none absolute inset-0 w-full h-full object-contain select-none'
                     onLoad={updateBounds}
                 />
             )}
@@ -306,7 +357,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
             {imgBounds && (
                 <div
                     onClick={handleClick}
-                    className="absolute cursor-pointer pointer-events-auto"
+                    className='absolute cursor-pointer pointer-events-auto'
                     style={{
                         left: imgBounds.left,
                         top: imgBounds.top,
@@ -337,11 +388,12 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                                     duration: DUST_LIFETIME / 1000,
                                     ease: 'easeOut',
                                 }}
-                                className="absolute pointer-events-none rounded-full"
+                                className='absolute pointer-events-none rounded-full'
                                 style={{
                                     width: particle.size,
                                     height: particle.size,
-                                    background: 'radial-gradient(circle, rgba(180, 160, 120, 0.8) 0%, rgba(160, 140, 100, 0.4) 50%, transparent 70%)',
+                                    background:
+                                        'radial-gradient(circle, rgba(180, 160, 120, 0.8) 0%, rgba(160, 140, 100, 0.4) 50%, transparent 70%)',
                                     filter: 'blur(1px)',
                                 }}
                             />
@@ -349,7 +401,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                     </AnimatePresence>
 
                     {progress && (
-                        <div className="absolute left-1/2 -top-22 min-[500px]:-top-3 -translate-x-1/2 z-40">
+                        <div className='absolute left-1/2 -top-22 min-[500px]:-top-3 -translate-x-1/2 z-40'>
                             <DiscreteProgress
                                 showIcon={false}
                                 value={progress.value}
@@ -362,7 +414,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                     )}
 
                     <AnimatePresence>
-                        {items.map((item) => (
+                        {items.map(item =>
                             item.type === 'story' ? (
                                 <StoryPill
                                     key={item.id}
@@ -396,13 +448,13 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                                     isCompleted={item.isCompleted ?? false}
                                     isActive={item.isActive}
                                 />
-                            )
-                        ))}
+                            ),
+                        )}
                     </AnimatePresence>
 
                     <motion.div
                         animate={controls}
-                        className="absolute origin-center pointer-events-none z-50"
+                        className='absolute origin-center pointer-events-none z-50'
                         style={{
                             width: catWidth,
                             height: catHeight,
@@ -411,7 +463,7 @@ export const Lawn = forwardRef<LawnRef, LawnProps>(function Lawn({
                     >
                         <CatSprite
                             ref={spriteRef}
-                            className="pointer-events-none w-full h-full dark:brightness-60"
+                            className='pointer-events-none w-full h-full dark:brightness-60'
                             style={{
                                 backgroundPosition: CAT_FRAMES.idle,
                             }}

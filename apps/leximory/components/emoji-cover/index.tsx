@@ -13,7 +13,7 @@ function createWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | 
             antialias: false,
             alpha: true,
             preserveDrawingBuffer: false,
-            powerPreference: 'low-power'
+            powerPreference: 'low-power',
         })
         return gl && !gl.isContextLost() ? gl : null
     } catch {
@@ -59,16 +59,19 @@ function subscribe(task: Task, throttleMs = 0) {
 // --- COLOR & MATH UTILS ---
 function oklchToSrgb(L: number, C: number, H: number): [number, number, number] {
     const hRad = (H * Math.PI) / 180
-    const a = C * Math.cos(hRad), b = C * Math.sin(hRad)
+    const a = C * Math.cos(hRad),
+        b = C * Math.sin(hRad)
     const lp = L + 0.3963377774 * a + 0.2158037573 * b
     const mp = L - 0.1055613458 * a - 0.0638541728 * b
-    const sp = L - 0.0894841775 * a - 1.2914855480 * b
-    const l = lp ** 3, m = mp ** 3, s = sp ** 3
-    const gamma = (x: number) => x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055
+    const sp = L - 0.0894841775 * a - 1.291485548 * b
+    const l = lp ** 3,
+        m = mp ** 3,
+        s = sp ** 3
+    const gamma = (x: number) => (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)
     return [
         Math.max(0, Math.min(1, gamma(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s))),
         Math.max(0, Math.min(1, gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s))),
-        Math.max(0, Math.min(1, gamma(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)))
+        Math.max(0, Math.min(1, gamma(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s))),
     ]
 }
 
@@ -98,7 +101,9 @@ export function emojiBackground(id: string) {
 }
 
 // --- BAYER DITHER (CPU) ---
-const BAYER_FLAT = new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]).map(v => v / 16)
+const BAYER_FLAT = new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]).map(
+    v => v / 16,
+)
 
 function createColorLUT(hue: number, isDarkMode: boolean): Uint32Array {
     const lut = new Uint32Array(256)
@@ -118,29 +123,45 @@ function createColorLUT(hue: number, isDarkMode: boolean): Uint32Array {
     return lut
 }
 
-function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDarkMode: boolean; hue: number }) {
+function BayerDither({
+    articleId,
+    isDarkMode,
+    hue,
+}: {
+    articleId: string
+    isDarkMode: boolean
+    hue: number
+}) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const sources = useMemo(() => {
         const rng = (function (seed) {
             let s = seed
-            return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646 }
+            return () => {
+                s = (s * 16807) % 2147483647
+                return (s - 1) / 2147483646
+            }
         })(hashString(articleId))
         return Array.from({ length: 3 + Math.floor(rng() * 3) }, () => ({
-            cx: rng() * 0.8 + 0.1, cy: rng() * 0.8 + 0.1,
-            radius: 0.4 + rng() * 0.5, strength: 0.4 + rng() * 0.5,
-            phaseX: rng() * Math.PI * 2, phaseY: rng() * Math.PI * 2,
+            cx: rng() * 0.8 + 0.1,
+            cy: rng() * 0.8 + 0.1,
+            radius: 0.4 + rng() * 0.5,
+            strength: 0.4 + rng() * 0.5,
+            phaseX: rng() * Math.PI * 2,
+            phaseY: rng() * Math.PI * 2,
             speed: 0.12 + rng() * 0.25,
         }))
     }, [articleId])
 
     const colorLUT = useMemo(() => createColorLUT(hue, isDarkMode), [hue, isDarkMode])
     const stateRef = useRef({
-        startTime: 0, w: 0, h: 0,
+        startTime: 0,
+        w: 0,
+        h: 0,
         imgData: null as ImageData | null,
         buf32: null as Uint32Array | null,
         visible: false,
         hasRendered: false,
-        lastFrameTime: 0
+        lastFrameTime: 0,
     })
 
     useEffect(() => {
@@ -161,9 +182,11 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
             st.lastFrameTime = timestamp
             if (st.startTime === 0) st.startTime = timestamp
 
-            const cols = (st.w / PIXEL_SIZE) | 0, rows = (st.h / PIXEL_SIZE) | 0
+            const cols = (st.w / PIXEL_SIZE) | 0,
+                rows = (st.h / PIXEL_SIZE) | 0
             if (canvas.width !== cols || canvas.height !== rows) {
-                canvas.width = cols; canvas.height = rows
+                canvas.width = cols
+                canvas.height = rows
                 st.imgData = ctx.createImageData(cols, rows)
                 st.buf32 = new Uint32Array(st.imgData.data.buffer)
                 st.hasRendered = false
@@ -176,18 +199,22 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
             const activeSources = sources.map(s => ({
                 sx: s.cx + Math.sin(elapsed * s.speed + s.phaseX) * 0.14,
                 sy: s.cy + Math.cos(elapsed * s.speed * 0.8 + s.phaseY) * 0.12,
-                r: s.radius, str: s.strength
+                r: s.radius,
+                str: s.strength,
             }))
 
             buf32.fill(0)
             for (let r = 0; r < rows; r++) {
-                const ny = r / rows, bayerOff = (r % 4) << 2, rowOffset = r * cols
+                const ny = r / rows,
+                    bayerOff = (r % 4) << 2,
+                    rowOffset = r * cols
                 for (let c = 0; c < cols; c++) {
                     const nx = c / cols
                     let val = 0
                     for (let i = 0; i < sources.length; i++) {
                         const s = activeSources[i]
-                        const dx = nx - s.sx, dy = ny - s.sy
+                        const dx = nx - s.sx,
+                            dy = ny - s.sy
                         const dist = Math.sqrt(dx * dx + dy * dy)
                         if (dist < s.r) val += s.str * (1 - dist / s.r)
                     }
@@ -207,17 +234,32 @@ function BayerDither({ articleId, isDarkMode, hue }: { articleId: string; isDark
             stateRef.current.w = e.contentRect.width
             stateRef.current.h = e.contentRect.height
         })
-        const io = new IntersectionObserver(([e]) => {
-            stateRef.current.visible = e.isIntersecting
-        }, { threshold: 0.01 })
+        const io = new IntersectionObserver(
+            ([e]) => {
+                stateRef.current.visible = e.isIntersecting
+            },
+            { threshold: 0.01 },
+        )
 
-        ro.observe(canvas); io.observe(canvas)
+        ro.observe(canvas)
+        io.observe(canvas)
         const unsub = subscribe(renderFrame, 33)
 
-        return () => { unsub(); ro.disconnect(); io.disconnect() }
+        return () => {
+            unsub()
+            ro.disconnect()
+            io.disconnect()
+        }
     }, [sources, colorLUT, isDarkMode])
 
-    return <canvas ref={canvasRef} className='pointer-events-none absolute inset-0 h-full w-full' style={{ imageRendering: 'pixelated' }} aria-hidden='true' />
+    return (
+        <canvas
+            ref={canvasRef}
+            className='pointer-events-none absolute inset-0 h-full w-full'
+            style={{ imageRendering: 'pixelated' }}
+            aria-hidden='true'
+        />
+    )
 }
 
 // --- WEBGL SECTION ---
@@ -225,7 +267,7 @@ const VERT = `attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=
 const FRAG_MAP = {
     liquid: `precision mediump float;uniform float uTime;uniform vec3 uColor;varying vec2 v;void main(){vec2 p=v*2.-1.;float t=uTime*.3;for(float i=1.;i<3.;i++){p.x+=.4/i*sin(i*2.*p.y+t);p.y+=.4/i*sin(i*2.*p.x+t);}gl_FragColor=vec4(mix(uColor,uColor*.96,smoothstep(.2,.9,length(p))),1);}`,
     grid: `precision mediump float;uniform vec3 uColor;uniform float uScale,uThick;varying vec2 v;void main(){vec2 g=step(uThick,fract(v*uScale));gl_FragColor=vec4(mix(uColor,uColor*.94,max(g.x,g.y)),1);}`,
-    drift: `precision mediump float;uniform float uTime;uniform vec3 uColor;varying vec2 v;void main(){float m=sin(v.x*3.+uTime*.5)*cos(v.y*2.+uTime*.4);gl_FragColor=vec4(mix(uColor,uColor*.97,smoothstep(.3,.7,.5+.5*m)),1);}`
+    drift: `precision mediump float;uniform float uTime;uniform vec3 uColor;varying vec2 v;void main(){float m=sin(v.x*3.+uTime*.5)*cos(v.y*2.+uTime*.4);gl_FragColor=vec4(mix(uColor,uColor*.97,smoothstep(.3,.7,.5+.5*m)),1);}`,
 }
 
 function useShaderCanvas(
@@ -233,7 +275,7 @@ function useShaderCanvas(
     variant: Exclude<ShaderVariant, 'dither'> | undefined,
     rgb: [number, number, number],
     articleId: string,
-    onContextLost: () => void
+    onContextLost: () => void,
 ) {
     useEffect(() => {
         const canvas = canvasRef.current
@@ -254,7 +296,8 @@ function useShaderCanvas(
         const compile = (t: number, s: string) => {
             const shader = gl.createShader(t)
             if (!shader) return null
-            gl.shaderSource(shader, s); gl.compileShader(shader)
+            gl.shaderSource(shader, s)
+            gl.compileShader(shader)
             return shader
         }
 
@@ -263,12 +306,18 @@ function useShaderCanvas(
         const prog = gl.createProgram()
         if (!vs || !fs || !prog) return
 
-        gl.attachShader(prog, vs); gl.attachShader(prog, fs)
-        gl.linkProgram(prog); gl.useProgram(prog)
+        gl.attachShader(prog, vs)
+        gl.attachShader(prog, fs)
+        gl.linkProgram(prog)
+        gl.useProgram(prog)
 
         const buf = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+            gl.STATIC_DRAW,
+        )
         const pos = gl.getAttribLocation(prog, 'a')
         gl.enableVertexAttribArray(pos)
         gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
@@ -293,13 +342,14 @@ function useShaderCanvas(
         const ro = new ResizeObserver(([entry]) => {
             const w = Math.round(entry.contentRect.width * dpr)
             const h = Math.round(entry.contentRect.height * dpr)
-            canvas.width = w; canvas.height = h
+            canvas.width = w
+            canvas.height = h
             gl.viewport(0, 0, w, h)
             render(performance.now())
         })
         if (canvas.parentElement) ro.observe(canvas.parentElement)
 
-        const unsub = variant !== 'grid' ? subscribe(render, 33) : () => { }
+        const unsub = variant !== 'grid' ? subscribe(render, 33) : () => {}
 
         return () => {
             unsub()
@@ -311,7 +361,21 @@ function useShaderCanvas(
     }, [variant, articleId, rgb, onContextLost, canvasRef])
 }
 
-export function EmojiCover({ emoji, articleId, className = '', isLink = false, variant, switchToDitherInDarkMode = false }: { emoji: string, articleId: string, className?: string, isLink?: boolean, variant?: ShaderVariant, switchToDitherInDarkMode?: boolean }) {
+export function EmojiCover({
+    emoji,
+    articleId,
+    className = '',
+    isLink = false,
+    variant,
+    switchToDitherInDarkMode = false,
+}: {
+    emoji: string
+    articleId: string
+    className?: string
+    isLink?: boolean
+    variant?: ShaderVariant
+    switchToDitherInDarkMode?: boolean
+}) {
     const bg = useMemo(() => emojiBackground(articleId), [articleId])
     const { resolvedTheme } = useTheme()
     const isDarkMode = resolvedTheme === 'dark'
@@ -320,7 +384,7 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false, v
     const containerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
-    const activeVariant = (switchToDitherInDarkMode && isDarkMode) ? 'dither' : variant
+    const activeVariant = switchToDitherInDarkMode && isDarkMode ? 'dither' : variant
     const rgb = isDarkMode ? bg.darkRgb : bg.lightRgb
     const shouldUseWebGL = activeVariant && activeVariant !== 'dither'
 
@@ -328,9 +392,12 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false, v
     useEffect(() => {
         const el = containerRef.current
         if (!el) return
-        const io = new IntersectionObserver(([entry]) => {
-            setIsVisible(entry.isIntersecting)
-        }, { threshold: 0, rootMargin: '200px' })
+        const io = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting)
+            },
+            { threshold: 0, rootMargin: '200px' },
+        )
         io.observe(el)
         return () => io.disconnect()
     }, [])
@@ -342,16 +409,19 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false, v
 
     useShaderCanvas(
         canvasRef,
-        (isVisible && shouldUseWebGL) ? activeVariant : undefined,
+        isVisible && shouldUseWebGL ? activeVariant : undefined,
         rgb,
         articleId,
-        handleContextLost
+        handleContextLost,
     )
 
     return (
         <div
             ref={containerRef}
-            className={cn('relative flex items-center justify-center rounded-4xl overflow-hidden', className)}
+            className={cn(
+                'relative flex items-center justify-center rounded-4xl overflow-hidden',
+                className,
+            )}
             style={{ containerType: 'size', backgroundColor: isDarkMode ? bg.dark : bg.light }}
         >
             {/* The canvas is UNMOUNTED when off-screen or when context is lost to force resource release */}
@@ -368,12 +438,20 @@ export function EmojiCover({ emoji, articleId, className = '', isLink = false, v
             )}
 
             <div className='w-full h-full flex items-center justify-center z-10'>
-                <span className={cn('select-none leading-none text-default-400', EMOJI.className)} style={{ fontSize: 'min(35cqi, 35cqb)' }}>
+                <span
+                    className={cn('select-none leading-none text-default-400', EMOJI.className)}
+                    style={{ fontSize: 'min(35cqi, 35cqb)' }}
+                >
                     {isLink ? (
-                        <LoadingIndicatorWrapper variant='spinner' classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}>
+                        <LoadingIndicatorWrapper
+                            variant='spinner'
+                            classNames={{ wrapper: 'w-[min(35cqi,35cqb)] h-[min(35cqi,35cqb)]' }}
+                        >
                             {emoji}
                         </LoadingIndicatorWrapper>
-                    ) : emoji}
+                    ) : (
+                        emoji
+                    )}
                 </span>
             </div>
         </div>

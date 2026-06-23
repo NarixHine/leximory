@@ -1,29 +1,23 @@
 {
-  "extends": "@repo/typescript-config/nextjs.json",
-  "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-    ],
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
+    "extends": "@repo/typescript-config/nextjs.json",
+    "compilerOptions": {
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "paths": {
+            "@/*": ["./*"]
+        }
     },
-  },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "next.config.ts",
-    "postcss.config.mjs",
-    ".next/dev/types/**/*.ts"
-  ],
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts",
+        "next.config.ts",
+        "postcss.config.mjs",
+        ".next/dev/types/**/*.ts"
+    ]
 }

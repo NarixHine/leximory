@@ -8,7 +8,7 @@ import { getShadowLib } from '@/server/db/lib'
 import { generateCorpusStory } from '@/service/corpus'
 import { getTimelineData } from '@/server/db/review'
 
-export async function save({ subs, hour }: { subs: PushSubscription, hour: number }) {
+export async function save({ subs, hour }: { subs: PushSubscription; hour: number }) {
     const { userId } = await getUserOrThrow()
     await saveSubs({ userId, subs, hour })
 }
@@ -18,10 +18,7 @@ export async function remove() {
     await delSubs({ userId })
 }
 
-export async function genStoryInShadowLib({ comments, lang }: {
-    comments: string[]
-    lang: Lang
-}) {
+export async function genStoryInShadowLib({ comments, lang }: { comments: string[]; lang: Lang }) {
     const { userId } = await getUserOrThrow()
     const lib = await getShadowLib({ owner: userId, lang })
     return await generateCorpusStory({ comments, lib: lib.id, isShadow: true })
@@ -31,4 +28,3 @@ export async function loadMoreTimelineDays(cursor?: string) {
     const { userId } = await getUserOrThrow()
     return await getTimelineData(userId, cursor)
 }
-

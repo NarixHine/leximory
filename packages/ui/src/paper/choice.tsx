@@ -15,7 +15,15 @@ import { safeParseHTML } from '../utils/parse'
  * @param options - Array of option texts
  * @param groupId - The section ID
  */
-const Choice = ({ localNo, options, groupId }: { localNo: number, options: string[], groupId: string }) => {
+const Choice = ({
+    localNo,
+    options,
+    groupId,
+}: {
+    localNo: number
+    options: string[]
+    groupId: string
+}) => {
     const setAnswer = useSetAtom(setAnswerAtom)
     const answers = useAtomValue(answersAtom)
     const viewMode = useAtomValue(viewModeAtom)
@@ -25,59 +33,70 @@ const Choice = ({ localNo, options, groupId }: { localNo: number, options: strin
     const correctAnswer = useCorrectAnswer({ sectionId: groupId, localNo })
     const { ask } = useAsk({ localNo, groupId })
 
-    return <div className='pb-2 flex flex-col gap-2 print:gap-0 print:-space-y-1'>
-        {options.map((option, index) => {
-            switch (viewMode) {
-                case 'revise':
-                    return <div key={index} className='flex items-center gap-2'>
-                        <Button
-                            color={matchColor([
-                                [correctAnswer, 'success'],
-                                [submittedAnswer, 'danger'],
-                            ], option)}
-                            variant={
-                                [submittedAnswer, correctAnswer].includes(option)
-                                    ? submittedAnswer === correctAnswer
-                                        ? 'solid'
-                                        : option === correctAnswer
-                                            ? 'flat'
-                                            : 'solid'
-                                    : 'ghost'
-                            }
-                            size='sm'
-                            className='size-6'
-                            radius='full'
-                            isIconOnly
-                            isDisabled
-                            startContent={<span>{ALPHABET_SET[index]}</span>}
-                        ></Button>
-                        <span className='leading-tight'>
-                            {safeParseHTML(option)}
-                        </span>
-                    </div>
-                default:
-                    return <div key={index} className='flex items-center gap-2'>
-                        <Button
-                            className='size-6 print:hidden'
-                            color={answer === option ? 'secondary' : 'default'}
-                            variant={answer === option ? 'solid' : 'ghost'}
-                            size='sm'
-                            radius='full'
-                            isIconOnly
-                            startContent={<span>{ALPHABET_SET[index]}</span>}
-                            onPress={() => {
-                                setAnswer({ sectionId: groupId, localQuestionNo: localNo, option })
-                            }}
-                        ></Button>
-                        <span className='print:inline hidden'>{ALPHABET_SET[index]}.</span>
-                        <span className='leading-tight'>
-                            {safeParseHTML(option)}
-                        </span>
-                    </div>
-            }
-        })}
-        {viewMode === 'revise' && <AskButton className='w-fit mt-2' variant='faded' ask={ask} />}
-    </div>
+    return (
+        <div className='pb-2 flex flex-col gap-2 print:gap-0 print:-space-y-1'>
+            {options.map((option, index) => {
+                switch (viewMode) {
+                    case 'revise':
+                        return (
+                            <div key={index} className='flex items-center gap-2'>
+                                <Button
+                                    color={matchColor(
+                                        [
+                                            [correctAnswer, 'success'],
+                                            [submittedAnswer, 'danger'],
+                                        ],
+                                        option,
+                                    )}
+                                    variant={
+                                        [submittedAnswer, correctAnswer].includes(option)
+                                            ? submittedAnswer === correctAnswer
+                                                ? 'solid'
+                                                : option === correctAnswer
+                                                  ? 'flat'
+                                                  : 'solid'
+                                            : 'ghost'
+                                    }
+                                    size='sm'
+                                    className='size-6'
+                                    radius='full'
+                                    isIconOnly
+                                    isDisabled
+                                    startContent={<span>{ALPHABET_SET[index]}</span>}
+                                ></Button>
+                                <span className='leading-tight'>{safeParseHTML(option)}</span>
+                            </div>
+                        )
+                    default:
+                        return (
+                            <div key={index} className='flex items-center gap-2'>
+                                <Button
+                                    className='size-6 print:hidden'
+                                    color={answer === option ? 'secondary' : 'default'}
+                                    variant={answer === option ? 'solid' : 'ghost'}
+                                    size='sm'
+                                    radius='full'
+                                    isIconOnly
+                                    startContent={<span>{ALPHABET_SET[index]}</span>}
+                                    onPress={() => {
+                                        setAnswer({
+                                            sectionId: groupId,
+                                            localQuestionNo: localNo,
+                                            option,
+                                        })
+                                    }}
+                                ></Button>
+                                <span className='print:inline hidden'>{ALPHABET_SET[index]}.</span>
+                                <span className='leading-tight'>{safeParseHTML(option)}</span>
+                            </div>
+                        )
+                }
+            })}
+            {viewMode === 'revise' && (
+                <AskButton className='w-fit mt-2' variant='faded' ask={ask} />
+            )}
+        </div>
+    )
 }
 
 export default Choice

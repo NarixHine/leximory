@@ -7,7 +7,12 @@ export { validateOrThrow }
 
 export function parseCommentParams(word: string | Array<string>) {
     try {
-        const decode = (str: string) => decodeURIComponent(str).replaceAll('{{', '').replaceAll('}}', '').replaceAll('<must>', '').replaceAll('</must>', '')
+        const decode = (str: string) =>
+            decodeURIComponent(str)
+                .replaceAll('{{', '')
+                .replaceAll('}}', '')
+                .replaceAll('<must>', '')
+                .replaceAll('</must>', '')
         const purifiedParams = Array.isArray(word) ? word.map(decode) : decode(word)
         if (Array.isArray(purifiedParams)) {
             return purifiedParams
@@ -24,7 +29,9 @@ export function parseCommentParams(word: string | Array<string>) {
     }
 }
 
-export const originals = (word: string): string[] => [...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)])]
+export const originals = (word: string): string[] => [
+    ...new Set([lemmatize.verb(word), lemmatize.adjective(word), lemmatize.noun(word)]),
+]
 
 export default function lexiconWrap(text: string, lexicon?: CustomLexicon): string {
     // Choose lexicon based on the provided argument
@@ -46,7 +53,10 @@ export default function lexiconWrap(text: string, lexicon?: CustomLexicon): stri
         }
 
         const originalForms = originals(normalizedWord).map(form => form.toLowerCase())
-        if (wordsSet.has(normalizedWord) || originalForms.some(originalForm => wordsSet.has(originalForm))) {
+        if (
+            wordsSet.has(normalizedWord) ||
+            originalForms.some(originalForm => wordsSet.has(originalForm))
+        ) {
             return `{{${word}}}`
         }
         return word
@@ -54,8 +64,10 @@ export default function lexiconWrap(text: string, lexicon?: CustomLexicon): stri
 
     return text.replace(/\b[\w'’]+\b/g, (match, offset) => {
         // Check if the match is already part of a larger sandwiched phrase or within parentheses
-        if (text.lastIndexOf('{{', offset) > text.lastIndexOf('}}', offset) ||
-            text.lastIndexOf('(', offset) > text.lastIndexOf(')', offset)) {
+        if (
+            text.lastIndexOf('{{', offset) > text.lastIndexOf('}}', offset) ||
+            text.lastIndexOf('(', offset) > text.lastIndexOf(')', offset)
+        ) {
             return match // It's part of a larger phrase or within parentheses, don't sandwich
         }
         return checkAndReplace(match) // It's not part of a larger phrase and not within parentheses, sandwich it

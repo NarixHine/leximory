@@ -12,7 +12,7 @@ export interface QuestionNoteCardProps {
 
 export function QuestionNoteCard({ content, className, cardBodyClassName }: QuestionNoteCardProps) {
     const parsed = parseQuestionNoteContent(content)
-    
+
     if (!parsed) {
         return (
             <Card fullWidth radius='sm' shadow='none' className={className}>
@@ -22,18 +22,16 @@ export function QuestionNoteCard({ content, className, cardBodyClassName }: Ques
             </Card>
         )
     }
-    
+
     const { sentence, correctAnswer, wrongAnswer, keyPoints } = parsed
     const hasWrongAnswer = wrongAnswer && wrongAnswer.length > 0
-    
+
     return (
         <Card fullWidth radius='sm' shadow='none' className={className}>
             <CardBody className={cn('px-5 py-3 leading-snug gap-3', cardBodyClassName)}>
                 {/* Sentence with blank */}
-                <Streamdown className='leading-relaxed'>
-                    {sentence}
-                </Streamdown>
-                
+                <Streamdown className='leading-relaxed'>{sentence}</Streamdown>
+
                 {/* Answers section */}
                 <div className='flex flex-col'>
                     {hasWrongAnswer && (
@@ -47,7 +45,7 @@ export function QuestionNoteCard({ content, className, cardBodyClassName }: Ques
                         <span className='text-success font-medium'>{correctAnswer}</span>
                     </div>
                 </div>
-                
+
                 {/* Key points */}
                 <div className='border-l-2 border-primary pl-3 text-sm text-default-600'>
                     {keyPoints}

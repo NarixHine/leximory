@@ -29,7 +29,9 @@ export function CostTable() {
                 </TableRow>
                 <TableRow key='review'>
                     <TableCell>审题</TableCell>
-                    <TableCell>{ACTION_QUOTA_COST.pouncepen.answer + ACTION_QUOTA_COST.pouncepen.verdict}</TableCell>
+                    <TableCell>
+                        {ACTION_QUOTA_COST.pouncepen.answer + ACTION_QUOTA_COST.pouncepen.verdict}
+                    </TableCell>
                     <TableCell>检阅该大题有无歧义</TableCell>
                 </TableRow>
             </TableBody>

@@ -14,63 +14,72 @@ async function getData(lib: string) {
     const [{ userId }, libData, texts] = await Promise.all([
         getUserOrThrow(),
         getLib({ id: lib }),
-        getTexts({ lib })
+        getTexts({ lib }),
     ])
     const isReadOnly = libData.owner !== userId
     const ownerData = await getUserById(libData.owner)
-    return { texts, name: libData.name, isReadOnly, lang: libData.lang, creatorName: ownerData.username || ownerData.email.split('@')[0] }
+    return {
+        texts,
+        name: libData.name,
+        isReadOnly,
+        lang: libData.lang,
+        creatorName: ownerData.username || ownerData.email.split('@')[0],
+    }
 }
 
 async function PageContent({ params }: LibProps) {
     const { lib } = await params
     const { texts, name, isReadOnly, lang, creatorName } = await getData(lib)
-    return <>
-        {/* Header */}
-        <header className='mx-auto max-w-md sm:max-w-6xl mb-10'>
-            <div className='flex items-center gap-2 flex-wrap'>
-                <Link
-                    href='/library'
-                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
-                    aria-label='返回文库'
-                >
-                    <LoadingIndicatorWrapper variant='spinner'>
-                        <PiArrowLeft className='size-6' />
-                    </LoadingIndicatorWrapper>
-                </Link>
-                <Link
-                    href={`/library/${lib}/corpus`}
-                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
-                    aria-label='语料本'
-                >
-                    <LoadingIndicatorWrapper variant='spinner'>
-                        <PiBookBookmark className='size-6' />
-                    </LoadingIndicatorWrapper>
-                </Link>
-                <Link
-                    href={`/library/${lib}/print`}
-                    className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
-                    aria-label='打印全部'
-                >
-                    <LoadingIndicatorWrapper variant='spinner'>
-                        <PiPrinter className='size-6' />
-                    </LoadingIndicatorWrapper>
-                </Link>
-                <h1 className='font-fancy text-balance text-2xl tracking-tight ml-1'>
-                    {name}
-                </h1>
-                <LibraryShareButton
-                    libName={name}
-                    creatorName={creatorName}
-                    lang={lang}
-                    libId={lib}
-                    texts={texts}
-                    className='ml-auto'
-                />
-            </div>
-        </header>
+    return (
+        <>
+            {/* Header */}
+            <header className='mx-auto max-w-md sm:max-w-6xl mb-10'>
+                <div className='flex items-center gap-2 flex-wrap'>
+                    <Link
+                        href='/library'
+                        className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                        aria-label='返回文库'
+                    >
+                        <LoadingIndicatorWrapper variant='spinner'>
+                            <PiArrowLeft className='size-6' />
+                        </LoadingIndicatorWrapper>
+                    </Link>
+                    <Link
+                        href={`/library/${lib}/corpus`}
+                        className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                        aria-label='语料本'
+                    >
+                        <LoadingIndicatorWrapper variant='spinner'>
+                            <PiBookBookmark className='size-6' />
+                        </LoadingIndicatorWrapper>
+                    </Link>
+                    <Link
+                        href={`/library/${lib}/print`}
+                        className='flex h-8 w-8 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-100 hover:text-default-600'
+                        aria-label='打印全部'
+                    >
+                        <LoadingIndicatorWrapper variant='spinner'>
+                            <PiPrinter className='size-6' />
+                        </LoadingIndicatorWrapper>
+                    </Link>
+                    <h1 className='font-fancy text-balance text-2xl tracking-tight ml-1'>{name}</h1>
+                    <LibraryShareButton
+                        libName={name}
+                        creatorName={creatorName}
+                        lang={lang}
+                        libId={lib}
+                        texts={texts}
+                        className='ml-auto'
+                    />
+                </div>
+            </header>
 
-        <TextList texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))} isReadOnly={isReadOnly} />
-    </>
+            <TextList
+                texts={texts.map(t => ({ ...t, topics: t.topics ?? [] }))}
+                isReadOnly={isReadOnly}
+            />
+        </>
+    )
 }
 
 /** Pulse placeholder block. */

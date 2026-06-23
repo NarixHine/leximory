@@ -4,7 +4,7 @@ import { supabase } from '@repo/supabase'
 import { ensureUserExists } from '../user'
 import { getLanguageName } from '@repo/languages'
 
-export async function getShadowLib({ owner, lang }: { owner: string, lang: Lang }) {
+export async function getShadowLib({ owner, lang }: { owner: string; lang: Lang }) {
     const { data: rec } = await supabase
         .from('libraries')
         .select('*')

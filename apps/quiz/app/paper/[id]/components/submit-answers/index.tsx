@@ -24,7 +24,7 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
             setWorkingPaperCompleted(parseInt(paperId!))
             toast.success('提交成功，刷新中……')
             router.refresh()
-        }
+        },
     })
     // Count total answers across all sections
     const answeredCount = Object.values(answers).reduce((count, sectionAnswers) => {
@@ -36,24 +36,34 @@ export function SubmitAnswers({ questionCount }: { questionCount: number }) {
         <div className='flex flex-col items-end gap-4'>
             <ConfirmPopover
                 skipConfirm={hasCompleted}
-                actionButton={(
+                actionButton={
                     <ProtectedButton
                         label='登录一下即可查看答案，并且荣登排行榜喵～'
-                        onPress={() => execute({ answers, id: parseInt(paperId!), passcode: passcode ?? undefined })}
+                        onPress={() =>
+                            execute({
+                                answers,
+                                id: parseInt(paperId!),
+                                passcode: passcode ?? undefined,
+                            })
+                        }
                         startContent={!isPending && <BoxArrowUpIcon weight='duotone' />}
                         color='primary'
                         isLoading={isPending}
                         isDisabled={hasSucceeded}
                     >
-                        {
-                            hasSucceeded
-                                ? '已上传'
-                                : (hasCompleted ? '提交' : '仅提交已完成部分')
-                        }
+                        {hasSucceeded ? '已上传' : hasCompleted ? '提交' : '仅提交已完成部分'}
                     </ProtectedButton>
-                )}
+                }
             >
-                <Button fullWidth startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />} color='primary' isLoading={isPending} isDisabled={hasSucceeded}>尚未完成，依然提交</Button>
+                <Button
+                    fullWidth
+                    startContent={!isPending && <WarningOctagonIcon weight='duotone' size={20} />}
+                    color='primary'
+                    isLoading={isPending}
+                    isDisabled={hasSucceeded}
+                >
+                    尚未完成，依然提交
+                </Button>
             </ConfirmPopover>
         </div>
     )

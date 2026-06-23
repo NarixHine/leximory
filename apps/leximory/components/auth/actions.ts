@@ -22,7 +22,9 @@ export async function login(props: z.infer<typeof authSchema>) {
         return { error: '输入格式错误' }
     }
 
-    const { data: { email, password, next } } = parseResult
+    const {
+        data: { email, password, next },
+    } = parseResult
 
     const { error } = await supabase.auth.signInWithPassword({
         email,

@@ -33,7 +33,7 @@ export default function Sortable() {
         }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
-        })
+        }),
     )
 
     return (
@@ -41,13 +41,25 @@ export default function Sortable() {
             <div className='flex flex-col gap-1 place-self-end'>
                 <Dropdown>
                     <DropdownTrigger>
-                        <Button color='secondary' size='lg' startContent={<PlusCircleIcon />} isIconOnly></Button>
+                        <Button
+                            color='secondary'
+                            size='lg'
+                            startContent={<PlusCircleIcon />}
+                            isIconOnly
+                        ></Button>
                     </DropdownTrigger>
                     <DropdownMenu color='secondary' variant='flat'>
-                        {(Object.keys(NAME_MAP) as QuizDataType[]).map((key) => (
-                            <DropdownItem startContent={ICON_MAP[key]} key={key} onPress={() => {
-                                setItems((items) => [...items, questionStrategies[key].getDefaultValue()])
-                            }}>
+                        {(Object.keys(NAME_MAP) as QuizDataType[]).map(key => (
+                            <DropdownItem
+                                startContent={ICON_MAP[key]}
+                                key={key}
+                                onPress={() => {
+                                    setItems(items => [
+                                        ...items,
+                                        questionStrategies[key].getDefaultValue(),
+                                    ])
+                                }}
+                            >
                                 {NAME_MAP[key]}
                             </DropdownItem>
                         ))}
@@ -59,16 +71,24 @@ export default function Sortable() {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
             >
-                <SortableContext
-                    items={items}
-                    strategy={verticalListSortingStrategy}
-                >
+                <SortableContext items={items} strategy={verticalListSortingStrategy}>
                     <div className='border-1 border-default-800/20 rounded-medium pl-4 py-4 gap-2 pr-1 min-w-60 flex flex-col justify-center items-center'>
-                        {items?.map((item, index) => <SortableItem key={item.id} id={item.id} index={index} name={NAME_MAP[item.type]} onDelete={() => {
-                            setItems((items) => items.filter((_, i) => i !== index))
-                        }} onClick={() => {
-                            document.getElementById(`section-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                        }} />)}
+                        {items?.map((item, index) => (
+                            <SortableItem
+                                key={item.id}
+                                id={item.id}
+                                index={index}
+                                name={NAME_MAP[item.type]}
+                                onDelete={() => {
+                                    setItems(items => items.filter((_, i) => i !== index))
+                                }}
+                                onClick={() => {
+                                    document
+                                        .getElementById(`section-${item.id}`)
+                                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                }}
+                            />
+                        ))}
                     </div>
                 </SortableContext>
             </DndContext>
@@ -84,9 +104,9 @@ export default function Sortable() {
         const { active, over } = event
 
         if (over && active.id !== over.id) {
-            setItems((items) => {
-                const oldIndex = items.findIndex((item) => item.id === active.id)
-                const newIndex = items.findIndex((item) => item.id === over.id)
+            setItems(items => {
+                const oldIndex = items.findIndex(item => item.id === active.id)
+                const newIndex = items.findIndex(item => item.id === over.id)
 
                 return arrayMove(items, oldIndex, newIndex)
             })

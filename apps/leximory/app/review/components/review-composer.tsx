@@ -71,10 +71,10 @@ export function ReviewComposer({
                             <textarea
                                 name='review-response'
                                 value={value}
-                                onChange={(event) => onChange(event.target.value)}
+                                onChange={event => onChange(event.target.value)}
                                 className={cn(
                                     'w-full resize-none border-0 bg-transparent px-3 py-2 focus:outline-none',
-                                    textareaClassName
+                                    textareaClassName,
                                 )}
                                 rows={rows}
                                 placeholder={placeholder}

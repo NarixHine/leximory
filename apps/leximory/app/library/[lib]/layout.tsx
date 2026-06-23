@@ -15,14 +15,14 @@ export async function generateMetadata(props: LibProps) {
     return {
         title: {
             default: name,
-            template: `%s | ${name} | Leximory`
-        }
+            template: `%s | ${name} | Leximory`,
+        },
     }
 }
 
 async function LibLayoutContent({
     params,
-    children
+    children,
 }: {
     params: Promise<{ lib: string }>
     children: ReactNode
@@ -40,33 +40,40 @@ async function LibLayoutContent({
 
     // Redirect to unauthorized page if user is not owner and hasn't starred the library
     if (!isOwner && !isStarred) {
-        if (access === LIB_ACCESS_STATUS.public)
-            redirect(`/library/unauthorized/${p.lib}`)
-        else
-            throw new Error('Access denied to this library')
+        if (access === LIB_ACCESS_STATUS.public) redirect(`/library/unauthorized/${p.lib}`)
+        else throw new Error('Access denied to this library')
     }
 
-    return (<HydrationBoundary options={{
-        enableReHydrate: true
-    }} hydrateAtoms={[
-        [libAtom, p.lib],
-        [isReadOnlyAtom, isReadOnly],
-        [langAtom, lang as Lang],
-        [isStarredAtom, isStarred],
-        [priceAtom, price]
-    ]}>
-        {children}
-    </HydrationBoundary>)
+    return (
+        <HydrationBoundary
+            options={{
+                enableReHydrate: true,
+            }}
+            hydrateAtoms={[
+                [libAtom, p.lib],
+                [isReadOnlyAtom, isReadOnly],
+                [langAtom, lang as Lang],
+                [isStarredAtom, isStarred],
+                [priceAtom, price],
+            ]}
+        >
+            {children}
+        </HydrationBoundary>
+    )
 }
 
-export default function LibLayout(
-    props: {
-        children: ReactNode
-        params: Promise<{ lib: string }>
-    }
-) {
+export default function LibLayout(props: {
+    children: ReactNode
+    params: Promise<{ lib: string }>
+}) {
     return (
-        <Suspense fallback={<Center><Spinner variant='wave' color='default' /></Center>}>
+        <Suspense
+            fallback={
+                <Center>
+                    <Spinner variant='wave' color='default' />
+                </Center>
+            }
+        >
             <LibLayoutContent params={props.params} children={props.children} />
         </Suspense>
     )

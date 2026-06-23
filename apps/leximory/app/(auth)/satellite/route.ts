@@ -10,7 +10,7 @@ export async function GET(request: Request) {
         throw new Error('Untrusted next URL')
     }
 
-    if (!await getUser()) {
+    if (!(await getUser())) {
         return NextResponse.redirect(prefixUrl('/login?next=' + encodeURIComponent(nextParam)))
     }
 

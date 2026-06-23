@@ -7,17 +7,17 @@ export async function getUsersPlansByIds(userIds: string[]): Promise<Record<stri
         return {}
     }
 
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id, plan')
-        .in('id', userIds)
+    const { data: users, error } = await supabase.from('users').select('id, plan').in('id', userIds)
 
     if (error) {
         throw new Error(`Failed to fetch user plans: ${error.message}`)
     }
 
-    return users.reduce((acc, user) => {
-        acc[user.id] = (user.plan || 'beginner') as Plan
-        return acc
-    }, {} as Record<string, Plan>)
+    return users.reduce(
+        (acc, user) => {
+            acc[user.id] = (user.plan || 'beginner') as Plan
+            return acc
+        },
+        {} as Record<string, Plan>,
+    )
 }

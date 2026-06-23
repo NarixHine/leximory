@@ -29,18 +29,18 @@ export { fastShuffle }
  * The Strategy Factory: Creates a question strategy with type safety and defaults.
  */
 export function createQuestionStrategy<T extends QuizData, O = unknown>(
-    config: Partial<QuestionStrategy<T, O>> & { keyPerLine: number } // Ensure keyPerLine is always provided
+    config: Partial<QuestionStrategy<T, O>> & { keyPerLine: number }, // Ensure keyPerLine is always provided
 ): QuestionStrategy<T, O> {
     const defaults: Omit<QuestionStrategy<T, O>, 'keyPerLine'> = {
-        getQuestionCount: (data) => ('text' in data ? extractCodeContent(data.text).length : 0),
+        getQuestionCount: data => ('text' in data ? extractCodeContent(data.text).length : 0),
         getOptions: () => undefined as O,
-        getCorrectAnswers: (data) => ('text' in data ? extractCodeContent(data.text) : []),
+        getCorrectAnswers: data => ('text' in data ? extractCodeContent(data.text) : []),
         isCorrect: (userAnswer, correctAnswer) => userAnswer === correctAnswer,
         renderPaper: () => null,
         getDefaultValue: () => {
             throw new Error('getDefaultValue must be implemented for each strategy')
         },
-        renderRubric: () => (<></>),
+        renderRubric: () => <></>,
         scorePerQuestion: 1,
     }
 
@@ -55,7 +55,11 @@ export function createQuestionStrategy<T extends QuizData, O = unknown>(
  * @param perLine - The number of cells to include in each row.
  * @returns An array of JSX elements representing the table rows.
  */
-export const toTableRows = (cells: JSX.Element[], perLine: number, lineNo?: number): JSX.Element[] => {
+export const toTableRows = (
+    cells: JSX.Element[],
+    perLine: number,
+    lineNo?: number,
+): JSX.Element[] => {
     if (!cells || cells.length === 0) return []
     const paddedCells = [...cells]
     while (paddedCells.length % perLine !== 0) {
@@ -65,7 +69,12 @@ export const toTableRows = (cells: JSX.Element[], perLine: number, lineNo?: numb
     const rows: JSX.Element[] = []
     for (let i = 0; i < paddedCells.length; i += perLine) {
         const rowCells = paddedCells.slice(i, i + perLine)
-        rows.push(<tr key={`row-${i / perLine}`} className='flex flex-wrap first:mt-1 last:mb-1'>{lineNo && <td className='mr-2 font-bold'>{lineNo}</td>}{rowCells}</tr>)
+        rows.push(
+            <tr key={`row-${i / perLine}`} className='flex flex-wrap first:mt-1 last:mb-1'>
+                {lineNo && <td className='mr-2 font-bold'>{lineNo}</td>}
+                {rowCells}
+            </tr>,
+        )
     }
     return rows
 }
@@ -94,7 +103,6 @@ export function applyStrategy<T>(data: QuizData, callback: StrategyCallback<T>):
     return callback(strategy as any, data as any)
 }
 
-
 /**
  * Parses HTML text, finds all `<code>` tags, and replaces them with a specified React node.
  * This is the core logic for rendering fill-in-the-blank and multiple-choice questions.
@@ -108,7 +116,7 @@ export function applyStrategy<T>(data: QuizData, callback: StrategyCallback<T>):
 export const replaceBlanks = (
     text: string,
     start: number,
-    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode
+    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode,
 ): ReactNode => {
     let i = 0
     return parse(text, {
@@ -129,7 +137,7 @@ export const replaceBlanks = (
                 const originalContent = child.data
                 return replacer(displayNo, localNo, originalContent) as JSX.Element
             }
-        }
+        },
     })
 }
 
@@ -146,20 +154,25 @@ export const replaceBlanks = (
 export const extractBlanks = (
     text: string,
     start: number,
-    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode
+    replacer: (displayNo: number, localNo: number, originalContent: string) => ReactNode,
 ): ReactNode[] => {
     const blanks: ReactNode[] = []
     let i = 0
     safeParseHTML(text, {
         replace: (node: DOMNode) => {
-            if ('name' in node && node.name === 'code' && 'children' in node && node.children[0]?.type === 'text') {
+            if (
+                'name' in node &&
+                node.name === 'code' &&
+                'children' in node &&
+                node.children[0]?.type === 'text'
+            ) {
                 i++
                 const displayNo = start + i - 1
                 const localNo = i // 1-based index within section
                 const originalContent = node.children[0].data
                 blanks.push(replacer(displayNo, localNo, originalContent))
             }
-        }
+        },
     })
     return blanks
 }
@@ -188,7 +201,10 @@ export const getQuestionStarts = (quizData: QuizData[]): number[] => {
  * @param userAnswers - Section-based answers mapping section IDs to local question numbers to answers.
  * @returns A section-based record mapping section IDs to local question numbers to correctness.
  */
-export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers): Record<string, Record<number, boolean>> => {
+export const checkAnswers = (
+    quizData: QuizData[],
+    userAnswers: SectionAnswers,
+): Record<string, Record<number, boolean>> => {
     const results: Record<string, Record<number, boolean>> = {}
 
     // Pre-compute section keys to avoid repeated linear searches
@@ -205,12 +221,17 @@ export const checkAnswers = (quizData: QuizData[], userAnswers: SectionAnswers):
             const userAns = sectionAnswers[localNo]
             const correctAns = sectionKey?.[localNo]
 
-            if (userAns === null || userAns === undefined || correctAns === undefined || correctAns === null) {
+            if (
+                userAns === null ||
+                userAns === undefined ||
+                correctAns === undefined ||
+                correctAns === null
+            ) {
                 results[sectionId][localNo] = false
                 continue
             }
 
-            results[sectionId][localNo] = applyStrategy(data, (strategy) => {
+            results[sectionId][localNo] = applyStrategy(data, strategy => {
                 return strategy.isCorrect(userAns, correctAns)
             })
         }
@@ -232,10 +253,13 @@ export const getSectionKeyFromData = (data: QuizData): Record<number, string> =>
         const options = strategy.getOptions?.(specificData)
         const correctAnswers = strategy.getCorrectAnswers(specificData, options)
         // Use local question numbers starting from 1
-        return correctAnswers.reduce((acc, answer, index) => {
-            acc[index + 1] = answer
-            return acc
-        }, {} as Record<number, string>)
+        return correctAnswers.reduce(
+            (acc, answer, index) => {
+                acc[index + 1] = answer
+                return acc
+            },
+            {} as Record<number, string>,
+        )
     })
 }
 
@@ -245,8 +269,11 @@ export const getSectionKeyFromData = (data: QuizData): Record<number, string> =>
  * @param sectionId - The section ID to get the key for.
  * @returns A record mapping local question numbers to correct answer text, or null if section not found.
  */
-export const getSectionKey = (quizData: QuizData[], sectionId: string): Record<number, string> | null => {
-    const data = quizData.find((item) => item.id === sectionId)
+export const getSectionKey = (
+    quizData: QuizData[],
+    sectionId: string,
+): Record<number, string> | null => {
+    const data = quizData.find(item => item.id === sectionId)
     if (!data) return null
     return getSectionKeyFromData(data)
 }
@@ -272,29 +299,41 @@ export const getSectionBasedKey = (quizData: QuizData[]): SectionAnswers => {
  * @param marker The marker (e.g., 'A', 'B', 'C') of the option to retrieve.
  * @returns The option string corresponding to the marker, or undefined if not found.
  */
-export const getOptionByMarker = (questionGroup: QuizData, marker: string, recordKey?: string): string | null => {
-    return applyStrategy(questionGroup, (strategy, specificData) => {
-        if (strategy.getOptions) {
-            const options = strategy.getOptions(specificData)
-            if (options) {
-                const MarkerSchema = z.enum(ALPHABET_SET)
-                const { data: parsedMarker, success: markerParseSuccess } = MarkerSchema.safeParse(marker)
-                if (markerParseSuccess) {
-                    const index = ALPHABET_SET.indexOf(parsedMarker)
-                    const optionsSchema = z.union([z.array(z.string()), z.record(z.string(), z.array(z.string()))])
-                    const { data: parsedOptions, success: optionsParseSuccess } = optionsSchema.safeParse(options)
-                    if (optionsParseSuccess) {
-                        if (Array.isArray(parsedOptions)) {
-                            return parsedOptions[index]
-                        }
-                        else {
-                            return recordKey && parsedOptions[recordKey] ? parsedOptions[recordKey][index] : null
+export const getOptionByMarker = (
+    questionGroup: QuizData,
+    marker: string,
+    recordKey?: string,
+): string | null => {
+    return (
+        applyStrategy(questionGroup, (strategy, specificData) => {
+            if (strategy.getOptions) {
+                const options = strategy.getOptions(specificData)
+                if (options) {
+                    const MarkerSchema = z.enum(ALPHABET_SET)
+                    const { data: parsedMarker, success: markerParseSuccess } =
+                        MarkerSchema.safeParse(marker)
+                    if (markerParseSuccess) {
+                        const index = ALPHABET_SET.indexOf(parsedMarker)
+                        const optionsSchema = z.union([
+                            z.array(z.string()),
+                            z.record(z.string(), z.array(z.string())),
+                        ])
+                        const { data: parsedOptions, success: optionsParseSuccess } =
+                            optionsSchema.safeParse(options)
+                        if (optionsParseSuccess) {
+                            if (Array.isArray(parsedOptions)) {
+                                return parsedOptions[index]
+                            } else {
+                                return recordKey && parsedOptions[recordKey]
+                                    ? parsedOptions[recordKey][index]
+                                    : null
+                            }
                         }
                     }
                 }
             }
-        }
-    }) || null
+        }) || null
+    )
 }
 
 /**
@@ -305,7 +344,10 @@ export const getOptionByMarker = (questionGroup: QuizData, marker: string, recor
  * @param no The 1-based local question number for which to retrieve the original word.
  * @returns The original word for the specified question number, or undefined if not found.
  */
-export const getClozeOriginalWord = (clozeQuestionGroup: ClozeData, no: number): string | undefined => {
+export const getClozeOriginalWord = (
+    clozeQuestionGroup: ClozeData,
+    no: number,
+): string | undefined => {
     let originalWord: string | undefined
 
     // Use replaceBlanks to iterate through the <code> tags in the text.
@@ -330,13 +372,16 @@ export const getClozeOriginalWord = (clozeQuestionGroup: ClozeData, no: number):
  */
 export const computePerfectScore = (quizData: QuizData[]): number => {
     return quizData.reduce((acc, data) => {
-        return acc + applyStrategy(data, (strategy, specificData) => {
-            if (strategy.getPerfectScore) {
-                return strategy.getPerfectScore(specificData)
-            }
-            const questionCount = strategy.getQuestionCount(specificData)
-            return questionCount * (strategy.scorePerQuestion ?? 1)
-        })
+        return (
+            acc +
+            applyStrategy(data, (strategy, specificData) => {
+                if (strategy.getPerfectScore) {
+                    return strategy.getPerfectScore(specificData)
+                }
+                const questionCount = strategy.getQuestionCount(specificData)
+                return questionCount * (strategy.scorePerQuestion ?? 1)
+            })
+        )
     }, 0)
 }
 
@@ -357,7 +402,7 @@ export const computeTotalScore = (quizData: QuizData[], userAnswers: SectionAnsw
 
         for (const localNoStr in sectionResults) {
             if (sectionResults[Number(localNoStr)]) {
-                totalScore += applyStrategy(data, (strategy) => {
+                totalScore += applyStrategy(data, strategy => {
                     return strategy.scorePerQuestion ?? 1
                 })
             }

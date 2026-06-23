@@ -53,7 +53,11 @@ function getRankColor(rank: number) {
     return 'text-default-500'
 }
 
-export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank }: LeaderboardTableProps) {
+export function LeaderboardTable({
+    leaderboardData,
+    currentUser,
+    currentUserRank,
+}: LeaderboardTableProps) {
     const handleJumpToUser = () => {
         if (!currentUser) return
         const element = document.getElementById(`user-row-${currentUser.userId}`)
@@ -100,23 +104,31 @@ export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank
                     <TableColumn>用户</TableColumn>
                     <TableColumn>分数</TableColumn>
                 </TableHeader>
-                <TableBody
-                    items={leaderboardData}
-                    emptyContent='暂无数据'
-                >
-                    {(item) => (
+                <TableBody items={leaderboardData} emptyContent='暂无数据'>
+                    {item => (
                         <TableRow
                             key={item.userId}
-                            id={currentUser && item.userId === currentUser.userId ? `user-row-${currentUser.userId}` : undefined}
+                            id={
+                                currentUser && item.userId === currentUser.userId
+                                    ? `user-row-${currentUser.userId}`
+                                    : undefined
+                            }
                             className={cn(
                                 'group',
-                                currentUser && item.userId === currentUser.userId && 'bg-primary-50/50'
+                                currentUser &&
+                                    item.userId === currentUser.userId &&
+                                    'bg-primary-50/50',
                             )}
                         >
                             <TableCell className='w-16 py-4'>
                                 <div className='flex items-center justify-center'>
                                     {getRankIcon(item.rank) || (
-                                        <span className={cn('text-sm font-medium', getRankColor(item.rank))}>
+                                        <span
+                                            className={cn(
+                                                'text-sm font-medium',
+                                                getRankColor(item.rank),
+                                            )}
+                                        >
                                             #{item.rank}
                                         </span>
                                     )}
@@ -144,7 +156,7 @@ export function LeaderboardTable({ leaderboardData, currentUser, currentUserRank
                             <TableCell className='py-4 text-right'>
                                 <div className='flex justify-end items-end pr-4'>
                                     <span className='text-xl font-bold text-primary mr-1'>
-                                        {item.score} 
+                                        {item.score}
                                     </span>
                                     <span className='text-sm text-default-400'>
                                         / {item.perfectScore}

@@ -15,7 +15,9 @@ export function useAuth() {
     useEffect(() => {
         // Initial check for the session
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
+            const {
+                data: { session },
+            } = await supabase.auth.getSession()
             setUser(session?.user || null)
             setIsLoading(false)
         }
@@ -23,12 +25,12 @@ export function useAuth() {
         checkSession()
 
         // Listen for auth state changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
-                setUser(session?.user || null)
-                setIsLoading(false) // Ensure loading is false after any auth event
-            }
-        )
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user || null)
+            setIsLoading(false) // Ensure loading is false after any auth event
+        })
 
         // Clean up the subscription on component unmount
         return () => {
@@ -45,8 +47,8 @@ export const useOnWindowResize = (handler: { (): void }) => {
             handler()
         }
         handleResize()
-        window.addEventListener("resize", handleResize)
+        window.addEventListener('resize', handleResize)
 
-        return () => window.removeEventListener("resize", handleResize)
+        return () => window.removeEventListener('resize', handleResize)
     }, [handler])
 }

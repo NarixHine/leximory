@@ -8,10 +8,14 @@ import { useState } from 'react'
 import { PiEyeSlash } from 'react-icons/pi'
 import { ALLOWED_IMAGE_REMOTE_PATTERNS } from '@repo/env/config'
 
-export default function MdImg({ src, alt = 'Image', title }: {
-    src: string,
-    alt?: string,
-    title?: string,
+export default function MdImg({
+    src,
+    alt = 'Image',
+    title,
+}: {
+    src: string
+    alt?: string
+    title?: string
 }) {
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const [isHidden, setIsHidden] = useState(false)
@@ -29,11 +33,15 @@ export default function MdImg({ src, alt = 'Image', title }: {
                 alt={alt}
                 src={src}
                 className='rounded-lg'
-                unoptimized={!ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
-                    if (src.startsWith('/'))
-                        return true
-                    return pattern.hostname === new URL(src).hostname && pattern.protocol === new URL(src).protocol
-                })}
+                unoptimized={
+                    !ALLOWED_IMAGE_REMOTE_PATTERNS.some(pattern => {
+                        if (src.startsWith('/')) return true
+                        return (
+                            pattern.hostname === new URL(src).hostname &&
+                            pattern.protocol === new URL(src).protocol
+                        )
+                    })
+                }
                 loading='lazy'
                 style={{ width: '100%', height: 'auto' }}
             />

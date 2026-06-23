@@ -5,7 +5,7 @@ import { useEventListener } from 'usehooks-ts'
 
 /**
  * Resets the selection to the default state.
- * 
+ *
  * @returns void
  */
 export function resetSelection() {
@@ -42,7 +42,7 @@ export function getBracketedSelection(selection: Selection): string {
         while (node) {
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
-                (['DIV', 'P', 'BLOCKQUOTE', 'LI'].includes((node as Element).tagName))
+                ['DIV', 'P', 'BLOCKQUOTE', 'LI'].includes((node as Element).tagName)
             ) {
                 return node as HTMLParagraphElement
             }
@@ -69,11 +69,10 @@ export function getBracketedSelection(selection: Selection): string {
         return fullText
     }
 
-    const result = (
+    const result =
         fullText.slice(0, idx) +
         `<must>${selectedText}</must>` +
         fullText.slice(idx + selectedText.length)
-    )
     return result
 }
 
@@ -81,17 +80,25 @@ export function useSelection(ref: RefObject<Document>) {
     const [rect, setRect] = useState<DOMRect | null>(null)
     const [selection, setSelection] = useState<Selection | null>(null)
 
-    useEventListener('selectionchange', () => {
-        const newSelection = getSelection()
-        if (!newSelection) {
-            if (selection) {
-                resetSelection()
+    useEventListener(
+        'selectionchange',
+        () => {
+            const newSelection = getSelection()
+            if (!newSelection) {
+                if (selection) {
+                    resetSelection()
+                }
+                return
             }
-            return
-        }
-        setRect(newSelection.isCollapsed ? null : newSelection.getRangeAt(0).getBoundingClientRect())
-        setSelection(newSelection)
-    }, ref)
+            setRect(
+                newSelection.isCollapsed
+                    ? null
+                    : newSelection.getRangeAt(0).getBoundingClientRect(),
+            )
+            setSelection(newSelection)
+        },
+        ref,
+    )
 
     const { left, width, bottom } = rect || {}
     return { selection, left, width, bottom }

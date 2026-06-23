@@ -28,12 +28,13 @@ export function ImportButton() {
         },
         onError: () => {
             toast.error(`Import failed.`)
-        }
+        },
     })
 
     async function handleAIImportClick() {
         if (!file) return
-        if (file.size > MAX_FILE_SIZE) toast.error(`File size exceeds the limit of ${MAX_FILE_SIZE / 1024 / 1024}MB`)
+        if (file.size > MAX_FILE_SIZE)
+            toast.error(`File size exceeds the limit of ${MAX_FILE_SIZE / 1024 / 1024}MB`)
         execute(file)
     }
 
@@ -53,12 +54,23 @@ export function ImportButton() {
                     <ModalHeader className='flex flex-col gap-1'>AI 导入</ModalHeader>
                     <ModalBody className='gap-0'>
                         <p>
-                            <b>智能导入</b> PDF 试卷（须含答案），转换为 PouncePen 格式以便使用编辑器进行操作。
+                            <b>智能导入</b> PDF 试卷（须含答案），转换为 PouncePen
+                            格式以便使用编辑器进行操作。
                         </p>
-                        <FileUpload onChange={(files) => { setFile(files[0]) }} disabled={isPending} />
+                        <FileUpload
+                            onChange={files => {
+                                setFile(files[0])
+                            }}
+                            disabled={isPending}
+                        />
                     </ModalBody>
                     <ModalFooter>
-                        <Button startContent={!isPending && <MagicWandIcon size={20} />} color='secondary' onPress={handleAIImportClick} isLoading={isPending}>
+                        <Button
+                            startContent={!isPending && <MagicWandIcon size={20} />}
+                            color='secondary'
+                            onPress={handleAIImportClick}
+                            isLoading={isPending}
+                        >
                             上传 PDF
                         </Button>
                     </ModalFooter>

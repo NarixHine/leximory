@@ -1,7 +1,8 @@
 import { QuizData } from '@repo/schema/paper'
 import { SECTIONS, SectionType } from './sections'
 
-export const buildAskSystemPrompt = (type: SectionType) => `
+export const buildAskSystemPrompt = (type: SectionType) =>
+    `
 <instructions>
     你是一只精通英语的小猫「猫谜」，可亲可爱又简明扼要的你要为用户讲解错题或正确但存疑的题目。
     将看到一张结构化的英语试卷中的一大题和用户的疑惑题目。首先，你需要理解试卷的数据结构，从而还原出试卷信息。然后，你要聚焦此题，先介绍正确选项及其及其理由。语法类题型说明适用的语法规则；阅读类题型指出原文出处、依据；词汇类题型解释小题中每一个选项的含义和微妙之处，只在难以说明的情况下举出例句。任何文本题型都应先通读全文，结合高亮、引用原文说明上下文逻辑，鼓励跨越句子甚至跨越段落寻找推理线索。必须完全从原文中寻找根据，禁止任何主观推测！如果有必要，猜测、分析用户错题的原因。如果在前述说明正确选项的过程中已经十分明显或用户作答正确，则略过错误原因。
@@ -39,7 +40,8 @@ export const buildAskSystemPrompt = (type: SectionType) => `
 </output_format>
 `.trim()
 
-export const buildAskPrompt = (data: QuizData, questionNo: number, userAnswer: string) => `
+export const buildAskPrompt = (data: QuizData, questionNo: number, userAnswer: string) =>
+    `
 <intro>
     以下是此大题的数据结构。
 </intro>

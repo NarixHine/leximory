@@ -29,7 +29,6 @@ function AudioPlayer({ src }: AudioPlayerProps) {
         setIsPlaying(!isPlaying)
     }
 
-
     const handleLoadedMetadata = () => {
         if (audioRef.current) {
             setDuration(audioRef.current.duration)
@@ -86,28 +85,34 @@ function AudioPlayer({ src }: AudioPlayerProps) {
 
     return (
         <FlatCard className={cn('w-full p-0')}>
-            {src && <audio
-                ref={audioRef}
-                src={src}
-                onLoadedMetadata={handleLoadedMetadata}
-                onEnded={handleAudioEnded}
-            />}
+            {src && (
+                <audio
+                    ref={audioRef}
+                    src={src}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onEnded={handleAudioEnded}
+                />
+            )}
             <div className={cn('flex items-center space-x-3')}>
-                {src ? <Button
-                    isIconOnly
-                    aria-label='Play/Pause'
-                    variant='light'
-                    radius='full'
-                    onPress={togglePlayPause}
-                    className={cn('bg-transparent p-0')}
-                    startContent={
-                        isPlaying ? (
-                            <PiPause className='text-lg text-primary-500' />
-                        ) : (
-                            <PiPlay className='text-lg text-primary-500' />
-                        )
-                    }
-                /> : <Spinner className='ml-2 pb-1.5' variant='dots' color='default' />}
+                {src ? (
+                    <Button
+                        isIconOnly
+                        aria-label='Play/Pause'
+                        variant='light'
+                        radius='full'
+                        onPress={togglePlayPause}
+                        className={cn('bg-transparent p-0')}
+                        startContent={
+                            isPlaying ? (
+                                <PiPause className='text-lg text-primary-500' />
+                            ) : (
+                                <PiPlay className='text-lg text-primary-500' />
+                            )
+                        }
+                    />
+                ) : (
+                    <Spinner className='ml-2 pb-1.5' variant='dots' color='default' />
+                )}
                 <div className={cn('grow')}>
                     <Slider
                         aria-label='Audio progress'

@@ -1,7 +1,8 @@
 import { QuizData } from '@repo/schema/paper'
 import { SECTIONS, SectionType } from './sections'
 
-export const buildQuestionNoteSystemPrompt = (type: SectionType) => `
+export const buildQuestionNoteSystemPrompt = (type: SectionType) =>
+    `
 <instructions>
     你是一只精通英语的小猫「猫谜」，需要为用户将错题或存疑题目整理成精炼的笔记条目。
     你会看到一张结构化的英语试卷中的一大题和用户的答题情况。
@@ -33,7 +34,14 @@ export const buildQuestionNoteSystemPrompt = (type: SectionType) => `
 </tone>
 `.trim()
 
-export const buildQuestionNotePrompt = (data: QuizData, questionNo: number, userAnswer: string, correctAnswer: string, isCorrect: boolean) => `
+export const buildQuestionNotePrompt = (
+    data: QuizData,
+    questionNo: number,
+    userAnswer: string,
+    correctAnswer: string,
+    isCorrect: boolean,
+) =>
+    `
 <intro>
     以下是此大题的数据结构。
 </intro>

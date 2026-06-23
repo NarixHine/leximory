@@ -1,6 +1,6 @@
 // Tremor Raw chartColors [v0.1.0]
 
-export type ColorUtility = "bg" | "stroke" | "fill" | "text"
+export type ColorUtility = 'bg' | 'stroke' | 'fill' | 'text'
 
 export const chartColors = {
     primary: {
@@ -26,7 +26,7 @@ export const chartColors = {
         stroke: 'stroke-default',
         fill: 'fill-default',
         text: 'text-default',
-    }
+    },
 } as const satisfies {
     [color: string]: {
         [key in ColorUtility]: string
@@ -50,15 +50,12 @@ export const constructCategoryColors = (
     return categoryColors
 }
 
-export const getColorClassName = (
-    color: AvailableChartColorsKeys,
-    type: ColorUtility,
-): string => {
+export const getColorClassName = (color: AvailableChartColorsKeys, type: ColorUtility): string => {
     const fallbackColor = {
-        bg: "bg-default-500",
-        stroke: "stroke-default-500",
-        fill: "fill-default-500",
-        text: "text-default-500",
+        bg: 'bg-default-500',
+        stroke: 'stroke-default-500',
+        fill: 'fill-default-500',
+        text: 'text-default-500',
     }
     return chartColors[color]?.[type] ?? fallbackColor[type]
 }
@@ -70,17 +67,14 @@ export const getYAxisDomain = (
     minValue: number | undefined,
     maxValue: number | undefined,
 ) => {
-    const minDomain = autoMinValue ? "auto" : minValue ?? 0
-    const maxDomain = maxValue ?? "auto"
+    const minDomain = autoMinValue ? 'auto' : (minValue ?? 0)
+    const maxDomain = maxValue ?? 'auto'
     return [minDomain, maxDomain]
 }
 
 // Tremor Raw hasOnlyOneValueForKey [v0.1.0]
 
-export function hasOnlyOneValueForKey(
-    array: any[],
-    keyToCheck: string,
-): boolean {
+export function hasOnlyOneValueForKey(array: any[], keyToCheck: string): boolean {
     const val: any[] = []
 
     for (const obj of array) {

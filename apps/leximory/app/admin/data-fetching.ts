@@ -8,7 +8,7 @@ export async function getUsersOverview() {
     await requireAdmin()
 
     const { data, error } = await supabase.auth.admin.listUsers({
-        perPage: 1000
+        perPage: 1000,
     })
     if (error) {
         throw new Error('Failed to fetch users')
@@ -25,16 +25,19 @@ export async function getUsersOverview() {
     const userIds = users.map(user => user.id)
     const userPlans = await getUsersPlansByIds(userIds)
 
-    const usersByPlan = users.reduce((acc, user) => {
-        const plan = userPlans[user.id] as Plan || 'beginner'
-        acc[plan] = (acc[plan] || 0) + 1
-        return acc
-    }, {} as Record<Plan, number>)
+    const usersByPlan = users.reduce(
+        (acc, user) => {
+            const plan = (userPlans[user.id] as Plan) || 'beginner'
+            acc[plan] = (acc[plan] || 0) + 1
+            return acc
+        },
+        {} as Record<Plan, number>,
+    )
 
     return {
         totalUsers,
         activeUsers,
-        usersByPlan
+        usersByPlan,
     }
 }
 
@@ -42,7 +45,7 @@ export async function getAllUsers() {
     await requireAdmin()
 
     const { data, error } = await supabase.auth.admin.listUsers({
-        perPage: 1000
+        perPage: 1000,
     })
     if (error) {
         throw new Error('Failed to fetch users')

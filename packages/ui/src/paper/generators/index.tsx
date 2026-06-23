@@ -7,9 +7,25 @@ import { Question } from './ui'
 import { getQuestionStarts } from './utils'
 import { answersAtom } from '../atoms'
 
-const QuestionProcessor = ({ data, config, variant }: { data: QuizData; config: Config; variant: 'paper' | 'key' }) => {
+const QuestionProcessor = ({
+    data,
+    config,
+    variant,
+}: {
+    data: QuizData
+    config: Config
+    variant: 'paper' | 'key'
+}) => {
     const answers = useAtomValue(answersAtom)
-    return applyStrategy(data, (strategy, specificData) => <Question answers={answers} strategy={strategy} specificData={specificData} variant={variant} config={config} />)
+    return applyStrategy(data, (strategy, specificData) => (
+        <Question
+            answers={answers}
+            strategy={strategy}
+            specificData={specificData}
+            variant={variant}
+            config={config}
+        />
+    ))
 }
 
 export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
@@ -17,7 +33,12 @@ export const QuizKey = ({ quizData }: { quizData: QuizData[] }) => {
     return (
         <div>
             {quizData.map((data, index) => (
-                <QuestionProcessor key={data.id || index} data={data} config={{ start: questionStarts[index] }} variant='key' />
+                <QuestionProcessor
+                    key={data.id || index}
+                    data={data}
+                    config={{ start: questionStarts[index] }}
+                    variant='key'
+                />
             ))}
         </div>
     )

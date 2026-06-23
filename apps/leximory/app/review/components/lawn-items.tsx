@@ -19,7 +19,15 @@ interface WordPillProps extends LawnItemProps {
     isCompleted?: boolean
 }
 
-export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = false }: WordPillProps) {
+export function WordPill({
+    id,
+    x,
+    y,
+    delay = 0,
+    onClick,
+    word,
+    isCompleted = false,
+}: WordPillProps) {
     return (
         <motion.div
             id={id}
@@ -30,9 +38,9 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
                 delay,
                 type: 'spring',
                 stiffness: 200,
-                damping: 28
+                damping: 28,
             }}
-            className="absolute"
+            className='absolute'
             style={{
                 left: `${x}%`,
                 top: `${y}%`,
@@ -44,20 +52,21 @@ export function WordPill({ id, x, y, delay = 0, onClick, word, isCompleted = fal
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
-                    "relative px-3 py-1.5 text-sm font-medium rounded-full overflow-hidden",
-                    "duration-200 transition-opacity",
-                    "cursor-pointer select-none",
+                    'relative px-3 py-1.5 text-sm font-medium rounded-full overflow-hidden',
+                    'duration-200 transition-opacity',
+                    'cursor-pointer select-none',
                     'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl',
-                    isCompleted && 'opacity-60 border-default-300 bg-default-100/90 text-content1-foreground/50'
+                    isCompleted &&
+                        'opacity-60 border-default-300 bg-default-100/90 text-content1-foreground/50',
                 )}
             >
-                <span className="relative \text-nowrap truncate block max-w-50">{word}</span>
+                <span className='relative \text-nowrap truncate block max-w-50'>{word}</span>
                 <motion.span
                     aria-hidden
                     initial={false}
                     animate={{ scaleX: isCompleted ? 1 : 0 }}
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 origin-left rounded-full bg-primary-400"
+                    className='absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 origin-left rounded-full bg-primary-400'
                 />
             </motion.button>
         </motion.div>
@@ -85,9 +94,9 @@ export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
                 delay,
                 type: 'spring',
                 stiffness: 200,
-                damping: 28
+                damping: 28,
             }}
-            className="absolute"
+            className='absolute'
             style={{
                 left: `${x}%`,
                 top: `${y}%`,
@@ -99,14 +108,14 @@ export function StoryPill({ id, x, y, delay = 0, onClick }: StoryPillProps) {
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
                 className={cn(
-                    "px-4 py-2 text-sm font-medium rounded-full font-kaiti",
-                    "flex items-center gap-2",
-                    "transition-colors duration-200",
-                    "cursor-pointer select-none",
-                    'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl'
+                    'px-4 py-2 text-sm font-medium rounded-full font-kaiti',
+                    'flex items-center gap-2',
+                    'transition-colors duration-200',
+                    'cursor-pointer select-none',
+                    'bg-default-50 px-3 py-1 border-3 border-default-200 rounded-4xl',
                 )}
             >
-                <PiBookOpen className="w-4 h-4" />
+                <PiBookOpen className='w-4 h-4' />
                 <span>连词成文</span>
             </motion.button>
         </motion.div>
@@ -132,7 +141,7 @@ export function CatTaskPill({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 12 }}
             transition={{ delay, type: 'spring', stiffness: 280, damping: 24 }}
-            className="absolute"
+            className='absolute'
             style={{
                 left: `${x}%`,
                 top: `${y}%`,

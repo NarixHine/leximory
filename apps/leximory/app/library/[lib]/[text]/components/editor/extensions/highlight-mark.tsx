@@ -14,13 +14,17 @@ export const HighlightMark = Mark.create({
     name: 'highlightMark',
 
     parseHTML() {
-        return [
-            { tag: 'mark' },
-        ]
+        return [{ tag: 'mark' }]
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['mark', mergeAttributes(HTMLAttributes, { class: 'bg-warning-200 dark:bg-warning-100/30 rounded-sm px-0.5' }), 0]
+        return [
+            'mark',
+            mergeAttributes(HTMLAttributes, {
+                class: 'bg-warning-200 dark:bg-warning-100/30 rounded-sm px-0.5',
+            }),
+            0,
+        ]
     },
 
     addCommands() {

@@ -11,12 +11,9 @@ export async function getLexicoinBalance(uid: string) {
     cacheTag('lexicoin')
 
     await ensureUserExists(uid)
-    const { data: { lexicoin } } = await supabase
-        .from('users')
-        .select('lexicoin')
-        .eq('id', uid)
-        .single()
-        .throwOnError()
+    const {
+        data: { lexicoin },
+    } = await supabase.from('users').select('lexicoin').eq('id', uid).single().throwOnError()
 
     return lexicoin
 }
@@ -65,11 +62,7 @@ export async function getLibPrice(lib: string) {
 export async function getLastDailyClaim(uid: string) {
     'use cache'
     cacheTag('lexicoin')
-    const { data } = await supabase
-        .from('users')
-        .select('last_daily_claim')
-        .eq('id', uid)
-        .single()
+    const { data } = await supabase.from('users').select('last_daily_claim').eq('id', uid).single()
 
     return data?.last_daily_claim
 }

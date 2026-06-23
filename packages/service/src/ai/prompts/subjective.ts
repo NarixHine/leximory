@@ -18,10 +18,10 @@ export function buildSummaryMarkingPrompt(
     copiedChunks: string[],
     wordCount: number,
 ): string {
-    const copyInfo = copiedChunks.length > 0
-        ? `Detected verbatim copied chunks (4+ consecutive words from source): ${copiedChunks.map(c => `"${c}"`).join(', ')}. Each instance of copying 4+ consecutive words with no variation deducts 0.5 language pts.`
-        : 'No verbatim copying of 4+ consecutive words was detected.'
-
+    const copyInfo =
+        copiedChunks.length > 0
+            ? `Detected verbatim copied chunks (4+ consecutive words from source): ${copiedChunks.map(c => `"${c}"`).join(', ')}. Each instance of copying 4+ consecutive words with no variation deducts 0.5 language pts.`
+            : 'No verbatim copying of 4+ consecutive words was detected.'
 
     return `<prompt>
 <role>You are a strict, objective marker for an English Summary Writing exam.</role>
@@ -83,16 +83,18 @@ export function buildTranslationMarkingPrompt(
     data: TranslationData,
     answers: Record<number, string | null>,
 ): string {
-    const itemPrompts = data.items.map((item, index) => {
-        const localNo = index + 1
-        const studentAnswer = answers[localNo] ?? '(unanswered)'
-        return `
+    const itemPrompts = data.items
+        .map((item, index) => {
+            const localNo = index + 1
+            const studentAnswer = answers[localNo] ?? '(unanswered)'
+            return `
 ITEM ${localNo} (${item.score} pts):
   Chinese: ${item.chinese}
   Required keyword: ${item.keyword}
   Reference translation(s): ${item.references.join(' / ')}
   Student's answer: ${studentAnswer}`
-    }).join('\n')
+        })
+        .join('\n')
 
     return `<prompt>
 <role>You are a strict, objective marker for an English Translation exam.</role>
@@ -135,10 +137,7 @@ Return a JSON object: {
  * @param data - The writing question data (guidance).
  * @param answer - The student's essay.
  */
-export function buildWritingScoringPrompt(
-    data: WritingData,
-    answer: string,
-): string {
+export function buildWritingScoringPrompt(data: WritingData, answer: string): string {
     return `<prompt>
 <role_definition>
 你是一位资深的高中英语老师，拥有多年高考英语阅卷经验。你评价十分客观、专业。
@@ -292,10 +291,7 @@ Return a JSON object: {
  * @param data - The writing question data (guidance).
  * @param answer - The student's essay.
  */
-export function buildWritingAnalysisPrompt(
-    data: WritingData,
-    answer: string,
-): string {
+export function buildWritingAnalysisPrompt(data: WritingData, answer: string): string {
     return `<prompt>
 <role_definition>
 你是一位资深的高中英语老师，拥有多年高考英语阅卷经验。你评价极度客观、严谨、专业，能根据学生的语言表达、内容完整度、结构逻辑、交际意识和主题契合度给出精准反馈。你从不夸大其词，始终直白指出学生水平和不足；你也懂得尊重学生的文风偏好。你尤其擅长逐句细致地润色任何不符英语习惯的表达。

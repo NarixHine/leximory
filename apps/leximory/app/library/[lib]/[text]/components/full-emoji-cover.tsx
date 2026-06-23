@@ -9,11 +9,13 @@ export function TextEmojiCover({ className }: { className?: string }) {
     const emoji = useAtomValue(emojiAtom)
     const textId = useAtomValue(textAtom)
     const ebook = useAtomValue(ebookAtom)
-    return (<EmojiCover
-        emoji={resolveEmoji(emoji, !!ebook)}
-        articleId={textId}
-        className={cn('rounded-none', className)}
-        variant='grid'
-        switchToDitherInDarkMode
-    />)
+    return (
+        <EmojiCover
+            emoji={resolveEmoji(emoji, !!ebook)}
+            articleId={textId}
+            className={cn('rounded-none', className)}
+            variant='grid'
+            switchToDitherInDarkMode
+        />
+    )
 }

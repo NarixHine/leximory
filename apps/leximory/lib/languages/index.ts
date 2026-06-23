@@ -6,7 +6,7 @@ export const languageStrategies = [
     englishStrategy,
     chineseStrategy,
     japaneseStrategy,
-    notListedStrategy
+    notListedStrategy,
 ]
 
 export function getLanguageStrategy(lang: Lang): LanguageStrategy {

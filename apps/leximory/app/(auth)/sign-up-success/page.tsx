@@ -14,11 +14,7 @@ export default function SignUpSuccessPage() {
                 </div>
 
                 <div>
-                    <LinkButton
-                        variant='flat'
-                        href='/login'
-                        startContent={<PiSignIn />}
-                    >
+                    <LinkButton variant='flat' href='/login' startContent={<PiSignIn />}>
                         返回登录
                     </LinkButton>
                 </div>

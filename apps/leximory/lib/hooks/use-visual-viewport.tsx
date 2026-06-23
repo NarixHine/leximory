@@ -14,7 +14,7 @@ export function useSmoothVisualViewport() {
             // Grab the scale to handle virtual zoom pinch behaviors if needed.
             setViewportCoords({
                 top: vv.offsetTop + 96,
-                scaleWidth: vv.width
+                scaleWidth: vv.width,
             })
         }
 

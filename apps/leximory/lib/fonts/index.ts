@@ -1,4 +1,13 @@
-import { Libre_Baskerville, Source_Code_Pro, Raleway, EB_Garamond, DM_Sans, Noto_Emoji, Space_Mono, Life_Savers } from 'next/font/google'
+import {
+    Libre_Baskerville,
+    Source_Code_Pro,
+    Raleway,
+    EB_Garamond,
+    DM_Sans,
+    Noto_Emoji,
+    Space_Mono,
+    Life_Savers,
+} from 'next/font/google'
 import localFont from 'next/font/local'
 
 export const MINCHO = localFont({
@@ -7,7 +16,7 @@ export const MINCHO = localFont({
 })
 
 export const EMOJI = Noto_Emoji({
-    weight: '400'
+    weight: '400',
 })
 
 export const KAITI = localFont({

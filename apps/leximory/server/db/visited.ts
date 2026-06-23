@@ -2,7 +2,7 @@ import 'server-only'
 import { supabase } from '@repo/supabase'
 import { cacheTag } from 'next/cache'
 
-export async function visitText({ textId, userId }: { textId: string, userId: string }) {
+export async function visitText({ textId, userId }: { textId: string; userId: string }) {
     // find existing visit record
     const { data: existingVisit } = await supabase
         .from('reads')
@@ -23,7 +23,7 @@ export async function visitText({ textId, userId }: { textId: string, userId: st
         .throwOnError()
 }
 
-export async function getVisitedTextIds({ libId, userId }: { libId: string, userId: string }) {
+export async function getVisitedTextIds({ libId, userId }: { libId: string; userId: string }) {
     'use cache'
     cacheTag(`reads:${libId}`)
 

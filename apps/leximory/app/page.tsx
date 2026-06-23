@@ -2,9 +2,9 @@ import Main from '@/components/ui/main'
 import H from '@/components/ui/h'
 import Markdown from '@/components/markdown'
 import {
-	PiLinkSimpleHorizontalDuotone,
-	PiNewspaperDuotone,
-	PiShootingStarDuotone,
+    PiLinkSimpleHorizontalDuotone,
+    PiNewspaperDuotone,
+    PiShootingStarDuotone,
 } from 'react-icons/pi'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -27,159 +27,198 @@ import LinkButton from '@repo/ui/link-button'
 import { CatSprite } from './review/components/cat-sprite'
 
 export default async function Home() {
+    return (
+        <div>
+            <HeroSection />
+            <StorySection />
 
-	return (
-		<div>
-			<HeroSection />
-			<StorySection />
+            {/* Rest of the Current Landing Page */}
+            <section>
+                <Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
+                    <H className='text-3xl sm:text-4xl mb-4'>
+                        Leximory&nbsp;<span className='font-semibold'>助你一臂之力。</span>
+                    </H>
+                    <div>
+                        <div className='grid w-full gap-3'>
+                            <div className='grid grid-cols-1 sm:grid-cols-5 gap-3'>
+                                <div className='col-span-2'>
+                                    <BentoCard title='外刊一键导入'>
+                                        <div className='flex w-full'>
+                                            <Input
+                                                className='flex-1'
+                                                label='网址'
+                                                placeholder='https://example.com/'
+                                                variant='underlined'
+                                                color='default'
+                                            />
+                                            <div className='flex flex-col-reverse'>
+                                                <Button
+                                                    color='default'
+                                                    radius='full'
+                                                    endContent={<PiLinkSimpleHorizontalDuotone />}
+                                                >
+                                                    读取
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </BentoCard>
+                                </div>
+                                <div className='col-span-3'>
+                                    <BentoCard title='考纲词汇高亮'>
+                                        <LexiconSelector />
+                                    </BentoCard>
+                                </div>
+                            </div>
 
-			{/* Rest of the Current Landing Page */}
-			<section>
-				<Main className={'w-11/12 max-w-(--breakpoint-lg)'}>
-					<H className='text-3xl sm:text-4xl mb-4'>Leximory&nbsp;<span className='font-semibold'>助你一臂之力。</span></H>
-					<div>
-						<div className='grid w-full gap-3'>
-							<div className='grid grid-cols-1 sm:grid-cols-5 gap-3'>
-								<div className='col-span-2'>
-									<BentoCard title='外刊一键导入'>
-										<div className='flex w-full'>
-											<Input
-												className='flex-1'
-												label='网址'
-												placeholder='https://example.com/'
-												variant='underlined'
-												color='default'
-											/>
-											<div className='flex flex-col-reverse'>
-												<Button
-													color='default'
-													radius='full'
-													endContent={<PiLinkSimpleHorizontalDuotone />}
-												>
-													读取
-												</Button>
-											</div>
-										</div>
-									</BentoCard>
-								</div>
-								<div className='col-span-3'>
-									<BentoCard title='考纲词汇高亮'>
-										<LexiconSelector />
-									</BentoCard>
-								</div>
-							</div>
+                            <div className='grid grid-cols-1 laptop:grid-cols-3 gap-3'>
+                                <div className='md:col-span-2'>
+                                    <BentoCard title='AI 注解 + AI 朗读'>
+                                        <div className='px-8 sm:px-16 flex flex-col'>
+                                            <ShowcaseAnnotation />
+                                        </div>
+                                    </BentoCard>
+                                </div>
+                                <div className='grid grid-cols-1 laptop:grid-cols-1 max-laptop:sm:grid-cols-2 gap-3'>
+                                    <div>
+                                        <BentoCard
+                                            title='一键分享'
+                                            description='将导入的文本分享给好友。无需登录。'
+                                        >
+                                            <LinkCard
+                                                isPressable
+                                                href='/read/ec50a3f1'
+                                                shadow='none'
+                                                className='h-32 w-full bg-linear-to-br from-secondary-100 to-default-200 p-2 relative rounded-2xl'
+                                            >
+                                                <CardBody>
+                                                    <h2 className='text-default-500 text-sm tracking-wider'>
+                                                        The New York Times
+                                                    </h2>
+                                                    <p className='text-base text-default-700 text-balance font-formal my-1'>
+                                                        Signature of Life on a Distant Planet
+                                                    </p>
+                                                    <div className='absolute bottom-0 right-0 p-0'>
+                                                        <PiNewspaperDuotone className='w-10 h-10 text-default-300' />
+                                                    </div>
+                                                </CardBody>
+                                            </LinkCard>
+                                        </BentoCard>
+                                    </div>
+                                    <div>
+                                        <BentoCard
+                                            title='语料本'
+                                            description='以往生词汇集一处，供君复盘、自测'
+                                        >
+                                            <ScopeProvider atoms={[libAtom, isReadOnlyAtom]}>
+                                                <HydrationBoundary
+                                                    hydrateAtoms={[
+                                                        [libAtom, EXAMPLE_SHARED_LIB.id],
+                                                        [isReadOnlyAtom, true],
+                                                    ]}
+                                                >
+                                                    <Test latestTime={'2025-01-16'} />
+                                                </HydrationBoundary>
+                                            </ScopeProvider>
+                                        </BentoCard>
+                                    </div>
+                                </div>
+                            </div>
 
-							<div className='grid grid-cols-1 laptop:grid-cols-3 gap-3'>
-								<div className='md:col-span-2'>
-									<BentoCard title='AI 注解 + AI 朗读'>
-										<div className='px-8 sm:px-16 flex flex-col'>
-											<ShowcaseAnnotation />
-										</div>
-									</BentoCard>
-								</div>
-								<div className='grid grid-cols-1 laptop:grid-cols-1 max-laptop:sm:grid-cols-2 gap-3'>
-									<div>
-										<BentoCard
-											title='一键分享'
-											description='将导入的文本分享给好友。无需登录。'
-										>
-											<LinkCard isPressable href='/read/ec50a3f1' shadow='none' className='h-32 w-full bg-linear-to-br from-secondary-100 to-default-200 p-2 relative rounded-2xl'>
-												<CardBody>
-													<h2 className='text-default-500 text-sm tracking-wider'>The New York Times</h2>
-													<p className='text-base text-default-700 text-balance font-formal my-1'>Signature of Life on a Distant Planet</p>
-													<div className='absolute bottom-0 right-0 p-0'>
-														<PiNewspaperDuotone className='w-10 h-10 text-default-300' />
-													</div>
-												</CardBody>
-											</LinkCard>
-										</BentoCard>
-									</div>
-									<div>
-										<BentoCard
-											title='语料本'
-											description='以往生词汇集一处，供君复盘、自测'
-										>
-											<ScopeProvider atoms={[libAtom, isReadOnlyAtom]}>
-												<HydrationBoundary
-													hydrateAtoms={[
-														[libAtom, EXAMPLE_SHARED_LIB.id],
-														[isReadOnlyAtom, true]
-													]}
-												>
-													<Test latestTime={'2025-01-16'} />
-												</HydrationBoundary>
-											</ScopeProvider>
-										</BentoCard>
-									</div>
-								</div>
-							</div>
+                            <div className='grid grid-cols-1 gap-3 md:grid-cols-3 w-full'>
+                                <div className='col-span-1 sm:col-span-2'>
+                                    <BentoCard title='多语言' description='文言文、日文……'>
+                                        <ScopeProvider atoms={[langAtom]}>
+                                            <HydrationBoundary hydrateAtoms={[[langAtom, 'zh']]}>
+                                                <Markdown
+                                                    inlineMode
+                                                    disableSave
+                                                    md={
+                                                        '> 屈原曰：“吾闻之，新{{沐||沐||`mù` 洗头发。}}者必{{弹冠||弹冠||`tánguān` 弹去帽子上的灰尘。}}，新{{浴||浴||`yù` 洗身体。}}者必{{振衣||振衣||`zhènyī` 抖落衣服上的泥沙。}}，人又谁能以身之{{察察||察察||`cháchá` 洁净的样子。}}，受物之{{汶汶||汶汶||`mènmèn` 肮脏，浑浊。}}者乎！{{宁||宁||`nìng` 宁可。}}赴{{常流||常流||`chángliú` 指长流不息的江水。}}而葬乎江鱼腹中耳，又安能以{{皓皓||皓皓||`hàohào` 洁白的样子。}}之白而蒙世俗之{{温蠖||温蠖||`wēnhuò` 尘垢。}}乎！”'
+                                                    }
+                                                />
+                                            </HydrationBoundary>
+                                        </ScopeProvider>
+                                    </BentoCard>
+                                </div>
+                                <div className='col-span-1'>
+                                    <BentoCard
+                                        title='文库集市'
+                                        description='发现别人制作的精品学习资源'
+                                    >
+                                        <LibraryCard
+                                            isOwner={false}
+                                            library={EXAMPLE_SHARED_LIB}
+                                            isStarred={false}
+                                        />
+                                    </BentoCard>
+                                </div>
+                            </div>
+                        </div>
 
-							<div className='grid grid-cols-1 gap-3 md:grid-cols-3 w-full'>
-								<div className='col-span-1 sm:col-span-2'>
-									<BentoCard title='多语言' description='文言文、日文……'>
-										<ScopeProvider atoms={[langAtom]}>
-											<HydrationBoundary hydrateAtoms={[[langAtom, 'zh']]}>
-												<Markdown
-													inlineMode
-													disableSave
-													md={'> 屈原曰：“吾闻之，新{{沐||沐||`mù` 洗头发。}}者必{{弹冠||弹冠||`tánguān` 弹去帽子上的灰尘。}}，新{{浴||浴||`yù` 洗身体。}}者必{{振衣||振衣||`zhènyī` 抖落衣服上的泥沙。}}，人又谁能以身之{{察察||察察||`cháchá` 洁净的样子。}}，受物之{{汶汶||汶汶||`mènmèn` 肮脏，浑浊。}}者乎！{{宁||宁||`nìng` 宁可。}}赴{{常流||常流||`chángliú` 指长流不息的江水。}}而葬乎江鱼腹中耳，又安能以{{皓皓||皓皓||`hàohào` 洁白的样子。}}之白而蒙世俗之{{温蠖||温蠖||`wēnhuò` 尘垢。}}乎！”'}
-												/>
-											</HydrationBoundary>
-										</ScopeProvider>
-									</BentoCard>
-								</div>
-								<div className='col-span-1'>
-									<BentoCard title='文库集市' description='发现别人制作的精品学习资源'>
-										<LibraryCard
-											isOwner={false}
-											library={EXAMPLE_SHARED_LIB}
-											isStarred={false}
-										/>
-									</BentoCard>
-								</div>
-							</div>
-						</div>
+                        <Spacer y={12}></Spacer>
 
-						<Spacer y={12}></Spacer>
+                        <div className='flex justify-center items-center'>
+                            <div className='w-full'>
+                                <H className='text-3xl mb-2 font-bold'>核心功能演示</H>
+                                <iframe
+                                    className='rounded-xl w-full aspect-video'
+                                    src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true'
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    </div>
 
-						<div className='flex justify-center items-center'>
-							<div className='w-full'>
-								<H className='text-3xl mb-2 font-bold'>核心功能演示</H>
-								<iframe className='rounded-xl w-full aspect-video' src='//player.bilibili.com/player.html?isOutside=true&aid=114210461845887&bvid=BV1m1X8YuEDg&cid=29024977489&p=1&muted=true' allowFullScreen></iframe>
-							</div>
-						</div>
-					</div>
+                    <Spacer y={12}></Spacer>
 
-					<Spacer y={12}></Spacer>
-
-					<div className='flex justify-center items-center flex-wrap'>
-						<LinkButton startContent={<PiShootingStarDuotone className='text-lg' />} radius='full' color='primary' href={SIGN_IN_URL} className='font-semibold'>
-							开始
-						</LinkButton>
-						<div className='text-lg font-semibold ml-2 flex justify-center items-center'>和小白猫<div className='h-16 w-30 -ml-3 -mr-9 inline-block'>
-							<CatSprite variant={'white'} frame='idle' className='drop-shadow-2xl' />
-						</div>一起学习语言。</div>
-					</div>
-				</Main>
-			</section>
-		</div>
-	)
+                    <div className='flex justify-center items-center flex-wrap'>
+                        <LinkButton
+                            startContent={<PiShootingStarDuotone className='text-lg' />}
+                            radius='full'
+                            color='primary'
+                            href={SIGN_IN_URL}
+                            className='font-semibold'
+                        >
+                            开始
+                        </LinkButton>
+                        <div className='text-lg font-semibold ml-2 flex justify-center items-center'>
+                            和小白猫
+                            <div className='h-16 w-30 -ml-3 -mr-9 inline-block'>
+                                <CatSprite
+                                    variant={'white'}
+                                    frame='idle'
+                                    className='drop-shadow-2xl'
+                                />
+                            </div>
+                            一起学习语言。
+                        </div>
+                    </div>
+                </Main>
+            </section>
+        </div>
+    )
 }
 
-const BentoCard = ({ title, children, description, }: {
-	title: string,
-	children: ReactNode,
-	description?: string,
+const BentoCard = ({
+    title,
+    children,
+    description,
+}: {
+    title: string
+    children: ReactNode
+    description?: string
 }) => {
-	return <Card shadow='none' className={'w-full h-full bg-default-50/50 rounded-4xl'}>
-		<CardBody className='p-5'>
-			<H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
-				{title}
-			</H>
-			{description && <div className='text-sm mb-2 text-secondary-400'>{description}</div>}
-			<div className='w-full h-full flex justify-center items-center'>
-				{children}
-			</div>
-		</CardBody>
-	</Card>
+    return (
+        <Card shadow='none' className={'w-full h-full bg-default-50/50 rounded-4xl'}>
+            <CardBody className='p-5'>
+                <H className={cn('text-2xl', !description && 'mb-2')} disableCenter>
+                    {title}
+                </H>
+                {description && (
+                    <div className='text-sm mb-2 text-secondary-400'>{description}</div>
+                )}
+                <div className='w-full h-full flex justify-center items-center'>{children}</div>
+            </CardBody>
+        </Card>
+    )
 }

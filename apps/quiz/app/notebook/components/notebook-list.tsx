@@ -8,7 +8,17 @@ import { useIntersectionObserver } from 'usehooks-ts'
 import { parseWord } from '@repo/utils'
 import { Logo } from '@/components/logo'
 
-export function NotebookList({ initialData }: { initialData: { words: Array<{ word: string, id: string, date: string }>, cursor: string, more: boolean } | undefined }) {
+export function NotebookList({
+    initialData,
+}: {
+    initialData:
+        | {
+              words: Array<{ word: string; id: string; date: string }>
+              cursor: string
+              more: boolean
+          }
+        | undefined
+}) {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
         queryKey: ['recent-words'],
         queryFn: async ({ pageParam }) => {
@@ -17,12 +27,12 @@ export function NotebookList({ initialData }: { initialData: { words: Array<{ wo
         },
         initialPageParam: '0',
         initialData: initialData ? { pages: [initialData], pageParams: ['0'] } : undefined,
-        getNextPageParam: (lastPage) => lastPage?.more ? lastPage.cursor : undefined,
+        getNextPageParam: lastPage => (lastPage?.more ? lastPage.cursor : undefined),
     })
 
     const { ref } = useIntersectionObserver({
         threshold: 0.1,
-        onChange: (isIntersecting) => {
+        onChange: isIntersecting => {
             if (isIntersecting && hasNextPage && !isFetchingNextPage) {
                 fetchNextPage()
             }
@@ -36,7 +46,9 @@ export function NotebookList({ initialData }: { initialData: { words: Array<{ wo
             <div className='col-span-full text-center py-12'>
                 <Logo className='mx-auto mb-4 size-20' />
                 <p className='text-primary'>还没有收录任何生词</p>
-                <p className='text-sm mt-1 text-default-400'>做完试卷后选中词汇点击「Define」按钮进行释义</p>
+                <p className='text-sm mt-1 text-default-400'>
+                    做完试卷后选中词汇点击「Define」按钮进行释义
+                </p>
             </div>
         )
     }
@@ -51,7 +63,11 @@ export function NotebookList({ initialData }: { initialData: { words: Array<{ wo
                             <span className='text-xs text-default-500 font-mono'>{date}</span>
                             <Logo className='size-5 grayscale-75 opacity-80' />
                         </div>
-                        <WordNote portions={portions} className='bg-transparent' cardBodyClassName='px-4 py-3' />
+                        <WordNote
+                            portions={portions}
+                            className='bg-transparent'
+                            cardBodyClassName='px-4 py-3'
+                        />
                     </div>
                 )
             })}

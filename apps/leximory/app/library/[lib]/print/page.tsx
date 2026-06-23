@@ -12,7 +12,7 @@ import Markdown from '@/components/markdown'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'All of It'
+    title: 'All of It',
 }
 
 export default async function AllOfItPage({ params }: { params: Promise<{ lib: string }> }) {
@@ -22,16 +22,28 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
     return (
         <Main className='max-w-(--breakpoint-xl)'>
             {texts.map((text, index) => (
-                <div key={text.id} className='space-y-4 print:break-inside-avoid [counter-reset:sidenote-counter]'>
-                    <ScopeProvider atoms={[titleAtom, contentAtom, topicsAtom, textAtom, allOfItAtom]}>
-                        <HydrationBoundary hydrateAtoms={[
-                            [titleAtom, text.title],
-                            [contentAtom, text.content],
-                            [topicsAtom, text.topics],
-                            [textAtom, text.id],
-                            [allOfItAtom, true]
-                        ]}>
-                            <div className={cn('flex flex-col justify-left w-3/5', index === 0 ? 'mt-0' : 'mt-10')}>
+                <div
+                    key={text.id}
+                    className='space-y-4 print:break-inside-avoid [counter-reset:sidenote-counter]'
+                >
+                    <ScopeProvider
+                        atoms={[titleAtom, contentAtom, topicsAtom, textAtom, allOfItAtom]}
+                    >
+                        <HydrationBoundary
+                            hydrateAtoms={[
+                                [titleAtom, text.title],
+                                [contentAtom, text.content],
+                                [topicsAtom, text.topics],
+                                [textAtom, text.id],
+                                [allOfItAtom, true],
+                            ]}
+                        >
+                            <div
+                                className={cn(
+                                    'flex flex-col justify-left w-3/5',
+                                    index === 0 ? 'mt-0' : 'mt-10',
+                                )}
+                            >
                                 <EditableH />
                                 <Topics topics={text.topics} className='justify-center'></Topics>
                             </div>
@@ -49,4 +61,4 @@ export default async function AllOfItPage({ params }: { params: Promise<{ lib: s
             ))}
         </Main>
     )
-} 
+}

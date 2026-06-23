@@ -3,8 +3,8 @@
 import H from '@/components/ui/h'
 import { useAtom, useAtomValue } from 'jotai'
 import { isEditingAtom, titleAtom, emojiAtom } from '../atoms'
-import { Input } from "@heroui/input"
-import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover"
+import { Input } from '@heroui/input'
+import { Popover, PopoverTrigger, PopoverContent } from '@heroui/popover'
 import { resolveEmoji, isValidEmoji } from '@/lib/utils'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { useTheme } from 'next-themes'
@@ -18,7 +18,16 @@ export default function EditableH() {
     const [manualInput, setManualInput] = useState('')
 
     if (!isEditing) {
-        return <H fancy className={'sm:text-4xl mb-2 text-3xl tracking-tight leading-none print:text-5xl print:mb-4 print:leading-none'}>{title}</H>
+        return (
+            <H
+                fancy
+                className={
+                    'sm:text-4xl mb-2 text-3xl tracking-tight leading-none print:text-5xl print:mb-4 print:leading-none'
+                }
+            >
+                {title}
+            </H>
+        )
     }
 
     const handleManualInput = (value: string) => {
@@ -54,9 +63,7 @@ export default function EditableH() {
                         />
                     </PopoverContent>
                 </Popover>
-                <div className='text-secondary-400 ml-2 mr-4'>
-                    或
-                </div>
+                <div className='text-secondary-400 ml-2 mr-4'>或</div>
                 <Input
                     value={manualInput}
                     onValueChange={handleManualInput}
@@ -67,7 +74,12 @@ export default function EditableH() {
                     aria-label='Manual emoji input'
                 />
             </div>
-            <Input value={title} onValueChange={setTitle} size='lg' classNames={{ input: 'text-center text-3xl' }} />
+            <Input
+                value={title}
+                onValueChange={setTitle}
+                size='lg'
+                classNames={{ input: 'text-center text-3xl' }}
+            />
         </div>
     )
 }

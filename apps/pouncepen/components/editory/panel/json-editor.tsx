@@ -39,7 +39,7 @@ export function JsonEditor() {
                 variant='flat'
                 description='仅供复制粘贴使用，编辑请使用 Pen 界面。'
                 classNames={{
-                    description: 'font-ui'
+                    description: 'font-ui',
                 }}
             />
         </section>

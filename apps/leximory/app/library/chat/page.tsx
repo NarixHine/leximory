@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 }
 
 export default function ChatPage() {
-    return <HydrationBoundary hydrateAtoms={[[isReadOnlyAtom, true]]}>
-        <ChatInterface />
-    </HydrationBoundary>
-} 
+    return (
+        <HydrationBoundary hydrateAtoms={[[isReadOnlyAtom, true]]}>
+            <ChatInterface />
+        </HydrationBoundary>
+    )
+}

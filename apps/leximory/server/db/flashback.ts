@@ -17,7 +17,10 @@ interface FlashbackData {
     created_at: string
 }
 
-export type FlashbackReviewProgress = Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>
+export type FlashbackReviewProgress = Pick<
+    FlashbackData,
+    'date' | 'lang' | 'story' | 'translations' | 'conversation'
+>
 
 interface CreateFlashbackParams {
     userId: string
@@ -82,9 +85,7 @@ export async function createFlashback({
     conversation,
 }: CreateFlashbackParams) {
     const normalizedTranslations = normalizeReviewTranslations(translations)
-    const normalizedConversation = conversation
-        ? normalizeReviewConversation(conversation)
-        : null
+    const normalizedConversation = conversation ? normalizeReviewConversation(conversation) : null
 
     const { data, error } = await supabase
         .from('flashbacks')
@@ -115,9 +116,7 @@ export async function updateFlashbackReview({
     conversation,
 }: UpdateFlashbackReviewParams) {
     const normalizedTranslations = normalizeReviewTranslations(translations)
-    const normalizedConversation = conversation
-        ? normalizeReviewConversation(conversation)
-        : null
+    const normalizedConversation = conversation ? normalizeReviewConversation(conversation) : null
 
     const { data, error } = await supabase
         .from('flashbacks')
@@ -155,7 +154,7 @@ export async function listFlashbacksWithin({
         .lte('date', endDate)
         .throwOnError()
 
-    return data.map((row) => ({
+    return data.map(row => ({
         date: row.date,
         lang: row.lang,
         story: row.story || '',

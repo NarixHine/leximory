@@ -54,7 +54,10 @@ async function submitTranslation({
     return res.json()
 }
 
-function buildHighlightSegments(answer: string, feedback: ReviewTranslationFeedback | null | undefined): HighlightSegment[] {
+function buildHighlightSegments(
+    answer: string,
+    feedback: ReviewTranslationFeedback | null | undefined,
+): HighlightSegment[] {
     if (!feedback?.badPairs.length) {
         return [{ text: answer, badPairIndex: null }]
     }
@@ -65,7 +68,10 @@ function buildHighlightSegments(answer: string, feedback: ReviewTranslationFeedb
             if (start === -1) return null
             return { start, end: start + pair.original.length, badPairIndex }
         })
-        .filter((match): match is { start: number; end: number; badPairIndex: number } => match !== null)
+        .filter(
+            (match): match is { start: number; end: number; badPairIndex: number } =>
+                match !== null,
+        )
         .sort((a, b) => a.start - b.start || b.end - a.end)
 
     if (matches.length === 0) {
@@ -133,7 +139,7 @@ export function TranslationExercise({
             return
         }
 
-        setSelectedBadPairIndex((currentIndex) => {
+        setSelectedBadPairIndex(currentIndex => {
             if (currentIndex !== null && currentIndex < badPairs.length) {
                 return currentIndex
             }
@@ -142,24 +148,34 @@ export function TranslationExercise({
     }, [isOpen, data?.status, data?.feedback])
 
     const submitMutation = useMutation({
-        mutationFn: ({ index, submission }: { itemId: string; index: number; submission: string }) =>
-            submitTranslation({ date, lang, index, submission }),
+        mutationFn: ({
+            index,
+            submission,
+        }: {
+            itemId: string
+            index: number
+            submission: string
+        }) => submitTranslation({ date, lang, index, submission }),
         onSuccess: ({ translation }, variables) => {
             queryClient.setQueryData(
                 ['review', 'check', date, lang],
-                (previous: {
-                    exists?: boolean
-                    story?: string
-                    translations?: ReviewTranslation[]
-                } | undefined) => {
+                (
+                    previous:
+                        | {
+                              exists?: boolean
+                              story?: string
+                              translations?: ReviewTranslation[]
+                          }
+                        | undefined,
+                ) => {
                     if (!previous?.translations) return previous
                     return {
                         ...previous,
                         translations: previous.translations.map((item, itemIndex) =>
-                            itemIndex === variables.index ? translation : item
+                            itemIndex === variables.index ? translation : item,
                         ),
                     }
-                }
+                },
             )
             queryClient.invalidateQueries({ queryKey: ['review', 'check', date, lang] })
 
@@ -174,7 +190,7 @@ export function TranslationExercise({
             setOptimisticSubmission(null)
         },
         onSettled: (_, __, variables) => {
-            setSubmittingItemIds((current) => {
+            setSubmittingItemIds(current => {
                 const next = new Set(current)
                 next.delete(variables.itemId)
                 return next
@@ -190,16 +206,17 @@ export function TranslationExercise({
     const canSubmit = index !== undefined && draft.trim().length > 0 && !isSubmittingCurrentItem
     const highlightSegments = useMemo(
         () => buildHighlightSegments(displayedSubmission ?? '', data?.feedback),
-        [displayedSubmission, data?.feedback]
+        [displayedSubmission, data?.feedback],
     )
-    const selectedBadPair = selectedBadPairIndex !== null ? data?.feedback?.badPairs[selectedBadPairIndex] : null
+    const selectedBadPair =
+        selectedBadPairIndex !== null ? data?.feedback?.badPairs[selectedBadPairIndex] : null
 
     const handleSubmit = () => {
         if (!canSubmit || index === undefined || !itemId) return
 
         const submission = draft.trim()
         setOptimisticSubmission(submission)
-        setSubmittingItemIds((current) => {
+        setSubmittingItemIds(current => {
             const next = new Set(current)
             next.add(itemId)
             return next
@@ -246,8 +263,10 @@ export function TranslationExercise({
                             className='overflow-hidden'
                         >
                             <div className='flex items-start justify-between gap-3'>
-                                <p className='font-mono text-xs uppercase text-default-400'>Your translation</p>
-                                {(isSubmittingCurrentItem || isPendingEvaluation) ? (
+                                <p className='font-mono text-xs uppercase text-default-400'>
+                                    Your translation
+                                </p>
+                                {isSubmittingCurrentItem || isPendingEvaluation ? (
                                     <div className='flex items-center gap-2 font-mono text-xs text-default-400'>
                                         <Spinner size='sm' variant='spinner' color='secondary' />
                                         <span>Evaluating</span>
@@ -258,7 +277,11 @@ export function TranslationExercise({
                             <div className='mt-2 whitespace-pre-wrap wrap-break-word font-mono text-default-700'>
                                 {highlightSegments.map((segment, segmentIndex) => {
                                     if (segment.badPairIndex === null) {
-                                        return <span key={`${segment.text}-${segmentIndex}`}>{segment.text}</span>
+                                        return (
+                                            <span key={`${segment.text}-${segmentIndex}`}>
+                                                {segment.text}
+                                            </span>
+                                        )
                                     }
 
                                     return (
@@ -266,9 +289,12 @@ export function TranslationExercise({
                                             key={`${segment.text}-${segmentIndex}`}
                                             role='button'
                                             tabIndex={0}
-                                            onClick={() => setSelectedBadPairIndex(segment.badPairIndex)}
-                                            onKeyDown={(event) => {
-                                                if (event.key !== 'Enter' && event.key !== ' ') return
+                                            onClick={() =>
+                                                setSelectedBadPairIndex(segment.badPairIndex)
+                                            }
+                                            onKeyDown={event => {
+                                                if (event.key !== 'Enter' && event.key !== ' ')
+                                                    return
                                                 event.preventDefault()
                                                 setSelectedBadPairIndex(segment.badPairIndex)
                                             }}

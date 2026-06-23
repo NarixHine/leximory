@@ -1,7 +1,13 @@
 import Main from '@/components/ui/main'
 import { ENGLISH_FANCY } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
-import { PiTelevisionDuotone, PiGithubLogoDuotone, PiMailboxDuotone, PiPenNibDuotone, PiHouseDuotone } from 'react-icons/pi'
+import {
+    PiTelevisionDuotone,
+    PiGithubLogoDuotone,
+    PiMailboxDuotone,
+    PiPenNibDuotone,
+    PiHouseDuotone,
+} from 'react-icons/pi'
 import { Metadata } from 'next'
 import { Article } from './article'
 import { BILIBILI_LINK } from '@repo/env/config'
@@ -9,16 +15,22 @@ import LinkButton from '@repo/ui/link-button'
 
 export const metadata: Metadata = {
     title: 'About Leximory',
-    description: '漫游 Leximory——文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
+    description:
+        '漫游 Leximory——文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。',
 }
 
 export default function About() {
     return (
         <Main className={cn('max-w-7xl')}>
             <section className='max-w-(--breakpoint-sm) mx-auto'>
-                <h1 className={cn('text-5xl text-default-700 tracking-tight', ENGLISH_FANCY.className)}>
+                <h1
+                    className={cn(
+                        'text-5xl text-default-700 tracking-tight',
+                        ENGLISH_FANCY.className,
+                    )}
+                >
                     About Leximory
-                </h1 >
+                </h1>
                 <div className='flex w-fit mt-1 mb-6'>
                     <LinkButton
                         size='sm'
@@ -68,6 +80,6 @@ export default function About() {
                 </div>
                 <Article />
             </section>
-        </Main >
+        </Main>
     )
 }

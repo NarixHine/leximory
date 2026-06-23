@@ -35,12 +35,14 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
             <div className='flex flex-col gap-3'>
                 <p className='text-sm opacity-60'>选中以强制注释词汇</p>
                 <div className='border border-default-200 rounded-2xl p-4 overflow-y-auto'>
-                    <PhotoEditor
-                        initialText={editorText}
-                        onChange={setEditorText}
-                    />
+                    <PhotoEditor initialText={editorText} onChange={setEditorText} />
                 </div>
-                <Switch isDisabled={isLoading} isSelected={shouldGenerateTitle} onValueChange={setShouldGenerateTitle} color='secondary'>
+                <Switch
+                    isDisabled={isLoading}
+                    isSelected={shouldGenerateTitle}
+                    onValueChange={setShouldGenerateTitle}
+                    color='secondary'
+                >
                     AI 生成标题
                 </Switch>
                 <Button
@@ -53,10 +55,18 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                         startGenerating(async () => {
                             try {
                                 setInput(editorText)
-                                await setAnnotationProgressAction({ id: textId, progress: 'annotating' })
+                                await setAnnotationProgressAction({
+                                    id: textId,
+                                    progress: 'annotating',
+                                })
                                 setIsLoading(true)
                                 onClose()
-                                const result = await generate({ article: editorText, textId, onlyComments: false, generateTitle: shouldGenerateTitle })
+                                const result = await generate({
+                                    article: editorText,
+                                    textId,
+                                    onlyComments: false,
+                                    generateTitle: shouldGenerateTitle,
+                                })
                                 if (result && 'error' in result) {
                                     setIsLoading(false)
                                     toast.error(result.error)
@@ -66,7 +76,8 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                                 toast.error('生成失败，请稍后重试')
                             }
                         })
-                    }}>
+                    }}
+                >
                     生成
                 </Button>
             </div>
@@ -81,29 +92,32 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                     <Spinner color='secondary' size='lg' />
                 </div>
             ) : (
-                <FileUpload acceptableTypes={['image/png', 'image/jpeg', 'image/webp', 'image/gif']} onChange={async (files) => {
-                    if (!files.length) return
-                    const file = files[files.length - 1]
-                    startOcr(async () => {
-                        const form = new FormData()
-                        form.append('file', file)
-                        try {
-                            const result = await ocrClassicalChinese(form)
-                            if (typeof result === 'object' && 'error' in result) {
-                                toast.error(result.error)
-                                return
+                <FileUpload
+                    acceptableTypes={['image/png', 'image/jpeg', 'image/webp', 'image/gif']}
+                    onChange={async files => {
+                        if (!files.length) return
+                        const file = files[files.length - 1]
+                        startOcr(async () => {
+                            const form = new FormData()
+                            form.append('file', file)
+                            try {
+                                const result = await ocrClassicalChinese(form)
+                                if (typeof result === 'object' && 'error' in result) {
+                                    toast.error(result.error)
+                                    return
+                                }
+                                const trimmed = result.trim()
+                                if (!trimmed) {
+                                    toast.error('未在图片中识别到文本，请尝试另一张图片或手动粘贴')
+                                    return
+                                }
+                                goToEditor(trimmed)
+                            } catch {
+                                toast.error('识别失败，请重试')
                             }
-                            const trimmed = result.trim()
-                            if (!trimmed) {
-                                toast.error('未在图片中识别到文本，请尝试另一张图片或手动粘贴')
-                                return
-                            }
-                            goToEditor(trimmed)
-                        } catch {
-                            toast.error('识别失败，请重试')
-                        }
-                    })
-                }} />
+                        })
+                    }}
+                />
             )}
             <div className='flex gap-2 -mt-2 mb-2 items-center'>
                 <Divider className='flex-1' />
@@ -124,7 +138,8 @@ export default function PhotoImportTab({ onClose }: { onClose: () => void }) {
                 fullWidth
                 startContent={<PiArrowRight className='text-lg' />}
                 isDisabled={!pastedText.trim()}
-                onPress={() => goToEditor(pastedText)}>
+                onPress={() => goToEditor(pastedText)}
+            >
                 下一步
             </Button>
         </div>

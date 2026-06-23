@@ -79,19 +79,25 @@ export async function POST(request: Request) {
 
                 const latestFlashback = await getFlashback({ userId, date, lang })
                 const latestTranslation = latestFlashback?.translations[index]
-                if (!latestFlashback || !latestTranslation || latestTranslation.submission !== submission) {
+                if (
+                    !latestFlashback ||
+                    !latestTranslation ||
+                    latestTranslation.submission !== submission
+                ) {
                     return
                 }
 
-                const completedTranslations = latestFlashback.translations.map((item, itemIndex) => {
-                    if (itemIndex !== index) return item
-                    return {
-                        ...item,
-                        status: 'complete' as const,
-                        feedback,
-                        evaluatedAt: new Date().toISOString(),
-                    }
-                })
+                const completedTranslations = latestFlashback.translations.map(
+                    (item, itemIndex) => {
+                        if (itemIndex !== index) return item
+                        return {
+                            ...item,
+                            status: 'complete' as const,
+                            feedback,
+                            evaluatedAt: new Date().toISOString(),
+                        }
+                    },
+                )
 
                 await updateFlashbackReview({
                     userId,
@@ -112,7 +118,11 @@ export async function POST(request: Request) {
 
                 const latestFlashback = await getFlashback({ userId, date, lang })
                 const latestTranslation = latestFlashback?.translations[index]
-                if (!latestFlashback || !latestTranslation || latestTranslation.submission !== submission) {
+                if (
+                    !latestFlashback ||
+                    !latestTranslation ||
+                    latestTranslation.submission !== submission
+                ) {
                     return
                 }
 

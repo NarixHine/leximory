@@ -17,7 +17,7 @@ export const toolDescriptions = {
     annotateArticle: 'Creating annotated article ...',
     getForgetCurve: 'Looking for words to review ...',
     annotateParagraph: 'Adding annotations ...',
-    extractArticleFromWebpage: 'Extracting article from webpage ...'
+    extractArticleFromWebpage: 'Extracting article from webpage ...',
 } as const
 
 export type ToolResult = {
@@ -51,15 +51,19 @@ export const toolSchemas = {
     annotateArticle: z.object({
         lib: z.string().describe('The id of the library'),
         title: z.string().describe('The title of the text (entitle it if not given)'),
-        content: z.string().describe('The content of the text')
+        content: z.string().describe('The content of the text'),
     }),
-    getForgetCurve: z.object({ period: z.enum(['day', 'week']).describe('The time period to get words for. You can only choose from: day, week'), }),
+    getForgetCurve: z.object({
+        period: z
+            .enum(['day', 'week'])
+            .describe('The time period to get words for. You can only choose from: day, week'),
+    }),
     annotateParagraph: z.object({
         content: z.string().describe('The content of the paragraph to annotate'),
-        lang: z.enum(SUPPORTED_LANGS).describe('The language of the paragraph')
+        lang: z.enum(SUPPORTED_LANGS).describe('The language of the paragraph'),
     }),
     extractArticleFromWebpage: z.object({
-        url: z.string().describe('The URL of the webpage to extract the article from')
+        url: z.string().describe('The URL of the webpage to extract the article from'),
     }),
 } as const
 

@@ -5,7 +5,10 @@ import { QuizData } from '@repo/schema/paper'
  * Strips HTML tags from a string.
  */
 export function stripHtmlTags(html: string): string {
-    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+    return html
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
 }
 
 /**
@@ -29,7 +32,8 @@ export function extractTextFromQuizData(data: QuizData): string {
     }
 }
 
-export const buildChunkGenerationSystemPrompt = () => `
+export const buildChunkGenerationSystemPrompt = () =>
+    `
 <instructions>
 你是一位专业的英语教育专家，专门帮助中国高中生学习地道的英语表达。
 你的任务是从给定的英语文本中提取有价值的表达片段（chunks），并提供准确且**地道自然**的中文翻译，而非生硬的翻译腔。
@@ -77,7 +81,8 @@ export const buildChunkGenerationSystemPrompt = () => `
 </output_format>
 `.trim()
 
-export const buildChunkGenerationPrompt = (text: string, sectionType: string) => `
+export const buildChunkGenerationPrompt = (text: string, sectionType: string) =>
+    `
 <section_type>
 这是一个${SECTION_NAME_MAP[sectionType as keyof typeof SECTION_NAME_MAP] ?? sectionType}题型的文本。
 </section_type>

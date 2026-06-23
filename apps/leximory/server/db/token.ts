@@ -7,7 +7,9 @@ import { ensureUserExists } from '@repo/supabase/user'
 export async function getOrCreateToken(userId: string) {
     await ensureUserExists(userId)
     // Check if token exists
-    const { data: { token } } = await supabase.from('users').select('token').eq('id', userId).single().throwOnError()
+    const {
+        data: { token },
+    } = await supabase.from('users').select('token').eq('id', userId).single().throwOnError()
     if (token) {
         return token
     }
@@ -18,7 +20,9 @@ export async function getOrCreateToken(userId: string) {
 
 // Verify a token and return the associated user id
 export async function verifyToken(token: string) {
-    const { data: { id } } = await supabase.from('users').select('id').eq('token', token).single().throwOnError()
+    const {
+        data: { id },
+    } = await supabase.from('users').select('id').eq('token', token).single().throwOnError()
     return id
 }
 

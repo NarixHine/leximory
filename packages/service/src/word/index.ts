@@ -11,9 +11,11 @@ import { z } from '@repo/schema'
  * of the authenticated user.
  */
 export const saveWordAction = actionClient
-    .inputSchema(z.object({
-        portions: z.array(z.string()),
-    }))
+    .inputSchema(
+        z.object({
+            portions: z.array(z.string()),
+        }),
+    )
     .action(async ({ parsedInput: { portions } }) => {
         const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
 
@@ -27,9 +29,11 @@ export const saveWordAction = actionClient
  *  in the shadow English library.
  */
 export const getRecentWordsAction = actionClient
-    .inputSchema(z.object({
-        cursor: z.string().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            cursor: z.string().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         const shadowLib = await getShadowLib({ owner: userId, lang: 'en' })

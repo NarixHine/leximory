@@ -8,7 +8,7 @@ export default function Hero({
     title,
     description,
     className,
-    imgSrc = '/assets/cover.webp'
+    imgSrc = '/assets/cover.webp',
 }: {
     children: ReactNode
     title: string
@@ -23,12 +23,14 @@ export default function Hero({
                     <PouncePenIcon className='size-6' /> PouncePen
                 </div>
                 <div className='flex-1'></div>
-                <div className='tracking-normal hidden sm:block'>Pen the paper. Pounce on performance.</div>
+                <div className='tracking-normal hidden sm:block'>
+                    Pen the paper. Pounce on performance.
+                </div>
             </header>
             <div
                 className={cn(
                     'rounded-2xl p-5 bg-[#e5fffe] bg-cover bg-top flex-1 flex justify-center items-center max-h-[50vh]',
-                    className
+                    className,
                 )}
                 style={{ backgroundImage: `url(${imgSrc})` }}
             >
@@ -36,9 +38,11 @@ export default function Hero({
                     <h1 className='text-default-50/80 sm:text-9xl text-8xl font-extrabold text-center'>
                         {title}
                     </h1>
-                    {description && <p className='text-white rounded px-1 text-2xl font-semibold'>
-                        {description}
-                    </p>}
+                    {description && (
+                        <p className='text-white rounded px-1 text-2xl font-semibold'>
+                            {description}
+                        </p>
+                    )}
                     {children}
                 </div>
             </div>

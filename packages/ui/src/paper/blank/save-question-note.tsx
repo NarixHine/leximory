@@ -39,19 +39,22 @@ export function SaveQuestionNoteButton({
         toast.promise(mutateAsync, {
             loading: '正在收录题目……',
             success: '已收录到错题本',
-            error: (err) => `收录失败：${err.message}`,
+            error: err => `收录失败：${err.message}`,
             action: {
                 label: '查看',
                 onClick: () => {
                     router.push('/collection')
-                }
-            }
+                },
+            },
         })
     }
 
     return (
         <Button
-            startContent={!isPending && (isSuccess ? <CheckIcon size={20} /> : <NotebookIcon weight='duotone' size={20} />)}
+            startContent={
+                !isPending &&
+                (isSuccess ? <CheckIcon size={20} /> : <NotebookIcon weight='duotone' size={20} />)
+            }
             color='secondary'
             variant='flat'
             isLoading={isPending}

@@ -31,7 +31,10 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
             }}
         >
             <div className='flex items-center gap-1'>
-                <ButtonGroup radius='full' className='bg-background/80 backdrop-blur-md z-10 border-default-300 border-1 rounded-4xl overflow-clip'>
+                <ButtonGroup
+                    radius='full'
+                    className='bg-background/80 backdrop-blur-md z-10 border-default-300 border-1 rounded-4xl overflow-clip'
+                >
                     <Button
                         onPress={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                         variant={editor.isActive('heading') ? 'shadow' : 'light'}

@@ -8,7 +8,10 @@ import { PiTrash } from 'react-icons/pi'
 import H from '@/components/ui/h'
 
 export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
-    <Card role='dialog' className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 p-6'>
+    <Card
+        role='dialog'
+        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 p-6'
+    >
         <CardHeader>
             <H className='text-2xl'>移除收藏</H>
         </CardHeader>
@@ -20,11 +23,7 @@ export const ConfirmUnstar = createCallable<void, boolean>(({ call }) => (
         </CardBody>
 
         <CardFooter className='flex gap-2 justify-end'>
-            <Button
-                variant='light'
-                color='secondary'
-                onPress={() => call.end(false)}
-            >
+            <Button variant='light' color='secondary' onPress={() => call.end(false)}>
                 取消
             </Button>
             <Button

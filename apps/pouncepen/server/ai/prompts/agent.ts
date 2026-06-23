@@ -74,7 +74,9 @@ export const AgentPrompt = `
 
   <question_type_introduction>
     <names>
-      ${Object.values(SECTIONS).map(section => `${section.name}（${section}）`).join('、')}
+      ${Object.values(SECTIONS)
+          .map(section => `${section.name}（${section}）`)
+          .join('、')}
     </names>
     <description>
       ${details.join('\n')}

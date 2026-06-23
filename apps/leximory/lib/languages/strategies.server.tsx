@@ -7,7 +7,7 @@ export const englishStrategy = createLanguageServerStrategy({
     async getAccentPrompt(userId) {
         const accent = await getAccentPreference({ userId })
         return `用户偏好：${accent}。请使用${accent}拼写、发音和语汇。`
-    }
+    },
 })
 
 export const chineseStrategy = createLanguageServerStrategy({
@@ -26,7 +26,7 @@ export const languageServerStrategies = [
     englishStrategy,
     chineseStrategy,
     japaneseStrategy,
-    notListedStrategy
+    notListedStrategy,
 ]
 
 export default function getLanguageServerStrategy(lang: string) {

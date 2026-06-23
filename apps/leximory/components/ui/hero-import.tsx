@@ -6,7 +6,14 @@ import { Input } from '@heroui/input'
 import { Select, SelectItem } from '@heroui/select'
 import { Card, CardBody } from '@heroui/card'
 import { motion, Transition } from 'framer-motion'
-import { PiLinkDuotone, PiPackageDuotone, PiAirplaneTakeoffDuotone, PiMouseSimpleDuotone, PiMouseLeftClickDuotone, PiCheckCircleDuotone } from 'react-icons/pi'
+import {
+    PiLinkDuotone,
+    PiPackageDuotone,
+    PiAirplaneTakeoffDuotone,
+    PiMouseSimpleDuotone,
+    PiMouseLeftClickDuotone,
+    PiCheckCircleDuotone,
+} from 'react-icons/pi'
 import confetti from 'canvas-confetti'
 import ScopeProvider from '@/components/jotai/scope-provider'
 import { HydrationBoundary } from 'jotai-ssr'
@@ -14,12 +21,12 @@ import { langAtom } from '@/app/library/[lib]/atoms'
 import { lexiconAtom } from '@/app/library/[lib]/[text]/atoms'
 import Markdown from '@/components/markdown'
 
-
-const HeroAnnotation = 'Comprehensible input is the {{bedrock||bedrock||**n. 基石** `ˈbedˌrɑːk` the fundamental principles on which something is based||语源"基岩": ***bed*** (底座) + ***rock*** (岩石)}} of language acquisition. It {{asserts||assert||**v. 断言** `əˈsɜːrt` state a fact or belief confidently and forcefully||语源"将手放在……之上": ***ad-*** (to) + ***ser*** (join, plant)||***ser*** (join) → **ser**ies (系列), ex**ert** (运用)}} that learners progress by processing abundant material. By prioritizing meaning over mechanics, it bypasses {{cognitive strain||cognitive strain||**phr. 认知负荷** the mental effort required to process information||***cognitive*** 来自 ***co-*** (together) + ***gnos*** (know); ***strain*** 来自 ***stringere*** (draw tight)||***gnos*** (know) → **dia**gnosis (诊断); ***string*** (tight) → **strict** (严厉的)}} , cultivates subconscious {{internalization||internalization||**n. 内化** `ɪnˌtɜːrnələˈzeɪʃn` the process of making an attitude or belief part of their own character||语源"使之进入内部": ***inter-*** (within) + ***-al*** (adj. suffix) + ***-ize*** (v. suffix) + ***-ation*** (n. suffix)||***inter-*** (within) → **inter**ior (内部的)}}.'
+const HeroAnnotation =
+    'Comprehensible input is the {{bedrock||bedrock||**n. 基石** `ˈbedˌrɑːk` the fundamental principles on which something is based||语源"基岩": ***bed*** (底座) + ***rock*** (岩石)}} of language acquisition. It {{asserts||assert||**v. 断言** `əˈsɜːrt` state a fact or belief confidently and forcefully||语源"将手放在……之上": ***ad-*** (to) + ***ser*** (join, plant)||***ser*** (join) → **ser**ies (系列), ex**ert** (运用)}} that learners progress by processing abundant material. By prioritizing meaning over mechanics, it bypasses {{cognitive strain||cognitive strain||**phr. 认知负荷** the mental effort required to process information||***cognitive*** 来自 ***co-*** (together) + ***gnos*** (know); ***strain*** 来自 ***stringere*** (draw tight)||***gnos*** (know) → **dia**gnosis (诊断); ***string*** (tight) → **strict** (严厉的)}} , cultivates subconscious {{internalization||internalization||**n. 内化** `ɪnˌtɜːrnələˈzeɪʃn` the process of making an attitude or belief part of their own character||语源"使之进入内部": ***inter-*** (within) + ***-al*** (adj. suffix) + ***-ize*** (v. suffix) + ***-ation*** (n. suffix)||***inter-*** (within) → **inter**ior (内部的)}}.'
 
 const TRANSITION: Transition = {
     duration: 0.2,
-    ease: [0.3, 0.72, 0, 1]
+    ease: [0.3, 0.72, 0, 1],
 }
 
 // Function to safely stream text character by character while preserving annotation boundaries
@@ -55,7 +62,8 @@ function getStreamSafeCharacters(text: string): string[] {
 
             // Find the word part (before first ||)
             const firstPipeIndex = fullAnnotation.indexOf('||')
-            if (firstPipeIndex > 2) { // Make sure it's after the opening {{
+            if (firstPipeIndex > 2) {
+                // Make sure it's after the opening {{
                 const wordPart = fullAnnotation.slice(2, firstPipeIndex) // Skip {{, get the word
                 const restPart = fullAnnotation.slice(firstPipeIndex) // Everything from first || including}}
 
@@ -87,7 +95,7 @@ function getStreamSafeCharacters(text: string): string[] {
     return streamingSteps
 }
 
-function StreamingText({ text, onComplete }: { text: string, onComplete?: () => void }) {
+function StreamingText({ text, onComplete }: { text: string; onComplete?: () => void }) {
     const [displayedText, setDisplayedText] = useState('')
     const completedRef = useRef(false)
 
@@ -116,14 +124,13 @@ function StreamingText({ text, onComplete }: { text: string, onComplete?: () => 
 
     return (
         <ScopeProvider atoms={[langAtom, lexiconAtom]}>
-            <HydrationBoundary hydrateAtoms={[
-                [langAtom, 'en'],
-                [lexiconAtom, 'none']
-            ]}>
-                <Markdown
-                    disableSave
-                    md={displayedText}
-                />
+            <HydrationBoundary
+                hydrateAtoms={[
+                    [langAtom, 'en'],
+                    [lexiconAtom, 'none'],
+                ]}
+            >
+                <Markdown disableSave md={displayedText} />
             </HydrationBoundary>
         </ScopeProvider>
     )
@@ -132,15 +139,12 @@ function StreamingText({ text, onComplete }: { text: string, onComplete?: () => 
 function AnimatedLearnMoreButton() {
     const handleScrollToContent = () => {
         document.getElementById('content-section')?.scrollIntoView({
-            behavior: 'smooth'
+            behavior: 'smooth',
         })
     }
 
     return (
-        <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
                 radius='full'
                 variant='light'
@@ -196,11 +200,7 @@ export default function HeroImportUI() {
     return (
         <div className='w-full max-w-2xl mx-auto'>
             {/* Import UI - Always visible */}
-            <motion.div
-                layout
-                transition={TRANSITION}
-                className='w-full max-w-xl mx-auto'
-            >
+            <motion.div layout transition={TRANSITION} className='w-full max-w-xl mx-auto'>
                 <Card shadow='none' className='bg-transparent rounded-3xl'>
                     <CardBody className='p-8'>
                         <div className='space-y-6 text-2xl'>
@@ -210,21 +210,26 @@ export default function HeroImportUI() {
                                     <span className='text-secondary-600'>将</span>
                                     <span className='hidden sm:inline'>网页</span>
                                 </span>
-                                <label htmlFor='url' className='hidden sm:flex text-default-600 items-center gap-1'>
+                                <label
+                                    htmlFor='url'
+                                    className='hidden sm:flex text-default-600 items-center gap-1'
+                                >
                                     <PiLinkDuotone className='text-4xl' /> 链接
                                 </label>
                                 <Input
                                     id='url'
                                     type='url'
                                     validationBehavior='aria'
-                                    startContent={<PiLinkDuotone className='text-4xl sm:hidden text-default-600' />}
+                                    startContent={
+                                        <PiLinkDuotone className='text-4xl sm:hidden text-default-600' />
+                                    }
                                     value='https://example.com/learn-english'
                                     variant='underlined'
                                     color='primary'
                                     size='lg'
                                     className='flex-1'
                                     classNames={{
-                                        innerWrapper: 'pb-0'
+                                        innerWrapper: 'pb-0',
                                     }}
                                     readOnly
                                 />
@@ -235,7 +240,10 @@ export default function HeroImportUI() {
 
                             {/* Library Select Row */}
                             <div className='flex flex-wrap items-center gap-x-3 gap-y-3 font-semibold'>
-                                <label htmlFor='lib' className='hidden sm:flex text-default-600 items-center gap-1'>
+                                <label
+                                    htmlFor='lib'
+                                    className='hidden sm:flex text-default-600 items-center gap-1'
+                                >
                                     <PiPackageDuotone className='text-4xl' /> 文库
                                 </label>
                                 <div className='flex-1'>
@@ -245,28 +253,55 @@ export default function HeroImportUI() {
                                         variant='underlined'
                                         color='primary'
                                         size='lg'
-                                        startContent={<PiPackageDuotone className='text-4xl sm:hidden text-default-600' />}
+                                        startContent={
+                                            <PiPackageDuotone className='text-4xl sm:hidden text-default-600' />
+                                        }
                                         className='w-full'
                                         classNames={{
-                                            popoverContent: 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
+                                            popoverContent:
+                                                'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-3xl',
                                         }}
                                     >
-                                        <SelectItem key='english-learning' className='rounded-3xl' textValue='🇬🇧 My English World'>
+                                        <SelectItem
+                                            key='english-learning'
+                                            className='rounded-3xl'
+                                            textValue='🇬🇧 My English World'
+                                        >
                                             <div className='flex flex-row items-baseline gap-3'>
-                                                <span className='truncate font-semibold'>{'🇬🇧 My English World'}</span>
-                                                <span className='text-sm text-secondary-400 shrink-0'>英语</span>
+                                                <span className='truncate font-semibold'>
+                                                    {'🇬🇧 My English World'}
+                                                </span>
+                                                <span className='text-sm text-secondary-400 shrink-0'>
+                                                    英语
+                                                </span>
                                             </div>
                                         </SelectItem>
-                                        <SelectItem key='japanese-learning' className='rounded-3xl' textValue='🇯🇵 Japanese Ebooks'>
+                                        <SelectItem
+                                            key='japanese-learning'
+                                            className='rounded-3xl'
+                                            textValue='🇯🇵 Japanese Ebooks'
+                                        >
                                             <div className='flex flex-row items-baseline gap-3'>
-                                                <span className='truncate font-semibold'>{'🇯🇵 Japanese Ebooks'}</span>
-                                                <span className='text-sm text-secondary-400 shrink-0'>日语</span>
+                                                <span className='truncate font-semibold'>
+                                                    {'🇯🇵 Japanese Ebooks'}
+                                                </span>
+                                                <span className='text-sm text-secondary-400 shrink-0'>
+                                                    日语
+                                                </span>
                                             </div>
                                         </SelectItem>
-                                        <SelectItem key='chinese-classical' className='rounded-3xl' textValue='🇨🇳 文言文库'>
+                                        <SelectItem
+                                            key='chinese-classical'
+                                            className='rounded-3xl'
+                                            textValue='🇨🇳 文言文库'
+                                        >
                                             <div className='flex flex-row items-baseline gap-3'>
-                                                <span className='truncate font-semibold'>{'🇨🇳 文言文库'}</span>
-                                                <span className='text-sm text-secondary-400 shrink-0'>文言文</span>
+                                                <span className='truncate font-semibold'>
+                                                    {'🇨🇳 文言文库'}
+                                                </span>
+                                                <span className='text-sm text-secondary-400 shrink-0'>
+                                                    文言文
+                                                </span>
                                             </div>
                                         </SelectItem>
                                     </Select>
@@ -284,9 +319,13 @@ export default function HeroImportUI() {
                                     size='lg'
                                     className='font-semibold px-8'
                                     endContent={
-                                        isImporting ? <PiAirplaneTakeoffDuotone className='size-6' /> :
-                                            streamingComplete ? <PiCheckCircleDuotone className='size-6 text-success' /> :
-                                                <PiMouseLeftClickDuotone className='size-6 animate-grow' />
+                                        isImporting ? (
+                                            <PiAirplaneTakeoffDuotone className='size-6' />
+                                        ) : streamingComplete ? (
+                                            <PiCheckCircleDuotone className='size-6 text-success' />
+                                        ) : (
+                                            <PiMouseLeftClickDuotone className='size-6 animate-grow' />
+                                        )
                                     }
                                 >
                                     {isImporting ? '导入中' : showAnnotation ? '已导入' : '导入'}
@@ -324,7 +363,7 @@ export default function HeroImportUI() {
                     transition={{
                         duration: 0.6,
                         ease: 'easeOut',
-                        delay: 0.5
+                        delay: 0.5,
                     }}
                     className='mt-4 flex justify-center'
                 >

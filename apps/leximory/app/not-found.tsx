@@ -19,11 +19,7 @@ export default function NotFound() {
                 </CardHeader>
                 <CardBody className='flex flex-col items-center gap-3'>
                     <div className='flex gap-4'>
-                        <LinkButton
-                            href='/'
-                            color='primary'
-                            className='min-w-30'
-                        >
+                        <LinkButton href='/' color='primary' className='min-w-30'>
                             Return to Library
                         </LinkButton>
                     </div>
@@ -32,9 +28,7 @@ export default function NotFound() {
                         <div className='h-2 w-2 rounded-full bg-secondary'></div>
                         <div className='h-2 w-2 rounded-full bg-default'></div>
                     </div>
-                    <p className='text-center text-sm opacity-50 font-mono'>
-                        Error Code: 404
-                    </p>
+                    <p className='text-center text-sm opacity-50 font-mono'>Error Code: 404</p>
                 </CardBody>
             </Card>
         </Center>

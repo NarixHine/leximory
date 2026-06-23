@@ -8,7 +8,7 @@ import { getAnnotationCache } from '@repo/kv'
 import { actionClient } from '../safe-action-client'
 
 const annotateWordSchema = z.object({
-    prompt: z.string()
+    prompt: z.string(),
 })
 
 export const annotateWordAction = actionClient

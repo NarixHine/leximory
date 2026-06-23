@@ -17,14 +17,11 @@ export function markdownToHtml(md: string): string {
     })
 
     const audioSections: { id: string; content: string }[] = []
-    let processed = md.replace(
-        /:::([A-Za-z0-9_-]+).*?\n([\s\S]*?):::/g,
-        (_, id, content) => {
-            const idx = audioSections.length
-            audioSections.push({ id, content: content.trim() })
-            return `\n\n<div data-audio-idx="${idx}"></div>\n\n`
-        }
-    )
+    let processed = md.replace(/:::([A-Za-z0-9_-]+).*?\n([\s\S]*?):::/g, (_, id, content) => {
+        const idx = audioSections.length
+        audioSections.push({ id, content: content.trim() })
+        return `\n\n<div data-audio-idx="${idx}"></div>\n\n`
+    })
 
     processed = processed.replace(commentSyntaxRegex, commentToHtml)
     processed = processed.replace(/&&(.*?)&&/g, '<span class="smallcaps">$1</span>')
@@ -35,7 +32,7 @@ export function markdownToHtml(md: string): string {
         const innerHtml = converter.makeHtml(innerMd)
         html = html.replace(
             new RegExp(`<div data-audio-idx="${idx}"></div>`, 'g'),
-            `<lexi-audio data-id="${section.id}">${innerHtml}</lexi-audio>`
+            `<lexi-audio data-id="${section.id}">${innerHtml}</lexi-audio>`,
         )
     })
 
@@ -44,7 +41,9 @@ export function markdownToHtml(md: string): string {
 
 export function getMarkdownFromEditor(editor: Editor): string {
     // tiptap-markdown stores its serializer in editor.storage.markdown
-    const md = (editor.storage as unknown as Record<string, { getMarkdown: () => string }>).markdown.getMarkdown()
+    const md = (
+        editor.storage as unknown as Record<string, { getMarkdown: () => string }>
+    ).markdown.getMarkdown()
 
     let result = md
 
@@ -53,22 +52,19 @@ export function getMarkdownFromEditor(editor: Editor): string {
         (_, encoded: string) => {
             const portions = JSON.parse(decodeURIComponent(encoded)) as string[]
             return `{{${portions.join('||')}}}`
-        }
+        },
     )
 
     result = result.replace(
         /<lexi-audio data-id="([^"]*)">([\s\S]*?)<\/lexi-audio>/g,
         (_, id: string, innerContent: string) => {
             return `:::${id}\n${innerContent.trim()}\n:::`
-        }
+        },
     )
 
-    result = result.replace(
-        /<span class="smallcaps">(.*?)<\/span>/g,
-        (_, content: string) => {
-            return `&&${content}&&`
-        }
-    )
+    result = result.replace(/<span class="smallcaps">(.*?)<\/span>/g, (_, content: string) => {
+        return `&&${content}&&`
+    })
 
     return result
 }

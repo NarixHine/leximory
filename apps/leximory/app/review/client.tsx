@@ -23,9 +23,15 @@ interface ExperimentClientProps {
     streakSlot: ReactNode
 }
 
-export default function ExperimentClient({ initialDays, initialNextCursor, streakSlot }: ExperimentClientProps) {
+export default function ExperimentClient({
+    initialDays,
+    initialNextCursor,
+    streakSlot,
+}: ExperimentClientProps) {
     const [selectedDay, setSelectedDay] = useState<SelectedReviewDay | null>(null)
-    const [progressOverrides, setProgressOverrides] = useState<Record<string, ReviewProgressData>>({})
+    const [progressOverrides, setProgressOverrides] = useState<Record<string, ReviewProgressData>>(
+        {},
+    )
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
         queryKey: ['review-timeline'],
@@ -37,15 +43,15 @@ export default function ExperimentClient({ initialDays, initialNextCursor, strea
             pages: [{ days: initialDays, nextCursor: initialNextCursor }],
             pageParams: [undefined],
         },
-        getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+        getNextPageParam: lastPage => lastPage?.nextCursor ?? undefined,
         staleTime: Infinity,
     })
 
-    const days = data.pages.flatMap((page) => page.days)
+    const days = data.pages.flatMap(page => page.days)
 
     const { ref: sentinelRef } = useIntersectionObserver({
         threshold: 0.1,
-        onChange: (isIntersecting) => {
+        onChange: isIntersecting => {
             if (isIntersecting && hasNextPage && !isFetchingNextPage) {
                 fetchNextPage()
             }
@@ -61,7 +67,7 @@ export default function ExperimentClient({ initialDays, initialNextCursor, strea
 
     const handleExitReview = (progress: ReviewProgressData) => {
         if (selectedDay) {
-            setProgressOverrides((current) => ({
+            setProgressOverrides(current => ({
                 ...current,
                 [`${selectedDay.date}:${selectedDay.lang}`]: progress,
             }))
@@ -73,12 +79,12 @@ export default function ExperimentClient({ initialDays, initialNextCursor, strea
         <AnimatePresence mode='sync'>
             {!selectedDay ? (
                 <motion.div
-                    key="timeline"
+                    key='timeline'
                     initial={{ opacity: 1, y: 0 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 30 }}
                     transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    className="pb-10"
+                    className='pb-10'
                 >
                     <Timeline
                         days={days}
@@ -87,19 +93,19 @@ export default function ExperimentClient({ initialDays, initialNextCursor, strea
                         onReviewClick={handleReviewClick}
                     />
                     {hasNextPage && (
-                        <div ref={sentinelRef} className="flex justify-center py-6">
-                            {isFetchingNextPage ? <Spinner size="sm" /> : null}
+                        <div ref={sentinelRef} className='flex justify-center py-6'>
+                            {isFetchingNextPage ? <Spinner size='lg' variant='simple' /> : null}
                         </div>
                     )}
                 </motion.div>
             ) : (
                 <motion.div
-                    key="review"
+                    key='review'
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="fixed inset-0 z-51 bg-background"
+                    className='fixed inset-0 z-51 bg-background'
                 >
                     <ReviewFlow
                         date={selectedDay.date}

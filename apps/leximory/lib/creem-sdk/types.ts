@@ -909,12 +909,12 @@ export interface WebhookHeaders {
  * @see https://docs.creem.io/learn/webhooks/event-types
  */
 export type WebhookEventType =
-    | 'checkout.completed'    // A checkout session was completed
-    | 'subscription.active'   // A new subscription is created and payment collected
-    | 'subscription.paid'     // A subscription transaction was paid
+    | 'checkout.completed' // A checkout session was completed
+    | 'subscription.active' // A new subscription is created and payment collected
+    | 'subscription.paid' // A subscription transaction was paid
     | 'subscription.canceled' // Subscription canceled by merchant or customer
-    | 'subscription.expired'  // Subscription expired (current_end_period reached)
-    | 'refund.created'      // A refund was created by the merchant
+    | 'subscription.expired' // Subscription expired (current_end_period reached)
+    | 'refund.created' // A refund was created by the merchant
 
 /**
  * Represents a customer in the Creem system

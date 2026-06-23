@@ -19,17 +19,20 @@ import { editoryItemsAtom } from '@repo/ui/paper/atoms'
 export default function Editor({ id }: { id?: string }) {
     const [items, setItems] = useAtom(editoryItemsAtom)
     const isChat = useAtomValue(isChatAtom)
-    const setData = (data: QuizData) => setItems((prevItems) => prevItems.map((item) => item.id === data.id ? data : item))
+    const setData = (data: QuizData) =>
+        setItems(prevItems => prevItems.map(item => (item.id === data.id ? data : item)))
 
     if (isChat) {
-        return <div className='flex-1 flex flex-col border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
-            <ChatInterface />
-        </div>
+        return (
+            <div className='flex-1 flex flex-col border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
+                <ChatInterface />
+            </div>
+        )
     }
 
-    return <div className='flex-1 border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
-        {
-            items.map((data) => {
+    return (
+        <div className='flex-1 border-secondary-400/20 border-4 min-h-[calc(88vh)] lg:max-w-[45vw] p-4 rounded-medium'>
+            {items.map(data => {
                 let editor: React.ReactNode
                 switch (data.type) {
                     case 'fishing':
@@ -65,8 +68,12 @@ export default function Editor({ id }: { id?: string }) {
                     default:
                         return null
                 }
-                return <div key={data.id} id={`section-${data.id}`}>{editor}</div>
-            })
-        }
-    </div>
+                return (
+                    <div key={data.id} id={`section-${data.id}`}>
+                        {editor}
+                    </div>
+                )
+            })}
+        </div>
+    )
 }

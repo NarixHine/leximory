@@ -20,7 +20,7 @@ type SubmissionWithUser = {
 async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]> {
     'use cache'
     const submissions = await getAllPaperSubmissions({ paperId })
-    
+
     if (!submissions || submissions.length === 0) {
         return []
     }
@@ -36,7 +36,7 @@ async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]
                     userId: submission.user,
                     userName: user.username,
                     userImage: user.image,
-                    createdAt: submission.created_at
+                    createdAt: submission.created_at,
                 }
             } catch (error) {
                 return {
@@ -46,10 +46,10 @@ async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]
                     userId: submission.user,
                     userName: undefined,
                     userImage: undefined,
-                    createdAt: submission.created_at
+                    createdAt: submission.created_at,
                 }
             }
-        })
+        }),
     )
 
     return leaderboardData
@@ -58,12 +58,12 @@ async function getLeaderboardData(paperId: number): Promise<SubmissionWithUser[]
 export default async function Leaderboard({ paperId }: LeaderboardProps) {
     const leaderboardData = await getLeaderboardData(paperId)
     const currentUser = await getUser()
-    const currentUserRank = currentUser 
+    const currentUserRank = currentUser
         ? leaderboardData.findIndex(entry => entry.userId === currentUser.userId) + 1
         : null
 
     return (
-        <LeaderboardTable 
+        <LeaderboardTable
             leaderboardData={leaderboardData}
             currentUser={currentUser}
             currentUserRank={currentUserRank}

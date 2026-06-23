@@ -22,7 +22,7 @@ export async function POST(request: Request) {
                 inputSchema: toolSchemas.getCurrentItems,
                 execute: async () => {
                     return currentItems
-                }
+                },
             }),
             addQuizItem: tool({
                 description: 'Add a new quiz item to the paper',
@@ -34,22 +34,35 @@ export async function POST(request: Request) {
             }),
             updateQuizItem: tool({
                 description: 'Update an existing quiz item',
-                inputSchema: toolSchemas.updateQuizItem
+                inputSchema: toolSchemas.updateQuizItem,
             }),
             designQuestions: tool({
-                description: 'Design questions based on the adapted text. ALWAYS CALL this tool to generate new questions, rather than directly do it as the main agent. Add special instructions ONLY WHEN the user provides them.',
+                description:
+                    'Design questions based on the adapted text. ALWAYS CALL this tool to generate new questions, rather than directly do it as the main agent. Add special instructions ONLY WHEN the user provides them.',
                 inputSchema: toolSchemas.designQuestionsInput,
-                execute: async ({ adaptedText, type, specialInstructions }: { adaptedText: string, type: AIGeneratableType, specialInstructions?: string }) => {
-                    const object = await generateQuiz({ prompt: adaptedText, type, specialInstructions })
+                execute: async ({
+                    adaptedText,
+                    type,
+                    specialInstructions,
+                }: {
+                    adaptedText: string
+                    type: AIGeneratableType
+                    specialInstructions?: string
+                }) => {
+                    const object = await generateQuiz({
+                        prompt: adaptedText,
+                        type,
+                        specialInstructions,
+                    })
                     return object
-                }
+                },
             }),
             scrapeArticle: tool({
                 description: 'Scrape an article from a URL',
                 inputSchema: toolSchemas.scrapeArticle,
                 execute: async ({ url }: { url: string }) => {
                     return extractArticleFromUrl(url)
-                }
+                },
             }),
         },
     })

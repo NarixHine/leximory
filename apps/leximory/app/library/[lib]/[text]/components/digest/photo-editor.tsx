@@ -10,29 +10,33 @@ import { useRef, useCallback } from 'react'
 
 /** Convert `[[word]]` markers to `<mark>` tags for Tiptap. */
 function bracketToHtml(text: string): string {
-    return text
-        .replace(/\[\[(.+?)\]\]/g, '<mark>$1</mark>')
-        // collapse multiple consecutive newlines into a single newline
-        .replace(/\n{2,}/g, '\n')
-        .trim()
+    return (
+        text
+            .replace(/\[\[(.+?)\]\]/g, '<mark>$1</mark>')
+            // collapse multiple consecutive newlines into a single newline
+            .replace(/\n{2,}/g, '\n')
+            .trim()
+    )
 }
 
 /** Convert Tiptap HTML `<mark>` tags back to `[[word]]` markers. */
 function htmlToBracket(html: string): string {
-    return html
-        .replace(/<mark[^>]*>(.*?)<\/mark>/g, '[[$1]]')
-        // Insert newlines at block boundaries before stripping tags
-        .replace(/<\/p>\s*<p/gi, '</p>\n<p')
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<\/(?:p|div|h[1-6]|li|blockquote)>/gi, '\n')
-        .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        // Collapse more than two consecutive newlines
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
+    return (
+        html
+            .replace(/<mark[^>]*>(.*?)<\/mark>/g, '[[$1]]')
+            // Insert newlines at block boundaries before stripping tags
+            .replace(/<\/p>\s*<p/gi, '</p>\n<p')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/(?:p|div|h[1-6]|li|blockquote)>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            // Collapse more than two consecutive newlines
+            .replace(/\n{3,}/g, '\n\n')
+            .trim()
+    )
 }
 
 /** Escape HTML special chars, but preserve `<mark>` tags. */
@@ -55,18 +59,17 @@ export default function PhotoEditor({ initialText, onChange, className }: PhotoE
     const initialHtml = useRef(
         bracketToHtml(initialText)
             .split('\n')
-            .map(line =>
-                line === ''
-                    ? '<p><br /></p>'
-                    : `<p>${escapeHtmlPreserveMark(line)}</p>`
-            )
-            .join('')
+            .map(line => (line === '' ? '<p><br /></p>' : `<p>${escapeHtmlPreserveMark(line)}</p>`))
+            .join(''),
     )
 
-    const handleUpdate = useCallback(({ editor }: { editor: ReturnType<typeof useEditor> }) => {
-        if (!editor) return
-        onChange(htmlToBracket(editor.getHTML()))
-    }, [onChange])
+    const handleUpdate = useCallback(
+        ({ editor }: { editor: ReturnType<typeof useEditor> }) => {
+            if (!editor) return
+            onChange(htmlToBracket(editor.getHTML()))
+        },
+        [onChange],
+    )
 
     const editor = useEditor({
         extensions: [
@@ -107,7 +110,10 @@ export default function PhotoEditor({ initialText, onChange, className }: PhotoE
                 }}
                 shouldShow={({ state }) => !state.selection.empty}
             >
-                <ButtonGroup radius='full' className='bg-background/80 backdrop-blur-md z-10 border-default-300 border-1 rounded-4xl overflow-clip'>
+                <ButtonGroup
+                    radius='full'
+                    className='bg-background/80 backdrop-blur-md z-10 border-default-300 border-1 rounded-4xl overflow-clip'
+                >
                     <Button
                         onPress={() => editor.chain().focus().toggleHighlightMark().run()}
                         variant={editor.isActive('highlightMark') ? 'shadow' : 'light'}

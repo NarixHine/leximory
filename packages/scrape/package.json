@@ -1,23 +1,23 @@
 {
-  "name": "@repo/scrape",
-  "type": "module",
-  "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc"
-  },
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "devDependencies": {
-    "@repo/typescript-config": "workspace:^",
-    "@types/node": "latest",
-    "typescript": "latest"
-  },
-  "dependencies": {
-    "@tabstack/sdk": "^2.3.0",
-    "defuddle": "^0.14.0",
-    "linkedom": "^0.18.12",
-    "server-only": "0.0.1",
-    "@repo/env": "workspace:^"
-  }
+    "name": "@repo/scrape",
+    "type": "module",
+    "scripts": {
+        "dev": "tsc --watch",
+        "build": "tsc"
+    },
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:^",
+        "@types/node": "latest",
+        "typescript": "latest"
+    },
+    "dependencies": {
+        "@tabstack/sdk": "^2.3.0",
+        "defuddle": "^0.14.0",
+        "linkedom": "^0.18.12",
+        "server-only": "0.0.1",
+        "@repo/env": "workspace:^"
+    }
 }

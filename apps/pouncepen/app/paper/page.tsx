@@ -13,11 +13,14 @@ export const metadata: Metadata = {
 export default async function PaperManagerPage() {
     return (
         <Main>
-            <Suspense fallback={
-                <>
-                    <PaperManagerHeader />
-                    <Progress size='lg' isIndeterminate />
-                </>}>
+            <Suspense
+                fallback={
+                    <>
+                        <PaperManagerHeader />
+                        <Progress size='lg' isIndeterminate />
+                    </>
+                }
+            >
                 <PaperManagerWrapper />
             </Suspense>
         </Main>

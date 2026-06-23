@@ -40,7 +40,11 @@ export function serializeQuestionNoteContent(content: QuestionNoteContent): stri
 export function parseQuestionNoteContent(content: string): QuestionNoteContent | null {
     try {
         const parsed = JSON.parse(content)
-        if (typeof parsed.sentence === 'string' && typeof parsed.correctAnswer === 'string' && typeof parsed.keyPoints === 'string') {
+        if (
+            typeof parsed.sentence === 'string' &&
+            typeof parsed.correctAnswer === 'string' &&
+            typeof parsed.keyPoints === 'string'
+        ) {
             return parsed as QuestionNoteContent
         }
         return null

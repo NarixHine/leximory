@@ -10,7 +10,7 @@ export async function changeUserEmail(userId: string, newEmail: string) {
     await requireAdmin()
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
-        email: newEmail
+        email: newEmail,
     })
 
     if (error) {

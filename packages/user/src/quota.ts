@@ -14,14 +14,16 @@ export const maxAudioQuota = async () => {
     return PLAN_AUDIO_QUOTA[plan]
 }
 
-export default async function incrCommentaryQuota(incrBy: number = 1, explicitUserId?: string, delayRevalidate: boolean = false) {
+export default async function incrCommentaryQuota(
+    incrBy: number = 1,
+    explicitUserId?: string,
+    delayRevalidate: boolean = false,
+) {
     const userId = explicitUserId ?? (await getUserOrThrow()).userId
     const quota = await incrementQuota(userId, 'commentary', incrBy)
-    if (delayRevalidate)
-        revalidateTag(`quota:${userId}:commentary`, 'max')
-    else
-        updateTag(`quota:${userId}:commentary`)
-    return quota > await maxCommentaryQuota(explicitUserId)
+    if (delayRevalidate) revalidateTag(`quota:${userId}:commentary`, 'max')
+    else updateTag(`quota:${userId}:commentary`)
+    return quota > (await maxCommentaryQuota(explicitUserId))
 }
 
 export { incrCommentaryQuota }
@@ -31,14 +33,14 @@ export async function getCommentaryQuota() {
     const quota = await getQuota(userId, 'commentary')
     const max = await maxCommentaryQuota()
     const ttl = await getQuotaTTL(userId, 'commentary')
-    return { quota, max, percentage: Math.floor(100 * quota / max), ttl }
+    return { quota, max, percentage: Math.floor((100 * quota) / max), ttl }
 }
 
 export async function incrAudioQuota() {
     const { userId } = await getUserOrThrow()
     const quota = await incrementQuota(userId, 'audio')
     updateTag(`quota:${userId}:audio`)
-    return quota > await maxAudioQuota()
+    return quota > (await maxAudioQuota())
 }
 
 export async function getAudioQuota() {
@@ -46,5 +48,5 @@ export async function getAudioQuota() {
     const quota = await getQuota(userId, 'audio')
     const max = await maxAudioQuota()
     const ttl = await getQuotaTTL(userId, 'audio')
-    return { quota, max, percentage: Math.floor(100 * quota / max), ttl }
+    return { quota, max, percentage: Math.floor((100 * quota) / max), ttl }
 }

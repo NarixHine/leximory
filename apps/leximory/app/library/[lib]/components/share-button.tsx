@@ -22,7 +22,15 @@ interface LibraryShareButtonProps extends ButtonProps {
     bgTheme?: BgTheme
 }
 
-export function LibraryShareButton({ libName, creatorName, lang, libId, texts, bgTheme, ...props }: LibraryShareButtonProps) {
+export function LibraryShareButton({
+    libName,
+    creatorName,
+    lang,
+    libId,
+    texts,
+    bgTheme,
+    ...props
+}: LibraryShareButtonProps) {
     const { isOpen, onOpen, onClose } = useDisclosure({})
 
     return (
@@ -32,7 +40,9 @@ export function LibraryShareButton({ libName, creatorName, lang, libId, texts, b
                 startContent={<PiShareNetwork className='size-5 text-default-400' />}
                 isIconOnly
                 radius='full'
-                onPress={() => { onOpen() }}
+                onPress={() => {
+                    onOpen()
+                }}
                 {...props}
             />
 

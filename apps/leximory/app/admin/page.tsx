@@ -6,16 +6,15 @@ import { Spinner } from '@heroui/spinner'
 import { getUsersOverview, getAllUsers } from './data-fetching'
 
 export default function AdminPage() {
-    return <Suspense>
-        <AdminPageContent />
-    </Suspense>
+    return (
+        <Suspense>
+            <AdminPageContent />
+        </Suspense>
+    )
 }
 
 async function AdminPageContent() {
-    const [overview, users] = await Promise.all([
-        getUsersOverview(),
-        getAllUsers()
-    ])
+    const [overview, users] = await Promise.all([getUsersOverview(), getAllUsers()])
 
     return (
         <div className='flex flex-col gap-6'>
@@ -23,7 +22,7 @@ async function AdminPageContent() {
                 <h2 className={'text-4xl font-medium text-center'}>Admin Panel</h2>
             </header>
             {/* Top Grid Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                 {/* System Overview - Takes 2 columns */}
                 <div>
                     <AdminOverview overview={overview} />
@@ -39,11 +38,13 @@ async function AdminPageContent() {
                 </div>
             </div>
 
-            <Suspense fallback={
-                <div className='flex justify-center items-center p-12'>
-                    <Spinner size='lg' />
-                </div>
-            }>
+            <Suspense
+                fallback={
+                    <div className='flex justify-center items-center p-12'>
+                        <Spinner size='lg' />
+                    </div>
+                }
+            >
                 <UsersList users={users} />
             </Suspense>
         </div>

@@ -1,46 +1,46 @@
 {
-  "name": "@repo/service",
-  "type": "module",
-  "scripts": {
-    "dev": "tsc --watch"
-  },
-  "exports": {
-    "./paper": "./src/paper/index.ts",
-    "./ai": "./src/ai/index.ts",
-    "./ai/config": "./src/ai/config.ts",
-    "./ai/dictation": "./src/ai/dictation/index.ts",
-    "./ai/prompts/subjective": "./src/ai/prompts/subjective.ts",
-    ".": "./src/index.ts",
-    "./kilpi": "./src/kilpi/index.ts",
-    "./user": "./src/user/index.ts",
-    "./prompts": "./src/ai/prompts/index.ts",
-    "./annotate": "./src/annotate/index.ts",
-    "./word": "./src/word/index.ts",
-    "./question-note": "./src/question-note/index.ts",
-    "./dictation": "./src/dictation/index.ts"
-  },
-  "devDependencies": {
-    "@repo/typescript-config": "workspace:^",
-    "@types/node": "^25.0.5",
-    "typescript": "latest"
-  },
-  "dependencies": {
-    "@kilpi/core": "^1.1.3",
-    "@kilpi/react-client": "^1.0.6",
-    "@kilpi/react-server": "^1.0.4",
-    "@repo/supabase": "workspace:^",
-    "@repo/user": "workspace:^",
-    "@repo/schema": "workspace:^",
-    "@repo/env": "workspace:^",
-    "@repo/kv": "workspace:^",
-    "@repo/utils": "workspace:^",
-    "nanoid": "^5.1.5",
-    "next-safe-action": "8.0.10",
-    "ai": "^6.0.26",
-    "@ai-sdk/gateway": "3.0.10",
-    "server-only": "^0.0.1"
-  },
-  "peerDependencies": {
-    "next": "^16.0.0"
-  }
+    "name": "@repo/service",
+    "type": "module",
+    "scripts": {
+        "dev": "tsc --watch"
+    },
+    "exports": {
+        "./paper": "./src/paper/index.ts",
+        "./ai": "./src/ai/index.ts",
+        "./ai/config": "./src/ai/config.ts",
+        "./ai/dictation": "./src/ai/dictation/index.ts",
+        "./ai/prompts/subjective": "./src/ai/prompts/subjective.ts",
+        ".": "./src/index.ts",
+        "./kilpi": "./src/kilpi/index.ts",
+        "./user": "./src/user/index.ts",
+        "./prompts": "./src/ai/prompts/index.ts",
+        "./annotate": "./src/annotate/index.ts",
+        "./word": "./src/word/index.ts",
+        "./question-note": "./src/question-note/index.ts",
+        "./dictation": "./src/dictation/index.ts"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:^",
+        "@types/node": "^25.0.5",
+        "typescript": "latest"
+    },
+    "dependencies": {
+        "@kilpi/core": "^1.1.3",
+        "@kilpi/react-client": "^1.0.6",
+        "@kilpi/react-server": "^1.0.4",
+        "@repo/supabase": "workspace:^",
+        "@repo/user": "workspace:^",
+        "@repo/schema": "workspace:^",
+        "@repo/env": "workspace:^",
+        "@repo/kv": "workspace:^",
+        "@repo/utils": "workspace:^",
+        "nanoid": "^5.1.5",
+        "next-safe-action": "8.0.10",
+        "ai": "^6.0.26",
+        "@ai-sdk/gateway": "3.0.10",
+        "server-only": "^0.0.1"
+    },
+    "peerDependencies": {
+        "next": "^16.0.0"
+    }
 }

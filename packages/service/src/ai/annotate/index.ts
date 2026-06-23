@@ -17,11 +17,11 @@ export function annotateWord({ prompt }: { prompt: string }) {
         onFinish: async ({ text }) => {
             await setAnnotationCache({ hash: hashPrompt(prompt), cache: text })
         },
-        onError: (err) => {
+        onError: err => {
             console.error('Annotation error:', err)
         },
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),
-        ...FLASH_AI
+        ...FLASH_AI,
     })
 
     return { annotation: textStream }

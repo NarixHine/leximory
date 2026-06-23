@@ -8,7 +8,7 @@ export { type NextRequest } from 'next/server'
 export async function updateSession(
     request: NextRequest,
     isProtectedRouteChecker: (path: string) => boolean,
-    authedHomepageRedirectPathname?: string
+    authedHomepageRedirectPathname?: string,
 ) {
     // 1. Create the response object ONCE.
     // We will mutate this object inside setAll to add cookies.
@@ -43,7 +43,7 @@ export async function updateSession(
                     })
                 },
             },
-        }
+        },
     )
 
     // 3. Use getClaims() for performance (no DB hit)
@@ -90,7 +90,7 @@ export async function updateSession(
 // Helper to preserve cookies when switching response objects (e.g. redirects)
 function copyCookies(source: NextResponse, destination: NextResponse) {
     const sourceCookies = source.cookies.getAll()
-    sourceCookies.forEach((cookie) => {
+    sourceCookies.forEach(cookie => {
         destination.cookies.set(cookie)
     })
 }

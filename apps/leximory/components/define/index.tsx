@@ -12,12 +12,23 @@ import { EmptyObject } from 'react-hook-form'
 import { useOnClickOutside } from 'usehooks-ts'
 import { getBracketedSelection, useSelection } from '@repo/ui/define'
 
-export default function Define(props: { left: number | null, width: number | null, bottom: number | null, selection: Selection | null, container: HTMLElement | null, reset: () => void } | EmptyObject) {
+export default function Define(
+    props:
+        | {
+              left: number | null
+              width: number | null
+              bottom: number | null
+              selection: Selection | null
+              container: HTMLElement | null
+              reset: () => void
+          }
+        | EmptyObject,
+) {
     const ref = useRef(globalThis.document)
     const selectionContext = useSelection(ref)
     const { left, width, selection } = props && 'left' in props ? props : selectionContext
     const container = props && 'container' in props ? props.container : undefined
-    const reset = props && 'reset' in props ? props.reset : () => { }
+    const reset = props && 'reset' in props ? props.reset : () => {}
     const buttonRef = useRef<HTMLButtonElement>(null!)
     const lang = useAtomValue(langAtom)
 
@@ -25,7 +36,10 @@ export default function Define(props: { left: number | null, width: number | nul
     const { defineClassName, defineLabel } = getLanguageStrategy(lang)
 
     // 1. Get the bounding rectangle of the selection
-    const rect = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).getBoundingClientRect() : null
+    const rect =
+        selection && selection.rangeCount > 0
+            ? selection.getRangeAt(0).getBoundingClientRect()
+            : null
 
     // 2. Calculate positioning
     let buttonTop = 0
@@ -51,31 +65,46 @@ export default function Define(props: { left: number | null, width: number | nul
 
     return (
         <Drawer.Root repositionInputs={false} direction='top' container={container}>
-            {selection && selection.anchorNode?.textContent && selection.toString() && left && width && rect && (
-                <Drawer.Trigger
-                    ref={buttonRef}
-                    style={{
-                        left: left + width / 2,
-                        top: buttonTop // Applied the conditional top here
-                    }}
-                    className={cn(
-                        'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-1 border-primary-300 hover:cursor-pointer transition-all ease-in-out text-foreground',
-                        isEbookMode && 'opacity-90',
-                        defineClassName
-                    )}
-                >
-                    <PiMagnifyingGlass />
-                    {defineLabel}
-                </Drawer.Trigger>
-            )}
+            {selection &&
+                selection.anchorNode?.textContent &&
+                selection.toString() &&
+                left &&
+                width &&
+                rect && (
+                    <Drawer.Trigger
+                        ref={buttonRef}
+                        style={{
+                            left: left + width / 2,
+                            top: buttonTop, // Applied the conditional top here
+                        }}
+                        className={cn(
+                            'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-1 border-primary-300 hover:cursor-pointer transition-all ease-in-out text-foreground',
+                            isEbookMode && 'opacity-90',
+                            defineClassName,
+                        )}
+                    >
+                        <PiMagnifyingGlass />
+                        {defineLabel}
+                    </Drawer.Trigger>
+                )}
             <Drawer.Portal>
-                <Drawer.Overlay className={cn(
-                    'fixed -inset-5 bottom-[20dvh] z-60',
-                    'bg-linear-to-b to-transparent from-default-900/40 dark:from-stone-950/60',
-                )} />
+                <Drawer.Overlay
+                    className={cn(
+                        'fixed -inset-5 bottom-[20dvh] z-60',
+                        'bg-linear-to-b to-transparent from-default-900/40 dark:from-stone-950/60',
+                    )}
+                />
                 <Drawer.Content className='h-fit px-2 fixed top-3 left-0 right-0 outline-none z-70 flex flex-col justify-center items-center mx-auto max-w-lg'>
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
-                    <Comment asCard prompt={selection && selection.anchorNode?.textContent && selection.toString() ? getBracketedSelection(selection) : ''} params='[]'></Comment>
+                    <Comment
+                        asCard
+                        prompt={
+                            selection && selection.anchorNode?.textContent && selection.toString()
+                                ? getBracketedSelection(selection)
+                                : ''
+                        }
+                        params='[]'
+                    ></Comment>
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>

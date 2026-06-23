@@ -13,11 +13,5 @@ export default async function Dictation({ paperId }: DictationProps) {
         Kilpi.papers.update(await getPaper({ id: paperId })).authorize(),
     ])
 
-    return (
-        <DictationContent
-            paperId={paperId}
-            dictation={dictation}
-            hasWriteAccess={granted}
-        />
-    )
+    return <DictationContent paperId={paperId} dictation={dictation} hasWriteAccess={granted} />
 }

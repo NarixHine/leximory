@@ -4,7 +4,12 @@ import { actionClient } from '../safe-action-client'
 import { z } from '@repo/schema'
 import { getUserOrThrow } from '@repo/user'
 import { Kilpi } from '../kilpi'
-import { getDictation, deleteDictation, createDictation, updateDictationContent } from '@repo/supabase/dictation'
+import {
+    getDictation,
+    deleteDictation,
+    createDictation,
+    updateDictationContent,
+} from '@repo/supabase/dictation'
 import { getPaper } from '@repo/supabase/paper'
 import { saveChunkNote, loadChunkNotes, deleteNote } from '@repo/supabase/question-note'
 import { acquireDictationLock, releaseDictationLock } from '@repo/kv'
@@ -17,9 +22,11 @@ import incrCommentaryQuota from '@repo/user/quota'
  * Gets a dictation for a paper.
  */
 export const getDictationAction = actionClient
-    .inputSchema(z.object({
-        paperId: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            paperId: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { paperId } }) => {
         const paper = await getPaper({ id: paperId })
         await Kilpi.papers.read(paper).authorize().assert()
@@ -31,9 +38,11 @@ export const getDictationAction = actionClient
  * Generates a dictation for a paper (authenticated users only).
  */
 export const generateDictationAction = actionClient
-    .inputSchema(z.object({
-        paperId: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            paperId: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { paperId } }) => {
         await Kilpi.authed().authorize().assert()
 
@@ -59,7 +68,7 @@ export const generateDictationAction = actionClient
             const quizItems = paper.content
 
             // Generate chunks for all sections in parallel
-            const sectionPromises = quizItems.map((item) => {
+            const sectionPromises = quizItems.map(item => {
                 return generateChunksForSection({ quizData: item })
             })
 
@@ -94,10 +103,12 @@ export const generateDictationAction = actionClient
  * Deletes a dictation (owner only).
  */
 export const deleteDictationAction = actionClient
-    .inputSchema(z.object({
-        paperId: z.number(),
-        dictationId: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            paperId: z.number(),
+            dictationId: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { paperId, dictationId } }) => {
         const paper = await getPaper({ id: paperId })
         await Kilpi.papers.update(paper).authorize().assert()
@@ -109,11 +120,13 @@ export const deleteDictationAction = actionClient
  * Saves a chunk note from dictation.
  */
 export const saveChunkNoteAction = actionClient
-    .inputSchema(z.object({
-        english: z.string(),
-        chinese: z.string(),
-        paperId: z.number().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            english: z.string(),
+            chinese: z.string(),
+            paperId: z.number().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { english, chinese, paperId } }) => {
         await Kilpi.authed().authorize().assert()
         const { userId } = await getUserOrThrow()
@@ -132,9 +145,11 @@ export const saveChunkNoteAction = actionClient
  * Gets recent chunk notes for the current user.
  */
 export const getRecentChunkNotesAction = actionClient
-    .inputSchema(z.object({
-        cursor: z.string().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            cursor: z.string().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { cursor } }) => {
         const { userId } = await getUserOrThrow()
         return await loadChunkNotes({ cursor, creator: userId })
@@ -144,9 +159,11 @@ export const getRecentChunkNotesAction = actionClient
  * Deletes a chunk note by ID.
  */
 export const deleteChunkNoteAction = actionClient
-    .inputSchema(z.object({
-        noteId: z.number(),
-    }))
+    .inputSchema(
+        z.object({
+            noteId: z.number(),
+        }),
+    )
     .action(async ({ parsedInput: { noteId } }) => {
         await Kilpi.authed().authorize().assert()
         const { userId } = await getUserOrThrow()
@@ -159,12 +176,14 @@ export const deleteChunkNoteAction = actionClient
  * Removes the entry at the specified section and entry index.
  */
 export const deleteDictationEntryAction = actionClient
-    .inputSchema(z.object({
-        paperId: z.number(),
-        dictationId: z.number(),
-        sectionIndex: z.number(),
-        entryEnglish: z.string(),
-    }))
+    .inputSchema(
+        z.object({
+            paperId: z.number(),
+            dictationId: z.number(),
+            sectionIndex: z.number(),
+            entryEnglish: z.string(),
+        }),
+    )
     .action(async ({ parsedInput: { paperId, dictationId, sectionIndex, entryEnglish } }) => {
         const paper = await getPaper({ id: paperId })
         await Kilpi.papers.update(paper).authorize().assert()
@@ -176,15 +195,17 @@ export const deleteDictationEntryAction = actionClient
         }
 
         // Remove the entry from the section
-        const newSections = dictation.content.sections.map((section, sIdx) => {
-            if (sIdx === sectionIndex) {
-                return {
-                    ...section,
-                    entries: section.entries.filter(entry => entry.english !== entryEnglish)
+        const newSections = dictation.content.sections
+            .map((section, sIdx) => {
+                if (sIdx === sectionIndex) {
+                    return {
+                        ...section,
+                        entries: section.entries.filter(entry => entry.english !== entryEnglish),
+                    }
                 }
-            }
-            return section
-        }).filter(section => section.entries.length > 0) // Remove empty sections
+                return section
+            })
+            .filter(section => section.entries.length > 0) // Remove empty sections
 
         // Update the dictation content
         const newContent: DictationContent = { sections: newSections }

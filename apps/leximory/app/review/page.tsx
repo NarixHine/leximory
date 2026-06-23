@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ExperimentPage() {
     return (
         <Main>
-            <div className="max-w-2xl mx-auto">
+            <div className='max-w-2xl mx-auto'>
                 <ReviewHeader />
                 <ReviewContentBoundary />
             </div>

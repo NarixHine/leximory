@@ -2,28 +2,29 @@ import { Lang } from '@repo/env/config'
 import type { LanguageServerStrategy, LanguageStrategy } from './types'
 
 export function createLanguageStrategy(
-  config: Partial<LanguageStrategy> & { type: Lang; name: string }
+    config: Partial<LanguageStrategy> & { type: Lang; name: string },
 ): LanguageStrategy {
-  const defaults = {
-    isRTL: false,
-    lineHeight: '1.6 !important',
-    pageFormat: (page: number, total: number, chapter?: string) => `At ${page}/${total} in ${chapter ?? 'Chapter'}`,
-    proseClassName: 'prose-lg font-formal',
-    defineLabel: 'Define',
-    defineClassName: 'font-formal',
-    periodMark: '.',
-    isDropcapEnabled: false,
-  }
+    const defaults = {
+        isRTL: false,
+        lineHeight: '1.6 !important',
+        pageFormat: (page: number, total: number, chapter?: string) =>
+            `At ${page}/${total} in ${chapter ?? 'Chapter'}`,
+        proseClassName: 'prose-lg font-formal',
+        defineLabel: 'Define',
+        defineClassName: 'font-formal',
+        periodMark: '.',
+        isDropcapEnabled: false,
+    }
 
-  return { ...defaults, ...config } as LanguageStrategy
+    return { ...defaults, ...config } as LanguageStrategy
 }
 
 export function createLanguageServerStrategy(
-  config: Partial<LanguageServerStrategy> & { type: Lang }
+    config: Partial<LanguageServerStrategy> & { type: Lang },
 ): LanguageServerStrategy {
-  const defaults = {
-    getAccentPrompt: async () => '',
-  }
+    const defaults = {
+        getAccentPrompt: async () => '',
+    }
 
-  return { ...defaults, ...config } as LanguageServerStrategy
+    return { ...defaults, ...config } as LanguageServerStrategy
 }

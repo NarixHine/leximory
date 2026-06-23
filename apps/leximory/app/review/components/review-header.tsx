@@ -4,13 +4,13 @@ import Bell from './bell-server'
 
 export function ReviewHeader() {
     return (
-        <header className="mb-4 sm:ml-22">
+        <header className='mb-4 sm:ml-22'>
             <div className='flex items-center gap-2'>
                 <span className='text-sm font-mono uppercase tracking-wide text-default-400'>
                     <PiCableCar className='inline-block size-5' /> Forming Connections
                 </span>
             </div>
-            <h1 className="flex items-center flex-wrap gap-2">
+            <h1 className='flex items-center flex-wrap gap-2'>
                 <div className='text-[22px] font-kaiti'>回忆旧知，创造新知</div>
                 <div className='flex-1' />
                 <Suspense>

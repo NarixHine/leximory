@@ -42,7 +42,7 @@ export type OrFilter = Awaited<ReturnType<typeof isListedFilter>>
  * Returns filters that match:
  * - Libraries owned by the user
  * - Public libraries that the user has starred
- * 
+ *
  * @returns Promise resolving to filter configuration object
  * @example
  * ```typescript
@@ -54,6 +54,6 @@ export const isListedFilter = async () => {
     const { userId } = await getUserOrThrow()
     return {
         filters: `owner.eq.${userId},and(starred_by.cs.{"${userId}"},access.eq.${LIB_ACCESS_STATUS.public})`,
-        options: { referencedTable: 'libraries' }
+        options: { referencedTable: 'libraries' },
     }
 }

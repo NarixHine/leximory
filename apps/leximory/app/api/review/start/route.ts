@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
         const progressKey = `review:${userId}:${date}:${lang}`
 
-        const existingProgress = await redis.get(progressKey) as { stage?: string } | null
+        const existingProgress = (await redis.get(progressKey)) as { stage?: string } | null
         if (existingProgress && existingProgress.stage !== 'complete') {
             return NextResponse.json({ success: true, inProgress: true })
         }

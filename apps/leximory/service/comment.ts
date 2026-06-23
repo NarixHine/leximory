@@ -19,7 +19,19 @@ export async function delComment(id: string) {
 }
 
 /** Saves or updates a vocabulary comment with Kilpi authorization. */
-export async function saveComment({ portions, lib, editId, shadow, lang }: { portions: string[], lib: string, editId?: string, shadow?: boolean, lang: "en" | "zh" | "ja" | "nl" }) {
+export async function saveComment({
+    portions,
+    lib,
+    editId,
+    shadow,
+    lang,
+}: {
+    portions: string[]
+    lib: string
+    editId?: string
+    shadow?: boolean
+    lang: 'en' | 'zh' | 'ja' | 'nl'
+}) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
     const revalidate = () => {
         updateTag(`words:${lib}`)
@@ -38,8 +50,7 @@ export async function saveComment({ portions, lib, editId, shadow, lang }: { por
             const { id } = await shadowSaveWord({ word, uid: userId, lang })
             revalidate()
             return id
-        }
-        else {
+        } else {
             const libData = await getLib({ id: lib })
             await Kilpi.libraries.write(libData).authorize().assert()
             const { id } = await saveWord({ lib, word })

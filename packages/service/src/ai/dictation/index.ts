@@ -2,7 +2,11 @@ import 'server-only'
 import { generateObject } from 'ai'
 import { FLASH_AI } from '../config'
 import { ChunkGenerationResponseSchema } from '@repo/schema/chunk-note'
-import { buildChunkGenerationPrompt, buildChunkGenerationSystemPrompt, extractTextFromQuizData } from '../prompts/dictation'
+import {
+    buildChunkGenerationPrompt,
+    buildChunkGenerationSystemPrompt,
+    extractTextFromQuizData,
+} from '../prompts/dictation'
 import type { QuizData } from '@repo/schema/paper'
 
 export interface GenerateChunksParams {

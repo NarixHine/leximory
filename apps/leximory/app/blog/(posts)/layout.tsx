@@ -13,7 +13,11 @@ export const metadata: Metadata = {
 
 export default function PostLayout({ children }: { children: ReactNode }) {
     return (
-        <Main className={'relative prose prose-h1:text-4xl dark:prose-invert prose-lg prose-a:underline-offset-4 prose-a:decoration-1 max-w-2xl prose-blockquote:not-italic prose-blockquote:border-primary-800 prose-blockquote:border-l-1.5 font-formal'}>
+        <Main
+            className={
+                'relative prose prose-h1:text-4xl dark:prose-invert prose-lg prose-a:underline-offset-4 prose-a:decoration-1 max-w-2xl prose-blockquote:not-italic prose-blockquote:border-primary-800 prose-blockquote:border-l-1.5 font-formal'
+            }
+        >
             <div className='fixed top-2 left-2 z-50'>
                 <LinkButton
                     href='/blog'
@@ -25,9 +29,7 @@ export default function PostLayout({ children }: { children: ReactNode }) {
                     Back to Blog
                 </LinkButton>
             </div>
-            <article className='mt-8'>
-                {children}
-            </article>
+            <article className='mt-8'>{children}</article>
         </Main>
     )
 }

@@ -8,10 +8,18 @@ export const getArticleData = async (text: string, throwOnUnauthorized = true) =
     }
     const [
         { title, content, topics, ebook, emoji, createdAt, lib, prompt, isPublicAndFree },
-        annotating
-    ] = await Promise.all([
-        getTextContent({ id: text }),
-        getTextAnnotationProgress({ id: text })
-    ])
-    return { title, content, topics, ebook, emoji, createdAt, lib, annotating, prompt, isPublicAndFree }
+        annotating,
+    ] = await Promise.all([getTextContent({ id: text }), getTextAnnotationProgress({ id: text })])
+    return {
+        title,
+        content,
+        topics,
+        ebook,
+        emoji,
+        createdAt,
+        lib,
+        annotating,
+        prompt,
+        isPublicAndFree,
+    }
 }

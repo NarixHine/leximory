@@ -11,7 +11,15 @@ import { cn } from '@/lib/utils'
 import { EMOJI } from '@/lib/fonts'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { StackedCards, CardModal, BgTheme, themeImages, themeOverlayClasses, themeTextClasses, cardThemes } from './stacked-cards'
+import {
+    StackedCards,
+    CardModal,
+    BgTheme,
+    themeImages,
+    themeOverlayClasses,
+    themeTextClasses,
+    cardThemes,
+} from './stacked-cards'
 
 interface TextItem {
     emoji: string | null
@@ -30,7 +38,16 @@ interface LibraryCardProps {
     bgTheme?: BgTheme
 }
 
-export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId, texts, bgTheme = 'lake' }: LibraryCardProps) {
+export function LibraryCard({
+    isOpen,
+    onClose,
+    libName,
+    creatorName,
+    lang,
+    libId,
+    texts,
+    bgTheme = 'lake',
+}: LibraryCardProps) {
     const [isSaving, setIsSaving] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
     const isClient = useIsClient()
@@ -72,7 +89,11 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
         return (
             <>
                 <div>
-                    <h2 className={cn('font-fancy text-6xl tracking-tight text-white leading-tight -mb-2')}>
+                    <h2
+                        className={cn(
+                            'font-fancy text-6xl tracking-tight text-white leading-tight -mb-2',
+                        )}
+                    >
                         {creatorName}
                     </h2>
                     <p className='text-2xl text-balance text-white/75 font-sans tracking-tight font-semibold leading-tight mt-1'>
@@ -83,20 +104,24 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
                 <div className='bg-white/60 h-1 rounded-lg w-1/3 mt-4 mb-3'></div>
 
                 <div className='flex-1 flex flex-col justify-center space-y-1'>
-                    {texts?.slice(0, 5).map((text) => (
+                    {texts?.slice(0, 5).map(text => (
                         <div key={text.id} className='flex items-center gap-3'>
-                            <div className={cn(
-                                'shrink-0 w-12 h-12 text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
-                                EMOJI.className
-                            )}>
+                            <div
+                                className={cn(
+                                    'shrink-0 w-12 h-12 text-white rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-2xl shadow-lg',
+                                    EMOJI.className,
+                                )}
+                            >
                                 {text.emoji || '📄'}
                             </div>
                             <div className='flex-1 min-w-0'>
-                                <p className={cn(
-                                    'text-medium text-balance leading-tight line-clamp-2 text-shadow-sm',
-                                    textClass,
-                                    articleTitleFont
-                                )}>
+                                <p
+                                    className={cn(
+                                        'text-medium text-balance leading-tight line-clamp-2 text-shadow-sm',
+                                        textClass,
+                                        articleTitleFont,
+                                    )}
+                                >
                                     {text.title}
                                 </p>
                             </div>
@@ -131,9 +156,11 @@ export function LibraryCard({ isOpen, onClose, libName, creatorName, lang, libId
                 </div>
 
                 <footer className='flex mt-3'>
-                    <p className={cn(
-                        'text-center text-sm font-mono text-white/75 uppercase text-shadow-lg',
-                    )}>
+                    <p
+                        className={cn(
+                            'text-center text-sm font-mono text-white/75 uppercase text-shadow-lg',
+                        )}
+                    >
                         leximory.com
                     </p>
                     <div className='flex-1'></div>

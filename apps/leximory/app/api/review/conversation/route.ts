@@ -75,7 +75,10 @@ export async function POST(request: Request) {
                 })
 
                 const latestFlashback = await getFlashback({ userId, date, lang })
-                if (!latestFlashback?.conversation || latestFlashback.conversation.submission !== submission) {
+                if (
+                    !latestFlashback?.conversation ||
+                    latestFlashback.conversation.submission !== submission
+                ) {
                     return
                 }
 
@@ -108,7 +111,10 @@ export async function POST(request: Request) {
                 console.error('Failed to evaluate review conversation:', error)
 
                 const latestFlashback = await getFlashback({ userId, date, lang })
-                if (!latestFlashback?.conversation || latestFlashback.conversation.submission !== submission) {
+                if (
+                    !latestFlashback?.conversation ||
+                    latestFlashback.conversation.submission !== submission
+                ) {
                     return
                 }
 

@@ -15,11 +15,20 @@ export async function getSession() {
 
 export async function getUser() {
     const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const {
+        data: { user },
+        error,
+    } = await supabase.auth.getUser()
     if (error || !user) {
         return null
     }
-    const { id, email, user_metadata: { username, avatar_url }, last_sign_in_at, created_at } = user
+    const {
+        id,
+        email,
+        user_metadata: { username, avatar_url },
+        last_sign_in_at,
+        created_at,
+    } = user
     return {
         userId: id,
         email: email as string,
@@ -43,7 +52,9 @@ export async function getPlan(userId?: string) {
         return await getPlan((await getUserOrThrow()).userId)
     }
     await ensureUserExists(userId)
-    const { data: { plan } } = await supabase.from('users').select('plan').eq('id', userId).single().throwOnError()
+    const {
+        data: { plan },
+    } = await supabase.from('users').select('plan').eq('id', userId).single().throwOnError()
     return (plan ?? 'beginner') as Plan
 }
 
@@ -53,11 +64,20 @@ export async function updatePlan(userId: string, plan: Plan) {
 
 export async function getUserById(userId: string) {
     'use cache'
-    const { data: { user }, error } = await supabase.auth.admin.getUserById(userId)
+    const {
+        data: { user },
+        error,
+    } = await supabase.auth.admin.getUserById(userId)
     if (error || !user) {
         throw new Error('User not found')
     }
-    const { id, email, user_metadata: { username, avatar_url, plan }, last_sign_in_at, created_at } = user
+    const {
+        id,
+        email,
+        user_metadata: { username, avatar_url, plan },
+        last_sign_in_at,
+        created_at,
+    } = user
     return {
         userId: id,
         email: email as string,

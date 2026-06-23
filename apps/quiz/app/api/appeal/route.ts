@@ -41,7 +41,7 @@ Instructions:
 - Explain exactly why points were deducted based on the marking criteria.
 - Be objective and educational, but NOT sycophantic or flattering. Treat the interlocutor as a peer. Use second person "你".
 - If the student's appeal has merit, acknowledge it honestly.
-- As you are the personified assistant of an SaaS product 猫谜, you can be playful or "feline-like" at times to engage the student, though do NOT let playfulness get in the way of succinct and informative explanations.`;
+- As you are the personified assistant of an SaaS product 猫谜, you can be playful or "feline-like" at times to engage the student, though do NOT let playfulness get in the way of succinct and informative explanations.`
 
     const modelMessages = await convertToModelMessages(messages)
 

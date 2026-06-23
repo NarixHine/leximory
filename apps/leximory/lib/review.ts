@@ -14,10 +14,12 @@ export const REVIEW_CONVERSATION_UNLOCK_PERCENT = 60
 
 export const ReviewTranslationFeedbackSchema = z.object({
     rationale: z.string(),
-    badPairs: z.array(z.object({
-        original: z.string(),
-        improved: z.string(),
-    })),
+    badPairs: z.array(
+        z.object({
+            original: z.string(),
+            improved: z.string(),
+        }),
+    ),
 })
 export type ReviewTranslationFeedback = z.infer<typeof ReviewTranslationFeedbackSchema>
 
@@ -39,14 +41,18 @@ export type ReviewTranslation = Omit<ReviewTranslationSchemaData, 'prompt' | 'ch
 }
 
 export const ReviewConversationFeedbackSchema = z.object({
-    goodPairs: z.array(z.object({
-        original: z.string(),
-        note: z.string(),
-    })),
-    badPairs: z.array(z.object({
-        original: z.string(),
-        improved: z.string(),
-    })),
+    goodPairs: z.array(
+        z.object({
+            original: z.string(),
+            note: z.string(),
+        }),
+    ),
+    badPairs: z.array(
+        z.object({
+            original: z.string(),
+            improved: z.string(),
+        }),
+    ),
 })
 export type ReviewConversationFeedback = z.infer<typeof ReviewConversationFeedbackSchema>
 
@@ -88,7 +94,9 @@ export function normalizeReviewTranslation(raw: unknown): ReviewTranslation | nu
 
 export function normalizeReviewTranslations(raw: unknown): ReviewTranslation[] {
     if (!Array.isArray(raw)) return []
-    return raw.map(normalizeReviewTranslation).filter((item): item is ReviewTranslation => item !== null)
+    return raw
+        .map(normalizeReviewTranslation)
+        .filter((item): item is ReviewTranslation => item !== null)
 }
 
 export function normalizeReviewConversation(raw: unknown): ReviewConversation | null {
@@ -107,7 +115,10 @@ export function normalizeReviewConversation(raw: unknown): ReviewConversation | 
     }
 }
 
-export function normalizeReviewConversationPayload(rawTranslations: unknown, rawConversation?: unknown) {
+export function normalizeReviewConversationPayload(
+    rawTranslations: unknown,
+    rawConversation?: unknown,
+) {
     if (Array.isArray(rawTranslations)) {
         return {
             translations: normalizeReviewTranslations(rawTranslations),
@@ -146,20 +157,24 @@ export function isTranslationCompleted(translation: Pick<ReviewTranslation, 'sta
     return translation.status === 'complete'
 }
 
-export function isConversationCompleted(conversation: Pick<ReviewConversation, 'status'> | null | undefined) {
+export function isConversationCompleted(
+    conversation: Pick<ReviewConversation, 'status'> | null | undefined,
+) {
     return conversation?.status === 'complete'
 }
 
-export function getConversationUnlockProgress(translations: Pick<ReviewTranslation, 'status'>[] | null | undefined) {
+export function getConversationUnlockProgress(
+    translations: Pick<ReviewTranslation, 'status'>[] | null | undefined,
+) {
     const normalizedTranslations = translations ?? []
     const totalTranslations = normalizedTranslations.length
     const completedTranslations = normalizedTranslations.filter(isTranslationCompleted).length
-    const requiredTranslations = totalTranslations === 0
-        ? 0
-        : Math.ceil((totalTranslations * REVIEW_CONVERSATION_UNLOCK_PERCENT) / 100)
-    const translationProgressPercent = totalTranslations === 0
-        ? 0
-        : Math.floor((completedTranslations / totalTranslations) * 100)
+    const requiredTranslations =
+        totalTranslations === 0
+            ? 0
+            : Math.ceil((totalTranslations * REVIEW_CONVERSATION_UNLOCK_PERCENT) / 100)
+    const translationProgressPercent =
+        totalTranslations === 0 ? 0 : Math.floor((completedTranslations / totalTranslations) * 100)
 
     return {
         completedTranslations,
@@ -200,9 +215,12 @@ export function getReviewCompletion({
     const completedTranslations = normalizedTranslations.filter(isTranslationCompleted).length
     const completedUnits = (story ? 1 : 0) + completedTranslations + (conversationCompleted ? 1 : 0)
     const baseStoryProgress = story ? 1 : 0
-    const translationProgress = Math.min(REVIEW_CONVERSATION_UNLOCK_PERCENT, Math.floor(
-        (unlockProgress.translationProgressPercent / 100) * REVIEW_CONVERSATION_UNLOCK_PERCENT
-    ))
+    const translationProgress = Math.min(
+        REVIEW_CONVERSATION_UNLOCK_PERCENT,
+        Math.floor(
+            (unlockProgress.translationProgressPercent / 100) * REVIEW_CONVERSATION_UNLOCK_PERCENT,
+        ),
+    )
     const percentage = conversationCompleted
         ? 100
         : Math.max(baseStoryProgress, translationProgress)
@@ -216,6 +234,8 @@ export function getReviewCompletion({
         translationProgressPercent: unlockProgress.translationProgressPercent,
         conversationUnlocked: unlockProgress.isUnlocked,
         conversationCompleted,
-        isComplete: conversation ? completedUnits === totalUnits : completedUnits === ((story ? 1 : 0) + normalizedTranslations.length),
+        isComplete: conversation
+            ? completedUnits === totalUnits
+            : completedUnits === (story ? 1 : 0) + normalizedTranslations.length,
     }
 }

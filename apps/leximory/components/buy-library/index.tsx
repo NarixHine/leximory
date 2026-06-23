@@ -12,7 +12,15 @@ import Link from 'next/link'
 import { star } from '@/service/library'
 
 /** Purchase button with an overlapping owner avatar. */
-export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase, uid, isOwner, ...props }: {
+export default function BuyLibrary({
+    price,
+    id,
+    isStarred,
+    navigateAfterPurchase,
+    uid,
+    isOwner,
+    ...props
+}: {
     price: number
     id: string
     isStarred: boolean
@@ -25,52 +33,62 @@ export default function BuyLibrary({ price, id, isStarred, navigateAfterPurchase
     const [isTransitioning, startTransition] = useTransition()
     const { data: user, isSuccess } = useUserProfile(uid)
 
-    return <div className={'flex items-center'}>
-        <Button
-            as={'div'}
-            size='sm'
-            isDisabled={isStarred || isOwner}
-            isLoading={isTransitioning}
-            startContent={isTransitioning ? null : (isStarred ? <PiCheckCircle className='size-5' /> : <PiCoins className='size-5' />)}
-            color='primary'
-            className={cn('-mr-5 pr-7 rounded-l-3xl')}
-            onPress={() => {
-                startTransition(async () => {
-                    const { success, message } = await star(id)
-                    if (success) {
-                        toast.success('购入成功')
-                        if (navigateAfterPurchase) {
-                            router.push(`/library/${id}`)
+    return (
+        <div className={'flex items-center'}>
+            <Button
+                as={'div'}
+                size='sm'
+                isDisabled={isStarred || isOwner}
+                isLoading={isTransitioning}
+                startContent={
+                    isTransitioning ? null : isStarred ? (
+                        <PiCheckCircle className='size-5' />
+                    ) : (
+                        <PiCoins className='size-5' />
+                    )
+                }
+                color='primary'
+                className={cn('-mr-5 pr-7 rounded-l-3xl')}
+                onPress={() => {
+                    startTransition(async () => {
+                        const { success, message } = await star(id)
+                        if (success) {
+                            toast.success('购入成功')
+                            if (navigateAfterPurchase) {
+                                router.push(`/library/${id}`)
+                            }
+                        } else {
+                            toast.error(message)
                         }
-                    }
-                    else {
-                        toast.error(message)
-                    }
-                })
-            }}
-            {...props}
-        >
-            {
-                isStarred
-                    ? '已购买'
-                    : price === 0
-                        ? '免费'
-                        : <span><span className='font-mono text-base'>{price}</span> 购入</span>
-            }
-        </Button>
-        <Button
-            startContent={
-                <Avatar
-                    icon={<PiUserCircleDuotone className='size-10' />}
-                    src={isSuccess ? user?.imageUrl ?? undefined : undefined}
-                    size='sm'
-                    className={!isSuccess ? 'animate-pulse' : ''}
-                />}
-            as={Link}
-            href={`/profile/${uid}`}
-            isIconOnly
-            radius='full'
-            aria-label='View owner profile'
-        />
-    </div>
-}   
+                    })
+                }}
+                {...props}
+            >
+                {isStarred ? (
+                    '已购买'
+                ) : price === 0 ? (
+                    '免费'
+                ) : (
+                    <span>
+                        <span className='font-mono text-base'>{price}</span> 购入
+                    </span>
+                )}
+            </Button>
+            <Button
+                startContent={
+                    <Avatar
+                        icon={<PiUserCircleDuotone className='size-10' />}
+                        src={isSuccess ? (user?.imageUrl ?? undefined) : undefined}
+                        size='sm'
+                        className={!isSuccess ? 'animate-pulse' : ''}
+                    />
+                }
+                as={Link}
+                href={`/profile/${uid}`}
+                isIconOnly
+                radius='full'
+                aria-label='View owner profile'
+            />
+        </div>
+    )
+}

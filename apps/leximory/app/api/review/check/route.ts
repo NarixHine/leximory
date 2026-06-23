@@ -2,7 +2,11 @@ import { connection, NextRequest, NextResponse } from 'next/server'
 import { getUserOrThrow } from '@repo/user'
 import { redis } from '@repo/kv/redis'
 import { getFlashback } from '@/server/db/flashback'
-import { normalizeReviewConversation, normalizeReviewConversationPayload, normalizeReviewTranslations } from '@/lib/review'
+import {
+    normalizeReviewConversation,
+    normalizeReviewConversationPayload,
+    normalizeReviewTranslations,
+} from '@/lib/review'
 
 type CachedReviewProgress = {
     stage: string
@@ -26,9 +30,12 @@ export async function GET(req: NextRequest) {
         const progressKey = `review:${userId}:${date}:${lang}`
 
         // Check Redis first (fast path)
-        const cached = await redis.get(progressKey) as CachedReviewProgress | null
+        const cached = (await redis.get(progressKey)) as CachedReviewProgress | null
         if (cached) {
-            const normalized = normalizeReviewConversationPayload(cached.translations, cached.conversation)
+            const normalized = normalizeReviewConversationPayload(
+                cached.translations,
+                cached.conversation,
+            )
 
             if (cached.stage === 'complete') {
                 return NextResponse.json({

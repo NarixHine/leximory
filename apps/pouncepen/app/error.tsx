@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 
 export default function Error({
     error,
-    reset
+    reset,
 }: {
     error: Error & { digest?: string }
     reset: () => void
@@ -25,11 +25,7 @@ export default function Error({
                 >
                     重试
                 </Button>
-                <Button
-                    size='sm'
-                    as={Link}
-                    href='/'
-                >
+                <Button size='sm' as={Link} href='/'>
                     返回主页
                 </Button>
                 <Button

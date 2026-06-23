@@ -18,21 +18,21 @@ const topicsPrompt = (input: string) => ({
     
     ${input}`,
     maxOutputTokens: 100,
-    ...nanoAI
+    ...nanoAI,
 })
 
 const emojiPrompt = (input: string) => ({
     system: `你是一个emoji选择器。根据文章的主题和氛围，选择一个最能代表这篇文章的emoji且新颖不落俗套。只输出一个emoji，不要输出任何其他内容。禁止选取可能引起强烈视觉不适的emoji，即禁止选取任何昆虫emoji。`,
     prompt: `为以下文章选择一个有表现力的emoji：\n\n${input.slice(0, 500)}`,
     maxOutputTokens: 20,
-    ...nanoAI
+    ...nanoAI,
 })
 
 const titlePrompt = (input: string) => ({
     system: `你是一个标题生成器。根据文章内容生成一个简洁、准确、有吸引力的标题。用文章的原语言输出标题。只输出标题文本，不要输出任何其他内容、引号或标点符号包裹。`,
     prompt: `为以下文章生成一个标题：\n\n${input.slice(0, 2000)}`,
     maxOutputTokens: 60,
-    ...nanoAI
+    ...nanoAI,
 })
 
 const chunkText = (text: string, maxLength: number): string[] => {
@@ -67,7 +67,9 @@ const chunkText = (text: string, maxLength: number): string[] => {
                         sentenceChunk = ''
                     }
                     for (let i = 0; i < sentence.length; i += maxLength) {
-                        chunks.push(sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim())
+                        chunks.push(
+                            sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim(),
+                        )
                     }
                 } else if ((sentenceChunk + sentence).length >= maxLength) {
                     chunks.push(sentenceChunk.trim())
@@ -114,18 +116,34 @@ export const annotateFullArticle = inngest.createFunction(
             return chunkText(article, getLanguageStrategy(lang).maxChunkSize)
         })
 
-        const { topicsConfig, emojiConfig, titleConfig, annotationConfigs } = await step.run('get-annotate-configs', async () => {
-            const topicsConfig = topicsPrompt(article)
-            const emojiConfig = emojiPrompt(article)
-            const titleConfig = generateTitle ? titlePrompt(article) : undefined
-            const annotationConfigs = await Promise.all(chunks.map((chunk, index) => articleAnnotationPrompt(lang, chunk, onlyComments, userId, true, index === 0)))
-            return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
-        })
+        const { topicsConfig, emojiConfig, titleConfig, annotationConfigs } = await step.run(
+            'get-annotate-configs',
+            async () => {
+                const topicsConfig = topicsPrompt(article)
+                const emojiConfig = emojiPrompt(article)
+                const titleConfig = generateTitle ? titlePrompt(article) : undefined
+                const annotationConfigs = await Promise.all(
+                    chunks.map((chunk, index) =>
+                        articleAnnotationPrompt(
+                            lang,
+                            chunk,
+                            onlyComments,
+                            userId,
+                            true,
+                            index === 0,
+                        ),
+                    ),
+                )
+                return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
+            },
+        )
 
         const parallelTasks: Promise<unknown>[] = [
             step.ai.wrap('annotate-topics', generateText, topicsConfig),
             step.ai.wrap('generate-emoji', generateText, emojiConfig),
-            ...annotationConfigs.map(async (config, index) => step.ai.wrap(`annotate-article-${index}`, generateText, config))
+            ...annotationConfigs.map(async (config, index) =>
+                step.ai.wrap(`annotate-article-${index}`, generateText, config),
+            ),
         ]
         if (titleConfig) {
             parallelTasks.push(step.ai.wrap('generate-title', generateText, titleConfig))
@@ -134,10 +152,18 @@ export const annotateFullArticle = inngest.createFunction(
         const results = await Promise.all(parallelTasks)
         const topics = results[0] as Awaited<ReturnType<typeof generateText>>
         const emoji = results[1] as Awaited<ReturnType<typeof generateText>>
-        const annotatedChunks = results.slice(2, 2 + annotationConfigs.length) as Awaited<ReturnType<typeof generateText>>[]
-        const titleResult = titleConfig ? results[2 + annotationConfigs.length] as Awaited<ReturnType<typeof generateText>> : undefined
+        const annotatedChunks = results.slice(2, 2 + annotationConfigs.length) as Awaited<
+            ReturnType<typeof generateText>
+        >[]
+        const titleResult = titleConfig
+            ? (results[2 + annotationConfigs.length] as Awaited<ReturnType<typeof generateText>>)
+            : undefined
 
-        const content = annotatedChunks.map(chunk => chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '').join('\n\n')
+        const content = annotatedChunks
+            .map(chunk =>
+                chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '',
+            )
+            .join('\n\n')
 
         const textUrl = `/library/${libId}/${textId}`
 
@@ -145,14 +171,25 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            const generatedEmoji = emoji.steps[0].content[0].type === 'text' ? emoji.steps[0].content[0].text.trim() : undefined
-            const generatedTitle = titleResult?.steps[0].content[0].type === 'text' ? titleResult.steps[0].content[0].text.trim().replace(/^["'""''《》]+|["'""''《》]+$/g, '') : undefined
+            const generatedEmoji =
+                emoji.steps[0].content[0].type === 'text'
+                    ? emoji.steps[0].content[0].text.trim()
+                    : undefined
+            const generatedTitle =
+                titleResult?.steps[0].content[0].type === 'text'
+                    ? titleResult.steps[0].content[0].text
+                          .trim()
+                          .replace(/^["'""''《》]+|["'""''《》]+$/g, '')
+                    : undefined
             await updateText({
                 id: textId,
                 content: fixDumbPunctuation(content),
-                topics: topics.steps[0].content[0].type === 'text' ? topics.steps[0].content[0].text.split('||') : [],
+                topics:
+                    topics.steps[0].content[0].type === 'text'
+                        ? topics.steps[0].content[0].text.split('||')
+                        : [],
                 emoji: generatedEmoji,
-                title: generatedTitle
+                title: generatedTitle,
             })
             revalidateTag(`texts:${libId}`, 'max')
         })
@@ -165,13 +202,16 @@ export const annotateFullArticle = inngest.createFunction(
         })
 
         if (hasSubs && subscription) {
-            await step.sendEvent('notify-user-on-article-imported', notifyEvent.create({
-                title: 'Leximory',
-                body: '😎 导入文章注解完毕啦！',
-                url: prefixUrl(textUrl),
-                subscription,
-                uid: userId,
-            }))
+            await step.sendEvent(
+                'notify-user-on-article-imported',
+                notifyEvent.create({
+                    title: 'Leximory',
+                    body: '😎 导入文章注解完毕啦！',
+                    url: prefixUrl(textUrl),
+                    subscription,
+                    uid: userId,
+                }),
+            )
         }
-    }
+    },
 )

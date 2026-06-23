@@ -1,6 +1,11 @@
 'use client'
 
-import { markedItemsAtom, removeMarkedItemAtom, clearMarkedItemsAtom, type MarkedItem } from '../paper/atoms'
+import {
+    markedItemsAtom,
+    removeMarkedItemAtom,
+    clearMarkedItemsAtom,
+    type MarkedItem,
+} from '../paper/atoms'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { Button } from '@heroui/react'
 import { BookmarkSimpleIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
@@ -21,7 +26,9 @@ export function MarkedItemsPanel() {
                 <div className='flex items-center gap-1 mb-1'>
                     <BookmarkSimpleIcon className='size-4 text-secondary' />
                     <span className='text-sm font-medium'>标记词汇</span>
-                    <span className='text-xs text-default-500 font-mono'>({markedItems.length})</span>
+                    <span className='text-xs text-default-500 font-mono'>
+                        ({markedItems.length})
+                    </span>
                 </div>
                 <Button
                     isIconOnly
@@ -36,7 +43,7 @@ export function MarkedItemsPanel() {
                 />
             </div>
             <div className='flex flex-wrap gap-2'>
-                {markedItems.map((item) => (
+                {markedItems.map(item => (
                     <MarkedItemButton
                         key={item.id}
                         item={item}
@@ -48,7 +55,7 @@ export function MarkedItemsPanel() {
     )
 }
 
-function MarkedItemButton({ item, onRemove }: { item: MarkedItem, onRemove: () => void }) {
+function MarkedItemButton({ item, onRemove }: { item: MarkedItem; onRemove: () => void }) {
     const handleJump = () => {
         const element = getElementByXPath(item.xpath)
         if (element) {
@@ -94,7 +101,7 @@ function getElementByXPath(xpath: string): Element | null {
             document,
             null,
             XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
+            null,
         )
         return result.singleNodeValue as Element | null
     } catch {

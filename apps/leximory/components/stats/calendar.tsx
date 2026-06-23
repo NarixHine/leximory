@@ -22,7 +22,7 @@ const colorPalette = {
     25: 'bg-default-600',
     30: 'bg-default-700',
     35: 'bg-default-800',
-    45: 'bg-default-900'
+    45: 'bg-default-900',
 }
 
 // Function to determine cell color based on word count
@@ -56,9 +56,11 @@ function getTextColor(count: number): string {
 }
 
 export default function VocabularyCalendar({ wordCountData, isLoading }: VocabularyCalendarProps) {
-    return <Suspense>
-        <VocabularyCalendarUI wordCountData={wordCountData} isLoading={isLoading} />
-    </Suspense>
+    return (
+        <Suspense>
+            <VocabularyCalendarUI wordCountData={wordCountData} isLoading={isLoading} />
+        </Suspense>
+    )
 }
 
 async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCalendarProps) {
@@ -84,15 +86,20 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
     return (
-        <FlatCard background='solid' className={cn(
-            'border-none bg-secondary-50',
-            isLoading && 'animate-pulse'
-        )}>
+        <FlatCard
+            background='solid'
+            className={cn('border-none bg-secondary-50', isLoading && 'animate-pulse')}
+        >
             <CardBody className='p-6 pt-4'>
                 <div className='grid grid-cols-7 gap-2'>
                     {/* Day headers */}
                     {dayNames.map((day, index) => (
-                        <div key={index} className={cn('text-center text-xs font-medium text-default-500 font-mono py-1',)}>
+                        <div
+                            key={index}
+                            className={cn(
+                                'text-center text-xs font-medium text-default-500 font-mono py-1',
+                            )}
+                        >
                             {day}
                         </div>
                     ))}
@@ -103,7 +110,7 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
                     ))}
 
                     {/* Day cells */}
-                    {days.map((day) => {
+                    {days.map(day => {
                         const dayMoment = momentSH({ year: currentYear, month: currentMonth, day })
                         const dateString = dayMoment.format('YYYY-MM-DD')
                         const wordCount = wordCountData.get(dateString) || 0
@@ -119,8 +126,10 @@ async function VocabularyCalendarUI({ wordCountData, isLoading }: VocabularyCale
                                     'text-xs', // Smaller text for the count
                                     textColor,
                                     'transition-all duration-200 hover:scale-105',
-                                    isToday ? 'ring-1 ring-offset-1 ring-offset-background ring-gray-300 dark:ring-gray-600' : '',
-                                    bgColor
+                                    isToday
+                                        ? 'ring-1 ring-offset-1 ring-offset-background ring-gray-300 dark:ring-gray-600'
+                                        : '',
+                                    bgColor,
                                 )}
                             >
                                 {wordCount > 0 ? (

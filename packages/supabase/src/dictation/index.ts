@@ -7,7 +7,11 @@ export type { DictationContent } from '@repo/schema/chunk-note'
 /**
  * Gets a dictation by paper ID.
  */
-export async function getDictation({ paperId }: { paperId: number }): Promise<{ id: number; content: DictationContent; createdAt: string } | null> {
+export async function getDictation({
+    paperId,
+}: {
+    paperId: number
+}): Promise<{ id: number; content: DictationContent; createdAt: string } | null> {
     const { data, error } = await supabase
         .from('dictations')
         .select('id, content, created_at')
@@ -32,7 +36,13 @@ export async function getDictation({ paperId }: { paperId: number }): Promise<{ 
 /**
  * Creates a new dictation for a paper.
  */
-export async function createDictation({ paperId, content }: { paperId: number; content: DictationContent }) {
+export async function createDictation({
+    paperId,
+    content,
+}: {
+    paperId: number
+    content: DictationContent
+}) {
     const { data } = await supabase
         .from('dictations')
         .insert({
@@ -50,17 +60,19 @@ export async function createDictation({ paperId, content }: { paperId: number; c
  * Deletes a dictation by ID.
  */
 export async function deleteDictation({ id }: { id: number }) {
-    await supabase
-        .from('dictations')
-        .delete()
-        .eq('id', id)
-        .throwOnError()
+    await supabase.from('dictations').delete().eq('id', id).throwOnError()
 }
 
 /**
  * Updates a dictation's content (e.g., to remove an entry).
  */
-export async function updateDictationContent({ id, content }: { id: number; content: DictationContent }) {
+export async function updateDictationContent({
+    id,
+    content,
+}: {
+    id: number
+    content: DictationContent
+}) {
     const { data } = await supabase
         .from('dictations')
         .update({ content })

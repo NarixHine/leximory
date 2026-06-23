@@ -1,4 +1,8 @@
-import Library, { ConfirmUnstarRoot, LibraryAddButton, LibrarySkeleton } from '@/app/library/components/lib'
+import Library, {
+    ConfirmUnstarRoot,
+    LibraryAddButton,
+    LibrarySkeleton,
+} from '@/app/library/components/lib'
 import { isListedFilter, OrFilter } from '@/server/auth/role'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -15,7 +19,7 @@ import ImportUI, { ImportUISkeleton } from './components/import'
 import { Spacer } from '@heroui/spacer'
 
 export const metadata: Metadata = {
-    title: '文库'
+    title: '文库',
 }
 
 async function getData(orFilter: OrFilter, userId: string) {
@@ -35,9 +39,7 @@ export default function Page() {
                     </span>
                 </div>
                 <div className='flex items-end gap-0.5'>
-                    <h1 className='font-kaiti text-3xl'>
-                        我的文库
-                    </h1>
+                    <h1 className='font-kaiti text-3xl'>我的文库</h1>
                     <div className='flex-1' />
                     <LinkButton
                         href='/about'
@@ -45,26 +47,32 @@ export default function Page() {
                         isIconOnly
                         variant='light'
                         color='default'
-                        startContent={<LoadingIndicatorWrapper><PiInfo className='size-5' /></LoadingIndicatorWrapper>}
+                        startContent={
+                            <LoadingIndicatorWrapper>
+                                <PiInfo className='size-5' />
+                            </LoadingIndicatorWrapper>
+                        }
                     />
                     <LibraryAddButton />
                 </div>
             </header>
 
             {/* Libraries */}
-            <Suspense fallback={
-                <>
-                    <ImportUISkeleton />
-                    <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
-                        <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
-                            <LibrarySkeleton rowCount={4} />
-                            <LibrarySkeleton rowCount={1} />
-                            <LibrarySkeleton rowCount={2} />
-                            <LibrarySkeleton rowCount={2} />
-                        </div>
-                    </section>
-                </>
-            }>
+            <Suspense
+                fallback={
+                    <>
+                        <ImportUISkeleton />
+                        <section className='w-full max-w-125 sm:max-w-150 mx-auto'>
+                            <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
+                                <LibrarySkeleton rowCount={4} />
+                                <LibrarySkeleton rowCount={1} />
+                                <LibrarySkeleton rowCount={2} />
+                                <LibrarySkeleton rowCount={2} />
+                            </div>
+                        </section>
+                    </>
+                }
+            >
                 <UserLibraryList />
             </Suspense>
 
@@ -82,8 +90,11 @@ async function UserLibraryList() {
     return <LibraryList userId={userId} orFilter={await isListedFilter()} />
 }
 
-async function LibraryList({ userId, orFilter }: {
-    userId: string,
+async function LibraryList({
+    userId,
+    orFilter,
+}: {
+    userId: string
     orFilter: Awaited<ReturnType<typeof isListedFilter>>
 }) {
     'use cache'
@@ -91,43 +102,50 @@ async function LibraryList({ userId, orFilter }: {
     cacheLife('days')
     const [data, archives] = await Promise.all([
         getData(orFilter, userId),
-        getArchivedLibs({ userId })
+        getArchivedLibs({ userId }),
     ])
-    const compactLibs = data.filter(({ lib }) => lib.shadow || archives.includes(lib.id)).sort((a, b) => (b.lib.shadow ? 1 : 0) - (a.lib.shadow ? 1 : 0))
+    const compactLibs = data
+        .filter(({ lib }) => lib.shadow || archives.includes(lib.id))
+        .sort((a, b) => (b.lib.shadow ? 1 : 0) - (a.lib.shadow ? 1 : 0))
     const normalLibs = data.filter(({ lib }) => !lib.shadow && !archives.includes(lib.id))
     return (
         <>
             <ConfirmUnstarRoot />
 
             {/* Import CTA */}
-            <ImportUI libraries={data.map(({ lib }) => ({
-                id: lib.id,
-                name: lib.name,
-                lang: lib.lang,
-                shadow: lib.shadow,
-                archived: archives.includes(lib.id),
-            }))} />
+            <ImportUI
+                libraries={data.map(({ lib }) => ({
+                    id: lib.id,
+                    name: lib.name,
+                    lang: lib.lang,
+                    shadow: lib.shadow,
+                    archived: archives.includes(lib.id),
+                }))}
+            />
 
             <Spacer y={7} />
 
             {/* Active libraries — CSS columns masonry */}
             <section className='w-full max-w-125 sm:max-w-150 mx-auto' aria-label='Your libraries'>
                 <div className='columns-1 sm:columns-2 sm:gap-4 space-y-4'>
-                    {normalLibs.map(({ lib, isStarred }) => lib && (
-                        <Library
-                            price={lib.price}
-                            shadow={false}
-                            access={lib.access}
-                            isStarred={isStarred}
-                            id={lib.id}
-                            key={lib.id}
-                            name={lib.name}
-                            lang={lib.lang}
-                            isOwner={lib.owner === userId}
-                            archived={false}
-                            prompt={lib.prompt}
-                        />
-                    ))}
+                    {normalLibs.map(
+                        ({ lib, isStarred }) =>
+                            lib && (
+                                <Library
+                                    price={lib.price}
+                                    shadow={false}
+                                    access={lib.access}
+                                    isStarred={isStarred}
+                                    id={lib.id}
+                                    key={lib.id}
+                                    name={lib.name}
+                                    lang={lib.lang}
+                                    isOwner={lib.owner === userId}
+                                    archived={false}
+                                    prompt={lib.prompt}
+                                />
+                            ),
+                    )}
                 </div>
             </section>
 
@@ -143,21 +161,24 @@ async function LibraryList({ userId, orFilter }: {
                         <div className='flex-1 h-px bg-secondary-300/70' />
                     </div>
                     <div className='flex flex-wrap gap-2 lg:mx-auto lg:w-170 lg:pl-15'>
-                        {compactLibs.map(({ lib, isStarred }) => lib && (
-                            <Library
-                                price={lib.price}
-                                shadow={lib.shadow}
-                                access={lib.access}
-                                isStarred={isStarred}
-                                id={lib.id}
-                                key={lib.id}
-                                name={lib.name}
-                                lang={lib.lang}
-                                isOwner={lib.owner === userId}
-                                archived={archives.includes(lib.id)}
-                                prompt={lib.prompt}
-                            />
-                        ))}
+                        {compactLibs.map(
+                            ({ lib, isStarred }) =>
+                                lib && (
+                                    <Library
+                                        price={lib.price}
+                                        shadow={lib.shadow}
+                                        access={lib.access}
+                                        isStarred={isStarred}
+                                        id={lib.id}
+                                        key={lib.id}
+                                        name={lib.name}
+                                        lang={lib.lang}
+                                        isOwner={lib.owner === userId}
+                                        archived={archives.includes(lib.id)}
+                                        prompt={lib.prompt}
+                                    />
+                                ),
+                        )}
                     </div>
                 </section>
             )}

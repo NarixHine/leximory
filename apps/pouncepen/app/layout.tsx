@@ -7,55 +7,55 @@ import UserAvatar from '@repo/ui/user'
 import { CostTable } from './components/cost-table'
 
 export const metadata: Metadata = {
-  title: {
-    default: 'PouncePen',
-    template: '%s | PouncePen',
-  }
+    title: {
+        default: 'PouncePen',
+        template: '%s | PouncePen',
+    },
 }
 
 export const ENGLISH_MONO = Source_Code_Pro({
-  subsets: ['latin'],
-  weight: ['400'],
-  style: ['normal', 'italic'],
-  variable: '--font-english-mono',
+    subsets: ['latin'],
+    weight: ['400'],
+    style: ['normal', 'italic'],
+    variable: '--font-english-mono',
 })
 
 const sans = Rethink_Sans({
-  variable: '--font-sans',
-  weight: 'variable',
-  subsets: ['latin'],
+    variable: '--font-sans',
+    weight: 'variable',
+    subsets: ['latin'],
 })
 
 const serif = Instrument_Serif({
-  variable: '--font-formal',
-  weight: '400',
-  style: ['normal', 'italic'],
-  subsets: ['latin'],
+    variable: '--font-formal',
+    weight: '400',
+    style: ['normal', 'italic'],
+    subsets: ['latin'],
 })
 
 const chinese = localFont({
-  src: './chinese.woff2',
-  variable: '--font-chinese',
-  display: 'swap',
+    src: './chinese.woff2',
+    variable: '--font-chinese',
+    display: 'swap',
 })
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode
+    children: React.ReactNode
 }>) {
-  return (
-    <html lang='zh-CN' suppressHydrationWarning>
-      <body
-        className={`${sans.variable} ${chinese.variable} ${serif.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
-      >
-        <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
-          {children}
-          <div className='fixed top-3 right-3'>
-            <UserAvatar quotaModalChildren={<CostTable />} />
-          </div>
-        </Providers>
-      </body>
-    </html>
-  )
+    return (
+        <html lang='zh-CN' suppressHydrationWarning>
+            <body
+                className={`${sans.variable} ${chinese.variable} ${serif.variable} ${ENGLISH_MONO.variable} antialiased font-ui`}
+            >
+                <Providers themeProps={{ attribute: 'class', enableSystem: true }}>
+                    {children}
+                    <div className='fixed top-3 right-3'>
+                        <UserAvatar quotaModalChildren={<CostTable />} />
+                    </div>
+                </Providers>
+            </body>
+        </html>
+    )
 }

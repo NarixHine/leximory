@@ -18,19 +18,27 @@ import { DateTime } from 'luxon'
 import { useRouter } from 'next/navigation'
 import { EmojiCover } from '@/components/emoji-cover'
 
-export function TagPills({ tags, parentClassName, classNames, ...props }: { tags: string[], parentClassName?: string } & ChipProps) {
+export function TagPills({
+    tags,
+    parentClassName,
+    classNames,
+    ...props
+}: { tags: string[]; parentClassName?: string } & ChipProps) {
     if (!tags.length) return null
     return (
         <div className={cn('flex flex-wrap gap-1.5', parentClassName)}>
-            {tags.slice(0, 3).map((tag) => (
+            {tags.slice(0, 3).map(tag => (
                 <Chip
                     variant='bordered'
                     color='secondary'
                     size='sm'
                     classNames={{
                         ...classNames,
-                        base: cn('border-divider border-1 text-[10px] font-kaiti', classNames?.base),
-                        content: cn('px-0.75 tracking-wide', classNames?.content)
+                        base: cn(
+                            'border-divider border-1 text-[10px] font-kaiti',
+                            classNames?.base,
+                        ),
+                        content: cn('px-0.75 tracking-wide', classNames?.content),
                     }}
                     key={tag}
                     {...props}
@@ -43,8 +51,18 @@ export function TagPills({ tags, parentClassName, classNames, ...props }: { tags
 }
 
 /** Large article card with emoji above, title below. */
-export function LeftCard({ id, title, topics, hasEbook, emoji }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+export function LeftCard({
+    id,
+    title,
+    topics,
+    hasEbook,
+    emoji,
+}: {
+    id: string
+    title: string
+    topics: string[]
+    hasEbook: boolean
+    emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -67,8 +85,20 @@ export function LeftCard({ id, title, topics, hasEbook, emoji }: {
 }
 
 /** Center hero card — large emoji, centered title + optional subtitle. */
-export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null, createdAt: string
+export function HeroCard({
+    id,
+    title,
+    topics,
+    hasEbook,
+    emoji,
+    createdAt,
+}: {
+    id: string
+    title: string
+    topics: string[]
+    hasEbook: boolean
+    emoji: string | null
+    createdAt: string
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -94,8 +124,18 @@ export function HeroCard({ id, title, topics, hasEbook, emoji, createdAt }: {
 }
 
 /** Right-side compact card — title left, emoji right. */
-export function RightCard({ id, title, topics, hasEbook, emoji }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+export function RightCard({
+    id,
+    title,
+    topics,
+    hasEbook,
+    emoji,
+}: {
+    id: string
+    title: string
+    topics: string[]
+    hasEbook: boolean
+    emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
@@ -120,13 +160,26 @@ export function RightCard({ id, title, topics, hasEbook, emoji }: {
 }
 
 /** Compact card for additional articles below hero. */
-export function CompactCard({ id, title, topics, hasEbook, emoji }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji: string | null
+export function CompactCard({
+    id,
+    title,
+    topics,
+    hasEbook,
+    emoji,
+}: {
+    id: string
+    title: string
+    topics: string[]
+    hasEbook: boolean
+    emoji: string | null
 }) {
     const lib = useAtomValue(libAtom)
     const allTopics = hasEbook ? [...topics, '电子书'] : topics
     return (
-        <Link href={`/library/${lib}/${id}`} className='group flex flex-row-reverse sm:flex-col cursor-pointer gap-3'>
+        <Link
+            href={`/library/${lib}/${id}`}
+            className='group flex flex-row-reverse sm:flex-col cursor-pointer gap-3'
+        >
             <EmojiCover
                 emoji={resolveEmoji(emoji, hasEbook)}
                 articleId={id}
@@ -149,85 +202,121 @@ export function CompactCard({ id, title, topics, hasEbook, emoji }: {
 export function AddTextButton() {
     const lib = useAtomValue(libAtom)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
-    const { register, handleSubmit, setValue, formState } = useForm<{ url: string, title: string }>({
-        defaultValues: { url: '', title: '' }
-    })
+    const { register, handleSubmit, setValue, formState } = useForm<{ url: string; title: string }>(
+        {
+            defaultValues: { url: '', title: '' },
+        },
+    )
     const lang = useAtomValue(langAtom)
     const router = useRouter()
 
-    return <>
-        <Card
-            isPressable
-            onPress={onOpen}
-            shadow='none'
-            className='p-0 bg-default-50 rounded-4xl'
-        >
-            <CardBody
-                className='group p-0 flex aspect-2/1 w-full cursor-pointer items-center justify-center rounded-xl transition-colors'
+    return (
+        <>
+            <Card
+                isPressable
+                onPress={onOpen}
+                shadow='none'
+                className='p-0 bg-default-50 rounded-4xl'
             >
-                <PiPlusBold className='h-8 w-8 text-default-400 transition-transform group-hover:scale-110' />
-            </CardBody>
-        </Card>
-        <Form
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            title='创建文章'
-            confirmText='导入'
-            isLoading={formState.isSubmitting}
-            onSubmit={handleSubmit(async (data) => {
-                if (data.url) {
-                    try {
-                        const { title, content } = await scrapeArticle(data.url)
-                        if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                            toast.error('识别内容过长，请手动录入')
-                            return
+                <CardBody className='group p-0 flex aspect-2/1 w-full cursor-pointer items-center justify-center rounded-xl transition-colors'>
+                    <PiPlusBold className='h-8 w-8 text-default-400 transition-transform group-hover:scale-110' />
+                </CardBody>
+            </Card>
+            <Form
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                title='创建文章'
+                confirmText='导入'
+                isLoading={formState.isSubmitting}
+                onSubmit={handleSubmit(async data => {
+                    if (data.url) {
+                        try {
+                            const { title, content } = await scrapeArticle(data.url)
+                            if (content.length > getLanguageStrategy(lang).maxArticleLength) {
+                                toast.error('识别内容过长，请手动录入')
+                                return
+                            }
+                            const textId = await addAndGenerateText({ title, content, lib })
+                            router.push(`/library/${lib}/${textId}`)
+                        } catch {
+                            toast.error('文章解析失败，请手动录入')
                         }
-                        const textId = await addAndGenerateText({ title, content, lib })
-                        router.push(`/library/${lib}/${textId}`)
-                    } catch {
-                        toast.error('文章解析失败，请手动录入')
+                    } else if (data.title) {
+                        await addText({ title: data.title, lib })
                     }
-                } else if (data.title) {
-                    await addText({ title: data.title, lib })
-                }
-            })}
-        >
-            <Tabs aria-label='方式'>
-                <Tab
-                    key='text'
-                    title={
-                        <div className='flex items-center space-x-2'>
-                            <PiLinkSimpleHorizontal />
-                            <span>网址导入外刊</span>
-                        </div>
-                    }
-                >
-                    <Input type='url' validationBehavior='aria' placeholder='https://www.theatlantic.com/' variant='bordered' color='primary' {...register('url', {
-                        onChange: () => setValue('title', '')
-                    })} />
-                </Tab>
-                <Tab key='ebook'
-                    title={
-                        <div className='flex items-center space-x-2'>
-                            <PiKeyboard />
-                            <span>手动输入标题</span>
-                        </div>
-                    }
-                >
-                    <Input placeholder='标题' variant='bordered' color='primary' {...register('title', {
-                        onChange: () => setValue('url', '')
-                    })} />
-                </Tab>
-            </Tabs>
-        </Form>
-    </>
+                })}
+            >
+                <Tabs aria-label='方式'>
+                    <Tab
+                        key='text'
+                        title={
+                            <div className='flex items-center space-x-2'>
+                                <PiLinkSimpleHorizontal />
+                                <span>网址导入外刊</span>
+                            </div>
+                        }
+                    >
+                        <Input
+                            type='url'
+                            validationBehavior='aria'
+                            placeholder='https://www.theatlantic.com/'
+                            variant='bordered'
+                            color='primary'
+                            {...register('url', {
+                                onChange: () => setValue('title', ''),
+                            })}
+                        />
+                    </Tab>
+                    <Tab
+                        key='ebook'
+                        title={
+                            <div className='flex items-center space-x-2'>
+                                <PiKeyboard />
+                                <span>手动输入标题</span>
+                            </div>
+                        }
+                    >
+                        <Input
+                            placeholder='标题'
+                            variant='bordered'
+                            color='primary'
+                            {...register('title', {
+                                onChange: () => setValue('url', ''),
+                            })}
+                        />
+                    </Tab>
+                </Tabs>
+            </Form>
+        </>
+    )
 }
 
 /** Backward-compatible default export — extra props kept for consumers outside /library. */
-export default function Text({ id, title, topics, hasEbook, emoji, ...rest }: {
-    id: string, title: string, topics: string[], hasEbook: boolean, emoji?: string | null,
-    createdAt?: string, disablePrefetch?: boolean, disableNavigation?: boolean,
-    visitStatus?: 'loading' | 'visited' | 'not-visited',
+export default function Text({
+    id,
+    title,
+    topics,
+    hasEbook,
+    emoji,
+    ...rest
+}: {
+    id: string
+    title: string
+    topics: string[]
+    hasEbook: boolean
+    emoji?: string | null
+    createdAt?: string
+    disablePrefetch?: boolean
+    disableNavigation?: boolean
+    visitStatus?: 'loading' | 'visited' | 'not-visited'
 }) {
-    return <CompactCard id={id} title={title} topics={topics} hasEbook={hasEbook} emoji={emoji ?? null} />
+    return (
+        <CompactCard
+            id={id}
+            title={title}
+            topics={topics}
+            hasEbook={hasEbook}
+            emoji={emoji ?? null}
+        />
+    )
 }

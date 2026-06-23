@@ -3,7 +3,11 @@ import { redis } from './redis'
 import { cacheTag } from 'next/cache'
 import { seconds } from 'itty-time'
 
-export async function incrementQuota(userId: string, type: 'commentary' | 'audio' = 'commentary', incrBy: number = 1) {
+export async function incrementQuota(
+    userId: string,
+    type: 'commentary' | 'audio' = 'commentary',
+    incrBy: number = 1,
+) {
     const quotaKey = `user:${userId}:${type}_quota`
     const quota = await redis.incrbyfloat(quotaKey, incrBy)
 
@@ -14,7 +18,10 @@ export async function incrementQuota(userId: string, type: 'commentary' | 'audio
     return quota
 }
 
-export async function getQuota(userId: string, type: 'commentary' | 'audio' = 'commentary'): Promise<number> {
+export async function getQuota(
+    userId: string,
+    type: 'commentary' | 'audio' = 'commentary',
+): Promise<number> {
     'use cache'
     cacheTag(`quota:${userId}:${type}`)
 
@@ -31,21 +38,21 @@ export async function getQuotaTTL(userId: string, type: 'commentary' | 'audio' =
 }
 
 export const getAnnotationCache = async ({ hash }: { hash: string }) => {
-    const cache = await redis.get(`annotation:${hash}`) as string | null
+    const cache = (await redis.get(`annotation:${hash}`)) as string | null
     return cache
 }
 
-export const setAnnotationCache = async ({ hash, cache }: { hash: string, cache: string }) => {
+export const setAnnotationCache = async ({ hash, cache }: { hash: string; cache: string }) => {
     await redis.set(`annotation:${hash}`, cache)
     await redis.expire(`annotation:${hash}`, seconds('1 week'))
 }
 
 export const getAskCache = async ({ hash }: { hash: string }) => {
-    const cache = await redis.get(`ask:${hash}`) as string | null
+    const cache = (await redis.get(`ask:${hash}`)) as string | null
     return cache
 }
 
-export const setAskCache = async ({ hash, cache }: { hash: string, cache: string }) => {
+export const setAskCache = async ({ hash, cache }: { hash: string; cache: string }) => {
     await redis.set(`ask:${hash}`, cache)
     await redis.expire(`ask:${hash}`, seconds('1 week'))
 }
@@ -86,7 +93,13 @@ export const isDictationGenerating = async ({ paperId }: { paperId: number }): P
  * the expected `baseVersion` (optimistic concurrency control).
  * Returns the new version on success, or `null` on conflict.
  */
-export const advancePaperVersion = async ({ paperId, baseVersion }: { paperId: number, baseVersion: number }): Promise<number | null> => {
+export const advancePaperVersion = async ({
+    paperId,
+    baseVersion,
+}: {
+    paperId: number
+    baseVersion: number
+}): Promise<number | null> => {
     const key = paperVersionKey(paperId)
     // Lua script: increment version only if current matches baseVersion.
     // Returns new version on success, -1 on conflict.
@@ -100,7 +113,7 @@ export const advancePaperVersion = async ({ paperId, baseVersion }: { paperId: n
          end
          return -1`,
         [key],
-        [baseVersion, seconds('7 days')]
+        [baseVersion, seconds('7 days')],
     )
     return result === -1 ? null : result
 }

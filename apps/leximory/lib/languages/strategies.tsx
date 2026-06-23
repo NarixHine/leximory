@@ -16,19 +16,36 @@ export const englishStrategy = createLanguageStrategy({
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const wordCount = sanitizedText.split(/\s+/).length
-        return <span className='text-lg tracking-wide'>{wordCount} Words, {Math.ceil(wordCount / 120)}-Minute Read</span>
+        return (
+            <span className='text-lg tracking-wide'>
+                {wordCount} Words, {Math.ceil(wordCount / 120)}-Minute Read
+            </span>
+        )
     },
-    exampleSentencePrompt: '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
+    exampleSentencePrompt:
+        '必须在语境义部分以斜体附上该词的例句。形如word||original||meaning: *example sentence*||etymology||cognates。例如：transpires||transpire||**v. 被表明是** `trænˈspaɪə` happen; become known: *It later transpired that he was a spy.*||原形容水汽"升腾": ***trans-*** (across) + ***spire*** (breathe) ||***trans-*** (across) → **trans**fer (转移), **trans**late (翻译); ***spire*** (breathe) → in**spire** (吹入灵感, 鼓舞)。',
     dictionaryLink: (word: string) => `https://www.etymonline.com/word/${word}`,
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>is <span className='text-white/85'>learning English</span> with the <span className='text-white/85'>Leximory Library</span> ↓</span>
+        learningWith: (
+            <span className='text-white/65'>
+                is <span className='text-white/85'>learning English</span> with the{' '}
+                <span className='text-white/85'>Leximory Library</span> ↓
+            </span>
+        ),
     },
     reviewLabels: {
-        lockMessage: (requiredTranslations) => requiredTranslations > 0
-            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, and then come back to me. Meow.</span>
-            : <span className='font-cute text-2xl leading-tight'>There are no translation exercises available to unlock today.</span>
+        lockMessage: requiredTranslations =>
+            requiredTranslations > 0 ? (
+                <span className='font-cute text-2xl leading-tight'>
+                    Complete 60% of your reviews, and then come back to me. Meow.
+                </span>
+            ) : (
+                <span className='font-cute text-2xl leading-tight'>
+                    There are no translation exercises available to unlock today.
+                </span>
+            ),
     },
-    articleTitleFont: 'font-formal leading-tight italic'
+    articleTitleFont: 'font-formal leading-tight italic',
 })
 
 export const chineseStrategy = createLanguageStrategy({
@@ -41,23 +58,41 @@ export const chineseStrategy = createLanguageStrategy({
     maxArticleLength: 5000,
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
-        const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? []).length
-        return <span className='text-lg tracking-wide font-kaiti'>{charCount}字，阅读约{Math.ceil(charCount / ZH_CHARS_PER_MINUTE)}分钟</span>
+        const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])
+            .length
+        return (
+            <span className='text-lg tracking-wide font-kaiti'>
+                {charCount}字，阅读约{Math.ceil(charCount / ZH_CHARS_PER_MINUTE)}分钟
+            </span>
+        )
     },
-    exampleSentencePrompt: '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词**简短例句**（例句必须含有被注释的词，且例句中被注释词的义项必须与原文语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
+    exampleSentencePrompt:
+        '必须在语境义部分以「」包裹附上含有该词的古汉语或古诗词**简短例句**（例句必须含有被注释的词，且例句中被注释词的义项必须与原文语境义相同），例句中该词以Markdown粗体表示。形如：词语||词语||释义「例句」',
     proseClassName: 'prose-lg font-formal dropcap-zh',
     defineLabel: '注解',
     defineClassName: 'font-formal font-semibold',
     dictionaryLink: (word: string) => `https://www.zdic.net/hans/${word}`,
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>正在阅读<span className='text-white/90'>此 Leximory 文库</span>来<span className='text-white/90'>学习文言文</span> ↓</span>
+        learningWith: (
+            <span className='text-white/65'>
+                正在阅读<span className='text-white/90'>此 Leximory 文库</span>来
+                <span className='text-white/90'>学习文言文</span> ↓
+            </span>
+        ),
     },
     reviewLabels: {
-        lockMessage: (requiredTranslations) => requiredTranslations > 0
-            ? <span className='font-cute text-base leading-relaxed'>需完成 60% 词汇复习，小黑猫才会轻轻开口。</span>
-            : <span className='font-cute text-base leading-relaxed'>今日没有可用于解锁的翻译题。</span>
+        lockMessage: requiredTranslations =>
+            requiredTranslations > 0 ? (
+                <span className='font-cute text-base leading-relaxed'>
+                    需完成 60% 词汇复习，小黑猫才会轻轻开口。
+                </span>
+            ) : (
+                <span className='font-cute text-base leading-relaxed'>
+                    今日没有可用于解锁的翻译题。
+                </span>
+            ),
     },
-    articleTitleFont: 'font-kaiti'
+    articleTitleFont: 'font-kaiti',
 })
 
 export const japaneseStrategy = createLanguageStrategy({
@@ -70,25 +105,44 @@ export const japaneseStrategy = createLanguageStrategy({
     maxArticleLength: 10000,
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
-        const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? []).length
-        return <span className='text-lg tracking-wide font-kaiti'>{charCount}字，約{Math.ceil(charCount / JA_CHARS_PER_MINUTE)}分で読了</span>
+        const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])
+            .length
+        return (
+            <span className='text-lg tracking-wide font-kaiti'>
+                {charCount}字，約{Math.ceil(charCount / JA_CHARS_PER_MINUTE)}分で読了
+            </span>
+        )
     },
-    exampleSentencePrompt: '必须在语境义部分以「」包裹附上该词的例句，例句中该词以粗体表示。形如単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である。「彼女は**可哀想**に見えた。」||**かわい**（可悲）＋**そう**（……的样子）',
+    exampleSentencePrompt:
+        '必须在语境义部分以「」包裹附上该词的例句，例句中该词以粗体表示。形如単語||原形||意味：*例文*||語源。例如：可哀想||可哀想||**［形動］（かわいそう／可怜）**気の毒である。「彼女は**可哀想**に見えた。」||**かわい**（可悲）＋**そう**（……的样子）',
     isRTL: true,
     lineHeight: '1.7 !important',
-    pageFormat: (page, total, chapter) => `${chapter ? chapter.concat(' ') : ''}${page}/${total} ページ目`,
+    pageFormat: (page, total, chapter) =>
+        `${chapter ? chapter.concat(' ') : ''}${page}/${total} ページ目`,
     defineLabel: '調べる',
     defineClassName: 'font-ja',
     dictionaryLink: (word: string) => `https://jisho.org/search/${encodeURIComponent(word)}`,
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>は<span className='text-white/85'>Leximory</span>で<span className='text-white/85'>日本語を勉強</span>している ↓</span>
+        learningWith: (
+            <span className='text-white/65'>
+                は<span className='text-white/85'>Leximory</span>で
+                <span className='text-white/85'>日本語を勉強</span>している ↓
+            </span>
+        ),
     },
     reviewLabels: {
-        lockMessage: (requiredTranslations) => requiredTranslations > 0
-            ? <span className='font-cute text-base leading-tight'>今日の語彙復習を 60% 完了すると、黒猫がそっと話してくれます。</span>
-            : <span className='font-cute text-base leading-tight'>今日は解除に使える翻訳問題がありません。</span>
+        lockMessage: requiredTranslations =>
+            requiredTranslations > 0 ? (
+                <span className='font-cute text-base leading-tight'>
+                    今日の語彙復習を 60% 完了すると、黒猫がそっと話してくれます。
+                </span>
+            ) : (
+                <span className='font-cute text-base leading-tight'>
+                    今日は解除に使える翻訳問題がありません。
+                </span>
+            ),
     },
-    articleTitleFont: 'font-kaiti'
+    articleTitleFont: 'font-kaiti',
 })
 
 export const notListedStrategy = createLanguageStrategy({
@@ -100,14 +154,26 @@ export const notListedStrategy = createLanguageStrategy({
     maxArticleLength: 10000,
     exampleSentencePrompt: '',
     libraryCardLabels: {
-        learningWith: <span className='text-white/65'>is <span className='text-white/95'>learning</span> with the <span className='text-white/95'>Leximory Library</span> ↓</span>
+        learningWith: (
+            <span className='text-white/65'>
+                is <span className='text-white/95'>learning</span> with the{' '}
+                <span className='text-white/95'>Leximory Library</span> ↓
+            </span>
+        ),
     },
     reviewLabels: {
-        lockMessage: (requiredTranslations) => requiredTranslations > 0
-            ? <span className='font-cute text-2xl leading-tight'>Complete 60% of your reviews, then come back to me.</span>
-            : <span className='font-cute text-2xl leading-tight'>There are no translation exercises available to unlock today.</span>
+        lockMessage: requiredTranslations =>
+            requiredTranslations > 0 ? (
+                <span className='font-cute text-2xl leading-tight'>
+                    Complete 60% of your reviews, then come back to me.
+                </span>
+            ) : (
+                <span className='font-cute text-2xl leading-tight'>
+                    There are no translation exercises available to unlock today.
+                </span>
+            ),
     },
-    articleTitleFont: 'font-mono'
+    articleTitleFont: 'font-mono',
 })
 
 const strategies = [englishStrategy, chineseStrategy, japaneseStrategy, notListedStrategy]

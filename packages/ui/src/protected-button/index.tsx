@@ -35,9 +35,17 @@ export function ProtectedButton({ label, ...props }: { label?: string } & Button
                     href={prefixPathname({ path: '/satellite', next: window.location.href })}
                 >
                     {isDarkMode ? (
-                        <ShinyText color='#ffffff' shineColor='#666f87' text={label ?? '请登录，因为这是一个厉害的功能'} />
+                        <ShinyText
+                            color='#ffffff'
+                            shineColor='#666f87'
+                            text={label ?? '请登录，因为这是一个厉害的功能'}
+                        />
                     ) : (
-                        <ShinyText color='#000000' shineColor='#ffffff' text={label ?? '请登录，因为这是一个厉害的功能'} />
+                        <ShinyText
+                            color='#000000'
+                            shineColor='#ffffff'
+                            text={label ?? '请登录，因为这是一个厉害的功能'}
+                        />
                     )}
                 </DropdownItem>
             </DropdownMenu>

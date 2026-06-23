@@ -2,8 +2,8 @@ import { z } from '@repo/schema'
 import { JSX } from 'react'
 
 export type StreamExplanationParams = {
-    quizData: QuizData,
-    questionNo: number,
+    quizData: QuizData
+    questionNo: number
     userAnswer: string
 }
 
@@ -14,7 +14,10 @@ export type StreamExplanationParams = {
  * - localQuestionNo: 1-based index within the section (not global question number)
  * - optionText: The actual answer text/word, not the marker (A, B, C, etc.)
  */
-export const SectionAnswersSchema = z.record(z.string(), z.record(z.coerce.number(), z.string().nullable()))
+export const SectionAnswersSchema = z.record(
+    z.string(),
+    z.record(z.coerce.number(), z.string().nullable()),
+)
 export type SectionAnswers = z.infer<typeof SectionAnswersSchema>
 
 /**
@@ -54,7 +57,7 @@ export interface QuestionStrategy<T extends QuizData = QuizData, O = unknown> {
     getQuestionCount: (data: T) => number
     getOptions?: (data: T) => O
     getCorrectAnswers: (data: T, options: O) => string[]
-    getLlmReadyText?: (data: T) => { paper: string, key: string }
+    getLlmReadyText?: (data: T) => { paper: string; key: string }
     isCorrect: (userAnswer: string, correctAnswer: string) => boolean
     renderPaper: (props: StrategyRenderProps<T, O>) => JSX.Element | null
     renderAnswerSheet?: (props: StrategyRenderProps<T, O>) => JSX.Element | null
@@ -67,69 +70,71 @@ export interface QuestionStrategy<T extends QuizData = QuizData, O = unknown> {
 }
 
 const BaseQuizSchema = z.object({
-    id: z.string()
+    id: z.string(),
 })
 
 export const FishingDataSchema = BaseQuizSchema.extend({
     text: z.string(),
     type: z.literal('fishing'),
-    distractors: z.array(z.string())
+    distractors: z.array(z.string()),
 })
 export type FishingData = z.infer<typeof FishingDataSchema>
 
 export const ClozeDataSchema = BaseQuizSchema.extend({
     text: z.string(),
     type: z.literal('cloze'),
-    questions: z.array(z.object({
-        original: z.string(),
-        distractors: z.array(z.string())
-    }))
+    questions: z.array(
+        z.object({
+            original: z.string(),
+            distractors: z.array(z.string()),
+        }),
+    ),
 })
 export type ClozeData = z.infer<typeof ClozeDataSchema>
 
 export const GrammarDataSchema = BaseQuizSchema.extend({
     text: z.string(),
     type: z.literal('grammar'),
-    hints: z.record(z.string(), z.string().optional())
+    hints: z.record(z.string(), z.string().optional()),
 })
 export type GrammarData = z.infer<typeof GrammarDataSchema>
 
 export const SentenceChoiceDataSchema = BaseQuizSchema.extend({
     text: z.string(),
     type: z.literal('sentences'),
-    distractors: z.array(z.string())
+    distractors: z.array(z.string()),
 })
 export type SentenceChoiceData = z.infer<typeof SentenceChoiceDataSchema>
 
 const QuestionSchema = z.object({
     q: z.string(),
     a: z.array(z.string()),
-    correct: z.number() // index of the correct answer
+    correct: z.number(), // index of the correct answer
 })
 export type Question = z.infer<typeof QuestionSchema>
 
 export const ReadingDataSchema = BaseQuizSchema.extend({
     text: z.string(),
     type: z.literal('reading'),
-    questions: z.array(QuestionSchema)
+    questions: z.array(QuestionSchema),
 })
 export type ReadingData = z.infer<typeof ReadingDataSchema>
 
 const ListeningQuestionSchema = QuestionSchema.extend({
-    transcript: z.string()
+    transcript: z.string(),
 })
 export type ListeningQuestion = z.infer<typeof ListeningQuestionSchema>
 
 export const ListeningDataSchema = BaseQuizSchema.extend({
     type: z.literal('listening'),
-    questions: z.array(ListeningQuestionSchema)
+    questions: z.array(ListeningQuestionSchema),
 })
 export type ListeningData = z.infer<typeof ListeningDataSchema>
 
 export const CustomDataSchema = BaseQuizSchema.extend({
     type: z.literal('custom'),
     paper: z.string(),
-    key: z.string()
+    key: z.string(),
 })
 export type CustomData = z.infer<typeof CustomDataSchema>
 
@@ -183,8 +188,12 @@ export const SummaryFeedbackSchema = z.object({
     contentScore: z.number(),
     languageScore: z.number(),
     totalScore: z.number(),
-    essentialItemResults: z.array(z.object({ item: z.string(), fulfilled: z.boolean(), note: z.string() })),
-    extraItemResults: z.array(z.object({ item: z.string(), fulfilled: z.boolean(), note: z.string() })),
+    essentialItemResults: z.array(
+        z.object({ item: z.string(), fulfilled: z.boolean(), note: z.string() }),
+    ),
+    extraItemResults: z.array(
+        z.object({ item: z.string(), fulfilled: z.boolean(), note: z.string() }),
+    ),
     copiedChunks: z.array(z.string()),
     rationale: z.string(),
 })
@@ -193,12 +202,14 @@ export type SummaryFeedback = z.infer<typeof SummaryFeedbackSchema>
 /** Feedback schema for Translation marking results stored in submissions.feedback */
 export const TranslationFeedbackSchema = z.object({
     type: z.literal('translation'),
-    items: z.array(z.object({
-        score: z.number(),
-        maxScore: z.number(),
-        rationale: z.string(),
-        badPairs: z.array(z.object({ original: z.string(), improved: z.string() })),
-    })),
+    items: z.array(
+        z.object({
+            score: z.number(),
+            maxScore: z.number(),
+            rationale: z.string(),
+            badPairs: z.array(z.object({ original: z.string(), improved: z.string() })),
+        }),
+    ),
     totalScore: z.number(),
 })
 export type TranslationFeedback = z.infer<typeof TranslationFeedbackSchema>
@@ -257,6 +268,6 @@ export type SubjectiveType = (typeof SUBJECTIVE_TYPES)[number]
 
 export type Config = {
     /** @default 1 */
-    start?: number,
-    countSpaces?: number,
+    start?: number
+    countSpaces?: number
 }

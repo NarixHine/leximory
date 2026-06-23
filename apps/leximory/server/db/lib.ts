@@ -11,7 +11,7 @@ import { LangSchema } from '@repo/schema/library'
 
 export * from '@repo/supabase/library'
 
-export async function starLib({ lib, userId }: { lib: string, userId: string }) {
+export async function starLib({ lib, userId }: { lib: string; userId: string }) {
     const { data: library } = await supabase
         .from('libraries')
         .select('starred_by')
@@ -22,15 +22,12 @@ export async function starLib({ lib, userId }: { lib: string, userId: string }) 
         ? (library.starred_by ?? []).filter((x: string) => x !== userId)
         : [...(library?.starred_by ?? []), userId]
 
-    await supabase
-        .from('libraries')
-        .update({ starred_by: newStarredBy })
-        .eq('id', lib)
+    await supabase.from('libraries').update({ starred_by: newStarredBy }).eq('id', lib)
 
     return newStarredBy.includes(userId)
 }
 
-export async function unstarLib({ lib, userId }: { lib: string, userId: string }) {
+export async function unstarLib({ lib, userId }: { lib: string; userId: string }) {
     const { data: library } = await supabase
         .from('libraries')
         .select('starred_by')
@@ -38,13 +35,24 @@ export async function unstarLib({ lib, userId }: { lib: string, userId: string }
         .single()
 
     const newStarredBy = library?.starred_by?.filter((x: string) => x !== userId)
-    await supabase
-        .from('libraries')
-        .update({ starred_by: newStarredBy })
-        .eq('id', lib)
+    await supabase.from('libraries').update({ starred_by: newStarredBy }).eq('id', lib)
 }
 
-export async function updateLib({ id, access, name, org, price, prompt }: { id: string, access: typeof LIB_ACCESS_STATUS.public | typeof LIB_ACCESS_STATUS.private, name: string, org: string | null, price: number, prompt?: string | null }) {
+export async function updateLib({
+    id,
+    access,
+    name,
+    org,
+    price,
+    prompt,
+}: {
+    id: string
+    access: typeof LIB_ACCESS_STATUS.public | typeof LIB_ACCESS_STATUS.private
+    name: string
+    org: string | null
+    price: number
+    prompt?: string | null
+}) {
     await supabase
         .from('libraries')
         .update({
@@ -57,7 +65,15 @@ export async function updateLib({ id, access, name, org, price, prompt }: { id: 
         .eq('id', id)
 }
 
-export async function createLib({ name, lang, owner }: { name: string, lang: Lang, owner: string }) {
+export async function createLib({
+    name,
+    lang,
+    owner,
+}: {
+    name: string
+    lang: Lang
+    owner: string
+}) {
     const id = nanoid()
 
     await supabase.from('libraries').insert({
@@ -91,7 +107,7 @@ export async function countPublicLibs() {
     return count ?? 0
 }
 
-export async function getPaginatedPublicLibs({ page, size }: { page: number, size: number }) {
+export async function getPaginatedPublicLibs({ page, size }: { page: number; size: number }) {
     'use cache'
     cacheTag('libraries')
     const { data } = await supabase
@@ -102,14 +118,16 @@ export async function getPaginatedPublicLibs({ page, size }: { page: number, siz
         .range((page - 1) * size, page * size - 1)
         .throwOnError()
 
-    return data.map(({ id, name, lang, owner, starred_by, price }) => ({
-        id,
-        name,
-        lang: LangSchema.parse(lang),
-        owner,
-        starredBy: starred_by,
-        price
-    })) ?? []
+    return (
+        data.map(({ id, name, lang, owner, starred_by, price }) => ({
+            id,
+            name,
+            lang: LangSchema.parse(lang),
+            owner,
+            starredBy: starred_by,
+            price,
+        })) ?? []
+    )
 }
 
 export async function getLib({ id }: { id: string }) {
@@ -128,16 +146,19 @@ export async function getLib({ id }: { id: string }) {
 export async function listLibs({ owner }: { owner: string }) {
     'use cache'
     cacheTag('libraries')
-    const query = supabase
-        .from('libraries')
-        .select('id')
-        .eq('owner', owner)
+    const query = supabase.from('libraries').select('id').eq('owner', owner)
 
     const { data } = await query.throwOnError()
     return data.map(({ id }) => id) ?? []
 }
 
-export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: OrFilter, userId?: string }) {
+export async function listLibsWithFullInfo({
+    or: { filters },
+    userId,
+}: {
+    or: OrFilter
+    userId?: string
+}) {
     'use cache'
     cacheTag('libraries')
 
@@ -148,10 +169,20 @@ export async function listLibsWithFullInfo({ or: { filters }, userId }: { or: Or
         .throwOnError()
 
     return data.map(lib => {
-        const libInfo = pick(lib, ['id', 'name', 'lang', 'owner', 'price', 'shadow', 'access', 'org', 'prompt'])
+        const libInfo = pick(lib, [
+            'id',
+            'name',
+            'lang',
+            'owner',
+            'price',
+            'shadow',
+            'access',
+            'org',
+            'prompt',
+        ])
         return {
             lib: { ...libInfo, lang: LangSchema.parse(libInfo.lang) },
-            isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false
+            isStarred: userId && lib.starred_by ? lib.starred_by.includes(userId) : false,
         }
     })
 }
@@ -170,7 +201,7 @@ export async function getArchivedLibs({ userId }: { userId: string }) {
     return data.archived_libs ?? []
 }
 
-export async function addToArchive({ userId, libId }: { userId: string, libId: string }) {
+export async function addToArchive({ userId, libId }: { userId: string; libId: string }) {
     const archive = await getArchivedLibs({ userId })
     await supabase
         .from('users')
@@ -178,11 +209,11 @@ export async function addToArchive({ userId, libId }: { userId: string, libId: s
         .eq('id', userId)
 }
 
-export async function removeFromArchive({ userId, libId }: { userId: string, libId: string }) {
+export async function removeFromArchive({ userId, libId }: { userId: string; libId: string }) {
     const archive = await getArchivedLibs({ userId })
     await supabase
         .from('users')
-        .update({ archived_libs: archive.filter((id) => id !== libId) })
+        .update({ archived_libs: archive.filter(id => id !== libId) })
         .eq('id', userId)
 }
 
@@ -191,7 +222,8 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
     cacheTag(`lib:${libId}`)
     const { data } = await supabase
         .from('texts')
-        .select(`
+        .select(
+            `
             id,
             title,
             content,
@@ -201,17 +233,20 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             lib:libraries (
                 name, id
             )
-        `)
+        `,
+        )
         .eq('lib', libId)
         .throwOnError()
 
-    return data.map(({ id, title, content, topics, has_ebook, created_at, lib }) => ({
-        id,
-        title,
-        content,
-        topics: topics ?? [],
-        hasEbook: has_ebook,
-        createdAt: new Date(created_at!).toDateString(),
-        libName: lib?.name ?? 'Unknown Library',
-    })) ?? []
+    return (
+        data.map(({ id, title, content, topics, has_ebook, created_at, lib }) => ({
+            id,
+            title,
+            content,
+            topics: topics ?? [],
+            hasEbook: has_ebook,
+            createdAt: new Date(created_at!).toDateString(),
+            libName: lib?.name ?? 'Unknown Library',
+        })) ?? []
+    )
 }

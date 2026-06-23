@@ -38,7 +38,7 @@ export const TextHoverEffect = ({
             xmlns='http://www.w3.org/2000/svg'
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
-            onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
+            onMouseMove={e => setCursor({ x: e.clientX, y: e.clientY })}
             className='select-none'
         >
             <defs>
@@ -68,25 +68,19 @@ export const TextHoverEffect = ({
                     animate={maskPosition}
                     transition={{ duration: duration ?? 0, ease: 'easeOut' }}
 
-                // example for a smoother animation below
+                    // example for a smoother animation below
 
-                //   transition={{
-                //     type: 'spring',
-                //     stiffness: 300,
-                //     damping: 50,
-                //   }}
+                    //   transition={{
+                    //     type: 'spring',
+                    //     stiffness: 300,
+                    //     damping: 50,
+                    //   }}
                 >
                     <stop offset='0%' stopColor='white' />
                     <stop offset='100%' stopColor='black' />
                 </motion.radialGradient>
                 <mask id='textMask'>
-                    <rect
-                        x='0'
-                        y='0'
-                        width='100%'
-                        height='100%'
-                        fill='url(#revealMask)'
-                    />
+                    <rect x='0' y='0' width='100%' height='100%' fill='url(#revealMask)' />
                 </mask>
             </defs>
             <text
@@ -95,7 +89,9 @@ export const TextHoverEffect = ({
                 textAnchor='middle'
                 dominantBaseline='middle'
                 strokeWidth='0.3'
-                className={cn('fill-transparent stroke-neutral-300 text-6xl font-bold dark:stroke-neutral-700')}
+                className={cn(
+                    'fill-transparent stroke-neutral-300 text-6xl font-bold dark:stroke-neutral-700',
+                )}
                 style={{ opacity: hovered ? 0.7 : 0 }}
             >
                 {text}
@@ -106,7 +102,9 @@ export const TextHoverEffect = ({
                 textAnchor='middle'
                 dominantBaseline='middle'
                 strokeWidth='0.3'
-                className={cn('fill-transparent stroke-neutral-300 text-6xl font-bold dark:stroke-neutral-700')}
+                className={cn(
+                    'fill-transparent stroke-neutral-300 text-6xl font-bold dark:stroke-neutral-700',
+                )}
                 initial={{ strokeDashoffset: 1000, strokeDasharray: 1000 }}
                 animate={{
                     strokeDashoffset: inView ? 0 : 1000,

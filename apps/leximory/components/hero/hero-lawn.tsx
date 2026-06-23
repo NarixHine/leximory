@@ -5,11 +5,7 @@ import { motion, useAnimationControls, AnimatePresence } from 'framer-motion'
 import { Card, CardBody } from '@heroui/card'
 import { CatSprite, CAT_FRAME_ASPECT, CAT_FRAMES } from '@/app/review/components/cat-sprite'
 import { WordPill } from '@/app/review/components/lawn-items'
-import {
-    useCatMovement,
-    CAT_SIZE,
-    DUST_LIFETIME,
-} from '@/lib/hooks/use-cat-movement'
+import { useCatMovement, CAT_SIZE, DUST_LIFETIME } from '@/lib/hooks/use-cat-movement'
 
 const PILLS = [
     { label: 'feline', x: 15, y: 32 },
@@ -22,11 +18,18 @@ const PILLS = [
 const IDLE_WAIT_MIN = 2000
 const IDLE_WAIT_MAX = 4000
 
-interface ImgBounds { left: number; top: number; width: number; height: number }
+interface ImgBounds {
+    left: number
+    top: number
+    width: number
+    height: number
+}
 
 function calcContainedBounds(
-    containerW: number, containerH: number,
-    naturalW: number, naturalH: number
+    containerW: number,
+    containerH: number,
+    naturalW: number,
+    naturalH: number,
 ): ImgBounds {
     if (!containerW || !containerH || !naturalW || !naturalH) {
         return { left: 0, top: 0, width: containerW, height: containerH }
@@ -39,7 +42,11 @@ function calcContainedBounds(
     return { left, top, width: w, height: h }
 }
 
-function getTarget(bounds: ImgBounds, catWidth: number, catHeight: number): { x: number; y: number } {
+function getTarget(
+    bounds: ImgBounds,
+    catWidth: number,
+    catHeight: number,
+): { x: number; y: number } {
     if (Math.random() < 0.6) {
         const pill = PILLS[Math.floor(Math.random() * PILLS.length)]
         return {
@@ -62,7 +69,7 @@ export default function HeroLawn() {
     const [imgBounds, setImgBounds] = useState<ImgBounds | null>(null)
     const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
     const mountedRef = useRef(true)
-    const wanderRef = useRef<() => void>(() => { })
+    const wanderRef = useRef<() => void>(() => {})
     const movementRef = useRef<ReturnType<typeof useCatMovement> | null>(null)
 
     const [isDark, setIsDark] = useState(false)
@@ -81,12 +88,21 @@ export default function HeroLawn() {
     const catMovement = useCatMovement({
         catWidth,
         catHeight,
-        setPosition: useCallback((x: number, y: number, rotation?: number) => {
-            controls.set(rotation !== undefined ? { x, y, rotate: rotation } : { x, y })
-        }, [controls]),
-        animateRotation: useCallback(async (angle: number) => {
-            await controls.start({ rotate: angle, transition: { duration: 0.2, ease: 'easeOut' } })
-        }, [controls]),
+        setPosition: useCallback(
+            (x: number, y: number, rotation?: number) => {
+                controls.set(rotation !== undefined ? { x, y, rotate: rotation } : { x, y })
+            },
+            [controls],
+        ),
+        animateRotation: useCallback(
+            async (angle: number) => {
+                await controls.start({
+                    rotate: angle,
+                    transition: { duration: 0.2, ease: 'easeOut' },
+                })
+            },
+            [controls],
+        ),
         setFrame: useCallback((frame: string) => {
             if (spriteRef.current) {
                 spriteRef.current.style.backgroundPosition = frame
@@ -100,8 +116,10 @@ export default function HeroLawn() {
         if (!node) return
         const rect = node.getBoundingClientRect()
         const bounds = calcContainedBounds(
-            rect.width, rect.height,
-            img?.naturalWidth ?? 0, img?.naturalHeight ?? 0
+            rect.width,
+            rect.height,
+            img?.naturalWidth ?? 0,
+            img?.naturalHeight ?? 0,
         )
         boundsRef.current = bounds
         setImgBounds(bounds)
@@ -121,12 +139,15 @@ export default function HeroLawn() {
         return () => observer.disconnect()
     }, [measureBounds, updateBounds])
 
-    const onImgRef = useCallback((el: HTMLImageElement | null) => {
-        imgRef.current = el
-        if (el?.complete && el.naturalWidth > 0) {
-            updateBounds()
-        }
-    }, [updateBounds])
+    const onImgRef = useCallback(
+        (el: HTMLImageElement | null) => {
+            imgRef.current = el
+            if (el?.complete && el.naturalWidth > 0) {
+                updateBounds()
+            }
+        },
+        [updateBounds],
+    )
 
     const initializedRef = useRef(false)
 
@@ -170,7 +191,10 @@ export default function HeroLawn() {
         const dist = Math.sqrt(dx * dx + dy * dy)
 
         if (dist < 30) {
-            timerRef.current = setTimeout(() => wanderRef.current(), IDLE_WAIT_MIN + Math.random() * (IDLE_WAIT_MAX - IDLE_WAIT_MIN))
+            timerRef.current = setTimeout(
+                () => wanderRef.current(),
+                IDLE_WAIT_MIN + Math.random() * (IDLE_WAIT_MAX - IDLE_WAIT_MIN),
+            )
             return
         }
 
@@ -232,7 +256,7 @@ export default function HeroLawn() {
                             }}
                         >
                             <AnimatePresence>
-                                {catMovement.particles.map((particle) => (
+                                {catMovement.particles.map(particle => (
                                     <motion.div
                                         key={particle.id}
                                         initial={{

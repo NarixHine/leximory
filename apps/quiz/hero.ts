@@ -1,36 +1,36 @@
 import { heroui } from '@heroui/react'
 
 export default heroui({
-    "themes": {
-        "light": {
-            "colors": {
-                "default": {
-                    "50": "#f8f8f8",
-                    "100": "#ededec",
-                    "200": "#cacac9",
-                    "300": "#b6b6b5",
-                    "400": "#a3a3a2",
-                    "500": "#8f8f8e",
-                    "600": "#767675",
-                    "700": "#5d5d5c",
-                    "800": "#444443",
-                    "900": "#2b2b2a",
-                    "foreground": "#000",
-                    "DEFAULT": "#cfcfbf"
+    themes: {
+        light: {
+            colors: {
+                default: {
+                    '50': '#f8f8f8',
+                    '100': '#ededec',
+                    '200': '#cacac9',
+                    '300': '#b6b6b5',
+                    '400': '#a3a3a2',
+                    '500': '#8f8f8e',
+                    '600': '#767675',
+                    '700': '#5d5d5c',
+                    '800': '#444443',
+                    '900': '#2b2b2a',
+                    foreground: '#000',
+                    DEFAULT: '#cfcfbf',
                 },
-                "primary": {
-                    "50": "#efefee",
-                    "100": "#dfdfde",
-                    "200": "#868684",
-                    "300": "#595957",
-                    "400": "#2d2d1d",
-                    "500": "#202010",
-                    "600": "#101000",
-                    "700": "#101000",
-                    "800": "#101000",
-                    "900": "#101000",
-                    "foreground": "#fff",
-                    "DEFAULT": "#202010"
+                primary: {
+                    '50': '#efefee',
+                    '100': '#dfdfde',
+                    '200': '#868684',
+                    '300': '#595957',
+                    '400': '#2d2d1d',
+                    '500': '#202010',
+                    '600': '#101000',
+                    '700': '#101000',
+                    '800': '#101000',
+                    '900': '#101000',
+                    foreground: '#fff',
+                    DEFAULT: '#202010',
                 },
                 secondary: {
                     DEFAULT: '#3AA99F',
@@ -71,57 +71,57 @@ export default heroui({
                     800: '#641F46',
                     900: '#39172B',
                 },
-                "background": "#ffffff",
-                "foreground": "#4a4a4a",
-                "content1": {
-                    "DEFAULT": "#f8f8f8",
-                    "foreground": "#000"
+                background: '#ffffff',
+                foreground: '#4a4a4a',
+                content1: {
+                    DEFAULT: '#f8f8f8',
+                    foreground: '#000',
                 },
-                "content2": {
-                    "DEFAULT": "#e6e6e6",
-                    "foreground": "#000"
+                content2: {
+                    DEFAULT: '#e6e6e6',
+                    foreground: '#000',
                 },
-                "content3": {
-                    "DEFAULT": "#dcdcdc",
-                    "foreground": "#000"
+                content3: {
+                    DEFAULT: '#dcdcdc',
+                    foreground: '#000',
                 },
-                "content4": {
-                    "DEFAULT": "#d2d2d2",
-                    "foreground": "#000"
+                content4: {
+                    DEFAULT: '#d2d2d2',
+                    foreground: '#000',
                 },
-                "focus": "#cfcfbf",
-                "overlay": "#000000"
-            }
+                focus: '#cfcfbf',
+                overlay: '#000000',
+            },
         },
-        "dark": {
-            "colors": {
-                "default": {
-                    "50": "#1d1d1d",
-                    "100": "#393939",
-                    "200": "#565656",
-                    "300": "#727272",
-                    "400": "#8f8f8f",
-                    "500": "#a5a5a5",
-                    "600": "#bcbcbc",
-                    "700": "#d2d2d2",
-                    "800": "#e9e9e9",
-                    "900": "#ffffff",
-                    "foreground": "#d2d2d2",
-                    "DEFAULT": "#8f8f8f"
+        dark: {
+            colors: {
+                default: {
+                    '50': '#1d1d1d',
+                    '100': '#393939',
+                    '200': '#565656',
+                    '300': '#727272',
+                    '400': '#8f8f8f',
+                    '500': '#a5a5a5',
+                    '600': '#bcbcbc',
+                    '700': '#d2d2d2',
+                    '800': '#e9e9e9',
+                    '900': '#ffffff',
+                    foreground: '#d2d2d2',
+                    DEFAULT: '#8f8f8f',
                 },
-                "primary": {
-                    "50": "#4d4d4d",
-                    "100": "#595959",
-                    "200": "#a6a6a6",
-                    "300": "#d2d2d2",
-                    "400": '#878580',
-                    "500": '#9F9D96',
-                    "600": '#B7B5AC',
-                    "700": '#CECDC3',
-                    "800": '#E6E4D9',
-                    "900": '#F2F0E5',
-                    "foreground": "#000",
-                    "DEFAULT": "#CECDC3"
+                primary: {
+                    '50': '#4d4d4d',
+                    '100': '#595959',
+                    '200': '#a6a6a6',
+                    '300': '#d2d2d2',
+                    '400': '#878580',
+                    '500': '#9F9D96',
+                    '600': '#B7B5AC',
+                    '700': '#CECDC3',
+                    '800': '#E6E4D9',
+                    '900': '#F2F0E5',
+                    foreground: '#000',
+                    DEFAULT: '#CECDC3',
                 },
                 secondary: {
                     DEFAULT: '#2F968D',
@@ -162,30 +162,30 @@ export default heroui({
                     800: '#FCCFDA',
                     900: '#FEE4E5',
                 },
-                "background": "#000000",
-                "foreground": "#b0b0b0",
-                "content1": {
-                    "DEFAULT": "#2a2a2a",
-                    "foreground": "#fff"
+                background: '#000000',
+                foreground: '#b0b0b0',
+                content1: {
+                    DEFAULT: '#2a2a2a',
+                    foreground: '#fff',
                 },
-                "content2": {
-                    "DEFAULT": "#3b3b3b",
-                    "foreground": "#fff"
+                content2: {
+                    DEFAULT: '#3b3b3b',
+                    foreground: '#fff',
                 },
-                "content3": {
-                    "DEFAULT": "#4c4c4c",
-                    "foreground": "#fff"
+                content3: {
+                    DEFAULT: '#4c4c4c',
+                    foreground: '#fff',
                 },
-                "content4": {
-                    "DEFAULT": "#5d5d5d",
-                    "foreground": "#fff"
+                content4: {
+                    DEFAULT: '#5d5d5d',
+                    foreground: '#fff',
                 },
-                "focus": "#000000",
-                "overlay": "#ffffff"
-            }
-        }
+                focus: '#000000',
+                overlay: '#ffffff',
+            },
+        },
     },
-    "layout": {
-        "disabledOpacity": "0.5"
-    }
+    layout: {
+        disabledOpacity: '0.5',
+    },
 })

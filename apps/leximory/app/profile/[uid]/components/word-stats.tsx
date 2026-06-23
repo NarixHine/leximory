@@ -18,4 +18,4 @@ export default async function WordStatsSection({ uid }: { uid: string }) {
             </div>
         </div>
     )
-} 
+}

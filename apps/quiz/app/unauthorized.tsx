@@ -12,23 +12,27 @@ export default function Unauthorized() {
     return (
         <Main className='flex flex-col items-center justify-center'>
             <h1 className='sm:text-7xl text-5xl font-bold text-foreground/20'>Unauthorized.</h1>
-            {isLoggedIn ? <Button
-                endContent={<HouseIcon weight='fill' size={20} />}
-                color='primary'
-                as={Link}
-                href={'/'}
-                className='mt-3'
-            >
-                回到首页
-            </Button> : <Button
-                endContent={<SignInIcon weight='fill' size={20} />}
-                color='primary'
-                as={Link}
-                href={prefixPathname({ path: '/satellite' })}
-                className='mt-3'
-            >
-                登录
-            </Button>}
+            {isLoggedIn ? (
+                <Button
+                    endContent={<HouseIcon weight='fill' size={20} />}
+                    color='primary'
+                    as={Link}
+                    href={'/'}
+                    className='mt-3'
+                >
+                    回到首页
+                </Button>
+            ) : (
+                <Button
+                    endContent={<SignInIcon weight='fill' size={20} />}
+                    color='primary'
+                    as={Link}
+                    href={prefixPathname({ path: '/satellite' })}
+                    className='mt-3'
+                >
+                    登录
+                </Button>
+            )}
         </Main>
     )
 }

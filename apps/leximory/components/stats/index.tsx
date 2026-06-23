@@ -10,15 +10,10 @@ const getCountMap = async ({ uid }: { uid: string }) => {
     'use cache'
     const libs = await listLibs({ owner: uid })
     const results = await aggrWordHistogram({ libs, size: 30 })
-    return new Map(
-        results.map(bucket => [
-            bucket.date,
-            bucket.count
-        ])
-    )
+    return new Map(results.map(bucket => [bucket.date, bucket.count]))
 }
 
-export async function WordStats({ uid, color }: { uid: string, color?: AvailableChartColorsKeys }) {
+export async function WordStats({ uid, color }: { uid: string; color?: AvailableChartColorsKeys }) {
     'use cache'
     const countMap = await getCountMap({ uid })
     return <WordChart data={formatChartData(countMap, 30)} color={color} />
@@ -47,7 +42,7 @@ export function formatChartData(countMap: Map<string, number>, size: number) {
 
     const data = dates.map(date => ({
         date: momentSH(date).format('MMM D'),
-        '入库词汇': countMap.get(date) || 0
+        入库词汇: countMap.get(date) || 0,
     }))
 
     return data

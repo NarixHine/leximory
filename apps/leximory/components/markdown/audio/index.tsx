@@ -15,8 +15,12 @@ import { cn } from '@/lib/utils'
 import { ms } from 'itty-time'
 import AudioPlayer from '@/components/ui/audio-player'
 
-export default function Audio({ id, md, ...props }: {
-    id: string,
+export default function Audio({
+    id,
+    md,
+    ...props
+}: {
+    id: string
 } & MarkdownProps) {
     const lib = useAtomValue(libAtom)
     const ref = useRef<HTMLDivElement>(null)
@@ -32,7 +36,7 @@ export default function Audio({ id, md, ...props }: {
 
     const generateMutation = useMutation({
         mutationFn: (innerText: string) => generateAudio(id, lib, innerText),
-        onSuccess: (res) => {
+        onSuccess: res => {
             if (typeof res === 'string') {
                 queryClient.invalidateQueries({ queryKey: ['audio', id] })
             } else if (res.error) {
@@ -41,7 +45,7 @@ export default function Audio({ id, md, ...props }: {
         },
         onError: () => {
             toast.error('生成失败')
-        }
+        },
     })
 
     function action() {
@@ -66,34 +70,51 @@ export default function Audio({ id, md, ...props }: {
         return 'ungenerated'
     })()
 
-    const MarkdownComponent = <Markdown hasWrapped md={decodeURIComponent(md)} {...props} className={cn('prose-lg')}></Markdown>
+    const MarkdownComponent = (
+        <Markdown
+            hasWrapped
+            md={decodeURIComponent(md)}
+            {...props}
+            className={cn('prose-lg')}
+        ></Markdown>
+    )
 
-    return isReaderMode ? MarkdownComponent : <div>
-        <div className='mt-2'>
-            {url || !audioQuery.isSuccess ? <AudioPlayer
-                src={url}
-            /> : <div className='flex items-center h-14 mt-1'>
-                <Button
-                    isLoading={status === 'loading' || status === 'generating'}
-                    isDisabled={status === 'lengthy'}
-                    radius='full'
-                    color='default'
-                    size='lg'
-                    startContent={<PiPlayCircle />}
-                    onPress={action}
-                >
-                    {
-                        status === 'lengthy' ? `录音文本不多于 ${MAX_TTS_LENGTH} 字` :
-                            status === 'loading' ? '加载中' :
-                                status === 'ungenerated' ? '生成' :
-                                    status === 'generating' ? '生成中' :
-                                        status === 'ready' ? 'Ready!' : '未知'
-                    }
-                </Button>
-            </div>}
+    return isReaderMode ? (
+        MarkdownComponent
+    ) : (
+        <div>
+            <div className='mt-2'>
+                {url || !audioQuery.isSuccess ? (
+                    <AudioPlayer src={url} />
+                ) : (
+                    <div className='flex items-center h-14 mt-1'>
+                        <Button
+                            isLoading={status === 'loading' || status === 'generating'}
+                            isDisabled={status === 'lengthy'}
+                            radius='full'
+                            color='default'
+                            size='lg'
+                            startContent={<PiPlayCircle />}
+                            onPress={action}
+                        >
+                            {status === 'lengthy'
+                                ? `录音文本不多于 ${MAX_TTS_LENGTH} 字`
+                                : status === 'loading'
+                                  ? '加载中'
+                                  : status === 'ungenerated'
+                                    ? '生成'
+                                    : status === 'generating'
+                                      ? '生成中'
+                                      : status === 'ready'
+                                        ? 'Ready!'
+                                        : '未知'}
+                        </Button>
+                    </div>
+                )}
+            </div>
+            <div ref={ref} className='my-3'>
+                {MarkdownComponent}
+            </div>
         </div>
-        <div ref={ref} className='my-3'>
-            {MarkdownComponent}
-        </div>
-    </div>
+    )
 }

@@ -1,34 +1,34 @@
 import { GeneratableDataSchema } from '@/server/ai/prompts/sections'
 import { z } from '@repo/schema'
-import { QuizData } from '@repo/schema/paper'   
+import { QuizData } from '@repo/schema/paper'
 import { extractArticleFromUrl } from '@repo/scrape'
 import { GeneratableTypeSchema } from '@repo/ui/paper/utils'
 
 export const toolDescriptions = {
     getCurrentItems: {
         loading: 'Reading Paper',
-        completed: 'Paper Retrieved'
+        completed: 'Paper Retrieved',
     },
     addQuizItem: {
         loading: 'Adding Section',
-        completed: 'Section Added'
+        completed: 'Section Added',
     },
     removeQuizItem: {
         loading: 'Removing Section',
-        completed: 'Section Removed'
+        completed: 'Section Removed',
     },
     updateQuizItem: {
         loading: 'Updating Questions',
-        completed: 'Questions Updated'
+        completed: 'Questions Updated',
     },
     designQuestions: {
         loading: 'Devising Questions',
-        completed: 'Questions Devised'
+        completed: 'Questions Devised',
     },
     scrapeArticle: {
         loading: 'Scraping Webpage',
-        completed: 'Article Extracted'
-    }
+        completed: 'Article Extracted',
+    },
 } as const
 
 export type ToolResult = {

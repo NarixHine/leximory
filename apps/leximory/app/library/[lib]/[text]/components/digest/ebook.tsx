@@ -31,7 +31,7 @@ function transformEbookUrl(url: string) {
 }
 
 const locationAtomFamily = atomFamily((text: string) =>
-    atomWithStorage<string | number>(`persist-location-${text}`, 0)
+    atomWithStorage<string | number>(`persist-location-${text}`, 0),
 )
 
 const EBOOK_DARK_FG = '#CECDC3'
@@ -64,7 +64,7 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean) {
         themes.override('color', EBOOK_LIGHT_FG)
         themes.override('background', EBOOK_LIGHT_BG)
     }
-    ; (rendition.getContents() as unknown as Contents[]).forEach((c) => injectThemeCSS(c, isDarkMode))
+    ;(rendition.getContents() as unknown as Contents[]).forEach(c => injectThemeCSS(c, isDarkMode))
 }
 
 export default function Ebook() {
@@ -78,16 +78,20 @@ export default function Ebook() {
     const strategy = useMemo(() => getLanguageStrategy(lang), [lang])
 
     const [selection, setSelection] = useState<Selection | null>(null)
-    const [rect, setRect] = useState<{ left: number | null, width: number | null, bottom: number | null }>({
+    const [rect, setRect] = useState<{
+        left: number | null
+        width: number | null
+        bottom: number | null
+    }>({
         left: null,
         width: null,
-        bottom: null
+        bottom: null,
     })
     const reset = () => {
         setRect({
             left: null,
             width: null,
-            bottom: null
+            bottom: null,
         })
         setSelection(null)
     }
@@ -113,169 +117,209 @@ export default function Ebook() {
 
     const router = useRouter()
 
-    return src && (
-        <motion.div
-            className='bg-background pt-5'
-            style={{
-                position: isFullViewport ? 'fixed' : 'relative',
-                width: isFullViewport ? '100dvw' : 'auto',
-                height: isFullViewport ? '100dvh' : 'auto',
-                zIndex: isFullViewport ? 999 : 0,
-                left: isFullViewport ? 0 : 'auto',
-                top: isFullViewport ? 0 : 'auto',
-                right: isFullViewport ? 0 : 'auto',
-            }}
-            transition={{
-                layout: {
-                    duration: 0.5,
-                    ease: 'easeInOut'
-                }
-            }}
-            layout='preserve-aspect'
-        >
-            <FullScreen handle={handleFullScreen} onChange={(isFullScreen) => setIsFullScreen(isFullScreen)} className={cn('block relative dark:opacity-95', isFullViewport ? 'h-full' : 'h-[80dvh]')}>
-                <div ref={containerRef} className='relative bg-background h-full' style={{ transform: 'translateZ(0)' }}>
-                    {hasZoomed && <Define
-                        {...rect}
-                        reset={reset}
-                        container={containerRef.current}
-                        selection={selection}
-                    />}
-                    <EpubReader
-                        key={isFullViewport ? 'full' : 'normal'}
-                        title={title}
-                        isRTL={strategy.isRTL}
-                        location={location}
-                        onLocationChange={epubcifi => {
-                            setLocation(epubcifi)
-                        }}
-                        getRendition={rendition => {
-                            updateTheme(rendition, isDarkMode)
-                            rendition.themes.default({
-                                p: {
-                                    'margin-top': '0.6em',
-                                    'margin-bottom': '0.6em',
-                                    'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
-                                    'line-height': strategy.lineHeight,
-                                    'text-rendering': 'optimizeLegibility',
-                                },
-                                div: {
-                                    'font-size': '24px !important',
-                                    'font-family': '"Athelas", Georgia, serif !important',
-                                    'line-height': strategy.lineHeight,
-                                    'text-rendering': 'optimizeLegibility',
-                                },
-                                h1: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
-                                },
-                                h2: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
-                                },
-                                h3: {
-                                    'font-family': '"Baskerville", Georgia, serif !important',
-                                },
-                                '.codeline': {
-                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                    'font-size': '1rem !important',
-                                    'line-height': '1.5 !important',
-                                },
-                                'code': {
-                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                    'font-size': '0.9em !important',
-                                },
-                                'pre': {
-                                    'font-family': 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
-                                    'font-size': '0.9em !important',
-                                    'overflow-x': 'auto !important',
-                                    'line-height': '1.5 !important',
-                                },
-                            })
-                            themeRendition.current = rendition
-                            rendition.on('selected', (_: Rendition, contents: Contents) => {
-                                const selection = contents.window.getSelection()!
-                                setSelection(selection)
-
-                                const rect = selection.getRangeAt(0).getBoundingClientRect()
-                                const epubView = document.getElementsByClassName('epub-view')[0]
-                                const offset = epubView ? epubView.getBoundingClientRect() : { left: 0, top: 0 }
-
-                                setRect({
-                                    left: rect.left + offset.left,
-                                    width: rect.width,
-                                    bottom: rect.bottom + offset.top
+    return (
+        src && (
+            <motion.div
+                className='bg-background pt-5'
+                style={{
+                    position: isFullViewport ? 'fixed' : 'relative',
+                    width: isFullViewport ? '100dvw' : 'auto',
+                    height: isFullViewport ? '100dvh' : 'auto',
+                    zIndex: isFullViewport ? 999 : 0,
+                    left: isFullViewport ? 0 : 'auto',
+                    top: isFullViewport ? 0 : 'auto',
+                    right: isFullViewport ? 0 : 'auto',
+                }}
+                transition={{
+                    layout: {
+                        duration: 0.5,
+                        ease: 'easeInOut',
+                    },
+                }}
+                layout='preserve-aspect'
+            >
+                <FullScreen
+                    handle={handleFullScreen}
+                    onChange={isFullScreen => setIsFullScreen(isFullScreen)}
+                    className={cn(
+                        'block relative dark:opacity-95',
+                        isFullViewport ? 'h-full' : 'h-[80dvh]',
+                    )}
+                >
+                    <div
+                        ref={containerRef}
+                        className='relative bg-background h-full'
+                        style={{ transform: 'translateZ(0)' }}
+                    >
+                        {hasZoomed && (
+                            <Define
+                                {...rect}
+                                reset={reset}
+                                container={containerRef.current}
+                                selection={selection}
+                            />
+                        )}
+                        <EpubReader
+                            key={isFullViewport ? 'full' : 'normal'}
+                            title={title}
+                            isRTL={strategy.isRTL}
+                            location={location}
+                            onLocationChange={epubcifi => {
+                                setLocation(epubcifi)
+                            }}
+                            getRendition={rendition => {
+                                updateTheme(rendition, isDarkMode)
+                                rendition.themes.default({
+                                    p: {
+                                        'margin-top': '0.6em',
+                                        'margin-bottom': '0.6em',
+                                        'font-size': '24px !important',
+                                        'font-family': '"Athelas", Georgia, serif !important',
+                                        'line-height': strategy.lineHeight,
+                                        'text-rendering': 'optimizeLegibility',
+                                    },
+                                    div: {
+                                        'font-size': '24px !important',
+                                        'font-family': '"Athelas", Georgia, serif !important',
+                                        'line-height': strategy.lineHeight,
+                                        'text-rendering': 'optimizeLegibility',
+                                    },
+                                    h1: {
+                                        'font-family': '"Baskerville", Georgia, serif !important',
+                                    },
+                                    h2: {
+                                        'font-family': '"Baskerville", Georgia, serif !important',
+                                    },
+                                    h3: {
+                                        'font-family': '"Baskerville", Georgia, serif !important',
+                                    },
+                                    '.codeline': {
+                                        'font-family':
+                                            'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                        'font-size': '1rem !important',
+                                        'line-height': '1.5 !important',
+                                    },
+                                    code: {
+                                        'font-family':
+                                            'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                        'font-size': '0.9em !important',
+                                    },
+                                    pre: {
+                                        'font-family':
+                                            'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important',
+                                        'font-size': '0.9em !important',
+                                        'overflow-x': 'auto !important',
+                                        'line-height': '1.5 !important',
+                                    },
                                 })
+                                themeRendition.current = rendition
+                                rendition.on('selected', (_: Rendition, contents: Contents) => {
+                                    const selection = contents.window.getSelection()!
+                                    setSelection(selection)
 
-                                const chapter = getChapterName(rendition.book, rendition.location)
-                                setBookmark(selection ? `\n\n> ${selection.toString().concat(chapter ? `\n— *${chapter}*` : '').replaceAll('\n', '\n>\n> ')}` : null)
-                            })
-                            rendition.on('rendered', (_: Rendition, contents: Contents) => {
-                                injectThemeCSS(contents, isDarkModeRef.current)
-                                contents.document.addEventListener('selectionchange', () => {
-                                    if (selection && selection.toString()) {
-                                        return
-                                    }
-                                    reset()
+                                    const rect = selection.getRangeAt(0).getBoundingClientRect()
+                                    const epubView = document.getElementsByClassName('epub-view')[0]
+                                    const offset = epubView
+                                        ? epubView.getBoundingClientRect()
+                                        : { left: 0, top: 0 }
+
+                                    setRect({
+                                        left: rect.left + offset.left,
+                                        width: rect.width,
+                                        bottom: rect.bottom + offset.top,
+                                    })
+
+                                    const chapter = getChapterName(
+                                        rendition.book,
+                                        rendition.location,
+                                    )
+                                    setBookmark(
+                                        selection
+                                            ? `\n\n> ${selection
+                                                  .toString()
+                                                  .concat(chapter ? `\n— *${chapter}*` : '')
+                                                  .replaceAll('\n', '\n>\n> ')}`
+                                            : null,
+                                    )
                                 })
-                            })
-                        }}
-                        url={transformEbookUrl(src)}
-                        portalContainer={hasZoomed ? containerRef.current : undefined}
-                        actions={
-                            <>
-                                <Button
-                                    isIconOnly
-                                    startContent={<PiFrameCorners className='text-xl' />}
-                                    className='z-10'
-                                    color='primary'
-                                    variant='light'
-                                    size='lg'
-                                    radius='full'
-                                    onPress={async () => {
-                                        try {
-                                            if (isFullScreen) {
-                                                await handleFullScreen.exit()
-                                            } else {
-                                                await handleFullScreen.enter()
-                                            }
-                                        } catch {
-                                            setIsFullViewport(!isFullViewport)
+                                rendition.on('rendered', (_: Rendition, contents: Contents) => {
+                                    injectThemeCSS(contents, isDarkModeRef.current)
+                                    contents.document.addEventListener('selectionchange', () => {
+                                        if (selection && selection.toString()) {
+                                            return
                                         }
-                                    }}
-                                />
-                                {hasZoomed && <>
+                                        reset()
+                                    })
+                                })
+                            }}
+                            url={transformEbookUrl(src)}
+                            portalContainer={hasZoomed ? containerRef.current : undefined}
+                            actions={
+                                <>
                                     <Button
-                                        startContent={!savingBookmark && <PiBookmark className='text-xl' />}
-                                        isLoading={savingBookmark}
-                                        isDisabled={!bookmark || isReadOnly}
+                                        isIconOnly
+                                        startContent={<PiFrameCorners className='text-xl' />}
                                         className='z-10'
                                         color='primary'
                                         variant='light'
                                         size='lg'
                                         radius='full'
-                                        isIconOnly
-                                        onPress={() => {
-                                            if (bookmark) {
-                                                startSavingBookmark(async () => {
-                                                    try {
-                                                        const newContent = content.concat(bookmark)
-                                                        await saveText({ id: text, content: newContent })
-                                                        router.refresh()
-                                                        setContent(newContent)
-                                                        toast.success('文摘已保存')
-                                                    } catch {
-                                                        toast.error('文摘保存失败，请重试')
-                                                    }
-                                                })
+                                        onPress={async () => {
+                                            try {
+                                                if (isFullScreen) {
+                                                    await handleFullScreen.exit()
+                                                } else {
+                                                    await handleFullScreen.enter()
+                                                }
+                                            } catch {
+                                                setIsFullViewport(!isFullViewport)
                                             }
-                                        }}>
-                                    </Button>
-                                </>}
-                            </>
-                        }
-                    />
-                </div>
-            </FullScreen>
-        </motion.div>
+                                        }}
+                                    />
+                                    {hasZoomed && (
+                                        <>
+                                            <Button
+                                                startContent={
+                                                    !savingBookmark && (
+                                                        <PiBookmark className='text-xl' />
+                                                    )
+                                                }
+                                                isLoading={savingBookmark}
+                                                isDisabled={!bookmark || isReadOnly}
+                                                className='z-10'
+                                                color='primary'
+                                                variant='light'
+                                                size='lg'
+                                                radius='full'
+                                                isIconOnly
+                                                onPress={() => {
+                                                    if (bookmark) {
+                                                        startSavingBookmark(async () => {
+                                                            try {
+                                                                const newContent =
+                                                                    content.concat(bookmark)
+                                                                await saveText({
+                                                                    id: text,
+                                                                    content: newContent,
+                                                                })
+                                                                router.refresh()
+                                                                setContent(newContent)
+                                                                toast.success('文摘已保存')
+                                                            } catch {
+                                                                toast.error('文摘保存失败，请重试')
+                                                            }
+                                                        })
+                                                    }
+                                                }}
+                                            ></Button>
+                                        </>
+                                    )}
+                                </>
+                            }
+                        />
+                    </div>
+                </FullScreen>
+            </motion.div>
+        )
     )
 }

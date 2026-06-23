@@ -8,10 +8,7 @@ import { useOnClickOutside } from 'usehooks-ts'
 import { Spinner } from '@heroui/spinner'
 import { PiLockKey } from 'react-icons/pi'
 import { Lang } from '@repo/env/config'
-import {
-    getConversationUnlockProgress,
-    type ReviewConversation,
-} from '@/lib/review'
+import { getConversationUnlockProgress, type ReviewConversation } from '@/lib/review'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import type { ReviewTranslation } from '@/lib/review'
 import { cn } from '@/lib/utils'
@@ -72,7 +69,10 @@ async function submitConversation({
     return res.json()
 }
 
-function buildConversationSegments(answer: string, feedback: ReviewConversation['feedback']): HighlightSegment[] {
+function buildConversationSegments(
+    answer: string,
+    feedback: ReviewConversation['feedback'],
+): HighlightSegment[] {
     if (!feedback) return [{ text: answer, tone: null, pairIndex: null }]
 
     const matches = [
@@ -87,7 +87,12 @@ function buildConversationSegments(answer: string, feedback: ReviewConversation[
             return { start, end: start + pair.original.length, tone: 'bad' as const, pairIndex }
         }),
     ]
-        .filter((match): match is { start: number; end: number; tone: SegmentTone; pairIndex: number } => match !== null)
+        .filter(
+            (
+                match,
+            ): match is { start: number; end: number; tone: SegmentTone; pairIndex: number } =>
+                match !== null,
+        )
         .sort((a, b) => a.start - b.start || b.end - a.end)
 
     if (matches.length === 0) return [{ text: answer, tone: null, pairIndex: null }]
@@ -132,7 +137,10 @@ function ConversationMessage({
         <div className='text-heimao-800'>
             <div className={cn('max-h-50 overflow-auto', bodyClassName)}>
                 <div
-                    className={cn('float-left -mb-3 -mt-2 overflow-visible', avatarVariant === 'black' ? ' -mr-7 -ml-6' : ' -mr-9 -ml-4')}
+                    className={cn(
+                        'float-left -mb-3 -mt-2 overflow-visible',
+                        avatarVariant === 'black' ? ' -mr-7 -ml-6' : ' -mr-9 -ml-4',
+                    )}
                     style={{
                         height: `${avatarHeightRem}rem`,
                         width: `${avatarWidthRem}rem`,
@@ -151,7 +159,9 @@ function ConversationMessage({
                 </div>
             ) : null}
 
-            {accent ? <div className='mt-2 clear-left text-sm text-heimao-600'>{accent}</div> : null}
+            {accent ? (
+                <div className='mt-2 clear-left text-sm text-heimao-600'>{accent}</div>
+            ) : null}
         </div>
     )
 }
@@ -185,16 +195,21 @@ export function ConversationExercise({
     }, [isOpen, data?.submission])
 
     const submitMutation = useMutation({
-        mutationFn: ({ submission }: { submission: string }) => submitConversation({ date, lang, submission }),
+        mutationFn: ({ submission }: { submission: string }) =>
+            submitConversation({ date, lang, submission }),
         onSuccess: ({ conversation }) => {
             queryClient.setQueryData(
                 ['review', 'check', date, lang],
-                (previous: {
-                    exists?: boolean
-                    story?: string
-                    translations?: ReviewTranslation[]
-                    conversation?: ReviewConversation | null
-                } | undefined) => previous ? { ...previous, conversation } : previous
+                (
+                    previous:
+                        | {
+                              exists?: boolean
+                              story?: string
+                              translations?: ReviewTranslation[]
+                              conversation?: ReviewConversation | null
+                          }
+                        | undefined,
+                ) => (previous ? { ...previous, conversation } : previous),
             )
             queryClient.invalidateQueries({ queryKey: ['review', 'check', date, lang] })
 
@@ -215,15 +230,17 @@ export function ConversationExercise({
     const canSubmit = draft.trim().length > 0 && !submitMutation.isPending && !isLocked
     const highlightSegments = useMemo(
         () => buildConversationSegments(displayedSubmission ?? '', data?.feedback),
-        [displayedSubmission, data?.feedback]
+        [displayedSubmission, data?.feedback],
     )
 
-    const selectedGoodPair = selectedTone === 'good' && selectedPairIndex !== null
-        ? data?.feedback?.goodPairs[selectedPairIndex]
-        : null
-    const selectedBadPair = selectedTone === 'bad' && selectedPairIndex !== null
-        ? data?.feedback?.badPairs[selectedPairIndex]
-        : null
+    const selectedGoodPair =
+        selectedTone === 'good' && selectedPairIndex !== null
+            ? data?.feedback?.goodPairs[selectedPairIndex]
+            : null
+    const selectedBadPair =
+        selectedTone === 'bad' && selectedPairIndex !== null
+            ? data?.feedback?.badPairs[selectedPairIndex]
+            : null
 
     const handleSubmit = () => {
         if (!canSubmit) return
@@ -232,7 +249,9 @@ export function ConversationExercise({
         submitMutation.mutate({ submission })
     }
 
-    const lockMessage = languageStrategy.reviewLabels?.lockMessage(unlockProgress.requiredTranslations) ?? (
+    const lockMessage = languageStrategy.reviewLabels?.lockMessage(
+        unlockProgress.requiredTranslations,
+    ) ?? (
         <>
             {unlockProgress.requiredTranslations > 0
                 ? 'Complete 60% of your vocabulary reviews before the little black cat will speak softly.'
@@ -251,21 +270,33 @@ export function ConversationExercise({
                         <div className='space-y-3'>
                             <ConversationMessage
                                 variant='black'
-                                content={<p className='text-heimao-700'>{lockMessage}
-                                    <span className='font-kaiti'>
-                                        <PiLockKey className='h-4 w-4 inline-block mx-2' />
-                                        完成翻译 {unlockProgress.completedTranslations}/{unlockProgress.requiredTranslations}
-                                    </span>
-                                </p>}
+                                content={
+                                    <p className='text-heimao-700'>
+                                        {lockMessage}
+                                        <span className='font-kaiti'>
+                                            <PiLockKey className='h-4 w-4 inline-block mx-2' />
+                                            完成翻译 {unlockProgress.completedTranslations}/
+                                            {unlockProgress.requiredTranslations}
+                                        </span>
+                                    </p>
+                                }
                             />
                         </div>
                     ) : (
                         <ConversationMessage
                             variant='black'
-                            content={<p className='font-cute text-2xl leading-tight text-heimao-700 mb-1'>{data?.prompt || '...'}</p>}
-                            accent={data?.keywords?.length
-                                ? <p className='font-mono text-sm text-center text-balance tracking-wide'>不妨试试选用 {data.keywords.slice(0, 6).join(' / ')}</p>
-                                : null}
+                            content={
+                                <p className='font-cute text-2xl leading-tight text-heimao-700 mb-1'>
+                                    {data?.prompt || '...'}
+                                </p>
+                            }
+                            accent={
+                                data?.keywords?.length ? (
+                                    <p className='font-mono text-sm text-center text-balance tracking-wide'>
+                                        不妨试试选用 {data.keywords.slice(0, 6).join(' / ')}
+                                    </p>
+                                ) : null
+                            }
                         />
                     )}
 
@@ -274,21 +305,28 @@ export function ConversationExercise({
                             <ConversationMessage
                                 variant='white'
                                 pendingLabel={isPendingEvaluation ? '吟味中' : null}
-                                content={(
+                                content={
                                     <div className='whitespace-pre-wrap font-mono leading-7'>
                                         {highlightSegments.map((segment, index) => {
                                             if (!segment.tone) {
-                                                return <span key={`${segment.text}-${index}`}>{segment.text}</span>
+                                                return (
+                                                    <span key={`${segment.text}-${index}`}>
+                                                        {segment.text}
+                                                    </span>
+                                                )
                                             }
 
-                                            const active = selectedTone === segment.tone && selectedPairIndex === segment.pairIndex
-                                            const toneClass = segment.tone === 'good'
-                                                ? active
-                                                    ? 'decoration-heimao-700 text-heimao-900'
-                                                    : 'decoration-heimao-400 hover:decoration-heimao-600'
-                                                : active
-                                                    ? 'decoration-warning-700 text-heimao-900'
-                                                    : 'decoration-warning-500 hover:decoration-warning-600'
+                                            const active =
+                                                selectedTone === segment.tone &&
+                                                selectedPairIndex === segment.pairIndex
+                                            const toneClass =
+                                                segment.tone === 'good'
+                                                    ? active
+                                                        ? 'decoration-heimao-700 text-heimao-900'
+                                                        : 'decoration-heimao-400 hover:decoration-heimao-600'
+                                                    : active
+                                                      ? 'decoration-warning-700 text-heimao-900'
+                                                      : 'decoration-warning-500 hover:decoration-warning-600'
 
                                             return (
                                                 <span
@@ -299,7 +337,7 @@ export function ConversationExercise({
                                                     }}
                                                     className={cn(
                                                         'cursor-pointer underline decoration-2 underline-offset-[0.28em] transition-colors',
-                                                        toneClass
+                                                        toneClass,
                                                     )}
                                                 >
                                                     {segment.text}
@@ -307,21 +345,23 @@ export function ConversationExercise({
                                             )
                                         })}
                                     </div>
-                                )}
-                                accent={data?.feedback ? (
-                                    <div className='space-y-2 text-left'>
-                                        {selectedGoodPair ? (
-                                            <p className='font-kaiti text-sm text-heimao-700'>
-                                                {selectedGoodPair.note}
-                                            </p>
-                                        ) : null}
-                                        {selectedBadPair ? (
-                                            <p className='font-kaiti text-sm text-warning-700'>
-                                                {selectedBadPair.improved}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                ) : null}
+                                }
+                                accent={
+                                    data?.feedback ? (
+                                        <div className='space-y-2 text-left'>
+                                            {selectedGoodPair ? (
+                                                <p className='font-kaiti text-sm text-heimao-700'>
+                                                    {selectedGoodPair.note}
+                                                </p>
+                                            ) : null}
+                                            {selectedBadPair ? (
+                                                <p className='font-kaiti text-sm text-warning-700'>
+                                                    {selectedBadPair.improved}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    ) : null
+                                }
                             />
 
                             {data?.reply ? (
@@ -331,7 +371,11 @@ export function ConversationExercise({
                                 >
                                     <ConversationMessage
                                         variant='black'
-                                        content={<p className='font-cute text-2xl leading-tight text-heimao-700'>{data.reply}</p>}
+                                        content={
+                                            <p className='font-cute text-2xl leading-tight text-heimao-700'>
+                                                {data.reply}
+                                            </p>
+                                        }
                                     />
                                 </motion.div>
                             ) : null}

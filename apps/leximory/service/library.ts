@@ -24,7 +24,14 @@ export async function save(data: z.infer<typeof saveValidator>) {
     const { id, name, access, org, price, prompt } = saveValidator.parse(data)
     const lib = await getLib({ id })
     await Kilpi.libraries.write(lib).authorize().assert()
-    await updateLib({ id, name, access: access ? LIB_ACCESS_STATUS.public : LIB_ACCESS_STATUS.private, org: org ?? null, price, prompt })
+    await updateLib({
+        id,
+        name,
+        access: access ? LIB_ACCESS_STATUS.public : LIB_ACCESS_STATUS.private,
+        org: org ?? null,
+        price,
+        prompt,
+    })
     updateTag('libraries')
     updateTag(`texts:${id}`)
     return { name, access, org, price }

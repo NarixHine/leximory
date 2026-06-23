@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from "@heroui/button"
+import { Button } from '@heroui/button'
 import { PiClockClockwise } from 'react-icons/pi'
 import { toast } from 'sonner'
 import env from '@repo/env'
@@ -28,8 +28,8 @@ export const subscribe = async (hour: number) => {
     // iOS will fail if you call subscribe on an "installing" worker
     if (registration.installing) {
         toast.info('正在安装服务...')
-        await new Promise((resolve) => {
-            registration.installing?.addEventListener('statechange', (e) => {
+        await new Promise(resolve => {
+            registration.installing?.addEventListener('statechange', e => {
                 if ((e.target as ServiceWorker).state === 'activated') resolve(null)
             })
         })
@@ -40,13 +40,17 @@ export const subscribe = async (hour: number) => {
     // 4. The actual subscription
     const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey
+        applicationServerKey,
     })
 
     await save({ subs: subscription.toJSON() as PushSubscription, hour })
 }
 
-export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
+export default function BellButton({
+    hasSubs,
+    hour = 22,
+    isDisabled,
+}: {
     hasSubs: boolean
     hour?: number | null
     isDisabled?: boolean
@@ -63,7 +67,9 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
                 await subscribe(selectedHour)
             }
         } catch (e) {
-            toast.error(e instanceof Error ? e.message : '开启失败，iOS 用户请将 Leximory 添加至主界面')
+            toast.error(
+                e instanceof Error ? e.message : '开启失败，iOS 用户请将 Leximory 添加至主界面',
+            )
         } finally {
             setIsLoading(false)
         }
@@ -74,7 +80,7 @@ export default function BellButton({ hasSubs, hour = 22, isDisabled }: {
             <Select
                 size='sm'
                 selectedKeys={[selectedHour.toString()]}
-                onSelectionChange={(e) => setSelectedHour(parseInt(e.currentKey ?? '22'))}
+                onSelectionChange={e => setSelectedHour(parseInt(e.currentKey ?? '22'))}
                 className='w-28'
                 radius='full'
                 startContent='于'

@@ -26,11 +26,11 @@ ${SECTIONS[parsedType].description}
 你需要自行完成以下大题的作答。直接给出答案。
 
 ${applyStrategy(questionGroup, (strategy, specificData) => {
-        if (strategy.getLlmReadyText) {
-            const { paper } = strategy.getLlmReadyText(specificData)
-            return paper
-        }
-    })}
+    if (strategy.getLlmReadyText) {
+        const { paper } = strategy.getLlmReadyText(specificData)
+        return paper
+    }
+})}
 `.trim()
 }
 
@@ -40,11 +40,11 @@ export function buildFeedbackPrompt({ questionGroup }: { questionGroup: QuizData
 # 参考答案
 
 ${applyStrategy(questionGroup, (strategy, specificData) => {
-        if (strategy.getLlmReadyText) {
-            const { key } = strategy.getLlmReadyText(specificData)
-            return key
-        }
-    })}
+    if (strategy.getLlmReadyText) {
+        const { key } = strategy.getLlmReadyText(specificData)
+        return key
+    }
+})}
 
 # 输出格式 
 

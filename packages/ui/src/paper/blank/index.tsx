@@ -1,8 +1,23 @@
 'use client'
 
-import { Popover, PopoverTrigger, PopoverContent, Button, Input, cn, Spacer, Chip } from '@heroui/react'
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Button,
+    Input,
+    cn,
+    Spacer,
+    Chip,
+} from '@heroui/react'
 import { useSetAtom, useAtomValue } from 'jotai'
-import { viewModeAtom, submittedAnswersAtom, editoryItemsAtom, answersAtom, setAnswerAtom } from '../atoms'
+import {
+    viewModeAtom,
+    submittedAnswersAtom,
+    editoryItemsAtom,
+    answersAtom,
+    setAnswerAtom,
+} from '../atoms'
 import { ALPHABET_ELEMENTS } from '../generators/config'
 import { CursorClickIcon, XCircleIcon, CheckCircleIcon } from '@phosphor-icons/react/ssr'
 import { questionStrategies } from '../generators/strategies'
@@ -38,34 +53,41 @@ const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankP
     const key = useCorrectAnswer({ sectionId: groupId, localNo })
     const { ask } = useAsk({ localNo, groupId })
     const { getFullInfo } = useBlankInfo({ localNo, groupId })
-    const getQuestionGroup = () => quizData ? quizData.find((item) => item.id === groupId)! : null
+    const getQuestionGroup = () => (quizData ? quizData.find(item => item.id === groupId)! : null)
     const checkAnswerCorrectness = () => {
         const questionGroup = getQuestionGroup()
         if (!questionGroup) return false
         const { type } = questionGroup
         const strategy = questionStrategies[type]
-        const isCorrect = type && key && submittedAnswer ? strategy.isCorrect(submittedAnswer, key) : false
+        const isCorrect =
+            type && key && submittedAnswer ? strategy.isCorrect(submittedAnswer, key) : false
         return isCorrect
     }
     const Icon = () => {
         if (viewMode === 'revise') {
-            return checkAnswerCorrectness()
-                ? <CheckCircleIcon className='inline ml-2 -mr-6 mb-1' />
-                : <XCircleIcon className='inline ml-2 -mr-6 mb-1' />
-        }
-        else {
-            return <CursorClickIcon weight={answer ? 'fill' : 'regular'} className='inline ml-2 -mr-6 mb-1 print:hidden' />
+            return checkAnswerCorrectness() ? (
+                <CheckCircleIcon className='inline ml-2 -mr-6 mb-1' />
+            ) : (
+                <XCircleIcon className='inline ml-2 -mr-6 mb-1' />
+            )
+        } else {
+            return (
+                <CursorClickIcon
+                    weight={answer ? 'fill' : 'regular'}
+                    className='inline ml-2 -mr-6 mb-1 print:hidden'
+                />
+            )
         }
     }
 
     const ShownBlank = (
         <span className='space-x-1'>
             {new Array(blankCount).fill(0).map((_, index) => (
-                <u
-                    key={index}
-                    className={cn('whitespace-nowrap print:text-black')}
-                >
-                    {<Icon />} <span className='print:hidden'>{spaces.repeat(6)}</span><span className='hidden print:inline'>{spaces.repeat(3)}</span>{displayNo}<span>{spaces.repeat(3)}</span>
+                <u key={index} className={cn('whitespace-nowrap print:text-black')}>
+                    {<Icon />} <span className='print:hidden'>{spaces.repeat(6)}</span>
+                    <span className='hidden print:inline'>{spaces.repeat(3)}</span>
+                    {displayNo}
+                    <span>{spaces.repeat(3)}</span>
                 </u>
             ))}
         </span>
@@ -75,9 +97,7 @@ const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankP
         case 'normal':
             return (
                 <Popover shadow='sm'>
-                    <PopoverTrigger>
-                        {ShownBlank}
-                    </PopoverTrigger>
+                    <PopoverTrigger>{ShownBlank}</PopoverTrigger>
                     {children}
                 </Popover>
             )
@@ -86,20 +106,40 @@ const Blank = ({ displayNo, localNo, groupId, children, blankCount = 1 }: BlankP
             return (
                 <Popover shadow='sm'>
                     <PopoverTrigger>
-                        <span id={`q${displayNo}`} className={cn(!checkAnswerCorrectness() && 'text-danger')}>
-                            {ShownBlank} {!checkAnswerCorrectness() && <span>(<span className='line-through'><FormattedFullAnswer /></span>; <span className='text-success'><FormattedFullKey /></span>)</span>}
+                        <span
+                            id={`q${displayNo}`}
+                            className={cn(!checkAnswerCorrectness() && 'text-danger')}
+                        >
+                            {ShownBlank}{' '}
+                            {!checkAnswerCorrectness() && (
+                                <span>
+                                    (
+                                    <span className='line-through'>
+                                        <FormattedFullAnswer />
+                                    </span>
+                                    ;{' '}
+                                    <span className='text-success'>
+                                        <FormattedFullKey />
+                                    </span>
+                                    )
+                                </span>
+                            )}
                         </span>
                     </PopoverTrigger>
                     <PopoverContent>
                         <div className='p-3 flex flex-col gap-2 max-w-64'>
-                            <div>你的答案是 <FormattedFullAnswer />。</div>
-                            <div>参考答案是 <FormattedFullKey />。</div>
+                            <div>
+                                你的答案是 <FormattedFullAnswer />。
+                            </div>
+                            <div>
+                                参考答案是 <FormattedFullKey />。
+                            </div>
                             {children}
                             <AskButton fullWidth ask={ask} />
                             <SaveQuestionNoteButton fullWidth localNo={localNo} groupId={groupId} />
                         </div>
                     </PopoverContent>
-                </Popover >
+                </Popover>
             )
         }
     }
@@ -113,7 +153,17 @@ const MemoizedBlank = memo(Blank)
  * @param options - Array of option texts
  * @param groupId - The section ID
  */
-export const MultipleChoice = ({ displayNo, localNo, options, groupId }: { displayNo: number, localNo: number, options?: string[], groupId: string }) => {
+export const MultipleChoice = ({
+    displayNo,
+    localNo,
+    options,
+    groupId,
+}: {
+    displayNo: number
+    localNo: number
+    options?: string[]
+    groupId: string
+}) => {
     const answers = useAtomValue(answersAtom)
     const setAnswer = useSetAtom(setAnswerAtom)
     const viewMode = useAtomValue(viewModeAtom)
@@ -126,18 +176,22 @@ export const MultipleChoice = ({ displayNo, localNo, options, groupId }: { displ
     const content = (
         <div className='p-2 grid grid-cols-1 sm:grid-cols-2 gap-2'>
             {options?.map((option, index) => {
-                return <Button
-                    key={index}
-                    color={matchColor([[answer, 'secondary']], option)}
-                    variant='flat'
-                    size='sm'
-                    isDisabled={viewMode === 'revise'}
-                    onPress={() => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option })}
-                >
-                    <div className='max-w-48 truncate text-left'>
-                        {ALPHABET_ELEMENTS[index]} {option}
-                    </div>
-                </Button>
+                return (
+                    <Button
+                        key={index}
+                        color={matchColor([[answer, 'secondary']], option)}
+                        variant='flat'
+                        size='sm'
+                        isDisabled={viewMode === 'revise'}
+                        onPress={() =>
+                            setAnswer({ sectionId: groupId, localQuestionNo: localNo, option })
+                        }
+                    >
+                        <div className='max-w-48 truncate text-left'>
+                            {ALPHABET_ELEMENTS[index]} {option}
+                        </div>
+                    </Button>
+                )
             })}
         </div>
     )
@@ -149,19 +203,24 @@ export const MultipleChoice = ({ displayNo, localNo, options, groupId }: { displ
                     <MemoizedBlank displayNo={displayNo} localNo={localNo} groupId={groupId}>
                         <div className='p-2 flex flex-wrap gap-2 max-w-60'>
                             {options?.map((option, index) => {
-                                return <Chip
-                                    key={index}
-                                    color={matchColor([
-                                        [correctAnswer, 'success'],
-                                        [submittedAnswer, 'danger'],
-                                    ], option)}
-                                    variant='flat'
-                                    size='sm'
-                                >
-                                    <div className='max-w-48 truncate'>
-                                        {ALPHABET_ELEMENTS[index]} {option}
-                                    </div>
-                                </Chip>
+                                return (
+                                    <Chip
+                                        key={index}
+                                        color={matchColor(
+                                            [
+                                                [correctAnswer, 'success'],
+                                                [submittedAnswer, 'danger'],
+                                            ],
+                                            option,
+                                        )}
+                                        variant='flat'
+                                        size='sm'
+                                    >
+                                        <div className='max-w-48 truncate'>
+                                            {ALPHABET_ELEMENTS[index]} {option}
+                                        </div>
+                                    </Chip>
+                                )
                             })}
                         </div>
                     </MemoizedBlank>
@@ -184,7 +243,17 @@ export const MultipleChoice = ({ displayNo, localNo, options, groupId }: { displ
  * @param localNo - The 1-based question number within the section (used for storage)
  * @param groupId - The section ID
  */
-export const FillInTheBlank = ({ groupId, displayNo, localNo, blankCount = 1 }: { groupId: string, displayNo: number, localNo: number, blankCount?: number }) => {
+export const FillInTheBlank = ({
+    groupId,
+    displayNo,
+    localNo,
+    blankCount = 1,
+}: {
+    groupId: string
+    displayNo: number
+    localNo: number
+    blankCount?: number
+}) => {
     const answers = useAtomValue(answersAtom)
     const setAnswer = useSetAtom(setAnswerAtom)
     // Get the answer for this section and local question number
@@ -197,8 +266,10 @@ export const FillInTheBlank = ({ groupId, displayNo, localNo, blankCount = 1 }: 
             autoFocus
             variant='flat'
             value={answer ?? ''}
-            onChange={(e) => setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: e.target.value })}
-            onKeyDown={(e) => {
+            onChange={e =>
+                setAnswer({ sectionId: groupId, localQuestionNo: localNo, option: e.target.value })
+            }
+            onKeyDown={e => {
                 if (e.key === 'Enter') {
                     const section = (e.target as HTMLElement).closest('section')
                     if (!section) return
@@ -208,7 +279,7 @@ export const FillInTheBlank = ({ groupId, displayNo, localNo, blankCount = 1 }: 
                     const nextInput = inputs[currentIndex + 1]
 
                     if (nextInput) {
-                        (nextInput as HTMLElement).focus()
+                        ;(nextInput as HTMLElement).focus()
                     }
                 }
             }}
@@ -217,15 +288,22 @@ export const FillInTheBlank = ({ groupId, displayNo, localNo, blankCount = 1 }: 
 
     switch (viewMode) {
         case 'revise':
-            return <MemoizedBlank
-                blankCount={blankCount}
-                displayNo={displayNo}
-                localNo={localNo}
-                groupId={groupId}
-            />
+            return (
+                <MemoizedBlank
+                    blankCount={blankCount}
+                    displayNo={displayNo}
+                    localNo={localNo}
+                    groupId={groupId}
+                />
+            )
         default:
             return (
-                <MemoizedBlank blankCount={blankCount} displayNo={displayNo} localNo={localNo} groupId={groupId}>
+                <MemoizedBlank
+                    blankCount={blankCount}
+                    displayNo={displayNo}
+                    localNo={localNo}
+                    groupId={groupId}
+                >
                     <PopoverContent className='p-0'>{content}</PopoverContent>
                 </MemoizedBlank>
             )

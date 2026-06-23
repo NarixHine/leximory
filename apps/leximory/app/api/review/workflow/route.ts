@@ -41,7 +41,12 @@ type PendingReviewResult =
     | { kind: 'translations'; value: Array<{ prompt: string; answer: string; keyword: string }> }
     | { kind: 'conversation'; value: GeneratedConversation | null }
 
-const buildStoryConfig = async (comments: string[], lang: Lang, userId: string, storyStyle?: string) => ({
+const buildStoryConfig = async (
+    comments: string[],
+    lang: Lang,
+    userId: string,
+    storyStyle?: string,
+) => ({
     system: `
         你是一位专业的${getLanguageStrategy(lang).name}教师，擅长为语言学习者创作包含指定词汇的短篇故事，帮助他们记忆单词。
         
@@ -84,11 +89,13 @@ const extractTitleAndStory = (text: string): { title: string; rawStory: string }
         return { title: 'Untitled Story', rawStory: text.trim() }
     }
 
-    const title = lines[titleIndex].trim().replace(/^##\s*/, '').trim()
-    const rawStory = [
-        ...lines.slice(0, titleIndex),
-        ...lines.slice(titleIndex + 1),
-    ].join('\n').trim()
+    const title = lines[titleIndex]
+        .trim()
+        .replace(/^##\s*/, '')
+        .trim()
+    const rawStory = [...lines.slice(0, titleIndex), ...lines.slice(titleIndex + 1)]
+        .join('\n')
+        .trim()
 
     return { title: title || 'Untitled Story', rawStory }
 }
@@ -118,7 +125,9 @@ const chunkText = (text: string, maxLength: number): string[] => {
                         sentenceChunk = ''
                     }
                     for (let i = 0; i < sentence.length; i += maxLength) {
-                        chunks.push(sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim())
+                        chunks.push(
+                            sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim(),
+                        )
                     }
                 } else if ((sentenceChunk + sentence).length >= maxLength) {
                     chunks.push(sentenceChunk.trim())
@@ -146,42 +155,51 @@ const chunkText = (text: string, maxLength: number): string[] => {
     return chunks.filter(chunk => chunk)
 }
 
-export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
+export const { POST } = serve<StoryWorkflowPayload>(async context => {
     const { date, lang, userId, storyStyle, progressKey } = context.requestPayload
     const reviewLang = lang as Lang
     const languageStrategy = getLanguageStrategy(reviewLang)
     const reviewCopy = getReviewLanguageCopy(reviewLang)
 
     // Step 1: Get words once
-    const { comments, words, translationQuotaExceeded } = await context.run('get-words-and-check-quotas', async () => {
-        const targetDate = new Date(date)
-        const today = new Date()
-        const daysDiff = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24))
+    const { comments, words, translationQuotaExceeded } = await context.run(
+        'get-words-and-check-quotas',
+        async () => {
+            const targetDate = new Date(date)
+            const today = new Date()
+            const daysDiff = Math.floor(
+                (today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24),
+            )
 
-        const allWords = await getWordsWithin({
-            fromDayAgo: daysDiff,
-            toDayAgo: daysDiff - 1,
-            userId,
-        })
+            const allWords = await getWordsWithin({
+                fromDayAgo: daysDiff,
+                toDayAgo: daysDiff - 1,
+                userId,
+            })
 
-        const words = allWords.filter((word) => word.lang === reviewLang)
+            const words = allWords.filter(word => word.lang === reviewLang)
 
-        if (words.length === 0) {
-            throw new Error('No words found for the specified date')
-        }
+            if (words.length === 0) {
+                throw new Error('No words found for the specified date')
+            }
 
-        const translationQuotaExceeded = await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId, true)
+            const translationQuotaExceeded = await incrCommentaryQuota(
+                ACTION_QUOTA_COST.wordAnnotation,
+                userId,
+                true,
+            )
 
-        if (translationQuotaExceeded) {
-            throw new Error('Daily quota exceeded')
-        }
+            if (translationQuotaExceeded) {
+                throw new Error('Daily quota exceeded')
+            }
 
-        return {
-            comments: words.map(w => w.word),
-            words,
-            translationQuotaExceeded,
-        }
-    })
+            return {
+                comments: words.map(w => w.word),
+                words,
+                translationQuotaExceeded,
+            }
+        },
+    )
 
     const progress: ReviewGenerationProgress = {
         stage: 'story',
@@ -209,7 +227,12 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
 
     // Write initial progress so the frontend shows loading UI immediately
     await context.run('init-progress', async () => {
-        await redis.set(progressKey, { stage: 'story', story: null, translations: null, conversation: null })
+        await redis.set(progressKey, {
+            stage: 'story',
+            story: null,
+            translations: null,
+            conversation: null,
+        })
     })
 
     // Step 2: Generate the three visible review items in parallel.
@@ -223,7 +246,9 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
         const annotationConfigs = await context.run('build-annotation-configs', async () => {
             const chunks = chunkText(rawStory, languageStrategy.maxChunkSize)
             return Promise.all(
-                chunks.map((chunk, index) => articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0))
+                chunks.map((chunk, index) =>
+                    articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0),
+                ),
             )
         })
 
@@ -232,8 +257,8 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
                 context.run(`annotate-chunk-${index}`, async () => {
                     const { text } = await generateText(config)
                     return text
-                })
-            )
+                }),
+            ),
         )
 
         const annotatedStory = await context.run('combine-annotations', async () => {
@@ -250,7 +275,9 @@ export const { POST } = serve<StoryWorkflowPayload>(async (context) => {
             return []
         }
 
-        const selectedWords = [...words].sort(() => 0.5 - Math.random()).slice(0, Math.min(5, words.length))
+        const selectedWords = [...words]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, Math.min(5, words.length))
 
         const { text } = await generateText({
             system: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
@@ -263,10 +290,12 @@ For each vocabulary word:
 
 Format: [{"prompt": "...", "answer": "...", "keyword": "..."}]`,
             prompt: `Create ${selectedWords.length} translation exercises for these ${reviewCopy.targetLanguageName} vocabulary words:
-${selectedWords.map((w, i) => {
-                const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
-                return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
-            }).join('\n')}`,
+${selectedWords
+    .map((w, i) => {
+        const parts = w.word.replace(/\{\{|\}\}/g, '').split('||')
+        return `${i + 1}. ${parts[0]} - ${parts[2] || parts[1]}`
+    })
+    .join('\n')}`,
             maxOutputTokens: 2000,
             ...miniAI,
         })
@@ -283,20 +312,26 @@ ${selectedWords.map((w, i) => {
         }
     })
 
-    const conversationPromise = context.run('generate-conversation', async (): Promise<GeneratedConversation | null> => {
-        const selectedWords = [...words].sort(() => 0.5 - Math.random()).slice(0, Math.min(8, words.length))
-        const selectedKeywords = selectedWords.map((word) => {
-            const parts = word.word.replace(/\{\{|\}\}/g, '').split('||')
-            return parts[1] || parts[0]
-        }).filter(Boolean)
+    const conversationPromise = context.run(
+        'generate-conversation',
+        async (): Promise<GeneratedConversation | null> => {
+            const selectedWords = [...words]
+                .sort(() => 0.5 - Math.random())
+                .slice(0, Math.min(8, words.length))
+            const selectedKeywords = selectedWords
+                .map(word => {
+                    const parts = word.word.replace(/\{\{|\}\}/g, '').split('||')
+                    return parts[1] || parts[0]
+                })
+                .filter(Boolean)
 
-        const { object } = await generateObject({
-            ...miniAI,
-            schema: z.object({
-                prompt: z.string(),
-            }),
-            temperature: 1.2,
-            prompt: `
+            const { object } = await generateObject({
+                ...miniAI,
+                schema: z.object({
+                    prompt: z.string(),
+                }),
+                temperature: 1.2,
+                prompt: `
 ${LEXIMORY_WORLD_VIEW}
 
 你要为 Leximory 语言学习软件的每日练笔生成一个简明而有新意的写作情境，供用户回答小黑猫。
@@ -311,18 +346,31 @@ ${LEXIMORY_WORLD_VIEW}
 7. 成品要简明，像小黑猫轻声发来的一个练笔邀约，不要超过140个目标语言字符为宜。
 8. 只生成练笔情境本身，不要添加标题、编号、解释或中文。
 `,
-        })
+            })
 
-        return {
-            prompt: object.prompt.trim(),
-            keywords: selectedKeywords,
-        }
-    })
+            return {
+                prompt: object.prompt.trim(),
+                keywords: selectedKeywords,
+            }
+        },
+    )
 
     const pending = new Map<string, Promise<PendingReviewResult>>([
-        ['story', storyPromise.then((story) => ({ kind: 'story' as const, value: story }))],
-        ['translations', translationsPromise.then((translations) => ({ kind: 'translations' as const, value: translations }))],
-        ['conversation', conversationPromise.then((generatedConversation) => ({ kind: 'conversation' as const, value: generatedConversation }))],
+        ['story', storyPromise.then(story => ({ kind: 'story' as const, value: story }))],
+        [
+            'translations',
+            translationsPromise.then(translations => ({
+                kind: 'translations' as const,
+                value: translations,
+            })),
+        ],
+        [
+            'conversation',
+            conversationPromise.then(generatedConversation => ({
+                kind: 'conversation' as const,
+                value: generatedConversation,
+            })),
+        ],
     ])
 
     let fullStory = ''
@@ -351,7 +399,7 @@ ${LEXIMORY_WORLD_VIEW}
             for (let i = 0; i < translations.length; i++) {
                 const partial = translations.slice(0, i + 1)
                 await context.run(`reveal-translation-${i}`, async () => {
-                    const data = await redis.get(progressKey) as any
+                    const data = (await redis.get(progressKey)) as any
                     data.translations = partial
                     if (storyReady) {
                         data.stage = getStage()
@@ -370,15 +418,15 @@ ${LEXIMORY_WORLD_VIEW}
 
         conversation = settled.value
             ? {
-                prompt: settled.value.prompt,
-                keywords: settled.value.keywords,
-                submission: null,
-                status: 'idle',
-                feedback: null,
-                reply: null,
-                submittedAt: null,
-                evaluatedAt: null,
-            }
+                  prompt: settled.value.prompt,
+                  keywords: settled.value.keywords,
+                  submission: null,
+                  status: 'idle',
+                  feedback: null,
+                  reply: null,
+                  submittedAt: null,
+                  evaluatedAt: null,
+              }
             : null
         conversationReady = true
 

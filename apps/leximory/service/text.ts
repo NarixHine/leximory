@@ -3,7 +3,16 @@
 import { Kilpi } from '@repo/service/kilpi'
 import { generateObject, generateText, smoothStream, streamText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
-import { createText, getTextAnnotationProgress, getTextContent, getTextWithLib, setTextAnnotationProgress, updateText, deleteText, uploadEbook } from '@/server/db/text'
+import {
+    createText,
+    getTextAnnotationProgress,
+    getTextContent,
+    getTextWithLib,
+    setTextAnnotationProgress,
+    updateText,
+    deleteText,
+    uploadEbook,
+} from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
 import { instruction } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
@@ -40,7 +49,7 @@ export async function markAsVisited(textId: string) {
 }
 
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const
-type AllowedImageType = typeof ALLOWED_IMAGE_TYPES[number]
+type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number]
 
 /** OCR + format a Classical Chinese image: dotted words become [[word]]. */
 export async function ocrClassicalChinese(form: FormData): Promise<{ error: string } | string> {
@@ -65,9 +74,10 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
     }
 
     const { text } = await generateText({
-        messages: [{
-            role: 'system',
-            content: `
+        messages: [
+            {
+                role: 'system',
+                content: `
 你将看到一张学生文言文注释加点词练习纸。任务：提取图中文言文，并用[[ ]]包裹加点词/要求注解的词汇。
 
 执行规则：
@@ -79,16 +89,20 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
 4. **保持原样**：除上述处理和删去大标题外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
 5. **零冗余**：如果图中没有文字，则输出为空。
 `.trim(),
-        }, {
-            role: 'user',
-            content: [{
-                type: 'file',
-                data: await file.arrayBuffer(),
-                mediaType: file.type as AllowedImageType
-            }]
-        }],
+            },
+            {
+                role: 'user',
+                content: [
+                    {
+                        type: 'file',
+                        data: await file.arrayBuffer(),
+                        mediaType: file.type as AllowedImageType,
+                    },
+                ],
+            },
+        ],
         maxOutputTokens: 8000,
-        ...miniAI
+        ...miniAI,
     })
 
     return text
@@ -103,8 +117,16 @@ export async function getNewText(id: string) {
 }
 
 /** Saves partial updates (content, topics, title, emoji) to a text. */
-export async function saveText({ id, ...updateData }: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
-    if (updateData.emoji !== undefined && updateData.emoji !== null && updateData.emoji !== '' && !isValidEmoji(updateData.emoji)) {
+export async function saveText({
+    id,
+    ...updateData
+}: { id: string } & Partial<{ content: string; topics: string[]; title: string; emoji: string }>) {
+    if (
+        updateData.emoji !== undefined &&
+        updateData.emoji !== null &&
+        updateData.emoji !== '' &&
+        !isValidEmoji(updateData.emoji)
+    ) {
         throw new Error('Invalid emoji: must be a single emoji character')
     }
     const text = await getTextWithLib(id)
@@ -137,7 +159,19 @@ export async function saveEbook(id: string, form: FormData) {
 }
 
 /** Triggers article annotation via Inngest after checking quota. */
-export async function generate({ article, textId, onlyComments, delayRevalidate, generateTitle }: { article: string, textId: string, onlyComments: boolean, delayRevalidate?: boolean, generateTitle?: boolean }) {
+export async function generate({
+    article,
+    textId,
+    onlyComments,
+    delayRevalidate,
+    generateTitle,
+}: {
+    article: string
+    textId: string
+    onlyComments: boolean
+    delayRevalidate?: boolean
+    generateTitle?: boolean
+}) {
     const { userId } = await getUserOrThrow()
     const text = await getTextWithLib(textId)
     await Kilpi.texts.write(text).authorize().assert()
@@ -156,12 +190,12 @@ export async function generate({ article, textId, onlyComments, delayRevalidate,
 
     await inngest.send({
         name: 'app/article.imported',
-        data: { article, userId, textId, onlyComments, generateTitle }
+        data: { article, userId, textId, onlyComments, generateTitle },
     })
 }
 
 /** Generates a single vocabulary comment, using cache when available. */
-export async function generateSingleComment({ prompt, lang }: { prompt: string, lang: Lang }) {
+export async function generateSingleComment({ prompt, lang }: { prompt: string; lang: Lang }) {
     const { userId } = await getUserOrThrow()
     const hash = crypto.createHash('sha256').update(prompt).digest('hex')
     const cache = await getAnnotationCache({ hash })
@@ -183,13 +217,23 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string, 
             生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
             ${instruction[lang]}
             `,
-        prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为"wrap my head around"，则对"wrap one\'s head around"进行注解；如果是"dip suddenly down"，则对"dip down"进行注解）' : (lang === 'zh' ? '（例如对于"天子[[并命]]"，注释"并命"在古汉语中而非现代汉语中的意思）' : '')}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
+        prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为"wrap my head around"，则对"wrap one\'s head around"进行注解；如果是"dip suddenly down"，则对"dip down"进行注解）' : lang === 'zh' ? '（例如对于"天子[[并命]]"，注释"并命"在古汉语中而非现代汉语中的意思）' : ''}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
         maxOutputTokens: 500,
         onFinish: async ({ text }) => {
             await setAnnotationCache({ hash, cache: text })
         },
-        experimental_transform: lang === 'zh' || lang === 'ja' ? smoothStream({ chunking: lang === 'zh' ? /[\u4E00-\u9FFF]|\S+\s+/ : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ }) : (lang === 'en' ? smoothStream() : undefined),
-        ...miniAI
+        experimental_transform:
+            lang === 'zh' || lang === 'ja'
+                ? smoothStream({
+                      chunking:
+                          lang === 'zh'
+                              ? /[\u4E00-\u9FFF]|\S+\s+/
+                              : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/,
+                  })
+                : lang === 'en'
+                  ? smoothStream()
+                  : undefined,
+        ...miniAI,
     })
 
     return { text: textStream }
@@ -204,7 +248,13 @@ export async function getAnnotationProgressAction(id: string) {
 }
 
 /** Updates the annotation progress for a text. */
-export async function setAnnotationProgressAction({ id, progress }: { id: string, progress: AnnotationProgress }) {
+export async function setAnnotationProgressAction({
+    id,
+    progress,
+}: {
+    id: string
+    progress: AnnotationProgress
+}) {
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
     await setTextAnnotationProgress({ id, progress })
@@ -215,7 +265,7 @@ export async function setAnnotationProgressAction({ id, progress }: { id: string
 // ---------------------------------------------------------------------------
 
 /** Creates a new text in a library and redirects to it. */
-export async function addText({ title, lib }: { title: string, lib: string }) {
+export async function addText({ title, lib }: { title: string; lib: string }) {
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.write(libData).authorize().assert()
     const id = await createText({ lib, title })
@@ -224,7 +274,15 @@ export async function addText({ title, lib }: { title: string, lib: string }) {
 }
 
 /** Creates a text with content, generates annotations, and redirects. */
-export async function addAndGenerateText({ title, content, lib }: { title: string, content: string, lib: string }) {
+export async function addAndGenerateText({
+    title,
+    content,
+    lib,
+}: {
+    title: string
+    content: string
+    lib: string
+}) {
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.write(libData).authorize().assert()
     const id = await createText({ lib, title, content })

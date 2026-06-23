@@ -24,10 +24,11 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
         if (!searchQuery.trim()) return users
 
         const query = searchQuery.toLowerCase()
-        return users.filter(user =>
-            user.username.toLowerCase().includes(query) ||
-            (user.email && user.email.toLowerCase().includes(query)) ||
-            user.plan.toLowerCase().includes(query)
+        return users.filter(
+            user =>
+                user.username.toLowerCase().includes(query) ||
+                (user.email && user.email.toLowerCase().includes(query)) ||
+                user.plan.toLowerCase().includes(query),
         )
     }, [users, searchQuery])
 
@@ -82,10 +83,14 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
 
     const getPlanColor = (plan: Plan) => {
         switch (plan) {
-            case 'leximory': return 'secondary'
-            case 'polyglot': return 'primary'
-            case 'bilingual': return 'success'
-            default: return 'default'
+            case 'leximory':
+                return 'secondary'
+            case 'polyglot':
+                return 'primary'
+            case 'bilingual':
+                return 'success'
+            default:
+                return 'default'
         }
     }
 
@@ -106,7 +111,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                 <Input
                     placeholder='Search users by name, email, or plan...'
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     size='sm'
                     className='max-w-md'
                     isClearable
@@ -117,10 +122,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                 </div>
             </div>
 
-            <Table
-                isVirtualized
-                aria-label='Users table'
-            >
+            <Table isVirtualized aria-label='Users table'>
                 <TableHeader>
                     <TableColumn>USER</TableColumn>
                     <TableColumn>PLAN</TableColumn>
@@ -128,24 +130,26 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                     <TableColumn>LAST SIGN IN</TableColumn>
                     <TableColumn>ACTIONS</TableColumn>
                 </TableHeader>
-                <TableBody emptyContent={searchQuery ? 'No users found matching your search' : 'No users found'}>
-                    {filteredUsers.map((user) => (
+                <TableBody
+                    emptyContent={
+                        searchQuery ? 'No users found matching your search' : 'No users found'
+                    }
+                >
+                    {filteredUsers.map(user => (
                         <TableRow key={user.id}>
                             <TableCell>
                                 <div className='flex items-center gap-3'>
-                                    <Avatar
-                                        name={user.username}
-                                        size='sm'
-                                        src={user.avatarUrl}
-                                    />
+                                    <Avatar name={user.username} size='sm' src={user.avatarUrl} />
                                     <div className='flex flex-col'>
-                                        <span className='text-small font-medium'>{user.username}</span>
+                                        <span className='text-small font-medium'>
+                                            {user.username}
+                                        </span>
                                         {editingUser === user.id ? (
                                             <div className='flex items-center gap-2 mt-1'>
                                                 <Input
                                                     type='email'
                                                     value={newEmail}
-                                                    onChange={(e) => setNewEmail(e.target.value)}
+                                                    onChange={e => setNewEmail(e.target.value)}
                                                     placeholder='Enter email'
                                                     size='sm'
                                                     className='max-w-48'
@@ -155,7 +159,9 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                                     size='sm'
                                                     color='success'
                                                     variant='flat'
-                                                    onPress={() => handleEmailChange(user.id, newEmail)}
+                                                    onPress={() =>
+                                                        handleEmailChange(user.id, newEmail)
+                                                    }
                                                     isDisabled={isPending}
                                                     isIconOnly
                                                 >
@@ -192,9 +198,15 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                                     size='sm'
                                                     variant='dot'
                                                     className='border-none'
-                                                    color={user.emailConfirmedAt ? 'success' : 'warning'}
+                                                    color={
+                                                        user.emailConfirmedAt
+                                                            ? 'success'
+                                                            : 'warning'
+                                                    }
                                                 >
-                                                    {user.emailConfirmedAt ? 'Verified' : 'Unverified'}
+                                                    {user.emailConfirmedAt
+                                                        ? 'Verified'
+                                                        : 'Unverified'}
                                                 </Chip>
                                             </div>
                                         )}
@@ -205,7 +217,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                 <Select
                                     size='sm'
                                     selectedKeys={[user.plan]}
-                                    onChange={(e) => {
+                                    onChange={e => {
                                         const selectedPlan = e.target.value as Plan
                                         if (selectedPlan !== user.plan) {
                                             handlePlanChange(user.id, selectedPlan)
@@ -224,7 +236,7 @@ export default function UsersList({ users }: { users: Awaited<ReturnType<typeof 
                                         </Chip>
                                     )}
                                 >
-                                    {PLANS.map((plan) => (
+                                    {PLANS.map(plan => (
                                         <SelectItem key={plan} className='capitalize'>
                                             {plan}
                                         </SelectItem>

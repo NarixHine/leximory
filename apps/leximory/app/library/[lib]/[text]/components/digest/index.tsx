@@ -1,7 +1,18 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { isEditingAtom, textAtom, ebookAtom, topicsAtom, contentAtom, titleAtom, hideTextAtom, isLoadingAtom, emojiAtom, inlineModeAtom } from '../../atoms'
+import {
+    isEditingAtom,
+    textAtom,
+    ebookAtom,
+    topicsAtom,
+    contentAtom,
+    titleAtom,
+    hideTextAtom,
+    isLoadingAtom,
+    emojiAtom,
+    inlineModeAtom,
+} from '../../atoms'
 import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
@@ -12,7 +23,18 @@ import { Input } from '@heroui/input'
 import ImportModal from './import'
 import { useEffect, useState, useCallback, useMemo, useTransition } from 'react'
 import Link from 'next/link'
-import { PiPrinter, PiPlusCircle, PiNotePencil, PiHeadphones, PiMagnifyingGlass, PiPencilCircle, PiBookBookmark, PiTrash, PiChatDots, PiBell } from 'react-icons/pi'
+import {
+    PiPrinter,
+    PiPlusCircle,
+    PiNotePencil,
+    PiHeadphones,
+    PiMagnifyingGlass,
+    PiPencilCircle,
+    PiBookBookmark,
+    PiTrash,
+    PiChatDots,
+    PiBell,
+} from 'react-icons/pi'
 import Editor from '../editor'
 import Topics from '../topics'
 import Markdown from '@/components/markdown'
@@ -20,7 +42,13 @@ import Define from '@/components/define'
 import LexiconSelector from '@/components/lexicon'
 import { cn } from '@/lib/utils'
 import { recentAccessAtom } from '@/app/library/components/lib'
-import { getAnnotationProgressAction, getNewText, removeText, saveText, markAsVisited } from '@/service/text'
+import {
+    getAnnotationProgressAction,
+    getNewText,
+    removeText,
+    saveText,
+    markAsVisited,
+} from '@/service/text'
 import { useRouter } from 'next/navigation'
 import { AnnotationProgress } from '@/lib/types'
 import { useInterval, useIntersectionObserver } from 'usehooks-ts'
@@ -32,338 +60,420 @@ import { commentSyntaxRegex } from '@repo/utils'
 import { InlineModeSwitch } from './inline-mode-switch'
 
 function ReaderModeToggle() {
-  const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
-  const setIsEditing = useSetAtom(isEditingAtom)
+    const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
+    const setIsEditing = useSetAtom(isEditingAtom)
 
-  return (
-    <div className={cn(
-      isReaderMode ? 'w-full flex justify-center' : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
-      'print:hidden'
-    )}>
-      <Button
-        onPress={() => {
-          if (!isReaderMode) {
-            setTimeout(print, 500)
-          }
-          toggleReaderMode()
-          setIsEditing(false)
-        }}
-        className='mx-auto'
-        variant={'light'}
-        color={'secondary'}
-        radius='full'
-        startContent={<PiPrinter className='size-5' />}
-      >
-        印刷模式
-      </Button>
-    </div>
-  )
+    return (
+        <div
+            className={cn(
+                isReaderMode
+                    ? 'w-full flex justify-center'
+                    : 'w-full flex justify-center my-2 sm:mt-0 sm:mb-0 sm:w-fit',
+                'print:hidden',
+            )}
+        >
+            <Button
+                onPress={() => {
+                    if (!isReaderMode) {
+                        setTimeout(print, 500)
+                    }
+                    toggleReaderMode()
+                    setIsEditing(false)
+                }}
+                className='mx-auto'
+                variant={'light'}
+                color={'secondary'}
+                radius='full'
+                startContent={<PiPrinter className='size-5' />}
+            >
+                印刷模式
+            </Button>
+        </div>
+    )
 }
 
 function EditingView() {
-  const text = useAtomValue(textAtom)
-  const lib = useAtomValue(libAtom)
-  const [topics, setTopics] = useAtom(topicsAtom)
-  const [content, setContent] = useAtom(contentAtom)
-  const setIsEditing = useSetAtom(isEditingAtom)
-  const title = useAtomValue(titleAtom)
-  const emoji = useAtomValue(emojiAtom)
+    const text = useAtomValue(textAtom)
+    const lib = useAtomValue(libAtom)
+    const [topics, setTopics] = useAtom(topicsAtom)
+    const [content, setContent] = useAtom(contentAtom)
+    const setIsEditing = useSetAtom(isEditingAtom)
+    const title = useAtomValue(titleAtom)
+    const emoji = useAtomValue(emojiAtom)
 
-  const setRecentAccess = useSetAtom(recentAccessAtom)
+    const setRecentAccess = useSetAtom(recentAccessAtom)
 
-  const [modifiedMd, setModifiedMd] = useState(content)
-  const [modifiedTopics, setModifiedTopics] = useState(topics)
-  const [newTopic, setNewTopic] = useState('')
+    const [modifiedMd, setModifiedMd] = useState(content)
+    const [modifiedTopics, setModifiedTopics] = useState(topics)
+    const [newTopic, setNewTopic] = useState('')
 
-  const [isUpdating, startUpdating] = useTransition()
+    const [isUpdating, startUpdating] = useTransition()
 
-  useEffect(() => {
-    setModifiedMd(content)
-    setModifiedTopics(topics)
-  }, [content, topics])
+    useEffect(() => {
+        setModifiedMd(content)
+        setModifiedTopics(topics)
+    }, [content, topics])
 
-  const handleTopicRemove = useCallback((topicToRemove: string) => {
-    setModifiedTopics(prevTopics => prevTopics.filter(topic => topic !== topicToRemove))
-  }, [])
+    const handleTopicRemove = useCallback((topicToRemove: string) => {
+        setModifiedTopics(prevTopics => prevTopics.filter(topic => topic !== topicToRemove))
+    }, [])
 
-  const handleAddTopic = useCallback(() => {
-    setModifiedTopics(prevTopics => [...prevTopics, newTopic])
-    setNewTopic('')
-  }, [newTopic])
+    const handleAddTopic = useCallback(() => {
+        setModifiedTopics(prevTopics => [...prevTopics, newTopic])
+        setNewTopic('')
+    }, [newTopic])
 
-  const handleSaveChanges = useCallback(async () => {
-    startUpdating(async () => {
-      try {
-        await saveText({ id: text, content: modifiedMd, topics: modifiedTopics, title, emoji: emoji ?? undefined })
-        setIsEditing(false)
-        setContent(modifiedMd)
-        setTopics(modifiedTopics)
-      } catch {
-        toast.error('保存失败，请重试')
-      }
-    })
-  }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title, emoji])
+    const handleSaveChanges = useCallback(async () => {
+        startUpdating(async () => {
+            try {
+                await saveText({
+                    id: text,
+                    content: modifiedMd,
+                    topics: modifiedTopics,
+                    title,
+                    emoji: emoji ?? undefined,
+                })
+                setIsEditing(false)
+                setContent(modifiedMd)
+                setTopics(modifiedTopics)
+            } catch {
+                toast.error('保存失败，请重试')
+            }
+        })
+    }, [text, modifiedMd, modifiedTopics, setIsEditing, setContent, setTopics, title, emoji])
 
-  const memoizedTopics = useMemo(() => (
-    <Topics topics={modifiedTopics} remove={handleTopicRemove} />
-  ), [modifiedTopics, handleTopicRemove])
+    const memoizedTopics = useMemo(
+        () => <Topics topics={modifiedTopics} remove={handleTopicRemove} />,
+        [modifiedTopics, handleTopicRemove],
+    )
 
-  const router = useRouter()
-  const [isDeleting, setIsDeleting] = useState(false)
-  const handleDeleteText = useCallback(async () => {
-    setIsDeleting(true)
-    await removeText({ id: text })
-    setRecentAccess(prev => {
-      const updated = { ...prev }
-      delete updated[lib]
-      return updated
-    })
-    router.push(`/library/${lib}`)
-    setIsDeleting(false)
-  }, [text, lib])
+    const router = useRouter()
+    const [isDeleting, setIsDeleting] = useState(false)
+    const handleDeleteText = useCallback(async () => {
+        setIsDeleting(true)
+        await removeText({ id: text })
+        setRecentAccess(prev => {
+            const updated = { ...prev }
+            delete updated[lib]
+            return updated
+        })
+        router.push(`/library/${lib}`)
+        setIsDeleting(false)
+    }, [text, lib])
 
-  return (
-    <>
-      <div className='fixed top-4 right-4 z-50 flex gap-2'>
-        <Button
-          isLoading={isDeleting}
-          isDisabled={isUpdating}
-          variant='light'
-          color='danger'
-          onPress={handleDeleteText}
-          startContent={<PiTrash />}
-          isIconOnly
-          radius='full'
-        ></Button>
-        <Button
-          isLoading={isUpdating}
-          isDisabled={isDeleting}
-          color='primary'
-          startContent={!isUpdating && <PiPencilCircle size={20} />}
-          onPress={handleSaveChanges}
-          radius='full'
-        >
-          保存更改
-        </Button>
-      </div>
-      <div className='flex space-x-3 items-baseline'>
-        {memoizedTopics}
-        <div className='flex-1'>
-          <Input
-            className='w-full'
-            variant='underlined'
-            color='secondary'
-            value={newTopic}
-            onChange={(e) => setNewTopic(e.target.value)}
-          />
-        </div>
-        <Button
-          variant='light'
-          color='secondary'
-          startContent={<PiPlusCircle />}
-          onPress={handleAddTopic}
-        >
-          添加
-        </Button>
-      </div>
-      <Spacer y={2} />
-      <div className='mx-auto max-w-160 px-4 sm:px-0 py-6'>
-        <Editor
-          value={modifiedMd}
-          onChange={setModifiedMd}
-        />
-      </div>
-    </>
-  )
+    return (
+        <>
+            <div className='fixed top-4 right-4 z-50 flex gap-2'>
+                <Button
+                    isLoading={isDeleting}
+                    isDisabled={isUpdating}
+                    variant='light'
+                    color='danger'
+                    onPress={handleDeleteText}
+                    startContent={<PiTrash />}
+                    isIconOnly
+                    radius='full'
+                ></Button>
+                <Button
+                    isLoading={isUpdating}
+                    isDisabled={isDeleting}
+                    color='primary'
+                    startContent={!isUpdating && <PiPencilCircle size={20} />}
+                    onPress={handleSaveChanges}
+                    radius='full'
+                >
+                    保存更改
+                </Button>
+            </div>
+            <div className='flex space-x-3 items-baseline'>
+                {memoizedTopics}
+                <div className='flex-1'>
+                    <Input
+                        className='w-full'
+                        variant='underlined'
+                        color='secondary'
+                        value={newTopic}
+                        onChange={e => setNewTopic(e.target.value)}
+                    />
+                </div>
+                <Button
+                    variant='light'
+                    color='secondary'
+                    startContent={<PiPlusCircle />}
+                    onPress={handleAddTopic}
+                >
+                    添加
+                </Button>
+            </div>
+            <Spacer y={2} />
+            <div className='mx-auto max-w-160 px-4 sm:px-0 py-6'>
+                <Editor value={modifiedMd} onChange={setModifiedMd} />
+            </div>
+        </>
+    )
 }
 
 function ReadingView() {
-  const content = useAtomValue(contentAtom)
-  const isReaderMode = useAtomValue(isReaderModeAtom)
-  const ebook = useAtomValue(ebookAtom)
-  const hideText = useAtomValue(hideTextAtom)
-  const inlineMode = useAtomValue(inlineModeAtom)
-  const text = useAtomValue(textAtom)
-  const lang = useAtomValue(langAtom)
-  const { user } = useAuth()
-  const strategy = getLanguageStrategy(lang)
-  const { ref: bottomRef, entry } = useIntersectionObserver({
-    freezeOnceVisible: true
-  })
-  useEffect(() => {
-    if (entry?.isIntersecting && user) {
-      markAsVisited(text)
+    const content = useAtomValue(contentAtom)
+    const isReaderMode = useAtomValue(isReaderModeAtom)
+    const ebook = useAtomValue(ebookAtom)
+    const hideText = useAtomValue(hideTextAtom)
+    const inlineMode = useAtomValue(inlineModeAtom)
+    const text = useAtomValue(textAtom)
+    const lang = useAtomValue(langAtom)
+    const { user } = useAuth()
+    const strategy = getLanguageStrategy(lang)
+    const { ref: bottomRef, entry } = useIntersectionObserver({
+        freezeOnceVisible: true,
+    })
+    useEffect(() => {
+        if (entry?.isIntersecting && user) {
+            markAsVisited(text)
+        }
+    }, [entry?.isIntersecting, text])
+
+    if (hideText && content) {
+        const matches = content.match(commentSyntaxRegex) || []
+        return (
+            <div className='columns-1 sm:columns-2 md:columns-3 lg:columns-4 space-y-4 gap-4'>
+                {matches.map((match, index) => (
+                    <div key={index} className='flex justify-center w-full'>
+                        <Markdown md={match} onlyComments />
+                    </div>
+                ))}
+            </div>
+        )
     }
-  }, [entry?.isIntersecting, text])
 
-  if (hideText && content) {
-    const matches = content.match(commentSyntaxRegex) || []
+    if (!content) {
+        return (
+            <ul
+                className={cn(
+                    'flex flex-col gap-1 align-middle justify-center items-center',
+                    !ebook && 'h-[calc(100dvh-350px)]',
+                )}
+            >
+                {ebook ? (
+                    <Alert
+                        description='保存的文摘会显示于此'
+                        icon={<PiBookBookmark />}
+                        color='primary'
+                        variant='bordered'
+                        classNames={{
+                            title: cn('text-md'),
+                            base: 'max-w-160 mx-auto',
+                            description: cn('text-xs'),
+                            alertIcon: 'text-lg',
+                        }}
+                        title='文摘'
+                    ></Alert>
+                ) : (
+                    <div>
+                        <li className='flex items-center gap-2'>
+                            <PiNotePencil />
+                            <span className='font-bold'>制作词摘</span>强制注解
+                            <span className='font-mono'>[[]]</span>内词汇
+                        </li>
+                        <li className='flex items-center gap-2'>
+                            <PiPrinter />
+                            <span className='font-bold'>导出打印</span>印刷模式下按
+                            <span className='font-mono'>Ctrl + P</span>
+                        </li>
+                        <li className='flex items-center gap-2'>
+                            <PiHeadphones />
+                            <span className='font-bold'>边听边读</span>
+                            <span>
+                                <Link
+                                    className='underline decoration-1 underline-offset-2'
+                                    href='/blog/reading-while-listening'
+                                >
+                                    培养
+                                </Link>
+                                多维度语言认知
+                            </span>
+                        </li>
+                        <li className='flex items-center gap-2'>
+                            <PiMagnifyingGlass />
+                            <span className='font-bold'>动态注解</span>长按点选查询任意单词
+                        </li>
+                    </div>
+                )}
+            </ul>
+        )
+    }
+
     return (
-      <div className='columns-1 sm:columns-2 md:columns-3 lg:columns-4 space-y-4 gap-4'>
-        {matches.map((match, index) => (
-          <div key={index} className='flex justify-center w-full'>
-            <Markdown md={match} onlyComments />
-          </div>
-        ))}
-      </div>
+        <>
+            <Markdown
+                className={cn(
+                    isReaderMode && !inlineMode
+                        ? 'w-3/5 block'
+                        : 'max-w-160 mx-auto block px-4 sm:px-0',
+                    !isReaderMode && strategy.isDropcapEnabled && 'dropcap',
+                    strategy.proseClassName,
+                    lang === 'zh' && inlineMode && 'inline-mode',
+                )}
+                md={`<article>\n${content}\n</article>`}
+                inlineMode={lang === 'zh' ? inlineMode : false}
+            />
+            <Define />
+            <div ref={bottomRef} className='w-full h-1'></div>
+        </>
     )
-  }
-
-  if (!content) {
-    return (
-      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', !ebook && 'h-[calc(100dvh-350px)]')}>
-        {ebook
-          ? <Alert description='保存的文摘会显示于此' icon={<PiBookBookmark />} color='primary' variant='bordered' classNames={{ title: cn('text-md'), base: 'max-w-160 mx-auto', description: cn('text-xs'), alertIcon: 'text-lg' }} title='文摘'></Alert>
-          : <div>
-            <li className='flex items-center gap-2'><PiNotePencil /><span className='font-bold'>制作词摘</span>强制注解<span className='font-mono'>[[]]</span>内词汇</li>
-            <li className='flex items-center gap-2'><PiPrinter /><span className='font-bold'>导出打印</span>印刷模式下按<span className='font-mono'>Ctrl + P</span></li>
-            <li className='flex items-center gap-2'><PiHeadphones /><span className='font-bold'>边听边读</span><span><Link className='underline decoration-1 underline-offset-2' href='/blog/reading-while-listening'>培养</Link>多维度语言认知</span></li>
-            <li className='flex items-center gap-2'><PiMagnifyingGlass /><span className='font-bold'>动态注解</span>长按点选查询任意单词</li>
-          </div>}
-      </ul>
-    )
-  }
-
-  return (
-    <>
-      <Markdown
-        className={cn(
-          isReaderMode && !inlineMode ? 'w-3/5 block' : 'max-w-160 mx-auto block px-4 sm:px-0',
-          !isReaderMode && strategy.isDropcapEnabled && 'dropcap',
-          strategy.proseClassName,
-          lang === 'zh' && inlineMode && 'inline-mode'
-        )}
-        md={`<article>\n${content}\n</article>`}
-        inlineMode={lang === 'zh' ? inlineMode : false}
-      />
-      <Define />
-      <div ref={bottomRef} className='w-full h-1'></div>
-    </>
-  )
 }
 
 function GeneratingView() {
-  const [annotationProgress, setAnnotationProgress] = useState<AnnotationProgress>('annotating')
-  const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
-  const setContent = useSetAtom(contentAtom)
-  const setTopics = useSetAtom(topicsAtom)
-  const text = useAtomValue(textAtom)
-  const [currentProgress, setCurrentProgress] = useState(0)
-  const setEmoji = useSetAtom(emojiAtom)
-  const setTitle = useSetAtom(titleAtom)
-  const router = useRouter()
+    const [annotationProgress, setAnnotationProgress] = useState<AnnotationProgress>('annotating')
+    const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
+    const setContent = useSetAtom(contentAtom)
+    const setTopics = useSetAtom(topicsAtom)
+    const text = useAtomValue(textAtom)
+    const [currentProgress, setCurrentProgress] = useState(0)
+    const setEmoji = useSetAtom(emojiAtom)
+    const setTitle = useSetAtom(titleAtom)
+    const router = useRouter()
 
-  const targetProgressRecord: Record<AnnotationProgress, number> = {
-    'annotating': 60,
-    'saving': 95,
-    'completed': 100
-  }
-
-  const startProgressRecord: Record<AnnotationProgress, number> = {
-    'annotating': 0,
-    'saving': 80,
-    'completed': 95
-  }
-
-  useInterval(() => {
-    if (currentProgress < targetProgressRecord[annotationProgress]) {
-      const remaining = targetProgressRecord[annotationProgress] - currentProgress
-      const baseIncrement = 3
-      const increment = Math.max(0.4, (baseIncrement * remaining) / targetProgressRecord[annotationProgress])
-      setCurrentProgress(prev => Math.min(prev + increment, targetProgressRecord[annotationProgress]))
+    const targetProgressRecord: Record<AnnotationProgress, number> = {
+        annotating: 60,
+        saving: 95,
+        completed: 100,
     }
-  }, 1000)
 
-  useInterval(() => {
-    getAnnotationProgressAction(text).then(newProgress => {
-      if (!newProgress) {
-        setAnnotationProgress('annotating')
-        return
-      }
-      if (annotationProgress !== newProgress) {
-        setCurrentProgress(startProgressRecord[newProgress])
-        if (newProgress === 'completed') {
-          getNewText(text).then(({ content, topics, emoji, title }) => {
-            setContent(content)
-            setTopics(topics ?? [])
-            setIsLoading(false)
-            setEmoji(emoji)
-            if (title) setTitle(title)
-            router.refresh()
-          })
+    const startProgressRecord: Record<AnnotationProgress, number> = {
+        annotating: 0,
+        saving: 80,
+        completed: 95,
+    }
+
+    useInterval(() => {
+        if (currentProgress < targetProgressRecord[annotationProgress]) {
+            const remaining = targetProgressRecord[annotationProgress] - currentProgress
+            const baseIncrement = 3
+            const increment = Math.max(
+                0.4,
+                (baseIncrement * remaining) / targetProgressRecord[annotationProgress],
+            )
+            setCurrentProgress(prev =>
+                Math.min(prev + increment, targetProgressRecord[annotationProgress]),
+            )
         }
-        setAnnotationProgress(newProgress)
-      }
-    })
-  }, isLoading ? 1000 : null)
+    }, 1000)
 
-  const progressLabel: Record<AnnotationProgress, string> = {
-    annotating: '生成注解中……',
-    saving: '保存中……',
-    completed: '完成'
-  }
+    useInterval(
+        () => {
+            getAnnotationProgressAction(text).then(newProgress => {
+                if (!newProgress) {
+                    setAnnotationProgress('annotating')
+                    return
+                }
+                if (annotationProgress !== newProgress) {
+                    setCurrentProgress(startProgressRecord[newProgress])
+                    if (newProgress === 'completed') {
+                        getNewText(text).then(({ content, topics, emoji, title }) => {
+                            setContent(content)
+                            setTopics(topics ?? [])
+                            setIsLoading(false)
+                            setEmoji(emoji)
+                            if (title) setTitle(title)
+                            router.refresh()
+                        })
+                    }
+                    setAnnotationProgress(newProgress)
+                }
+            })
+        },
+        isLoading ? 1000 : null,
+    )
 
-  return (
-    <div className='flex flex-col justify-center items-center h-[calc(100dvh-400px)] gap-4'>
-      <Progress
-        classNames={{ label: cn('text-md') }}
-        color='primary'
-        size='lg'
-        value={currentProgress}
-        label={progressLabel[annotationProgress]}
-      />
-      <ul className={cn('flex flex-col gap-1 align-middle justify-center items-center', 'h-[calc(100dvh-350px)]', 'text-md')}>
-        <li className='flex items-center gap-2'><PiChatDots /><span>生成完成后注解版会自动出现</span></li>
-        <li className='flex items-center gap-2'><PiBell /><span>开启<Link className='underline decoration-1 underline-offset-4' href='/review'>通知</Link>以立刻接收生成结果</span></li>
-      </ul>
-    </div>
-  )
+    const progressLabel: Record<AnnotationProgress, string> = {
+        annotating: '生成注解中……',
+        saving: '保存中……',
+        completed: '完成',
+    }
+
+    return (
+        <div className='flex flex-col justify-center items-center h-[calc(100dvh-400px)] gap-4'>
+            <Progress
+                classNames={{ label: cn('text-md') }}
+                color='primary'
+                size='lg'
+                value={currentProgress}
+                label={progressLabel[annotationProgress]}
+            />
+            <ul
+                className={cn(
+                    'flex flex-col gap-1 align-middle justify-center items-center',
+                    'h-[calc(100dvh-350px)]',
+                    'text-md',
+                )}
+            >
+                <li className='flex items-center gap-2'>
+                    <PiChatDots />
+                    <span>生成完成后注解版会自动出现</span>
+                </li>
+                <li className='flex items-center gap-2'>
+                    <PiBell />
+                    <span>
+                        开启
+                        <Link className='underline decoration-1 underline-offset-4' href='/review'>
+                            通知
+                        </Link>
+                        以立刻接收生成结果
+                    </span>
+                </li>
+            </ul>
+        </div>
+    )
 }
 
 export default function Digest({ hideImportControls }: { hideImportControls?: boolean }) {
-  const isEditing = useAtomValue(isEditingAtom)
-  const ebook = useAtomValue(ebookAtom)
-  const lang = useAtomValue(langAtom)
-  const isReaderMode = useAtomValue(isReaderModeAtom)
-  const isLoading = useAtomValue(isLoadingAtom)
-  const lib = useAtomValue(libAtom)
-  const text = useAtomValue(textAtom)
-  const setRecentAccess = useSetAtom(recentAccessAtom)
-  const title = useAtomValue(titleAtom)
+    const isEditing = useAtomValue(isEditingAtom)
+    const ebook = useAtomValue(ebookAtom)
+    const lang = useAtomValue(langAtom)
+    const isReaderMode = useAtomValue(isReaderModeAtom)
+    const isLoading = useAtomValue(isLoadingAtom)
+    const lib = useAtomValue(libAtom)
+    const text = useAtomValue(textAtom)
+    const setRecentAccess = useSetAtom(recentAccessAtom)
+    const title = useAtomValue(titleAtom)
 
-  useEffect(() => {
-    setRecentAccess(prev => ({ ...prev, [lib]: { id: text, title } }))
-  }, [lib, text, title])
+    useEffect(() => {
+        setRecentAccess(prev => ({ ...prev, [lib]: { id: text, title } }))
+    }, [lib, text, title])
 
-  return (
-    <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
-      <div className='sm:mt-2 sm:flex sm:justify-center sm:items-center mb-4 sm:mb-3 opacity-75'>
-        {!ebook && (
-          <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
-            <ReaderModeToggle />
-            {lang === 'en' && !isReaderMode && <LexiconSelector className='mb-1 sm:mb-0' />}
-          </div>
-        )}
-      </div>
+    return (
+        <div className='min-h-[calc(100dvh-300px)] md:min-h-[calc(100dvh-200px)] flex flex-col'>
+            <div className='sm:mt-2 sm:flex sm:justify-center sm:items-center mb-4 sm:mb-3 opacity-75'>
+                {!ebook && (
+                    <div className='sm:flex sm:justify-center sm:items-center sm:space-x-4'>
+                        <ReaderModeToggle />
+                        {lang === 'en' && !isReaderMode && (
+                            <LexiconSelector className='mb-1 sm:mb-0' />
+                        )}
+                    </div>
+                )}
+            </div>
 
-      <div>
-        {isLoading ? (
-          <GeneratingView />
-        ) : isEditing ? (
-          <EditingView />
-        ) : (
-          <>
-            {ebook && <Ebook />}
-            <ReadingView />
-          </>
-        )}
-      </div>
+            <div>
+                {isLoading ? (
+                    <GeneratingView />
+                ) : isEditing ? (
+                    <EditingView />
+                ) : (
+                    <>
+                        {ebook && <Ebook />}
+                        <ReadingView />
+                    </>
+                )}
+            </div>
 
-      <Spacer y={6} />
+            <Spacer y={6} />
 
-      {!isReaderMode && <div className={'max-w-160 mx-auto mt-auto'}>
-        {hideImportControls ? (lang === 'zh' && <InlineModeSwitch />) : <ImportModal />}
-      </div>}
-    </div>
-  )
+            {!isReaderMode && (
+                <div className={'max-w-160 mx-auto mt-auto'}>
+                    {hideImportControls ? lang === 'zh' && <InlineModeSwitch /> : <ImportModal />}
+                </div>
+            )}
+        </div>
+    )
 }

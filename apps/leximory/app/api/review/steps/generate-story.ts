@@ -12,8 +12,13 @@ interface TriggerStoryWorkflowParams {
 
 const workflowClient = new Client({ token: env.QSTASH_TOKEN })
 
-export async function generateStory({ date, lang, userId, storyStyle, progressKey }: TriggerStoryWorkflowParams) {
-
+export async function generateStory({
+    date,
+    lang,
+    userId,
+    storyStyle,
+    progressKey,
+}: TriggerStoryWorkflowParams) {
     const { workflowRunId } = await workflowClient.trigger({
         url: prefixUrl('/api/review/workflow'),
         body: { date, lang, userId, storyStyle, progressKey },

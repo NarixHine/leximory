@@ -6,16 +6,13 @@ const StoneSkeleton = extendVariants(Skeleton, {
     variants: {
         color: {
             stone: {
-                base: [
-                    'bg-default-100/50',
-                    'before:via-default-200/60'
-                ],
-            }
-        }
+                base: ['bg-default-100/50', 'before:via-default-200/60'],
+            },
+        },
     },
     defaultVariants: {
-        color: 'stone'
-    }
+        color: 'stone',
+    },
 })
 
 export default StoneSkeleton

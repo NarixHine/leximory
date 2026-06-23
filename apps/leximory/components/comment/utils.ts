@@ -1,6 +1,6 @@
 /**
  * Returns the clicked text from an element.
- * 
+ *
  * @param element - The HTMLElement to get the clicked text from.
  * @returns The clicked text as a string.
  */

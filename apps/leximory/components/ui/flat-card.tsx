@@ -6,10 +6,7 @@ const FlatCard = extendVariants(Card, {
     variants: {
         shadow: {
             none: {
-                base: [
-                    'shadow-none',
-                    'p-2',
-                ],
+                base: ['shadow-none', 'p-2'],
             },
         },
         background: {
@@ -21,7 +18,7 @@ const FlatCard = extendVariants(Card, {
             solid: {
                 base: 'bg-default-50 border-none',
             },
-        }
+        },
     },
     defaultVariants: {
         shadow: 'none',

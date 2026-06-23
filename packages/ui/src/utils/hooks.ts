@@ -2,7 +2,10 @@
 
 export function useSelectionPosition(selection: Selection | null) {
     // 1. Get the bounding rectangle of the selection
-    const rect = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).getBoundingClientRect() : null
+    const rect =
+        selection && selection.rangeCount > 0
+            ? selection.getRangeAt(0).getBoundingClientRect()
+            : null
 
     // 2. Calculate positioning
     let buttonTop = 0

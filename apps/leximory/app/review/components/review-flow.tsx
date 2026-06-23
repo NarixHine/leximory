@@ -50,7 +50,7 @@ function rotateLandscapePointToPortrait(x: number, y: number) {
 function hashSeed(str: string): number {
     let h = 0
     for (let i = 0; i < str.length; i++) {
-        h = Math.imul(31, h) + str.charCodeAt(i) | 0
+        h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
     }
     return h
 }
@@ -79,25 +79,28 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         const result: ReviewItem[] = []
 
         const getItemFootprint = (item: Pick<LawnItem, 'type' | 'label'>) => ({
-            width: item.type === 'story'
-                ? 20
-                : item.type === 'conversation'
-                    ? 26
-                    : Math.min(28, Math.max(12, 8 + item.label.length * 1.15)),
+            width:
+                item.type === 'story'
+                    ? 20
+                    : item.type === 'conversation'
+                      ? 26
+                      : Math.min(28, Math.max(12, 8 + item.label.length * 1.15)),
             height: item.type === 'story' ? 9 : item.type === 'conversation' ? 12 : 7,
         })
 
         const overlaps = (
             candidate: { type: ReviewItem['type']; label: string; x: number; y: number },
-            existing: ReviewItem
+            existing: ReviewItem,
         ) => {
             const candidateSize = getItemFootprint(candidate)
             const existingSize = getItemFootprint(existing)
             const buffer = 10
 
             return (
-                Math.abs(candidate.x - existing.x) < (candidateSize.width + existingSize.width) / 2 + buffer &&
-                Math.abs(candidate.y - existing.y) < (candidateSize.height + existingSize.height) / 2 + buffer
+                Math.abs(candidate.x - existing.x) <
+                    (candidateSize.width + existingSize.width) / 2 + buffer &&
+                Math.abs(candidate.y - existing.y) <
+                    (candidateSize.height + existingSize.height) / 2 + buffer
             )
         }
 
@@ -118,7 +121,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                     x: usePortraitLawn ? 10 + rng() * 80 : 20 + rng() * 60,
                     y: usePortraitLawn ? 46 + rng() * 40 : 26 + rng() * 40,
                 }
-                const overlapCount = result.filter((item) => overlaps(candidate, item)).length
+                const overlapCount = result.filter(item => overlaps(candidate, item)).length
 
                 if (overlapCount < bestCandidate.overlapCount) {
                     bestCandidate = { x: candidate.x, y: candidate.y, overlapCount }
@@ -138,7 +141,14 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
         if (story) {
             const pos = getPosition('story', 'story', '故事')
-            result.push({ id: 'story', type: 'story', label: '故事', x: pos.x, y: pos.y, data: story })
+            result.push({
+                id: 'story',
+                type: 'story',
+                label: '故事',
+                x: pos.x,
+                y: pos.y,
+                data: story,
+            })
         }
 
         if (translations) {
@@ -174,54 +184,61 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
 
     const unlockProgress = useMemo(
         () => getConversationUnlockProgress(translations),
-        [translations]
+        [translations],
     )
     const reviewCompletion = useMemo(
         () => getReviewCompletion({ story, translations, conversation }),
-        [story, translations, conversation]
+        [story, translations, conversation],
     )
 
-    const currentProgress = useMemo<ReviewProgressData>(() => ({
-        percentage: reviewCompletion.percentage,
-        conversationCompleted: reviewCompletion.conversationCompleted,
-    }), [reviewCompletion.conversationCompleted, reviewCompletion.percentage])
+    const currentProgress = useMemo<ReviewProgressData>(
+        () => ({
+            percentage: reviewCompletion.percentage,
+            conversationCompleted: reviewCompletion.conversationCompleted,
+        }),
+        [reviewCompletion.conversationCompleted, reviewCompletion.percentage],
+    )
 
     const handleExit = useCallback(() => {
         onExit(currentProgress)
     }, [currentProgress, onExit])
 
     const displayItems = useMemo(
-        () => items.map((item) => {
-            const rotated = usePortraitLawn
+        () =>
+            items.map(item => {
+                const rotated = usePortraitLawn
+                    ? rotateLandscapePointToPortrait(item.x, item.y)
+                    : { x: item.x, y: item.y }
+
+                return {
+                    item,
+                    displayX: rotated.x,
+                    displayY: rotated.y,
+                }
+            }),
+        [items, usePortraitLawn],
+    )
+
+    const handleItemClick = useCallback(
+        (item: LawnItem) => {
+            if (!lawnRef.current) return
+
+            if (closeTimeoutRef.current) {
+                clearTimeout(closeTimeoutRef.current)
+                closeTimeoutRef.current = null
+            }
+
+            setPendingItemId(item.id)
+            setOpenPanel(item.type)
+
+            const targetPosition = usePortraitLawn
                 ? rotateLandscapePointToPortrait(item.x, item.y)
                 : { x: item.x, y: item.y }
 
-            return {
-                item,
-                displayX: rotated.x,
-                displayY: rotated.y,
-            }
-        }),
-        [items, usePortraitLawn]
+            lawnRef.current.moveTo(targetPosition.x, targetPosition.y)
+        },
+        [usePortraitLawn],
     )
-
-    const handleItemClick = useCallback((item: LawnItem) => {
-        if (!lawnRef.current) return
-
-        if (closeTimeoutRef.current) {
-            clearTimeout(closeTimeoutRef.current)
-            closeTimeoutRef.current = null
-        }
-
-        setPendingItemId(item.id)
-        setOpenPanel(item.type)
-
-        const targetPosition = usePortraitLawn
-            ? rotateLandscapePointToPortrait(item.x, item.y)
-            : { x: item.x, y: item.y }
-
-        lawnRef.current.moveTo(targetPosition.x, targetPosition.y)
-    }, [usePortraitLawn])
 
     const handleClose = useCallback(() => {
         setOpenPanel(null)
@@ -237,7 +254,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
     const isGenerating = progress?.stage !== 'complete'
     const liveTranslation = useMemo(() => {
         if (openPanel !== 'translation' || !pendingItemId) return null
-        const item = items.find((i) => i.id === pendingItemId && i.type === 'translation')
+        const item = items.find(i => i.id === pendingItemId && i.type === 'translation')
         if (!item || item.type !== 'translation') return null
         return {
             id: item.id,
@@ -251,7 +268,7 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
         story: 'Writing story...',
         translations: 'Generating exercises...',
         conversation: 'Creating conversation...',
-        complete: ''
+        complete: '',
     }[progress?.stage ?? 'init']
 
     return (
@@ -260,14 +277,14 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="h-dvh w-full relative flex flex-col"
+            className='h-dvh w-full relative flex flex-col'
         >
             <Button
                 radius='full'
                 onPress={handleExit}
                 variant='light'
                 startContent={<PiX />}
-                className="absolute top-6 left-6 z-50"
+                className='absolute top-6 left-6 z-50'
             >
                 返回
             </Button>
@@ -279,12 +296,15 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                        className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4"
+                        className='fixed top-24 left-1/2 -translate-x-1/2 z-50 px-4'
                     >
-                        <Card shadow="none" className="bg-default-50 p-2 shadow-none border-7 border-default-200 rounded-4xl w-64 max-w-full">
-                            <CardBody className="flex flex-row items-center gap-3 py-2 px-4">
+                        <Card
+                            shadow='none'
+                            className='bg-default-50 p-2 shadow-none border-7 border-default-200 rounded-4xl w-64 max-w-full'
+                        >
+                            <CardBody className='flex flex-row items-center gap-3 py-2 px-4'>
                                 <Spinner variant='spinner' size='sm' color='secondary' />
-                                <span className="text-xs text-default-400 uppercase tracking-wide font-mono">
+                                <span className='text-xs text-default-400 uppercase tracking-wide font-mono'>
                                     {statusText}
                                 </span>
                             </CardBody>
@@ -293,17 +313,21 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-3 pb-4 sm:p-4">
-                <div className="relative w-full max-w-136 max-h-full aspect-3/4 md:h-full md:max-w-4xl md:aspect-video">
+            <div className='flex-1 flex flex-col items-center justify-center px-3 pb-4 sm:p-4'>
+                <div className='relative w-full max-w-136 max-h-full aspect-3/4 md:h-full md:max-w-4xl md:aspect-video'>
                     <Lawn
                         key={usePortraitLawn ? 'portrait-lawn' : 'landscape-lawn'}
                         ref={lawnRef}
                         isPortrait={usePortraitLawn}
-                        progress={!isGenerating && reviewCompletion.totalUnits > 0 ? {
-                            value: reviewCompletion.percentage,
-                            conversationCompleted: reviewCompletion.conversationCompleted,
-                            lang: lang,
-                        } : undefined}
+                        progress={
+                            !isGenerating && reviewCompletion.totalUnits > 0
+                                ? {
+                                      value: reviewCompletion.percentage,
+                                      conversationCompleted: reviewCompletion.conversationCompleted,
+                                      lang: lang,
+                                  }
+                                : undefined
+                        }
                         items={displayItems.map(({ item, displayX, displayY }, index) => ({
                             id: item.id,
                             type: item.type,
@@ -313,12 +337,16 @@ export function ReviewFlow({ date, lang, onExit }: ReviewFlowProps) {
                             displayX,
                             displayY,
                             delay: index * 0.1,
-                            isLocked: item.type === 'conversation' ? !unlockProgress.isUnlocked : undefined,
-                            isCompleted: item.type === 'conversation'
-                                ? isConversationCompleted(item.data as ReviewConversation)
-                                : item.type === 'translation'
-                                    ? isTranslationCompleted(item.data as ReviewTranslation)
+                            isLocked:
+                                item.type === 'conversation'
+                                    ? !unlockProgress.isUnlocked
                                     : undefined,
+                            isCompleted:
+                                item.type === 'conversation'
+                                    ? isConversationCompleted(item.data as ReviewConversation)
+                                    : item.type === 'translation'
+                                      ? isTranslationCompleted(item.data as ReviewTranslation)
+                                      : undefined,
                             isActive: pendingItemId === item.id,
                         }))}
                         onItemClick={handleItemClick}

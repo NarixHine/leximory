@@ -24,26 +24,28 @@ function sanitizeAnswers(answers: SectionAnswers): SectionAnswers {
             const localNo = Number(localNoStr)
             const answer = sectionAnswers[localNo]
             const trimmed = answer?.trim()
-            sanitized[sectionId][localNo] = trimmed === '' ? null : trimmed ?? null
+            sanitized[sectionId][localNo] = trimmed === '' ? null : (trimmed ?? null)
         }
     }
     return sanitized
 }
 
 export const submitAnswersAction = actionClient
-    .inputSchema(z.object({
-        answers: SectionAnswersSchema,
-        id: z.number(),
-        passcode: z.string().optional(),
-    }))
+    .inputSchema(
+        z.object({
+            answers: SectionAnswersSchema,
+            id: z.number(),
+            passcode: z.string().optional(),
+        }),
+    )
     .action(async ({ parsedInput: { answers, id, passcode } }) => {
         const { content } = await getPaper({ id })
         const sanitizedAnswers = sanitizeAnswers(answers)
         const user = await getUserOrThrow()
 
         // Check quota BEFORE creating submission to avoid orphaned submissions
-        const hasSubjective = content.some(
-            (section) => (SUBJECTIVE_TYPES as readonly string[]).includes(section.type)
+        const hasSubjective = content.some(section =>
+            (SUBJECTIVE_TYPES as readonly string[]).includes(section.type),
         )
         if (hasSubjective) {
             if (await incrCommentaryQuota(ACTION_QUOTA_COST.quiz.marking, user.userId)) {

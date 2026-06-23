@@ -5,13 +5,25 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import type { Contents, NavItem, Rendition } from 'epubjs'
 import ePub from 'epubjs'
 import {
-    Drawer, DrawerContent, DrawerHeader, DrawerBody,
-    Button, useDisclosure, cn,
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerBody,
+    Button,
+    useDisclosure,
+    cn,
     Progress,
     ScrollShadow,
     CircularProgress,
 } from '@heroui/react'
-import { CaretLeftIcon, CaretRightIcon, CaretDownIcon, RowsIcon, CheckCircleIcon, CircleDashedIcon } from '@phosphor-icons/react'
+import {
+    CaretLeftIcon,
+    CaretRightIcon,
+    CaretDownIcon,
+    RowsIcon,
+    CheckCircleIcon,
+    CircleDashedIcon,
+} from '@phosphor-icons/react'
 import { sanitizeHTML } from '../utils/parse'
 
 export type { Book, Rendition, NavItem, Contents, Location } from 'epubjs'
@@ -107,20 +119,31 @@ function TinyProgress({ value }: { value: number }) {
     const circ = 2 * Math.PI * r
 
     if (value === 0) {
-        return (
-            <CircleDashedIcon weight='thin' />
-        )
+        return <CircleDashedIcon weight='thin' />
     }
     if (value >= 100) {
-        return (
-            <CheckCircleIcon weight='thin' className='text-foreground/50' />
-        )
+        return <CheckCircleIcon weight='thin' className='text-foreground/50' />
     }
     return (
-        <svg width={size} height={size} className='shrink-0 -rotate-90' style={{ overflow: 'visible' }}>
-            <circle cx={size / 2} cy={size / 2} r={r} fill='none' stroke='currentColor' strokeWidth={stroke} className='text-default-200' />
+        <svg
+            width={size}
+            height={size}
+            className='shrink-0 -rotate-90'
+            style={{ overflow: 'visible' }}
+        >
             <circle
-                cx={size / 2} cy={size / 2} r={r}
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill='none'
+                stroke='currentColor'
+                strokeWidth={stroke}
+                className='text-default-200'
+            />
+            <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
                 fill='none'
                 stroke='currentColor'
                 strokeWidth={stroke}
@@ -169,7 +192,7 @@ function TocEntry({
                 fullWidth
                 disableAnimation
                 variant={isActive ? 'flat' : 'light'}
-                onPress={() => hasChildren ? toggleExpand(item.id) : onSelect(item.href)}
+                onPress={() => (hasChildren ? toggleExpand(item.id) : onSelect(item.href))}
                 className={cn(
                     'flex items-center gap-2.5 text-left transition-colors',
                     depth === 0 ? 'py-2.5' : 'py-2',
@@ -177,13 +200,15 @@ function TocEntry({
                 style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: '16px' }}
             >
                 <TinyProgress value={progress} />
-                <span className={cn(
-                    'flex-1 leading-snug transition-colors truncate',
-                    depth === 0 ? 'text-sm font-semibold' : 'text-xs font-normal',
-                    isActive && 'text-primary-700',
-                    isDone && !isActive && 'text-foreground/30',
-                    !isDone && !isActive && 'text-foreground/80',
-                )}>
+                <span
+                    className={cn(
+                        'flex-1 leading-snug transition-colors truncate',
+                        depth === 0 ? 'text-sm font-semibold' : 'text-xs font-normal',
+                        isActive && 'text-primary-700',
+                        isDone && !isActive && 'text-foreground/30',
+                        !isDone && !isActive && 'text-foreground/80',
+                    )}
+                >
                     {item.label.trim()}
                 </span>
                 {hasChildren && (
@@ -260,7 +285,7 @@ export default function EpubReader({
             width: '100%',
             height: '100%',
             spread: 'auto',
-            allowScriptedContent: true
+            allowScriptedContent: true,
         })
 
         // Intercept and Purify
@@ -273,7 +298,7 @@ export default function EpubReader({
                 ADD_ATTR: ['itemprop', 'role'],
                 // FORBID: Scripts and event handlers (onmouseover, etc.)
                 FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
-                FORBID_ATTR: ['onerror', 'onclick', 'onload']
+                FORBID_ATTR: ['onerror', 'onclick', 'onload'],
             })
 
             body.innerHTML = cleanHtml
@@ -291,13 +316,18 @@ export default function EpubReader({
             rendition.display()
         }
 
-        rendition.on('relocated', (loc: { start: { cfi: string; href: string; displayed: { page: number; total: number } } }) => {
-            setIsLoaded(true)
-            setCurrentHref(loc.start.href)
-            setCurrentPage(loc.start.displayed.page)
-            setTotalPages(loc.start.displayed.total)
-            onLocationChangeRef.current(loc.start.cfi)
-        })
+        rendition.on(
+            'relocated',
+            (loc: {
+                start: { cfi: string; href: string; displayed: { page: number; total: number } }
+            }) => {
+                setIsLoaded(true)
+                setCurrentHref(loc.start.href)
+                setCurrentPage(loc.start.displayed.page)
+                setTotalPages(loc.start.displayed.total)
+                onLocationChangeRef.current(loc.start.cfi)
+            },
+        )
 
         onRenditionRef.current?.(rendition)
 
@@ -335,23 +365,19 @@ export default function EpubReader({
         })
     }, [])
 
-    const flatHrefs = useMemo(
-        () => flattenNavItems(toc).map(t => hrefBase(t.href)),
-        [toc],
-    )
+    const flatHrefs = useMemo(() => flattenNavItems(toc).map(t => hrefBase(t.href)), [toc])
 
     const currentBase = hrefBase(currentHref)
 
-    const chapterName = useMemo(
-        () => findChapterLabel(toc, currentBase),
-        [toc, currentBase],
-    )
+    const chapterName = useMemo(() => findChapterLabel(toc, currentBase), [toc, currentBase])
 
     const overallProgress = useMemo(() => {
         if (!flatHrefs.length) return 0
         const curIdx = flatHrefs.findIndex(h => hrefMatch(h, currentBase))
         if (curIdx < 0) return 0
-        return Math.round(((curIdx + (currentPage / Math.max(totalPages, 1))) / flatHrefs.length) * 100)
+        return Math.round(
+            ((curIdx + currentPage / Math.max(totalPages, 1)) / flatHrefs.length) * 100,
+        )
     }, [flatHrefs, currentBase, currentPage, totalPages])
 
     const prev = useCallback(() => renditionRef.current?.prev(), [])
@@ -359,7 +385,8 @@ export default function EpubReader({
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+                return
             if (e.key === 'ArrowLeft') isRTL ? next() : prev()
             else if (e.key === 'ArrowRight') isRTL ? prev() : next()
         }
@@ -373,9 +400,7 @@ export default function EpubReader({
         <div className='group relative flex flex-col w-full h-full'>
             {/* Header */}
             <div className='flex items-center px-1 h-15 shrink-0'>
-                <div className='flex-1'>
-
-                </div>
+                <div className='flex-1'></div>
                 <span className='min-w-2 px-2 text-primary-400 group-hover:text-primary-500 transition-colors text-sm text-center truncate select-none'>
                     {headerTitle}
                 </span>
@@ -405,7 +430,10 @@ export default function EpubReader({
                     onClick={isRTL ? next : prev}
                     className='flex items-center justify-start pl-2 w-10 sm:w-20 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
-                    <CaretLeftIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
+                    <CaretLeftIcon
+                        weight='bold'
+                        className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity'
+                    />
                 </button>
 
                 {/* Epub viewer */}
@@ -424,14 +452,21 @@ export default function EpubReader({
                     onClick={isRTL ? prev : next}
                     className='flex items-center justify-end pr-2 w-10 sm:w-20 shrink-0 text-default-300 hover:text-default-500 active:text-default-600 transition-colors group'
                 >
-                    <CaretRightIcon weight='bold' className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity' />
+                    <CaretRightIcon
+                        weight='bold'
+                        className='text-xl opacity-60 group-hover:opacity-100 group-active:opacity-100 transition-opacity'
+                    />
                 </button>
             </div>
 
             {/* Page indicator footer */}
             {isLoaded && (
                 <div className='flex items-center justify-center pb-5 w-full text-primary-400 group-hover:text-primary-500 transition-colors select-none'>
-                    <span>{currentPage}<span className='text-primary-300'>&nbsp;/&nbsp;</span>{totalPages}</span>
+                    <span>
+                        {currentPage}
+                        <span className='text-primary-300'>&nbsp;/&nbsp;</span>
+                        {totalPages}
+                    </span>
                 </div>
             )}
 
@@ -445,11 +480,18 @@ export default function EpubReader({
                 portalContainer={portalContainer}
             >
                 <DrawerContent>
-                    {(onClose) => (
+                    {onClose => (
                         <>
                             <DrawerHeader className='flex flex-col gap-3 px-4 pt-5 pb-3'>
-                                <span className='font-semibold text-base leading-none'>{tocTitle}</span>
-                                <Progress value={overallProgress} size='sm' className='w-full' color='secondary' />
+                                <span className='font-semibold text-base leading-none'>
+                                    {tocTitle}
+                                </span>
+                                <Progress
+                                    value={overallProgress}
+                                    size='sm'
+                                    className='w-full'
+                                    color='secondary'
+                                />
                             </DrawerHeader>
 
                             <DrawerBody className='px-0 pb-8'>
@@ -464,7 +506,7 @@ export default function EpubReader({
                                                 currentBase={currentBase}
                                                 currentPage={currentPage}
                                                 totalPages={totalPages}
-                                                onSelect={(href) => {
+                                                onSelect={href => {
                                                     renditionRef.current?.display(href)
                                                     onClose()
                                                 }}

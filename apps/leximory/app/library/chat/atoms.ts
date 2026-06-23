@@ -11,7 +11,7 @@ export const messagesAtom = atomWithStorage<UIMessage[]>('chat-messages', [], {
     setItem: (key, value) => {
         localStorage.setItem(key, JSON.stringify(value))
     },
-    removeItem: (key) => {
+    removeItem: key => {
         localStorage.removeItem(key)
-    }
+    },
 })

@@ -1,13 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import {
-    MotionValue,
-    motion,
-    useMotionValue,
-    useSpring,
-    useTransform,
-} from 'framer-motion'
+import { MotionValue, motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { useAtomValue } from 'jotai'
 import Link, { useLinkStatus } from 'next/link'
 import { ReactNode, useRef } from 'react'
@@ -16,9 +10,7 @@ import { Spinner } from '@heroui/spinner'
 import { AnimatePresence } from 'framer-motion'
 
 // Shared color classes for dock items
-const colorClasses = [
-    'bg-primary-200/70 text-primary-600',
-]
+const colorClasses = ['bg-primary-200/70 text-primary-600']
 
 type FloatingDockProps = {
     items: { icon: React.ReactNode; href: string }[]
@@ -39,10 +31,7 @@ type IconContainerVerticalProps = IconContainerProps & {
     mouseY: MotionValue
 }
 
-export const FloatingDock = ({
-    items,
-    className,
-}: FloatingDockProps) => {
+export const FloatingDock = ({ items, className }: FloatingDockProps) => {
     return (
         <>
             <FloatingDockHorizontal items={items} className={className} />
@@ -50,37 +39,36 @@ export const FloatingDock = ({
         </>
     )
 }
-const FloatingDockHorizontal = ({
-    items,
-    className,
-}: FloatingDockProps) => {
+const FloatingDockHorizontal = ({ items, className }: FloatingDockProps) => {
     const mouseX = useMotionValue(Infinity)
     const isReaderMode = useAtomValue(isReaderModeAtom)
-    return !isReaderMode && (
-        <motion.div
-            onMouseMove={(e) => mouseX.set(e.clientX)}
-            onMouseLeave={() => mouseX.set(Infinity)}
-            className={cn(
-                'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-4xl backdrop:blur-sm bg-primary-50/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
-                className
-            )}
-        >
-            {items.map((item, i) => (
-                <IconContainerHorizontal mouseX={mouseX} key={item.href} {...item} styles={colorClasses[i % colorClasses.length]} />
-            ))}
-        </motion.div>
+    return (
+        !isReaderMode && (
+            <motion.div
+                onMouseMove={e => mouseX.set(e.clientX)}
+                onMouseLeave={() => mouseX.set(Infinity)}
+                className={cn(
+                    'md:hidden z-50 fixed bottom-2 left-1/2 -translate-x-1/2 flex h-16 gap-4 items-end rounded-4xl backdrop:blur-sm bg-primary-50/90 backdrop-blur-md backdrop-saturate-150 px-4 pb-3 print:hidden',
+                    className,
+                )}
+            >
+                {items.map((item, i) => (
+                    <IconContainerHorizontal
+                        mouseX={mouseX}
+                        key={item.href}
+                        {...item}
+                        styles={colorClasses[i % colorClasses.length]}
+                    />
+                ))}
+            </motion.div>
+        )
     )
 }
 
-function IconContainerHorizontal({
-    mouseX,
-    icon,
-    href,
-    styles,
-}: IconContainerHorizontalProps) {
+function IconContainerHorizontal({ mouseX, icon, href, styles }: IconContainerHorizontalProps) {
     const ref = useRef<HTMLDivElement>(null)
 
-    const distance = useTransform(mouseX, (val) => {
+    const distance = useTransform(mouseX, val => {
         const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 }
 
         return val - bounds.x - bounds.width / 2
@@ -116,7 +104,7 @@ function IconContainerHorizontal({
                 style={{ width, height, opacity }}
                 className={cn(
                     'aspect-square rounded-full flex items-center justify-center relative',
-                    styles
+                    styles,
                 )}
             >
                 <motion.div
@@ -139,31 +127,33 @@ const FloatingDockVertical = ({
 }) => {
     const mouseY = useMotionValue(Infinity)
     const isReaderMode = useAtomValue(isReaderModeAtom)
-    return !isReaderMode && (
-        <motion.div
-            onMouseMove={(e) => mouseY.set(e.clientY)}
-            onMouseLeave={() => mouseY.set(Infinity)}
-            className={cn(
-                'hidden z-50 md:flex fixed right-3 bottom-3 w-16 flex-col gap-4 items-end rounded-4xl backdrop:blur-sm bg-slate-100/60 dark:bg-zinc-900/80 backdrop-blur-md backdrop-saturate-150 px-3 py-4 print:hidden',
-                className
-            )}
-        >
-            {items.map((item, i) => (
-                <IconContainerVertical mouseY={mouseY} key={item.href} {...item} styles={colorClasses[i % colorClasses.length]} />
-            ))}
-        </motion.div>
+    return (
+        !isReaderMode && (
+            <motion.div
+                onMouseMove={e => mouseY.set(e.clientY)}
+                onMouseLeave={() => mouseY.set(Infinity)}
+                className={cn(
+                    'hidden z-50 md:flex fixed right-3 bottom-3 w-16 flex-col gap-4 items-end rounded-4xl backdrop:blur-sm bg-slate-100/60 dark:bg-zinc-900/80 backdrop-blur-md backdrop-saturate-150 px-3 py-4 print:hidden',
+                    className,
+                )}
+            >
+                {items.map((item, i) => (
+                    <IconContainerVertical
+                        mouseY={mouseY}
+                        key={item.href}
+                        {...item}
+                        styles={colorClasses[i % colorClasses.length]}
+                    />
+                ))}
+            </motion.div>
+        )
     )
 }
 
-function IconContainerVertical({
-    mouseY,
-    icon,
-    href,
-    styles,
-}: IconContainerVerticalProps) {
+function IconContainerVertical({ mouseY, icon, href, styles }: IconContainerVerticalProps) {
     const ref = useRef<HTMLDivElement>(null)
 
-    const distance = useTransform(mouseY, (val) => {
+    const distance = useTransform(mouseY, val => {
         const bounds = ref.current?.getBoundingClientRect() ?? { y: 0, height: 0 }
         return val - bounds.y - bounds.height / 2
     })
@@ -198,7 +188,7 @@ function IconContainerVertical({
                 style={{ width, height, opacity }}
                 className={cn(
                     'aspect-square rounded-full flex items-center justify-center relative',
-                    styles
+                    styles,
                 )}
             >
                 <motion.div
@@ -212,17 +202,22 @@ function IconContainerVertical({
     )
 }
 
-function Indicator({
-    icon,
-}: {
-    icon: ReactNode
-}) {
+function Indicator({ icon }: { icon: ReactNode }) {
     const { pending } = useLinkStatus()
     const MotionSpinner = motion.create(Spinner)
     return (
         <AnimatePresence mode='wait'>
             {pending ? (
-                <MotionSpinner key='spinner' variant='gradient' size='sm' color='white' initial={{ opacity: 0, scale: 0.5 }} transition={{ duration: 0.1 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} />
+                <MotionSpinner
+                    key='spinner'
+                    variant='gradient'
+                    size='sm'
+                    color='white'
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                />
             ) : (
                 <motion.div
                     key='icon'
@@ -237,4 +232,3 @@ function Indicator({
         </AnimatePresence>
     )
 }
-

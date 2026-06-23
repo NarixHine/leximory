@@ -13,9 +13,7 @@ export const metadata: Metadata = {
 export default function Page() {
     return (
         <Main className='max-w-none sm:w-full lg:-translate-x-5'>
-            <HydrationBoundary hydrateAtoms={[
-                [paperIdAtom, EDITORY_PAPER_ID],
-            ]}>
+            <HydrationBoundary hydrateAtoms={[[paperIdAtom, EDITORY_PAPER_ID]]}>
                 <ScopeProvider atoms={[editoryItemsAtom, viewModeAtom]}>
                     <Suspense>
                         <Editory />

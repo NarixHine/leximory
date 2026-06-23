@@ -12,9 +12,7 @@ export const metadata = {
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
         <Suspense>
-            <AdminLayoutContetn>
-                {children}
-            </AdminLayoutContetn>
+            <AdminLayoutContetn>{children}</AdminLayoutContetn>
         </Suspense>
     )
 }

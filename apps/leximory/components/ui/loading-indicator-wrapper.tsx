@@ -17,7 +17,10 @@ const variants = {
     exit: { opacity: 0, filter: 'blur(3px)', scale: 0 },
 }
 
-export default function LoadingIndicatorWrapper({ children, ...props }: { children: ReactNode } & SpinnerProps) {
+export default function LoadingIndicatorWrapper({
+    children,
+    ...props
+}: { children: ReactNode } & SpinnerProps) {
     const { pending } = useLinkStatus()
     const [currentState, setCurrentState] = useState(pending ? 'spinner' : 'children')
 

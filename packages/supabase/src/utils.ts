@@ -12,8 +12,7 @@ export function cookiesFactory() {
             sameSite: 'lax' as const,
             secure: true,
         }
-    }
-    else {
+    } else {
         return undefined
     }
 }

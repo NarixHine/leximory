@@ -26,10 +26,13 @@ async function HeroSection() {
         <section className='flex items-center gap-5 px-2'>
             <Avatar src={image} isBordered color='default' className='size-16! shrink-0' />
             <div className='flex flex-col gap-1 min-w-0'>
-                <h1 className='text-2xl font-formal tracking-tight text-foreground truncate'>{username ?? '你好 👋'}</h1>
+                <h1 className='text-2xl font-formal tracking-tight text-foreground truncate'>
+                    {username ?? '你好 👋'}
+                </h1>
                 <span className='text-xs tracking-wider text-default-500 font-mono flex items-center gap-1.5'>
                     <PiCalendarBlankDuotone className='size-3.5' />
-                    {momentSH(createdAt).locale('zh-cn').calendar()} <span className='font-sans'>加入</span>
+                    {momentSH(createdAt).locale('zh-cn').calendar()}{' '}
+                    <span className='font-sans'>加入</span>
                 </span>
             </div>
         </section>
@@ -68,10 +71,18 @@ export default async function Settings() {
 
             {/* Actions — upgrade & daily claim */}
             <section className='flex gap-3 w-full'>
-                <Suspense fallback={<div className='h-12 w-28 animate-pulse rounded-full bg-default-100' />}>
+                <Suspense
+                    fallback={
+                        <div className='h-12 w-28 animate-pulse rounded-full bg-default-100' />
+                    }
+                >
                     <UpgradeServer />
                 </Suspense>
-                <Suspense fallback={<div className='h-12 flex-1 animate-pulse rounded-full bg-default-100' />}>
+                <Suspense
+                    fallback={
+                        <div className='h-12 flex-1 animate-pulse rounded-full bg-default-100' />
+                    }
+                >
                     <ClaimDailyLexicoinServer />
                 </Suspense>
             </section>
@@ -102,13 +113,21 @@ export default async function Settings() {
             {/* Preferences */}
             <section className='grid grid-cols-2 gap-3'>
                 <div className='bg-default-50 rounded-2xl p-5 flex flex-col gap-3'>
-                    <h2 className='text-sm font-formal tracking-tight text-default-500'>英语偏好</h2>
-                    <Suspense fallback={<div className='h-8 w-full animate-pulse rounded-full bg-default-100' />}>
+                    <h2 className='text-sm font-formal tracking-tight text-default-500'>
+                        英语偏好
+                    </h2>
+                    <Suspense
+                        fallback={
+                            <div className='h-8 w-full animate-pulse rounded-full bg-default-100' />
+                        }
+                    >
                         <Preference />
                     </Suspense>
                 </div>
                 <div className='bg-default-50 rounded-2xl p-5 flex flex-col gap-3'>
-                    <h2 className='text-sm font-formal tracking-tight text-default-500'>通行密钥</h2>
+                    <h2 className='text-sm font-formal tracking-tight text-default-500'>
+                        通行密钥
+                    </h2>
                     <CopyToken />
                 </div>
             </section>
@@ -161,5 +180,9 @@ async function Plan() {
 async function ClaimDailyLexicoinServer() {
     const { userId } = await getUserOrThrow()
     const lastClaimDate = await getLastDailyClaim(userId)
-    return <ClaimDailyLexicoin hasClaimed={lastClaimDate ? momentSH(lastClaimDate).isSame(momentSH(), 'day') : false} />
+    return (
+        <ClaimDailyLexicoin
+            hasClaimed={lastClaimDate ? momentSH(lastClaimDate).isSame(momentSH(), 'day') : false}
+        />
+    )
 }

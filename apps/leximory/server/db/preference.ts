@@ -4,22 +4,14 @@ import { supabase } from '@repo/supabase'
 
 export type Accent = 'BrE' | 'AmE'
 
-export async function setAccentPreference({ accent, userId }: { accent: Accent, userId: string }) {
-    await supabase
-        .from('users')
-        .update({ accent })
-        .eq('id', userId)
-        .throwOnError()
+export async function setAccentPreference({ accent, userId }: { accent: Accent; userId: string }) {
+    await supabase.from('users').update({ accent }).eq('id', userId).throwOnError()
 }
 
 export async function getAccentPreference({ userId }: { userId: string }) {
     'use cache'
     cacheTag('accent')
-    const { data } = await supabase
-        .from('users')
-        .select('accent')
-        .eq('id', userId)
-        .single()
+    const { data } = await supabase.from('users').select('accent').eq('id', userId).single()
 
     if (!data) {
         const { data: newUser, error: createError } = await supabase

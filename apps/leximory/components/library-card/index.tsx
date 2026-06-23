@@ -37,11 +37,7 @@ export default function LibraryCardBase({ id, name, lang, footer }: LibraryCardB
                 </CardBody>
             </Card>
 
-            {footer && (
-                <div className='flex items-center justify-between px-2 pt-2'>
-                    {footer}
-                </div>
-            )}
+            {footer && <div className='flex items-center justify-between px-2 pt-2'>{footer}</div>}
         </div>
     )
 }

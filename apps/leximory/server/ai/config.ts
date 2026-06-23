@@ -77,47 +77,48 @@ export const thinkAI = {
 } as const
 
 export const elevenLabsVoiceConfig = {
-    'BrE': {
+    BrE: {
         voice: 'rfkTsdZrVWEVhDycUYn9',
         options: {
             voice_settings: {
                 stability: 0.45,
                 similarity_boost: 0.75,
                 speed: 1.05,
-            }
-        }
+            },
+        },
     },
-    'AmE': {
+    AmE: {
         voice: 'RaFzMbMIfqBcIurH6XF9',
         options: {
             voice_settings: {
                 stability: 0.3,
                 similarity_boost: 0.4,
                 speed: 1.07,
-            }
-        }
+            },
+        },
     },
-    'ja': {
+    ja: {
         voice: 'GxxMAMfQkDlnqjpzjLHH',
-        options: {
-        }
+        options: {},
     },
-    'zh': {
+    zh: {
         voice: 'FjfxJryh105iTLL4ktHB',
-        options: {
-        }
+        options: {},
     },
-    'nl': {
+    nl: {
         voice: '0sGQQaD2G2X1s87kHM5b',
-        options: {
-        }
+        options: {},
     },
-} as const satisfies Record<string, {
-    voice: string, options: Partial<{
-        voice_settings: Partial<{
-            stability: number,
-            similarity_boost: number,
-            speed: number
+} as const satisfies Record<
+    string,
+    {
+        voice: string
+        options: Partial<{
+            voice_settings: Partial<{
+                stability: number
+                similarity_boost: number
+                speed: number
+            }>
         }>
-    }>
-}>
+    }
+>

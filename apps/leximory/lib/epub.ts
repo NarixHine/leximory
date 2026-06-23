@@ -3,7 +3,7 @@ import { NavItem, Book, EpubCFI, Location } from 'epubjs'
 function flatten(chapters: any): NavItem[] {
     return chapters.flatMap((chapter: NavItem) => [
         chapter,
-        ...(chapter.subitems ? flatten(chapter.subitems) : [])
+        ...(chapter.subitems ? flatten(chapter.subitems) : []),
     ])
 }
 
@@ -23,7 +23,9 @@ export function getChapter(book: Book, location: Location) {
             return book.canonical(chapter.href).includes(book.canonical(locationHref))
         }, null)
         .reduce((result: NavItem | null, chapter: NavItem) => {
-            const locationAfterChapter = EpubCFI.prototype.compare(location.start.cfi, getCfiFromHref(book, chapter.href)) > 0
+            const locationAfterChapter =
+                EpubCFI.prototype.compare(location.start.cfi, getCfiFromHref(book, chapter.href)) >
+                0
             return locationAfterChapter ? chapter : result
         }, null)
 

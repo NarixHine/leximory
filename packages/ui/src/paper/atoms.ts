@@ -25,7 +25,7 @@ export const EDITORY_PAPER_ID = 'EDITORY-PAPER' as const
 export const answersAtomFamily = atomFamily((paperId: string) =>
     EDITORY_PAPER_ID === paperId
         ? atom<SectionAnswers>({})
-        : atomWithStorage<SectionAnswers>(`answers-v2-${paperId}`, {})
+        : atomWithStorage<SectionAnswers>(`answers-v2-${paperId}`, {}),
 )
 
 /**
@@ -43,7 +43,7 @@ export const feedbackAtom = atom<SubmissionFeedback | null>(null)
 /**
  * Derived atom that returns the answers for the current paper.
  */
-export const answersAtom = atom((get) => {
+export const answersAtom = atom(get => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
     return get(answersAtomFamily(paperId))
 })
@@ -54,19 +54,29 @@ export const answersAtom = atom((get) => {
  * @param localQuestionNo - The 1-based question number within the section
  * @param option - The actual answer text (not the marker)
  */
-export const setAnswerAtomFamily = atomFamily((paperId: string) => atom(
-    null,
-    (get, set, { sectionId, localQuestionNo, option }: { sectionId: string, localQuestionNo: number, option: string }) => {
-        const current = get(answersAtomFamily(paperId))
-        set(answersAtomFamily(paperId), {
-            ...current,
-            [sectionId]: {
-                ...(current[sectionId] || {}),
-                [localQuestionNo]: option
-            }
-        })
-    }
-))
+export const setAnswerAtomFamily = atomFamily((paperId: string) =>
+    atom(
+        null,
+        (
+            get,
+            set,
+            {
+                sectionId,
+                localQuestionNo,
+                option,
+            }: { sectionId: string; localQuestionNo: number; option: string },
+        ) => {
+            const current = get(answersAtomFamily(paperId))
+            set(answersAtomFamily(paperId), {
+                ...current,
+                [sectionId]: {
+                    ...(current[sectionId] || {}),
+                    [localQuestionNo]: option,
+                },
+            })
+        },
+    ),
+)
 
 /**
  * Atom for setting an answer in the current paper.
@@ -76,17 +86,25 @@ export const setAnswerAtomFamily = atomFamily((paperId: string) => atom(
  */
 export const setAnswerAtom = atom(
     null,
-    (get, set, { sectionId, localQuestionNo, option }: { sectionId: string, localQuestionNo: number, option: string }) => {
+    (
+        get,
+        set,
+        {
+            sectionId,
+            localQuestionNo,
+            option,
+        }: { sectionId: string; localQuestionNo: number; option: string },
+    ) => {
         const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
         const current = get(answersAtomFamily(paperId))
         set(answersAtomFamily(paperId), {
             ...current,
             [sectionId]: {
                 ...(current[sectionId] || {}),
-                [localQuestionNo]: option
-            }
+                [localQuestionNo]: option,
+            },
         })
-    }
+    },
 )
 
 export interface MarkedItem {
@@ -97,46 +115,42 @@ export interface MarkedItem {
 }
 
 export const markedItemsAtomFamily = atomFamily((paperId: string) =>
-    atomWithStorage<MarkedItem[]>(`marked-items-${paperId}`, [])
+    atomWithStorage<MarkedItem[]>(`marked-items-${paperId}`, []),
 )
-export const markedItemsAtom = atom((get) => {
+export const markedItemsAtom = atom(get => {
     const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
     return get(markedItemsAtomFamily(paperId))
 })
 export const addMarkedItemAtom = atom(
     null,
-    (get, set, { text, xpath }: { text: string, xpath: string }) => {
+    (get, set, { text, xpath }: { text: string; xpath: string }) => {
         const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
         const current = get(markedItemsAtomFamily(paperId))
         const newItem: MarkedItem = {
             id: nanoid(),
             text,
             xpath,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         }
         set(markedItemsAtomFamily(paperId), [...current, newItem])
-    }
+    },
 )
-export const removeMarkedItemAtom = atom(
-    null,
-    (get, set, { id }: { id: string }) => {
-        const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
-        const current = get(markedItemsAtomFamily(paperId))
-        set(markedItemsAtomFamily(paperId), current.filter(item => item.id !== id))
-    }
-)
-export const clearMarkedItemsAtom = atom(
-    null,
-    (get, set) => {
-        const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
-        set(markedItemsAtomFamily(paperId), [])
-    }
-)
+export const removeMarkedItemAtom = atom(null, (get, set, { id }: { id: string }) => {
+    const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+    const current = get(markedItemsAtomFamily(paperId))
+    set(
+        markedItemsAtomFamily(paperId),
+        current.filter(item => item.id !== id),
+    )
+})
+export const clearMarkedItemsAtom = atom(null, (get, set) => {
+    const paperId = get(paperIdAtom) || DEFAULT_PAPER_ID
+    set(markedItemsAtomFamily(paperId), [])
+})
 
 export const editoryItemsAtom = atomWithStorage<QuizItems>('editory-items', [], {
     getItem(key, initialValue) {
-        if (typeof window === 'undefined')
-            return initialValue
+        if (typeof window === 'undefined') return initialValue
 
         const storedValue = localStorage.getItem(key)
         if (!storedValue) return initialValue
@@ -150,8 +164,7 @@ export const editoryItemsAtom = atomWithStorage<QuizItems>('editory-items', [], 
         }
     },
     setItem(key, value) {
-        if (typeof window === 'undefined')
-            return
+        if (typeof window === 'undefined') return
         localStorage.setItem(key, JSON.stringify(value))
     },
     removeItem(key) {

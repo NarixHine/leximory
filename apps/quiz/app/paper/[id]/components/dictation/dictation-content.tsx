@@ -5,11 +5,21 @@ import { Button } from '@heroui/button'
 import { Switch } from '@heroui/switch'
 import { Card, CardBody, CardHeader } from '@heroui/card'
 import { Spinner } from '@heroui/spinner'
-import { TrashIcon, FloppyDiskIcon, ArrowsClockwiseIcon, CheckCircleIcon } from '@phosphor-icons/react'
+import {
+    TrashIcon,
+    FloppyDiskIcon,
+    ArrowsClockwiseIcon,
+    CheckCircleIcon,
+} from '@phosphor-icons/react'
 import { ProtectedButton } from '@repo/ui/protected-button'
 import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { saveChunkNoteAction, deleteDictationAction, generateDictationAction, deleteDictationEntryAction } from '@repo/service/dictation'
+import {
+    saveChunkNoteAction,
+    deleteDictationAction,
+    generateDictationAction,
+    deleteDictationEntryAction,
+} from '@repo/service/dictation'
 import type { DictationContent as DictationContentType } from '@repo/schema/chunk-note'
 import { SECTION_NAME_MAP } from '@repo/env/config'
 import { cn } from '@heroui/theme'
@@ -37,7 +47,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
         },
         onError: () => {
             toast.error('生成失败')
-        }
+        },
     })
 
     const deleteMutation = useMutation({
@@ -45,7 +55,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
             if (!dictation) return
             await deleteDictationAction({
                 paperId,
-                dictationId: dictation.id
+                dictationId: dictation.id,
             })
         },
         onSuccess: () => {
@@ -82,9 +92,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
                 {generateMutation.isPending ? (
                     <div className='flex flex-col items-center gap-3'>
                         <Spinner size='lg' />
-                        <p className='text-default-500 text-sm'>
-                            正在生成默写纸，可能需要半分钟……
-                        </p>
+                        <p className='text-default-500 text-sm'>正在生成默写纸，可能需要半分钟……</p>
                     </div>
                 ) : (
                     <ProtectedButton
@@ -105,11 +113,7 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
         <div className='space-y-6'>
             {/* Header with toggle and delete button */}
             <div className='flex items-center justify-between print:hidden'>
-                <Switch
-                    isSelected={showEnglish}
-                    onValueChange={setShowEnglish}
-                    size='sm'
-                >
+                <Switch isSelected={showEnglish} onValueChange={setShowEnglish} size='sm'>
                     显示全部英文
                 </Switch>
                 {hasWriteAccess && (
@@ -130,10 +134,12 @@ export function DictationContent({ paperId, dictation, hasWriteAccess }: Dictati
             {dictation.content.sections.map((section, sectionIndex) => (
                 <Card key={sectionIndex} shadow='none' className='bg-transparent p-0'>
                     <CardHeader className='px-0'>
-                        <h3 className='text-lg font-semibold'>{SECTION_NAME_MAP[section.sectionType]}</h3>
+                        <h3 className='text-lg font-semibold'>
+                            {SECTION_NAME_MAP[section.sectionType]}
+                        </h3>
                     </CardHeader>
                     <CardBody className='px-0 print:gap-2'>
-                        {section.entries.map((entry) => {
+                        {section.entries.map(entry => {
                             const entryKey = `${sectionIndex}-${entry.chinese}-${entry.english}`
                             return (
                                 <DictationEntry
@@ -169,9 +175,13 @@ function DictationEntry({
     paperId,
     dictationId,
     sectionIndex,
-    hasWriteAccess
+    hasWriteAccess,
 }: DictationEntryProps) {
-    const { mutate: deleteEntry, isPending: isDeleting, isSuccess: isDeleted } = useMutation({
+    const {
+        mutate: deleteEntry,
+        isPending: isDeleting,
+        isSuccess: isDeleted,
+    } = useMutation({
         mutationFn: async () => {
             const { data } = await deleteDictationEntryAction({
                 paperId,
@@ -181,7 +191,7 @@ function DictationEntry({
             })
             return data
         },
-        onError: (error) => {
+        onError: error => {
             toast.error(`删除失败：${error.message}`)
         },
     })
@@ -190,13 +200,21 @@ function DictationEntry({
         <div className='flex justify-between gap-1'>
             <p className='text-default-700'>{entry.chinese}</p>
             <div className='flex items-center justify-end'>
-                <p className={cn(
-                    showEnglish ? 'text-foreground' : 'text-transparent underline-offset-6 underline decoration-foreground',
-                    'font-medium mr-2 text-right'
-                )}>
+                <p
+                    className={cn(
+                        showEnglish
+                            ? 'text-foreground'
+                            : 'text-transparent underline-offset-6 underline decoration-foreground',
+                        'font-medium mr-2 text-right',
+                    )}
+                >
                     {entry.english}
                 </p>
-                <SaveEntryButton english={entry.english} chinese={entry.chinese} paperId={paperId} />
+                <SaveEntryButton
+                    english={entry.english}
+                    chinese={entry.chinese}
+                    paperId={paperId}
+                />
                 {hasWriteAccess && (
                     <Button
                         size='sm'
@@ -207,7 +225,13 @@ function DictationEntry({
                         isLoading={isDeleting}
                         isIconOnly
                         isDisabled={isDeleted}
-                        startContent={isDeleted ? <CheckCircleIcon weight='duotone' /> : <TrashIcon weight='duotone' />}
+                        startContent={
+                            isDeleted ? (
+                                <CheckCircleIcon weight='duotone' />
+                            ) : (
+                                <TrashIcon weight='duotone' />
+                            )
+                        }
                     />
                 )}
             </div>
@@ -215,15 +239,27 @@ function DictationEntry({
     )
 }
 
-function SaveEntryButton({ english, chinese, paperId }: { english: string; chinese: string; paperId: number }) {
+function SaveEntryButton({
+    english,
+    chinese,
+    paperId,
+}: {
+    english: string
+    chinese: string
+    paperId: number
+}) {
     const queryClient = useQueryClient()
-    const { mutate: save, isPending, isSuccess } = useMutation({
+    const {
+        mutate: save,
+        isPending,
+        isSuccess,
+    } = useMutation({
         mutationKey: ['save-chunk-note', english, chinese],
         mutationFn: async ({ english, chinese }: { english: string; chinese: string }) => {
             const { data, serverError } = await saveChunkNoteAction({
                 english,
                 chinese,
-                paperId
+                paperId,
             })
             if (serverError) throw new Error(serverError)
             return data
@@ -231,7 +267,7 @@ function SaveEntryButton({ english, chinese, paperId }: { english: string; chine
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['all-notes'] })
         },
-        onError: (error) => {
+        onError: error => {
             toast.error(`保存失败：${error.message}`)
         },
     })
@@ -242,14 +278,22 @@ function SaveEntryButton({ english, chinese, paperId }: { english: string; chine
             variant='light'
             color='primary'
             className='print:hidden'
-            onPress={() => save({
-                english,
-                chinese
-            })}
+            onPress={() =>
+                save({
+                    english,
+                    chinese,
+                })
+            }
             isLoading={isPending}
             isDisabled={isSuccess}
             isIconOnly
-            startContent={isSuccess ? <CheckCircleIcon weight='duotone' /> : <FloppyDiskIcon weight='duotone' />}
+            startContent={
+                isSuccess ? (
+                    <CheckCircleIcon weight='duotone' />
+                ) : (
+                    <FloppyDiskIcon weight='duotone' />
+                )
+            }
         />
     )
 }
