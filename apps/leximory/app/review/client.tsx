@@ -94,7 +94,7 @@ export default function ExperimentClient({
                     />
                     {hasNextPage && (
                         <div ref={sentinelRef} className='flex justify-center py-6'>
-                            {isFetchingNextPage ? <Spinner size='lg' variant='simple' /> : null}
+                            {isFetchingNextPage ? <Spinner size='lg' variant='dots' /> : null}
                         </div>
                     )}
                 </motion.div>
