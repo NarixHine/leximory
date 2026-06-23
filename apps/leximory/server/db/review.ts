@@ -29,7 +29,10 @@ export interface DayData {
 
 export interface TimelineData {
     days: DayData[]
+    nextCursor: string | undefined
 }
+
+const DEFAULT_TIMELINE_LIMIT = 100
 
 export interface ReviewStreakData {
     total: number
@@ -42,8 +45,12 @@ export interface ReviewStreakData {
     threshold: number
 }
 
-export async function getTimelineData(userId: string): Promise<TimelineData> {
-    const wordRows = await getTimelineWords({ userId, limit: 100 })
+export async function getTimelineData(
+    userId: string,
+    cursor?: string,
+    limit: number = DEFAULT_TIMELINE_LIMIT,
+): Promise<TimelineData> {
+    const wordRows = await getTimelineWords({ userId, limit, cursor })
 
     const wordsByDate = new Map<string, DayData['words']>()
     for (const row of wordRows) {
@@ -60,7 +67,7 @@ export async function getTimelineData(userId: string): Promise<TimelineData> {
 
     const dates = Array.from(wordsByDate.keys()).sort((left, right) => right.localeCompare(left))
     if (dates.length === 0) {
-        return { days: [] }
+        return { days: [], nextCursor: undefined }
     }
 
     const startDate = dates[dates.length - 1]
@@ -113,7 +120,12 @@ export async function getTimelineData(userId: string): Promise<TimelineData> {
         }
     })
 
-    return { days }
+    const oldestDate = dates[dates.length - 1]
+    const nextCursor = wordRows.length >= limit
+        ? oldestDate
+        : undefined
+
+    return { days, nextCursor }
 }
 
 export async function getReviewStreakData(userId: string): Promise<ReviewStreakData> {

@@ -7,11 +7,12 @@ import { ReviewStreakServer } from './review-streak-server'
 
 export async function ReviewContentServer() {
     const { userId } = await getUserOrThrow()
-    const { days } = await getTimelineData(userId)
+    const { days, nextCursor } = await getTimelineData(userId)
 
     return (
         <ExperimentClient
-            days={days}
+            initialDays={days}
+            initialNextCursor={nextCursor}
             streakSlot={
                 <Suspense fallback={<ReviewStreakSkeleton />}>
                     <ReviewStreakServer userId={userId} />
