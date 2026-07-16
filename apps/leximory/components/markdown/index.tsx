@@ -156,12 +156,12 @@ function Markdown({
                             ),
                         },
                         img: ({ alt, ...props }) => <MdImg alt={alt ?? 'Image'} {...props} />,
-                        p: props => (
-                            <div
-                                {...props}
-                                className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')}
-                            />
-                        ),
+                          p: props => (
+                              <div
+                                  {...props}
+                                  className={cn('last:mb-0', compact ? 'mb-2' : 'mb-5')}
+                              />
+                          ),
                         a: props => <Link {...props} className='underline underline-offset-4' />,
                         hr: () => (
                             <div

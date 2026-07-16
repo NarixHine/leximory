@@ -128,8 +128,8 @@ export async function getTimelineData(
         }
     })
 
-    const oldestDate = dates[dates.length - 1]
-    const nextCursor = wordRows.length >= limit ? oldestDate : undefined
+    const lastWord = wordRows[wordRows.length - 1]
+    const nextCursor = wordRows.length >= limit && lastWord ? lastWord.createdAt : undefined
 
     return { days, nextCursor }
 }

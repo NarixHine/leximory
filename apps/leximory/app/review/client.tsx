@@ -47,7 +47,20 @@ export default function ExperimentClient({
         staleTime: Infinity,
     })
 
-    const days = data.pages.flatMap(page => page.days)
+    const days = data.pages.flatMap(page => page.days).reduce((merged, day) => {
+        const prev = merged[merged.length - 1]
+        if (prev && prev.date === day.date) {
+            merged[merged.length - 1] = {
+                ...prev,
+                words: [...prev.words, ...day.words],
+                count: prev.count + day.count,
+                progressByLang: { ...prev.progressByLang, ...day.progressByLang },
+            }
+        } else {
+            merged.push(day)
+        }
+        return merged
+    }, [] as DayData[])
 
     const { ref: sentinelRef } = useIntersectionObserver({
         threshold: 0.1,
@@ -94,7 +107,7 @@ export default function ExperimentClient({
                     />
                     {hasNextPage && (
                         <div ref={sentinelRef} className='flex justify-center py-6'>
-                            {isFetchingNextPage ? <Spinner size='lg' variant='dots' /> : null}
+                            {isFetchingNextPage ? <Spinner variant='wave' color='primary' /> : null}
                         </div>
                     )}
                 </motion.div>
