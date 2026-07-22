@@ -11,7 +11,7 @@ import { fixDumbPunctuation } from '@repo/utils'
 import { articleImported, notifyEvent } from './client'
 
 const topicsPrompt = (input: string) => ({
-    system: `
+    instructions: `
     用1~3个中文标签表示下文的话题或关键词。每个关键词间用||分隔（双竖线）。
     `,
     prompt: `请从下文提取出1~3个中文标签表示下文的话题或关键词：
@@ -22,14 +22,14 @@ const topicsPrompt = (input: string) => ({
 })
 
 const emojiPrompt = (input: string) => ({
-    system: `你是一个emoji选择器。根据文章的主题和氛围，选择一个最能代表这篇文章的emoji且新颖不落俗套。只输出一个emoji，不要输出任何其他内容。禁止选取可能引起强烈视觉不适的emoji，即禁止选取任何昆虫emoji。`,
+    instructions: `你是一个emoji选择器。根据文章的主题和氛围，选择一个最能代表这篇文章的emoji且新颖不落俗套。只输出一个emoji，不要输出任何其他内容。禁止选取可能引起强烈视觉不适的emoji，即禁止选取任何昆虫emoji。`,
     prompt: `为以下文章选择一个有表现力的emoji：\n\n${input.slice(0, 500)}`,
     maxOutputTokens: 20,
     ...nanoAI,
 })
 
 const titlePrompt = (input: string) => ({
-    system: `你是一个标题生成器。根据文章内容生成一个简洁、准确、有吸引力的标题。用文章的原语言输出标题。只输出标题文本，不要输出任何其他内容、引号或标点符号包裹。`,
+    instructions: `你是一个标题生成器。根据文章内容生成一个简洁、准确、有吸引力的标题。用文章的原语言输出标题。只输出标题文本，不要输出任何其他内容、引号或标点符号包裹。`,
     prompt: `为以下文章生成一个标题：\n\n${input.slice(0, 2000)}`,
     maxOutputTokens: 60,
     ...nanoAI,

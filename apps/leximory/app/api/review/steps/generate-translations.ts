@@ -48,7 +48,7 @@ export async function generateTranslations({
     const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, Math.min(5, words.length))
 
     const { text } = await generateText({
-        system: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
+        instructions: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
 
 For each vocabulary word:
 1. Create a natural Chinese sentence that conveys the word's meaning clearly.

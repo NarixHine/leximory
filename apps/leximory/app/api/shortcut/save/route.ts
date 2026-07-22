@@ -60,7 +60,7 @@ async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, use
     const { exampleSentencePrompt } = getLanguageStrategy(lang)
     const { getAccentPrompt } = getLanguageServerStrategy(lang)
     const { text } = await generateText({
-        system: `
+        instructions: `
         生成词汇注解（形如<must>vocabulary</must>、<must></must>中的部分必须注解）。
 
         ${instruction[lang]}

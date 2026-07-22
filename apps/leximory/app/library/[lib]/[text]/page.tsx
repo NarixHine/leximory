@@ -5,8 +5,9 @@ import { getArticleData } from './data'
 import { Article } from './article'
 import { Suspense } from 'react'
 import { ArticleSkeleton } from './skeleton'
+import { Metadata } from 'next'
 
-export async function generateMetadata(props: LibAndTextProps) {
+export async function generateMetadata(props: LibAndTextProps): Promise<Metadata> {
     const params = await props.params
     const { title } = await getTextContent({ id: params.text })
     return {

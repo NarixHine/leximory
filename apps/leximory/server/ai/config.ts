@@ -1,4 +1,4 @@
-import { GoogleGenerativeAIProviderOptions } from '@ai-sdk/google'
+import { GoogleLanguageModelOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
     model: 'openai/gpt-5.4-mini',
@@ -38,7 +38,7 @@ export const miniAI = {
                     threshold: 'BLOCK_NONE',
                 },
             ],
-        } satisfies GoogleGenerativeAIProviderOptions,
+        } satisfies GoogleLanguageModelOptions,
     },
 } as const
 
@@ -72,6 +72,6 @@ export const thinkAI = {
                     threshold: 'BLOCK_NONE',
                 },
             ],
-        } satisfies GoogleGenerativeAIProviderOptions,
+        } satisfies GoogleLanguageModelOptions,
     },
 } as const

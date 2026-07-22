@@ -536,7 +536,7 @@ function ChatSession({
         transport: new DefaultChatTransport({
             api: '/api/library/chat',
         }),
-        onFinish: () => {
+        onEnd: () => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
             setFiles(undefined)
             if (fileInputRef.current) {

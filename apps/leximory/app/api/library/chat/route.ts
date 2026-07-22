@@ -2,7 +2,7 @@ import {
     convertToModelMessages,
     generateText,
     smoothStream,
-    stepCountIs,
+    isStepCount,
     streamText,
     ToolSet,
 } from 'ai'
@@ -141,7 +141,7 @@ const tools: ToolSet = {
 
             // Use AI to distill the main article content from the webpage
             const { text: distilledContent } = await generateText({
-                system: `You are an expert at extracting the main article content from webpage text. Your task is to:
+                instructions: `You are an expert at extracting the main article content from webpage text. Your task is to:
 1. Remove navigation elements, headers, footers, ads, and other non-article content
 2. Keep only the main article body content
 3. Preserve the article's structure and formatting, but remove the title and links
@@ -171,9 +171,9 @@ export async function POST(req: NextRequest) {
 
     const result = streamText({
         tools,
-        system: CHAT_SYSTEM_PROMPT,
+        instructions: CHAT_SYSTEM_PROMPT,
         messages,
-        stopWhen: stepCountIs(20),
+        stopWhen: isStepCount(20),
         maxOutputTokens: 30000,
         temperature: 0.3,
         experimental_transform: smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ }),

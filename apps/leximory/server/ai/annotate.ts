@@ -13,7 +13,7 @@ export const articleAnnotationPrompt = async (
     autoTrim: boolean = true,
     isFirstChunk: boolean = true,
 ) => ({
-    system: `
+    instructions: `
         生成文本注解（形如 [[vocabulary]] 双重中括号内的词以及形如<must>vocabulary</must>的词必须注解，除此以外***尽可能多***地挑选。
 
         ${instruction[lang]}

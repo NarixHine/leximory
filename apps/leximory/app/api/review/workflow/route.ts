@@ -47,7 +47,7 @@ const buildStoryConfig = async (
     userId: string,
     storyStyle?: string,
 ) => ({
-    system: `
+    instructions: `
         你是一位专业的${getLanguageStrategy(lang).name}教师，擅长为语言学习者创作包含指定词汇的短篇故事，帮助他们记忆单词。
         
         规则：
@@ -280,7 +280,7 @@ export const { POST } = serve<StoryWorkflowPayload>(async context => {
             .slice(0, Math.min(5, words.length))
 
         const { text } = await generateText({
-            system: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
+            instructions: `Create translation exercises for learners of ${reviewCopy.targetLanguageName}. Return ONLY a JSON array, no markdown, no explanation.
 
 For each vocabulary word:
 1. Create a natural Chinese sentence that conveys the word's meaning clearly.
