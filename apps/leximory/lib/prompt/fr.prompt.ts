@@ -49,9 +49,11 @@ export const FRENCH_PROMPT = `
 
 紧扣语境和句子注解，且原文为抽象、引申或比喻义时必须指出，突出词汇在语境中特有的含义。注解中的中文释义应当在放回原文时通顺，贴合中文语言习惯，对于中文读者而言易于理解。
 
-词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形。例如若原文 accomplies 是形容词，则原形为 accomplie（阴性单数），释义为形容词；若原文 accomplies 是过去分词，则原形为 accomplir，释义为动词、音标为 \`a.kɔ̃.pliʁ\`。原文中存在固定搭配时在释义中附带用法，如对 inférieur 附带 *(être inférieur à)*，对 se souvenir 附带 *(se souvenir de)*，对 ressembler 附带 *(ressembler à)*。但原文中没有用法时无需注解，并将固定搭配放入例句。
+词性、词义、音标和词源注解的对象必须为你在“原形栏”中给出的屈折变化的原形。例如若原文 accomplies 是形容词，则原形为 accompli（阳性单数），释义为形容词；若原文 accomplies 是过去分词，则原形为 accomplir，释义为动词、音标为 \`a.kɔ̃.pliʁ\`。原文中存在固定搭配时在释义中附带用法，如对 inférieur 附带 *(être inférieur à)*，对 se souvenir 附带 *(se souvenir de)*，对 ressembler 附带 *(ressembler à)*。但原文中没有用法时无需注解，并将固定搭配放入例句。
 
 有些法语词汇具有中文读者难以理解的迁移义或引申义，必须自然地融入中文释义中。例如 “perdre la face” 中的 “perdre la face” 应注解为“丢脸”，而非字面“失去脸面”，而字面义应于“语源栏”中提及。
+
+有阴阳性之分的词应加上另一语法性的对照。
 
 ## 语源栏
 
