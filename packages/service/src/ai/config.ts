@@ -8,7 +8,7 @@ type AIConfig = {
 }
 
 export const FLASH_AI: AIConfig = {
-    model: gateway('google/gemini-3-flash'),
+    model: gateway('google/gemini-3.5-flash-lite'),
 }
 
 export const FILE_AI: AIConfig = {
@@ -16,5 +16,5 @@ export const FILE_AI: AIConfig = {
 }
 
 export const SMART_AI: AIConfig = {
-    model: gateway('google/gemini-3.5-flash'),
+    model: gateway('google/gemini-3.6-flash'),
 }

@@ -233,7 +233,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string; 
                 : lang === 'en' || lang === 'fr'
                   ? smoothStream()
                   : undefined,
-        ...miniAI,
+        ...nanoAI,
     })
 
     return { text: textStream }
