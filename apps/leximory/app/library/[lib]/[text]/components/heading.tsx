@@ -5,24 +5,19 @@ import { contentAtom, isFullViewportAtom } from '../atoms'
 import EditableH from './editable-h'
 import ShareButton from './share-button'
 import { cn } from '@/lib/utils'
-import type { ReactNode } from 'react'
 import { langAtom } from '../../atoms'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { Lang } from '@repo/env/config'
 
 interface ArticleHeadingProps {
-    hideControls?: boolean
     isPublicAndFree: boolean
-    quoteInAgent: ReactNode
     libId: string
     libName: string
     lang: Lang
 }
 
 export function ArticleHeading({
-    hideControls,
     isPublicAndFree,
-    quoteInAgent,
     libId,
     libName,
     lang,
@@ -49,13 +44,9 @@ export function ArticleHeading({
                     isFullViewport && 'opacity-0',
                 )}
             >
-                {hideControls ? (
-                    <div className='invisible'>
-                        <ShareButton {...shareButtonProps} className='mb-2' />
-                    </div>
-                ) : (
-                    quoteInAgent
-                )}
+                <div className='invisible'>
+                    <ShareButton {...shareButtonProps} className='mb-2' />
+                </div>
                 <EditableH />
                 <ShareButton {...shareButtonProps} className='mb-2 print:invisible' />
             </div>

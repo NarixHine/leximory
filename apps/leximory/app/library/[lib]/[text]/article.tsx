@@ -17,7 +17,6 @@ import {
     inlineModeAtom,
 } from './atoms'
 import Digest from './components/digest'
-import QuoteInAgent from './components/quote-in-agent'
 import { ArticleHero } from './components/article-hero'
 import { ArticleHeading } from './components/heading'
 
@@ -79,9 +78,7 @@ export const Article = ({
                     libId={lib.id}
                 />
                 <ArticleHeading
-                    hideControls={hideControls}
                     isPublicAndFree={isPublicAndFree}
-                    quoteInAgent={<QuoteInAgent className='mb-2 print:invisible' />}
                     libId={lib.id}
                     libName={lib.name}
                     lang={lib.lang}
