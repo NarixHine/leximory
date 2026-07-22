@@ -30,7 +30,7 @@ export async function saveComment({
     lib: string
     editId?: string
     shadow?: boolean
-    lang: 'en' | 'zh' | 'ja' | 'nl'
+    lang: 'en' | 'fr' | 'zh' | 'ja' | 'nl'
 }) {
     const word = `{{${extractSaveForm(portions.filter(Boolean)).join('||')}}}`
     const revalidate = () => {

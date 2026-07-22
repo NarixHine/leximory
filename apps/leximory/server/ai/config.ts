@@ -105,6 +105,16 @@ export const elevenLabsVoiceConfig = {
         voice: 'FjfxJryh105iTLL4ktHB',
         options: {},
     },
+    fr: {
+        voice: '0sGQQaD2G2X1s87kHM5b',
+        options: {
+            voice_settings: {
+                stability: 0.4,
+                similarity_boost: 0.6,
+                speed: 1.0,
+            },
+        },
+    },
     nl: {
         voice: '0sGQQaD2G2X1s87kHM5b',
         options: {},

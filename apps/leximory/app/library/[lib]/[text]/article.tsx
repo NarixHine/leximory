@@ -86,7 +86,7 @@ export const Article = ({
                     libName={lib.name}
                     lang={lib.lang}
                 />
-                <div className='px-5 sm:w-5/6 mx-auto'>
+                <div className='px-5 sm:w-5/6 mx-auto' lang={lib.lang}>
                     <Digest hideImportControls={hideControls}></Digest>
                 </div>
             </HydrationBoundary>

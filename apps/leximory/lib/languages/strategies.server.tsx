@@ -14,6 +14,10 @@ export const chineseStrategy = createLanguageServerStrategy({
     type: 'zh',
 })
 
+export const frenchStrategy = createLanguageServerStrategy({
+    type: 'fr',
+})
+
 export const japaneseStrategy = createLanguageServerStrategy({
     type: 'ja',
 })
@@ -24,6 +28,7 @@ export const notListedStrategy = createLanguageServerStrategy({
 
 export const languageServerStrategies = [
     englishStrategy,
+    frenchStrategy,
     chineseStrategy,
     japaneseStrategy,
     notListedStrategy,

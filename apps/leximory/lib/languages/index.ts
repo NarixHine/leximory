@@ -1,9 +1,10 @@
 import { Lang } from '@repo/env/config'
-import { chineseStrategy, englishStrategy, japaneseStrategy, notListedStrategy } from './strategies'
+import { chineseStrategy, englishStrategy, frenchStrategy, japaneseStrategy, notListedStrategy } from './strategies'
 import { LanguageStrategy } from './types'
 
 export const languageStrategies = [
     englishStrategy,
+    frenchStrategy,
     chineseStrategy,
     japaneseStrategy,
     notListedStrategy,

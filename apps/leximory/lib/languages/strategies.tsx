@@ -145,6 +145,49 @@ export const japaneseStrategy = createLanguageStrategy({
     articleTitleFont: 'font-kaiti',
 })
 
+export const frenchStrategy = createLanguageStrategy({
+    type: 'fr',
+    name: '法文',
+    emoji: '🇫🇷',
+    welcome: '{{Bienvenue !||bienvenue||Bienvenue dans votre nouvelle bibliothèque de français !}}',
+    maxChunkSize: 5000,
+    maxArticleLength: 30000,
+    isDropcapEnabled: true,
+    FormattedReadingTime: (text: string) => {
+        const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
+        const wordCount = sanitizedText.split(/\s+/).length
+        return (
+            <span className='text-lg tracking-wide'>
+                {wordCount} Mots, {Math.ceil(wordCount / 120)} min de lecture
+            </span>
+        )
+    },
+    exampleSentencePrompt:
+        '必须在语境义部分以斜体附上该词的例句。形如 mot||forme originale||signification: *phrase d\'exemple*||étymologie||cognates。例如：accompli||accomplir||**v. 完成** `a.kɔ̃.pliʁ` accomplish: *Il a accompli sa mission.*||意为"完成、实现": ***ac-*** (to) + ***compl*** (fill) + ***-ir***||***compl*** (complete) → **compl**ete (完整的) [英], **accompl**ish (完成) [英]。',
+    dictionaryLink: (word: string) => `https://www.cnrtl.fr/definition/${word}`,
+    libraryCardLabels: {
+        learningWith: (
+            <span className='text-white/65'>
+                apprend le <span className='text-white/85'>français</span> avec la{' '}
+                <span className='text-white/85'>Leximory Library</span> ↓
+            </span>
+        ),
+    },
+    reviewLabels: {
+        lockMessage: requiredTranslations =>
+            requiredTranslations > 0 ? (
+                <span className='font-cute text-2xl leading-tight'>
+                    Complète 60 % de tes révisions, puis reviens me voir. Miaou.
+                </span>
+            ) : (
+                <span className='font-cute text-2xl leading-tight'>
+                    Aucun exercice de traduction disponible pour débloquer aujourd'hui.
+                </span>
+            ),
+    },
+    articleTitleFont: 'font-formal leading-tight italic',
+})
+
 export const notListedStrategy = createLanguageStrategy({
     type: 'nl',
     name: '其他',
@@ -176,7 +219,7 @@ export const notListedStrategy = createLanguageStrategy({
     articleTitleFont: 'font-mono',
 })
 
-const strategies = [englishStrategy, chineseStrategy, japaneseStrategy, notListedStrategy]
+const strategies = [englishStrategy, frenchStrategy, chineseStrategy, japaneseStrategy, notListedStrategy]
 
 export function getLanguageStrategy(lang: Lang) {
     return strategies.find(s => s.type === lang) ?? notListedStrategy
