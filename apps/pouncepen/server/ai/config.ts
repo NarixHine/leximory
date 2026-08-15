@@ -12,9 +12,9 @@ export const FLASH_AI: AIConfig = {
 }
 
 export const FILE_AI: AIConfig = {
-    model: gateway('google/gemini-3.6-flash'),
+    model: gateway('google/gemini-3.7-flash'),
 }
 
 export const SMART_AI: AIConfig = {
-    model: gateway('google/gemini-3.6-flash'),
+    model: gateway('google/gemini-3.7-flash'),
 }

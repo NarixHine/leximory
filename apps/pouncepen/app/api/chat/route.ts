@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     const agent = new ToolLoopAgent({
-        model: 'google/gemini-3.6-flash',
+        model: 'google/gemini-3.7-flash',
         instructions: AgentPrompt,
         tools: {
             getCurrentItems: tool({
