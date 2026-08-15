@@ -1,11 +1,11 @@
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
-    model: 'google/gemini-3.5-flash-lite',
+    model: 'google/gemini-3.7-flash',
     providerOptions: {
         google: {
             thinkingConfig: {
-                thinkingLevel: 'minimal',
+                thinkingLevel: 'low',
                 includeThoughts: true,
             },
             safetySettings: [
@@ -23,14 +23,6 @@ export const nanoAI = {
                 },
                 {
                     category: 'HARM_CATEGORY_HARASSMENT',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_UNSPECIFIED',
                     threshold: 'BLOCK_NONE',
                 },
             ],
@@ -43,7 +35,7 @@ export const miniAI = {
     providerOptions: {
         google: {
             thinkingConfig: {
-                thinkingLevel: 'minimal',
+                thinkingLevel: 'medium',
                 includeThoughts: true,
             },
             safetySettings: [
@@ -61,14 +53,6 @@ export const miniAI = {
                 },
                 {
                     category: 'HARM_CATEGORY_HARASSMENT',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_UNSPECIFIED',
                     threshold: 'BLOCK_NONE',
                 },
             ],
@@ -95,14 +79,6 @@ export const thinkAI = {
                 },
                 {
                     category: 'HARM_CATEGORY_HARASSMENT',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-                    threshold: 'BLOCK_NONE',
-                },
-                {
-                    category: 'HARM_CATEGORY_UNSPECIFIED',
                     threshold: 'BLOCK_NONE',
                 },
             ],
