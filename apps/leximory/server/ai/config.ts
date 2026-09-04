@@ -1,7 +1,7 @@
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
-    model: 'google/gemini-3.5-flash-lite',
+    model: 'google/gemini-3.8-flash',
     providerOptions: {
         google: {
             thinkingConfig: {
@@ -31,7 +31,7 @@ export const nanoAI = {
 } as const
 
 export const miniAI = {
-    model: 'google/gemini-3.7-flash',
+    model: 'google/gemini-3.8-flash',
     providerOptions: {
         google: {
             thinkingConfig: {
