@@ -21,7 +21,7 @@ export function LeximoryGuide() {
     return (
         <GradientCard
             title='Leximory 漫游指南'
-            text='文库、边听边读、智能体、火星日报、Memories、iOS Shortcut、文库集市……所有功能，一网打尽。'
+            text='文库、边听边读、智能体、iOS Shortcut、文库集市……所有功能，一网打尽。'
             className='bg-[linear-gradient(120deg,#10172a_0%,#283e51_40%,#485563_70%,#232526_100%)]'
             textClassName='mb-8 text-white opacity-80'
             titleClassName='text-2xl mb-1 text-white/90'

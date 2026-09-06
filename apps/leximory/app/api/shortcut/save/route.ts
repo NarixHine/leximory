@@ -9,7 +9,7 @@ import { ACTION_QUOTA_COST, Lang, SUPPORTED_LANGS } from '@repo/env/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { verifyToken } from '@/server/db/token'
-import { miniAI, nanoAI } from '@/server/ai/config'
+import { nanoAI } from '@/server/ai/config'
 import { getLanguageStrategy } from '@/lib/languages'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { instruction } from '@/lib/prompt'
@@ -66,8 +66,8 @@ async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, use
         ${instruction[lang]}
         `,
         prompt: `下面是一个加<must>的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为"wrap my head around"，则对"wrap one\'s head around"进行注解；如果是"dip suddenly down"，则对"dip down"进行注解）' : lang === 'fr' ? '（例如如果括号内为"se rendre compte"，则对"se rendre compte"整体进行注解；如果是"met en perspective"，则对"mettre en perspective"进行注解，须还原为不定式）' : ''}。如果是长句则完整翻译并解释。不要在输出中附带下文。请依次输出它的原文形式、原形、语境义（含例句）${lang === 'en' || lang === 'fr' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}\n你要注解的是：\n${prompt}`,
-        maxOutputTokens: 500,
-        ...miniAI,
+        maxOutputTokens: 1000,
+        ...nanoAI,
     })
 
     return text
