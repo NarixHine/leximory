@@ -276,6 +276,10 @@ export default function EpubReader({
     onLocationChangeRef.current = onLocationChange
     const onRenditionRef = useRef(onRendition)
     onRenditionRef.current = onRendition
+    // A relocated event updates the controlled location prop. Do not display
+    // that same location again: epub.js may re-resolve a split-page CFI to the
+    // adjacent page when display() is called during an active pagination move.
+    const lastReportedLocationRef = useRef<string | null>(null)
 
     useEffect(() => {
         if (!viewerRef.current) return
@@ -305,6 +309,7 @@ export default function EpubReader({
         })
 
         renditionRef.current = rendition
+        lastReportedLocationRef.current = null
 
         book.ready.then(() => {
             setToc(book.navigation.toc)
@@ -325,6 +330,7 @@ export default function EpubReader({
                 setCurrentHref(loc.start.href)
                 setCurrentPage(loc.start.displayed.page)
                 setTotalPages(loc.start.displayed.total)
+                lastReportedLocationRef.current = loc.start.cfi
                 onLocationChangeRef.current(loc.start.cfi)
             },
         )
@@ -338,9 +344,15 @@ export default function EpubReader({
     }, [url])
 
     useEffect(() => {
-        if (renditionRef.current && location) {
-            renditionRef.current.display(location.toString())
+        if (!renditionRef.current || !location) return
+
+        const nextLocation = location.toString()
+        if (nextLocation === lastReportedLocationRef.current) {
+            lastReportedLocationRef.current = null
+            return
         }
+
+        renditionRef.current.display(nextLocation)
     }, [location])
 
     // Auto-expand ToC parents of the active chapter
