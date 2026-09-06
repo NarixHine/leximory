@@ -244,11 +244,6 @@ export function Article() {
                         <TableCell>{ACTION_QUOTA_COST.story}</TableCell>
                         <TableCell>在语料本或文本页面将词汇串联成文</TableCell>
                     </TableRow>
-                    <TableRow key='chat'>
-                        <TableCell>Talk to Your Library</TableCell>
-                        <TableCell>{ACTION_QUOTA_COST.chat}</TableCell>
-                        <TableCell>自动化复盘：对话 AI，玩转词汇</TableCell>
-                    </TableRow>
                 </TableBody>
             </Table>
         </article>

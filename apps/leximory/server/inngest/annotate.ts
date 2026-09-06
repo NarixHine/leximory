@@ -157,14 +157,13 @@ export const annotateFullArticle = inngest.createFunction(
                 const emojiConfig = emojiPrompt(article)
                 const titleConfig = generateTitle ? titlePrompt(article) : undefined
                 const annotationConfigs = await Promise.all(
-                    chunks.map((chunk, index) =>
+                    chunks.map(chunk =>
                         articleAnnotationPrompt(
                             lang,
                             chunk,
                             onlyComments,
                             userId,
                             true,
-                            index === 0,
                         ),
                     ),
                 )

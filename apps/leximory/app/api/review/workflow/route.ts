@@ -246,8 +246,8 @@ export const { POST } = serve<StoryWorkflowPayload>(async context => {
         const annotationConfigs = await context.run('build-annotation-configs', async () => {
             const chunks = chunkText(rawStory, languageStrategy.maxChunkSize)
             return Promise.all(
-                chunks.map((chunk, index) =>
-                    articleAnnotationPrompt(reviewLang, chunk, false, userId, true, index === 0),
+                chunks.map(chunk =>
+                    articleAnnotationPrompt(reviewLang, chunk, false, userId, true),
                 ),
             )
         })
