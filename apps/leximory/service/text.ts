@@ -6,6 +6,7 @@ import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
 import {
     createText,
     getTextAnnotationProgress,
+    getFreshTextContent,
     getTextContent,
     getTextWithLib,
     setTextAnnotationProgress,
@@ -112,7 +113,7 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
 export async function getNewText(id: string) {
     const textWithLib = await getTextWithLib(id)
     await Kilpi.texts.read(textWithLib).authorize().assert()
-    const { content, topics, emoji, title } = await getTextContent({ id })
+    const { content, topics, emoji, title } = await getFreshTextContent({ id })
     return { content, topics, emoji, title }
 }
 

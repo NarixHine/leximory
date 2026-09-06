@@ -142,8 +142,7 @@ export async function getTexts({ lib }: { lib: string }) {
     }))
 }
 
-export async function getTextContent({ id }: { id: string }) {
-    'use cache'
+async function getTextContentFromDb({ id }: { id: string }) {
     const { data: text, error } = await supabase
         .from('texts')
         .select(
@@ -172,8 +171,6 @@ export async function getTextContent({ id }: { id: string }) {
     if (!text || text.length === 0) {
         notFound()
     }
-
-    cacheTag(`texts:${text[0].lib!.id}`)
 
     const { content, has_ebook, title, topics, emoji, created_at, lib } = text[0]
     const isPublicAndFree = lib?.access === LIB_ACCESS_STATUS.public && lib?.price === 0
@@ -209,6 +206,17 @@ export async function getTextContent({ id }: { id: string }) {
         prompt,
         isPublicAndFree,
     }
+}
+
+export async function getTextContent({ id }: { id: string }) {
+    'use cache'
+    const result = await getTextContentFromDb({ id })
+    cacheTag(`texts:${result.lib.id}`)
+    return result
+}
+
+export async function getFreshTextContent({ id }: { id: string }) {
+    return getTextContentFromDb({ id })
 }
 
 export async function uploadEbook({ id, ebook }: { id: string; ebook: File }) {

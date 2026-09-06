@@ -28,6 +28,40 @@ const emojiPrompt = (input: string) => ({
     ...nanoAI,
 })
 
+const getFinalAiOutput = (result: unknown): string => {
+    if (!result || typeof result !== 'object') return ''
+
+    const response = result as Record<string, unknown>
+    for (const key of ['_output', 'text']) {
+        if (typeof response[key] === 'string') return response[key]
+    }
+
+    if (!Array.isArray(response.steps)) return ''
+
+    for (let index = response.steps.length - 1; index >= 0; index--) {
+        const step = response.steps[index]
+        if (!step || typeof step !== 'object') continue
+
+        const content = (step as Record<string, unknown>).content
+        if (!Array.isArray(content)) continue
+
+        const text = content
+            .filter(
+                part =>
+                    part &&
+                    typeof part === 'object' &&
+                    (part as Record<string, unknown>).type === 'text' &&
+                    typeof (part as Record<string, unknown>).text === 'string',
+            )
+            .map(part => (part as Record<string, string>).text)
+            .join('')
+
+        if (text) return text
+    }
+
+    return ''
+}
+
 const titlePrompt = (input: string) => ({
     instructions: `你是一个标题生成器。根据文章内容生成一个简洁、准确、有吸引力的标题。用文章的原语言输出标题。只输出标题文本，不要输出任何其他内容、引号或标点符号包裹。`,
     prompt: `为以下文章生成一个标题：\n\n${input.slice(0, 2000)}`,
@@ -159,11 +193,7 @@ export const annotateFullArticle = inngest.createFunction(
             ? (results[2 + annotationConfigs.length] as Awaited<ReturnType<typeof generateText>>)
             : undefined
 
-        const content = annotatedChunks
-            .map(chunk =>
-                chunk.steps[0].content[0].type === 'text' ? chunk.steps[0].content[0].text : '',
-            )
-            .join('\n\n')
+        const content = annotatedChunks.map(getFinalAiOutput).join('\n\n')
 
         const textUrl = `/library/${libId}/${textId}`
 
@@ -171,23 +201,16 @@ export const annotateFullArticle = inngest.createFunction(
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
-            const generatedEmoji =
-                emoji.steps[0].content[0].type === 'text'
-                    ? emoji.steps[0].content[0].text.trim()
-                    : undefined
-            const generatedTitle =
-                titleResult?.steps[0].content[0].type === 'text'
-                    ? titleResult.steps[0].content[0].text
-                          .trim()
-                          .replace(/^["'""''《》]+|["'""''《》]+$/g, '')
-                    : undefined
+            const generatedEmoji = getFinalAiOutput(emoji).trim() || undefined
+            const generatedTitle = titleResult
+                ? getFinalAiOutput(titleResult)
+                      .trim()
+                      .replace(/^["'""''《》]+|["'""''《》]+$/g, '')
+                : undefined
             await updateText({
                 id: textId,
                 content: fixDumbPunctuation(content),
-                topics:
-                    topics.steps[0].content[0].type === 'text'
-                        ? topics.steps[0].content[0].text.split('||')
-                        : [],
+                topics: getFinalAiOutput(topics).split('||'),
                 emoji: generatedEmoji,
                 title: generatedTitle,
             })

@@ -48,8 +48,8 @@ export async function POST(request: Request) {
 
 async function getWordLang(word: string): Promise<Lang> {
     const { text } = await generateText({
-        prompt: `请判断下述词汇最可能属于哪种语言，在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择（只返回语言代码）：\n${word}`,
-        maxOutputTokens: 50,
+        prompt: `请判断下述词汇最可能属于哪种语言，你能且仅能在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择一个（只返回语言代码）：\n${word}`,
+        maxOutputTokens: 300,
         ...nanoAI,
     })
     const lang = z.enum(SUPPORTED_LANGS).parse(text.trim())

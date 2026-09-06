@@ -369,16 +369,23 @@ function GeneratingView() {
                 if (annotationProgress !== newProgress) {
                     setCurrentProgress(startProgressRecord[newProgress])
                     if (newProgress === 'completed') {
-                        getNewText(text).then(({ content, topics, emoji, title }) => {
-                            setContent(content)
-                            setTopics(topics ?? [])
-                            setIsLoading(false)
-                            setEmoji(emoji)
-                            if (title) setTitle(title)
-                            router.refresh()
-                        })
+                        getNewText(text)
+                            .then(({ content, topics, emoji, title }) => {
+                                setContent(content)
+                                setTopics(topics ?? [])
+                                setEmoji(emoji)
+                                if (title) setTitle(title)
+                                setAnnotationProgress('completed')
+                                setIsLoading(false)
+                                router.refresh()
+                            })
+                            .catch(() => {
+                                toast.error('获取生成结果失败，正在重试')
+                                setAnnotationProgress('saving')
+                            })
+                    } else {
+                        setAnnotationProgress(newProgress)
                     }
-                    setAnnotationProgress(newProgress)
                 }
             })
         },
