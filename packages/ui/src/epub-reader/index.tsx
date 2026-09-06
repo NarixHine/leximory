@@ -228,7 +228,7 @@ function TocEntry({
                 <ul
                     className={cn(
                         'overflow-hidden list-none p-0 m-0',
-                        isExpanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0',
+                        isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0',
                     )}
                 >
                     {item.subitems!.map(child => (
@@ -326,6 +326,36 @@ export default function EpubReader({
         renditionRef.current = rendition
         lastReportedLocationRef.current = null
 
+        // The reader can receive its final height one layout pass after
+        // epub.js has created the rendition (notably outside fullscreen). Keep
+        // pagination in sync with the actual viewport dimensions.
+        let renditionAttached = false
+        const resizeRendition = () => {
+            if (renditionRef.current !== rendition || !renditionAttached) return
+
+            const bounds = viewerRef.current?.getBoundingClientRect()
+            if (!bounds?.width || !bounds.height) return
+
+            rendition.resize(Math.round(bounds.width), Math.round(bounds.height))
+        }
+        const resizeObserver = new ResizeObserver(resizeRendition)
+        resizeObserver.observe(viewerRef.current)
+
+        const resizeAfterViewportChange = () => {
+            requestAnimationFrame(() => {
+                resizeRendition()
+                window.setTimeout(resizeRendition, 100)
+            })
+        }
+        const visualViewport = window.visualViewport
+        window.addEventListener('resize', resizeAfterViewportChange)
+        visualViewport?.addEventListener('resize', resizeAfterViewportChange)
+
+        rendition.on('attached', () => {
+            renditionAttached = true
+            resizeAfterViewportChange()
+        })
+
         book.ready.then(() => {
             setToc(book.navigation.toc)
         })
@@ -353,6 +383,9 @@ export default function EpubReader({
         onRenditionRef.current?.(rendition)
 
         return () => {
+            resizeObserver.disconnect()
+            window.removeEventListener('resize', resizeAfterViewportChange)
+            visualViewport?.removeEventListener('resize', resizeAfterViewportChange)
             renditionRef.current = null
             book.destroy()
         }

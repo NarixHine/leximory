@@ -17,6 +17,7 @@ export default function Define(
         | {
               left: number | null
               width: number | null
+              top: number | null
               bottom: number | null
               selection: Selection | null
               container: HTMLElement | null
@@ -29,6 +30,8 @@ export default function Define(
     const { left, width, selection } = props && 'left' in props ? props : selectionContext
     const container = props && 'container' in props ? props.container : undefined
     const reset = props && 'reset' in props ? props.reset : () => {}
+    const positionTop = props && 'top' in props ? props.top : null
+    const positionBottom = props && 'bottom' in props ? props.bottom : null
     const buttonRef = useRef<HTMLButtonElement>(null!)
     const lang = useAtomValue(langAtom)
 
@@ -44,18 +47,22 @@ export default function Define(
     // 2. Calculate positioning
     let buttonTop = 0
     if (rect) {
-        const centerY = rect.top + rect.height / 2
-        const isUpperHalf = centerY < window.innerHeight / 2
-        const scrollOffset = isEbookMode ? 60 : window.scrollY
-
-        if (isUpperHalf) {
-            // Position ABOVE the selection
-            // rect.top is the top of the text, subtract ~50px for button height + margin
-            buttonTop = scrollOffset + rect.top - 50
+        if (isEbookMode && positionTop !== null && positionBottom !== null && container) {
+            // EPUB selections are measured in the iframe's viewport. The parent
+            // passes coordinates relative to the browser viewport.
+            const centerY = (positionTop + positionBottom) / 2
+            const isUpperHalf = centerY < window.innerHeight / 2
+            buttonTop = isUpperHalf ? positionTop - 50 : positionBottom + 10
         } else {
-            // Position BELOW the selection
-            // rect.bottom is the bottom of the text, add ~10px margin
-            buttonTop = scrollOffset + rect.bottom + 10
+            const centerY = rect.top + rect.height / 2
+            const isUpperHalf = centerY < window.innerHeight / 2
+            const scrollOffset = window.scrollY
+
+            if (isUpperHalf) {
+                buttonTop = scrollOffset + rect.top - 50
+            } else {
+                buttonTop = scrollOffset + rect.bottom + 10
+            }
         }
     }
 
@@ -68,18 +75,18 @@ export default function Define(
             {selection &&
                 selection.anchorNode?.textContent &&
                 selection.toString() &&
-                left &&
-                width &&
+                left !== null &&
+                width !== null &&
                 rect && (
                     <Drawer.Trigger
                         ref={buttonRef}
                         style={{
-                            left: left + width / 2,
+                            left: left! + width! / 2,
                             top: buttonTop, // Applied the conditional top here
                         }}
                         className={cn(
                             'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-1 border-primary-300 hover:cursor-pointer transition-all ease-in-out text-foreground',
-                            isEbookMode && 'opacity-90',
+                            isEbookMode && 'fixed opacity-90',
                             defineClassName,
                         )}
                     >

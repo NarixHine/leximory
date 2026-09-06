@@ -92,16 +92,19 @@ export default function Ebook() {
     const [rect, setRect] = useState<{
         left: number | null
         width: number | null
+        top: number | null
         bottom: number | null
     }>({
         left: null,
         width: null,
+        top: null,
         bottom: null,
     })
     const reset = () => {
         setRect({
             left: null,
             width: null,
+            top: null,
             bottom: null,
         })
         setSelection(null)
@@ -230,15 +233,16 @@ export default function Ebook() {
                                     setSelection(selection)
 
                                     const rect = selection.getRangeAt(0).getBoundingClientRect()
-                                    const epubView = document.getElementsByClassName('epub-view')[0]
-                                    const offset = epubView
-                                        ? epubView.getBoundingClientRect()
-                                        : { left: 0, top: 0 }
-
+                                    const frameElement = contents.window.frameElement
+                                    const epubBounds = frameElement?.getBoundingClientRect() ?? {
+                                        left: 0,
+                                        top: 0,
+                                    }
                                     setRect({
-                                        left: rect.left + offset.left,
+                                        left: rect.left + epubBounds.left,
                                         width: rect.width,
-                                        bottom: rect.bottom + offset.top,
+                                        top: rect.top + epubBounds.top,
+                                        bottom: rect.bottom + epubBounds.top,
                                     })
 
                                     const chapter = getChapterName(
@@ -257,9 +261,8 @@ export default function Ebook() {
                                 rendition.on('rendered', (_: Rendition, contents: Contents) => {
                                     injectThemeCSS(contents, isDarkModeRef.current, isJapanese)
                                     contents.document.addEventListener('selectionchange', () => {
-                                        if (selection && selection.toString()) {
-                                            return
-                                        }
+                                        const currentSelection = contents.window.getSelection()
+                                        if (currentSelection?.toString()) return
                                         reset()
                                     })
                                 })
