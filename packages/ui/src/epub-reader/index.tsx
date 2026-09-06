@@ -55,6 +55,8 @@ export interface EpubReaderProps {
     onLocationChange: (epubcifi: string) => void
     getRendition?: (rendition: Rendition) => void
     isRTL?: boolean
+    /** Sets the writing mode before epub.js calculates pagination. */
+    writingMode?: 'horizontal-tb' | 'vertical-rl' | 'vertical-lr'
     title?: string
     tocTitle?: string
     actions?: ReactNode
@@ -257,6 +259,7 @@ export default function EpubReader({
     onLocationChange,
     getRendition: onRendition,
     isRTL = false,
+    writingMode,
     title = '',
     tocTitle = '目录',
     actions,
@@ -291,6 +294,18 @@ export default function EpubReader({
             spread: 'auto',
             allowScriptedContent: true,
         })
+
+        // Apply writing mode before epub.js measures the document. Applying it
+        // from the rendered event is too late: pagination has already selected
+        // its axis by then.
+        if (writingMode) {
+            book.spine.hooks.content.register((document: Document) => {
+                const root = document.documentElement
+                root.style.setProperty('writing-mode', writingMode)
+                root.style.setProperty('-webkit-writing-mode', writingMode)
+                root.style.setProperty('direction', 'ltr')
+            })
+        }
 
         // Intercept and Purify
         rendition.hooks.content.register((contents: Contents) => {
@@ -341,7 +356,7 @@ export default function EpubReader({
             renditionRef.current = null
             book.destroy()
         }
-    }, [url])
+    }, [url, writingMode])
 
     useEffect(() => {
         if (!renditionRef.current || !location) return

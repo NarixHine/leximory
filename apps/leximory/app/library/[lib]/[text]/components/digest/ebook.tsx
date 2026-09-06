@@ -39,8 +39,8 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
-/** Injects a `<style>` with `!important` rules into an epub content frame to enforce theme colors over custom epub styles. */
-function injectThemeCSS(contents: Contents, isDark: boolean) {
+/** Injects a `<style>` with `!important` rules into an epub content frame to enforce reader styles over custom epub styles. */
+function injectThemeCSS(contents: Contents, isDark: boolean, isJapanese: boolean) {
     const doc = contents.document
     if (!doc?.head) return
     let style = doc.getElementById('leximory-theme-override')
@@ -49,13 +49,21 @@ function injectThemeCSS(contents: Contents, isDark: boolean) {
         style.id = 'leximory-theme-override'
         doc.head.appendChild(style)
     }
-    style.textContent = isDark
+
+    const colors = isDark
         ? `* { color: ${EBOOK_DARK_FG} !important; } body { background-color: ${EBOOK_DARK_BG} !important; }`
-        : ``
+        : ''
+    const japaneseWritingMode = isJapanese
+        ? `html, body { direction: ltr !important; writing-mode: vertical-rl !important; -webkit-writing-mode: vertical-rl !important; text-orientation: mixed !important; }`
+        : ''
+
+    style.textContent = `${colors}${japaneseWritingMode}`
 }
 
-function updateTheme(rendition: Rendition, isDarkMode: boolean) {
+function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: boolean) {
     const themes = rendition.themes
+    // In vertical Japanese, `vertical-rl` controls right-to-left column flow;
+    // a right-to-left inline direction would make some runs flow bottom-to-top.
     themes.override('direction', 'ltr')
     if (isDarkMode) {
         themes.override('color', EBOOK_DARK_FG)
@@ -64,7 +72,9 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean) {
         themes.override('color', EBOOK_LIGHT_FG)
         themes.override('background', EBOOK_LIGHT_BG)
     }
-    ;(rendition.getContents() as unknown as Contents[]).forEach(c => injectThemeCSS(c, isDarkMode))
+    ;(rendition.getContents() as unknown as Contents[]).forEach(c =>
+        injectThemeCSS(c, isDarkMode, isJapanese),
+    )
 }
 
 export default function Ebook() {
@@ -76,6 +86,7 @@ export default function Ebook() {
     const isReadOnly = useAtomValue(isReadOnlyAtom)
     const [location, setLocation] = useAtom(locationAtomFamily(text))
     const strategy = useMemo(() => getLanguageStrategy(lang), [lang])
+    const isJapanese = strategy.type === 'ja'
 
     const [selection, setSelection] = useState<Selection | null>(null)
     const [rect, setRect] = useState<{
@@ -105,9 +116,9 @@ export default function Ebook() {
     isDarkModeRef.current = isDarkMode
     useEffect(() => {
         if (themeRendition.current) {
-            updateTheme(themeRendition.current, isDarkMode)
+            updateTheme(themeRendition.current, isDarkMode, isJapanese)
         }
-    }, [lang, isDarkMode])
+    }, [isDarkMode, isJapanese, lang])
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
@@ -163,12 +174,13 @@ export default function Ebook() {
                             key={isFullViewport ? 'full' : 'normal'}
                             title={title}
                             isRTL={strategy.isRTL}
+                            writingMode={isJapanese ? 'vertical-rl' : undefined}
                             location={location}
                             onLocationChange={epubcifi => {
                                 setLocation(epubcifi)
                             }}
                             getRendition={rendition => {
-                                updateTheme(rendition, isDarkMode)
+                                updateTheme(rendition, isDarkMode, isJapanese)
                                 rendition.themes.default({
                                     p: {
                                         'margin-top': '0.6em',
@@ -243,7 +255,7 @@ export default function Ebook() {
                                     )
                                 })
                                 rendition.on('rendered', (_: Rendition, contents: Contents) => {
-                                    injectThemeCSS(contents, isDarkModeRef.current)
+                                    injectThemeCSS(contents, isDarkModeRef.current, isJapanese)
                                     contents.document.addEventListener('selectionchange', () => {
                                         if (selection && selection.toString()) {
                                             return
