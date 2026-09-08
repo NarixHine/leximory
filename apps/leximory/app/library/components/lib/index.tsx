@@ -388,11 +388,11 @@ function Library({
                 <p className='opacity-80 dark:prose-invert text-xs text-center prose prose-sm'>
                     你会获得销售额 ⅕ 的 LexiCoin。
                 </p>
-                <Textarea
+                {/*<Textarea
                     label='Talk to Your Library 默认提示词'
                     placeholder='在文本界面唤起 AI 对话时的初始提示词。'
                     {...register('prompt')}
-                />
+                />*/}
             </Form>
         </>
     )
