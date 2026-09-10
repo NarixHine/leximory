@@ -17,7 +17,12 @@ import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { getChapterName } from '@/lib/epub'
-import { findTextRange, parseBookmarks } from '@/lib/bookmarks'
+import {
+    findTextRange,
+    highlightTextRange,
+    normalizeBookmarks,
+    parseBookmarks,
+} from '@/lib/bookmarks'
 import Define from '@/components/define'
 import { useRouter } from 'next/navigation'
 import { saveText } from '@/service/text'
@@ -40,8 +45,11 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
-/** Class applied to the SVG overlays epub.js renders for bookmarked ranges. */
-const BOOKMARK_HIGHLIGHT_CLASS = 'leximory-bookmark'
+const logHighlightDebug = (...args: unknown[]) => {
+    if (process.env.NODE_ENV !== 'production') {
+        console.info('[ebook highlights]', ...args)
+    }
+}
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce reader styles over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean, isJapanese: boolean) {
@@ -127,59 +135,83 @@ export default function Ebook() {
         }
     }, [isDarkMode, isJapanese, lang])
 
-    // Bookmark highlighting: remember which ranges were already annotated so
-    // pagination/re-renders do not stack duplicate SVG overlays, and which
-    // sections have been scanned so we only search each one once.
+    // Bookmark highlighting is applied to the text DOM inside each EPUB iframe.
+    // This avoids epub.js SVG overlays being detached during resize/fullscreen.
     const contentRef = useRef(content)
     contentRef.current = content
-    const highlightedCfisRef = useRef<Set<string>>(new Set())
-    const scannedSectionsRef = useRef<Set<number>>(new Set())
+    const activeRenditionRef = useRef<Rendition | null>(null)
 
     /** Highlights bookmark selections in the currently rendered EPUB sections. */
     const highlightBookmarks = useCallback((rendition: Rendition) => {
-        const selections = parseBookmarks(contentRef.current).map(bookmark => bookmark.text)
+        const rawContent = contentRef.current
+        const bookmarks = parseBookmarks(rawContent)
+        logHighlightDebug('scan requested', {
+            contentLength: rawContent.length,
+            bookmarkCount: bookmarks.length,
+            bookmarks: bookmarks.map(bookmark => bookmark.text),
+            rendition: rendition === themeRendition.current ? 'active' : 'stale',
+        })
+
+        if (activeRenditionRef.current !== rendition) {
+            activeRenditionRef.current = rendition
+            logHighlightDebug('new rendition')
+        }
+
+        const selections = bookmarks.map(bookmark => bookmark.text)
         if (selections.length === 0) return
 
         const contentsList = rendition.getContents() as unknown as Contents[]
+        logHighlightDebug('rendered contents', {
+            count: contentsList.length,
+            sections: contentsList.map(contents => contents.sectionIndex),
+        })
         for (const contents of contentsList) {
-            if (scannedSectionsRef.current.has(contents.sectionIndex)) continue
+            const bodyText = contents.document.body?.textContent ?? ''
+            logHighlightDebug('scan section', {
+                section: contents.sectionIndex,
+                bodyLength: bodyText.length,
+                bodyPreview: bodyText.slice(0, 160),
+            })
 
             for (const text of selections) {
                 const range = findTextRange(contents.document.body, text)
-                if (!range) continue
-
-                let cfi: string
-                try {
-                    cfi = contents.cfiFromRange(range)
-                } catch {
+                if (!range) {
+                    logHighlightDebug('quote not found in section', {
+                        section: contents.sectionIndex,
+                        text,
+                    })
                     continue
                 }
-                if (!cfi || highlightedCfisRef.current.has(cfi)) continue
 
-                highlightedCfisRef.current.add(cfi)
                 try {
-                    rendition.annotations.highlight(
-                        cfi,
-                        {},
-                        undefined,
-                        BOOKMARK_HIGHLIGHT_CLASS,
-                    )
+                    const wrapped = highlightTextRange(range, isDarkModeRef.current)
+                    logHighlightDebug('highlight applied', {
+                        section: contents.sectionIndex,
+                        text,
+                        wrapped,
+                    })
                 } catch {
-                    highlightedCfisRef.current.delete(cfi)
+                    logHighlightDebug('highlight application failed', {
+                        section: contents.sectionIndex,
+                        text,
+                    })
                 }
             }
-
-            scannedSectionsRef.current.add(contents.sectionIndex)
         }
     }, [])
 
-    // Re-scan rendered sections whenever the digest content changes so newly
-    // saved bookmarks (or updates synced from elsewhere) get highlighted. The
-    // CFI guard keeps existing highlights from being re-added.
+    const retryHighlights = useCallback((rendition: Rendition) => {
+        highlightBookmarks(rendition)
+        requestAnimationFrame(() => highlightBookmarks(rendition))
+        window.setTimeout(() => highlightBookmarks(rendition), 100)
+        window.setTimeout(() => highlightBookmarks(rendition), 500)
+    }, [highlightBookmarks])
+
+    // Re-apply whenever the digest content changes so newly saved bookmarks get
+    // highlighted; the CFI guard keeps existing highlights from being re-added.
     useEffect(() => {
         const rendition = themeRendition.current
         if (!rendition) return
-        scannedSectionsRef.current = new Set()
         highlightBookmarks(rendition)
     }, [content, highlightBookmarks])
 
@@ -234,7 +266,7 @@ export default function Ebook() {
                             />
                         )}
                         <EpubReader
-                            key={isFullViewport ? 'full' : 'normal'}
+                            key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
                             title={title}
                             isRTL={strategy.isRTL}
                             writingMode={isJapanese ? 'vertical-rl' : undefined}
@@ -288,8 +320,6 @@ export default function Ebook() {
                                     },
                                 })
                                 themeRendition.current = rendition
-                                highlightedCfisRef.current = new Set()
-                                scannedSectionsRef.current = new Set()
                                 rendition.on('selected', (_: Rendition, contents: Contents) => {
                                     const selection = contents.window.getSelection()!
                                     setSelection(selection)
@@ -320,15 +350,28 @@ export default function Ebook() {
                                             : null,
                                     )
                                 })
-                                rendition.on('rendered', (_: Rendition, contents: Contents) => {
-                                    injectThemeCSS(contents, isDarkModeRef.current, isJapanese)
-                                    contents.document.addEventListener('selectionchange', () => {
-                                        const currentSelection = contents.window.getSelection()
-                                        if (currentSelection?.toString()) return
-                                        reset()
-                                    })
-                                    highlightBookmarks(rendition)
-                                })
+                                 rendition.on(
+                                    'rendered',
+                                    (_section: unknown, view: { contents?: Contents }) => {
+                                        const contents = view.contents
+                                        logHighlightDebug('rendered event', {
+                                            hasView: !!view,
+                                            hasContents: !!contents,
+                                            section: contents?.sectionIndex,
+                                        })
+                                        if (!contents) return
+                                        injectThemeCSS(contents, isDarkModeRef.current, isJapanese)
+                                        contents.document.addEventListener('selectionchange', () => {
+                                            const currentSelection = contents.window.getSelection()
+                                            if (currentSelection?.toString()) return
+                                            reset()
+                                        })
+                                        retryHighlights(rendition)
+                                    },
+                                )
+                                rendition.on('displayed', () => retryHighlights(rendition))
+                                rendition.on('relocated', () => retryHighlights(rendition))
+                                logHighlightDebug('rendition attached')
                             }}
                             url={transformEbookUrl(src)}
                             portalContainer={hasZoomed ? containerRef.current : undefined}
@@ -375,7 +418,9 @@ export default function Ebook() {
                                                         startSavingBookmark(async () => {
                                                             try {
                                                                 const newContent =
-                                                                    content.concat(bookmark)
+                                                                    normalizeBookmarks(
+                                                                        content,
+                                                                    ).concat(bookmark)
                                                                 await saveText({
                                                                     id: text,
                                                                     content: newContent,

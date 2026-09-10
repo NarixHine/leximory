@@ -57,6 +57,7 @@ import { toast } from 'sonner'
 import { getLanguageStrategy } from '@/lib/languages'
 import { useAuth } from '@/lib/hooks'
 import { commentSyntaxRegex } from '@repo/utils'
+import { normalizeBookmarks } from '@/lib/bookmarks'
 import { InlineModeSwitch } from './inline-mode-switch'
 
 function ReaderModeToggle() {
@@ -214,7 +215,8 @@ function EditingView() {
 }
 
 function ReadingView() {
-    const content = useAtomValue(contentAtom)
+    const rawContent = useAtomValue(contentAtom)
+    const content = useMemo(() => normalizeBookmarks(rawContent), [rawContent])
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const ebook = useAtomValue(ebookAtom)
     const hideText = useAtomValue(hideTextAtom)
