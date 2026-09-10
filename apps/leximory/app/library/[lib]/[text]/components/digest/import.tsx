@@ -259,13 +259,22 @@ export default function ImportModal() {
                                             上传电子书
                                         </p>
                                         <FileUpload
-                                            acceptableTypes={['application/epub+zip']}
-                                            onChange={async files => {
-                                                const ebook = files[files.length - 1]
-                                                if (
-                                                    !['application/epub+zip'].includes(ebook.type)
-                                                ) {
-                                                    toast.error('发生错误，文件需为 .epub 格式')
+                                             acceptableTypes={[
+                                                 'application/epub+zip',
+                                                 'application/pdf',
+                                             ]}
+                                             onChange={async files => {
+                                                 const ebook = files[files.length - 1]
+                                                 const isEpub =
+                                                     ebook.type === 'application/epub+zip' ||
+                                                     ebook.name.toLowerCase().endsWith('.epub')
+                                                 const isPdf =
+                                                     ebook.type === 'application/pdf' ||
+                                                     ebook.name.toLowerCase().endsWith('.pdf')
+                                                 if (
+                                                     !isEpub && !isPdf
+                                                 ) {
+                                                     toast.error('发生错误，文件需为 .epub 或 .pdf 格式')
                                                     return
                                                 }
                                                 if (ebook.size > MAX_FILE_SIZE) {

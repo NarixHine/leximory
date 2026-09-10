@@ -264,7 +264,11 @@ export function highlightTextRange(
         if (selected.parentElement?.closest('[data-leximory-bookmark]')) return 0
         const mark = document.createElement('span')
         mark.dataset.leximoryBookmark = 'true'
-        mark.style.setProperty('background-color', isDark ? '#7bbf63' : '#b7e08f', 'important')
+        mark.style.setProperty(
+            'background-image',
+            `linear-gradient(to bottom, transparent 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 82%, transparent 82%)`,
+            'important',
+        )
         mark.style.setProperty('color', 'inherit', 'important')
         mark.style.setProperty('mix-blend-mode', isDark ? 'screen' : 'multiply')
         mark.style.setProperty('-webkit-box-decoration-break', 'clone')
@@ -304,7 +308,11 @@ export function highlightTextRange(
 
         const mark = document.createElement('span')
         mark.dataset.leximoryBookmark = 'true'
-        mark.style.setProperty('background-color', isDark ? '#7bbf63' : '#b7e08f', 'important')
+        mark.style.setProperty(
+            'background-image',
+            `linear-gradient(to bottom, transparent 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 82%, transparent 82%)`,
+            'important',
+        )
         mark.style.setProperty('color', 'inherit', 'important')
         mark.style.setProperty('mix-blend-mode', isDark ? 'screen' : 'multiply')
         mark.style.setProperty('-webkit-box-decoration-break', 'clone')

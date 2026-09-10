@@ -91,3 +91,35 @@ span.smallcaps button {
   mix-blend-mode: screen;
 }
 
+/* PDF.js text selection layer. */
+.textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+  color: transparent;
+  line-height: 1;
+  opacity: 1;
+  position: absolute;
+  text-align: initial;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+
+.textLayer :is(span, br) {
+  color: transparent !important;
+  cursor: text;
+  position: absolute;
+  transform-origin: 0% 0%;
+  white-space: pre;
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate, 0deg)) scaleX(var(--scale-x, 1))
+    scale(var(--min-font-size-inv));
+}
+
+.textLayer ::selection {
+  background: rgb(0 96 255 / 0.25);
+}

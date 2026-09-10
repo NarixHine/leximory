@@ -103,7 +103,9 @@ export async function deleteText({ id }: { id: string }) {
         .single()
         .throwOnError()
     if (rec.has_ebook) {
-        await supabase.storage.from('user-files').remove([`ebooks/${id}.epub`])
+        await supabase.storage
+            .from('user-files')
+            .remove([`ebooks/${id}.epub`, `ebooks/${id}.pdf`])
     }
 }
 
@@ -179,10 +181,19 @@ async function getTextContentFromDb({ id }: { id: string }) {
         throw new Error('lib not found')
     }
     if (has_ebook) {
-        const { data, error } = await supabase.storage
-            .from('user-files')
-            .createSignedUrl(`ebooks/${id}.epub`, seconds('3 days'))
-        if (error) throw error
+        let data: { signedUrl: string } | null = null
+        let error: Error | null = null
+        for (const extension of ['pdf', 'epub']) {
+            const result = await supabase.storage
+                .from('user-files')
+                .createSignedUrl(`ebooks/${id}.${extension}`, seconds('3 days'))
+            if (!result.error) {
+                data = result.data
+                break
+            }
+            error = result.error
+        }
+        if (!data) throw error
         return {
             content,
             ebook: data.signedUrl,
@@ -220,9 +231,15 @@ export async function getFreshTextContent({ id }: { id: string }) {
 }
 
 export async function uploadEbook({ id, ebook }: { id: string; ebook: File }) {
+    const extension = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf')
+        ? 'pdf'
+        : 'epub'
+    await supabase.storage
+        .from('user-files')
+        .remove([`ebooks/${id}.epub`, `ebooks/${id}.pdf`])
     const { data: uploadData } = await supabase.storage
         .from('user-files')
-        .upload(`ebooks/${id}.epub`, await ebook.arrayBuffer(), {
+        .upload(`ebooks/${id}.${extension}`, await ebook.arrayBuffer(), {
             contentType: ebook.type,
             upsert: true,
         })

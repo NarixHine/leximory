@@ -143,11 +143,13 @@ export async function removeText({ id }: { id: string }) {
     await deleteText({ id })
 }
 
-/** Uploads an EPUB ebook and attaches it to a text. */
+/** Uploads an EPUB or PDF ebook and attaches it to a text. */
 export async function saveEbook(id: string, form: FormData) {
     const ebook = form.get('ebook') as File
-    if (!['application/epub+zip'].includes(ebook.type)) {
-        throw new Error('Not an epub file')
+    const isEpub = ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
+    const isPdf = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf')
+    if (!isEpub && !isPdf) {
+        throw new Error('Not a supported ebook file')
     }
     if (ebook.size > MAX_FILE_SIZE) {
         throw new Error('File too large')

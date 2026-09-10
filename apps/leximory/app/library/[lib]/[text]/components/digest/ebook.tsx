@@ -4,6 +4,7 @@ import { Button } from '@heroui/button'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
+import PdfReader from '@repo/ui/pdf-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
@@ -28,10 +29,10 @@ import { useRouter } from 'next/navigation'
 import { saveText } from '@/service/text'
 
 function transformEbookUrl(url: string) {
-    const match = url.match(/\/ebooks\/([^/]+)\.epub\?token=([^&]+)/)
+    const match = url.match(/\/ebooks\/([^/]+)\.(epub|pdf)\?token=([^&]+)/)
     if (match) {
-        const [, id, token] = match
-        return `/ebooks/${token}/${id}.epub`
+        const [, id, extension, token] = match
+        return `/ebooks/${token}/${id}.${extension}`
     }
     return url
 }
@@ -44,12 +45,6 @@ const EBOOK_DARK_FG = '#CECDC3'
 const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
-
-const logHighlightDebug = (...args: unknown[]) => {
-    if (process.env.NODE_ENV !== 'production') {
-        console.info('[ebook highlights]', ...args)
-    }
-}
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce reader styles over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean, isJapanese: boolean) {
@@ -89,7 +84,136 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: bool
     )
 }
 
-export default function Ebook() {
+function PdfEbook() {
+    const title = useAtomValue(titleAtom)
+    const text = useAtomValue(textAtom)
+    const [content, setContent] = useAtom(contentAtom)
+    const src = useAtomValue(ebookAtom)
+    const isReadOnly = useAtomValue(isReadOnlyAtom)
+    const [location, setLocation] = useAtom(locationAtomFamily(text))
+    const [selection, setSelection] = useState<Selection | null>(null)
+    const [rect, setRect] = useState({
+        left: null as number | null,
+        width: null as number | null,
+        top: null as number | null,
+        bottom: null as number | null,
+    })
+    const [bookmark, setBookmark] = useState<string | null>(null)
+    const [savingBookmark, startSavingBookmark] = useTransition()
+    const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
+    const [isFullScreen, setIsFullScreen] = useState(false)
+    const { resolvedTheme } = useTheme()
+    const handleFullScreen = useFullScreenHandle()
+    const containerRef = useRef<HTMLDivElement>(null!)
+    const router = useRouter()
+    const hasZoomed = isFullViewport || isFullScreen
+    const highlights = useMemo(
+        () => parseBookmarks(content).map(savedBookmark => savedBookmark.text),
+        [content],
+    )
+
+    const reset = () => {
+        setSelection(null)
+        setRect({ left: null, width: null, top: null, bottom: null })
+        setBookmark(null)
+    }
+
+    if (!src) return null
+
+    return (
+        <FullScreen
+            handle={handleFullScreen}
+            onChange={setIsFullScreen}
+            className={cn('block relative dark:opacity-95', isFullViewport ? 'h-full' : 'h-[80dvh]')}
+        >
+            <div ref={containerRef} className='relative h-full bg-background'>
+                {hasZoomed && (
+                    <Define
+                        {...rect}
+                        reset={reset}
+                        container={containerRef.current}
+                        selection={selection}
+                    />
+                )}
+                <PdfReader
+                    key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
+                    url={transformEbookUrl(src)}
+                    title={title}
+                    location={location}
+                    highlights={highlights}
+                    dark={resolvedTheme === 'dark'}
+                    onLocationChange={setLocation}
+                    onSelection={(nextSelection, selectionRect, page) => {
+                        setSelection(nextSelection)
+                        setLocation(String(page))
+                        setRect({
+                            left: selectionRect.left,
+                            width: selectionRect.width,
+                            top: selectionRect.top,
+                            bottom: selectionRect.bottom,
+                        })
+                        setBookmark(
+                            `\n\n> ${nextSelection
+                                .toString()
+                                .concat(`\n— *Page ${page}*`)
+                                .replaceAll('\n', '\n>\n> ')}`,
+                        )
+                    }}
+                    actions={
+                        <>
+                            <Button
+                                isIconOnly
+                                startContent={<PiFrameCorners className='text-xl' />}
+                                className='z-10'
+                                color='primary'
+                                variant='light'
+                                size='lg'
+                                radius='full'
+                                onPress={async () => {
+                                    try {
+                                        if (isFullScreen) await handleFullScreen.exit()
+                                        else await handleFullScreen.enter()
+                                    } catch {
+                                        setIsFullViewport(value => !value)
+                                    }
+                                }}
+                            />
+                            {hasZoomed && (
+                                <Button
+                                    isIconOnly
+                                    isLoading={savingBookmark}
+                                    isDisabled={!bookmark || isReadOnly}
+                                    startContent={!savingBookmark && <PiBookmark className='text-xl' />}
+                                    className='z-10'
+                                    color='primary'
+                                    variant='light'
+                                    size='lg'
+                                    radius='full'
+                                    onPress={() => {
+                                        if (!bookmark) return
+                                        startSavingBookmark(async () => {
+                                            try {
+                                                const newContent = normalizeBookmarks(content).concat(bookmark)
+                                                await saveText({ id: text, content: newContent })
+                                                router.refresh()
+                                                setContent(newContent)
+                                                toast.success('文摘已保存')
+                                            } catch {
+                                                toast.error('文摘保存失败，请重试')
+                                            }
+                                        })
+                                    }}
+                                />
+                            )}
+                        </>
+                    }
+                />
+            </div>
+        </FullScreen>
+    )
+}
+
+function EpubEbook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
     const [content, setContent] = useAtom(contentAtom)
@@ -139,62 +263,22 @@ export default function Ebook() {
     // This avoids epub.js SVG overlays being detached during resize/fullscreen.
     const contentRef = useRef(content)
     contentRef.current = content
-    const activeRenditionRef = useRef<Rendition | null>(null)
 
     /** Highlights bookmark selections in the currently rendered EPUB sections. */
     const highlightBookmarks = useCallback((rendition: Rendition) => {
-        const rawContent = contentRef.current
-        const bookmarks = parseBookmarks(rawContent)
-        logHighlightDebug('scan requested', {
-            contentLength: rawContent.length,
-            bookmarkCount: bookmarks.length,
-            bookmarks: bookmarks.map(bookmark => bookmark.text),
-            rendition: rendition === themeRendition.current ? 'active' : 'stale',
-        })
-
-        if (activeRenditionRef.current !== rendition) {
-            activeRenditionRef.current = rendition
-            logHighlightDebug('new rendition')
-        }
-
-        const selections = bookmarks.map(bookmark => bookmark.text)
+        const selections = parseBookmarks(contentRef.current).map(bookmark => bookmark.text)
         if (selections.length === 0) return
 
         const contentsList = rendition.getContents() as unknown as Contents[]
-        logHighlightDebug('rendered contents', {
-            count: contentsList.length,
-            sections: contentsList.map(contents => contents.sectionIndex),
-        })
         for (const contents of contentsList) {
-            const bodyText = contents.document.body?.textContent ?? ''
-            logHighlightDebug('scan section', {
-                section: contents.sectionIndex,
-                bodyLength: bodyText.length,
-                bodyPreview: bodyText.slice(0, 160),
-            })
-
             for (const text of selections) {
                 const range = findTextRange(contents.document.body, text)
-                if (!range) {
-                    logHighlightDebug('quote not found in section', {
-                        section: contents.sectionIndex,
-                        text,
-                    })
-                    continue
-                }
+                if (!range) continue
 
                 try {
-                    const wrapped = highlightTextRange(range, isDarkModeRef.current)
-                    logHighlightDebug('highlight applied', {
-                        section: contents.sectionIndex,
-                        text,
-                        wrapped,
-                    })
+                    highlightTextRange(range, isDarkModeRef.current)
                 } catch {
-                    logHighlightDebug('highlight application failed', {
-                        section: contents.sectionIndex,
-                        text,
-                    })
+                    continue
                 }
             }
         }
@@ -350,15 +434,10 @@ export default function Ebook() {
                                             : null,
                                     )
                                 })
-                                 rendition.on(
+                                rendition.on(
                                     'rendered',
                                     (_section: unknown, view: { contents?: Contents }) => {
                                         const contents = view.contents
-                                        logHighlightDebug('rendered event', {
-                                            hasView: !!view,
-                                            hasContents: !!contents,
-                                            section: contents?.sectionIndex,
-                                        })
                                         if (!contents) return
                                         injectThemeCSS(contents, isDarkModeRef.current, isJapanese)
                                         contents.document.addEventListener('selectionchange', () => {
@@ -371,7 +450,6 @@ export default function Ebook() {
                                 )
                                 rendition.on('displayed', () => retryHighlights(rendition))
                                 rendition.on('relocated', () => retryHighlights(rendition))
-                                logHighlightDebug('rendition attached')
                             }}
                             url={transformEbookUrl(src)}
                             portalContainer={hasZoomed ? containerRef.current : undefined}
@@ -447,4 +525,10 @@ export default function Ebook() {
             </motion.div>
         )
     )
+}
+
+export default function Ebook() {
+    const src = useAtomValue(ebookAtom)
+    if (src?.match(/\.pdf(?:\?|$)/i)) return <PdfEbook />
+    return <EpubEbook />
 }
