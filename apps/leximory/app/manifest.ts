@@ -5,8 +5,6 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Leximory',
         short_name: 'Leximory',
         display_override: ['standalone', 'minimal-ui'],
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',

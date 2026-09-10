@@ -6,7 +6,7 @@ import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { contentAtom, ebookAtom, isFullViewportAtom, textAtom, titleAtom } from '../../atoms'
 import { isReadOnlyAtom, langAtom } from '../../../atoms'
 import { useAtom, useAtomValue } from 'jotai'
@@ -17,6 +17,7 @@ import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { getChapterName } from '@/lib/epub'
+import { findTextRange, parseBookmarks } from '@/lib/bookmarks'
 import Define from '@/components/define'
 import { useRouter } from 'next/navigation'
 import { saveText } from '@/service/text'
@@ -38,6 +39,9 @@ const EBOOK_DARK_FG = '#CECDC3'
 const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
+
+/** Class applied to the SVG overlays epub.js renders for bookmarked ranges. */
+const BOOKMARK_HIGHLIGHT_CLASS = 'leximory-bookmark'
 
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce reader styles over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean, isJapanese: boolean) {
@@ -122,6 +126,62 @@ export default function Ebook() {
             updateTheme(themeRendition.current, isDarkMode, isJapanese)
         }
     }, [isDarkMode, isJapanese, lang])
+
+    // Bookmark highlighting: remember which ranges were already annotated so
+    // pagination/re-renders do not stack duplicate SVG overlays, and which
+    // sections have been scanned so we only search each one once.
+    const contentRef = useRef(content)
+    contentRef.current = content
+    const highlightedCfisRef = useRef<Set<string>>(new Set())
+    const scannedSectionsRef = useRef<Set<number>>(new Set())
+
+    /** Highlights bookmark selections in the currently rendered EPUB sections. */
+    const highlightBookmarks = useCallback((rendition: Rendition) => {
+        const selections = parseBookmarks(contentRef.current).map(bookmark => bookmark.text)
+        if (selections.length === 0) return
+
+        const contentsList = rendition.getContents() as unknown as Contents[]
+        for (const contents of contentsList) {
+            if (scannedSectionsRef.current.has(contents.sectionIndex)) continue
+
+            for (const text of selections) {
+                const range = findTextRange(contents.document.body, text)
+                if (!range) continue
+
+                let cfi: string
+                try {
+                    cfi = contents.cfiFromRange(range)
+                } catch {
+                    continue
+                }
+                if (!cfi || highlightedCfisRef.current.has(cfi)) continue
+
+                highlightedCfisRef.current.add(cfi)
+                try {
+                    rendition.annotations.highlight(
+                        cfi,
+                        {},
+                        undefined,
+                        BOOKMARK_HIGHLIGHT_CLASS,
+                    )
+                } catch {
+                    highlightedCfisRef.current.delete(cfi)
+                }
+            }
+
+            scannedSectionsRef.current.add(contents.sectionIndex)
+        }
+    }, [])
+
+    // Re-scan rendered sections whenever the digest content changes so newly
+    // saved bookmarks (or updates synced from elsewhere) get highlighted. The
+    // CFI guard keeps existing highlights from being re-added.
+    useEffect(() => {
+        const rendition = themeRendition.current
+        if (!rendition) return
+        scannedSectionsRef.current = new Set()
+        highlightBookmarks(rendition)
+    }, [content, highlightBookmarks])
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
@@ -228,6 +288,8 @@ export default function Ebook() {
                                     },
                                 })
                                 themeRendition.current = rendition
+                                highlightedCfisRef.current = new Set()
+                                scannedSectionsRef.current = new Set()
                                 rendition.on('selected', (_: Rendition, contents: Contents) => {
                                     const selection = contents.window.getSelection()!
                                     setSelection(selection)
@@ -265,6 +327,7 @@ export default function Ebook() {
                                         if (currentSelection?.toString()) return
                                         reset()
                                     })
+                                    highlightBookmarks(rendition)
                                 })
                             }}
                             url={transformEbookUrl(src)}
@@ -319,6 +382,8 @@ export default function Ebook() {
                                                                 })
                                                                 router.refresh()
                                                                 setContent(newContent)
+                                                                // The content effect re-scans and
+                                                                // highlights the new bookmark.
                                                                 toast.success('文摘已保存')
                                                             } catch {
                                                                 toast.error('文摘保存失败，请重试')
