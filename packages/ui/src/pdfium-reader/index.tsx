@@ -10,12 +10,10 @@ import {
     DocumentManagerPluginPackage,
 } from '@embedpdf/plugin-document-manager/react'
 import {
-    GlobalPointerProvider,
     PagePointerProvider,
     InteractionManagerPluginPackage,
     useInteractionManagerCapability,
 } from '@embedpdf/plugin-interaction-manager/react'
-import { PanPluginPackage, usePan } from '@embedpdf/plugin-pan/react'
 import { RenderLayer, RenderPluginPackage } from '@embedpdf/plugin-render/react'
 import { Scroller, ScrollPluginPackage, useScroll } from '@embedpdf/plugin-scroll/react'
 import {
@@ -23,11 +21,15 @@ import {
     SelectionPluginPackage,
     useSelectionCapability,
 } from '@embedpdf/plugin-selection/react'
-import { Viewport, ViewportPluginPackage } from '@embedpdf/plugin-viewport/react'
+import {
+    Viewport,
+    ViewportPluginPackage,
+    useViewportElement,
+} from '@embedpdf/plugin-viewport/react'
 import { ZoomMode, ZoomPluginPackage, useZoom } from '@embedpdf/plugin-zoom/react'
 import { Button, CircularProgress } from '@heroui/react'
 import { cn } from '@heroui/theme'
-import { PiArrowClockwise, PiHand, PiTextT, PiWarningCircle } from 'react-icons/pi'
+import { PiArrowClockwise, PiWarningCircle } from 'react-icons/pi'
 
 interface PdfiumReaderProps {
     url: string
@@ -428,46 +430,107 @@ function SelectionBridge({
 }
 
 /**
- * Surfaces pan-mode state and controls to the header toggle.
+ * Enables one-finger text selection and two-finger scrolling at the same time.
  *
- * A single touch gesture cannot both scroll the document and drag-select text,
- * so the reader runs two interaction modes:
+ * The interaction manager's `pointerMode` keeps `touch-action: none` on the page
+ * so a single-finger drag reaches the selection handler instead of the browser.
+ * That also disables native touch scrolling, so two-finger panning is driven
+ * here in JavaScript:
  *
- * - `panMode` leaves native scrolling enabled (`wantsRawTouch: false`) and turns
- *   selection off. The pan plugin makes it the default on touch devices.
- * - `pointerMode` captures raw touch (`touch-action: none`) so a drag selects
- *   text; it remains the default on pointer/mouse devices.
+ * - The first finger down may start a selection; the moment a second finger
+ *   lands we cancel it and pause interaction so the drag never becomes a
+ *   selection.
+ * - While two fingers move, we translate the viewport by the centroid delta,
+ *   which reads as a natural two-finger scroll.
+ * - Interaction resumes when the last finger lifts, so the next lone finger
+ *   selects again.
  *
- * The header button toggles between them for touch users. We drive the modes
- * directly rather than through `pan.disablePan()` because that returns to the
- * default mode, which is `panMode` on touch.
+ * Rendered inside `<Viewport>` so it can borrow the scroll container element.
  */
-function PanBridge({
-    documentId,
-    touch,
-    onPanStateChange,
-    controlRef,
-}: {
-    documentId: string
-    touch: boolean
-    onPanStateChange: (panning: boolean) => void
-    controlRef: { current: ((pan: boolean) => void) | null }
-}) {
+function TwoFingerPan({ documentId }: { documentId: string }) {
+    const viewportElement = useViewportElement()
     const { provides: interaction } = useInteractionManagerCapability()
-    const { isPanning } = usePan(documentId)
+    const { provides: selection } = useSelectionCapability()
 
     useEffect(() => {
-        if (!interaction || !touch) return
-        controlRef.current = (pan: boolean) =>
-            interaction.forDocument(documentId).activate(pan ? 'panMode' : 'pointerMode')
-        return () => {
-            controlRef.current = null
+        const element = viewportElement?.current
+        if (!element) return
+
+        const pointers = new Map<number, { x: number; y: number }>()
+        let lastCentroid: { x: number; y: number } | null = null
+        let panning = false
+
+        const centroid = () => {
+            const points = [...pointers.values()]
+            if (points.length === 0) return null
+            let x = 0
+            let y = 0
+            for (const point of points) {
+                x += point.x
+                y += point.y
+            }
+            return { x: x / points.length, y: y / points.length }
         }
-    }, [interaction, documentId, touch, controlRef])
 
-    useEffect(() => {
-        onPanStateChange(isPanning)
-    }, [isPanning, onPanStateChange])
+        const onPointerDown = (event: PointerEvent) => {
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+            if (pointers.size === 2) {
+                panning = true
+                selection?.forDocument(documentId).clear()
+                interaction?.forDocument(documentId).pause()
+                lastCentroid = centroid()
+            }
+        }
+
+        const onPointerMove = (event: PointerEvent) => {
+            if (!pointers.has(event.pointerId)) return
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+            if (!panning || pointers.size < 2 || !lastCentroid) return
+
+            const next = centroid()
+            if (!next) return
+            const dx = next.x - lastCentroid.x
+            const dy = next.y - lastCentroid.y
+            lastCentroid = next
+
+            // Scroll the element directly rather than via the viewport
+            // capability: `scrollTo` defers to a rAF and reading it back returns
+            // a stale position, so chained deltas were dropped and the gesture
+            // felt laggy. Writing `scrollTop` here is synchronous and 1:1 with
+            // the fingers; the viewport's own scroll listener still syncs state.
+            element.scrollLeft -= dx
+            element.scrollTop -= dy
+        }
+
+        const onPointerEnd = (event: PointerEvent) => {
+            pointers.delete(event.pointerId)
+            if (pointers.size >= 2) {
+                lastCentroid = centroid()
+                return
+            }
+            // Only reset state and end the pan once every finger is gone;
+            // dropping from two to one keeps panning until the last lift.
+            if (panning && pointers.size === 0) {
+                panning = false
+                lastCentroid = null
+                selection?.forDocument(documentId).clear()
+                interaction?.forDocument(documentId).resume()
+            }
+        }
+
+        element.addEventListener('pointerdown', onPointerDown)
+        element.addEventListener('pointermove', onPointerMove)
+        element.addEventListener('pointerup', onPointerEnd)
+        element.addEventListener('pointercancel', onPointerEnd)
+
+        return () => {
+            element.removeEventListener('pointerdown', onPointerDown)
+            element.removeEventListener('pointermove', onPointerMove)
+            element.removeEventListener('pointerup', onPointerEnd)
+            element.removeEventListener('pointercancel', onPointerEnd)
+            interaction?.forDocument(documentId).resume()
+        }
+    }, [viewportElement, interaction, selection, documentId])
 
     return null
 }
@@ -565,16 +628,6 @@ export default function PdfiumReader({
     const [buffer, setBuffer] = useState<ArrayBuffer | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
     const [attempt, setAttempt] = useState(0)
-    const [isTouchDevice, setIsTouchDevice] = useState(false)
-    const [isPanning, setIsPanning] = useState(false)
-    const panControlRef = useRef<((pan: boolean) => void) | null>(null)
-
-    useEffect(() => {
-        setIsTouchDevice(
-            typeof window !== 'undefined' &&
-                ('ontouchstart' in window || navigator.maxTouchPoints > 0),
-        )
-    }, [])
 
     // Fetching the file ourselves gives precise, user-facing errors (HTTP
     // status, network failure, wrong format) that the engine abstracts away.
@@ -631,9 +684,6 @@ export default function PdfiumReader({
                           defaultZoomLevel: ZoomMode.FitWidth,
                       }),
                       createPluginRegistration(InteractionManagerPluginPackage),
-                      createPluginRegistration(PanPluginPackage, {
-                          defaultMode: 'mobile',
-                      }),
                       createPluginRegistration(SelectionPluginPackage, {
                           marquee: { enabled: false },
                       }),
@@ -655,27 +705,7 @@ export default function PdfiumReader({
         <div className='flex h-15 shrink-0 items-center px-1'>
             <div className='flex-1' />
             <span className='truncate px-2 text-center text-sm text-primary-400'>{title}</span>
-            <div className='flex flex-1 justify-end gap-0.5 px-2'>
-                {isTouchDevice && buffer ? (
-                    <Button
-                        isIconOnly
-                        aria-label={isPanning ? '切换到选择文字' : '切换到拖动浏览'}
-                        startContent={
-                            isPanning ? (
-                                <PiHand className='text-xl' />
-                            ) : (
-                                <PiTextT className='text-xl' />
-                            )
-                        }
-                        color={isPanning ? 'primary' : 'default'}
-                        variant={isPanning ? 'flat' : 'light'}
-                        size='lg'
-                        radius='full'
-                        onPress={() => panControlRef.current?.(!isPanning)}
-                    />
-                ) : null}
-                {actions}
-            </div>
+            <div className='flex flex-1 justify-end gap-0.5 px-2'>{actions}</div>
         </div>
     )
 
@@ -763,12 +793,6 @@ export default function PdfiumReader({
                                             if (!isLoaded) return null
                                             return (
                                                 <>
-                                                    <PanBridge
-                                                        documentId={activeDocumentId}
-                                                        touch={isTouchDevice}
-                                                        onPanStateChange={setIsPanning}
-                                                        controlRef={panControlRef}
-                                                    />
                                                     <SelectionBridge
                                                         documentId={activeDocumentId}
                                                         onSelection={onSelection}
@@ -778,42 +802,38 @@ export default function PdfiumReader({
                                                         documentId={activeDocumentId}
                                                         onPageChange={handlePageChange}
                                                     />
-                                                    <GlobalPointerProvider
+                                                    <Viewport
                                                         documentId={activeDocumentId}
-                                                        className='flex-1'
+                                                        className={cn(
+                                                            'flex-1',
+                                                            dark
+                                                                ? 'bg-stone-950'
+                                                                : 'bg-background',
+                                                        )}
                                                     >
-                                                        <Viewport
+                                                        <TwoFingerPan
                                                             documentId={activeDocumentId}
-                                                            className={cn(
-                                                                'h-full w-full',
-                                                                dark
-                                                                    ? 'bg-stone-950'
-                                                                    : 'bg-background',
+                                                        />
+                                                        <Scroller
+                                                            documentId={activeDocumentId}
+                                                            renderPage={({
+                                                                width,
+                                                                height,
+                                                                pageIndex,
+                                                            }) => (
+                                                                <PageFrame
+                                                                    engine={engine}
+                                                                    documentId={activeDocumentId}
+                                                                    pageIndex={pageIndex}
+                                                                    width={width}
+                                                                    height={height}
+                                                                    highlights={highlights}
+                                                                    dark={dark}
+                                                                    onWidth={setPageWidth}
+                                                                />
                                                             )}
-                                                        >
-                                                            <Scroller
-                                                                documentId={activeDocumentId}
-                                                                renderPage={({
-                                                                    width,
-                                                                    height,
-                                                                    pageIndex,
-                                                                }) => (
-                                                                    <PageFrame
-                                                                        engine={engine}
-                                                                        documentId={
-                                                                            activeDocumentId
-                                                                        }
-                                                                        pageIndex={pageIndex}
-                                                                        width={width}
-                                                                        height={height}
-                                                                        highlights={highlights}
-                                                                        dark={dark}
-                                                                        onWidth={setPageWidth}
-                                                                    />
-                                                                )}
-                                                            />
-                                                        </Viewport>
-                                                    </GlobalPointerProvider>
+                                                        />
+                                                    </Viewport>
                                                 </>
                                             )
                                         }}

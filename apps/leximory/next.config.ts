@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
             },
         ]
     },
+    allowedDevOrigins: ['10.3.19.213'],
 }
 
 const withMDX = createMDX({})
