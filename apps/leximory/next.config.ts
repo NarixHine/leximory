@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
                 destination:
                     'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token',
             },
+            {
+                source: '/ebooks/:token/:id\\.pdf',
+                destination:
+                    'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.pdf?token=:token',
+            },
         ]
     },
 }
