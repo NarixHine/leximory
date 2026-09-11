@@ -444,7 +444,7 @@ function PageFrame({
     return (
         <div
             data-pdf-page={pageIndex}
-            className='relative mx-auto bg-white'
+            className='relative mx-auto bg-white dark:bg-black'
             style={{ width, height }}
         >
             <PagePointerProvider documentId={documentId} pageIndex={pageIndex}>
@@ -452,7 +452,7 @@ function PageFrame({
                     documentId={documentId}
                     pageIndex={pageIndex}
                     draggable={false}
-                    className='pointer-events-none select-none'
+                    className='pointer-events-none select-none dark:invert dark:hue-rotate-180'
                 />
                 <HighlightOverlay
                     engine={engine}
