@@ -143,75 +143,98 @@ function PdfEbook() {
     if (!src) return null
 
     return (
-        <FullScreen
-            handle={handleFullScreen}
-            onChange={setIsFullScreen}
-            className={cn('block relative dark:opacity-95', isFullViewport ? 'h-full' : 'h-[80dvh]')}
+        <motion.div
+            className='bg-background'
+            style={{
+                position: isFullViewport ? 'fixed' : 'relative',
+                width: isFullViewport ? '100dvw' : 'auto',
+                height: isFullViewport ? '100dvh' : 'auto',
+                zIndex: isFullViewport ? 999 : 0,
+                left: isFullViewport ? 0 : 'auto',
+                top: isFullViewport ? 0 : 'auto',
+                right: isFullViewport ? 0 : 'auto',
+            }}
+            transition={{
+                layout: {
+                    duration: 0.5,
+                    ease: 'easeInOut',
+                },
+            }}
+            layout='preserve-aspect'
         >
-            <div ref={containerRef} className='relative h-full bg-background'>
-                <Define
-                    {...rect}
-                    reset={reset}
-                    container={containerRef.current}
-                    selection={selectedText ? null : selection}
-                    selectedText={selectedText ?? undefined}
-                    actions={
-                        <BookmarkButton
-                            isDisabled={!bookmark || isReadOnly}
-                            isLoading={savingBookmark}
-                            onPress={() => {
-                                if (!bookmark) return
-                                startSavingBookmark(async () => {
-                                    try {
-                                        const newContent = normalizeBookmarks(content).concat(
-                                            bookmark,
-                                        )
-                                        await saveText({ id: text, content: newContent })
-                                        router.refresh()
-                                        setContent(newContent)
-                                        toast.success('文摘已保存')
-                                    } catch {
-                                        toast.error('文摘保存失败，请重试')
-                                    }
-                                })
-                            }}
-                        />
-                    }
-                />
-                <div className='mx-auto h-full w-full max-w-176'>
-                <PdfReader
-                    key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
-                    url={transformEbookUrl(src)}
-                    title={title}
-                    dark={resolvedTheme === 'dark'}
-                    highlights={highlights}
-                    onSelection={handlePdfSelection}
-                    onSelectionClear={reset}
-                    actions={
-                        <>
-                            <Button
-                                isIconOnly
-                                startContent={<PiFrameCorners className='text-xl' />}
-                                className='z-10'
-                                color='primary'
-                                variant='light'
-                                size='lg'
-                                radius='full'
-                                onPress={async () => {
-                                    try {
-                                        if (isFullScreen) await handleFullScreen.exit()
-                                        else await handleFullScreen.enter()
-                                    } catch {
-                                        setIsFullViewport(value => !value)
-                                    }
+            <FullScreen
+                handle={handleFullScreen}
+                onChange={setIsFullScreen}
+                className={cn(
+                    'block relative dark:opacity-95',
+                    isFullViewport ? 'h-full' : 'h-[80dvh]',
+                )}
+            >
+                <div ref={containerRef} className='relative h-full bg-background'>
+                    <Define
+                        {...rect}
+                        reset={reset}
+                        container={containerRef.current}
+                        selection={selectedText ? null : selection}
+                        selectedText={selectedText ?? undefined}
+                        actions={
+                            <BookmarkButton
+                                isDisabled={!bookmark || isReadOnly}
+                                isLoading={savingBookmark}
+                                onPress={() => {
+                                    if (!bookmark) return
+                                    startSavingBookmark(async () => {
+                                        try {
+                                            const newContent = normalizeBookmarks(content).concat(
+                                                bookmark,
+                                            )
+                                            await saveText({ id: text, content: newContent })
+                                            router.refresh()
+                                            setContent(newContent)
+                                            toast.success('文摘已保存')
+                                        } catch {
+                                            toast.error('文摘保存失败，请重试')
+                                        }
+                                    })
                                 }}
                             />
-                        </>
-                    }
-                />
+                        }
+                    />
+                    <div className='mx-auto h-full w-full max-w-176'>
+                        <PdfReader
+                            key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
+                            url={transformEbookUrl(src)}
+                            title={title}
+                            dark={resolvedTheme === 'dark'}
+                            highlights={highlights}
+                            onSelection={handlePdfSelection}
+                            onSelectionClear={reset}
+                            actions={
+                                <>
+                                    <Button
+                                        isIconOnly
+                                        startContent={<PiFrameCorners className='text-xl' />}
+                                        className='z-10'
+                                        color='primary'
+                                        variant='light'
+                                        size='lg'
+                                        radius='full'
+                                        onPress={async () => {
+                                            try {
+                                                if (isFullScreen) await handleFullScreen.exit()
+                                                else await handleFullScreen.enter()
+                                            } catch {
+                                                setIsFullViewport(value => !value)
+                                            }
+                                        }}
+                                    />
+                                </>
+                            }
+                        />
+                    </div>
                 </div>
-            </div>
-        </FullScreen>
+            </FullScreen>
+        </motion.div>
     )
 }
 
