@@ -32,7 +32,7 @@
         "./confirm-popover": "./src/confirm-popover/index.tsx",
         "./file-upload": "./src/file-upload/index.tsx",
         "./epub-reader": "./src/epub-reader/index.tsx",
-        "./pdf-reader": "./src/pdf-reader/index.tsx"
+        "./pdfium-reader": "./src/pdfium-reader/index.tsx"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",
@@ -47,12 +47,14 @@
     "dependencies": {
         "@embedpdf/core": "^2.15.0",
         "@embedpdf/engines": "^2.15.0",
+        "@embedpdf/plugin-annotation": "^2.15.0",
         "@embedpdf/plugin-document-manager": "^2.15.0",
         "@embedpdf/plugin-interaction-manager": "^2.15.0",
         "@embedpdf/plugin-render": "^2.15.0",
         "@embedpdf/plugin-scroll": "^2.15.0",
         "@embedpdf/plugin-selection": "^2.15.0",
         "@embedpdf/plugin-viewport": "^2.15.0",
+        "@embedpdf/plugin-zoom": "^2.15.0",
         "@phosphor-icons/react": "^2.1.10",
         "@repo/env": "workspace:^",
         "@repo/schema": "workspace:^",
@@ -71,7 +73,6 @@
         "linkedom": "^0.18.12",
         "moment": "^2.30.1",
         "nanoid": "^5.1.6",
-        "pdfjs-dist": "^5.4.54",
         "rand-seed": "^3.0.0",
         "react-dropzone": "^14.3.5",
         "react-icons": "^5.5.0",

@@ -18,9 +18,10 @@ export default function Define(
               left: number | null
               width: number | null
               top: number | null
-              bottom: number | null
-              selection: Selection | null
-              container: HTMLElement | null
+               bottom: number | null
+               selection: Selection | null
+               selectedText?: string
+               container: HTMLElement | null
               reset: () => void
           }
         | EmptyObject,
@@ -28,6 +29,7 @@ export default function Define(
     const ref = useRef(globalThis.document)
     const selectionContext = useSelection(ref)
     const { left, width, selection } = props && 'left' in props ? props : selectionContext
+    const selectedText = props && 'selectedText' in props ? props.selectedText : undefined
     const container = props && 'container' in props ? props.container : undefined
     const reset = props && 'reset' in props ? props.reset : () => {}
     const positionTop = props && 'top' in props ? props.top : null
@@ -42,7 +44,9 @@ export default function Define(
     const rect =
         selection && selection.rangeCount > 0
             ? selection.getRangeAt(0).getBoundingClientRect()
-            : null
+            : selectedText
+              ? ({ top: positionTop ?? 0, bottom: positionBottom ?? 0 } as DOMRect)
+              : null
 
     // 2. Calculate positioning
     let buttonTop = 0
@@ -72,9 +76,7 @@ export default function Define(
 
     return (
         <Drawer.Root repositionInputs={false} direction='top' container={container}>
-            {selection &&
-                selection.anchorNode?.textContent &&
-                selection.toString() &&
+            {((selection && selection.anchorNode?.textContent && selection.toString()) || selectedText) &&
                 left !== null &&
                 width !== null &&
                 rect && (
@@ -106,9 +108,10 @@ export default function Define(
                     <Comment
                         asCard
                         prompt={
-                            selection && selection.anchorNode?.textContent && selection.toString()
+                            selectedText ||
+                            (selection && selection.anchorNode?.textContent && selection.toString()
                                 ? getBracketedSelection(selection)
-                                : ''
+                                : '')
                         }
                         params='[]'
                     ></Comment>

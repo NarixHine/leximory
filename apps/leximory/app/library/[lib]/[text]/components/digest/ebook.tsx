@@ -4,7 +4,7 @@ import { Button } from '@heroui/button'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
-import PdfReader from '@repo/ui/pdf-reader'
+import PdfReader from '@repo/ui/pdfium-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
@@ -90,8 +90,9 @@ function PdfEbook() {
     const [content, setContent] = useAtom(contentAtom)
     const src = useAtomValue(ebookAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
-    const [location, setLocation] = useAtom(locationAtomFamily(text))
+    const [, setLocation] = useAtom(locationAtomFamily(text))
     const [selection, setSelection] = useState<Selection | null>(null)
+    const [selectedText, setSelectedText] = useState<string | null>(null)
     const [rect, setRect] = useState({
         left: null as number | null,
         width: null as number | null,
@@ -107,16 +108,37 @@ function PdfEbook() {
     const containerRef = useRef<HTMLDivElement>(null!)
     const router = useRouter()
     const hasZoomed = isFullViewport || isFullScreen
-    const highlights = useMemo(
-        () => parseBookmarks(content).map(savedBookmark => savedBookmark.text),
-        [content],
-    )
 
-    const reset = () => {
+    const reset = useCallback(() => {
         setSelection(null)
+        setSelectedText(null)
         setRect({ left: null, width: null, top: null, bottom: null })
         setBookmark(null)
-    }
+    }, [])
+
+    const handlePdfSelection = useCallback(
+        (
+            nextText: string,
+            page: number,
+            selectionRect: { left: number; top: number; width: number; height: number },
+        ) => {
+            setSelection(null)
+            setSelectedText(nextText)
+            setLocation(String(page))
+            setRect({
+                left: selectionRect.left,
+                width: selectionRect.width,
+                top: selectionRect.top,
+                bottom: selectionRect.top + selectionRect.height,
+            })
+            setBookmark(
+                `\n\n> ${nextText
+                    .concat(`\n— *Page ${page}*`)
+                    .replaceAll('\n', '\n>\n> ')}`,
+            )
+        },
+        [setLocation],
+    )
 
     if (!src) return null
 
@@ -127,38 +149,21 @@ function PdfEbook() {
             className={cn('block relative dark:opacity-95', isFullViewport ? 'h-full' : 'h-[80dvh]')}
         >
             <div ref={containerRef} className='relative h-full bg-background'>
-                {hasZoomed && (
-                    <Define
-                        {...rect}
-                        reset={reset}
-                        container={containerRef.current}
-                        selection={selection}
-                    />
-                )}
+                <Define
+                    {...rect}
+                    reset={reset}
+                    container={containerRef.current}
+                    selection={selectedText ? null : selection}
+                    selectedText={selectedText ?? undefined}
+                />
+                <div className='mx-auto h-full w-full max-w-176'>
                 <PdfReader
                     key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
                     url={transformEbookUrl(src)}
                     title={title}
-                    location={location}
-                    highlights={highlights}
                     dark={resolvedTheme === 'dark'}
-                    onLocationChange={setLocation}
-                    onSelection={(nextSelection, selectionRect, page) => {
-                        setSelection(nextSelection)
-                        setLocation(String(page))
-                        setRect({
-                            left: selectionRect.left,
-                            width: selectionRect.width,
-                            top: selectionRect.top,
-                            bottom: selectionRect.bottom,
-                        })
-                        setBookmark(
-                            `\n\n> ${nextSelection
-                                .toString()
-                                .concat(`\n— *Page ${page}*`)
-                                .replaceAll('\n', '\n>\n> ')}`,
-                        )
-                    }}
+                    onSelection={handlePdfSelection}
+                    onSelectionClear={reset}
                     actions={
                         <>
                             <Button
@@ -208,6 +213,7 @@ function PdfEbook() {
                         </>
                     }
                 />
+                </div>
             </div>
         </FullScreen>
     )
