@@ -22,8 +22,9 @@ import {
 } from '@embedpdf/plugin-selection/react'
 import { Viewport, ViewportPluginPackage } from '@embedpdf/plugin-viewport/react'
 import { ZoomMode, ZoomPluginPackage, useZoom } from '@embedpdf/plugin-zoom/react'
-import { CircularProgress } from '@heroui/react'
+import { Button, CircularProgress } from '@heroui/react'
 import { cn } from '@heroui/theme'
+import { PiArrowClockwise, PiWarningCircle } from 'react-icons/pi'
 
 interface PdfiumReaderProps {
     url: string
@@ -38,6 +39,79 @@ interface PdfiumReaderProps {
     ) => void
     onSelectionClear?: () => void
     highlights?: string[]
+}
+
+/** Human-readable explanations for the PDFium engine error codes. */
+const PDF_ERROR_HINTS: Record<number, string> = {
+    2: '文件不存在或已被删除。',
+    3: '文件不是有效的 PDF，可能已损坏。',
+    4: '该 PDF 受密码保护，需要密码才能打开。',
+    5: '该 PDF 的安全设置禁止在浏览器中打开。',
+    6: 'PDF 页面数据无法读取。',
+    13: 'PDF 引擎无法解析该文件。',
+}
+
+/** A descriptive error surface shown when a PDF cannot be loaded. */
+function PdfError({
+    title,
+    message,
+    code,
+    detail,
+    onRetry,
+}: {
+    title: string
+    message?: string | null
+    code?: number
+    detail?: unknown
+    onRetry?: () => void
+}) {
+    const hint = code !== undefined ? PDF_ERROR_HINTS[code] : undefined
+    const detailText =
+        detail === undefined || detail === null
+            ? null
+            : typeof detail === 'string'
+              ? detail
+              : (() => {
+                    try {
+                        return JSON.stringify(detail, null, 2)
+                    } catch {
+                        return String(detail)
+                    }
+                })()
+
+    return (
+        <div className='flex flex-1 items-center justify-center p-6'>
+            <div className='flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-danger-100 bg-danger-50/60 px-6 py-8 text-center dark:border-danger-500/20 dark:bg-danger-500/10'>
+                <PiWarningCircle className='text-4xl text-danger' />
+                <div className='flex flex-col gap-1'>
+                    <p className='text-base font-semibold text-foreground'>{title}</p>
+                    {message ? (
+                        <p className='text-sm text-foreground-500'>{message}</p>
+                    ) : null}
+                    {hint ? <p className='text-sm text-foreground-500'>{hint}</p> : null}
+                </div>
+                {detailText ? (
+                    <pre className='max-h-40 w-full overflow-auto rounded-lg bg-default-100/70 p-3 text-left text-xs leading-relaxed text-foreground-500'>
+                        {detailText}
+                    </pre>
+                ) : null}
+                {code !== undefined ? (
+                    <p className='text-xs text-foreground-400'>错误代码：{code}</p>
+                ) : null}
+                {onRetry ? (
+                    <Button
+                        color='danger'
+                        variant='flat'
+                        radius='full'
+                        startContent={<PiArrowClockwise />}
+                        onPress={onRetry}
+                    >
+                        重试
+                    </Button>
+                ) : null}
+            </div>
+        </div>
+    )
 }
 
 /**
@@ -387,7 +461,15 @@ function PageFrame({
                     highlights={highlights}
                     dark={dark}
                 />
-                <SelectionLayer documentId={documentId} pageIndex={pageIndex} />
+                <SelectionLayer
+                    documentId={documentId}
+                    pageIndex={pageIndex}
+                    textStyle={{
+                        background: dark
+                            ? 'rgb(156 168 171 / 0.35)'
+                            : 'rgb(103 120 124 / 0.3)',
+                    }}
+                />
             </PagePointerProvider>
         </div>
     )
@@ -425,22 +507,69 @@ export default function PdfiumReader({
     const [pageWidth, setPageWidth] = useState<number | null>(null)
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(0)
+    const [buffer, setBuffer] = useState<ArrayBuffer | null>(null)
+    const [fetchError, setFetchError] = useState<string | null>(null)
+    const [attempt, setAttempt] = useState(0)
+
+    // Fetching the file ourselves gives precise, user-facing errors (HTTP
+    // status, network failure, wrong format) that the engine abstracts away.
+    useEffect(() => {
+        let cancelled = false
+        setBuffer(null)
+        setFetchError(null)
+        void (async () => {
+            try {
+                const response = await fetch(url)
+                if (!response.ok) {
+                    throw new Error(
+                        `下载文件失败：HTTP ${response.status} ${response.statusText || ''}`.trim(),
+                    )
+                }
+                const data = await response.arrayBuffer()
+                if (cancelled) return
+                const header = new TextDecoder().decode(new Uint8Array(data.slice(0, 1024)))
+                if (!header.includes('%PDF-')) {
+                    throw new Error('文件内容不是有效的 PDF（未找到 %PDF- 文件头）。')
+                }
+                setBuffer(data)
+            } catch (reason) {
+                if (cancelled) return
+                setFetchError(
+                    reason instanceof Error ? reason.message : '下载文件时发生未知错误。',
+                )
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [url, attempt])
+
+    const filename = useMemo(() => {
+        try {
+            return decodeURIComponent(new URL(url, 'https://local').pathname.split('/').pop() ?? '')
+        } catch {
+            return 'ebook.pdf'
+        }
+    }, [url])
 
     const plugins = useMemo(
-        () => [
-            createPluginRegistration(DocumentManagerPluginPackage, {
-                initialDocuments: [{ url, documentId: 'ebook' }],
-            }),
-            createPluginRegistration(ViewportPluginPackage, { viewportGap: 0 }),
-            createPluginRegistration(ScrollPluginPackage, { defaultPageGap: 0 }),
-            createPluginRegistration(RenderPluginPackage),
-            createPluginRegistration(ZoomPluginPackage, {
-                defaultZoomLevel: ZoomMode.FitWidth,
-            }),
-            createPluginRegistration(InteractionManagerPluginPackage),
-            createPluginRegistration(SelectionPluginPackage),
-        ],
-        [url],
+        () =>
+            buffer
+                ? [
+                      createPluginRegistration(DocumentManagerPluginPackage, {
+                          initialDocuments: [{ buffer, name: filename, documentId: 'ebook' }],
+                      }),
+                      createPluginRegistration(ViewportPluginPackage, { viewportGap: 0 }),
+                      createPluginRegistration(ScrollPluginPackage, { defaultPageGap: 0 }),
+                      createPluginRegistration(RenderPluginPackage),
+                      createPluginRegistration(ZoomPluginPackage, {
+                          defaultZoomLevel: ZoomMode.FitWidth,
+                      }),
+                      createPluginRegistration(InteractionManagerPluginPackage),
+                      createPluginRegistration(SelectionPluginPackage),
+                  ]
+                : [],
+        [buffer, filename],
     )
 
     const handlePageChange = useMemo(
@@ -452,31 +581,63 @@ export default function PdfiumReader({
         [onLocationChange],
     )
 
+    const header = (
+        <div className='flex h-15 shrink-0 items-center px-1'>
+            <div className='flex-1' />
+            <span className='truncate px-2 text-center text-sm text-primary-400'>{title}</span>
+            <div className='flex flex-1 justify-end gap-0.5 px-2'>{actions}</div>
+        </div>
+    )
+
     if (isLoading || !engine) {
         return (
-            <div className='flex h-full items-center justify-center'>
-                <CircularProgress color='primary' size='lg' />
+            <div className='flex h-full flex-col'>
+                {header}
+                <div className='flex flex-1 items-center justify-center'>
+                    <CircularProgress color='primary' size='lg' />
+                </div>
             </div>
         )
     }
     if (error) {
         return (
-            <div className='flex h-full items-center justify-center text-danger'>{error.message}</div>
+            <div className='flex h-full flex-col'>
+                {header}
+                <PdfError
+                    title='PDF 引擎加载失败'
+                    message={error.message}
+                    detail={String(error.stack ?? '')}
+                />
+            </div>
+        )
+    }
+    if (fetchError) {
+        return (
+            <div className='flex h-full flex-col'>
+                {header}
+                <PdfError
+                    title='无法加载 PDF'
+                    message={fetchError}
+                    onRetry={() => setAttempt(value => value + 1)}
+                />
+            </div>
         )
     }
 
     return (
         <div ref={containerRef} className='group relative flex h-full min-h-0 flex-col'>
-            <div className='flex h-15 shrink-0 items-center px-1'>
-                <div className='flex-1' />
-                <span className='truncate px-2 text-center text-sm text-primary-400'>{title}</span>
-                <div className='flex flex-1 justify-end gap-0.5 px-2'>{actions}</div>
-            </div>
+            {header}
+            {!buffer ? (
+                <div className='flex flex-1 items-center justify-center'>
+                    <CircularProgress color='primary' size='lg' />
+                </div>
+            ) : (
+                <>
             <EmbedPDF engine={engine} plugins={plugins}>
                 {({ activeDocumentId }) =>
                     activeDocumentId && (
                         <DocumentContent documentId={activeDocumentId}>
-                            {({ isLoaded, isLoading: documentLoading, isError }) => {
+                            {({ isLoaded, isLoading: documentLoading, isError, documentState }) => {
                                 if (documentLoading) {
                                     return (
                                         <div className='flex flex-1 items-center justify-center'>
@@ -486,9 +647,13 @@ export default function PdfiumReader({
                                 }
                                 if (isError) {
                                     return (
-                                        <div className='flex flex-1 items-center justify-center text-danger'>
-                                            无法加载 PDF
-                                        </div>
+                                        <PdfError
+                                            title='无法加载 PDF'
+                                            message={documentState?.error}
+                                            code={documentState?.errorCode}
+                                            detail={documentState?.errorDetails}
+                                            onRetry={() => setAttempt(value => value + 1)}
+                                        />
                                     )
                                 }
                                 if (!isLoaded) return null
@@ -540,6 +705,8 @@ export default function PdfiumReader({
                 >
                     {page} / {totalPages}
                 </div>
+            )}
+                </>
             )}
         </div>
     )

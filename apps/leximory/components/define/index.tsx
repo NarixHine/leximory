@@ -2,7 +2,7 @@
 
 import { Drawer } from 'vaul'
 import Comment from '@/components/comment'
-import { useRef } from 'react'
+import { ReactNode, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { PiMagnifyingGlass } from 'react-icons/pi'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
@@ -11,6 +11,7 @@ import { langAtom } from '@/app/library/[lib]/atoms'
 import { EmptyObject } from 'react-hook-form'
 import { useOnClickOutside } from 'usehooks-ts'
 import { getBracketedSelection, useSelection } from '@repo/ui/define'
+import { Button } from '@heroui/button'
 
 export default function Define(
     props:
@@ -23,6 +24,8 @@ export default function Define(
                selectedText?: string
                container: HTMLElement | null
               reset: () => void
+              /** Trailing actions rendered beside the Define trigger (e.g. bookmark). */
+              actions?: ReactNode
           }
         | EmptyObject,
 ) {
@@ -34,7 +37,8 @@ export default function Define(
     const reset = props && 'reset' in props ? props.reset : () => {}
     const positionTop = props && 'top' in props ? props.top : null
     const positionBottom = props && 'bottom' in props ? props.bottom : null
-    const buttonRef = useRef<HTMLButtonElement>(null!)
+    const actions = props && 'actions' in props ? props.actions : undefined
+    const wrapperRef = useRef<HTMLDivElement>(null!)
     const lang = useAtomValue(langAtom)
 
     const isEbookMode = !!container
@@ -70,7 +74,7 @@ export default function Define(
         }
     }
 
-    useOnClickOutside(buttonRef, () => {
+    useOnClickOutside(wrapperRef, () => {
         reset()
     })
 
@@ -80,21 +84,31 @@ export default function Define(
                 left !== null &&
                 width !== null &&
                 rect && (
-                    <Drawer.Trigger
-                        ref={buttonRef}
+                    <div
+                        ref={wrapperRef}
                         style={{
                             left: left! + width! / 2,
                             top: buttonTop, // Applied the conditional top here
                         }}
                         className={cn(
-                            'absolute -translate-x-1/2 z-50 flex h-10 shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-default-50/70 hover:bg-default-50/90 backdrop-blur px-4 text-sm font-medium border-1 border-primary-300 hover:cursor-pointer transition-all ease-in-out text-foreground',
-                            isEbookMode && 'fixed opacity-90',
-                            defineClassName,
+                            'absolute z-50 flex -translate-x-1/2 items-center gap-2',
+                            isEbookMode && 'fixed opacity-95',
                         )}
                     >
-                        <PiMagnifyingGlass />
-                        {defineLabel}
-                    </Drawer.Trigger>
+                        <Drawer.Trigger asChild>
+                            <Button
+                                color='primary'
+                                variant='solid'
+                                size='md'
+                                radius='full'
+                                startContent={<PiMagnifyingGlass />}
+                                className={cn('h-10 font-semibold shadow-md', defineClassName)}
+                            >
+                                {defineLabel}
+                            </Button>
+                        </Drawer.Trigger>
+                        {actions}
+                    </div>
                 )}
             <Drawer.Portal>
                 <Drawer.Overlay

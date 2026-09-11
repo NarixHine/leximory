@@ -107,7 +107,6 @@ function PdfEbook() {
     const handleFullScreen = useFullScreenHandle()
     const containerRef = useRef<HTMLDivElement>(null!)
     const router = useRouter()
-    const hasZoomed = isFullViewport || isFullScreen
     const highlights = useMemo(
         () => parseBookmarks(content).map(bookmark => bookmark.text),
         [content],
@@ -156,6 +155,28 @@ function PdfEbook() {
                     container={containerRef.current}
                     selection={selectedText ? null : selection}
                     selectedText={selectedText ?? undefined}
+                    actions={
+                        <BookmarkButton
+                            isDisabled={!bookmark || isReadOnly}
+                            isLoading={savingBookmark}
+                            onPress={() => {
+                                if (!bookmark) return
+                                startSavingBookmark(async () => {
+                                    try {
+                                        const newContent = normalizeBookmarks(content).concat(
+                                            bookmark,
+                                        )
+                                        await saveText({ id: text, content: newContent })
+                                        router.refresh()
+                                        setContent(newContent)
+                                        toast.success('文摘已保存')
+                                    } catch {
+                                        toast.error('文摘保存失败，请重试')
+                                    }
+                                })
+                            }}
+                        />
+                    }
                 />
                 <div className='mx-auto h-full w-full max-w-176'>
                 <PdfReader
@@ -185,39 +206,38 @@ function PdfEbook() {
                                     }
                                 }}
                             />
-                            {hasZoomed && (
-                                <Button
-                                    isIconOnly
-                                    isLoading={savingBookmark}
-                                    isDisabled={!bookmark || isReadOnly}
-                                    startContent={!savingBookmark && <PiBookmark className='text-xl' />}
-                                    className='z-10'
-                                    color='primary'
-                                    variant='light'
-                                    size='lg'
-                                    radius='full'
-                                    onPress={() => {
-                                        if (!bookmark) return
-                                        startSavingBookmark(async () => {
-                                            try {
-                                                const newContent = normalizeBookmarks(content).concat(bookmark)
-                                                await saveText({ id: text, content: newContent })
-                                                router.refresh()
-                                                setContent(newContent)
-                                                toast.success('文摘已保存')
-                                            } catch {
-                                                toast.error('文摘保存失败，请重试')
-                                            }
-                                        })
-                                    }}
-                                />
-                            )}
                         </>
                     }
                 />
                 </div>
             </div>
         </FullScreen>
+    )
+}
+
+/** Icon-only bookmark action rendered beside the Define trigger. */
+function BookmarkButton({
+    isDisabled,
+    isLoading,
+    onPress,
+}: {
+    isDisabled: boolean
+    isLoading: boolean
+    onPress: () => void
+}) {
+    return (
+        <Button
+            isIconOnly
+            isLoading={isLoading}
+            isDisabled={isDisabled}
+            startContent={!isLoading && <PiBookmark className='text-xl' />}
+            color='default'
+            variant='flat'
+            size='md'
+            radius='full'
+            className='h-10 w-10 min-w-10 bg-default-200 text-foreground hover:bg-default-300'
+            onPress={onPress}
+        />
     )
 }
 
@@ -355,6 +375,28 @@ function EpubEbook() {
                                 reset={reset}
                                 container={containerRef.current}
                                 selection={selection}
+                                actions={
+                                    <BookmarkButton
+                                        isDisabled={!bookmark || isReadOnly}
+                                        isLoading={savingBookmark}
+                                        onPress={() => {
+                                            if (!bookmark) return
+                                            startSavingBookmark(async () => {
+                                                try {
+                                                    const newContent = normalizeBookmarks(
+                                                        content,
+                                                    ).concat(bookmark)
+                                                    await saveText({ id: text, content: newContent })
+                                                    router.refresh()
+                                                    setContent(newContent)
+                                                    toast.success('文摘已保存')
+                                                } catch {
+                                                    toast.error('文摘保存失败，请重试')
+                                                }
+                                            })
+                                        }}
+                                    />
+                                }
                             />
                         )}
                         <EpubReader
@@ -483,48 +525,6 @@ function EpubEbook() {
                                             }
                                         }}
                                     />
-                                    {hasZoomed && (
-                                        <>
-                                            <Button
-                                                startContent={
-                                                    !savingBookmark && (
-                                                        <PiBookmark className='text-xl' />
-                                                    )
-                                                }
-                                                isLoading={savingBookmark}
-                                                isDisabled={!bookmark || isReadOnly}
-                                                className='z-10'
-                                                color='primary'
-                                                variant='light'
-                                                size='lg'
-                                                radius='full'
-                                                isIconOnly
-                                                onPress={() => {
-                                                    if (bookmark) {
-                                                        startSavingBookmark(async () => {
-                                                            try {
-                                                                const newContent =
-                                                                    normalizeBookmarks(
-                                                                        content,
-                                                                    ).concat(bookmark)
-                                                                await saveText({
-                                                                    id: text,
-                                                                    content: newContent,
-                                                                })
-                                                                router.refresh()
-                                                                setContent(newContent)
-                                                                // The content effect re-scans and
-                                                                // highlights the new bookmark.
-                                                                toast.success('文摘已保存')
-                                                            } catch {
-                                                                toast.error('文摘保存失败，请重试')
-                                                            }
-                                                        })
-                                                    }
-                                                }}
-                                            ></Button>
-                                        </>
-                                    )}
                                 </>
                             }
                         />

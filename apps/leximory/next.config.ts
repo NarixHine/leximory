@@ -34,14 +34,9 @@ const nextConfig: NextConfig = {
     async rewrites() {
         return [
             {
-                source: '/ebooks/:token/:id\\.epub',
+                source: '/ebooks/:token/:file',
                 destination:
-                    'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.epub?token=:token',
-            },
-            {
-                source: '/ebooks/:token/:id\\.pdf',
-                destination:
-                    'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:id.pdf?token=:token',
+                    'https://pcsjszvydprmevipvpva.supabase.co/storage/v1/object/sign/user-files/ebooks/:file?token=:token',
             },
         ]
     },
