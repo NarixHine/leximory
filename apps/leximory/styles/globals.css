@@ -77,6 +77,14 @@ span.smallcaps button {
   }
 }
 
+/* EmbedPDF's selection overlay is hardcoded to `mix-blend-mode: multiply`.
+   In dark mode the page image is inverted to black, so multiply can only
+   darken and the selection becomes invisible. Force normal compositing so the
+   translucent `textStyle.background` actually shows. */
+.dark [data-pdf-page] [style*='mix-blend-mode: multiply'] {
+  mix-blend-mode: normal !important;
+}
+
 /* Bookmark highlights inside the EPUB reader. epub.js draws these as SVG
    overlays (marks-pane), so `mark` colors from the editor don't apply. */
 .leximory-bookmark rect {
