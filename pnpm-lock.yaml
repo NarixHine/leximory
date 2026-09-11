@@ -1249,6 +1249,9 @@ importers:
       '@embedpdf/engines':
         specifier: ^2.15.0
         version: 2.15.0(preact@10.29.8)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(svelte@5.57.0(@typescript-eslint/types@8.52.0))(vue@3.5.42(typescript@7.0.2))
+      '@embedpdf/models':
+        specifier: ^2.15.0
+        version: 2.15.0
       '@embedpdf/plugin-annotation':
         specifier: ^2.15.0
         version: 2.15.0(8a97b40ee3fd90a36b253dbbfdee09b5)

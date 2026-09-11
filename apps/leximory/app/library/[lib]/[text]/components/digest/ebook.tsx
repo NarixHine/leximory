@@ -108,6 +108,10 @@ function PdfEbook() {
     const containerRef = useRef<HTMLDivElement>(null!)
     const router = useRouter()
     const hasZoomed = isFullViewport || isFullScreen
+    const highlights = useMemo(
+        () => parseBookmarks(content).map(bookmark => bookmark.text),
+        [content],
+    )
 
     const reset = useCallback(() => {
         setSelection(null)
@@ -131,11 +135,8 @@ function PdfEbook() {
                 top: selectionRect.top,
                 bottom: selectionRect.top + selectionRect.height,
             })
-            setBookmark(
-                `\n\n> ${nextText
-                    .concat(`\n— *Page ${page}*`)
-                    .replaceAll('\n', '\n>\n> ')}`,
-            )
+            const quote = nextText.replace(/\s+/g, ' ').trim()
+            setBookmark(`\n\n> ${quote}\n>\n> — *Page ${page}*`)
         },
         [setLocation],
     )
@@ -162,6 +163,7 @@ function PdfEbook() {
                     url={transformEbookUrl(src)}
                     title={title}
                     dark={resolvedTheme === 'dark'}
+                    highlights={highlights}
                     onSelection={handlePdfSelection}
                     onSelectionClear={reset}
                     actions={

@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PdfEngine, PdfPageGeometry, PdfTextRun, Rect } from '@embedpdf/models'
 import { createPluginRegistration } from '@embedpdf/core'
-import { EmbedPDF } from '@embedpdf/core/react'
+import { EmbedPDF, useDocumentState } from '@embedpdf/core/react'
 import { usePdfiumEngine } from '@embedpdf/engines/react'
 import {
     DocumentContent,
@@ -21,6 +22,7 @@ import {
 } from '@embedpdf/plugin-selection/react'
 import { Viewport, ViewportPluginPackage } from '@embedpdf/plugin-viewport/react'
 import { ZoomMode, ZoomPluginPackage, useZoom } from '@embedpdf/plugin-zoom/react'
+import { CircularProgress } from '@heroui/react'
 import { cn } from '@heroui/theme'
 
 interface PdfiumReaderProps {
@@ -35,12 +37,259 @@ interface PdfiumReaderProps {
         rect: { left: number; top: number; width: number; height: number },
     ) => void
     onSelectionClear?: () => void
+    highlights?: string[]
 }
 
-const debugLog = (...args: unknown[]) => {
-    if (process.env.NODE_ENV !== 'production') {
-        console.debug('[pdfium]', ...args)
+/**
+ * A page projection that can be searched without whitespace getting in the way.
+ *
+ * `normalized` is the page text with Markdown/typographic noise folded out and
+ * all whitespace removed. `offsets[i]` is the ORIGINAL PDF character index of
+ * `normalized[i]`, so a match found here can be mapped back onto real glyph
+ * geometry.
+ *
+ * Worked example (dummy data) — note the line break with no space between runs:
+ *
+ *   runs: [
+ *     { charIndex: 0,  text: "Hello world" },   // H=0 e=1 l=2 l=3 o=4 ·=5 w=6 o=7 r=8 l=9 d=10
+ *     { charIndex: 11, text: "\nagain" },       // \n=11 a=12 g=13 a=14 i=15 n=16
+ *   ]
+ *
+ *   normalized → "Helloworldagain"
+ *   offsets    → [ 0, 1, 2, 3, 4,    6, 7, 8, 9, 10, 12, 13, 14, 15, 16 ]
+ *                  └───── "Hello world" ─────┘      └───── "\nagain" ─────┘
+ *                  (index 5 and 11 are whitespace and are skipped)
+ *
+ * A saved quote of `"Hello world\nagain"` folds to `"Helloworldagain"`, matches
+ * at index 0, and maps to original offsets `0..16` — spanning both runs.
+ */
+interface PageTextIndex {
+    normalized: string
+    offsets: number[]
+}
+
+/**
+ * Folds a single character to a canonical form so saved quotes match the
+ * engine's extracted text regardless of typographic punctuation differences.
+ *
+ * Dummy mappings:
+ *   "’" → "'"      "“" → '"'      "–"/"—" → "-"
+ *   "\u00A0" (NBSP) → " "          "\u200B" (zero-width) → "" (dropped)
+ */
+function foldChar(char: string): string {
+    switch (char) {
+        case '\u2018':
+        case '\u2019':
+        case '\u201B':
+        case '\u2032':
+            return "'"
+        case '\u201C':
+        case '\u201D':
+        case '\u201F':
+        case '\u2033':
+            return '"'
+        case '\u00A0':
+            return ' '
+        default:
+            if (char >= '\u2010' && char <= '\u2015') return '-'
+            if (char === '\u200B' || char === '\u200C' || char === '\u200D' || char === '\uFEFF') {
+                return ''
+            }
+            return char
     }
+}
+
+/**
+ * Normalizes a saved bookmark quote: strips Markdown escapes/emphasis, folds
+ * punctuation, and removes all whitespace so line-wrapped PDF selections match
+ * the extracted page text.
+ */
+function foldQuote(text: string): string {
+    const unescaped = text
+        .replace(/\\([!-/:-@[-`{-~])/g, '$1')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/__([^_]+)__/g, '$1')
+    let result = ''
+    for (const char of unescaped) {
+        const folded = foldChar(char)
+        if (folded === '' || /\s/.test(folded)) continue
+        result += folded
+    }
+    return result
+}
+
+/**
+ * Builds a whitespace-free page string plus an index map back to the original
+ * character offsets used by the PDF text geometry. Removing whitespace makes
+ * line breaks, missing spaces, and stray spaces between text runs irrelevant.
+ */
+function buildPageText(runs: PdfTextRun[]): PageTextIndex {
+    const ordered = [...runs].sort((a, b) => a.charIndex - b.charIndex)
+    let normalized = ''
+    const offsets: number[] = []
+    for (const run of ordered) {
+        for (let i = 0; i < run.text.length; i++) {
+            const folded = foldChar(run.text[i])
+            if (folded === '' || /\s/.test(folded)) continue
+            normalized += folded
+            offsets.push(run.charIndex + i)
+        }
+    }
+    return { normalized, offsets }
+}
+
+/**
+ * Converts a page character range into per-line highlight rectangles.
+ *
+ * Dummy data for a quote that wraps across two visual lines:
+ *
+ *   geometry.runs: [
+ *     { charStart: 0,  glyphs: [ {x:10, y:20, width:5, height:10}, ... ] },  // line 1
+ *     { charStart: 40, glyphs: [ {x:10, y:34, width:5, height:10}, ... ] },  // line 2 (y jumped)
+ *   ]
+ *   from = 0, to = 60
+ *
+ *   → [
+ *       { origin: { x: 10, y: 20 }, size: { width: …, height: 10 } },  // line 1 band
+ *       { origin: { x: 10, y: 34 }, size: { width: …, height: 10 } },  // line 2 band
+ *     ]
+ *
+ * Glyphs are grouped by a vertical jump (`glyph.y` differing by more than half
+ * the previous glyph height), which is what separates wrapped lines.
+ */
+function characterRangeToRects(geo: PdfPageGeometry, from: number, to: number): Rect[] {
+    const rects: Rect[] = []
+    for (const run of geo.runs) {
+        const runStart = run.charStart
+        const runEnd = runStart + run.glyphs.length - 1
+        if (runEnd < from || runStart > to) continue
+
+        const startIndex = Math.max(from, runStart) - runStart
+        const endIndex = Math.min(to, runEnd) - runStart
+
+        let line: { minX: number; minY: number; maxX: number; maxY: number } | null = null
+        let previousY: number | null = null
+        let previousHeight = 0
+        const flush = () => {
+            if (line) {
+                rects.push({
+                    origin: { x: line.minX, y: line.minY },
+                    size: { width: line.maxX - line.minX, height: line.maxY - line.minY },
+                })
+            }
+            line = null
+        }
+
+        for (let i = startIndex; i <= endIndex; i++) {
+            const glyph = run.glyphs[i]
+            if (!glyph || glyph.flags === 2) continue
+            if (line && previousY !== null && Math.abs(glyph.y - previousY) > previousHeight * 0.5) {
+                flush()
+            }
+            if (!line) {
+                line = {
+                    minX: glyph.x,
+                    minY: glyph.y,
+                    maxX: glyph.x + glyph.width,
+                    maxY: glyph.y + glyph.height,
+                }
+            } else {
+                line.minX = Math.min(line.minX, glyph.x)
+                line.minY = Math.min(line.minY, glyph.y)
+                line.maxX = Math.max(line.maxX, glyph.x + glyph.width)
+                line.maxY = Math.max(line.maxY, glyph.y + glyph.height)
+            }
+            previousY = glyph.y
+            previousHeight = glyph.height
+        }
+        flush()
+    }
+    return rects
+}
+
+/** Resolves saved bookmark quotes into highlight rectangles for one page. */
+function HighlightOverlay({
+    engine,
+    documentId,
+    pageIndex,
+    highlights,
+    dark,
+}: {
+    engine: PdfEngine
+    documentId: string
+    pageIndex: number
+    highlights: string[]
+    dark: boolean
+}) {
+    const documentState = useDocumentState(documentId)
+    const { state: zoomState } = useZoom(documentId)
+    const [rects, setRects] = useState<Rect[]>([])
+
+    useEffect(() => {
+        const document = documentState?.document
+        const page = document?.pages[pageIndex]
+        const targets = highlights.map(foldQuote).filter(Boolean)
+        if (!engine || !document || !page || targets.length === 0) {
+            setRects([])
+            return
+        }
+
+        let cancelled = false
+        Promise.all([
+            engine.getPageTextRuns(document, page).toPromise(),
+            engine.getPageGeometry(document, page).toPromise(),
+        ])
+            .then(([textRuns, geometry]) => {
+                if (cancelled) return
+                const { normalized, offsets } = buildPageText(textRuns.runs)
+                const found: Rect[] = []
+                for (const target of targets) {
+                    // Match in the whitespace-free space, then map back to the
+                    // original character range before asking for glyph boxes.
+                    //
+                    // Dummy data:
+                    //   target      → "Helloworldagain"
+                    //   match       → start = 0, end = 14
+                    //   from / to   → offsets[0] = 0, offsets[14] = 16
+                    const start = normalized.indexOf(target)
+                    if (start < 0) continue
+                    const end = start + target.length - 1
+                    const from = offsets[start]
+                    const to = offsets[end]
+                    if (from === undefined || to === undefined) continue
+                    found.push(...characterRangeToRects(geometry, from, to))
+                }
+                setRects(found)
+            })
+            .catch(() => {
+                if (!cancelled) setRects([])
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [engine, documentState?.document, pageIndex, highlights])
+
+    if (rects.length === 0) return null
+    const scale = zoomState?.currentZoomLevel || 1
+    return (
+        <>
+            {rects.map((rect, index) => (
+                <div
+                    key={index}
+                    className='pointer-events-none absolute'
+                    style={{
+                        left: rect.origin.x * scale,
+                        top: rect.origin.y * scale,
+                        width: rect.size.width * scale,
+                        height: rect.size.height * scale,
+                        backgroundColor: dark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.45)',
+                        mixBlendMode: dark ? 'screen' : 'multiply',
+                    }}
+                />
+            ))}
+        </>
+    )
 }
 
 /** Relays engine-native selection data to the host app. */
@@ -61,15 +310,9 @@ function SelectionBridge({
     useEffect(() => {
         if (!provides || !onSelection) return
         const scope = provides.forDocument(documentId)
-        debugLog('selection bridge subscribed', { documentId })
 
         const emitSelection = (texts: string[]) => {
             const formatted = scope.getFormattedSelection()[0]
-            debugLog('getSelectedText resolved', {
-                texts,
-                formatted,
-                scale: scaleRef.current,
-            })
             if (!formatted) return
             const page = document.querySelector<HTMLElement>(
                 `[data-pdf-page="${formatted.pageIndex}"]`,
@@ -84,14 +327,10 @@ function SelectionBridge({
             })
         }
 
-        const offEnd = scope.onEndSelection(({ modeId }) => {
-            debugLog('end selection', { modeId })
-            scope.getSelectedText().wait(emitSelection, error =>
-                debugLog('getSelectedText failed', error),
-            )
+        const offEnd = scope.onEndSelection(() => {
+            scope.getSelectedText().wait(emitSelection, () => {})
         })
         const offChange = scope.onSelectionChange(selection => {
-            debugLog('selection change', { hasSelection: !!selection })
             if (!selection) onClear?.()
         })
 
@@ -106,16 +345,22 @@ function SelectionBridge({
 
 /** Reports the rendered page width so the footer can match it. */
 function PageFrame({
+    engine,
     documentId,
     pageIndex,
     width,
     height,
+    highlights,
+    dark,
     onWidth,
 }: {
+    engine: PdfEngine
     documentId: string
     pageIndex: number
     width: number
     height: number
+    highlights: string[]
+    dark: boolean
     onWidth?: (width: number) => void
 }) {
     useEffect(() => {
@@ -125,7 +370,7 @@ function PageFrame({
     return (
         <div
             data-pdf-page={pageIndex}
-            className='relative mx-auto mb-6 bg-white shadow-sm'
+            className='relative mx-auto bg-white'
             style={{ width, height }}
         >
             <PagePointerProvider documentId={documentId} pageIndex={pageIndex}>
@@ -134,6 +379,13 @@ function PageFrame({
                     pageIndex={pageIndex}
                     draggable={false}
                     className='pointer-events-none select-none'
+                />
+                <HighlightOverlay
+                    engine={engine}
+                    documentId={documentId}
+                    pageIndex={pageIndex}
+                    highlights={highlights}
+                    dark={dark}
                 />
                 <SelectionLayer documentId={documentId} pageIndex={pageIndex} />
             </PagePointerProvider>
@@ -166,6 +418,7 @@ export default function PdfiumReader({
     onSelection,
     onSelectionClear,
     onLocationChange,
+    highlights = [],
 }: PdfiumReaderProps) {
     const { engine, isLoading, error } = usePdfiumEngine()
     const containerRef = useRef<HTMLDivElement>(null)
@@ -178,8 +431,8 @@ export default function PdfiumReader({
             createPluginRegistration(DocumentManagerPluginPackage, {
                 initialDocuments: [{ url, documentId: 'ebook' }],
             }),
-            createPluginRegistration(ViewportPluginPackage, { viewportGap: 24 }),
-            createPluginRegistration(ScrollPluginPackage, { defaultPageGap: 24 }),
+            createPluginRegistration(ViewportPluginPackage, { viewportGap: 0 }),
+            createPluginRegistration(ScrollPluginPackage, { defaultPageGap: 0 }),
             createPluginRegistration(RenderPluginPackage),
             createPluginRegistration(ZoomPluginPackage, {
                 defaultZoomLevel: ZoomMode.FitWidth,
@@ -200,7 +453,11 @@ export default function PdfiumReader({
     )
 
     if (isLoading || !engine) {
-        return <div className='flex h-full items-center justify-center'>加载 PDF 引擎中……</div>
+        return (
+            <div className='flex h-full items-center justify-center'>
+                <CircularProgress color='primary' size='lg' />
+            </div>
+        )
     }
     if (error) {
         return (
@@ -223,7 +480,7 @@ export default function PdfiumReader({
                                 if (documentLoading) {
                                     return (
                                         <div className='flex flex-1 items-center justify-center'>
-                                            加载 PDF 中……
+                                            <CircularProgress color='primary' size='lg' />
                                         </div>
                                     )
                                 }
@@ -257,10 +514,13 @@ export default function PdfiumReader({
                                                 documentId={activeDocumentId}
                                                 renderPage={({ width, height, pageIndex }) => (
                                                     <PageFrame
+                                                        engine={engine}
                                                         documentId={activeDocumentId}
                                                         pageIndex={pageIndex}
                                                         width={width}
                                                         height={height}
+                                                        highlights={highlights}
+                                                        dark={dark}
                                                         onWidth={setPageWidth}
                                                     />
                                                 )}
