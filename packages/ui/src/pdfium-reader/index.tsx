@@ -12,6 +12,7 @@ import {
 import {
     PagePointerProvider,
     InteractionManagerPluginPackage,
+    useInteractionManagerCapability,
 } from '@embedpdf/plugin-interaction-manager/react'
 import { RenderLayer, RenderPluginPackage } from '@embedpdf/plugin-render/react'
 import { Scroller, ScrollPluginPackage, useScroll } from '@embedpdf/plugin-scroll/react'
@@ -408,11 +409,45 @@ function SelectionBridge({
             if (!selection) onClear?.()
         })
 
+        // A browser-initiated scroll dispatches `pointercancel` instead of
+        // `pointerup`, so the selection handler never ends the drag on its own.
+        // Clearing here drops the partial selection left under the finger.
+        const cancelSelection = () => scope.clear()
+        document.addEventListener('pointercancel', cancelSelection)
+
         return () => {
             offEnd()
             offChange()
+            document.removeEventListener('pointercancel', cancelSelection)
         }
     }, [documentId, onSelection, onClear, provides])
+
+    return null
+}
+
+/**
+ * Restores native touch scrolling.
+ *
+ * The interaction manager's default `pointerMode` captures raw touch events,
+ * which sets `touch-action: none` on every page. On touch devices that blocks
+ * momentum scrolling entirely and turns every finger drag into a marquee
+ * selection. Re-registering the mode with `wantsRawTouch: false` clears that
+ * inline style and lets the viewport scroll natively, while pointer events
+ * (tap / double-tap word selection) keep working and a browser-initiated scroll
+ * simply cancels the in-flight pointer stream.
+ */
+function TouchScrollBridge() {
+    const { provides } = useInteractionManagerCapability()
+
+    useEffect(() => {
+        provides?.registerMode({
+            id: 'pointerMode',
+            scope: 'page',
+            exclusive: false,
+            cursor: 'auto',
+            wantsRawTouch: false,
+        })
+    }, [provides])
 
     return null
 }
@@ -566,7 +601,9 @@ export default function PdfiumReader({
                           defaultZoomLevel: ZoomMode.FitWidth,
                       }),
                       createPluginRegistration(InteractionManagerPluginPackage),
-                      createPluginRegistration(SelectionPluginPackage),
+                      createPluginRegistration(SelectionPluginPackage, {
+                          marquee: { enabled: false },
+                      }),
                   ]
                 : [],
         [buffer, filename],
@@ -633,79 +670,98 @@ export default function PdfiumReader({
                 </div>
             ) : (
                 <>
-            <EmbedPDF engine={engine} plugins={plugins}>
-                {({ activeDocumentId }) =>
-                    activeDocumentId && (
-                        <DocumentContent documentId={activeDocumentId}>
-                            {({ isLoaded, isLoading: documentLoading, isError, documentState }) => {
-                                if (documentLoading) {
-                                    return (
-                                        <div className='flex flex-1 items-center justify-center'>
-                                            <CircularProgress color='primary' size='lg' />
-                                        </div>
-                                    )
-                                }
-                                if (isError) {
-                                    return (
-                                        <PdfError
-                                            title='无法加载 PDF'
-                                            message={documentState?.error}
-                                            code={documentState?.errorCode}
-                                            detail={documentState?.errorDetails}
-                                            onRetry={() => setAttempt(value => value + 1)}
-                                        />
-                                    )
-                                }
-                                if (!isLoaded) return null
-                                return (
-                                    <>
-                                        <SelectionBridge
-                                            documentId={activeDocumentId}
-                                            onSelection={onSelection}
-                                            onClear={onSelectionClear}
-                                        />
-                                        <ScrollBridge
-                                            documentId={activeDocumentId}
-                                            onPageChange={handlePageChange}
-                                        />
-                                        <Viewport
-                                            documentId={activeDocumentId}
-                                            className={cn(
-                                                'flex-1',
-                                                dark ? 'bg-stone-950' : 'bg-background',
-                                            )}
-                                        >
-                                            <Scroller
-                                                documentId={activeDocumentId}
-                                                renderPage={({ width, height, pageIndex }) => (
-                                                    <PageFrame
-                                                        engine={engine}
-                                                        documentId={activeDocumentId}
-                                                        pageIndex={pageIndex}
-                                                        width={width}
-                                                        height={height}
-                                                        highlights={highlights}
-                                                        dark={dark}
-                                                        onWidth={setPageWidth}
+                    <EmbedPDF engine={engine} plugins={plugins}>
+                        {({ activeDocumentId }) => (
+                            <>
+                                <TouchScrollBridge />
+                                {activeDocumentId && (
+                                    <DocumentContent documentId={activeDocumentId}>
+                                        {({
+                                            isLoaded,
+                                            isLoading: documentLoading,
+                                            isError,
+                                            documentState,
+                                        }) => {
+                                            if (documentLoading) {
+                                                return (
+                                                    <div className='flex flex-1 items-center justify-center'>
+                                                        <CircularProgress
+                                                            color='primary'
+                                                            size='lg'
+                                                        />
+                                                    </div>
+                                                )
+                                            }
+                                            if (isError) {
+                                                return (
+                                                    <PdfError
+                                                        title='无法加载 PDF'
+                                                        message={documentState?.error}
+                                                        code={documentState?.errorCode}
+                                                        detail={documentState?.errorDetails}
+                                                        onRetry={() =>
+                                                            setAttempt(value => value + 1)
+                                                        }
                                                     />
-                                                )}
-                                            />
-                                        </Viewport>
-                                    </>
-                                )
-                            }}
-                        </DocumentContent>
-                    )
-                }
-            </EmbedPDF>
-            {totalPages > 0 && (
-                <div
-                    className='mx-auto shrink-0 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
-                    style={pageWidth ? { width: `${pageWidth}px` } : undefined}
-                >
-                    {page} / {totalPages}
-                </div>
-            )}
+                                                )
+                                            }
+                                            if (!isLoaded) return null
+                                            return (
+                                                <>
+                                                    <SelectionBridge
+                                                        documentId={activeDocumentId}
+                                                        onSelection={onSelection}
+                                                        onClear={onSelectionClear}
+                                                    />
+                                                    <ScrollBridge
+                                                        documentId={activeDocumentId}
+                                                        onPageChange={handlePageChange}
+                                                    />
+                                                    <Viewport
+                                                        documentId={activeDocumentId}
+                                                        className={cn(
+                                                            'flex-1',
+                                                            dark
+                                                                ? 'bg-stone-950'
+                                                                : 'bg-background',
+                                                        )}
+                                                    >
+                                                        <Scroller
+                                                            documentId={activeDocumentId}
+                                                            renderPage={({
+                                                                width,
+                                                                height,
+                                                                pageIndex,
+                                                            }) => (
+                                                                <PageFrame
+                                                                    engine={engine}
+                                                                    documentId={activeDocumentId}
+                                                                    pageIndex={pageIndex}
+                                                                    width={width}
+                                                                    height={height}
+                                                                    highlights={highlights}
+                                                                    dark={dark}
+                                                                    onWidth={setPageWidth}
+                                                                />
+                                                            )}
+                                                        />
+                                                    </Viewport>
+                                                </>
+                                            )
+                                        }}
+                                    </DocumentContent>
+                                )}
+                            </>
+                        )}
+                    </EmbedPDF>
+                    {totalPages > 0 && (
+                        <div
+                            className='mx-auto shrink-0 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
+                            style={pageWidth ? { width: `${pageWidth}px` } : undefined}
+                        >
+                            {page} / {totalPages}
+                        </div>
+                    )}
                 </>
             )}
         </div>
