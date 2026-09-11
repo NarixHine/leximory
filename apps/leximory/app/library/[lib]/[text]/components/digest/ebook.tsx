@@ -90,7 +90,7 @@ function PdfEbook() {
     const [content, setContent] = useAtom(contentAtom)
     const src = useAtomValue(ebookAtom)
     const isReadOnly = useAtomValue(isReadOnlyAtom)
-    const [, setLocation] = useAtom(locationAtomFamily(text))
+    const [location, setLocation] = useAtom(locationAtomFamily(text))
     const [selection, setSelection] = useState<Selection | null>(null)
     const [selectedText, setSelectedText] = useState<string | null>(null)
     const [rect, setRect] = useState({
@@ -206,7 +206,9 @@ function PdfEbook() {
                             url={transformEbookUrl(src)}
                             title={title}
                             dark={resolvedTheme === 'dark'}
+                            initialPage={Number(location) || 1}
                             highlights={highlights}
+                            onLocationChange={page => setLocation(Number(page))}
                             onSelection={handlePdfSelection}
                             onSelectionClear={reset}
                             actions={

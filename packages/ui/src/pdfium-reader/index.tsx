@@ -15,7 +15,12 @@ import {
     useInteractionManagerCapability,
 } from '@embedpdf/plugin-interaction-manager/react'
 import { RenderLayer, RenderPluginPackage } from '@embedpdf/plugin-render/react'
-import { Scroller, ScrollPluginPackage, useScroll } from '@embedpdf/plugin-scroll/react'
+import {
+    Scroller,
+    ScrollPluginPackage,
+    useScroll,
+    useScrollCapability,
+} from '@embedpdf/plugin-scroll/react'
 import {
     SelectionLayer,
     SelectionPluginPackage,
@@ -36,6 +41,8 @@ interface PdfiumReaderProps {
     title?: string
     actions?: React.ReactNode
     dark?: boolean
+    /** 1-based page to restore to once the document first lays out. */
+    initialPage?: number
     onLocationChange?: (page: string) => void
     onSelection?: (
         text: string,
@@ -429,6 +436,19 @@ function SelectionBridge({
     return null
 }
 
+/** Per-millisecond velocity retention; ~0.9975 is an iOS-like glide length. */
+const PAN_DECELERATION = 0.9975
+/** Only pointer samples within this window contribute to the fling velocity. */
+const PAN_VELOCITY_WINDOW_MS = 90
+/** Releasing after this long without movement is a stop, not a fling. */
+const PAN_STALE_SAMPLE_MS = 70
+/** Below this the glide is over (px/ms). */
+const PAN_MIN_FLING_VELOCITY = 0.05
+/** Ceiling so a hard flick cannot launch the page into orbit (px/ms). */
+const PAN_MAX_FLING_VELOCITY = 3.5
+/** How long restore keeps re-asserting to outlast the initial fit-width zoom. */
+const PAN_RESTORE_SETTLE_MS = 700
+
 /**
  * Enables one-finger text selection and two-finger scrolling at the same time.
  *
@@ -441,9 +461,13 @@ function SelectionBridge({
  *   lands we cancel it and pause interaction so the drag never becomes a
  *   selection.
  * - While two fingers move, we translate the viewport by the centroid delta,
- *   which reads as a natural two-finger scroll.
- * - Interaction resumes when the last finger lifts, so the next lone finger
- *   selects again.
+ *   which tracks the fingers 1:1.
+ * - On release the recent centroid samples give a velocity, and an exponential
+ *   decay glide carries the scroll to a natural stop (`PAN_DECELERATION`). The
+ *   glide renders in a rAF loop integrating velocity over real elapsed time, so
+ *   it is frame-rate independent and survives high-refresh displays.
+ * - Touching the page mid-glide ends it immediately (as on iOS), and
+ *   interaction resumes so the next lone finger selects again.
  *
  * Rendered inside `<Viewport>` so it can borrow the scroll container element.
  */
@@ -457,8 +481,18 @@ function TwoFingerPan({ documentId }: { documentId: string }) {
         if (!element) return
 
         const pointers = new Map<number, { x: number; y: number }>()
+        const history: { x: number; y: number; t: number }[] = []
         let lastCentroid: { x: number; y: number } | null = null
         let panning = false
+
+        // Momentum state. `posX/posY` are float accumulators so sub-pixel deltas
+        // are not lost to integer `scrollTop` reads during the glide.
+        let rafId = 0
+        let velocityX = 0
+        let velocityY = 0
+        let posX = 0
+        let posY = 0
+        let lastFrame = 0
 
         const centroid = () => {
             const points = [...pointers.values()]
@@ -472,14 +506,103 @@ function TwoFingerPan({ documentId }: { documentId: string }) {
             return { x: x / points.length, y: y / points.length }
         }
 
+        const stopMomentum = (resumeInteraction: boolean) => {
+            if (!rafId) return
+            cancelAnimationFrame(rafId)
+            rafId = 0
+            velocityX = 0
+            velocityY = 0
+            if (resumeInteraction) interaction?.forDocument(documentId).resume()
+        }
+
+        const tick = (now: number) => {
+            rafId = 0
+            // Clamp the step so a dropped frame (tab switch, jank) cannot teleport.
+            const dt = Math.min(now - lastFrame, 48)
+            lastFrame = now
+
+            posX += velocityX * dt
+            posY += velocityY * dt
+
+            const maxX = element.scrollWidth - element.clientWidth
+            const maxY = element.scrollHeight - element.clientHeight
+            if (posX <= 0) {
+                posX = 0
+                velocityX = 0
+            } else if (posX >= maxX) {
+                posX = maxX
+                velocityX = 0
+            }
+            if (posY <= 0) {
+                posY = 0
+                velocityY = 0
+            } else if (posY >= maxY) {
+                posY = maxY
+                velocityY = 0
+            }
+
+            element.scrollLeft = posX
+            element.scrollTop = posY
+
+            const decay = Math.pow(PAN_DECELERATION, dt)
+            velocityX *= decay
+            velocityY *= decay
+
+            if (
+                Math.abs(velocityX) < PAN_MIN_FLING_VELOCITY &&
+                Math.abs(velocityY) < PAN_MIN_FLING_VELOCITY
+            ) {
+                interaction?.forDocument(documentId).resume()
+                return
+            }
+            rafId = requestAnimationFrame(tick)
+        }
+
+        const startMomentum = (vx: number, vy: number) => {
+            velocityX = vx
+            velocityY = vy
+            posX = element.scrollLeft
+            posY = element.scrollTop
+            lastFrame = performance.now()
+            rafId = requestAnimationFrame(tick)
+        }
+
+        /** Average centroid velocity over the sample window, in scroll space. */
+        const flingVelocity = () => {
+            const last = history[history.length - 1]
+            if (history.length < 2 || !last) return { vx: 0, vy: 0 }
+            if (performance.now() - last.t > PAN_STALE_SAMPLE_MS) return { vx: 0, vy: 0 }
+            const first = history.find(sample => last.t - sample.t <= PAN_VELOCITY_WINDOW_MS)
+            if (!first) return { vx: 0, vy: 0 }
+            const dt = last.t - first.t
+            if (dt <= 0) return { vx: 0, vy: 0 }
+
+            // Scroll moves opposite the fingers, hence the negation.
+            let vx = -(last.x - first.x) / dt
+            let vy = -(last.y - first.y) / dt
+            const speed = Math.hypot(vx, vy)
+            if (speed > PAN_MAX_FLING_VELOCITY) {
+                const scale = PAN_MAX_FLING_VELOCITY / speed
+                vx *= scale
+                vy *= scale
+            }
+            return { vx, vy }
+        }
+
         const onPointerDown = (event: PointerEvent) => {
+            // Touching the moving page halts the glide, like iOS.
+            stopMomentum(true)
             pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-            if (pointers.size === 2) {
+
+            if (pointers.size < 2) return
+            if (!panning) {
                 panning = true
+                history.length = 0
                 selection?.forDocument(documentId).clear()
                 interaction?.forDocument(documentId).pause()
-                lastCentroid = centroid()
             }
+            // Re-anchor when the finger count changes so the centroid does not jump.
+            lastCentroid = centroid()
         }
 
         const onPointerMove = (event: PointerEvent) => {
@@ -493,6 +616,12 @@ function TwoFingerPan({ documentId }: { documentId: string }) {
             const dy = next.y - lastCentroid.y
             lastCentroid = next
 
+            const t = performance.now()
+            history.push({ x: next.x, y: next.y, t })
+            while (history.length > 1 && t - history[0].t > PAN_VELOCITY_WINDOW_MS) {
+                history.shift()
+            }
+
             // Scroll the element directly rather than via the viewport
             // capability: `scrollTo` defers to a rAF and reading it back returns
             // a stale position, so chained deltas were dropped and the gesture
@@ -504,30 +633,41 @@ function TwoFingerPan({ documentId }: { documentId: string }) {
 
         const onPointerEnd = (event: PointerEvent) => {
             pointers.delete(event.pointerId)
-            if (pointers.size >= 2) {
+            if (!panning) return
+
+            // Dropping from two fingers to one keeps the pan paused until the
+            // last lift, but does not itself fling.
+            if (pointers.size >= 1) {
                 lastCentroid = centroid()
                 return
             }
-            // Only reset state and end the pan once every finger is gone;
-            // dropping from two to one keeps panning until the last lift.
-            if (panning && pointers.size === 0) {
-                panning = false
-                lastCentroid = null
+
+            panning = false
+            lastCentroid = null
+            const { vx, vy } = flingVelocity()
+            if (Math.hypot(vx, vy) >= PAN_MIN_FLING_VELOCITY) {
+                startMomentum(vx, vy)
+            } else {
                 selection?.forDocument(documentId).clear()
                 interaction?.forDocument(documentId).resume()
             }
         }
 
+        const onWheel = () => stopMomentum(true)
+
         element.addEventListener('pointerdown', onPointerDown)
         element.addEventListener('pointermove', onPointerMove)
         element.addEventListener('pointerup', onPointerEnd)
         element.addEventListener('pointercancel', onPointerEnd)
+        element.addEventListener('wheel', onWheel, { passive: true })
 
         return () => {
             element.removeEventListener('pointerdown', onPointerDown)
             element.removeEventListener('pointermove', onPointerMove)
             element.removeEventListener('pointerup', onPointerEnd)
             element.removeEventListener('pointercancel', onPointerEnd)
+            element.removeEventListener('wheel', onWheel)
+            if (rafId) cancelAnimationFrame(rafId)
             interaction?.forDocument(documentId).resume()
         }
     }, [viewportElement, interaction, selection, documentId])
@@ -593,19 +733,99 @@ function PageFrame({
     )
 }
 
-/** Relays the engine-native scroll position to the host app. */
+/**
+ * Relays the engine-native scroll position to the host app and restores the
+ * last-read page once the document has laid out.
+ *
+ * Two timing hazards shape this:
+ *
+ * 1. The restored page arrives through a storage-backed atom, which can hydrate
+ *    a tick after mount, so the target is tracked in a ref and the settle loop
+ *    keeps re-reading it instead of locking in the first (possibly empty) value.
+ * 2. The scroller's geometry needs the final fit-width scale, which is
+ *    recalculated shortly after the first layout and scrolls back to the top.
+ *    The restore therefore re-asserts for a short window; a timer (not rAF) is
+ *    used so it still lands when the tab is backgrounded, and any touch or wheel
+ *    stops it so it never fights the reader.
+ *
+ * Reporting stays silent until the restore has finished so the placeholder page
+ * count on mount cannot overwrite the stored position.
+ */
 function ScrollBridge({
     documentId,
+    initialPage,
     onPageChange,
 }: {
     documentId: string
+    initialPage?: number
     onPageChange: (page: number, total: number) => void
 }) {
     const { state } = useScroll(documentId)
+    const { provides: scroll } = useScrollCapability()
+    const targetRef = useRef(0)
+    const [restored, setRestored] = useState(false)
+
+    if (!restored && initialPage !== undefined) {
+        targetRef.current = Math.round(initialPage)
+    }
 
     useEffect(() => {
-        onPageChange(state.currentPage + 1, state.totalPages)
-    }, [state.currentPage, state.totalPages, onPageChange])
+        if (!scroll || restored) return
+        const scope = scroll.forDocument(documentId)
+        let stopped = false
+        let timer = 0
+        const start = performance.now()
+
+        const apply = () => {
+            const target = targetRef.current
+            if (target <= 1) return false
+            if (scope.getLayout().virtualItems.length === 0) return false
+            scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
+            return true
+        }
+
+        const loop = () => {
+            if (stopped) return
+            if (apply() || performance.now() - start >= PAN_RESTORE_SETTLE_MS) {
+                stopped = true
+                setRestored(true)
+                return
+            }
+            timer = window.setTimeout(loop, 16)
+        }
+
+        const stop = () => {
+            stopped = true
+            window.clearTimeout(timer)
+        }
+
+        const layoutReady = scroll.onLayoutReady(event => {
+            if (event.documentId === documentId) apply()
+        })
+        const layoutChange = scroll.onLayoutChange(event => {
+            if (event.documentId === documentId) apply()
+        })
+
+        document.addEventListener('pointerdown', stop, { once: true })
+        document.addEventListener('wheel', stop, { once: true, passive: true })
+
+        timer = window.setTimeout(loop, 0)
+
+        return () => {
+            stop()
+            layoutReady()
+            layoutChange()
+            document.removeEventListener('pointerdown', stop)
+            document.removeEventListener('wheel', stop)
+        }
+    }, [scroll, documentId, restored])
+
+    useEffect(() => {
+        if (!restored) return
+        if (state.totalPages <= 1) return
+        // `currentPage` is already 1-based (`scrollToPage` uses pageNumber as-is).
+        onPageChange(state.currentPage, state.totalPages)
+    }, [restored, state.currentPage, state.totalPages, onPageChange])
 
     return null
 }
@@ -615,6 +835,7 @@ export default function PdfiumReader({
     title = '',
     actions,
     dark = false,
+    initialPage,
     onSelection,
     onSelectionClear,
     onLocationChange,
@@ -800,6 +1021,7 @@ export default function PdfiumReader({
                                                     />
                                                     <ScrollBridge
                                                         documentId={activeDocumentId}
+                                                        initialPage={initialPage}
                                                         onPageChange={handlePageChange}
                                                     />
                                                     <Viewport
