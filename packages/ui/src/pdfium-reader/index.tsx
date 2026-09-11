@@ -784,19 +784,24 @@ function ScrollBridge({
             return true
         }
 
+        const finish = () => {
+            stopped = true
+            window.clearTimeout(timer)
+            setRestored(true)
+        }
+
         const loop = () => {
             if (stopped) return
-            if (apply() || performance.now() - start >= PAN_RESTORE_SETTLE_MS) {
-                stopped = true
-                setRestored(true)
+            // A successful scroll only proves that a layout exists. The
+            // fit-width recalculation that follows can still reset the
+            // viewport to page 1, so keep applying the saved page for the
+            // complete settle window.
+            apply()
+            if (performance.now() - start >= PAN_RESTORE_SETTLE_MS) {
+                finish()
                 return
             }
             timer = window.setTimeout(loop, 16)
-        }
-
-        const stop = () => {
-            stopped = true
-            window.clearTimeout(timer)
         }
 
         const layoutReady = scroll.onLayoutReady(event => {
@@ -806,17 +811,18 @@ function ScrollBridge({
             if (event.documentId === documentId) apply()
         })
 
-        document.addEventListener('pointerdown', stop, { once: true })
-        document.addEventListener('wheel', stop, { once: true, passive: true })
+        document.addEventListener('pointerdown', finish, { once: true })
+        document.addEventListener('wheel', finish, { once: true, passive: true })
 
         timer = window.setTimeout(loop, 0)
 
         return () => {
-            stop()
+            stopped = true
+            window.clearTimeout(timer)
             layoutReady()
             layoutChange()
-            document.removeEventListener('pointerdown', stop)
-            document.removeEventListener('wheel', stop)
+            document.removeEventListener('pointerdown', finish)
+            document.removeEventListener('wheel', finish)
         }
     }, [scroll, documentId, restored])
 
