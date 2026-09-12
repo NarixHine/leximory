@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
     PdfBookmarkObject,
     PdfEngine,
@@ -39,18 +39,10 @@ import {
     useViewportElement,
 } from '@embedpdf/plugin-viewport/react'
 import { ZoomMode, ZoomPluginPackage, useZoom } from '@embedpdf/plugin-zoom/react'
-import {
-    Button,
-    CircularProgress,
-    Drawer,
-    DrawerBody,
-    DrawerContent,
-    DrawerHeader,
-    ScrollShadow,
-    useDisclosure,
-} from '@heroui/react'
+import { Button, CircularProgress, useDisclosure } from '@heroui/react'
 import { cn } from '@heroui/theme'
-import { PiArrowClockwise, PiCaretDown, PiListBullets, PiWarningCircle } from 'react-icons/pi'
+import { PiArrowClockwise, PiWarningCircle } from 'react-icons/pi'
+import { TocDrawer, TocTrigger, hrefBase, subtreeContains, type TocItem } from '../toc'
 
 interface PdfiumReaderProps {
     url: string
@@ -67,6 +59,8 @@ interface PdfiumReaderProps {
     ) => void
     onSelectionClear?: () => void
     highlights?: string[]
+    /** Element the ToC drawer portals into, so it survives the Fullscreen API. */
+    portalContainer?: Element
 }
 
 /** Human-readable explanations for the PDFium engine error codes. */
@@ -864,124 +858,62 @@ function bookmarkPageIndex(bookmark: PdfBookmarkObject): number | null {
     return null
 }
 
-/** One row of the PDF outline; parents expand in place, leaves jump to their page. */
-function PdfTocEntry({
-    item,
-    path,
-    depth,
-    expanded,
-    toggle,
-    onSelect,
-}: {
-    item: PdfBookmarkObject
-    path: string
-    depth: number
-    expanded: Set<string>
-    toggle: (path: string) => void
-    onSelect: (pageIndex: number) => void
-}) {
-    const children = item.children ?? []
-    const hasChildren = children.length > 0
-    const isExpanded = expanded.has(path)
-    const pageIndex = bookmarkPageIndex(item)
-    const label = item.title.trim() || '未命名章节'
-
-    return (
-        <li>
-            <div
-                className='flex items-center gap-1 pr-3 transition-colors hover:bg-default-100'
-                style={{ paddingLeft: `${12 + depth * 14}px` }}
-            >
-                <button
-                    type='button'
-                    onClick={() => {
-                        if (pageIndex !== null) onSelect(pageIndex)
-                        else if (hasChildren) toggle(path)
-                    }}
-                    className={cn(
-                        'flex-1 truncate py-2 text-left leading-snug',
-                        depth === 0 ? 'text-sm font-medium' : 'text-xs',
-                        pageIndex === null && !hasChildren
-                            ? 'text-foreground-400'
-                            : 'text-foreground-700',
-                    )}
-                >
-                    {label}
-                </button>
-                {hasChildren && (
-                    <button
-                        type='button'
-                        aria-label={isExpanded ? '收起' : '展开'}
-                        onClick={() => toggle(path)}
-                        className='shrink-0 rounded p-1 text-foreground-400 transition-colors hover:text-foreground-600'
-                    >
-                        <PiCaretDown
-                            className={cn(
-                                'text-xs transition-transform',
-                                isExpanded && 'rotate-180',
-                            )}
-                        />
-                    </button>
-                )}
-            </div>
-            {hasChildren && isExpanded && (
-                <ul className='m-0 list-none p-0'>
-                    {children.map((child, index) => (
-                        <PdfTocEntry
-                            key={`${path}-${index}`}
-                            item={child}
-                            path={`${path}-${index}`}
-                            depth={depth + 1}
-                            expanded={expanded}
-                            toggle={toggle}
-                            onSelect={onSelect}
-                        />
-                    ))}
-                </ul>
-            )}
-        </li>
-    )
+/**
+ * Maps the engine's bookmark tree onto the shared ToC shape.
+ *
+ * `href` encodes the target page (`page:<index>`) so the shared entry and
+ * progress logic work unchanged; bookmarks without a target get an inert href
+ * and are excluded from the page lookup.
+ */
+function buildToc(bookmarks: PdfBookmarkObject[]): {
+    items: TocItem[]
+    pages: Map<string, number>
+} {
+    const pages = new Map<string, number>()
+    const convert = (list: PdfBookmarkObject[], path: string): TocItem[] =>
+        list.map((bookmark, index) => {
+            const id = `${path}-${index}`
+            const pageIndex = bookmarkPageIndex(bookmark)
+            const href = pageIndex !== null ? `page:${pageIndex}` : `section:${id}`
+            if (pageIndex !== null) pages.set(href, pageIndex)
+            const children = bookmark.children ?? []
+            return {
+                id,
+                href,
+                label: bookmark.title.trim() || '未命名章节',
+                subitems: children.length ? convert(children, id) : undefined,
+            }
+        })
+    return { items: convert(bookmarks, 'toc'), pages }
 }
 
-/** A collapsible outline tree, hidden entirely when the document has no outline. */
-function PdfTocList({
-    bookmarks,
-    onSelect,
-}: {
-    bookmarks: PdfBookmarkObject[]
-    onSelect: (pageIndex: number) => void
-}) {
-    const [expanded, setExpanded] = useState<Set<string>>(new Set())
-    const toggle = (path: string) =>
-        setExpanded(previous => {
-            const next = new Set(previous)
-            if (next.has(path)) next.delete(path)
-            else next.add(path)
-            return next
-        })
-
-    return (
-        <ul className='m-0 list-none p-0'>
-            {bookmarks.map((item, index) => (
-                <PdfTocEntry
-                    key={index}
-                    item={item}
-                    path={String(index)}
-                    depth={0}
-                    expanded={expanded}
-                    toggle={toggle}
-                    onSelect={onSelect}
-                />
-            ))}
-        </ul>
-    )
+/** The href of the deepest outline entry at or before the current page. */
+function findCurrentTocHref(
+    items: TocItem[],
+    pages: Map<string, number>,
+    pageIndex: number,
+): string {
+    let bestHref = ''
+    let bestPage = -1
+    const walk = (list: TocItem[]) => {
+        for (const item of list) {
+            const target = pages.get(item.href)
+            if (target !== undefined && target <= pageIndex && target >= bestPage) {
+                bestPage = target
+                bestHref = item.href
+            }
+            if (item.subitems) walk(item.subitems)
+        }
+    }
+    walk(items)
+    return bestHref
 }
 
 /**
  * Reads the document outline from the engine and exposes a jump-to-page handle.
  *
  * The fetch runs once the document object exists and is cached in the parent so
- * the footer's ToC affordance only appears when there is an outline to show.
+ * the reader's ToC affordance only appears when there is an outline to show.
  */
 function TocBridge({
     engine,
@@ -1038,6 +970,7 @@ export default function PdfiumReader({
     onSelectionClear,
     onLocationChange,
     highlights = [],
+    portalContainer,
 }: PdfiumReaderProps) {
     const { engine, isLoading, error } = usePdfiumEngine()
     const containerRef = useRef<HTMLDivElement>(null)
@@ -1047,7 +980,9 @@ export default function PdfiumReader({
     const [buffer, setBuffer] = useState<ArrayBuffer | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
     const [attempt, setAttempt] = useState(0)
-    const [bookmarks, setBookmarks] = useState<PdfBookmarkObject[]>([])
+    const [tocItems, setTocItems] = useState<TocItem[]>([])
+    const tocPagesRef = useRef<Map<string, number>>(new Map())
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
     const navigateRef = useRef<((pageIndex: number) => void) | null>(null)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
@@ -1057,7 +992,8 @@ export default function PdfiumReader({
         let cancelled = false
         setBuffer(null)
         setFetchError(null)
-        setBookmarks([])
+        setTocItems([])
+        tocPagesRef.current = new Map()
         void (async () => {
             try {
                 const response = await fetch(url)
@@ -1123,6 +1059,42 @@ export default function PdfiumReader({
         },
         [onLocationChange],
     )
+
+    const handleBookmarks = useMemo(
+        () => (bookmarks: PdfBookmarkObject[]) => {
+            const { items, pages } = buildToc(bookmarks)
+            tocPagesRef.current = pages
+            setTocItems(items)
+        },
+        [],
+    )
+
+    const toggleExpand = useCallback((id: string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }, [])
+
+    const currentTocHref = useMemo(
+        () => findCurrentTocHref(tocItems, tocPagesRef.current, page - 1),
+        [tocItems, page],
+    )
+
+    // Auto-expand ToC parents of the active chapter, mirroring the EPUB reader.
+    useEffect(() => {
+        if (!tocItems.length || !currentTocHref) return
+        const base = hrefBase(currentTocHref)
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            tocItems.forEach(topItem => {
+                if (subtreeContains(topItem, base)) next.add(topItem.id)
+            })
+            return next
+        })
+    }, [currentTocHref, tocItems])
 
     const header = (
         <div className='flex h-15 shrink-0 items-center px-1'>
@@ -1229,7 +1201,7 @@ export default function PdfiumReader({
                                                     <TocBridge
                                                         engine={engine}
                                                         documentId={activeDocumentId}
-                                                        onBookmarks={setBookmarks}
+                                                        onBookmarks={handleBookmarks}
                                                         navigateRef={navigateRef}
                                                     />
                                                     <Viewport
@@ -1274,50 +1246,37 @@ export default function PdfiumReader({
                     </EmbedPDF>
                     {totalPages > 0 && (
                         <div
-                            className='relative mx-auto flex shrink-0 items-center justify-center border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
+                            className='mx-auto flex shrink-0 items-center justify-center gap-1 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
                             style={pageWidth ? { width: `${pageWidth}px` } : undefined}
                         >
+                            {tocItems.length > 0 && (
+                                <span aria-hidden className='h-6 w-6 shrink-0' />
+                            )}
                             <span>
                                 {page} / {totalPages}
                             </span>
-                            {bookmarks.length > 0 && (
-                                <button
-                                    type='button'
-                                    aria-label='目录'
-                                    title='目录'
-                                    onClick={onOpen}
-                                    className='absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-primary-400 opacity-50 transition-opacity hover:bg-default-100 hover:text-primary-600 focus-visible:opacity-100 group-hover:opacity-100'
-                                >
-                                    <PiListBullets className='text-base' />
-                                </button>
-                            )}
+                            {tocItems.length > 0 && <TocTrigger onPress={onOpen} />}
                         </div>
                     )}
                 </>
             )}
 
-            <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement='right' size='xs'>
-                <DrawerContent>
-                    {onClose => (
-                        <>
-                            <DrawerHeader className='px-4 pb-3 pt-5'>
-                                <span className='text-base font-semibold leading-none'>目录</span>
-                            </DrawerHeader>
-                            <DrawerBody className='px-0 pb-8'>
-                                <ScrollShadow>
-                                    <PdfTocList
-                                        bookmarks={bookmarks}
-                                        onSelect={pageIndex => {
-                                            navigateRef.current?.(pageIndex)
-                                            onClose()
-                                        }}
-                                    />
-                                </ScrollShadow>
-                            </DrawerBody>
-                        </>
-                    )}
-                </DrawerContent>
-            </Drawer>
+            <TocDrawer
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                title='目录'
+                items={tocItems}
+                currentHref={currentTocHref}
+                currentPage={page}
+                totalPages={totalPages}
+                onSelect={href => {
+                    const pageIndex = tocPagesRef.current.get(href)
+                    if (pageIndex !== undefined) navigateRef.current?.(pageIndex)
+                }}
+                expandedIds={expandedIds}
+                toggleExpand={toggleExpand}
+                portalContainer={portalContainer}
+            />
         </div>
     )
 }

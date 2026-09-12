@@ -106,6 +106,11 @@ function PdfEbook() {
     const { resolvedTheme } = useTheme()
     const handleFullScreen = useFullScreenHandle()
     const containerRef = useRef<HTMLDivElement>(null!)
+    const [portalContainer, setPortalContainer] = useState<Element | null>(null)
+    const setContainer = useCallback((element: HTMLDivElement | null) => {
+        containerRef.current = element!
+        setPortalContainer(element)
+    }, [])
     const router = useRouter()
     const highlights = useMemo(
         () => parseBookmarks(content).map(bookmark => bookmark.text),
@@ -170,7 +175,7 @@ function PdfEbook() {
                     isFullViewport ? 'h-full' : 'h-[80dvh]',
                 )}
             >
-                <div ref={containerRef} className='relative h-full bg-background'>
+                <div ref={setContainer} className='relative h-full bg-background'>
                     <Define
                         {...rect}
                         reset={reset}
@@ -208,6 +213,7 @@ function PdfEbook() {
                             dark={resolvedTheme === 'dark'}
                             initialPage={Number(location) || 1}
                             highlights={highlights}
+                            portalContainer={portalContainer ?? undefined}
                             onLocationChange={page => setLocation(Number(page))}
                             onSelection={handlePdfSelection}
                             onSelectionClear={reset}
