@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { PdfEngine, PdfPageGeometry, PdfTextRun, Rect } from '@embedpdf/models'
+import type {
+    PdfBookmarkObject,
+    PdfEngine,
+    PdfPageGeometry,
+    PdfTextRun,
+    Rect,
+} from '@embedpdf/models'
+import { PdfActionType } from '@embedpdf/models'
 import { createPluginRegistration } from '@embedpdf/core'
 import { EmbedPDF, useDocumentState } from '@embedpdf/core/react'
 import { usePdfiumEngine } from '@embedpdf/engines/react'
@@ -32,9 +39,18 @@ import {
     useViewportElement,
 } from '@embedpdf/plugin-viewport/react'
 import { ZoomMode, ZoomPluginPackage, useZoom } from '@embedpdf/plugin-zoom/react'
-import { Button, CircularProgress } from '@heroui/react'
+import {
+    Button,
+    CircularProgress,
+    Drawer,
+    DrawerBody,
+    DrawerContent,
+    DrawerHeader,
+    ScrollShadow,
+    useDisclosure,
+} from '@heroui/react'
 import { cn } from '@heroui/theme'
-import { PiArrowClockwise, PiWarningCircle } from 'react-icons/pi'
+import { PiArrowClockwise, PiCaretDown, PiListBullets, PiWarningCircle } from 'react-icons/pi'
 
 interface PdfiumReaderProps {
     url: string
@@ -836,6 +852,182 @@ function ScrollBridge({
     return null
 }
 
+/** Resolves the 0-based page a PDF bookmark points at, if it has a usable target. */
+function bookmarkPageIndex(bookmark: PdfBookmarkObject): number | null {
+    const target = bookmark.target
+    if (!target) return null
+    if (target.type === 'destination') return target.destination.pageIndex
+    const action = target.action
+    if (action.type === PdfActionType.Goto || action.type === PdfActionType.RemoteGoto) {
+        return action.destination.pageIndex
+    }
+    return null
+}
+
+/** One row of the PDF outline; parents expand in place, leaves jump to their page. */
+function PdfTocEntry({
+    item,
+    path,
+    depth,
+    expanded,
+    toggle,
+    onSelect,
+}: {
+    item: PdfBookmarkObject
+    path: string
+    depth: number
+    expanded: Set<string>
+    toggle: (path: string) => void
+    onSelect: (pageIndex: number) => void
+}) {
+    const children = item.children ?? []
+    const hasChildren = children.length > 0
+    const isExpanded = expanded.has(path)
+    const pageIndex = bookmarkPageIndex(item)
+    const label = item.title.trim() || '未命名章节'
+
+    return (
+        <li>
+            <div
+                className='flex items-center gap-1 pr-3 transition-colors hover:bg-default-100'
+                style={{ paddingLeft: `${12 + depth * 14}px` }}
+            >
+                <button
+                    type='button'
+                    onClick={() => {
+                        if (pageIndex !== null) onSelect(pageIndex)
+                        else if (hasChildren) toggle(path)
+                    }}
+                    className={cn(
+                        'flex-1 truncate py-2 text-left leading-snug',
+                        depth === 0 ? 'text-sm font-medium' : 'text-xs',
+                        pageIndex === null && !hasChildren
+                            ? 'text-foreground-400'
+                            : 'text-foreground-700',
+                    )}
+                >
+                    {label}
+                </button>
+                {hasChildren && (
+                    <button
+                        type='button'
+                        aria-label={isExpanded ? '收起' : '展开'}
+                        onClick={() => toggle(path)}
+                        className='shrink-0 rounded p-1 text-foreground-400 transition-colors hover:text-foreground-600'
+                    >
+                        <PiCaretDown
+                            className={cn(
+                                'text-xs transition-transform',
+                                isExpanded && 'rotate-180',
+                            )}
+                        />
+                    </button>
+                )}
+            </div>
+            {hasChildren && isExpanded && (
+                <ul className='m-0 list-none p-0'>
+                    {children.map((child, index) => (
+                        <PdfTocEntry
+                            key={`${path}-${index}`}
+                            item={child}
+                            path={`${path}-${index}`}
+                            depth={depth + 1}
+                            expanded={expanded}
+                            toggle={toggle}
+                            onSelect={onSelect}
+                        />
+                    ))}
+                </ul>
+            )}
+        </li>
+    )
+}
+
+/** A collapsible outline tree, hidden entirely when the document has no outline. */
+function PdfTocList({
+    bookmarks,
+    onSelect,
+}: {
+    bookmarks: PdfBookmarkObject[]
+    onSelect: (pageIndex: number) => void
+}) {
+    const [expanded, setExpanded] = useState<Set<string>>(new Set())
+    const toggle = (path: string) =>
+        setExpanded(previous => {
+            const next = new Set(previous)
+            if (next.has(path)) next.delete(path)
+            else next.add(path)
+            return next
+        })
+
+    return (
+        <ul className='m-0 list-none p-0'>
+            {bookmarks.map((item, index) => (
+                <PdfTocEntry
+                    key={index}
+                    item={item}
+                    path={String(index)}
+                    depth={0}
+                    expanded={expanded}
+                    toggle={toggle}
+                    onSelect={onSelect}
+                />
+            ))}
+        </ul>
+    )
+}
+
+/**
+ * Reads the document outline from the engine and exposes a jump-to-page handle.
+ *
+ * The fetch runs once the document object exists and is cached in the parent so
+ * the footer's ToC affordance only appears when there is an outline to show.
+ */
+function TocBridge({
+    engine,
+    documentId,
+    onBookmarks,
+    navigateRef,
+}: {
+    engine: PdfEngine
+    documentId: string
+    onBookmarks: (bookmarks: PdfBookmarkObject[]) => void
+    navigateRef: React.RefObject<((pageIndex: number) => void) | null>
+}) {
+    const documentState = useDocumentState(documentId)
+    const { provides: scroll } = useScrollCapability()
+
+    useEffect(() => {
+        const document = documentState?.document
+        if (!document) return
+        let cancelled = false
+        engine
+            .getBookmarks(document)
+            .toPromise()
+            .then(result => {
+                if (!cancelled) onBookmarks(result.bookmarks ?? [])
+            })
+            .catch(() => {
+                if (!cancelled) onBookmarks([])
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [engine, documentState?.document, onBookmarks])
+
+    useEffect(() => {
+        if (!scroll) return
+        const scope = scroll.forDocument(documentId)
+        navigateRef.current = (pageIndex: number) =>
+            scope.scrollToPage({ pageNumber: pageIndex + 1, behavior: 'smooth' })
+        return () => {
+            navigateRef.current = null
+        }
+    }, [scroll, documentId, navigateRef])
+
+    return null
+}
+
 export default function PdfiumReader({
     url,
     title = '',
@@ -855,6 +1047,9 @@ export default function PdfiumReader({
     const [buffer, setBuffer] = useState<ArrayBuffer | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
     const [attempt, setAttempt] = useState(0)
+    const [bookmarks, setBookmarks] = useState<PdfBookmarkObject[]>([])
+    const navigateRef = useRef<((pageIndex: number) => void) | null>(null)
+    const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
     // Fetching the file ourselves gives precise, user-facing errors (HTTP
     // status, network failure, wrong format) that the engine abstracts away.
@@ -862,6 +1057,7 @@ export default function PdfiumReader({
         let cancelled = false
         setBuffer(null)
         setFetchError(null)
+        setBookmarks([])
         void (async () => {
             try {
                 const response = await fetch(url)
@@ -1030,6 +1226,12 @@ export default function PdfiumReader({
                                                         initialPage={initialPage}
                                                         onPageChange={handlePageChange}
                                                     />
+                                                    <TocBridge
+                                                        engine={engine}
+                                                        documentId={activeDocumentId}
+                                                        onBookmarks={setBookmarks}
+                                                        navigateRef={navigateRef}
+                                                    />
                                                     <Viewport
                                                         documentId={activeDocumentId}
                                                         className={cn(
@@ -1072,14 +1274,50 @@ export default function PdfiumReader({
                     </EmbedPDF>
                     {totalPages > 0 && (
                         <div
-                            className='mx-auto shrink-0 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
+                            className='relative mx-auto flex shrink-0 items-center justify-center border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
                             style={pageWidth ? { width: `${pageWidth}px` } : undefined}
                         >
-                            {page} / {totalPages}
+                            <span>
+                                {page} / {totalPages}
+                            </span>
+                            {bookmarks.length > 0 && (
+                                <button
+                                    type='button'
+                                    aria-label='目录'
+                                    title='目录'
+                                    onClick={onOpen}
+                                    className='absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-primary-400 opacity-50 transition-opacity hover:bg-default-100 hover:text-primary-600 focus-visible:opacity-100 group-hover:opacity-100'
+                                >
+                                    <PiListBullets className='text-base' />
+                                </button>
+                            )}
                         </div>
                     )}
                 </>
             )}
+
+            <Drawer isOpen={isOpen} onOpenChange={onOpenChange} placement='right' size='xs'>
+                <DrawerContent>
+                    {onClose => (
+                        <>
+                            <DrawerHeader className='px-4 pb-3 pt-5'>
+                                <span className='text-base font-semibold leading-none'>目录</span>
+                            </DrawerHeader>
+                            <DrawerBody className='px-0 pb-8'>
+                                <ScrollShadow>
+                                    <PdfTocList
+                                        bookmarks={bookmarks}
+                                        onSelect={pageIndex => {
+                                            navigateRef.current?.(pageIndex)
+                                            onClose()
+                                        }}
+                                    />
+                                </ScrollShadow>
+                            </DrawerBody>
+                        </>
+                    )}
+                </DrawerContent>
+            </Drawer>
         </div>
     )
 }
