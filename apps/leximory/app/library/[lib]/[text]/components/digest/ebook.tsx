@@ -38,7 +38,13 @@ function transformEbookUrl(url: string) {
 }
 
 const locationAtomFamily = atomFamily((text: string) =>
-    atomWithStorage<string | number>(`persist-location-${text}`, 0),
+    atomWithStorage<string | number>(`persist-location-${text}`, 0, undefined, {
+        // Read synchronously on the client so the reader receives the saved
+        // page on its first render instead of after a post-mount effect. The
+        // delayed read let the reader settle on page 1 and persist it before
+        // the stored location arrived.
+        getOnInit: true,
+    }),
 )
 
 const EBOOK_DARK_FG = '#CECDC3'

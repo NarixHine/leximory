@@ -458,6 +458,10 @@ const PAN_MIN_FLING_VELOCITY = 0.05
 const PAN_MAX_FLING_VELOCITY = 3.5
 /** How long restore keeps re-asserting to outlast the initial fit-width zoom. */
 const PAN_RESTORE_SETTLE_MS = 700
+/** Hard cap so a document that never lays out cannot block page reporting forever. */
+const PAN_RESTORE_MAX_MS = 10000
+/** How often the restore hold re-checks for a silent layout reset. */
+const PAN_RESTORE_POLL_MS = 250
 
 /**
  * Enables one-finger text selection and two-finger scrolling at the same time.
@@ -747,19 +751,24 @@ function PageFrame({
  * Relays the engine-native scroll position to the host app and restores the
  * last-read page once the document has laid out.
  *
- * Two timing hazards shape this:
+ * Timing hazards this guards against:
  *
- * 1. The restored page arrives through a storage-backed atom, which can hydrate
- *    a tick after mount, so the target is tracked in a ref and the settle loop
- *    keeps re-reading it instead of locking in the first (possibly empty) value.
+ * 1. The restored page arrives through a storage-backed atom, which hydrates a
+ *    tick after mount, so the target is re-read on every render and restored
+ *    again when it changes instead of locking in the first (possibly empty)
+ *    value.
  * 2. The scroller's geometry needs the final fit-width scale, which is
- *    recalculated shortly after the first layout and scrolls back to the top.
- *    The restore therefore re-asserts for a short window; a timer (not rAF) is
- *    used so it still lands when the tab is backgrounded, and any touch or wheel
- *    stops it so it never fights the reader.
+ *    recalculated after the first layout and can scroll back to the top. The
+ *    saved page is therefore re-asserted on every layout change (and polled)
+ *    until the reader is actually used, so a late recalc cannot strand it.
+ * 3. A viewport resize (fullscreen transitions included) and layout resets can
+ *    momentarily report page 1. While the restore hold is active no page below
+ *    the saved one is persisted, and reporting pauses for a settle window after
+ *    any resize, so a transient value never overwrites the stored position.
  *
- * Reporting stays silent until the restore has finished so the placeholder page
- * count on mount cannot overwrite the stored position.
+ * The hold releases on the first real interaction (or a hard cap) so it never
+ * fights the reader, and reporting stays silent until the restore has settled
+ * so the placeholder page count on mount cannot overwrite the stored position.
  */
 function ScrollBridge({
     documentId,
@@ -773,47 +782,77 @@ function ScrollBridge({
     const { state } = useScroll(documentId)
     const { provides: scroll } = useScrollCapability()
     const targetRef = useRef(0)
-    const [restored, setRestored] = useState(false)
+    const [released, setReleased] = useState(false)
+    const [settling, setSettling] = useState(false)
 
-    if (!restored && initialPage !== undefined) {
+    if (!released && initialPage !== undefined) {
         targetRef.current = Math.round(initialPage)
     }
 
+    // A viewport resize (notably the fullscreen transition) can momentarily
+    // reset the scroller to page 1 while fit-width recalculates. Pausing
+    // reporting until the resize settles stops that transient value from
+    // overwriting the saved location.
     useEffect(() => {
-        if (!scroll || restored) return
-        const scope = scroll.forDocument(documentId)
-        let stopped = false
         let timer = 0
-        const start = performance.now()
+        const onResize = () => {
+            setSettling(true)
+            window.clearTimeout(timer)
+            timer = window.setTimeout(() => setSettling(false), PAN_RESTORE_SETTLE_MS)
+        }
+        window.addEventListener('resize', onResize)
+        return () => {
+            window.removeEventListener('resize', onResize)
+            window.clearTimeout(timer)
+        }
+    }, [])
+
+    // The restore hold ends on the first real interaction, or after a hard cap
+    // for a reader that is opened and never touched.
+    useEffect(() => {
+        if (released) return
+        const release = () => setReleased(true)
+        document.addEventListener('pointerdown', release)
+        document.addEventListener('wheel', release, { passive: true })
+        document.addEventListener('touchstart', release, { passive: true })
+        document.addEventListener('keydown', release)
+        const cap = window.setTimeout(release, PAN_RESTORE_MAX_MS)
+        return () => {
+            document.removeEventListener('pointerdown', release)
+            document.removeEventListener('wheel', release)
+            document.removeEventListener('touchstart', release)
+            document.removeEventListener('keydown', release)
+            window.clearTimeout(cap)
+        }
+    }, [released])
+
+    // Keep the saved page pinned across layout recalculations until the reader
+    // is actually used. Re-applying only on deviation avoids fighting a scroll,
+    // and the periodic check catches silent resets that emit no layout event.
+    // Depending on `initialPage` also lets a late storage hydration still land.
+    // The first apply always runs, even if an early interaction already
+    // released the hold, so a stray wheel/touch during load cannot strand the
+    // reader on page 1.
+    useEffect(() => {
+        if (!scroll) return
+        const scope = scroll.forDocument(documentId)
 
         const apply = () => {
             const target = targetRef.current
-            if (target <= 1) return false
-            if (scope.getLayout().virtualItems.length === 0) return false
-            scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
-            return true
-        }
-
-        const finish = () => {
-            stopped = true
-            window.clearTimeout(timer)
-            setRestored(true)
-        }
-
-        const loop = () => {
-            if (stopped) return
-            // A successful scroll only proves that a layout exists. The
-            // fit-width recalculation that follows can still reset the
-            // viewport to page 1, so keep applying the saved page for the
-            // complete settle window.
-            apply()
-            if (performance.now() - start >= PAN_RESTORE_SETTLE_MS) {
-                finish()
-                return
+            if (target <= 1) return
+            if (scope.getLayout().virtualItems.length === 0) return
+            if (scope.getCurrentPage() !== target) {
+                scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
             }
-            timer = window.setTimeout(loop, 16)
         }
 
+        apply()
+        const timer = window.setTimeout(apply, 0)
+        if (released) {
+            return () => window.clearTimeout(timer)
+        }
+
+        const interval = window.setInterval(apply, PAN_RESTORE_POLL_MS)
         const layoutReady = scroll.onLayoutReady(event => {
             if (event.documentId === documentId) apply()
         })
@@ -821,27 +860,22 @@ function ScrollBridge({
             if (event.documentId === documentId) apply()
         })
 
-        document.addEventListener('pointerdown', finish, { once: true })
-        document.addEventListener('wheel', finish, { once: true, passive: true })
-
-        timer = window.setTimeout(loop, 0)
-
         return () => {
-            stopped = true
             window.clearTimeout(timer)
+            window.clearInterval(interval)
             layoutReady()
             layoutChange()
-            document.removeEventListener('pointerdown', finish)
-            document.removeEventListener('wheel', finish)
         }
-    }, [scroll, documentId, restored])
+    }, [scroll, documentId, released, initialPage])
 
     useEffect(() => {
-        if (!restored) return
+        if (settling) return
         if (state.totalPages <= 1) return
-        // `currentPage` is already 1-based (`scrollToPage` uses pageNumber as-is).
+        // While the restore hold is active, never persist a page below the
+        // saved one: a lower value is a transient from layout recalculation.
+        if (!released && targetRef.current > 1 && state.currentPage < targetRef.current) return
         onPageChange(state.currentPage, state.totalPages)
-    }, [restored, state.currentPage, state.totalPages, onPageChange])
+    }, [released, settling, state.currentPage, state.totalPages, onPageChange])
 
     return null
 }
