@@ -33,6 +33,51 @@ export type Database = {
     }
     public: {
         Tables: {
+            bookmarks: {
+                Row: {
+                    chapter: string | null
+                    created_at: string
+                    id: number
+                    location: string | null
+                    quote: string
+                    text: string
+                    uid: string
+                }
+                Insert: {
+                    chapter?: string | null
+                    created_at: string
+                    id?: number
+                    location?: string | null
+                    quote: string
+                    text: string
+                    uid: string
+                }
+                Update: {
+                    chapter?: string | null
+                    created_at?: string
+                    id?: number
+                    location?: string | null
+                    quote?: string
+                    text?: string
+                    uid?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: 'bookmarks_text_fkey'
+                        columns: ['text']
+                        isOneToOne: false
+                        referencedRelation: 'texts'
+                        referencedColumns: ['id']
+                    },
+                    {
+                        foreignKeyName: 'bookmarks_uid_fkey'
+                        columns: ['uid']
+                        isOneToOne: false
+                        referencedRelation: 'users'
+                        referencedColumns: ['id']
+                    },
+                ]
+            }
             dictations: {
                 Row: {
                     content: Json
@@ -278,20 +323,26 @@ export type Database = {
                 Row: {
                     created_at: string
                     id: number
+                    location: string | null
                     text: string
                     uid: string
+                    updated_at: string | null
                 }
                 Insert: {
                     created_at?: string
                     id?: number
+                    location?: string | null
                     text: string
                     uid?: string
+                    updated_at?: string | null
                 }
                 Update: {
                     created_at?: string
                     id?: number
+                    location?: string | null
                     text?: string
                     uid?: string
+                    updated_at?: string | null
                 }
                 Relationships: [
                     {

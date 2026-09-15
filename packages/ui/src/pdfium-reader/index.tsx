@@ -782,6 +782,7 @@ function ScrollBridge({
     const { state } = useScroll(documentId)
     const { provides: scroll } = useScrollCapability()
     const targetRef = useRef(0)
+    const restoredRef = useRef(false)
     const [released, setReleased] = useState(false)
     const [settling, setSettling] = useState(false)
 
@@ -830,21 +831,28 @@ function ScrollBridge({
     // is actually used. Re-applying only on deviation avoids fighting a scroll,
     // and the periodic check catches silent resets that emit no layout event.
     // Depending on `initialPage` also lets a late storage hydration still land.
-    // The first apply always runs, even if an early interaction already
-    // released the hold, so a stray wheel/touch during load cannot strand the
-    // reader on page 1.
+    // Once the reader has been used, the saved page is never re-asserted again:
+    // the host keeps writing the current location back into `initialPage`, and
+    // re-applying on those updates would repeatedly snap the reader to the
+    // restore target instead of letting the scroll stand.
     useEffect(() => {
         if (!scroll) return
         const scope = scroll.forDocument(documentId)
 
         const apply = () => {
             const target = targetRef.current
-            if (target <= 1) return
+            if (target <= 1) {
+                restoredRef.current = true
+                return
+            }
             if (scope.getLayout().virtualItems.length === 0) return
             if (scope.getCurrentPage() !== target) {
                 scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
             }
+            restoredRef.current = true
         }
+
+        if (released && restoredRef.current) return
 
         apply()
         const timer = window.setTimeout(apply, 0)

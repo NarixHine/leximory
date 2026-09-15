@@ -190,10 +190,24 @@ CREATE TABLE "memories" (
 CREATE TABLE "reads" (
     "id" serial PRIMARY KEY,
     "created_at" timestamp with time zone NOT NULL,
+    "updated_at" timestamp with time zone,
     "uid" uuid NOT NULL,
     "text" text NOT NULL,
+    "location" text,
     CONSTRAINT "reads_text_fkey" FOREIGN KEY ("text") REFERENCES "texts" ("id") ON DELETE CASCADE,
     CONSTRAINT "reads_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "bookmarks" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone NOT NULL,
+    "uid" uuid NOT NULL,
+    "text" text NOT NULL,
+    "quote" text NOT NULL,
+    "chapter" text,
+    "location" text,
+    CONSTRAINT "bookmarks_text_fkey" FOREIGN KEY ("text") REFERENCES "texts" ("id") ON DELETE CASCADE,
+    CONSTRAINT "bookmarks_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 -- Enable Row Level Security
@@ -204,7 +218,29 @@ ALTER TABLE public.texts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
 ```
+
+> Existing projects that predate per-user bookmarks and reading locations need:
+>
+> ```sql
+> ALTER TABLE "reads" ADD COLUMN "updated_at" timestamp with time zone;
+> ALTER TABLE "reads" ADD COLUMN "location" text;
+>
+> CREATE TABLE "bookmarks" (
+>     "id" serial PRIMARY KEY,
+>     "created_at" timestamp with time zone NOT NULL,
+>     "uid" uuid NOT NULL,
+>     "text" text NOT NULL,
+>     "quote" text NOT NULL,
+>     "chapter" text,
+>     "location" text,
+>     CONSTRAINT "bookmarks_text_fkey" FOREIGN KEY ("text") REFERENCES "texts" ("id") ON DELETE CASCADE,
+>     CONSTRAINT "bookmarks_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
+> );
+>
+> ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
+> ```
 
 #### 5. Set Up Environment Variables
 

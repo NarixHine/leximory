@@ -17,7 +17,6 @@ import { langAtom, libAtom } from '../../../atoms'
 import { isReaderModeAtom } from '@/app/atoms'
 import Ebook from './ebook'
 import { Button } from '@heroui/button'
-import { Alert } from '@heroui/alert'
 import { Spacer } from '@heroui/spacer'
 import { Input } from '@heroui/input'
 import ImportModal from './import'
@@ -30,7 +29,6 @@ import {
     PiHeadphones,
     PiMagnifyingGlass,
     PiPencilCircle,
-    PiBookBookmark,
     PiTrash,
     PiChatDots,
     PiBell,
@@ -59,6 +57,7 @@ import { useAuth } from '@/lib/hooks'
 import { commentSyntaxRegex } from '@repo/utils'
 import { normalizeBookmarks } from '@/lib/bookmarks'
 import { InlineModeSwitch } from './inline-mode-switch'
+import Bookmarks from './bookmarks'
 
 function ReaderModeToggle() {
     const [isReaderMode, toggleReaderMode] = useAtom(isReaderModeAtom)
@@ -248,58 +247,43 @@ function ReadingView() {
     }
 
     if (!content) {
+        if (ebook) return null
         return (
             <ul
                 className={cn(
                     'flex flex-col gap-1 align-middle justify-center items-center',
-                    !ebook && 'h-[calc(100dvh-350px)]',
+                    'h-[calc(100dvh-350px)]',
                 )}
             >
-                {ebook ? (
-                    <Alert
-                        description='保存的文摘会显示于此'
-                        icon={<PiBookBookmark />}
-                        color='primary'
-                        variant='bordered'
-                        classNames={{
-                            title: cn('text-md'),
-                            base: 'max-w-160 mx-auto',
-                            description: cn('text-xs'),
-                            alertIcon: 'text-lg',
-                        }}
-                        title='文摘'
-                    ></Alert>
-                ) : (
-                    <div>
-                        <li className='flex items-center gap-2'>
-                            <PiNotePencil />
-                            <span className='font-bold'>制作词摘</span>强制注解
-                            <span className='font-mono'>[[]]</span>内词汇
-                        </li>
-                        <li className='flex items-center gap-2'>
-                            <PiPrinter />
-                            <span className='font-bold'>导出打印</span>印刷模式下按
-                            <span className='font-mono'>Ctrl + P</span>
-                        </li>
-                        <li className='flex items-center gap-2'>
-                            <PiHeadphones />
-                            <span className='font-bold'>边听边读</span>
-                            <span>
-                                <Link
-                                    className='underline decoration-1 underline-offset-2'
-                                    href='/blog/reading-while-listening'
-                                >
-                                    培养
-                                </Link>
-                                多维度语言认知
-                            </span>
-                        </li>
-                        <li className='flex items-center gap-2'>
-                            <PiMagnifyingGlass />
-                            <span className='font-bold'>动态注解</span>长按点选查询任意单词
-                        </li>
-                    </div>
-                )}
+                <div>
+                    <li className='flex items-center gap-2'>
+                        <PiNotePencil />
+                        <span className='font-bold'>制作词摘</span>强制注解
+                        <span className='font-mono'>[[]]</span>内词汇
+                    </li>
+                    <li className='flex items-center gap-2'>
+                        <PiPrinter />
+                        <span className='font-bold'>导出打印</span>印刷模式下按
+                        <span className='font-mono'>Ctrl + P</span>
+                    </li>
+                    <li className='flex items-center gap-2'>
+                        <PiHeadphones />
+                        <span className='font-bold'>边听边读</span>
+                        <span>
+                            <Link
+                                className='underline decoration-1 underline-offset-2'
+                                href='/blog/reading-while-listening'
+                            >
+                                培养
+                            </Link>
+                            多维度语言认知
+                        </span>
+                    </li>
+                    <li className='flex items-center gap-2'>
+                        <PiMagnifyingGlass />
+                        <span className='font-bold'>动态注解</span>长按点选查询任意单词
+                    </li>
+                </div>
             </ul>
         )
     }
@@ -472,6 +456,7 @@ export default function Digest({ hideImportControls }: { hideImportControls?: bo
                     <>
                         {ebook && <Ebook />}
                         <ReadingView />
+                        {ebook && !hideImportControls && <Bookmarks />}
                     </>
                 )}
             </div>

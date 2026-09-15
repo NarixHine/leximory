@@ -15,6 +15,9 @@ import {
     emojiAtom,
     hideTextAtom,
     inlineModeAtom,
+    bookmarksAtom,
+    locationAtom,
+    initialLocationAtom,
 } from './atoms'
 import Digest from './components/digest'
 import { ArticleHero } from './components/article-hero'
@@ -33,6 +36,8 @@ export const Article = ({
     prompt,
     hideControls,
     isPublicAndFree,
+    bookmarks,
+    location,
 }: Awaited<ReturnType<typeof getArticleData>> & {
     text: string
     hideControls?: boolean
@@ -53,6 +58,9 @@ export const Article = ({
                 emojiAtom,
                 hideTextAtom,
                 inlineModeAtom,
+                bookmarksAtom,
+                locationAtom,
+                initialLocationAtom,
             ]}
         >
             <HydrationBoundary
@@ -66,6 +74,8 @@ export const Article = ({
                     [isLoadingAtom, annotating === 'annotating' || annotating === 'saving'],
                     [promptAtom, prompt],
                     [emojiAtom, emoji],
+                    [bookmarksAtom, bookmarks],
+                    [initialLocationAtom, location ?? null],
                 ]}
             >
                 <ArticleHero

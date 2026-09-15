@@ -15,6 +15,14 @@ export type CustomLexicon = 'chuzhong' | 'gaozhong' | 'cet6' | 'none'
 
 export type AnnotationProgress = 'annotating' | 'saving' | 'completed'
 
+export type EbookBookmark = {
+    id: number
+    quote: string
+    chapter: string | null
+    location: string | null
+    createdAt: string
+}
+
 export const forgetCurve = {
     今天记忆: [0, -1],
     一天前记忆: [1, 0],

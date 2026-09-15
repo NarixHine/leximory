@@ -92,6 +92,33 @@ export function parseBookmarks(content: string): Bookmark[] {
 }
 
 /**
+ * Classifies an ebook's `content` as either a pure set of attributed bookmarks
+ * or content that also holds prose.
+ *
+ * The one-time bookmark migration uses this to decide whether `content` can be
+ * cleared: only content where every non-blank line belongs to an attributed
+ * bookmark block is considered pure. Any prose, or any blockquote without a
+ * chapter attribution, marks the content as not pure so it is preserved.
+ */
+export function analyzeBookmarks(content: string): {
+    bookmarks: Bookmark[]
+    isPureBookmarks: boolean
+} {
+    if (!content) return { bookmarks: [], isPureBookmarks: false }
+
+    const bookmarks = parseBookmarks(content)
+    if (bookmarks.length === 0 || bookmarks.some(bookmark => !bookmark.chapter)) {
+        return { bookmarks, isPureBookmarks: false }
+    }
+
+    const hasOtherContent = bookmarkSource(content)
+        .split('\n')
+        .some(line => line.trim() !== '' && !BLOCKQUOTE_LINE.test(line))
+
+    return { bookmarks, isPureBookmarks: !hasOtherContent }
+}
+
+/**
  * Rewrites bookmark blockquotes so each bookmark is rendered as its own
  * blockquote. Only acts when the content actually contains attributed
  * bookmarks, leaving ordinary text untouched.

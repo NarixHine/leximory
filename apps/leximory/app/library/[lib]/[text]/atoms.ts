@@ -1,6 +1,6 @@
 'use client'
 
-import { CustomLexicon } from '@/lib/types'
+import { CustomLexicon, EbookBookmark } from '@/lib/types'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
@@ -18,3 +18,8 @@ export const inlineModeAtom = atom(false)
 export const promptAtom = atom('')
 export const emojiAtom = atom<string | null>(null)
 export const isFullViewportAtom = atom(false)
+export const bookmarksAtom = atom<EbookBookmark[]>([])
+/** Live reader position for the current text. Set once from the server, then owned by the client. */
+export const locationAtom = atom<string | number>(0)
+/** Server-persisted position, used only to seed `locationAtom`. */
+export const initialLocationAtom = atom<string | number | null>(null)

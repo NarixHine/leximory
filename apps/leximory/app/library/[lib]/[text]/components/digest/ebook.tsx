@@ -8,25 +8,25 @@ import PdfReader from '@repo/ui/pdfium-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
-import { contentAtom, ebookAtom, isFullViewportAtom, textAtom, titleAtom } from '../../atoms'
-import { isReadOnlyAtom, langAtom } from '../../../atoms'
-import { useAtom, useAtomValue } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
+import {
+    bookmarksAtom,
+    ebookAtom,
+    initialLocationAtom,
+    isFullViewportAtom,
+    locationAtom,
+    textAtom,
+    titleAtom,
+} from '../../atoms'
+import { langAtom } from '../../../atoms'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useFullScreenHandle, FullScreen } from 'react-full-screen'
-import { atomFamily } from 'jotai/utils'
 import { motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { getChapterName } from '@/lib/epub'
-import {
-    findTextRange,
-    highlightTextRange,
-    normalizeBookmarks,
-    parseBookmarks,
-} from '@/lib/bookmarks'
+import { findTextRange, highlightTextRange } from '@/lib/bookmarks'
 import Define from '@/components/define'
-import { useRouter } from 'next/navigation'
-import { saveText } from '@/service/text'
+import { saveBookmarkAction, saveLocationAction } from '@/service/bookmark'
 
 function transformEbookUrl(url: string) {
     const match = url.match(/\/ebooks\/([^/]+)\.(epub|pdf)\?token=([^&]+)/)
@@ -37,15 +37,36 @@ function transformEbookUrl(url: string) {
     return url
 }
 
-const locationAtomFamily = atomFamily((text: string) =>
-    atomWithStorage<string | number>(`persist-location-${text}`, 0, undefined, {
-        // Read synchronously on the client so the reader receives the saved
-        // page on its first render instead of after a post-mount effect. The
-        // delayed read let the reader settle on page 1 and persist it before
-        // the stored location arrived.
-        getOnInit: true,
-    }),
-)
+/**
+ * Writes the reader's position to the server, debounced so page flips do not
+ * spam requests. The atom still updates immediately for the reader's controlled
+ * location. Server persistence replaces the old per-browser localStorage value
+ * so every device resumes at the same place.
+ */
+function useLocationSync(text: string, setLocation: (location: string | number) => void) {
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const pending = useRef<string | null>(null)
+
+    useEffect(
+        () => () => {
+            if (timer.current) clearTimeout(timer.current)
+        },
+        [],
+    )
+
+    return useCallback(
+        (location: string | number) => {
+            setLocation(location)
+            pending.current = String(location)
+            if (timer.current) clearTimeout(timer.current)
+            timer.current = setTimeout(() => {
+                const value = pending.current
+                if (value !== null) void saveLocationAction({ textId: text, location: value })
+            }, 1500)
+        },
+        [text, setLocation],
+    )
+}
 
 const EBOOK_DARK_FG = '#CECDC3'
 const EBOOK_DARK_BG = '#100F0F'
@@ -93,10 +114,11 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: bool
 function PdfEbook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
-    const [content, setContent] = useAtom(contentAtom)
     const src = useAtomValue(ebookAtom)
-    const isReadOnly = useAtomValue(isReadOnlyAtom)
-    const [location, setLocation] = useAtom(locationAtomFamily(text))
+    const bookmarks = useAtomValue(bookmarksAtom)
+    const setBookmarks = useSetAtom(bookmarksAtom)
+    const [location, setLocation] = useAtom(locationAtom)
+    const syncLocation = useLocationSync(text, setLocation)
     const [selection, setSelection] = useState<Selection | null>(null)
     const [selectedText, setSelectedText] = useState<string | null>(null)
     const [rect, setRect] = useState({
@@ -105,7 +127,11 @@ function PdfEbook() {
         top: null as number | null,
         bottom: null as number | null,
     })
-    const [bookmark, setBookmark] = useState<string | null>(null)
+    const [bookmark, setBookmark] = useState<{
+        quote: string
+        chapter: string | null
+        location: string | null
+    } | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
     const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
     const [isFullScreen, setIsFullScreen] = useState(false)
@@ -117,11 +143,7 @@ function PdfEbook() {
         containerRef.current = element!
         setPortalContainer(element)
     }, [])
-    const router = useRouter()
-    const highlights = useMemo(
-        () => parseBookmarks(content).map(bookmark => bookmark.text),
-        [content],
-    )
+    const highlights = useMemo(() => bookmarks.map(bookmark => bookmark.quote), [bookmarks])
 
     const reset = useCallback(() => {
         setSelection(null)
@@ -146,7 +168,7 @@ function PdfEbook() {
                 bottom: selectionRect.top + selectionRect.height,
             })
             const quote = nextText.replace(/\s+/g, ' ').trim()
-            setBookmark(`\n\n> ${quote}\n>\n> — *Page ${page}*`)
+            setBookmark({ quote, chapter: `Page ${page}`, location: String(page) })
         },
         [setLocation],
     )
@@ -190,18 +212,20 @@ function PdfEbook() {
                         selectedText={selectedText ?? undefined}
                         actions={
                             <BookmarkButton
-                                isDisabled={!bookmark || isReadOnly}
+                                isDisabled={!bookmark}
                                 isLoading={savingBookmark}
                                 onPress={() => {
                                     if (!bookmark) return
                                     startSavingBookmark(async () => {
                                         try {
-                                            const newContent = normalizeBookmarks(content).concat(
-                                                bookmark,
-                                            )
-                                            await saveText({ id: text, content: newContent })
-                                            router.refresh()
-                                            setContent(newContent)
+                                            const created = await saveBookmarkAction({
+                                                textId: text,
+                                                quote: bookmark.quote,
+                                                chapter: bookmark.chapter,
+                                                location: bookmark.location,
+                                            })
+                                            setBookmarks(prev => [...prev, created])
+                                            reset()
                                             toast.success('文摘已保存')
                                         } catch {
                                             toast.error('文摘保存失败，请重试')
@@ -220,7 +244,7 @@ function PdfEbook() {
                             initialPage={Number(location) || 1}
                             highlights={highlights}
                             portalContainer={portalContainer ?? undefined}
-                            onLocationChange={page => setLocation(Number(page))}
+                            onLocationChange={page => syncLocation(Number(page))}
                             onSelection={handlePdfSelection}
                             onSelectionClear={reset}
                             actions={
@@ -281,11 +305,12 @@ function BookmarkButton({
 function EpubEbook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
-    const [content, setContent] = useAtom(contentAtom)
     const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
-    const isReadOnly = useAtomValue(isReadOnlyAtom)
-    const [location, setLocation] = useAtom(locationAtomFamily(text))
+    const bookmarks = useAtomValue(bookmarksAtom)
+    const setBookmarks = useSetAtom(bookmarksAtom)
+    const [location, setLocation] = useAtom(locationAtom)
+    const syncLocation = useLocationSync(text, setLocation)
     const strategy = useMemo(() => getLanguageStrategy(lang), [lang])
     const isJapanese = strategy.type === 'ja'
 
@@ -310,7 +335,11 @@ function EpubEbook() {
         })
         setSelection(null)
     }
-    const [bookmark, setBookmark] = useState<string | null>(null)
+    const [bookmark, setBookmark] = useState<{
+        quote: string
+        chapter: string | null
+        location: string | null
+    } | null>(null)
     const [savingBookmark, startSavingBookmark] = useTransition()
     const themeRendition = useRef<Rendition | null>(null)
 
@@ -326,18 +355,18 @@ function EpubEbook() {
 
     // Bookmark highlighting is applied to the text DOM inside each EPUB iframe.
     // This avoids epub.js SVG overlays being detached during resize/fullscreen.
-    const contentRef = useRef(content)
-    contentRef.current = content
+    const bookmarksRef = useRef(bookmarks)
+    bookmarksRef.current = bookmarks
 
-    /** Highlights bookmark selections in the currently rendered EPUB sections. */
+    /** Highlights the current user's bookmark selections in the rendered EPUB sections. */
     const highlightBookmarks = useCallback((rendition: Rendition) => {
-        const selections = parseBookmarks(contentRef.current).map(bookmark => bookmark.text)
-        if (selections.length === 0) return
+        const quotes = bookmarksRef.current.map(bookmark => bookmark.quote)
+        if (quotes.length === 0) return
 
         const contentsList = rendition.getContents() as unknown as Contents[]
         for (const contents of contentsList) {
-            for (const text of selections) {
-                const range = findTextRange(contents.document.body, text)
+            for (const quote of quotes) {
+                const range = findTextRange(contents.document.body, quote)
                 if (!range) continue
 
                 try {
@@ -356,21 +385,19 @@ function EpubEbook() {
         window.setTimeout(() => highlightBookmarks(rendition), 500)
     }, [highlightBookmarks])
 
-    // Re-apply whenever the digest content changes so newly saved bookmarks get
-    // highlighted; the CFI guard keeps existing highlights from being re-added.
+    // Re-apply whenever the user's bookmarks change so newly saved ones get
+    // highlighted; the DOM guard keeps existing highlights from being re-added.
     useEffect(() => {
         const rendition = themeRendition.current
         if (!rendition) return
         highlightBookmarks(rendition)
-    }, [content, highlightBookmarks])
+    }, [bookmarks, highlightBookmarks])
 
     const handleFullScreen = useFullScreenHandle()
     const [isFullViewport, setIsFullViewport] = useAtom(isFullViewportAtom)
     const [isFullScreen, setIsFullScreen] = useState(false)
     const hasZoomed = isFullViewport || isFullScreen
     const containerRef = useRef<HTMLDivElement>(null!)
-
-    const router = useRouter()
 
     return (
         src && (
@@ -414,18 +441,20 @@ function EpubEbook() {
                                 selection={selection}
                                 actions={
                                     <BookmarkButton
-                                        isDisabled={!bookmark || isReadOnly}
+                                        isDisabled={!bookmark}
                                         isLoading={savingBookmark}
                                         onPress={() => {
                                             if (!bookmark) return
                                             startSavingBookmark(async () => {
                                                 try {
-                                                    const newContent = normalizeBookmarks(
-                                                        content,
-                                                    ).concat(bookmark)
-                                                    await saveText({ id: text, content: newContent })
-                                                    router.refresh()
-                                                    setContent(newContent)
+                                                    const created = await saveBookmarkAction({
+                                                        textId: text,
+                                                        quote: bookmark.quote,
+                                                        chapter: bookmark.chapter,
+                                                        location: bookmark.location,
+                                                    })
+                                                    setBookmarks(prev => [...prev, created])
+                                                    reset()
                                                     toast.success('文摘已保存')
                                                 } catch {
                                                     toast.error('文摘保存失败，请重试')
@@ -443,7 +472,7 @@ function EpubEbook() {
                             writingMode={isJapanese ? 'vertical-rl' : undefined}
                             location={location}
                             onLocationChange={epubcifi => {
-                                setLocation(epubcifi)
+                                syncLocation(epubcifi)
                             }}
                             getRendition={rendition => {
                                 updateTheme(rendition, isDarkMode, isJapanese)
@@ -492,34 +521,42 @@ function EpubEbook() {
                                 })
                                 themeRendition.current = rendition
                                 rendition.on('selected', (_: Rendition, contents: Contents) => {
-                                    const selection = contents.window.getSelection()!
+                                    const selection = contents.window.getSelection()
+                                    if (!selection || selection.rangeCount === 0) {
+                                        setBookmark(null)
+                                        return
+                                    }
                                     setSelection(selection)
 
-                                    const rect = selection.getRangeAt(0).getBoundingClientRect()
+                                    const range = selection.getRangeAt(0)
+                                    const bounds = range.getBoundingClientRect()
                                     const frameElement = contents.window.frameElement
                                     const epubBounds = frameElement?.getBoundingClientRect() ?? {
                                         left: 0,
                                         top: 0,
                                     }
                                     setRect({
-                                        left: rect.left + epubBounds.left,
-                                        width: rect.width,
-                                        top: rect.top + epubBounds.top,
-                                        bottom: rect.bottom + epubBounds.top,
+                                        left: bounds.left + epubBounds.left,
+                                        width: bounds.width,
+                                        top: bounds.top + epubBounds.top,
+                                        bottom: bounds.bottom + epubBounds.top,
                                     })
 
                                     const chapter = getChapterName(
                                         rendition.book,
                                         rendition.location,
                                     )
-                                    setBookmark(
-                                        selection
-                                            ? `\n\n> ${selection
-                                                  .toString()
-                                                  .concat(chapter ? `\n— *${chapter}*` : '')
-                                                  .replaceAll('\n', '\n>\n> ')}`
-                                            : null,
-                                    )
+                                    let cfi: string | null = null
+                                    try {
+                                        cfi = contents.cfiFromRange(range)
+                                    } catch {
+                                        cfi = null
+                                    }
+                                    setBookmark({
+                                        quote: selection.toString(),
+                                        chapter: chapter ?? null,
+                                        location: cfi,
+                                    })
                                 })
                                 rendition.on(
                                     'rendered',
@@ -574,6 +611,21 @@ function EpubEbook() {
 
 export default function Ebook() {
     const src = useAtomValue(ebookAtom)
+    const text = useAtomValue(textAtom)
+    const initialLocation = useAtomValue(initialLocationAtom)
+    const setLocation = useSetAtom(locationAtom)
+    const seededText = useRef<string | null>(null)
+
+    // Seed the reader from the server-persisted position exactly once per text.
+    // The live location atom must not follow later server renders: a debounced
+    // location save re-renders the route, and re-hydrating the atom would pull
+    // the reader back to the last saved page.
+    useEffect(() => {
+        if (seededText.current === text) return
+        seededText.current = text
+        if (initialLocation !== null && initialLocation !== 0) setLocation(initialLocation)
+    }, [text, initialLocation, setLocation])
+
     if (src?.match(/\.pdf(?:\?|$)/i)) return <PdfEbook />
     return <EpubEbook />
 }
