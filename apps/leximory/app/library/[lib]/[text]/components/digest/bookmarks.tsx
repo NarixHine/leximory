@@ -42,7 +42,7 @@ export default function Bookmarks() {
                     <PiBookmarkSimple className='size-4' />
                 </span>
                 <h2 className='font-fancy text-lg font-semibold text-foreground'>文摘</h2>
-                <span className='ml-auto flex items-center gap-1.5 text-sm text-default-500'>
+                <span className='ml-auto flex items-center gap-1.5 text-base text-default-500'>
                     <PiLockSimple className='size-4' />
                     仅你可见
                 </span>
@@ -66,8 +66,8 @@ export default function Bookmarks() {
                     {bookmarks.map(bookmark => (
                         <blockquote key={bookmark.id}>
                             <p className='whitespace-pre-wrap'>{bookmark.quote}</p>
-                            <footer className='mt-2 flex items-center justify-between gap-3 text-sm not-italic text-default-500'>
-                                <span>{bookmark.chapter ?? ''}</span>
+                            <footer className='mt-2 flex items-center justify-between gap-3 text-base not-italic'>
+                                <span className='font-mono'>{bookmark.chapter ?? ''}</span>
                                 <Button
                                     isIconOnly
                                     size='sm'

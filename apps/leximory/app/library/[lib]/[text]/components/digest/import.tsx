@@ -84,20 +84,23 @@ export default function ImportModal() {
         )
     }
 
-    const ImportButton = () => (
-        <Button
-            isDisabled={isReadOnly}
-            onPress={onOpen}
-            radius='full'
-            fullWidth
-            variant={'solid'}
-            color={editing ? 'default' : 'primary'}
-            startContent={<PiMagicWand className='text-lg' />}
-            isLoading={isLoading}
-        >
-            导入{!ebook ? '材料' : '电子书'}
-        </Button>
-    )
+    const ImportButton = () => {
+        // Unauthorized readers get no import affordance at all.
+        if (isReadOnly) return null
+        return (
+            <Button
+                onPress={onOpen}
+                radius='full'
+                fullWidth
+                variant={'solid'}
+                color={editing ? 'default' : 'primary'}
+                startContent={<PiMagicWand className='text-lg' />}
+                isLoading={isLoading}
+            >
+                导入{!ebook ? '材料' : '电子书'}
+            </Button>
+        )
+    }
 
     const EditSwitch = () => (
         <div className='flex items-center gap-2'>
@@ -124,10 +127,12 @@ export default function ImportModal() {
                 <div>
                     <ImportButton />
                 </div>
-                <div className='flex gap-2 justify-center'>
-                    <EditSwitch />
-                    <KanbanSwitch />
-                </div>
+                {!(isReadOnly && ebook) && (
+                    <div className='flex gap-2 justify-center'>
+                        <EditSwitch />
+                        <KanbanSwitch />
+                    </div>
+                )}
             </div>
             <Drawer
                 hideCloseButton
