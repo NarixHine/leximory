@@ -56,6 +56,8 @@ export const chineseStrategy = createLanguageStrategy({
     welcome: '{{欢迎！||欢迎||欢迎来到你的新文言文文库！}}',
     maxChunkSize: 700,
     maxArticleLength: 5000,
+    selectionContextRadius: 200,
+    sentenceEndMarkers: '。！？…',
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])
@@ -103,6 +105,8 @@ export const japaneseStrategy = createLanguageStrategy({
     welcome: '{{ようこそ！||ようこそ||新しい日本語ライブラリへようこそ！}}',
     maxChunkSize: 1000,
     maxArticleLength: 10000,
+    selectionContextRadius: 300,
+    sentenceEndMarkers: '。！？…',
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])

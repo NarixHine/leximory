@@ -114,6 +114,7 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: bool
 function PdfEbook() {
     const title = useAtomValue(titleAtom)
     const text = useAtomValue(textAtom)
+    const lang = useAtomValue(langAtom)
     const src = useAtomValue(ebookAtom)
     const bookmarks = useAtomValue(bookmarksAtom)
     const setBookmarks = useSetAtom(bookmarksAtom)
@@ -157,9 +158,11 @@ function PdfEbook() {
             nextText: string,
             page: number,
             selectionRect: { left: number; top: number; width: number; height: number },
+            context?: string,
         ) => {
             setSelection(null)
-            setSelectedText(nextText)
+            const annotationPrompt = context ?? `<must>${nextText}</must>`
+            setSelectedText(annotationPrompt)
             setLocation(String(page))
             setRect({
                 left: selectionRect.left,
@@ -240,6 +243,8 @@ function PdfEbook() {
                             key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
                             url={transformEbookUrl(src)}
                             title={title}
+                            selectionContextRadius={getLanguageStrategy(lang).selectionContextRadius}
+                            sentenceEndMarkers={getLanguageStrategy(lang).sentenceEndMarkers}
                             dark={resolvedTheme === 'dark'}
                             initialPage={Number(location) || 1}
                             highlights={highlights}

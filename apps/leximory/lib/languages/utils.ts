@@ -14,6 +14,8 @@ export function createLanguageStrategy(
         defineClassName: 'font-formal',
         periodMark: '.',
         isDropcapEnabled: false,
+        selectionContextRadius: 500,
+        sentenceEndMarkers: '.!?…',
     }
 
     return { ...defaults, ...config } as LanguageStrategy

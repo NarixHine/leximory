@@ -11,6 +11,8 @@ export interface LanguageStrategy {
     // for annotation
     maxChunkSize: number
     maxArticleLength: number
+    selectionContextRadius: number
+    sentenceEndMarkers: string
     exampleSentencePrompt: string
     // for UI
     FormattedReadingTime?: (text: string) => ReactNode

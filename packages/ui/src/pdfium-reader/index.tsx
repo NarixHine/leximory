@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+    PdfDocumentObject,
     PdfBookmarkObject,
     PdfEngine,
     PdfPageGeometry,
@@ -31,6 +32,7 @@ import {
 import {
     SelectionLayer,
     SelectionPluginPackage,
+    type SelectionDocumentState,
     useSelectionCapability,
 } from '@embedpdf/plugin-selection/react'
 import {
@@ -51,16 +53,163 @@ interface PdfiumReaderProps {
     dark?: boolean
     /** 1-based page to restore to once the document first lays out. */
     initialPage?: number
+    /** Maximum surrounding characters to include on each side of a selection. */
+    selectionContextRadius?: number
+    /** Sentence-ending characters used when trimming PDF annotation context. */
+    sentenceEndMarkers?: string
     onLocationChange?: (page: string) => void
     onSelection?: (
         text: string,
         page: number,
         rect: { left: number; top: number; width: number; height: number },
+        context?: string,
     ) => void
     onSelectionClear?: () => void
     highlights?: string[]
     /** Element the ToC drawer portals into, so it survives the Fullscreen API. */
     portalContainer?: Element
+}
+
+function isPdfContextBoundary(text: string, index: number, sentenceEndMarkers: string) {
+    const character = text[index]
+    if (sentenceEndMarkers.includes(character)) return true
+    return character === '\n' && text[index + 1] === '\n'
+}
+
+/** Adds nearby PDF text while marking the exact selection for the annotation prompt. */
+function findPdfSelectionBounds(
+    text: string,
+    selectedText: string,
+    expectedStart: number,
+    expectedEnd: number,
+) {
+    const candidates: Array<{ start: number; end: number }> = []
+    let index = text.indexOf(selectedText)
+    while (index !== -1) {
+        candidates.push({ start: index, end: index + selectedText.length })
+        index = text.indexOf(selectedText, index + 1)
+    }
+
+    if (candidates.length > 0) {
+        return candidates.reduce((closest, candidate) =>
+            Math.abs(candidate.start - expectedStart) < Math.abs(closest.start - expectedStart)
+                ? candidate
+                : closest,
+        )
+    }
+
+    const words = selectedText.trim().split(/\s+/).filter(Boolean)
+    if (words.length === 0) return null
+    const pattern = words
+        .map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('\\s+')
+    const expression = new RegExp(pattern, 'g')
+    while (true) {
+        const match = expression.exec(text)
+        if (!match || match.index === undefined) break
+        candidates.push({ start: match.index, end: match.index + match[0].length })
+    }
+
+    return candidates.reduce<{ start: number; end: number } | null>(
+        (closest, candidate) =>
+            !closest ||
+            Math.abs(candidate.start - expectedStart) < Math.abs(closest.start - expectedStart)
+                ? candidate
+                : closest,
+        null,
+    )
+}
+
+function bracketPdfSelection(
+    text: string,
+    selectedText: string,
+    start: number,
+    end: number,
+    contextRadius: number,
+    sentenceEndMarkers: string,
+) {
+    const expectedStart = Math.max(0, Math.min(start, text.length))
+    const expectedEnd = Math.max(expectedStart, Math.min(end + 1, text.length))
+    const bounds = findPdfSelectionBounds(text, selectedText, expectedStart, expectedEnd)
+    const selectionStart = bounds?.start ?? expectedStart
+    const selectionEnd = bounds?.end ?? expectedEnd
+    const selected = text.slice(selectionStart, selectionEnd)
+    if (!selected.trim()) return null
+
+    const leftLimit = Math.max(0, selectionStart - contextRadius)
+    let contextStart = selectionStart
+    for (let index = selectionStart - 1; index >= leftLimit; index--) {
+        contextStart = index
+        if (isPdfContextBoundary(text, index, sentenceEndMarkers)) break
+    }
+
+    const rightLimit = Math.min(text.length, selectionEnd + contextRadius)
+    let contextEnd = selectionEnd
+    for (let index = selectionEnd; index < rightLimit; index++) {
+        contextEnd = index + 1
+        if (isPdfContextBoundary(text, index, sentenceEndMarkers)) break
+    }
+
+    const before = text.slice(contextStart, selectionStart).trim()
+    const after = text.slice(selectionEnd, contextEnd).trim()
+    return `${before ? `${before} ` : ''}<must>${selected}</must>${after ? ` ${after}` : ''}`
+}
+
+async function getPdfSelectionContext({
+    engine,
+    document,
+    state,
+    pageIndex,
+    selectedText,
+    contextRadius,
+    sentenceEndMarkers,
+}: {
+    engine: PdfEngine
+    document: PdfDocumentObject | undefined
+    state: SelectionDocumentState
+    pageIndex: number
+    selectedText: string
+    contextRadius: number
+    sentenceEndMarkers: string
+}) {
+    if (!document) return null
+
+    const slice = state.slices[pageIndex]
+    const geometry = state.geometry[pageIndex]
+    if (!slice || !geometry) return null
+
+    const lastRun = geometry.runs[geometry.runs.length - 1]
+    const totalCharacters = lastRun ? lastRun.charStart + lastRun.glyphs.length : 0
+    if (totalCharacters === 0) return null
+
+    const contextStart = Math.max(0, slice.start - contextRadius)
+    const contextEnd = Math.min(
+        totalCharacters,
+        slice.start + slice.count + contextRadius,
+    )
+    if (contextEnd <= contextStart) return null
+
+    try {
+        const [text] = await engine
+            .getTextSlices(document, [
+                {
+                    pageIndex,
+                    charIndex: contextStart,
+                    charCount: contextEnd - contextStart,
+                },
+            ])
+            .toPromise()
+        return bracketPdfSelection(
+            text,
+            selectedText,
+            slice.start - contextStart,
+            slice.start + slice.count - 1 - contextStart,
+            contextRadius,
+            sentenceEndMarkers,
+        )
+    } catch {
+        return null
+    }
 }
 
 /** Human-readable explanations for the PDFium engine error codes. */
@@ -391,14 +540,21 @@ function HighlightOverlay({
 /** Relays engine-native selection data to the host app. */
 function SelectionBridge({
     documentId,
+    engine,
+    contextRadius,
+    sentenceEndMarkers,
     onSelection,
     onClear,
 }: {
     documentId: string
+    engine: PdfEngine
+    contextRadius: number
+    sentenceEndMarkers: string
     onSelection?: PdfiumReaderProps['onSelection']
     onClear?: () => void
 }) {
     const { provides } = useSelectionCapability()
+    const documentState = useDocumentState(documentId)
     const { state: zoomState } = useZoom(documentId)
     const scaleRef = useRef(zoomState.currentZoomLevel)
     scaleRef.current = zoomState.currentZoomLevel
@@ -415,11 +571,28 @@ function SelectionBridge({
             )
             const scale = scaleRef.current || 1
             const pageRect = page?.getBoundingClientRect() ?? { left: 0, top: 0 }
-            onSelection(texts.join('\n'), formatted.pageIndex + 1, {
+            const rawText = texts.join('\n')
+            const rect = {
                 left: pageRect.left + formatted.rect.origin.x * scale,
                 top: pageRect.top + formatted.rect.origin.y * scale,
                 width: formatted.rect.size.width * scale,
                 height: formatted.rect.size.height * scale,
+            }
+            void getPdfSelectionContext({
+                engine,
+                document: documentState?.document ?? undefined,
+                state: scope.getState(),
+                pageIndex: formatted.pageIndex,
+                selectedText: rawText,
+                contextRadius,
+                sentenceEndMarkers,
+            }).then(context => {
+                onSelection(
+                    rawText,
+                    formatted.pageIndex + 1,
+                    rect,
+                    context ?? `<must>${rawText}</must>`,
+                )
             })
         }
 
@@ -441,7 +614,16 @@ function SelectionBridge({
             offChange()
             document.removeEventListener('pointercancel', cancelSelection)
         }
-    }, [documentId, onSelection, onClear, provides])
+    }, [
+        contextRadius,
+        documentId,
+        documentState?.document,
+        engine,
+        sentenceEndMarkers,
+        onSelection,
+        onClear,
+        provides,
+    ])
 
     return null
 }
@@ -1010,6 +1192,8 @@ export default function PdfiumReader({
     initialPage,
     onSelection,
     onSelectionClear,
+    selectionContextRadius = 500,
+    sentenceEndMarkers = '.!?…',
     onLocationChange,
     highlights = [],
     portalContainer,
@@ -1232,6 +1416,9 @@ export default function PdfiumReader({
                                                 <>
                                                     <SelectionBridge
                                                         documentId={activeDocumentId}
+                                                        engine={engine}
+                                                        contextRadius={selectionContextRadius}
+                                                        sentenceEndMarkers={sentenceEndMarkers}
                                                         onSelection={onSelection}
                                                         onClear={onSelectionClear}
                                                     />
