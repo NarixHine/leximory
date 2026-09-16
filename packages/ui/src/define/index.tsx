@@ -3,7 +3,7 @@
 import { Drawer } from 'vaul'
 import { useRef } from 'react'
 import { cn } from '@heroui/theme'
-import { getBracketedSelection, useSelection } from './utils'
+import { getBracketedSelection, getSelectionText, useSelection } from './utils'
 import { useSelectionPosition } from '../utils/hooks'
 import { Button } from '@heroui/react'
 import {
@@ -68,7 +68,7 @@ export function Define() {
 
     // freeze the selection so it persists during the click
     const lastValidSelection = useRef<string>('')
-    if (selection && selection.toString()) {
+    if (selection && getSelectionText(selection)) {
         lastValidSelection.current = getBracketedSelection(selection)
     }
 
@@ -76,7 +76,7 @@ export function Define() {
         <Drawer.Root direction='top' repositionInputs={false}>
             {selection &&
                 selection.anchorNode?.textContent &&
-                selection.toString() &&
+                getSelectionText(selection) &&
                 left != null &&
                 width != null &&
                 rect && (

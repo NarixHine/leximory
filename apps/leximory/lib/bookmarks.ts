@@ -202,16 +202,26 @@ function stripMarkdownEscapes(text: string): string {
         .replace(/(?<!\w)_([^_]+)_(?!\w)/g, '$1')
 }
 
+function isRubyAnnotation(node: Node): boolean {
+    let parent = node.parentNode
+    while (parent?.nodeType === Node.ELEMENT_NODE) {
+        const tagName = (parent as Element).tagName.toLowerCase()
+        if (tagName === 'rt' || tagName === 'rp') return true
+        parent = parent.parentNode
+    }
+    return false
+}
+
 function collectTextNodes(root: Node): Text[] {
     const document = root.nodeType === Node.DOCUMENT_NODE ? (root as Document) : root.ownerDocument
     if (!document) return []
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
     const nodes: Text[] = []
-    if (root.nodeType === Node.TEXT_NODE) nodes.push(root as Text)
+    if (root.nodeType === Node.TEXT_NODE && !isRubyAnnotation(root)) nodes.push(root as Text)
     let current = walker.nextNode()
     while (current) {
-        nodes.push(current as Text)
+        if (!isRubyAnnotation(current)) nodes.push(current as Text)
         current = walker.nextNode()
     }
     return nodes
@@ -269,7 +279,7 @@ export function findTextRange(root: Node, query: string): Range | null {
     return range
 }
 
-/** Wraps the text covered by a range without changing the surrounding EPUB structure. */
+/** Wraps the text covered by a range in one stable highlight element. */
 export function highlightTextRange(
     range: Range,
     isDark: boolean,
@@ -278,75 +288,41 @@ export function highlightTextRange(
     const document = root.ownerDocument
     if (!document) return 0
 
+    const applyHighlight = (element: HTMLElement) => {
+        element.dataset.leximoryBookmark = 'true'
+        element.style.setProperty(
+            'background-color',
+            isDark ? 'rgb(105 170 78 / 0.45)' : 'rgb(183 224 143 / 0.45)',
+            'important',
+        )
+        element.style.setProperty('color', 'inherit', 'important')
+        element.style.setProperty('-webkit-box-decoration-break', 'clone')
+    }
+
+    const elementFor = (node: Node) =>
+        node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement
+    const startElement = elementFor(range.startContainer)
+    const endElement = elementFor(range.endContainer)
     if (
-        range.startContainer === range.endContainer &&
-        range.startContainer.nodeType === Node.TEXT_NODE
+        startElement?.closest('[data-leximory-bookmark]') ||
+        endElement?.closest('[data-leximory-bookmark]')
     ) {
-        const node = range.startContainer as Text
-        const selected = range.startOffset > 0 ? node.splitText(range.startOffset) : node
-        const length = range.endOffset - range.startOffset
-        if (length <= 0) return 0
-        if (length < selected.length) selected.splitText(length)
-
-        if (selected.parentElement?.closest('[data-leximory-bookmark]')) return 0
-        const mark = document.createElement('span')
-        mark.dataset.leximoryBookmark = 'true'
-        mark.style.setProperty(
-            'background-image',
-            `linear-gradient(to bottom, transparent 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 82%, transparent 82%)`,
-            'important',
-        )
-        mark.style.setProperty('color', 'inherit', 'important')
-        mark.style.setProperty('mix-blend-mode', isDark ? 'screen' : 'multiply')
-        mark.style.setProperty('-webkit-box-decoration-break', 'clone')
-        selected.parentNode?.insertBefore(mark, selected)
-        mark.appendChild(selected)
-        return 1
+        return 0
     }
 
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    const nodes: Text[] = []
-    let current = walker.nextNode()
-    while (current) {
-        nodes.push(current as Text)
-        current = walker.nextNode()
+    const highlightRange = range.cloneRange()
+    const startRuby = startElement?.closest('ruby')
+    const endRuby = endElement?.closest('ruby')
+    if (startRuby) highlightRange.setStartBefore(startRuby)
+    if (endRuby) highlightRange.setEndAfter(endRuby)
+
+    const mark = document.createElement('span')
+    applyHighlight(mark)
+    try {
+        mark.appendChild(highlightRange.extractContents())
+        highlightRange.insertNode(mark)
+    } catch {
+        return 0
     }
-
-    let wrapped = 0
-    for (const node of nodes) {
-        if (!node.parentElement || node.parentElement.closest('[data-leximory-bookmark]')) {
-            continue
-        }
-
-        let intersects = false
-        try {
-            intersects = range.intersectsNode(node)
-        } catch {
-            continue
-        }
-        if (!intersects) continue
-
-        const start = node === range.startContainer ? range.startOffset : 0
-        const end = node === range.endContainer ? range.endOffset : node.length
-        if (end <= start) continue
-
-        const selected = start > 0 ? node.splitText(start) : node
-        if (end - start < selected.length) selected.splitText(end - start)
-
-        const mark = document.createElement('span')
-        mark.dataset.leximoryBookmark = 'true'
-        mark.style.setProperty(
-            'background-image',
-            `linear-gradient(to bottom, transparent 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 45%, ${isDark ? 'rgb(123 191 99 / 0.35)' : 'rgb(183 224 143 / 0.5)'} 82%, transparent 82%)`,
-            'important',
-        )
-        mark.style.setProperty('color', 'inherit', 'important')
-        mark.style.setProperty('mix-blend-mode', isDark ? 'screen' : 'multiply')
-        mark.style.setProperty('-webkit-box-decoration-break', 'clone')
-        selected.parentNode?.insertBefore(mark, selected)
-        mark.appendChild(selected)
-        wrapped++
-    }
-
-    return wrapped
+    return 1
 }

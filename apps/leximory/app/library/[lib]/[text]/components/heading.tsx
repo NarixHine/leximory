@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtomValue } from 'jotai'
-import { contentAtom, isFullViewportAtom } from '../atoms'
+import { contentAtom, ebookAtom, isFullViewportAtom } from '../atoms'
 import EditableH from './editable-h'
 import ShareButton from './share-button'
 import { cn } from '@/lib/utils'
@@ -26,6 +26,7 @@ export function ArticleHeading({
     const { FormattedReadingTime } = getLanguageStrategy(currentLang)
     const isFullViewport = useAtomValue(isFullViewportAtom)
     const content = useAtomValue(contentAtom)
+    const ebook = useAtomValue(ebookAtom)
 
     const shareButtonProps = {
         isPublicAndFree,
@@ -51,7 +52,7 @@ export function ArticleHeading({
                 <ShareButton {...shareButtonProps} className='mb-2 print:invisible' />
             </div>
             <div>
-                {FormattedReadingTime && (
+                {FormattedReadingTime && !ebook && (
                     <div className='text-sm text-center text-secondary-400 mb-2 text-balance px-4 md:hidden'>
                         {FormattedReadingTime(content)}
                     </div>

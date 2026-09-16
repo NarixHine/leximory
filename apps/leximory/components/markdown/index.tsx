@@ -64,7 +64,7 @@ function Markdown({
         .replace(
             commentSyntaxRegex,
             (_, p1: string, p2: string, p3: string, p4: string, p5: string) => {
-                const portions = [p1, p2, lang === 'ja' ? p3.replace('）**', '）** ') : p3, p4, p5]
+                const portions = [p1, p2, lang === 'ja' ? p3.replaceAll('）**', '）** ') : p3, p4, p5]
                     .filter(Boolean)
                     .map(portion =>
                         encodeURIComponent(

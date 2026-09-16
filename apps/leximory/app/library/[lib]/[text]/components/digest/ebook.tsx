@@ -4,6 +4,7 @@ import { Button } from '@heroui/button'
 import type { Contents, Rendition } from 'epubjs'
 import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
+import { getBracketedSelection, getSelectionText } from '@repo/ui/define/utils'
 import PdfReader from '@repo/ui/pdfium-reader'
 import { getLanguageStrategy } from '@/lib/languages/strategies'
 import { cn } from '@/lib/utils'
@@ -320,6 +321,7 @@ function EpubEbook() {
     const isJapanese = strategy.type === 'ja'
 
     const [selection, setSelection] = useState<Selection | null>(null)
+    const [selectedText, setSelectedText] = useState<string | null>(null)
     const [rect, setRect] = useState<{
         left: number | null
         width: number | null
@@ -339,6 +341,7 @@ function EpubEbook() {
             bottom: null,
         })
         setSelection(null)
+        setSelectedText(null)
     }
     const [bookmark, setBookmark] = useState<{
         quote: string
@@ -444,6 +447,7 @@ function EpubEbook() {
                                 reset={reset}
                                 container={containerRef.current}
                                 selection={selection}
+                                selectedText={selectedText ?? undefined}
                                 actions={
                                     <BookmarkButton
                                         isDisabled={!bookmark}
@@ -531,7 +535,19 @@ function EpubEbook() {
                                         setBookmark(null)
                                         return
                                     }
+                                    const quote = getSelectionText(selection)
+                                    if (!quote) {
+                                        reset()
+                                        setBookmark(null)
+                                        return
+                                    }
+                                    const prompt =
+                                        getBracketedSelection(
+                                            selection,
+                                            strategy.selectionContextRadius,
+                                        ) || `<must>${quote}</must>`
                                     setSelection(selection)
+                                    setSelectedText(prompt)
 
                                     const range = selection.getRangeAt(0)
                                     const bounds = range.getBoundingClientRect()
@@ -558,7 +574,7 @@ function EpubEbook() {
                                         cfi = null
                                     }
                                     setBookmark({
-                                        quote: selection.toString(),
+                                        quote,
                                         chapter: chapter ?? null,
                                         location: cfi,
                                     })

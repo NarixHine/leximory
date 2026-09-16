@@ -23,6 +23,7 @@
         "./avatar": "./src/avatar/index.tsx",
         "./dock": "./src/dock/index.tsx",
         "./define": "./src/define/index.tsx",
+        "./define/utils": "./src/define/utils.tsx",
         "./word-note": "./src/word-note/index.tsx",
         "./question-note": "./src/question-note/index.tsx",
         "./chunk-note": "./src/chunk-note/index.tsx",
