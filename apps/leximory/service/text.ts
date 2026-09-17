@@ -75,10 +75,7 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
     }
 
     const { text } = await generateText({
-        messages: [
-            {
-                role: 'system',
-                content: `
+        instructions: `
 你将看到一张学生文言文注释加点词练习纸。任务：提取图中文言文，并用[[ ]]包裹加点词/要求注解的词汇。
 
 执行规则：
@@ -90,7 +87,7 @@ export async function ocrClassicalChinese(form: FormData): Promise<{ error: stri
 4. **保持原样**：除上述处理和删去大标题外，保留原文的分段、标点和基本排版。使用Markdown格式输出。
 5. **零冗余**：如果图中没有文字，则输出为空。
 `.trim(),
-            },
+        messages: [
             {
                 role: 'user',
                 content: [
