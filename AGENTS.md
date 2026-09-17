@@ -6,6 +6,7 @@
 - Before changing **any Next.js code**, find and read the relevant installed documentation in `node_modules/next/dist/docs/`. The installed Next.js 16 docs are authoritative.
 - Use `pnpm`, never npm. Verify Leximory changes with `pnpm --dir apps/leximory run check-types`; for the full repository use `turbo check-types`. Do not invoke `tsc` directly.
 - Leximory development runs on port **3001** and also starts local Inngest and QStash: `pnpm --dir apps/leximory dev`.
+- NEVER directly modify db schema. NEVER run any operation on Supabase with side effects without explicit authorization.
 
 ## Repository map
 

@@ -71,6 +71,7 @@ export const ACTION_QUOTA_COST = {
     wordList: 1,
     story: 2,
     chat: 0.5,
+    evaluation: 0.01,
     pouncepen: {
         import: 5,
         answer: 1,
@@ -141,12 +142,3 @@ export const SECTION_NAME_MAP = {
     translation: '翻译',
     writing: '写作',
 } as const
-
-export const FORGET_CURVE = {
-    今天记忆: [0, -1],
-    一天前记忆: [1, 0],
-    四天前记忆: [4, 3],
-    七天前记忆: [7, 6],
-    十四天前记忆: [14, 13],
-}
-export type ForgetCurvePoint = keyof typeof FORGET_CURVE

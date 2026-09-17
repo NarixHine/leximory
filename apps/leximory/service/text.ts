@@ -287,9 +287,14 @@ export async function addAndGenerateText({
     await Kilpi.libraries.write(libData).authorize().assert()
     const id = await createText({ lib, title, content })
     updateTag(`texts:${lib}`)
-    await generate({ article: content, textId: id, onlyComments: false })
+    const generated = await generate({ article: content, textId: id, onlyComments: false })
+    if (generated && 'error' in generated) {
+        await deleteText({ id })
+        updateTag(`texts:${lib}`)
+        return { error: generated.error }
+    }
     await setTextAnnotationProgress({ id, progress: 'annotating' })
-    return id
+    return { textId: id }
 }
 
 /** Returns IDs of texts visited by the current user in a library. */

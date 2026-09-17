@@ -3,7 +3,6 @@ import { NOT_LISTED_PROMPT } from './nl.prompt'
 import { JAPANESE_PROMPT } from './ja.prompt'
 import { CHINESE_PROMPT } from './zh.prompt'
 import { FRENCH_PROMPT } from './fr.prompt'
-import { SYSTEM_PROMPT } from './chat.prompt'
 import { EN_ANNOTATION_PROMPT } from '@repo/service/prompts'
 
 export const instruction: {
@@ -15,5 +14,3 @@ export const instruction: {
     ja: JAPANESE_PROMPT,
     zh: CHINESE_PROMPT,
 }
-
-export const CHAT_SYSTEM_PROMPT = SYSTEM_PROMPT

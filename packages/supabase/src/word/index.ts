@@ -1,5 +1,5 @@
 import 'server-only'
-import { FORGET_CURVE, ForgetCurvePoint, Lang } from '@repo/env/config'
+import { Lang } from '@repo/env/config'
 import { supabase } from '@repo/supabase'
 import { cacheLife, cacheTag } from 'next/cache'
 import { validateOrThrow, stdMoment } from '@repo/utils'
@@ -114,15 +114,6 @@ export async function retrieveWordsWithRange({
         )
         .limit(size)
         .throwOnError()
-    return data
-}
-
-export async function getForgetCurve({ day, userId }: { day: ForgetCurvePoint; userId: string }) {
-    const data = await getWordsWithin({
-        fromDayAgo: FORGET_CURVE[day][0],
-        toDayAgo: FORGET_CURVE[day][1],
-        userId,
-    })
     return data
 }
 

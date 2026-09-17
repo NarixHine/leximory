@@ -9,17 +9,19 @@ import {
     PiLinkDuotone,
     PiAirplaneInFlightDuotone,
     PiAirplaneTakeoffDuotone,
+    PiSparkle,
 } from 'react-icons/pi'
-import { scrapeArticle } from '@/server/ai/scrape'
-import { addAndGenerateText } from '@/service/text'
+import { importArticle, prefetchLibrary } from '@/service/import'
 import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { motion, Transition } from 'framer-motion'
-import { useRef } from 'react'
+import { AnimatePresence, motion, useReducedMotion, Transition } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
 import type { Lang } from '@repo/env/config'
 import isUrl from 'is-url'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { useDebounceValue } from 'usehooks-ts'
 
 type LibOption = {
     id: string
@@ -34,13 +36,56 @@ const TRANSITION: Transition = {
     ease: [0.3, 0.72, 0, 1],
 }
 
+const AUTO_FILL_HIGHLIGHT_MS = 1600
+
 export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
-    const { register, handleSubmit, formState, control } = useForm<{ url: string; lib: string }>({
+    const { register, handleSubmit, formState, control, watch, setValue, getValues } = useForm<{
+        url: string
+        lib: string
+    }>({
         defaultValues: { url: '', lib: '' },
     })
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const autoFilledRef = useRef<string | null>(null)
+    const [autoFilled, setAutoFilled] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const prefersReducedMotion = useReducedMotion()
 
-    // Group libraries: active, shadow, archived
+    const urlValue = watch('url')
+    const [debouncedUrl] = useDebounceValue(urlValue ?? '', 700)
+
+    const { data: prefetch } = useQuery({
+        queryKey: ['import-prefetch', debouncedUrl],
+        queryFn: () => prefetchLibrary(debouncedUrl),
+        enabled: isUrl(debouncedUrl),
+        staleTime: Infinity,
+        retry: false,
+    })
+
+    useEffect(() => {
+        setError(null)
+    }, [urlValue])
+
+    useEffect(() => {
+        const predicted = prefetch?.lib
+        if (!predicted) {
+            setAutoFilled(null)
+            return
+        }
+
+        const current = getValues('lib')
+        const isAutoFilled = current === autoFilledRef.current
+        if (current && !isAutoFilled && current !== predicted) return
+        if (current === predicted) return
+
+        setValue('lib', predicted)
+        autoFilledRef.current = predicted
+        setAutoFilled(predicted)
+
+        const timeout = setTimeout(() => setAutoFilled(null), AUTO_FILL_HIGHLIGHT_MS)
+        return () => clearTimeout(timeout)
+    }, [prefetch?.lib, getValues, setValue])
+
     const activeLibs = libraries.filter(lib => !lib.shadow && !lib.archived)
     const shadowLibs = libraries.filter(lib => lib.shadow && !lib.archived)
     const archivedLibs = libraries.filter(lib => lib.archived)
@@ -97,19 +142,19 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                         throw new Error('Library is required')
                     }
 
-                    const lang = selectedLang(lib)
-                    if (!lang) {
+                    if (!selectedLang(lib)) {
                         throw new Error('Invalid library selection')
                     }
 
-                    const { title, content } = await scrapeArticle(url)
-                    if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                        toast.error('识别内容过长，请手动录入')
-                        throw new Error('Content too long')
+                    setError(null)
+                    const result = await importArticle({ url, lib })
+                    if ('error' in result) {
+                        setError(result.error)
+                        return
                     }
-                    const textId = await addAndGenerateText({ title, content, lib })
+
                     triggerConfetti()
-                    router.push(`/library/${lib}/${textId}`)
+                    router.push(`/library/${lib}/${result.textId}`)
                 },
                 () => {
                     console.log('Form submission failed', formState.errors)
@@ -158,7 +203,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                         >
                             <PiPackageDuotone className='size-6' /> 文库
                         </label>
-                        <motion.div layout className='flex-1' transition={TRANSITION}>
+                        <motion.div layout className='relative flex-1' transition={TRANSITION}>
                             <Controller
                                 name='lib'
                                 control={control}
@@ -180,6 +225,34 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                         }
                                         className='w-full'
                                         aria-label='目标文库'
+                                        renderValue={items => {
+                                            const lib = libraries.find(l => l.id === items[0]?.key)
+                                            if (!lib) return null
+                                            return (
+                                                <motion.span
+                                                    key={lib.id}
+                                                    initial={
+                                                        autoFilled === lib.id &&
+                                                        !prefersReducedMotion
+                                                            ? { opacity: 0, y: 4, filter: 'blur(4px)' }
+                                                            : false
+                                                    }
+                                                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                                                    transition={{
+                                                        duration: 0.42,
+                                                        ease: [0.16, 1, 0.3, 1],
+                                                    }}
+                                                    className='flex w-full flex-row items-baseline gap-2'
+                                                >
+                                                    <span className='truncate font-bold'>
+                                                        {lib.name}
+                                                    </span>
+                                                    <span className='text-sm font-normal text-secondary-400 shrink-0'>
+                                                        {getLanguageStrategy(lib.lang).name}
+                                                    </span>
+                                                </motion.span>
+                                            )
+                                        }}
                                         classNames={{
                                             popoverContent:
                                                 'shadow-none border-1 p-3 border-primary-300 bg-secondary-50 rounded-4xl',
@@ -203,6 +276,61 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                     </Select>
                                 )}
                             />
+                            <AnimatePresence>
+                                {autoFilled && !prefersReducedMotion ? (
+                                    <>
+                                        <motion.span
+                                            key='bloom'
+                                            aria-hidden
+                                            initial={{ opacity: 0, scaleX: 0.55, scaleY: 0.5 }}
+                                            animate={{
+                                                opacity: [0, 0.5, 0],
+                                                scaleX: [0.55, 1, 1.08],
+                                                scaleY: [0.5, 1, 1.15],
+                                            }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{
+                                                duration: 1,
+                                                ease: [0.22, 1, 0.36, 1],
+                                                times: [0, 0.3, 1],
+                                            }}
+                                            className='pointer-events-none absolute inset-x-1 bottom-0 h-8 origin-bottom rounded-full bg-gradient-to-t from-secondary-400/40 via-secondary-300/20 to-transparent blur-md'
+                                        />
+                                        <motion.span
+                                            key='sweep'
+                                            aria-hidden
+                                            initial={{ scaleX: 0, opacity: 0 }}
+                                            animate={{ scaleX: [0, 1, 1], opacity: [0, 0.9, 0] }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{
+                                                duration: 0.9,
+                                                ease: [0.22, 1, 0.36, 1],
+                                                times: [0, 0.45, 1],
+                                            }}
+                                            className='pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-transparent via-secondary-500 to-transparent'
+                                        />
+                                        <motion.span
+                                            key='sparkle'
+                                            aria-hidden
+                                            initial={{ opacity: 0, scale: 0.4, y: 2 }}
+                                            animate={{
+                                                opacity: [0, 1, 0],
+                                                scale: [0.4, 1, 0.85],
+                                                y: [2, -3, -6],
+                                            }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{
+                                                duration: 1,
+                                                ease: [0.16, 1, 0.3, 1],
+                                                times: [0, 0.25, 1],
+                                            }}
+                                            className='pointer-events-none absolute -right-0.5 -top-1 text-secondary-500'
+                                        >
+                                            <PiSparkle className='size-3.5' />
+                                        </motion.span>
+                                    </>
+                                ) : null}
+                            </AnimatePresence>
                         </motion.div>
                         <motion.span
                             layout
@@ -231,6 +359,10 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                             </Button>
                         </motion.div>
                     </div>
+
+                    {error ? (
+                        <p className='text-right text-sm font-medium text-danger-500'>{error}</p>
+                    ) : null}
                 </div>
             </div>
         </form>

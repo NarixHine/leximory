@@ -4,7 +4,9 @@ import { saveWord } from '@/server/db/word'
 import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from '@repo/schema'
-import { experimental_evaluate as evaluate, generateText } from 'ai'
+import { generateText } from 'ai'
+import { evaluateWithQuota } from '@/service/evaluate'
+import { wordLanguageQuestion } from '@/server/ai/detect-language'
 import { ACTION_QUOTA_COST, Lang, SUPPORTED_LANGS } from '@repo/env/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
@@ -26,7 +28,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: `你已用完本月的 ${await maxCommentaryQuota()} 词点。` })
     }
 
-    const lang = await getWordLang(rawWord)
+    const language = await getWordLang(rawWord, sub)
+    if ('error' in language) {
+        return NextResponse.json({ error: language.error }, { status: 402 })
+    }
+    const lang = language.lang
     const word = `<must>${lang === 'en' ? originals(rawWord)[0] : rawWord}</must>`
     const comment = await generateSingleCommentFromShortcut(word, lang, sub)
 
@@ -46,26 +52,17 @@ export async function POST(request: Request) {
     })
 }
 
-const DETECTABLE_LANGS = SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh')
-
-async function getWordLang(word: string): Promise<Lang> {
-    const { answers } = await evaluate({
-        model: 'typesafe-ai/jev',
-        state: word,
-        questions: {
-            language: {
-                type: 'choice',
-                instructions:
-                    'The state is a single word or phrase. Identify the language it most likely belongs to.',
-                criteria: {
-                    en: 'English',
-                    fr: 'French',
-                    ja: 'Japanese',
-                } satisfies Record<(typeof DETECTABLE_LANGS)[number], string>,
-            },
-        },
+async function getWordLang(
+    word: string,
+    userId: string,
+): Promise<{ lang: Lang } | { error: string }> {
+    const result = await evaluateWithQuota({
+        ...wordLanguageQuestion(word),
+        userId,
+        delayRevalidate: true,
     })
-    return z.enum(SUPPORTED_LANGS).parse(answers.language.choice)
+    if ('error' in result) return { error: result.error }
+    return { lang: z.enum(SUPPORTED_LANGS).parse(result.answers.language.choice) }
 }
 
 async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {

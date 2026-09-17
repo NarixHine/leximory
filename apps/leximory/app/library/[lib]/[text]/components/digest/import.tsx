@@ -36,7 +36,7 @@ import { Tabs, Tab } from '@heroui/tabs'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '@heroui/drawer'
 import { useDisclosure } from '@heroui/react'
 import { getLanguageStrategy } from '@/lib/languages'
-import { scrapeArticle } from '@/server/ai/scrape'
+import { readArticle } from '@/service/import'
 import { InlineModeSwitch } from './inline-mode-switch'
 
 export default function ImportModal() {
@@ -53,8 +53,15 @@ export default function ImportModal() {
     const [inlineMode, setInlineMode] = useAtom(inlineModeAtom)
     const [isPopulating, startPopulating] = useTransition()
     const setTitle = useSetAtom(titleAtom)
+    const [error, setError] = useState<string | null>(null)
     const populate = async () => {
-        const { title, content } = await scrapeArticle(url)
+        setError(null)
+        const result = await readArticle(url)
+        if ('error' in result) {
+            setError(result.error)
+            return
+        }
+        const { title, content } = result
         setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
         saveText({ id: text, content })
         setTitle(title)
@@ -181,6 +188,11 @@ export default function ImportModal() {
                                                     一键读取
                                                 </Button>
                                             </div>
+                                            {error ? (
+                                                <p className='mb-2 text-right text-sm font-medium text-danger-500'>
+                                                    {error}
+                                                </p>
+                                            ) : null}
                                             <Textarea
                                                 errorMessage={
                                                     exceeded

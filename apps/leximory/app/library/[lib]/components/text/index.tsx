@@ -1,18 +1,17 @@
 'use client'
 
-import { addText, addAndGenerateText } from '@/service/text'
+import { addText } from '@/service/text'
 import { PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
-import { langAtom, libAtom } from '../../atoms'
+import { libAtom } from '../../atoms'
 import { Tabs, Tab } from '@heroui/tabs'
 import { Card, CardBody, Chip, ChipProps, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
 import Link from 'next/link'
-import { getLanguageStrategy } from '@/lib/languages'
 import { toast } from 'sonner'
-import { scrapeArticle } from '@/server/ai/scrape'
+import { importArticle } from '@/service/import'
 import { cn, resolveEmoji } from '@/lib/utils'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/navigation'
@@ -207,7 +206,6 @@ export function AddTextButton() {
             defaultValues: { url: '', title: '' },
         },
     )
-    const lang = useAtomValue(langAtom)
     const router = useRouter()
 
     return (
@@ -231,13 +229,12 @@ export function AddTextButton() {
                 onSubmit={handleSubmit(async data => {
                     if (data.url) {
                         try {
-                            const { title, content } = await scrapeArticle(data.url)
-                            if (content.length > getLanguageStrategy(lang).maxArticleLength) {
-                                toast.error('识别内容过长，请手动录入')
+                            const result = await importArticle({ url: data.url, lib })
+                            if ('error' in result) {
+                                toast.error(result.error)
                                 return
                             }
-                            const textId = await addAndGenerateText({ title, content, lib })
-                            router.push(`/library/${lib}/${textId}`)
+                            router.push(`/library/${lib}/${result.textId}`)
                         } catch {
                             toast.error('文章解析失败，请手动录入')
                         }
