@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { ReactNode } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { FormProps, Form as HeroUIForm } from '@heroui/form'
 import { Button } from '@heroui/button'
 import { DrawerBody, DrawerFooter, DrawerHeader, DrawerContent, Drawer } from '@heroui/drawer'
@@ -16,6 +16,7 @@ export default function Form({
     onSubmit,
     title,
     actionButton,
+    confirmText,
     ...props
 }: {
     isOpen: boolean
@@ -25,7 +26,8 @@ export default function Form({
     isLoading: boolean
     actionButton?: ReactNode
     confirmText?: string
-} & FormProps) {
+    onSubmit?: (e: FormEvent<HTMLFormElement>) => unknown | Promise<unknown>
+} & Omit<FormProps, 'onSubmit'>) {
     return (
         <Drawer
             hideCloseButton
@@ -57,8 +59,9 @@ export default function Form({
             <DrawerContent className='max-h-dvh rounded-t-4xl'>
                 {onClose => (
                     <HeroUIForm
-                        onSubmit={async props => {
-                            await onSubmit?.(props)
+                        onSubmit={async e => {
+                            const result = await onSubmit?.(e)
+                            if (result === false) return
                             onClose()
                         }}
                         className={cn('max-w-(--breakpoint-sm) mx-auto py-3', className)}
@@ -76,7 +79,7 @@ export default function Form({
                                 startContent={isLoading ? null : <PiFloppyDisk size={20} />}
                                 isLoading={isLoading}
                             >
-                                {props.confirmText ?? '确认'}
+                                {confirmText ?? '确认'}
                             </Button>
                         </DrawerFooter>
                     </HeroUIForm>

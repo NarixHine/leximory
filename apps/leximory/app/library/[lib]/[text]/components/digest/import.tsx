@@ -62,7 +62,7 @@ export default function ImportModal() {
             return
         }
         const { title, content } = result
-        setInput(content.replace(/(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g, '$1'))
+        setInput(content)
         saveText({ id: text, content })
         setTitle(title)
     }
@@ -169,7 +169,12 @@ export default function ImportModal() {
                                                     label='网址'
                                                     placeholder='https://example.com/'
                                                     value={url}
-                                                    onValueChange={value => setUrl(value.trim())}
+                                                    onValueChange={value => {
+                                                        setUrl(value.trim())
+                                                        setError(null)
+                                                    }}
+                                                    isInvalid={!!error}
+                                                    errorMessage={error ?? undefined}
                                                     variant='underlined'
                                                 />
                                                 <Button
@@ -188,11 +193,6 @@ export default function ImportModal() {
                                                     一键读取
                                                 </Button>
                                             </div>
-                                            {error ? (
-                                                <p className='mb-2 text-right text-sm font-medium text-danger-500'>
-                                                    {error}
-                                                </p>
-                                            ) : null}
                                             <Textarea
                                                 errorMessage={
                                                     exceeded

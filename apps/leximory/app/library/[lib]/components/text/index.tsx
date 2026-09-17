@@ -1,6 +1,7 @@
 'use client'
 
 import { addText } from '@/service/text'
+import { importArticle } from '@/service/import'
 import { PiLinkSimpleHorizontal, PiKeyboard, PiPlusBold } from 'react-icons/pi'
 import { useForm } from 'react-hook-form'
 import { useAtomValue } from 'jotai'
@@ -10,8 +11,6 @@ import { Card, CardBody, Chip, ChipProps, useDisclosure } from '@heroui/react'
 import { Input } from '@heroui/input'
 import Form from '@/components/form'
 import Link from 'next/link'
-import { toast } from 'sonner'
-import { importArticle } from '@/service/import'
 import { cn, resolveEmoji } from '@/lib/utils'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/navigation'
@@ -201,11 +200,12 @@ export function CompactCard({
 export function AddTextButton() {
     const lib = useAtomValue(libAtom)
     const { isOpen, onOpen, onOpenChange } = useDisclosure()
-    const { register, handleSubmit, setValue, formState } = useForm<{ url: string; title: string }>(
-        {
-            defaultValues: { url: '', title: '' },
-        },
-    )
+    const { register, handleSubmit, setValue, setError, clearErrors, formState } = useForm<{
+        url: string
+        title: string
+    }>({
+        defaultValues: { url: '', title: '' },
+    })
     const router = useRouter()
 
     return (
@@ -226,22 +226,32 @@ export function AddTextButton() {
                 title='创建文章'
                 confirmText='导入'
                 isLoading={formState.isSubmitting}
-                onSubmit={handleSubmit(async data => {
-                    if (data.url) {
-                        try {
-                            const result = await importArticle({ url: data.url, lib })
-                            if ('error' in result) {
-                                toast.error(result.error)
-                                return
+                onSubmit={async e => {
+                    let failed = false
+                    await handleSubmit(async data => {
+                        clearErrors('url')
+                        if (data.url) {
+                            try {
+                                const result = await importArticle({ url: data.url, lib })
+                                if ('error' in result) {
+                                    setError('url', { type: 'server', message: result.error })
+                                    failed = true
+                                    return
+                                }
+                                router.push(`/library/${lib}/${result.textId}`)
+                            } catch {
+                                setError('url', {
+                                    type: 'server',
+                                    message: '文章解析失败，请手动录入',
+                                })
+                                failed = true
                             }
-                            router.push(`/library/${lib}/${result.textId}`)
-                        } catch {
-                            toast.error('文章解析失败，请手动录入')
+                        } else if (data.title) {
+                            await addText({ title: data.title, lib })
                         }
-                    } else if (data.title) {
-                        await addText({ title: data.title, lib })
-                    }
-                })}
+                    })(e)
+                    return failed ? false : undefined
+                }}
             >
                 <Tabs aria-label='方式'>
                     <Tab
@@ -259,8 +269,13 @@ export function AddTextButton() {
                             placeholder='https://www.theatlantic.com/'
                             variant='bordered'
                             color='primary'
+                            isInvalid={!!formState.errors.url}
+                            errorMessage={formState.errors.url?.message}
                             {...register('url', {
-                                onChange: () => setValue('title', ''),
+                                onChange: () => {
+                                    clearErrors('url')
+                                    setValue('title', '')
+                                },
                             })}
                         />
                     </Tab>

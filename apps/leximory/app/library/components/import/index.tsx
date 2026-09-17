@@ -69,6 +69,7 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
     useEffect(() => {
         const predicted = prefetch?.lib
         if (!predicted) {
+            autoFilledRef.current = null
             setAutoFilled(null)
             return
         }
@@ -215,6 +216,9 @@ export default function ImportUI({ libraries }: { libraries: LibOption[] }) {
                                         selectedKeys={field.value ? [field.value] : []}
                                         onSelectionChange={keys => {
                                             const selected = Array.from(keys)[0] as string
+                                            if (selected !== autoFilledRef.current) {
+                                                autoFilledRef.current = null
+                                            }
                                             field.onChange(selected)
                                         }}
                                         variant='underlined'

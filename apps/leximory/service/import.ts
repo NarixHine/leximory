@@ -104,21 +104,28 @@ export async function prefetchLibrary(url: string): Promise<{ lib: string } | nu
     return { lib }
 }
 
-/** Crawls a URL and gates the result before it is imported. */
+const MARKDOWN_LINK = /(?<!\!)\[([^\[]+)\]\(([^)]+)\)/g
+
+function stripMarkdownLinks(content: string) {
+    return content.replace(MARKDOWN_LINK, '$1')
+}
+
+/** Crawls a URL, strips Markdown links, and gates the result before it is imported. */
 export async function readArticle(
     url: string,
 ): Promise<{ title: string; content: string } | { error: string }> {
     await requireUser()
 
     const { title, content } = await extractArticleFromUrl(url)
+    const plain = stripMarkdownLinks(content)
 
-    const result = await evaluateWithQuota(articleGate({ title, url, content }))
+    const result = await evaluateWithQuota(articleGate({ title, url, content: plain }))
     if ('error' in result) return { error: result.error }
 
     const status = result.answers.status.choice
     if (status !== 'ok') return { error: GATE_FAILURE_MESSAGES[status] }
 
-    return { title, content }
+    return { title, content: plain }
 }
 
 /** Crawls, gates, and imports a URL into a library, then starts annotation. */
