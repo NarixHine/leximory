@@ -4,7 +4,7 @@ import { saveWord } from '@/server/db/word'
 import { after, NextResponse } from 'next/server'
 import removeMd from 'remove-markdown'
 import { z } from '@repo/schema'
-import { generateText } from 'ai'
+import { experimental_evaluate as evaluate, generateText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, SUPPORTED_LANGS } from '@repo/env/config'
 import { getShadowLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
@@ -46,14 +46,26 @@ export async function POST(request: Request) {
     })
 }
 
+const DETECTABLE_LANGS = SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh')
+
 async function getWordLang(word: string): Promise<Lang> {
-    const { text } = await generateText({
-        prompt: `请判断下述词汇最可能属于哪种语言，你能且仅能在${SUPPORTED_LANGS.filter(lang => lang !== 'nl' && lang !== 'zh').join('、')}中选择一个（只返回语言代码）：\n${word}`,
-        maxOutputTokens: 300,
-        ...nanoAI,
+    const { answers } = await evaluate({
+        model: 'typesafe-ai/jev',
+        state: word,
+        questions: {
+            language: {
+                type: 'choice',
+                instructions:
+                    'The state is a single word or phrase. Identify the language it most likely belongs to.',
+                criteria: {
+                    en: 'English',
+                    fr: 'French',
+                    ja: 'Japanese',
+                } satisfies Record<(typeof DETECTABLE_LANGS)[number], string>,
+            },
+        },
     })
-    const lang = z.enum(SUPPORTED_LANGS).parse(text.trim())
-    return lang
+    return z.enum(SUPPORTED_LANGS).parse(answers.language.choice)
 }
 
 async function generateSingleCommentFromShortcut(prompt: string, lang: Lang, userId: string) {
