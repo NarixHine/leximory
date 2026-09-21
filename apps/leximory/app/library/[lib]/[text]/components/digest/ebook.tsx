@@ -2,7 +2,12 @@
 
 import { Button } from '@heroui/button'
 import type { Contents, Rendition } from 'epubjs'
-import { PiBookmark, PiFrameCorners, PiMagnifyingGlass } from 'react-icons/pi'
+import {
+    PiBookmark,
+    PiFrameCorners,
+    PiMagnifyingGlassMinus,
+    PiMagnifyingGlassPlus,
+} from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
 import { getBracketedSelection, getSelectionText } from '@repo/ui/define/utils'
 import PdfReader from '@repo/ui/pdfium-reader'
@@ -115,16 +120,21 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: bool
 }
 
 /** Widen control shown left of the PDF footer page counter. */
-function WidthToggle({ onPress }: { onPress: () => void }) {
+function WidthToggle({ onPress, shrinking }: { onPress: () => void; shrinking: boolean }) {
+    const label = shrinking ? '缩小 PDF 宽度' : '放大 PDF 宽度'
     return (
         <button
             type='button'
-            aria-label='调整 PDF 宽度'
-            title='调整 PDF 宽度'
+            aria-label={label}
+            title={label}
             onClick={onPress}
             className='inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-current transition-colors hover:bg-default-100 focus-visible:bg-default-100 active:bg-default-200'
         >
-            <PiMagnifyingGlass className='text-sm' />
+            {shrinking ? (
+                <PiMagnifyingGlassMinus className='text-sm' />
+            ) : (
+                <PiMagnifyingGlassPlus className='text-sm' />
+            )}
         </button>
     )
 }
@@ -195,6 +205,7 @@ function PdfEbook() {
     )
 
     const [widthStep, setWidthStep] = useState(0)
+    const [widthDirection, setWidthDirection] = useState(1)
     const widthRef = useRef<HTMLDivElement>(null)
     const [availableWidth, setAvailableWidth] = useState(0)
 
@@ -211,6 +222,21 @@ function PdfEbook() {
     if (!src) return null
 
     const canWiden = widthStep > 0 || availableWidth > PDF_WIDTHS[0] + 1
+    const shrinking = widthStep > 0 && widthDirection === -1
+
+    const cycleWidth = () => {
+        let direction = widthDirection
+        let next = widthStep + direction
+        if (next > PDF_WIDTHS.length - 1) {
+            direction = -1
+            next = widthStep - 1
+        } else if (next < 0) {
+            direction = 1
+            next = widthStep + 1
+        }
+        setWidthDirection(direction)
+        setWidthStep(next)
+    }
 
     return (
         <motion.div
@@ -292,11 +318,7 @@ function PdfEbook() {
                             onSelectionClear={reset}
                             footerLeading={
                                 canWiden ? (
-                                    <WidthToggle
-                                        onPress={() =>
-                                            setWidthStep(step => (step + 1) % PDF_WIDTHS.length)
-                                        }
-                                    />
+                                    <WidthToggle onPress={cycleWidth} shrinking={shrinking} />
                                 ) : null
                             }
                             actions={

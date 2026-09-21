@@ -1060,14 +1060,36 @@ function ScrollBridge({
         }
     }, [scroll, documentId, released, initialPage])
 
+    const anchorRef = useRef(1)
+
     useEffect(() => {
         if (settling) return
         if (state.totalPages <= 1) return
         // While the restore hold is active, never persist a page below the
         // saved one: a lower value is a transient from layout recalculation.
         if (!released && targetRef.current > 1 && state.currentPage < targetRef.current) return
+        anchorRef.current = state.currentPage
         onPageChange(state.currentPage, state.totalPages)
     }, [released, settling, state.currentPage, state.totalPages, onPageChange])
+
+    // A fit-width recalculation (host widening/narrowing, fullscreen, rotation)
+    // reflows every page, so the unchanged pixel offset lands on different
+    // content. Re-scroll to the page the reader was on before the reflow.
+    useEffect(() => {
+        if (!scroll || !released) return
+        const scope = scroll.forDocument(documentId)
+        const layoutChange = scroll.onLayoutChange(event => {
+            if (event.documentId !== documentId) return
+            const page = anchorRef.current
+            if (page <= 1) return
+            requestAnimationFrame(() => {
+                if (scope.getCurrentPage() !== page) {
+                    scope.scrollToPage({ pageNumber: page, behavior: 'instant' })
+                }
+            })
+        })
+        return () => layoutChange()
+    }, [scroll, documentId, released])
 
     return null
 }
@@ -1444,6 +1466,7 @@ export default function PdfiumReader({
                                                                 ? 'bg-stone-950'
                                                                 : 'bg-background',
                                                         )}
+                                                        style={{ overflowX: 'hidden' }}
                                                     >
                                                         <TwoFingerPan
                                                             documentId={activeDocumentId}
