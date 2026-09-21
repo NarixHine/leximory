@@ -121,6 +121,7 @@ export default function Define(
                     <Drawer.Title className='sr-only'>词汇注解</Drawer.Title>
                     <Comment
                         asCard
+                        showLocation
                         prompt={
                             selectedText ||
                             (selection && selection.anchorNode?.textContent && selection.toString()

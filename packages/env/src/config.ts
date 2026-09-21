@@ -72,6 +72,8 @@ export const ACTION_QUOTA_COST = {
     story: 2,
     chat: 0.5,
     evaluation: 0.01,
+    locationDetection: 0.2,
+    location: 0.05,
     pouncepen: {
         import: 5,
         answer: 1,

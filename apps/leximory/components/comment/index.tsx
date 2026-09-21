@@ -36,6 +36,7 @@ import { useRouter } from 'next/navigation'
 import styles from '@/styles/sidenote.module.css'
 import { getClickedChunk } from './utils'
 import { readStreamableValue } from '@repo/ui/utils'
+import LocationMap from '../location'
 import StoneSkeleton from '../ui/stone-skeleton'
 import FlatCard from '../ui/flat-card'
 import { Spinner } from '@heroui/spinner'
@@ -51,6 +52,8 @@ interface CommentProps {
     trigger?: ComponentProps<typeof Button>
     asCard?: boolean
     prompt?: string
+    /** Renders the location map inside the Define tray (card mode only). */
+    showLocation?: boolean
     onlyComments?: boolean
     print?: boolean
     shadow?: boolean
@@ -110,6 +113,7 @@ function Comment({
     trigger,
     asCard,
     prompt,
+    showLocation,
     onlyComments,
     print,
     className,
@@ -147,7 +151,7 @@ function Comment({
 
     const [activePrompt, setActivePrompt] = useState(prompt ?? '')
 
-    const { data: streamData = [], isPending } = useQuery(
+    const { data: streamData = [], isPending, isFetching } = useQuery(
         commentQueryOptions(activePrompt, lang, error =>
             toast.error(error, {
                 duration: 10000,
@@ -561,6 +565,13 @@ function Comment({
                                 isEditing={isEditing}
                                 editedPortions={editedPortions}
                                 onEdit={setEditedPortions}
+                            />
+                        )}
+                        {showLocation && (
+                            <LocationMap
+                                prompt={activePrompt}
+                                revealed={isVisible}
+                                ready={!isFetching}
                             />
                         )}
                         {portions[2] && (
