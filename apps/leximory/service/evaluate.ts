@@ -23,7 +23,8 @@ export async function evaluateWithQuota<
 
     try {
         return await runEvaluation({ state, questions })
-    } catch {
+    } catch (error) {
+        console.error('[evaluate] evaluation failed', error)
         return { error: '评估失败，请稍后重试。' }
     }
 }

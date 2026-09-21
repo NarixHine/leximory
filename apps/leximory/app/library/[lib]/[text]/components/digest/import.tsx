@@ -26,6 +26,7 @@ import {
     isLoadingAtom,
     isEditingAtom,
     ebookAtom,
+    emojiAtom,
     textAtom,
     hideTextAtom,
     titleAtom,
@@ -44,6 +45,7 @@ export default function ImportModal() {
     const lang = useAtomValue(langAtom)
     const text = useAtomValue(textAtom)
     const [ebook, setEbook] = useAtom(ebookAtom)
+    const setEmoji = useSetAtom(emojiAtom)
     const [input, setInput] = useAtom(inputAtom)
     const [isLoading, setIsLoading] = useAtom(isLoadingAtom)
     const [editing, setEditing] = useAtom(isEditingAtom)
@@ -304,8 +306,9 @@ export default function ImportModal() {
                                                 const form = new FormData()
                                                 form.append('ebook', ebook)
 
-                                                const src = await saveEbook(text, form)
-                                                setEbook(src)
+                                                const result = await saveEbook(text, form)
+                                                setEbook(result.url)
+                                                if (result.emoji) setEmoji(result.emoji)
                                                 onClose()
                                             }}
                                         ></FileUpload>

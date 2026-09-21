@@ -30,6 +30,8 @@ import { miniAI, nanoAI } from '@/server/ai/config'
 import { getLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { redirect } from 'next/navigation'
+import { emojiChoice } from '@/server/ai/emoji'
+import { evaluateWithQuota } from './evaluate'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -140,7 +142,7 @@ export async function removeText({ id }: { id: string }) {
     await deleteText({ id })
 }
 
-/** Uploads an EPUB or PDF ebook and attaches it to a text. */
+/** Uploads an EPUB or PDF ebook, attaches it to a text, and auto-fills its emoji. */
 export async function saveEbook(id: string, form: FormData) {
     const ebook = form.get('ebook') as File
     const isEpub = ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
@@ -155,7 +157,16 @@ export async function saveEbook(id: string, form: FormData) {
     await Kilpi.texts.write(text).authorize().assert()
 
     const url = await uploadEbook({ id, ebook })
-    return url
+
+    const chosen = await evaluateWithQuota(emojiChoice({ title: text.title, filename: ebook.name }))
+    if ('error' in chosen) return { url, emoji: null }
+
+    const emoji = chosen.answers.emoji.choice
+    if (!isValidEmoji(emoji)) return { url, emoji: null }
+
+    await updateText({ id, emoji })
+    updateTag(`texts:${text.lib.id}`)
+    return { url, emoji }
 }
 
 /** Triggers article annotation via Inngest after checking quota. */
