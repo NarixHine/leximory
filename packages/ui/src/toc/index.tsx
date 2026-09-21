@@ -240,7 +240,7 @@ export function TocTrigger({ onPress }: { onPress: () => void }) {
             aria-label='目录'
             title='目录'
             onClick={onPress}
-            className='inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-current opacity-50 transition-colors hover:bg-default-100 hover:opacity-100 focus-visible:bg-default-100 focus-visible:opacity-100 active:bg-default-200 group-hover:opacity-100'
+            className='inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-current transition-colors hover:bg-default-100 focus-visible:bg-default-100 active:bg-default-200'
         >
             <RowsIcon className='text-sm' />
         </button>

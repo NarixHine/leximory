@@ -2,7 +2,7 @@
 
 import { Button } from '@heroui/button'
 import type { Contents, Rendition } from 'epubjs'
-import { PiBookmark, PiFrameCorners } from 'react-icons/pi'
+import { PiBookmark, PiFrameCorners, PiMagnifyingGlass } from 'react-icons/pi'
 import EpubReader from '@repo/ui/epub-reader'
 import { getBracketedSelection, getSelectionText } from '@repo/ui/define/utils'
 import PdfReader from '@repo/ui/pdfium-reader'
@@ -74,6 +74,8 @@ const EBOOK_DARK_BG = '#100F0F'
 const EBOOK_LIGHT_FG = '#100F0F'
 const EBOOK_LIGHT_BG = '#ffffff'
 
+const PDF_WIDTHS = [704, 804, 904, 1004]
+
 /** Injects a `<style>` with `!important` rules into an epub content frame to enforce reader styles over custom epub styles. */
 function injectThemeCSS(contents: Contents, isDark: boolean, isJapanese: boolean) {
     const doc = contents.document
@@ -109,6 +111,21 @@ function updateTheme(rendition: Rendition, isDarkMode: boolean, isJapanese: bool
     }
     ;(rendition.getContents() as unknown as Contents[]).forEach(c =>
         injectThemeCSS(c, isDarkMode, isJapanese),
+    )
+}
+
+/** Widen control shown left of the PDF footer page counter. */
+function WidthToggle({ onPress }: { onPress: () => void }) {
+    return (
+        <button
+            type='button'
+            aria-label='调整 PDF 宽度'
+            title='调整 PDF 宽度'
+            onClick={onPress}
+            className='inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-current transition-colors hover:bg-default-100 focus-visible:bg-default-100 active:bg-default-200'
+        >
+            <PiMagnifyingGlass className='text-sm' />
+        </button>
     )
 }
 
@@ -177,7 +194,23 @@ function PdfEbook() {
         [setLocation],
     )
 
+    const [widthStep, setWidthStep] = useState(0)
+    const widthRef = useRef<HTMLDivElement>(null)
+    const [availableWidth, setAvailableWidth] = useState(0)
+
+    useEffect(() => {
+        const parent = widthRef.current?.parentElement
+        if (!parent) return
+        const update = () => setAvailableWidth(parent.clientWidth)
+        update()
+        const observer = new ResizeObserver(update)
+        observer.observe(parent)
+        return () => observer.disconnect()
+    }, [])
+
     if (!src) return null
+
+    const canWiden = widthStep > 0 || availableWidth > PDF_WIDTHS[0] + 1
 
     return (
         <motion.div
@@ -239,7 +272,11 @@ function PdfEbook() {
                             />
                         }
                     />
-                    <div className='mx-auto h-full w-full max-w-176'>
+                    <div
+                        ref={widthRef}
+                        className='mx-auto h-full w-full'
+                        style={{ maxWidth: PDF_WIDTHS[widthStep] }}
+                    >
                         <PdfReader
                             key={`${isFullViewport ? 'viewport' : 'window'}-${isFullScreen ? 'fullscreen' : 'normal'}`}
                             url={transformEbookUrl(src)}
@@ -253,6 +290,15 @@ function PdfEbook() {
                             onLocationChange={page => syncLocation(Number(page))}
                             onSelection={handlePdfSelection}
                             onSelectionClear={reset}
+                            footerLeading={
+                                canWiden ? (
+                                    <WidthToggle
+                                        onPress={() =>
+                                            setWidthStep(step => (step + 1) % PDF_WIDTHS.length)
+                                        }
+                                    />
+                                ) : null
+                            }
                             actions={
                                 <>
                                     <Button

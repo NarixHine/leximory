@@ -68,6 +68,8 @@ interface PdfiumReaderProps {
     highlights?: string[]
     /** Element the ToC drawer portals into, so it survives the Fullscreen API. */
     portalContainer?: Element
+    /** Optional control rendered to the left of the footer page counter. */
+    footerLeading?: React.ReactNode
 }
 
 function isPdfContextBoundary(text: string, index: number, sentenceEndMarkers: string) {
@@ -1197,6 +1199,7 @@ export default function PdfiumReader({
     onLocationChange,
     highlights = [],
     portalContainer,
+    footerLeading,
 }: PdfiumReaderProps) {
     const { engine, isLoading, error } = usePdfiumEngine()
     const containerRef = useRef<HTMLDivElement>(null)
@@ -1475,16 +1478,16 @@ export default function PdfiumReader({
                     </EmbedPDF>
                     {totalPages > 0 && (
                         <div
-                            className='mx-auto flex shrink-0 items-center justify-center gap-1 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
+                            className='mx-auto grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-1 border-x border-t border-default-200/60 py-3 text-center text-sm text-primary-400'
                             style={pageWidth ? { width: `${pageWidth}px` } : undefined}
                         >
-                            {tocItems.length > 0 && (
-                                <span aria-hidden className='h-6 w-6 shrink-0' />
-                            )}
+                            <div className='flex items-center justify-end'>{footerLeading}</div>
                             <span>
                                 {page} / {totalPages}
                             </span>
-                            {tocItems.length > 0 && <TocTrigger onPress={onOpen} />}
+                            <div className='flex items-center justify-start'>
+                                {tocItems.length > 0 && <TocTrigger onPress={onOpen} />}
+                            </div>
                         </div>
                     )}
                 </>
