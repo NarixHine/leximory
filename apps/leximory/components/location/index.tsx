@@ -143,11 +143,11 @@ const ResolvedLocationMap = memo(function ResolvedLocationMap({
                     </MapMarker>
                 )}
             </Map>
-            <div className='pointer-events-none absolute inset-x-2 top-2 z-10 flex justify-start'>
-                <div className='pointer-events-auto min-w-0 max-w-full overflow-x-auto rounded-full bg-content1/50 px-2.5 py-1 font-mono text-xs whitespace-nowrap text-default-600 backdrop-blur-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+            <div className='pointer-events-none absolute inset-x-2 top-2 z-10'>
+                <span className='pointer-events-auto inline rounded-md bg-content1/50 px-1.5 py-0 font-mono text-xs/4 text-default-600 backdrop-blur-sm [box-decoration-break:clone] [-webkit-box-decoration-break:clone]'>
                     {location.label}
                     {location.explanation ? `, ${location.explanation}` : ''}
-                </div>
+                </span>
             </div>
         </div>
     )
