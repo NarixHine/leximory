@@ -20,6 +20,7 @@ import {
     initialLocationAtom,
     isFullViewportAtom,
     locationAtom,
+    pdfZoomAtom,
     textAtom,
     titleAtom,
 } from '../../atoms'
@@ -204,7 +205,7 @@ function PdfEbook() {
         [setLocation],
     )
 
-    const [widthStep, setWidthStep] = useState(0)
+    const [widthStep, setWidthStep] = useAtom(pdfZoomAtom)
     const [widthDirection, setWidthDirection] = useState(1)
     const widthRef = useRef<HTMLDivElement>(null)
     const [availableWidth, setAvailableWidth] = useState(0)

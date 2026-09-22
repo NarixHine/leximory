@@ -145,7 +145,8 @@ export async function removeText({ id }: { id: string }) {
 /** Uploads an EPUB or PDF ebook, attaches it to a text, and auto-fills its emoji. */
 export async function saveEbook(id: string, form: FormData) {
     const ebook = form.get('ebook') as File
-    const isEpub = ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
+    const isEpub =
+        ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
     const isPdf = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf')
     if (!isEpub && !isPdf) {
         throw new Error('Not a supported ebook file')

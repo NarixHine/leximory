@@ -1,5 +1,5 @@
+import { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
-import { gateway } from '@ai-sdk/gateway'
 
 export const nanoAI = {
     model: 'google/gemini-3.8-flash',
@@ -37,7 +37,6 @@ export const miniAI = {
         google: {
             thinkingConfig: {
                 thinkingLevel: 'medium',
-                includeThoughts: true,
             },
             safetySettings: [
                 {
@@ -67,6 +66,9 @@ export const miniAI = {
  */
 export const locationAI = {
     model: 'zai/glm-5.3',
+    providerOptions: {
+        speed: 'fast',
+    } satisfies GatewayProviderOptions,
 } as const
 
 export const thinkAI = {

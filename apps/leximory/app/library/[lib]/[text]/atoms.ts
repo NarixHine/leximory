@@ -18,6 +18,8 @@ export const inlineModeAtom = atom(false)
 export const promptAtom = atom('')
 export const emojiAtom = atom<string | null>(null)
 export const isFullViewportAtom = atom(false)
+/** Persisted PDF width/zoom notch, so the chosen reading zoom survives reloads. */
+export const pdfZoomAtom = atomWithStorage<number>('persist-pdf-zoom', 0)
 export const bookmarksAtom = atom<EbookBookmark[]>([])
 /** Live reader position for the current text. Set once from the server, then owned by the client. */
 export const locationAtom = atom<string | number>(0)
