@@ -2,7 +2,7 @@ import 'server-only'
 import { generateObject, type Experimental_EvaluationQuestion } from 'ai'
 import { Lang } from '@repo/env/config'
 import { LocationSchema, type LocationKind, type ResolvedLocation } from '@/lib/location'
-import { locationAI } from './config'
+import { nanoAI } from './config'
 import { EVALUATION_STATE_CONTENT_LIMIT, type EvaluationState } from './evaluate'
 
 const LANG_NAME: Record<Lang, string> = {
@@ -64,10 +64,10 @@ export async function resolveLocation({
     const language = LANG_NAME[lang] ?? LANG_NAME.en
 
     const { object } = await generateObject({
-        ...locationAI,
+        ...nanoAI,
         schema: LocationSchema,
-        maxOutputTokens: 400,
-        reasoning: 'minimal',
+        maxOutputTokens: 500,
+        reasoning: 'low',
         prompt: `<task>
 你在解析一段${language}文本中被选中的语块所指涉的地理位置，用于在地图上标注。必须结合上下文，而不只看字面。
 </task>

@@ -60,19 +60,6 @@ export const miniAI = {
     },
 } as const
 
-/**
- * Fast path for the location resolver. It only has to fill a small structured
- * extraction, so a lite model with no thinking budget beats the annotation model on latency.
- */
-export const locationAI = {
-    model: 'zai/glm-5.3',
-    providerOptions: {
-        gateway: {
-            speed: 'fast',
-        } satisfies GatewayProviderOptions,
-    },
-} as const
-
 export const thinkAI = {
     model: 'google/gemini-3.7-flash',
     providerOptions: {
