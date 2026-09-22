@@ -1,4 +1,4 @@
-import { GatewayProviderOptions } from '@ai-sdk/gateway'
+import { type GatewayProviderOptions } from '@ai-sdk/gateway'
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
@@ -67,8 +67,10 @@ export const miniAI = {
 export const locationAI = {
     model: 'zai/glm-5.3',
     providerOptions: {
-        speed: 'fast',
-    } satisfies GatewayProviderOptions,
+        gateway: {
+            speed: 'fast',
+        } satisfies GatewayProviderOptions,
+    },
 } as const
 
 export const thinkAI = {

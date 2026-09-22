@@ -67,6 +67,7 @@ export async function resolveLocation({
         ...locationAI,
         schema: LocationSchema,
         maxOutputTokens: 400,
+        reasoning: 'minimal',
         prompt: `<task>
 你在解析一段${language}文本中被选中的语块所指涉的地理位置，用于在地图上标注。必须结合上下文，而不只看字面。
 </task>
