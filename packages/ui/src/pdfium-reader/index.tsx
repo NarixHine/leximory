@@ -640,8 +640,10 @@ const PAN_STALE_SAMPLE_MS = 70
 const PAN_MIN_FLING_VELOCITY = 0.05
 /** Ceiling so a hard flick cannot launch the page into orbit (px/ms). */
 const PAN_MAX_FLING_VELOCITY = 3.5
-/** How long restore keeps re-asserting to outlast the initial fit-width zoom. */
-const PAN_RESTORE_SETTLE_MS = 700
+/** How long reporting pauses after a gesture-less reflow trigger. */
+const REFLOW_SETTLE_MS = 1000
+/** How often the settle window re-checks for reflow resets. */
+const REFLOW_REASSERT_MS = 150
 /** Hard cap so a document that never lays out cannot block page reporting forever. */
 const PAN_RESTORE_MAX_MS = 10000
 /** How often the restore hold re-checks for a silent layout reset. */
@@ -945,10 +947,15 @@ function PageFrame({
  *    recalculated after the first layout and can scroll back to the top. The
  *    saved page is therefore re-asserted on every layout change (and polled)
  *    until the reader is actually used, so a late recalc cannot strand it.
- * 3. A viewport resize (fullscreen transitions included) and layout resets can
- *    momentarily report page 1. While the restore hold is active no page below
- *    the saved one is persisted, and reporting pauses for a settle window after
- *    any resize, so a transient value never overwrites the stored position.
+ * 3. Reflows that happen without any user gesture — fit-width recalculations
+ *    after a viewport resize, the browser reclaiming scroll position when a
+ *    fullscreen element enters or leaves the top layer, and app switches that
+ *    tear down and recreate the fullscreen space — can momentarily land the
+ *    scroller on page 1. During a settle window after any such trigger,
+ *    reporting pauses and the last confirmed page is re-asserted on deviation,
+ *    so a transient value can neither reach the host nor overwrite the user's
+ *    real position. Reporting also stays silent while the document is hidden,
+ *    because nothing user-driven can happen then.
  *
  * The hold releases on the first real interaction (or a hard cap) so it never
  * fights the reader, and reporting stays silent until the restore has settled
@@ -969,28 +976,47 @@ function ScrollBridge({
     const restoredRef = useRef(false)
     const [released, setReleased] = useState(false)
     const [settling, setSettling] = useState(false)
+    const settleTimerRef = useRef(0)
+    const anchorRef = useRef(1)
 
     if (!released && initialPage !== undefined) {
         targetRef.current = Math.round(initialPage)
     }
 
-    // A viewport resize (notably the fullscreen transition) can momentarily
-    // reset the scroller to page 1 while fit-width recalculates. Pausing
-    // reporting until the resize settles stops that transient value from
-    // overwriting the saved location.
-    useEffect(() => {
-        let timer = 0
-        const onResize = () => {
-            setSettling(true)
-            window.clearTimeout(timer)
-            timer = window.setTimeout(() => setSettling(false), PAN_RESTORE_SETTLE_MS)
-        }
-        window.addEventListener('resize', onResize)
-        return () => {
-            window.removeEventListener('resize', onResize)
-            window.clearTimeout(timer)
-        }
+    /**
+     * Opens a settle window after a gesture-less reflow trigger. While it is
+     * open, page reporting pauses and the anchor page is re-asserted on
+     * deviation, so reflow transients cannot overwrite the reading position.
+     */
+    const beginSettle = useCallback(() => {
+        window.clearTimeout(settleTimerRef.current)
+        settleTimerRef.current = window.setTimeout(() => setSettling(false), REFLOW_SETTLE_MS)
+        setSettling(true)
     }, [])
+
+    useEffect(() => () => window.clearTimeout(settleTimerRef.current), [])
+
+    // Gesture-less reflow triggers: window resizes, fullscreen transitions,
+    // and app/tab switches (focus + visibility). macOS reclaims the scroll
+    // position of a fullscreen space when another app takes over, so switching
+    // back must open a window even though nothing was resized.
+    useEffect(() => {
+        const onVisibility = () => {
+            if (!document.hidden) beginSettle()
+        }
+        window.addEventListener('resize', beginSettle)
+        window.addEventListener('focus', beginSettle)
+        document.addEventListener('visibilitychange', onVisibility)
+        document.addEventListener('fullscreenchange', beginSettle)
+        document.addEventListener('webkitfullscreenchange', beginSettle)
+        return () => {
+            window.removeEventListener('resize', beginSettle)
+            window.removeEventListener('focus', beginSettle)
+            document.removeEventListener('visibilitychange', onVisibility)
+            document.removeEventListener('fullscreenchange', beginSettle)
+            document.removeEventListener('webkitfullscreenchange', beginSettle)
+        }
+    }, [beginSettle])
 
     // The restore hold ends on the first real interaction, or after a hard cap
     // for a reader that is opened and never touched.
@@ -1032,7 +1058,6 @@ function ScrollBridge({
             if (scope.getLayout().virtualItems.length === 0) return
             if (scope.getCurrentPage() !== target) {
                 scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
-                return
             }
             restoredRef.current = true
         }
@@ -1041,7 +1066,7 @@ function ScrollBridge({
 
         apply()
         const timer = window.setTimeout(apply, 0)
-        if (released && restoredRef.current) {
+        if (released) {
             return () => window.clearTimeout(timer)
         }
 
@@ -1061,40 +1086,54 @@ function ScrollBridge({
         }
     }, [scroll, documentId, released, initialPage])
 
-    const anchorRef = useRef(1)
+    // While a settle window is open, pull the scroller back to the last page
+    // the user actually confirmed. Every reset emits commit updates, each of
+    // which re-checks the deviation; the interval also catches resets that
+    // arrive without one (e.g. a clamped scrollTop after a top-layer change).
+    useEffect(() => {
+        if (!settling || !scroll) return
+        const scope = scroll.forDocument(documentId)
+        const reassert = () => {
+            const anchor = anchorRef.current
+            if (anchor <= 1) return
+            if (state.totalPages <= 1) return
+            if (scope.getLayout().virtualItems.length === 0) return
+            if (scope.getCurrentPage() !== anchor) {
+                scope.scrollToPage({ pageNumber: anchor, behavior: 'instant' })
+            }
+        }
+        reassert()
+        const frame = requestAnimationFrame(reassert)
+        const interval = window.setInterval(reassert, REFLOW_REASSERT_MS)
+        return () => {
+            cancelAnimationFrame(frame)
+            window.clearInterval(interval)
+        }
+    }, [settling, scroll, documentId, state.currentPage, state.totalPages])
+
+    // Layout recalculations (initial layout, rotation, spread, strategy
+    // changes) reflow every page without a gesture, so they open their own
+    // settle window. Transient page-one values are thereby replaced with a
+    // re-assertion of the reader's actual position.
+    useEffect(() => {
+        if (!scroll) return
+        const layoutChange = scroll.onLayoutChange(event => {
+            if (event.documentId !== documentId) return
+            beginSettle()
+        })
+        return () => layoutChange()
+    }, [scroll, documentId, beginSettle])
 
     useEffect(() => {
         if (settling) return
+        if (document.hidden) return
         if (state.totalPages <= 1) return
-        // A freshly mounted reader initially reports page 1 while the document
-        // lays out. Never publish that placeholder before the requested page
-        // has actually been reached, even if the user interacts during restore.
-        if (!restoredRef.current) return
         // While the restore hold is active, never persist a page below the
         // saved one: a lower value is a transient from layout recalculation.
         if (!released && targetRef.current > 1 && state.currentPage < targetRef.current) return
         anchorRef.current = state.currentPage
         onPageChange(state.currentPage, state.totalPages)
     }, [released, settling, state.currentPage, state.totalPages, onPageChange])
-
-    // A fit-width recalculation (host widening/narrowing, fullscreen, rotation)
-    // reflows every page, so the unchanged pixel offset lands on different
-    // content. Re-scroll to the page the reader was on before the reflow.
-    useEffect(() => {
-        if (!scroll || !released) return
-        const scope = scroll.forDocument(documentId)
-        const layoutChange = scroll.onLayoutChange(event => {
-            if (event.documentId !== documentId) return
-            const page = anchorRef.current
-            if (page <= 1) return
-            requestAnimationFrame(() => {
-                if (scope.getCurrentPage() !== page) {
-                    scope.scrollToPage({ pageNumber: page, behavior: 'instant' })
-                }
-            })
-        })
-        return () => layoutChange()
-    }, [scroll, documentId, released])
 
     return null
 }
