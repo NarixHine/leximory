@@ -15,10 +15,13 @@ export const LOCATION_DETECTION_THRESHOLD = 0.5
 /**
  * Structured output of the location resolver. `bbox` is `[west, south, east, north]`
  * for areal features; `lat`/`lng` pin point features. Country mentions carry an
- * ISO 3166-1 alpha-2 code so the client can draw the real border.
+ * ISO 3166-1 alpha-2 code so the client can draw the real border. `explanation`
+ * is an optional trailing clause (max 6 words) that is displayed after the label,
+ * joined with a comma, when the link to the selection is not immediately obvious.
  */
 export const LocationSchema = z.object({
     label: z.string(),
+    explanation: z.string().nullable(),
     kind: z.enum(LOCATION_KINDS),
     country: z.string().nullable(),
     countryIso: z.string().nullable(),

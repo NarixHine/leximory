@@ -150,7 +150,10 @@ const ResolvedLocationMap = memo(function ResolvedLocationMap({
                 color='default'
                 className='font-mono text-default-600 bg-content1/40 absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] backdrop-blur-sm'
             >
-                <span className='truncate'>{location.label}</span>
+                <span className='truncate'>
+                    {location.label}
+                    {location.explanation ? `, ${location.explanation}` : ''}
+                </span>
             </Chip>
         </div>
     )

@@ -79,6 +79,7 @@ export async function resolveLocation({
 - 若为面状实体（sea、region、山脉、沙漠）：bbox 填 [西, 南, 东, 北] 四个经纬度边界值，lat、lng 可为 null。
 - country 填该实体今天所属的国家名称（用${language}书写）；无法确定时为 null。
 - label 用${language}书写，格式固定为"地名 / 国家 / 洲"，即用" / "依次连接地名、所属国家、所属大洲；仅当这个国家对${language}读者来说比较陌生、需要靠大洲来帮助定位时，才在末尾保留大洲，否则省略洲名。label 会被原样展示，不要加入其他内容或标点。
+- explanation 用地道的${language}点出该地点与选中内容的关联，最多 6 个词，不加句号、不重复地名。只有当关联并非一目了然（需要背景知识才能理解为什么出现这个地名）时才填写；若地名本身就是选中内容或关联显而易见，则设为 null。
 - confidence 为 0 到 1 的小数，表示你对定位准确度的把握；不确定唯一实体时把 confidence 设低。
 </rules>
 
