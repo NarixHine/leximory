@@ -22,6 +22,7 @@ import {
     setLocationDetectionCache,
 } from '@/server/db/ai-cache'
 import { getCountryFeature } from '@/server/geo/countries'
+import { after } from 'next/server'
 
 const hashPrompt = (value: string) => crypto.createHash('sha256').update(value).digest('hex')
 
@@ -49,7 +50,9 @@ export async function detectLocation({
             isLocation,
             kind: isLocation ? (answers.kind.choice as LocationKind) : null,
         }
-        await setLocationDetectionCache({ hash, detection })
+        after(async () => {
+            await setLocationDetectionCache({ hash, detection })
+        })
         return detection
     } catch (error) {
         console.error('[location] detection failed', error)
@@ -84,7 +87,9 @@ export async function generateLocation({
             console.error('[location] resolution failed', error)
             return { error: '定位失败，请稍后重试。' }
         }
-        await setLocationCache({ hash, location: resolved })
+        after(async () => {
+            await setLocationCache({ hash, location: resolved })
+        })
     }
 
     const location: LocationPayload = {

@@ -1,4 +1,5 @@
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
+import { gateway } from '@ai-sdk/gateway'
 
 export const nanoAI = {
     model: 'google/gemini-3.8-flash',
@@ -62,16 +63,10 @@ export const miniAI = {
 
 /**
  * Fast path for the location resolver. It only has to fill a small structured
- * extraction (the gate and the kind already come from Jev), so a lite model
- * with no thinking budget beats the annotation model on latency.
+ * extraction, so a lite model with no thinking budget beats the annotation model on latency.
  */
 export const locationAI = {
-    model: 'google/gemini-3.5-flash-lite',
-    providerOptions: {
-        google: {
-            safetySettings: [...nanoAI.providerOptions.google.safetySettings],
-        } satisfies GoogleLanguageModelOptions,
-    },
+    model: 'zai/glm-5.3',
 } as const
 
 export const thinkAI = {

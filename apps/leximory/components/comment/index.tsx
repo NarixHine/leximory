@@ -568,7 +568,11 @@ function Comment({
                             />
                         )}
                         {showLocation && (
-                            <LocationMap prompt={activePrompt} revealed={isVisible} />
+                            <LocationMap
+                                prompt={activePrompt}
+                                revealed={isVisible}
+                                className={!portions[2] ? 'mb-3' : undefined}
+                            />
                         )}
                         {portions[2] && (
                             <>
