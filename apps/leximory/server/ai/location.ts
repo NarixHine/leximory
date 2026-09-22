@@ -1,8 +1,8 @@
 import 'server-only'
 import { generateObject, type Experimental_EvaluationQuestion } from 'ai'
 import { Lang } from '@repo/env/config'
-import { LocationSchema, type ResolvedLocation } from '@/lib/location'
-import { nanoAI } from './config'
+import { LocationSchema, type LocationKind, type ResolvedLocation } from '@/lib/location'
+import { locationAI } from './config'
 import { EVALUATION_STATE_CONTENT_LIMIT, type EvaluationState } from './evaluate'
 
 const LANG_NAME: Record<Lang, string> = {
@@ -14,8 +14,9 @@ const LANG_NAME: Record<Lang, string> = {
 }
 
 /**
- * Boolean Jev question: does the selected text uniquely refer to a place that
- * can be pinned on a map? Runs in parallel with the vocabulary annotation.
+ * One Jev call does both typed decisions: is there a mappable place, and which
+ * kind is it? Runs in parallel with the vocabulary annotation, and hands the
+ * resolver a kind prior so the (fast) model does less reasoning.
  */
 export function locationDetection({ prompt }: { prompt: string }) {
     const state: EvaluationState = {
@@ -32,6 +33,19 @@ export function locationDetection({ prompt }: { prompt: string }) {
                 false: '没有地理实体、泛指、虚构或无法唯一确定',
             },
         },
+        kind: {
+            type: 'choice',
+            instructions:
+                '若存在地理实体，选出最接近的类别；若不存在，任选一项即可（以 hasLocation 为准）。历史地名按它今天对应的实体归类。',
+            criteria: {
+                country: '国家、主权政治实体',
+                city: '城市、城镇、聚落',
+                region: '省、州、郡、地区、岛屿、沙漠',
+                mountain: '山脉、山峰',
+                sea: '海洋、海湾、湖泊、河流',
+                landmark: '遗迹、建筑、地标',
+            },
+        },
     } satisfies Record<string, Experimental_EvaluationQuestion>
 
     return { state, questions }
@@ -41,22 +55,25 @@ export function locationDetection({ prompt }: { prompt: string }) {
 export async function resolveLocation({
     prompt,
     lang,
+    kind,
 }: {
     prompt: string
     lang: Lang
+    kind: LocationKind | null
 }): Promise<ResolvedLocation> {
     const language = LANG_NAME[lang] ?? LANG_NAME.en
 
     const { object } = await generateObject({
-        ...nanoAI,
+        ...locationAI,
         schema: LocationSchema,
+        maxOutputTokens: 400,
         prompt: `<task>
 你在解析一段${language}文本中被选中的语块所指涉的地理位置，用于在地图上标注。必须结合上下文，而不只看字面。
 </task>
 
 <rules>
 - 只输出一个最主要的实体。历史地名、旧称、别称都要转换成今天依然存在的城市、国家或地区。
-- kind 只能是 country、city、region、mountain、sea、landmark 之一：国家用 country；城市用 city；省、州、郡、岛屿、沙漠等区域用 region；山脉、山峰用 mountain；海洋、海湾、湖泊、河流用 sea；遗迹、建筑、地标用 landmark。
+- 预先判定的类别是 ${kind ?? '未定'}（country、city、region、mountain、sea、landmark 之一）；除非明显不符，否则沿用该类别。
 - 若 kind 为 country：countryIso 填该国的 ISO 3166-1 alpha-2 代码（如 JP、FR、CN、NL），lat、lng、bbox 可为 null。
 - 若为点状实体（city、landmark、单座山峰）：lat、lng 填现代坐标（WGS84 十进制度），bbox 为 null。
 - 若为面状实体（sea、region、山脉、沙漠）：bbox 填 [西, 南, 东, 北] 四个经纬度边界值，lat、lng 可为 null。

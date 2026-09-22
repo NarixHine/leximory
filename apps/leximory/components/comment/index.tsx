@@ -151,7 +151,7 @@ function Comment({
 
     const [activePrompt, setActivePrompt] = useState(prompt ?? '')
 
-    const { data: streamData = [], isPending, isFetching } = useQuery(
+    const { data: streamData = [], isPending } = useQuery(
         commentQueryOptions(activePrompt, lang, error =>
             toast.error(error, {
                 duration: 10000,
@@ -568,11 +568,7 @@ function Comment({
                             />
                         )}
                         {showLocation && (
-                            <LocationMap
-                                prompt={activePrompt}
-                                revealed={isVisible}
-                                ready={!isFetching}
-                            />
+                            <LocationMap prompt={activePrompt} revealed={isVisible} />
                         )}
                         {portions[2] && (
                             <>

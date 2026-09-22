@@ -60,6 +60,20 @@ export const miniAI = {
     },
 } as const
 
+/**
+ * Fast path for the location resolver. It only has to fill a small structured
+ * extraction (the gate and the kind already come from Jev), so a lite model
+ * with no thinking budget beats the annotation model on latency.
+ */
+export const locationAI = {
+    model: 'google/gemini-3.5-flash-lite',
+    providerOptions: {
+        google: {
+            safetySettings: [...nanoAI.providerOptions.google.safetySettings],
+        } satisfies GoogleLanguageModelOptions,
+    },
+} as const
+
 export const thinkAI = {
     model: 'google/gemini-3.7-flash',
     providerOptions: {

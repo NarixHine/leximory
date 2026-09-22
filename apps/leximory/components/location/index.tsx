@@ -8,7 +8,11 @@ import { useAtomValue } from 'jotai'
 import type { Feature } from 'geojson'
 import { langAtom } from '@/app/library/[lib]/atoms'
 import { detectLocation, generateLocation } from '@/service/location'
-import { LOCATION_CONFIDENCE_THRESHOLD, type LocationPayload } from '@/lib/location'
+import {
+    LOCATION_CONFIDENCE_THRESHOLD,
+    type LocationKind,
+    type LocationPayload,
+} from '@/lib/location'
 import { Map, MapControls, MapGeoJSON, MapMarker, MarkerContent, useMap } from '@/components/map'
 import { cn } from '@/lib/utils'
 import { Lang } from '@repo/env/config'
@@ -35,10 +39,15 @@ const detectionQueryOptions = (prompt: string) =>
     })
 
 /** Only fired once the gate says the selection actually names a place. */
-const locationQueryOptions = (prompt: string, lang: Lang, enabled: boolean) =>
+const locationQueryOptions = (
+    prompt: string,
+    lang: Lang,
+    kind: LocationKind | null,
+    enabled: boolean,
+) =>
     queryOptions({
-        queryKey: ['location', prompt, lang],
-        queryFn: () => generateLocation({ prompt, lang }),
+        queryKey: ['location', prompt, lang, kind],
+        queryFn: () => generateLocation({ prompt, lang, kind }),
         staleTime: Infinity,
         enabled: enabled && prompt.length > 0,
     })
@@ -154,31 +163,24 @@ const ResolvedLocationMap = memo(function ResolvedLocationMap({
 export default function LocationMap({
     prompt,
     revealed,
-    ready = true,
     className,
 }: {
     prompt: string
     revealed?: boolean
-    /** False while the annotation is still streaming; nothing may render then. */
-    ready?: boolean
     className?: string
 }) {
     const lang = useAtomValue(langAtom)
 
     const detection = useQuery(detectionQueryOptions(prompt))
-    const isLocation =
-        detection.data && 'isLocation' in detection.data ? detection.data.isLocation : false
-    const resolution = useQuery(locationQueryOptions(prompt, lang, isLocation))
+    const detected = detection.data && 'isLocation' in detection.data ? detection.data : null
+    const isLocation = detected?.isLocation ?? false
+    const kind = detected?.kind ?? null
+    const resolution = useQuery(locationQueryOptions(prompt, lang, kind, isLocation))
 
     const resolved =
         resolution.data && 'location' in resolution.data ? resolution.data.location : null
     const location =
         resolved && resolved.confidence >= LOCATION_CONFIDENCE_THRESHOLD ? resolved : null
-
-    // Hard guarantee: while the annotation is streaming this component does no
-    // DOM, layout or WebGL work at all. The Jev gate and the resolver still run
-    // in parallel, so the data is already there the moment `ready` flips.
-    if (!ready) return null
 
     if (!prompt || !revealed || !isLocation) return null
 

@@ -102,27 +102,9 @@ span.smallcaps button {
   mix-blend-mode: screen;
 }
 
-/* MapLibre chrome is stripped of backgrounds, borders and shadows; the compact
-   ⓘ toggle stays as the only attribution affordance. */
+/* MapLibre popup chrome stripped of backgrounds, borders and shadows. The
+   attribution control is disabled in favour of our own collapsed toggle. */
 @layer base {
-  .maplibregl-ctrl-attrib,
-  .maplibregl-ctrl-attrib.maplibregl-compact {
-    background-color: transparent !important;
-    color: var(--heroui-default-400) !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    font-size: 10px !important;
-  }
-
-  .maplibregl-ctrl-attrib a {
-    color: var(--heroui-default-400) !important;
-  }
-
-  .maplibregl-ctrl-attrib a:hover {
-    color: var(--heroui-foreground) !important;
-  }
-
   .maplibregl-popup-content {
     background: transparent !important;
     box-shadow: none !important;

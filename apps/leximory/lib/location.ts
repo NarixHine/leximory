@@ -35,6 +35,9 @@ export type LocationPayload = ResolvedLocation & {
     feature?: Feature | null
 }
 
+/** Typed Jev verdict: whether a place is present, and which kind it looks like. */
+export type LocationDetection = { isLocation: boolean; kind: LocationKind | null }
+
 /** Result shared by the two location server actions. */
-export type LocationDetectionResult = { isLocation: boolean } | { error: string }
+export type LocationDetectionResult = LocationDetection | { error: string }
 export type LocationResult = { location: LocationPayload } | { error: string }

@@ -4,11 +4,14 @@ import crypto from 'crypto'
 import { ACTION_QUOTA_COST, type Lang } from '@repo/env/config'
 import { getUserOrThrow } from '@repo/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
-import type {
-    LocationDetectionResult,
-    LocationPayload,
-    LocationResult,
-    ResolvedLocation,
+import {
+    LOCATION_DETECTION_THRESHOLD,
+    type LocationDetection,
+    type LocationDetectionResult,
+    type LocationKind,
+    type LocationPayload,
+    type LocationResult,
+    type ResolvedLocation,
 } from '@/lib/location'
 import { runEvaluation } from '@/server/ai/evaluate'
 import { locationDetection, resolveLocation } from '@/server/ai/location'
@@ -32,7 +35,7 @@ export async function detectLocation({
     const hash = hashPrompt(prompt)
 
     const cached = await getLocationDetectionCache({ hash })
-    if (cached !== null) return { isLocation: cached }
+    if (cached !== null) return cached
 
     // Delay the quota revalidation so it never refreshes the UI mid-annotation.
     if (await incrCommentaryQuota(ACTION_QUOTA_COST.locationDetection, undefined, true)) {
@@ -41,9 +44,13 @@ export async function detectLocation({
 
     try {
         const { answers } = await runEvaluation(locationDetection({ prompt }))
-        const isLocation = answers.hasLocation.probability >= 0.5
-        await setLocationDetectionCache({ hash, isLocation })
-        return { isLocation }
+        const isLocation = answers.hasLocation.probability >= LOCATION_DETECTION_THRESHOLD
+        const detection: LocationDetection = {
+            isLocation,
+            kind: isLocation ? (answers.kind.choice as LocationKind) : null,
+        }
+        await setLocationDetectionCache({ hash, detection })
+        return detection
     } catch (error) {
         console.error('[location] detection failed', error)
         return { error: '定位失败，请稍后重试。' }
@@ -54,9 +61,11 @@ export async function detectLocation({
 export async function generateLocation({
     prompt,
     lang,
+    kind,
 }: {
     prompt: string
     lang: Lang
+    kind: LocationKind | null
 }): Promise<LocationResult> {
     await getUserOrThrow()
     const hash = hashPrompt(`${lang}:${prompt}`)
@@ -70,7 +79,7 @@ export async function generateLocation({
             return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
         }
         try {
-            resolved = await resolveLocation({ prompt, lang })
+            resolved = await resolveLocation({ prompt, lang, kind })
         } catch (error) {
             console.error('[location] resolution failed', error)
             return { error: '定位失败，请稍后重试。' }

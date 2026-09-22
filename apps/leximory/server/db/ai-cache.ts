@@ -1,7 +1,7 @@
 import 'server-only'
 import { redis } from '@repo/kv/redis'
 import { seconds } from 'itty-time'
-import type { ResolvedLocation } from '@/lib/location'
+import type { LocationDetection, ResolvedLocation } from '@/lib/location'
 
 export const getAnnotationCache = async ({ hash }: { hash: string }) => {
     const cache = (await redis.get(`annotation:${hash}`)) as string | null
@@ -14,27 +14,27 @@ export const setAnnotationCache = async ({ hash, cache }: { hash: string; cache:
 }
 
 /**
- * Cached Jev verdict for whether a selection refers to a mappable place.
- * Upstash auto-deserializes JSON, so a boolean round-trips as a boolean —
- * stringly-typed values would come back as numbers and never compare equal.
+ * Cached Jev verdict (place + kind) for a selection. Upstash auto-deserializes
+ * JSON, so objects round-trip natively — never store stringly-typed values.
+ * `v2` avoids colliding with the previous boolean-shaped entries.
  */
 export const getLocationDetectionCache = async ({ hash }: { hash: string }) =>
-    (await redis.get<boolean>(`location-detect:${hash}`)) ?? null
+    (await redis.get<LocationDetection>(`location-detect:v2:${hash}`)) ?? null
 
 export const setLocationDetectionCache = async ({
     hash,
-    isLocation,
+    detection,
 }: {
     hash: string
-    isLocation: boolean
+    detection: LocationDetection
 }) => {
-    await redis.set(`location-detect:${hash}`, isLocation)
-    await redis.expire(`location-detect:${hash}`, seconds('1 day'))
+    await redis.set(`location-detect:v2:${hash}`, detection)
+    await redis.expire(`location-detect:v2:${hash}`, seconds('1 day'))
 }
 
 /** Cached resolved location, keyed by the same hash as its detection. */
 export const getLocationCache = async ({ hash }: { hash: string }) =>
-    (await redis.get<ResolvedLocation>(`location:${hash}`)) ?? null
+    (await redis.get<ResolvedLocation>(`location:v2:${hash}`)) ?? null
 
 export const setLocationCache = async ({
     hash,
@@ -43,6 +43,6 @@ export const setLocationCache = async ({
     hash: string
     location: ResolvedLocation
 }) => {
-    await redis.set(`location:${hash}`, location)
-    await redis.expire(`location:${hash}`, seconds('1 day'))
+    await redis.set(`location:v2:${hash}`, location)
+    await redis.expire(`location:v2:${hash}`, seconds('1 day'))
 }
