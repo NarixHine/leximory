@@ -149,6 +149,8 @@ function PdfEbook() {
     const setBookmarks = useSetAtom(bookmarksAtom)
     const [location, setLocation] = useAtom(locationAtom)
     const syncLocation = useLocationSync(text, setLocation)
+    const lastPdfPageRef = useRef(Math.max(1, Number(location) || 1))
+    const fullscreenRestorePageRef = useRef<number | null>(null)
     const [selection, setSelection] = useState<Selection | null>(null)
     const [selectedText, setSelectedText] = useState<string | null>(null)
     const [rect, setRect] = useState({
@@ -192,6 +194,7 @@ function PdfEbook() {
             setSelection(null)
             const annotationPrompt = context ?? `<must>${nextText}</must>`
             setSelectedText(annotationPrompt)
+            lastPdfPageRef.current = page
             setLocation(String(page))
             setRect({
                 left: selectionRect.left,
@@ -203,6 +206,33 @@ function PdfEbook() {
             setBookmark({ quote, chapter: `Page ${page}`, location: String(page) })
         },
         [setLocation],
+    )
+
+    const handlePdfLocationChange = useCallback(
+        (page: number) => {
+            const restorePage = fullscreenRestorePageRef.current
+            if (restorePage !== null && page < restorePage) return
+            if (restorePage !== null && page >= restorePage) {
+                fullscreenRestorePageRef.current = null
+            }
+            lastPdfPageRef.current = page
+            syncLocation(page)
+        },
+        [syncLocation],
+    )
+
+    const handleFullscreenChange = useCallback(
+        (next: boolean) => {
+            const page = lastPdfPageRef.current
+            if (page > 1) {
+                // Fullscreen teardown remounts the PDF reader. Keep its last
+                // confirmed page authoritative while the replacement lays out.
+                fullscreenRestorePageRef.current = page
+                syncLocation(page)
+            }
+            setIsFullScreen(next)
+        },
+        [setIsFullScreen, syncLocation],
     )
 
     const [widthStep, setWidthStep] = useAtom(pdfZoomAtom)
@@ -261,7 +291,7 @@ function PdfEbook() {
         >
             <FullScreen
                 handle={handleFullScreen}
-                onChange={setIsFullScreen}
+                onChange={handleFullscreenChange}
                 className={cn(
                     'block relative dark:opacity-95',
                     isFullViewport ? 'h-full' : 'h-[80dvh]',
@@ -314,7 +344,7 @@ function PdfEbook() {
                             initialPage={Number(location) || 1}
                             highlights={highlights}
                             portalContainer={portalContainer ?? undefined}
-                            onLocationChange={page => syncLocation(Number(page))}
+                            onLocationChange={page => handlePdfLocationChange(Number(page))}
                             onSelection={handlePdfSelection}
                             onSelectionClear={reset}
                             footerLeading={
