@@ -101,18 +101,3 @@ span.smallcaps button {
   fill-opacity: 0.35;
   mix-blend-mode: screen;
 }
-
-/* MapLibre popup chrome stripped of backgrounds, borders and shadows. The
-   attribution control is disabled in favour of our own collapsed toggle. */
-@layer base {
-  .maplibregl-popup-content {
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-  }
-
-  .maplibregl-popup-tip {
-    display: none !important;
-  }
-}

@@ -1032,6 +1032,7 @@ function ScrollBridge({
             if (scope.getLayout().virtualItems.length === 0) return
             if (scope.getCurrentPage() !== target) {
                 scope.scrollToPage({ pageNumber: target, behavior: 'instant' })
+                return
             }
             restoredRef.current = true
         }
@@ -1040,7 +1041,7 @@ function ScrollBridge({
 
         apply()
         const timer = window.setTimeout(apply, 0)
-        if (released) {
+        if (released && restoredRef.current) {
             return () => window.clearTimeout(timer)
         }
 
@@ -1065,6 +1066,10 @@ function ScrollBridge({
     useEffect(() => {
         if (settling) return
         if (state.totalPages <= 1) return
+        // A freshly mounted reader initially reports page 1 while the document
+        // lays out. Never publish that placeholder before the requested page
+        // has actually been reached, even if the user interacts during restore.
+        if (!restoredRef.current) return
         // While the restore hold is active, never persist a page below the
         // saved one: a lower value is a transient from layout recalculation.
         if (!released && targetRef.current > 1 && state.currentPage < targetRef.current) return
