@@ -1,4 +1,3 @@
-import { type GatewayProviderOptions } from '@ai-sdk/gateway'
 import { GoogleLanguageModelOptions } from '@ai-sdk/google'
 
 export const nanoAI = {
@@ -7,7 +6,6 @@ export const nanoAI = {
         google: {
             thinkingConfig: {
                 thinkingLevel: 'low',
-                includeThoughts: true,
             },
             safetySettings: [
                 {
@@ -56,6 +54,19 @@ export const miniAI = {
                     threshold: 'BLOCK_NONE',
                 },
             ],
+        } satisfies GoogleLanguageModelOptions,
+    },
+} as const
+
+/**
+ * Fast path for the location resolver. It only has to fill a small structured
+ * extraction, so a lite model with low reasoning beats the annotation model on latency.
+ */
+export const locationAI = {
+    model: 'google/gemini-3.5-flash-lite',
+    providerOptions: {
+        google: {
+            safetySettings: [...nanoAI.providerOptions.google.safetySettings],
         } satisfies GoogleLanguageModelOptions,
     },
 } as const

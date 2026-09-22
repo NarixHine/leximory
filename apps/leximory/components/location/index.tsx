@@ -2,7 +2,6 @@
 
 import { memo, useMemo } from 'react'
 import { queryOptions, useQuery } from '@tanstack/react-query'
-import { Chip } from '@heroui/chip'
 import { Spinner } from '@heroui/spinner'
 import { useAtomValue } from 'jotai'
 import type { Feature } from 'geojson'
@@ -144,17 +143,12 @@ const ResolvedLocationMap = memo(function ResolvedLocationMap({
                     </MapMarker>
                 )}
             </Map>
-            <Chip
-                size='sm'
-                variant='flat'
-                color='default'
-                className='font-mono text-default-600 bg-content1/40 absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] backdrop-blur-sm'
-            >
-                <span className='truncate'>
+            <div className='pointer-events-none absolute inset-x-2 top-2 z-10 flex justify-start'>
+                <div className='pointer-events-auto min-w-0 max-w-full overflow-x-auto rounded-full bg-content1/50 px-2.5 py-1 font-mono text-xs whitespace-nowrap text-default-600 backdrop-blur-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
                     {location.label}
                     {location.explanation ? `, ${location.explanation}` : ''}
-                </span>
-            </Chip>
+                </div>
+            </div>
         </div>
     )
 })
