@@ -21,6 +21,9 @@ export interface LanguageStrategy {
     defineClassName: string
     dictionaryLink?: (word: string) => string
     isDropcapEnabled: boolean
+    // Whether words are separated by spaces (false for scripts like Chinese/Japanese,
+    // where adjacent inline highlights would otherwise visually merge)
+    hasWordSpacing: boolean
     reviewLabels?: {
         lockMessage: (requiredTranslations: number) => ReactNode
     }

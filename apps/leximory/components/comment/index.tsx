@@ -128,6 +128,7 @@ function Comment({
     const isReaderMode = useAtomValue(isReaderModeAtom)
     const isDeleteable = deleteId && deleteId !== 'undefined'
     const lang = useAtomValue(langAtom)
+    const { hasWordSpacing } = getLanguageStrategy(lang)
     const parsedParams = parseCommentParams(params)
     const [portions, setPortions] = useState(parsedParams)
     const isOnDemand = parsedParams.length === 1
@@ -369,7 +370,11 @@ function Comment({
                                 className={cn(
                                     !isReaderMode && [
                                         'box-decoration-clone',
-                                        '[box-shadow:inset_0_-0.5em_0_0_var(--tw-shadow-color)]',
+                                        'bg-[linear-gradient(var(--tw-shadow-color),var(--tw-shadow-color))]',
+                                        'bg-no-repeat bg-bottom bg-origin-content bg-clip-content',
+                                        hasWordSpacing
+                                            ? 'bg-size-[100%_0.5em]'
+                                            : 'bg-size-[calc(100%-0.2em)_0.5em]',
                                         isOnDemand
                                             ? 'shadow-emerald-300/30'
                                             : 'shadow-default-300/70',

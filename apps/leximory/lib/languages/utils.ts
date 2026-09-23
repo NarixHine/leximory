@@ -14,6 +14,7 @@ export function createLanguageStrategy(
         defineClassName: 'font-formal',
         periodMark: '.',
         isDropcapEnabled: false,
+        hasWordSpacing: true,
         selectionContextRadius: 500,
         sentenceEndMarkers: '.!?…',
     }

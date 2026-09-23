@@ -58,6 +58,7 @@ export const chineseStrategy = createLanguageStrategy({
     maxArticleLength: 5000,
     selectionContextRadius: 200,
     sentenceEndMarkers: '。！？…',
+    hasWordSpacing: false,
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])
@@ -107,6 +108,7 @@ export const japaneseStrategy = createLanguageStrategy({
     maxArticleLength: 10000,
     selectionContextRadius: 300,
     sentenceEndMarkers: '。！？…',
+    hasWordSpacing: false,
     FormattedReadingTime: (text: string) => {
         const sanitizedText = text.replace(commentSyntaxRegex, (_, p1) => p1)
         const charCount = (sanitizedText.match(/[\u3040-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g) ?? [])
