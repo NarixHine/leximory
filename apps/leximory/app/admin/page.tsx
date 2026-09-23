@@ -1,52 +1,59 @@
 import { Suspense } from 'react'
-import AdminOverview from './components/overview'
-import UsersList from './components/user-list'
-import { Card, CardHeader } from '@heroui/card'
-import { Spinner } from '@heroui/spinner'
-import { getUsersOverview, getAllUsers } from './data-fetching'
+import { getAdminOverview } from './data-fetching'
+import OverviewStats from './components/overview-stats'
+import SignupsChart, { SignupsChartSkeleton } from './components/signups-chart'
+import PlanDistribution from './components/plan-distribution'
+import RecentSignups from './components/recent-signups'
 
 export default function AdminPage() {
     return (
-        <Suspense>
-            <AdminPageContent />
+        <Suspense fallback={<OverviewSkeleton />}>
+            <AdminOverviewContent />
         </Suspense>
     )
 }
 
-async function AdminPageContent() {
-    const [overview, users] = await Promise.all([getUsersOverview(), getAllUsers()])
+async function AdminOverviewContent() {
+    const overview = await getAdminOverview()
 
     return (
         <div className='flex flex-col gap-6'>
-            <header>
-                <h2 className={'text-4xl font-medium text-center'}>Admin Panel</h2>
-            </header>
-            {/* Top Grid Section */}
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                {/* System Overview - Takes 2 columns */}
-                <div>
-                    <AdminOverview overview={overview} />
-                </div>
+            <section className='flex flex-col gap-1'>
+                <h2 className='font-formal text-2xl tracking-tight'>Overview</h2>
+            </section>
 
-                {/* Quick Actions Card */}
-                <div>
-                    <Card className='h-full p-4' shadow='sm'>
-                        <CardHeader className='pb-3'>
-                            <h3 className='text-lg'>Quick Actions</h3>
-                        </CardHeader>
-                    </Card>
-                </div>
+            <OverviewStats overview={overview} />
+
+            <SignupsChart data={overview.signupsByDay} />
+
+            <div className='grid grid-cols-1 gap-3 lg:grid-cols-2'>
+                <PlanDistribution overview={overview} />
+                <RecentSignups users={overview.recentUsers} />
             </div>
+        </div>
+    )
+}
 
-            <Suspense
-                fallback={
-                    <div className='flex justify-center items-center p-12'>
-                        <Spinner size='lg' />
-                    </div>
-                }
-            >
-                <UsersList users={users} />
-            </Suspense>
+function OverviewSkeleton() {
+    return (
+        <div className='flex flex-col gap-6'>
+            <div className='flex flex-col gap-2'>
+                <div className='h-7 w-32 animate-pulse rounded-full bg-default-100' />
+                <div className='h-3 w-80 max-w-full animate-pulse rounded-full bg-default-100' />
+            </div>
+            <div className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                        key={index}
+                        className='min-h-30 animate-pulse rounded-2xl bg-default-100'
+                    />
+                ))}
+            </div>
+            <SignupsChartSkeleton />
+            <div className='grid grid-cols-1 gap-3 lg:grid-cols-2'>
+                <div className='h-56 animate-pulse rounded-2xl bg-default-100' />
+                <div className='h-56 animate-pulse rounded-2xl bg-default-100' />
+            </div>
         </div>
     )
 }
