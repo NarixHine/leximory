@@ -163,6 +163,7 @@ CREATE TABLE "texts" (
     "has_ebook" boolean DEFAULT false NOT NULL,
     "topics" text[],
     "no" integer,
+    "emoji" text,
     "created_at" timestamp with time zone,
     CONSTRAINT "texts_lib_fkey" FOREIGN KEY ("lib") REFERENCES "libraries" ("id") ON DELETE CASCADE
 );
@@ -175,16 +176,6 @@ CREATE TABLE "subs" (
     "hour" smallint NOT NULL,
     "created_at" timestamp with time zone,
     CONSTRAINT "subs_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
-);
-
-CREATE TABLE "memories" (
-    "id" serial PRIMARY KEY,
-    "created_at" timestamp with time zone NOT NULL,
-    "creator" uuid NOT NULL,
-    "content" text NOT NULL,
-    "public" boolean NOT NULL,
-    "streak" boolean NOT NULL,
-    CONSTRAINT "memories_creator_fkey" FOREIGN KEY ("creator") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "reads" (
@@ -210,15 +201,76 @@ CREATE TABLE "bookmarks" (
     CONSTRAINT "bookmarks_uid_fkey" FOREIGN KEY ("uid") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
+CREATE TABLE "papers" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "creator" uuid NOT NULL,
+    "title" text DEFAULT ''::text NOT NULL,
+    "content" jsonb DEFAULT '{}'::jsonb NOT NULL,
+    "tags" text[] DEFAULT '{}'::text[] NOT NULL,
+    "public" boolean DEFAULT false NOT NULL,
+    "is_pinned" boolean DEFAULT false NOT NULL,
+    "passcode" text,
+    CONSTRAINT "papers_creator_fkey" FOREIGN KEY ("creator") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "notes" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "creator" uuid NOT NULL,
+    "content" text NOT NULL,
+    "type" text NOT NULL,
+    "related_paper" integer,
+    CONSTRAINT "notes_creator_fkey" FOREIGN KEY ("creator") REFERENCES "users" ("id") ON DELETE CASCADE,
+    CONSTRAINT "notes_related_paper_fkey" FOREIGN KEY ("related_paper") REFERENCES "papers" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "submissions" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "user" uuid NOT NULL,
+    "paper" integer NOT NULL,
+    "answers" jsonb NOT NULL,
+    "feedback" jsonb,
+    "score" integer NOT NULL,
+    "perfect_score" integer NOT NULL,
+    CONSTRAINT "submissions_user_fkey" FOREIGN KEY ("user") REFERENCES "users" ("id") ON DELETE CASCADE,
+    CONSTRAINT "submissions_paper_fkey" FOREIGN KEY ("paper") REFERENCES "papers" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "dictations" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "paper" integer NOT NULL UNIQUE,
+    "content" jsonb NOT NULL,
+    CONSTRAINT "dictations_paper_fkey" FOREIGN KEY ("paper") REFERENCES "papers" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "flashbacks" (
+    "id" serial PRIMARY KEY,
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "user" uuid,
+    "date" text NOT NULL,
+    "lang" text NOT NULL,
+    "story" text,
+    "translations" jsonb,
+    "conversation" jsonb,
+    CONSTRAINT "flashbacks_user_fkey" FOREIGN KEY ("user") REFERENCES "users" ("id") ON DELETE CASCADE
+);
+
 -- Enable Row Level Security
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.libraries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lexicon ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.texts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.papers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dictations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flashbacks ENABLE ROW LEVEL SECURITY;
 ```
 
 > Existing projects that predate per-user bookmarks and reading locations need:

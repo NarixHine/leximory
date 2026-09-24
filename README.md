@@ -44,7 +44,7 @@ Shared code lives in workspace packages. Import through a package's `exports` ma
 
 ## Getting started
 
-Prerequisites: [pnpm](https://pnpm.io/installation) (repo uses `pnpm@10.8.1`).
+Prerequisites: [pnpm](https://pnpm.io/installation).
 
 ```bash
 pnpm install
@@ -54,11 +54,11 @@ Config lives in `apps/leximory/.env`, validated against [`packages/env/src/index
 
 ### Database
 
-Create a Supabase project and run the schema SQL in [`apps/leximory/README.md`](./apps/leximory/README.md#4-set-up-supabase). Don't edit the schema by hand; use Supabase migrations.
+Create a Supabase project and run the schema SQL in [`apps/leximory/README.md`](./apps/leximory/README.md#4-set-up-supabase).
 
 ### Develop
 
-Run every workspace at once:
+Run all the apps and packages in the monorepo:
 
 ```bash
 pnpm dev
