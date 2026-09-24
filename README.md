@@ -1,6 +1,8 @@
 # Leximory
 
-![Leximory](./apps/leximory/screenshot.png)
+![Leximory Hero](./hero.png)
+![Dynamic Annotation](./annotate.png)
+![Library Sharing](./share.png)
 
 Leximory is a language-learning app built around extensive input. Point it at an ebook, article, or newspaper and it imports the text, annotates the words you don't know, and saves them for later review.
 
