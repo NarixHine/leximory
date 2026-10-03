@@ -87,7 +87,7 @@ enum PlaybackState: Equatable {
             } catch {
                 guard let self, !Task.isCancelled, self.generation == request else { return }
                 self.wantsPlayback = false
-                self.state = .failed(source, "This recording could not be played. Try opening it again.")
+                self.state = .failed(source, "无法播放录音，请重新打开。")
             }
         }
     }
@@ -118,7 +118,7 @@ enum PlaybackState: Equatable {
                 self.player?.play(); self.publishProgress()
             } catch {
                 guard self.generation == request else { return }
-                self.wantsPlayback = false; self.state = .failed(source, "Audio output is unavailable.")
+                self.wantsPlayback = false; self.state = .failed(source, "音频输出暂不可用。")
             }
         }
     }
@@ -162,7 +162,7 @@ enum PlaybackState: Equatable {
                     self.publishProgress()
                 case .failed:
                     self.wantsPlayback = false
-                    self.state = .failed(source, "The recording is missing or its playback URL has expired.")
+                    self.state = .failed(source, "录音不存在或播放链接已过期。")
                     self.clearNowPlaying()
                 default: break
                 }

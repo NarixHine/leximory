@@ -9,8 +9,12 @@ settings:
     SWIFT_VERSION: '6.0'
     SWIFT_STRICT_CONCURRENCY: complete
     TARGETED_DEVICE_FAMILY: '1,2'
+    SUPPORTS_MACCATALYST: YES
     CODE_SIGN_STYLE: Automatic
 packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    exactVersion: 2.48.0
   LeximoryCore:
     path: Core
 targets:
@@ -20,9 +24,12 @@ targets:
     sources: [App]
     dependencies:
       - package: LeximoryCore
+      - package: Supabase
+        product: Auth
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
+        "PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]": com.leximory.reader.mac
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
@@ -30,7 +37,14 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: Leximory
-        UIAppFonts: [EBGaramond.ttf, LXGWWenKaiScreen.ttf, NotoSerifJP.ttf]
+        CFBundleURLTypes:
+          - CFBundleURLName: com.leximory.reader
+            CFBundleURLSchemes: [leximory]
+        CFBundleDevelopmentRegion: zh_CN
+        CFBundleLocalizations: [zh-Hans]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UIAppFonts: [LibreBaskerville.ttf, LibreBaskerville-Italic.ttf, SpaceMono-Regular.ttf, SourceCodePro-Medium.ttf, EBGaramond.ttf, EBGaramond-Italic.ttf, LXGWWenKaiScreen.ttf, NotoSerifJP.ttf, NotoSerifSC-Medium.ttf, Raleway-Regular.ttf, Raleway-SemiBold.ttf, NotoSerifSC-SemiBold.ttf]
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -43,7 +57,6 @@ targets:
     sources: [Tests]
     dependencies:
       - target: Leximory
-      - package: LeximoryCore
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

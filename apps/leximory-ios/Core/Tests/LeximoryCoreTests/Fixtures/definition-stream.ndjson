@@ -1,0 +1,4 @@
+{"kind":"started","requestId":"request-native-fixture"}
+{"kind":"delta","requestId":"request-native-fixture","text":"{{bank||bank||河"}
+{"kind":"delta","requestId":"request-native-fixture","text":"岸 🙂}}"}
+{"kind":"completed","requestId":"request-native-fixture","definition":{"lemma":"bank","definition":"河岸 🙂","etymology":null,"cognates":null}}

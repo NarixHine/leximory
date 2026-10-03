@@ -1,14 +1,18 @@
-# Display fonts
+# Bundled typography
 
-EB Garamond is Leximory's original web display family. `EBGaramond.ttf` comes from the official Google Fonts `ofl/ebgaramond` directory. SHA-256: `ef9512f92f6d579e5dc75af59a5a4b1b8b47d2eda89e00b954d44520e5369027`.
+Font roles follow `apps/leximory/lib/fonts/index.ts` and the web components, rather than a system-font substitution.
 
-LXGW WenKai Screen is converted from the repository's existing `apps/leximory/lib/fonts/kaiti.woff2`. FontTools decompressed its WOFF2 container to TrueType without changing glyphs or names. It supplies the original handwritten Chinese display treatment.
+| Role | Native faces | Source |
+| --- | --- | --- |
+| Latin editorial titles | EB Garamond, with real italic and OpenType small caps | Google Fonts `ofl/ebgaramond` |
+| English/French reading and definition prose | Libre Baskerville Regular and Italic | Google Fonts `ofl/librebaskerville` |
+| Chinese serif and Chinese UI fallback | Noto Serif SC Medium 500 and SemiBold 600 | Google Fonts `ofl/notoserifsc` |
+| Japanese serif and ruby | Noto Serif JP Regular | Google Fonts `ofl/notoserifjp` |
+| Library page heading, hero slogan, topic pills | LXGW WenKai Screen | Converted from the repository's `lib/fonts/kaiti.woff2` |
+| Latin interface labels | Raleway Regular and SemiBold | Google Fonts `ofl/raleway` |
+| Libraries eyebrow | Space Mono Regular | Google Fonts `ofl/spacemono` |
+| IPA and code | Source Code Pro Medium | Google Fonts `ofl/sourcecodepro` |
 
-Noto Serif JP provides Japanese Mincho-style display typography. `NotoSerifJP.ttf` comes from the official Google Fonts `ofl/notoserifjp` directory. The variable font is instantiated at weight 400 with FontTools, preserving its regular face name. It uses the SIL Open Font License, as do the other two bundled fonts. The web's different Mincho asset remains unchanged.
+Noto Serif SC is the mobile substitute for the web's LXGW Neo ZhiSong Screen. There is no Chinese serif face below weight 500 in the bundle. Latin faces cascade to the appropriate Chinese or Japanese face, so mixed-language titles retain editorial typography. Variable fonts were instantiated with FontTools and updated PostScript names; native tests verify their registration. Full SIL Open Font Licenses accompany every family.
 
-The corresponding complete licenses are included beside the font files. Native interface controls retain system fonts, and the reader retains its tested native text font and canonical offset mapping.
-
-## Bundled file checksums
-
-- LXGWWenKaiScreen.ttf: `b92be8498f2c77af1b6c95306b684a0d51517e8962401e41687a23cf481e8116`
-- NotoSerifJP.ttf: `434a003c93db766b274ab912c1febdf1815d7dd3aab14437f407e7900b45383c`
+App-authored text uses these faces, including buttons and navigation headings. SF Symbols, emoji, and operating-system text-selection controls retain their platform rendering. Dynamic Type scales the app's typography. Reader font changes do not alter the canonical UTF-16 text or selection ranges.

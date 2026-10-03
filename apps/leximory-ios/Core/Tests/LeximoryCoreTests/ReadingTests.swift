@@ -3,6 +3,19 @@ import Testing
 @testable import LeximoryCore
 
 struct ReadingTests {
+    @Test func headerTitleDoesNotDuplicateProseOrChangeSelectionOffsets() throws {
+        let document = try fixture("reader")
+        let title = try #require(document.blocks.first)
+        let layout = ReaderLayout(document: document, openingTitleInHeader: title.displayText)
+        #expect(!layout.entries.contains(where: { $0.block.id == title.id }))
+        let paragraph = try #require(layout.entries.first(where: { $0.block.displayText.contains("We walked") }))
+        let range = (paragraph.block.displayText as NSString).range(of: "bank")
+        let selected = try layout.selection(NSRange(location: paragraph.documentRange.location + range.location, length: range.length), document: document, textID: TextID(rawValue: "fixture"))
+        #expect(selected.blockID == paragraph.block.id)
+        #expect(selected.range.location == range.location)
+        #expect(selected.text == "bank")
+        #expect(ReaderLayout(document: document, openingTitleInHeader: "Another title").entries.count == document.blocks.count)
+    }
     func fixture(_ name: String = "reader") throws -> ReadingDocument {
         let url = try #require(Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures"))
         return try JSONDecoder().decode(ReadingDocument.self, from: Data(contentsOf: url))

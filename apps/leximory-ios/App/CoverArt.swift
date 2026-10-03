@@ -1,7 +1,19 @@
 import SwiftUI
 
+enum CoverBackground { case varied, newspaper }
+
 struct CoverArt: View {
     let motif: CoverMotif
+    var identity = "invitation"
+    var animated = false
+    var emoji: String? = nil
+    var cornerRadius: CGFloat = 30
+    var background = CoverBackground.varied
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var visible = false
+    @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+
     var body: some View {
         Canvas { context, size in
             let side = min(size.width, size.height) * 0.62
@@ -41,7 +53,107 @@ struct CoverArt: View {
                 draw(stem)
             }
         }
-        .background(LeximoryPalette.cover, in: RoundedRectangle(cornerRadius: 30))
+        .opacity(emoji == nil ? 1 : 0)
+        .overlay {
+            if let emoji {
+                GeometryReader { geometry in
+                    Text(emoji).font(.system(size: min(geometry.size.width, geometry.size.height) * 0.42))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .background {
+            TimelineView(.animation(minimumInterval: 1.0 / 24, paused: !animated || reduceMotion || !visible || lowPower || scenePhase != .active)) { timeline in
+                let time = animated && !reduceMotion && !lowPower ? timeline.date.timeIntervalSinceReferenceDate : 0
+                CoverTexture(identity: identity, time: time, background: background)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .onScrollVisibilityChange { visible = $0 }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
         .accessibilityHidden(true)
+    }
+}
+
+private struct CoverTexture: View {
+    let identity: String
+    let time: Double
+    let background: CoverBackground
+    @Environment(\.colorScheme) private var colorScheme
+    private var seed: UInt64 {
+        let hash = identity.utf16.reduce(UInt32(0)) { (($0 &<< 5) &- $0) &+ UInt32($1) }
+        return UInt64(abs(Int(Int32(bitPattern: hash))))
+    }
+    var body: some View {
+        Canvas { context, size in
+            let dark = colorScheme == .dark
+            let hue = 120 + Double(seed % 55)
+            let chroma = 0.003 + Double((seed >> 8) % 10) / 10 * 0.005
+            let lightness = dark ? 0.18 + Double((seed >> 16) % 10) / 10 * 0.06 : 0.975 + Double((seed >> 16) % 10) / 10 * 0.02
+            let paper = Self.oklch(lightness, dark ? 0 : chroma, hue)
+            let canvas = Path(CGRect(origin: .zero, size: size))
+            context.fill(canvas, with: .color(paper))
+            let phase = time / 18 + Double(seed % 100)
+            let color = LeximoryPalette.illustration
+            let center = CGPoint(x: size.width * (0.5 + 0.22 * sin(phase)), y: size.height * (0.5 + 0.2 * cos(phase * 0.8)))
+            let wash = Self.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0.006 : chroma * 2, hue + 18 * sin(phase * 0.3))
+            context.fill(canvas, with: .radialGradient(Gradient(colors: [wash.opacity(0.7), wash.opacity(0)]), center: center, startRadius: 0, endRadius: max(size.width, size.height) * 0.8))
+            let light = dark ? Self.oklch(lightness + 0.035, 0, hue) : Color.white
+            context.fill(canvas, with: .radialGradient(Gradient(colors: [light.opacity(0.75), light.opacity(0)]), center: CGPoint(x: size.width - center.x, y: size.height - center.y), startRadius: 0, endRadius: max(size.width, size.height) * 0.7))
+            switch background == .newspaper ? 4 : seed % 4 {
+            case 4:
+                var grid = Path()
+                for column in stride(from: 0.0, through: size.width, by: 96) {
+                    for offset in [0.0, 16, 32] {
+                        grid.move(to: CGPoint(x: column + offset, y: 0))
+                        grid.addLine(to: CGPoint(x: column + offset, y: size.height))
+                    }
+                }
+                for y in stride(from: 0.0, through: size.height, by: 28) {
+                    grid.move(to: CGPoint(x: 0, y: y)); grid.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                context.stroke(grid, with: .color(dark ? color.opacity(0.18) : Color(red: 0.72, green: 0.78, blue: 0.74).opacity(0.26)), lineWidth: 0.6)
+            case 0:
+                // The web's drafting-paper grid, with a slowly passing wash.
+                var grid = Path()
+                for x in stride(from: 0.0, through: size.width, by: 22) {
+                    grid.move(to: CGPoint(x: x, y: 0)); grid.addLine(to: CGPoint(x: x, y: size.height))
+                }
+                for y in stride(from: 0.0, through: size.height, by: 22) {
+                    grid.move(to: CGPoint(x: 0, y: y)); grid.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                context.stroke(grid, with: .color(color.opacity(0.10)), lineWidth: 0.5)
+            case 1:
+                for row in 0..<18 {
+                    var contour = Path()
+                    let y = Double(row) * size.height / 15
+                    contour.move(to: CGPoint(x: -20, y: y))
+                    contour.addCurve(to: CGPoint(x: size.width + 20, y: y), control1: CGPoint(x: size.width * 0.3, y: y + sin(phase + Double(row) * 0.3) * 18), control2: CGPoint(x: size.width * 0.7, y: y - 20))
+                    context.stroke(contour, with: .color(color.opacity(0.09)), lineWidth: 0.6)
+                }
+            case 2:
+                for x in stride(from: 8.0, through: size.width, by: 13) {
+                    for y in stride(from: 8.0, through: size.height, by: 13) {
+                        let opacity = 0.04 + 0.07 * (sin(x / 70 + y / 90 + phase) + 1) / 2
+                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.5, height: 1.5)), with: .color(color.opacity(opacity)))
+                    }
+                }
+            default: break
+            }
+        }
+    }
+    private static func oklch(_ lightness: Double, _ chroma: Double, _ hue: Double) -> Color {
+        let angle = hue * .pi / 180, a = chroma * cos(angle), b = chroma * sin(angle)
+        let l = pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3)
+        let m = pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3)
+        let s = pow(lightness - 0.0894841775 * a - 1.291485548 * b, 3)
+        func gamma(_ value: Double) -> Double {
+            min(1, max(0, value <= 0.0031308 ? 12.92 * value : 1.055 * pow(value, 1 / 2.4) - 0.055))
+        }
+        return Color(red: gamma(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+                     green: gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+                     blue: gamma(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s))
     }
 }

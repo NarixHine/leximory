@@ -1,0 +1,22 @@
+{
+    "name": "@repo/api",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "generate": "node --import tsx src/generate.ts"
+    },
+    "dependencies": {
+        "@orpc/contract": "1.15.4",
+        "@orpc/openapi": "1.15.4",
+        "@orpc/zod": "1.15.4",
+        "@repo/schema": "workspace:^",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "tsx": "^4.21.0",
+        "@types/node": "^25.0.5"
+    }
+}

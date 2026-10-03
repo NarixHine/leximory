@@ -7,9 +7,9 @@ Revision of the attached 2026-10-02 reading-flow migration plan. This document c
 | Decision | Outcome |
 | --- | --- |
 | Product | Reading companion for existing accounts |
-| Devices and minimum OS | iPhone and iPad, iOS 26+ |
+| Devices and minimum OS | iPhone and iPad, iOS 26+; shared Mac Catalyst target |
 | Client state | SwiftUI Observation with injected clients; no TCA |
-| Documents | Article/Markdown reading; show PDF/EPUB entries as unsupported |
+| Documents | Article/Markdown reading plus existing web-library EPUB/PDF books |
 | Word actions | Show embedded definitions, generate contextual word/phrase definitions, save vocabulary |
 | Persistence | Preserve existing own-library/shadow-library save behavior; no new learning status |
 | Distribution and sign-in | Private TestFlight; email/password and restored sessions first |
@@ -17,9 +17,11 @@ Revision of the attached 2026-10-02 reading-flow migration plan. This document c
 | Generation | Incremental definitions; Save becomes available after successful completion |
 | Audio | Existing recordings only; background/Lock Screen playback while the source reader remains open; stop when leaving it |
 
-Keep imports, review sessions, PDF/EPUB reading, offline downloads/sync, article editing, whole-article annotation generation, persisted range annotation, vocabulary editing/deletion, purchases, and signup outside this release. Ordinary text selection and contextual phrase lookup remain in scope. Neither requires creating a persisted article annotation.
+Keep direct imports, review sessions, offline downloads/sync, article editing, whole-article annotation generation, persisted range annotation, vocabulary editing/deletion, purchases, and signup outside this release. Ordinary text selection and contextual phrase lookup remain in scope. Neither requires creating a persisted article annotation.
 
 Saved sessions and local reading position are allowed. They do not imply an offline document store or queued writes. After signout, clear account-scoped content, selection, lookup results, and navigation.
+
+The user subsequently expanded this release to existing web-library ebooks and Mac Catalyst. Ebook contents, saved reading position, bookmarks, contextual lookup, and vocabulary saving share the existing backend; direct file importing remains separate. [DESIGN.md](../../apps/leximory-ios/DESIGN.md) is the maintained visual specification.
 
 ## Findings that change the original plan
 

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>zh_CN</string>
 	<key>CFBundleDisplayName</key>
 	<string>Leximory</string>
 	<key>CFBundleExecutable</key>
@@ -12,19 +12,48 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>zh-Hans</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.leximory.reader</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>leximory</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>LibreBaskerville.ttf</string>
+		<string>LibreBaskerville-Italic.ttf</string>
+		<string>SpaceMono-Regular.ttf</string>
+		<string>SourceCodePro-Medium.ttf</string>
 		<string>EBGaramond.ttf</string>
+		<string>EBGaramond-Italic.ttf</string>
 		<string>LXGWWenKaiScreen.ttf</string>
 		<string>NotoSerifJP.ttf</string>
+		<string>NotoSerifSC-Medium.ttf</string>
+		<string>Raleway-Regular.ttf</string>
+		<string>Raleway-SemiBold.ttf</string>
+		<string>NotoSerifSC-SemiBold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

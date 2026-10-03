@@ -1,13 +1,13 @@
 import type { MobileErrorBody, MobileErrorCode } from '@repo/schema/mobile'
 
 const failures = {
-    unauthenticated: { status: 401, message: 'Sign in to continue.', retryable: false },
-    inaccessible: { status: 404, message: 'This item is not available.', retryable: false },
-    invalid_input: { status: 400, message: 'The request is invalid.', retryable: false },
-    stale_revision: { status: 409, message: 'The passage changed. Open it again.', retryable: false },
-    quota_exceeded: { status: 429, message: 'Your definition allowance has been reached.', retryable: false },
-    unsupported_format: { status: 422, message: 'This format is not supported in the reading companion.', retryable: false },
-    service_unavailable: { status: 503, message: 'The service is temporarily unavailable.', retryable: true },
+    unauthenticated: { status: 401, message: '请登录后继续。', retryable: false },
+    inaccessible: { status: 404, message: '此内容暂不可用。', retryable: false },
+    invalid_input: { status: 400, message: '请求无效，请重试。', retryable: false },
+    stale_revision: { status: 409, message: '文章已更新，请重新打开。', retryable: false },
+    quota_exceeded: { status: 429, message: '本期词点额度已用完。', retryable: false },
+    unsupported_format: { status: 422, message: 'iOS 版暂不支持此格式。', retryable: false },
+    service_unavailable: { status: 503, message: '服务暂时不可用，请稍后重试。', retryable: true },
 } satisfies Record<MobileErrorCode, { status: number; message: string; retryable: boolean }>
 
 export class MobileError extends Error {

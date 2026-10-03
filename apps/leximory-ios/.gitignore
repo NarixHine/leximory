@@ -5,3 +5,5 @@ DerivedData/
 *.xcresult
 
 .tools/
+
+App/Resources/Connection.json

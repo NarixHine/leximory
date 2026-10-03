@@ -13,3 +13,9 @@ if [[ ! -x "$tool" ]]; then
 fi
 [[ "$($tool --version)" == 'Version: 2.44.1' ]]
 "$tool" generate --spec "$app_dir/project.yml"
+
+if [[ -f "$app_dir/Package.resolved" ]]; then
+    resolution_dir="$app_dir/Leximory.xcodeproj/project.xcworkspace/xcshareddata/swiftpm"
+    mkdir -p "$resolution_dir"
+    cp "$app_dir/Package.resolved" "$resolution_dir/Package.resolved"
+fi

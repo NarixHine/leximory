@@ -8,8 +8,11 @@ import os
 @MainActor
 struct ReadingTextView: UIViewRepresentable {
     let document: ReadingDocument
+    var article: FixtureArticle? = nil
+    var language = "English"
     let textID: TextID
     let jumpToEnd: Bool
+    var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -21,6 +24,16 @@ struct ReadingTextView: UIViewRepresentable {
         view.textContainerInset = UIEdgeInsets(top: 28, left: 22, bottom: 36, right: 22)
         view.textContainer.lineFragmentPadding = 0
         view.adjustsFontForContentSizeCategory = true
+        if let article {
+            let header = UIHostingController(rootView: ArticleReadingHeader(article: article, language: language, onTitleFrame: { [weak view, weak coordinator = context.coordinator] rect in
+                view?.headerTitleFrame = rect
+                if let view { coordinator?.updateTitleVisibility(view) }
+            }))
+            header.view.backgroundColor = .clear
+            context.coordinator.header = header
+            view.headerView = header.view
+            view.addSubview(header.view)
+        }
         view.delegate = context.coordinator
         view.accessibilityIdentifier = "reading-document"
         view.isAccessibilityElement = false
@@ -34,19 +47,20 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        let signature = "\(document.revision):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme)"
+        let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
+        let signature = "\(document.revision):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
         if coordinator.signature != signature {
             let selection = view.selectedRange
             let offset = view.contentOffset
             coordinator.signature = signature
-            coordinator.layout = ReaderLayout(document: document)
+            coordinator.layout = ReaderLayout(document: document, openingTitleInHeader: article?.title)
             view.readingLayout = coordinator.layout
             view.readingDocument = document
             view.readingTextID = textID
             let start = ContinuousClock.now
             coordinator.imageTasks.forEach { $0.cancel() }
             coordinator.imageTasks.removeAll()
-            view.attributedText = ReaderAttributes.build(layout: coordinator.layout)
+            view.attributedText = ReaderAttributes.build(layout: coordinator.layout, language: language, bodySize: bodySize)
             coordinator.loadImages(in: view)
             view.rubySpans = coordinator.layout.entries.flatMap { entry in
                 entry.block.spans.compactMap { span in
@@ -60,7 +74,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         if coordinator.lastJump != jumpToEnd {
             coordinator.lastJump = jumpToEnd
-            if view.textStorage.length > 0 { view.scrollRangeToVisible(NSRange(location: view.textStorage.length - 1, length: 1)) }
+            if jumpToEnd { view.pendingFinalScroll = true; view.setNeedsLayout() }
         }
     }
 
@@ -75,7 +89,8 @@ struct ReadingTextView: UIViewRepresentable {
         var signature = ""
         var lastJump = false
         var imageTasks: [Task<Void, Never>] = []
-        init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document) }
+        var header: UIHostingController<ArticleReadingHeader>?
+        init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title) }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
             for entry in layout.entries {
@@ -86,22 +101,32 @@ struct ReadingTextView: UIViewRepresentable {
                         guard let image = try? await ReaderImage.load(url), !Task.isCancelled,
                               let self, let view, self.parent.document.revision == revision else { return }
                         attachment.image = image
+                        if self.parent.jumpToEnd { view.pendingFinalScroll = true }
                         view.setNeedsLayout()
                         view.setNeedsDisplay()
                     })
                 }
             }
         }
+        var lastTitleVisible: Bool?
+        func updateTitleVisibility(_ view: RubyTextView) {
+            guard view.headerTitleFrame.height > 0 else { return }
+            let visible = view.headerTitleFrame.maxY - view.contentOffset.y > view.adjustedContentInset.top + 4
+            guard visible != lastTitleVisible else { return }
+            lastTitleVisible = visible
+            Task { @MainActor [parent] in parent.onTitleVisibilityChange?(visible) }
+        }
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            if let view = scrollView as? RubyTextView { updateTitleVisibility(view) }
             (scrollView as? RubyTextView)?.setNeedsLayout()
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
-            let action = UIAction(title: "Define", image: UIImage(systemName: "text.magnifyingglass")) { [weak self, weak textView] _ in
+            let action = UIAction(title: "查词", image: UIImage(systemName: "text.magnifyingglass")) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
-            return UIMenu(children: [action] + suggestedActions)
+            return UIMenu(children: [UIMenu(options: .displayInline, children: [action])] + suggestedActions)
         }
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
             if case .tag(let tag) = textItem.content, tag.hasPrefix("definition:") {
@@ -123,27 +148,27 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor enum ReaderAttributes {
-    static func build(layout: ReaderLayout) -> NSAttributedString {
+    static func build(layout: ReaderLayout, language: String = "English", bodySize: CGFloat = 18) -> NSAttributedString {
         let output = NSMutableAttributedString(string: layout.text)
-        let body = LeximoryPalette.readingFont
+        let body = UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.proseUI(bodySize, language: language))
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 7
+        paragraph.lineSpacing = bodySize < 20 ? 5 : 7
         output.addAttributes([.font: body, .foregroundColor: UIColor.label, .paragraphStyle: paragraph], range: NSRange(location: 0, length: output.length))
         for notice in layout.notices {
-            output.addAttributes([.font: UIFont.preferredFont(forTextStyle: .caption1), .foregroundColor: UIColor.secondaryLabel], range: notice.range)
+            output.addAttributes([.font: UIFontMetrics(forTextStyle: .caption1).scaledFont(for: LeximoryTypography.interfaceUI(12)), .foregroundColor: UIColor.secondaryLabel], range: notice.range)
         }
         for entry in layout.entries {
             let range = entry.documentRange
             let block = entry.block
             let style = NSMutableParagraphStyle()
-            style.lineSpacing = block.spans.contains(where: { if case .ruby = $0.style { true } else { false } }) ? body.pointSize * 0.65 : 7
+            style.lineSpacing = block.spans.contains(where: { if case .ruby = $0.style { true } else { false } }) ? body.pointSize * 0.65 : paragraph.lineSpacing
             style.paragraphSpacing = body.pointSize * 0.8
             let font: UIFont
             switch block.kind {
             case .heading1: font = LeximoryPalette.serif(.largeTitle)
             case .heading2: font = LeximoryPalette.serif(.title2)
             case .heading3, .heading4, .heading5, .heading6: font = LeximoryPalette.serif(.headline)
-            case .code, .fallback: font = UIFont.preferredFont(forTextStyle: .body).withMonospacedDesign()
+            case .code, .fallback: font = UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.face("SourceCodePro-Medium", size: 16))
             default: font = body
             }
             if block.kind == .quote { style.firstLineHeadIndent = 14; style.headIndent = 14 }
@@ -159,8 +184,8 @@ struct ReadingTextView: UIViewRepresentable {
                     let descriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) ?? font.fontDescriptor
                     output.addAttribute(.font, value: UIFont(descriptor: descriptor, size: 0), range: target)
                 case .emphasis:
-                    let descriptor = font.fontDescriptor.withSymbolicTraits(.traitItalic) ?? font.fontDescriptor
-                    output.addAttribute(.font, value: UIFont(descriptor: descriptor, size: 0), range: target)
+                    let italic = language == "Japanese" || language == "Chinese" ? UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(.traitItalic) ?? font.fontDescriptor, size: 0) : LeximoryTypography.face("LibreBaskerville-Italic", size: font.pointSize)
+                    output.addAttribute(.font, value: italic, range: target)
                 case .code: output.addAttribute(.font, value: font.withMonospacedDesign(), range: target)
                 case .smallcaps:
                     let descriptor = font.fontDescriptor.addingAttributes([.featureSettings: [[UIFontDescriptor.FeatureKey.type: kLowerCaseType, .selector: kLowerCaseSmallCapsSelector]]])
@@ -168,7 +193,6 @@ struct ReadingTextView: UIViewRepresentable {
                 case .link(let url): output.addAttribute(.link, value: url, range: target)
                 case .definition:
                     output.addAttribute(.textItemTag, value: "definition:\(block.id):\(span.range.location)", range: target)
-                    output.addAttribute(.backgroundColor, value: LeximoryPalette.wordHighlightUI, range: target)
                 case .ruby: break
                 case .image(_, let alt):
                     let attachment = NSTextAttachment()
@@ -184,9 +208,13 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
+    var pendingFinalScroll = false
+    var headerTitleFrame = CGRect.zero
     struct Ruby { let range: NSRange; let pronunciation: String }
+    var headerView: UIView?
     var rubySpans: [Ruby] = [] { didSet { setNeedsLayout() } }
     private var pronunciationLabels: [Int: UILabel] = [:]
+    private let markerLayer = CAShapeLayer()
     private var updatingPronunciations = false
     private var paragraphElements: [String: UIAccessibilityElement] = [:]
     var readingLayout: ReaderLayout? { didSet { paragraphElements.removeAll() } }
@@ -202,25 +230,27 @@ struct ReadingTextView: UIViewRepresentable {
             let end = storage.offset(from: storage.documentRange.location, to: viewport.endLocation)
             guard start >= 0, end >= start else { return [] }
             let visible = NSRange(location: start, length: end - start)
-            return layout.entries.compactMap { entry -> UIAccessibilityElement? in
+            let paragraphs = layout.entries.compactMap { entry -> UIAccessibilityElement? in
                 guard NSIntersectionRange(entry.documentRange, visible).length > 0 else { return nil }
                 let element = paragraphElements[entry.block.id] ?? UIAccessibilityElement(accessibilityContainer: self)
                 paragraphElements[entry.block.id] = element
                 element.accessibilityLabel = entry.block.displayText.replacingOccurrences(of: "\u{FFFC}", with: "")
                 if let notice = entry.block.notice { element.accessibilityLabel = notice + ". " + (element.accessibilityLabel ?? "") }
                 element.accessibilityTraits = entry.block.kind.rawValue.hasPrefix("heading") ? [.header, .staticText] : .staticText
-                element.accessibilityFrameInContainerSpace = self.rect(for: entry.documentRange)
+                element.accessibilityFrameInContainerSpace = self.boundingRect(for: entry.documentRange)
                 element.accessibilityCustomActions = entry.block.spans.compactMap { span in
                     guard case .definition(let definition) = span.style,
                           let selection = try? document.selection(textID: textID, blockID: entry.block.id, range: span.range) else { return nil }
                     let globalRange = NSRange(location: entry.documentRange.location + span.range.location, length: span.range.length)
-                    return UIAccessibilityCustomAction(name: "Define \(selection.text)") { [weak self] _ in
+                    return UIAccessibilityCustomAction(name: "查看释义 \(selection.text)") { [weak self] _ in
                         self?.accessibleDefine?(selection, definition, globalRange)
                         return true
                     }
                 }
                 return element
             }
+            if let headerView, headerView.frame.intersects(bounds) { return [headerView] + paragraphs }
+            return paragraphs
         }
         set { }
     }
@@ -239,7 +269,13 @@ struct ReadingTextView: UIViewRepresentable {
     }
 
     override func layoutSubviews() {
-        let side = max(22, (bounds.width - 680) / 2)
+        if let headerView, bounds.width > 0 {
+            let size = headerView.systemLayoutSizeFitting(CGSize(width: bounds.width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+            headerView.frame = CGRect(x: 0, y: 0, width: bounds.width, height: size.height)
+            if textContainerInset.top != size.height + 28 { textContainerInset.top = size.height + 28 }
+        }
+        let side = max(22, (bounds.width - LeximoryLayout.readingMeasure) / 2)
         if textContainerInset.left != side {
             textContainerInset.left = side
             textContainerInset.right = side
@@ -252,7 +288,39 @@ struct ReadingTextView: UIViewRepresentable {
             if attachment.bounds != next { attachment.bounds = next }
         }
         super.layoutSubviews()
+        if pendingFinalScroll, bounds.width > 0, bounds.height > 0, textStorage.length > 0 {
+            pendingFinalScroll = false
+            scrollRangeToVisible(NSRange(location: textStorage.length - 1, length: 1))
+        }
         updatePronunciations()
+        updateMarkers()
+    }
+    private func updateMarkers() {
+        guard let layout = readingLayout, let manager = textLayoutManager,
+              let storage = manager.textContentManager, let viewport = manager.textViewportLayoutController.viewportRange else { markerLayer.path = nil; return }
+        let start = storage.offset(from: storage.documentRange.location, to: viewport.location)
+        let end = storage.offset(from: storage.documentRange.location, to: viewport.endLocation)
+        guard start >= 0, end >= start else { return }
+        let visible = NSRange(location: start, length: end - start)
+        if markerLayer.superlayer == nil { layer.insertSublayer(markerLayer, at: 0) }
+        let path = UIBezierPath()
+        for entry in layout.entries where NSIntersectionRange(entry.documentRange, visible).length > 0 {
+            for span in entry.block.spans {
+                guard case .definition = span.style,
+                      let start = position(from: beginningOfDocument, offset: entry.documentRange.location + span.range.location),
+                      let end = position(from: start, offset: span.range.length),
+                      let range = textRange(from: start, to: end) else { continue }
+                for selection in selectionRects(for: range) where !selection.rect.isEmpty {
+                    let rect = selection.rect
+                    let band = CGRect(x: rect.minX - 1, y: rect.minY + rect.height * 0.47, width: rect.width + 2, height: rect.height * 0.40)
+                    path.append(UIBezierPath(roundedRect: band, cornerRadius: band.height * 0.3))
+                }
+            }
+        }
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        markerLayer.fillColor = LeximoryPalette.wordHighlightUI.cgColor
+        markerLayer.path = path.cgPath
+        CATransaction.commit()
     }
     private func updatePronunciations() {
         guard !updatingPronunciations else { return }
@@ -277,7 +345,7 @@ struct ReadingTextView: UIViewRepresentable {
                 addSubview(label)
             }
             label.text = ruby.pronunciation
-            label.font = .systemFont(ofSize: LeximoryPalette.readingFont.pointSize * 0.48)
+            label.font = LeximoryTypography.face("NotoSerifJP-Regular", size: LeximoryPalette.readingFont.pointSize * 0.48)
             let width = max(base.width, label.sizeThatFits(.zero).width)
             label.frame = CGRect(x: base.midX - width / 2, y: base.minY - label.font.lineHeight + 1,
                                  width: width, height: label.font.lineHeight)
@@ -293,7 +361,7 @@ struct ReadingTextView: UIViewRepresentable {
 
 private extension UIFont {
     func withMonospacedDesign() -> UIFont {
-        UIFont(descriptor: fontDescriptor.withDesign(.monospaced) ?? fontDescriptor, size: 0)
+        LeximoryTypography.face("SourceCodePro-Medium", size: pointSize)
     }
 }
 
@@ -304,6 +372,13 @@ private extension UIFont {
         return CGRect(x: min(max(0, rect.minX), max(0, bounds.width - rect.width)),
                       y: min(max(0, rect.minY), max(0, bounds.height - rect.height)),
                       width: min(rect.width, bounds.width), height: min(rect.height, bounds.height))
+    }
+    func boundingRect(for range: NSRange) -> CGRect {
+        guard let start = position(from: beginningOfDocument, offset: range.location),
+              let end = position(from: start, offset: range.length),
+              let selection = textRange(from: start, to: end) else { return .zero }
+        let result = selectionRects(for: selection).reduce(CGRect.null) { $0.union($1.rect) }
+        return result.isNull ? firstRect(for: selection) : result
     }
     func rect(for range: NSRange) -> CGRect {
         guard let start = position(from: beginningOfDocument, offset: range.location),

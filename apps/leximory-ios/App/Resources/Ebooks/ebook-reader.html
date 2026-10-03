@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hans"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:64px 0;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),760px);margin:0 auto}iframe{border:0}</style>
+<script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
+<body><div id="book"></div><script>
+let book, rendition, selected, ready = false, currentTheme;
+const send = (kind, payload = {}) => window.webkit.messageHandlers.reader.postMessage({kind,...payload});
+function sanitizeDocument(source, svg = false) {
+  let document = new DOMParser().parseFromString(source, svg ? 'image/svg+xml' : 'application/xhtml+xml');
+  if (document.querySelector('parsererror') && !svg) document = new DOMParser().parseFromString(source, 'text/html');
+  if (document.querySelector('parsererror')) throw Error('Invalid book document');
+  document.querySelectorAll('script,object,embed,form,iframe,frame,foreignObject,base').forEach(el => el.remove());
+  for (const element of document.querySelectorAll('*')) {
+    for (const attribute of [...element.attributes]) {
+      const uri = attribute.value.replace(/[\u0000-\u0020]/g, '');
+      if (/^on/i.test(attribute.name) || /^(?:javascript|vbscript):/i.test(uri) || /^(?:href|xlink:href)$/i.test(attribute.name) && /^data:(?:text\/html|application\/xhtml\+xml)/i.test(uri) || attribute.name === 'srcdoc') element.removeAttribute(attribute.name);
+    }
+    if (element.localName === 'meta' && element.hasAttribute('http-equiv')) element.remove();
+  }
+  return new XMLSerializer().serializeToString(document);
+}
+function proseCSS(theme) {
+  return `html,body{background:${theme.paper}!important;color:${theme.ink}!important}
+  body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
+  p,li,blockquote,dd,dt{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
+  p{margin:0 0 0.95em!important;text-indent:0!important;text-align:start!important}
+  p span,li span,blockquote span{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;letter-spacing:inherit!important}
+  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:1.3em 0 0.7em!important}
+  h1{font-size:1.65em!important}h2{font-size:1.35em!important}h3{font-size:1.15em!important}
+  img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:#5a715a}
+  blockquote{margin:1em 0!important;padding-left:1em!important;border-left:2px solid #9caea1}
+  table{max-width:100%}sup,sub{font-size:0.75em!important}rt{font-size:0.55em!important}
+  pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}`;
+}
+function styleContents(contents) {
+  let style = contents.document.getElementById('leximory-prose');
+  if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
+  style.textContent=proseCSS(currentTheme);
+}
+window.readerTheme = async theme => {
+  currentTheme=theme; document.body.style.background=theme.paper;
+  if (!rendition) return;
+  const location=rendition.currentLocation()?.start?.cfi;
+  rendition.getContents().forEach(styleContents);
+  rendition.resize();
+  if (location) await rendition.display(location);
+};
+window.openBook = async (base64, location, fonts, theme, bookmarks) => {
+  try {
+    currentTheme=theme;document.body.style.background=theme.paper;
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const archive = await JSZip.loadAsync(bytes);
+    const entries = Object.values(archive.files);
+    const expanded = entries.reduce((sum, entry) => sum + (entry._data?.uncompressedSize || 0), 0);
+    if (entries.length > 10000 || expanded > 160 * 1024 * 1024) throw Error('Book exceeds reader limits');
+    const contentTypes = new Map();
+    for (const entry of entries.filter(e => /\.opf$/i.test(e.name))) {
+      const packageDocument = new DOMParser().parseFromString(await entry.async('string'), 'application/xml');
+      for (const item of packageDocument.querySelectorAll('item')) {
+        const type = item.getAttribute('media-type') || '';
+        if (!['application/xhtml+xml','text/html','image/svg+xml'].includes(type)) continue;
+        const path = decodeURIComponent(new URL(item.getAttribute('href'), 'https://book.invalid/' + entry.name).pathname.slice(1));
+        contentTypes.set(path, type);
+      }
+    }
+    for (const entry of entries) {
+      const type = contentTypes.get(entry.name);
+      if (entry.dir || !type && !/\.(xhtml|html|htm|svg|xml)$/i.test(entry.name)) continue;
+      archive.file(entry.name, sanitizeDocument(await entry.async('string'), type === 'image/svg+xml' || /\.svg$/i.test(entry.name)));
+    }
+    const sanitized = await archive.generateAsync({type:'uint8array',compression:'STORE'});
+    book = ePub(sanitized.buffer, {replacements:'blobUrl'});
+    await book.ready;
+    rendition = book.renderTo('book', {width:'100%',height:'100%',spread:'none',flow:'paginated',gap:0,allowScriptedContent:true});
+    rendition.themes.default({'@font-face':[
+      {'font-family':'LeximoryProse','font-weight':'100 900','src':`url('${fonts.regular}')`},
+      {'font-family':'LeximoryProse','font-style':'italic','font-weight':'100 900','src':`url('${fonts.italic}')`},
+      {'font-family':'LeximoryDisplay','font-weight':'100 900','src':`url('${fonts.display}')`}
+    ]});
+    const flatten = (items, depth=0) => items.flatMap(item => [{title:item.label.trim(),href:item.href,depth},...flatten(item.subitems||[],depth+1)]);
+    const navigation = await book.loaded.navigation;
+    send('contents',{items:flatten(navigation.toc)});
+    rendition.hooks.content.register(async contents => {
+      contents.document.querySelectorAll('script,object,embed,form').forEach(el => el.remove());
+      styleContents(contents);
+      await contents.document.fonts.load(`${currentTheme.size}px LeximoryProse`);
+      contents.document.addEventListener('selectionchange', () => {
+        try {
+        const selection = contents.window.getSelection();
+        const quote = selection?.toString().trim();
+        if (!quote || quote.length > 1024) { selected=null; send('selectionCleared'); return; }
+        const range = selection.getRangeAt(0);
+        const node = range.commonAncestorContainer;
+        const container = (node.nodeType === 1 ? node : node.parentElement)?.closest('p,li,div,section') || contents.document.body;
+        const prefix = contents.document.createRange();
+        prefix.selectNodeContents(container); prefix.setEnd(range.startContainer, range.startOffset);
+        const paragraph = container.textContent;
+        const offset = prefix.toString().length + selection.toString().indexOf(quote);
+        const start = Math.max(0, offset-1400);
+        const context = paragraph.slice(start, Math.min(paragraph.length,offset+quote.length+1400));
+        if (context.slice(offset-start,offset-start+quote.length) !== quote) { selected=null; send('selectionCleared'); return; }
+        const bounds=range.getBoundingClientRect();
+        const view=rendition.views().all().find(v=>v.contents===contents);
+        const frame=view?.iframe.getBoundingClientRect() || {x:0,y:0};
+        selected = {quote,context,offset:offset-start,rect:{x:bounds.x+frame.x,y:bounds.y+frame.y,width:bounds.width,height:bounds.height}};
+        send('selected', selected);
+        } catch(error) { send('diagnostic', {message:String(error)}); }
+      });
+    });
+    rendition.on('selected', (cfi) => send('selectionLocation', {location:cfi}));
+    const relocated = location => {
+      const cfi=location.start.cfi,href=location.start.href;
+      const chapter=flatten(navigation.toc).find(item=>item.href.split('#')[0]===href)?.title||null;
+      send('location',{location:cfi,chapter,page:location.start.displayed?.page||1,atStart:location.atStart,atEnd:location.atEnd});
+    };
+    rendition.on('relocated', location => { if(ready) relocated(location); });
+    await rendition.display(location || undefined).catch(() => rendition.display());
+    ready = true;
+    for (const mark of bookmarks || []) if (mark.location?.startsWith('epubcfi(')) {
+      try { rendition.annotations.highlight(mark.location, {}, null, 'bookmark', {'fill':'#9caea1','fill-opacity':'0.25'}); } catch (_) {}
+    }
+    relocated(rendition.currentLocation());send('ready');
+  } catch (error) { send('failed',{message:String(error)}); }
+};
+window.readerCommand = (command,value) => {
+  if (!rendition) return;
+  if (command==='next') rendition.next();
+  if (command==='previous') rendition.prev();
+  if (command==='display') rendition.display(value);
+};
+window.addEventListener('resize', () => { if(rendition) rendition.resize(); });
+</script></body></html>

@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server'
 import { updateSession, type NextRequest } from '@repo/supabase/proxy'
 
 const PROTECTED_ROUTE_PREFIXES = [
@@ -13,6 +14,7 @@ const isProtectedRouteChecker = (path: string) => {
 }
 
 export async function proxy(request: NextRequest) {
+    if (request.nextUrl.pathname.startsWith('/api/mobile/v1/')) return NextResponse.next()
     return await updateSession(request, isProtectedRouteChecker, '/library')
 }
 

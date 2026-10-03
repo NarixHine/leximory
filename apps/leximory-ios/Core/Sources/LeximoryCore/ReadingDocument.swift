@@ -145,11 +145,13 @@ public struct ReaderLayout: Sendable {
     public let text: String
     public let entries: [Entry]
     public let notices: [Notice]
-    public init(document: ReadingDocument) {
+    public init(document: ReadingDocument, openingTitleInHeader: String? = nil) {
         var text = ""
         var entries: [Entry] = []
         var notices: [Notice] = []
-        for block in document.blocks {
+        for (index, block) in document.blocks.enumerated() {
+            if index == 0, block.kind == .heading1, block.displayText == openingTitleInHeader,
+               block.spans.isEmpty, block.notice == nil { continue }
             if !text.isEmpty { text += "\n" }
             if let notice = block.notice {
                 notices.append(Notice(range: NSRange(location: text.utf16.count, length: notice.utf16.count), text: notice))
