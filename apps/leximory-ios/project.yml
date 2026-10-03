@@ -1,0 +1,65 @@
+name: Leximory
+options:
+  minimumXcodeGenVersion: 2.44.1
+  deploymentTarget:
+    iOS: '26.0'
+  bundleIdPrefix: com.leximory
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: '1,2'
+    CODE_SIGN_STYLE: Automatic
+packages:
+  LeximoryCore:
+    path: Core
+targets:
+  Leximory:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: LeximoryCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Leximory
+        UIAppFonts: [EBGaramond.ttf, LXGWWenKaiScreen.ttf, NotoSerifJP.ttf]
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes: [audio]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+  LeximoryTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: Leximory
+      - package: LeximoryCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+  LeximoryUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Leximory
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Leximory:
+    build:
+      targets:
+        Leximory: all
+    test:
+      targets: [LeximoryTests, LeximoryUITests]

@@ -1,0 +1,7 @@
+.build/
+Core/.build/
+*.xcodeproj/
+DerivedData/
+*.xcresult
+
+.tools/

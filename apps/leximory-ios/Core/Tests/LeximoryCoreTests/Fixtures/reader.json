@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "revision": "ba5016cfc3199315f41f6414780b6727bc7fc91a2e63a1aeb0af506d4588649e",
+  "source": "# The art of noticing\n\nA quiet page, a little time, and a word that stays with you.\n\n## Along the river\n\n🙂 café café 東京. We walked along the {{bank||bank||The land beside a river.||From Old Norse bakki.||embankment}}. Later, we passed the {{bank||bank||A place that keeps and lends money.||From Italian banca, a bench.||banker}}.\n\nReading slowly makes room for **small discoveries**, *new connections*, and &&ordinary wonders&&. Keep the original punctuation: 你好，世界！\n\n> “Attention is the beginning of understanding.”\n\n- Select a word or phrase and choose Define.\n- Tap a marked word to see its embedded meaning.\n- Make room for the final sentence.\n\n1. Read a little.\n2. Come back tomorrow.\n\n## 日本語\n\n<ruby>東京<rp>（</rp><rt>とうきょう</rt><rp>）</rp></ruby>で、{{腕組||腕組||抱着胳膊}}をして考える。言葉を一つずつ、ゆっくりと。\n\n## More voices\n\n{{se rendre compte||se rendre compte||意识到}}. {{欢迎||欢迎||Welcome}}！ {{ontdekken||ontdekken||to discover}}.\n\n[Read with Leximory](https://leximory.com). An image keeps its alternative text:\n\n![A quiet forest](https://fixtures.leximory.invalid/forest.png)\n\n:::fixture_recording\n## Listen to this passage\n\nThe recording belongs to this section. The {{leaves||leaf||The flat, green parts of a plant.}} move in the breeze. This text stays visible even when audio is unavailable.\n:::\n\n:::missing_recording\nThis section has no available recording. It still has all of its text.\n:::\n\n## Readable fallbacks\n\n```latex\nE = mc^2\n```\n\nA malformed marker keeps its visible word: {{unfinished||secret metadata. No metadata should become prose.\n\n---\n\n## Final section\n\nThe last sentence matters just as much as the first.\n",
+  "blocks": [
+    {
+      "id": "bb448463f936e5ca7f090dc4",
+      "kind": "heading1",
+      "sourceRange": {
+        "location": 0,
+        "length": 21
+      },
+      "displayText": "The art of noticing",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "e11a3fbe8330e1c11ec02f12",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 23,
+        "length": 60
+      },
+      "displayText": "A quiet page, a little time, and a word that stays with you.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "fc46786eeae44dd52eb58ca3",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 85,
+        "length": 18
+      },
+      "displayText": "Along the river",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "45cde9658a8150680d2c6b37",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 105,
+        "length": 226
+      },
+      "displayText": "🙂 café café 東京. We walked along the bank. Later, we passed the bank.",
+      "spans": [
+        {
+          "range": {
+            "location": 38,
+            "length": 4
+          },
+          "kind": "definition",
+          "lemma": "bank",
+          "definition": "The land beside a river.",
+          "etymology": "From Old Norse bakki.",
+          "cognates": "embankment"
+        },
+        {
+          "range": {
+            "location": 65,
+            "length": 4
+          },
+          "kind": "definition",
+          "lemma": "bank",
+          "definition": "A place that keeps and lends money.",
+          "etymology": "From Italian banca, a bench.",
+          "cognates": "banker"
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "468f0481b757df1c9851af41",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 333,
+        "length": 135
+      },
+      "displayText": "Reading slowly makes room for small discoveries, new connections, and ordinary wonders. Keep the original punctuation: 你好，世界！",
+      "spans": [
+        {
+          "range": {
+            "location": 30,
+            "length": 17
+          },
+          "kind": "strong"
+        },
+        {
+          "range": {
+            "location": 49,
+            "length": 15
+          },
+          "kind": "emphasis"
+        },
+        {
+          "range": {
+            "location": 70,
+            "length": 16
+          },
+          "kind": "smallcaps"
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "2d32a1390e895d99302e02b0",
+      "kind": "quote",
+      "sourceRange": {
+        "location": 472,
+        "length": 46
+      },
+      "displayText": "“Attention is the beginning of understanding.”",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "5ca781f11c9eb216c7b19f69",
+      "kind": "listItem",
+      "sourceRange": {
+        "location": 522,
+        "length": 42
+      },
+      "displayText": "• Select a word or phrase and choose Define.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "42f85a446f66615b569c0bc4",
+      "kind": "listItem",
+      "sourceRange": {
+        "location": 567,
+        "length": 46
+      },
+      "displayText": "• Tap a marked word to see its embedded meaning.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "d43f6619b212bd3937502b09",
+      "kind": "listItem",
+      "sourceRange": {
+        "location": 616,
+        "length": 33
+      },
+      "displayText": "• Make room for the final sentence.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "3476e395240da27efe185f82",
+      "kind": "listItem",
+      "sourceRange": {
+        "location": 654,
+        "length": 14
+      },
+      "displayText": "1. Read a little.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "9b3b298bbaebc6f17b3c89fc",
+      "kind": "listItem",
+      "sourceRange": {
+        "location": 672,
+        "length": 19
+      },
+      "displayText": "2. Come back tomorrow.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "a27ade6d2dfd563c5b0fad9d",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 693,
+        "length": 6
+      },
+      "displayText": "日本語",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "80e21ff9afbcc11ebe038928",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 701,
+        "length": 88
+      },
+      "displayText": "東京で、腕組をして考える。言葉を一つずつ、ゆっくりと。",
+      "spans": [
+        {
+          "range": {
+            "location": 0,
+            "length": 2
+          },
+          "kind": "ruby",
+          "pronunciation": "とうきょう"
+        },
+        {
+          "range": {
+            "location": 4,
+            "length": 2
+          },
+          "kind": "definition",
+          "lemma": "腕組",
+          "definition": "抱着胳膊",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "785547b246cba4008caf8194",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 791,
+        "length": 14
+      },
+      "displayText": "More voices",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "6790188f14c0213f5040b05d",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 807,
+        "length": 104
+      },
+      "displayText": "se rendre compte. 欢迎！ ontdekken.",
+      "spans": [
+        {
+          "range": {
+            "location": 0,
+            "length": 16
+          },
+          "kind": "definition",
+          "lemma": "se rendre compte",
+          "definition": "意识到",
+          "etymology": null,
+          "cognates": null
+        },
+        {
+          "range": {
+            "location": 18,
+            "length": 2
+          },
+          "kind": "definition",
+          "lemma": "欢迎",
+          "definition": "Welcome",
+          "etymology": null,
+          "cognates": null
+        },
+        {
+          "range": {
+            "location": 22,
+            "length": 9
+          },
+          "kind": "definition",
+          "lemma": "ontdekken",
+          "definition": "to discover",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "229eff49093cccce3256ccc2",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 913,
+        "length": 80
+      },
+      "displayText": "Read with Leximory. An image keeps its alternative text:",
+      "spans": [
+        {
+          "range": {
+            "location": 0,
+            "length": 18
+          },
+          "kind": "link",
+          "url": "https://leximory.com/"
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "6a5b8e5bc3472c87e67d42f9",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 995,
+        "length": 63
+      },
+      "displayText": "￼ A quiet forest",
+      "spans": [
+        {
+          "range": {
+            "location": 0,
+            "length": 1
+          },
+          "kind": "image",
+          "url": "https://fixtures.leximory.invalid/forest.png",
+          "alt": "A quiet forest"
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "2dd340149afe5e4eabc3f3c1",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 1081,
+        "length": 25
+      },
+      "displayText": "Listen to this passage",
+      "spans": [],
+      "audioId": "fixture_recording",
+      "notice": null
+    },
+    {
+      "id": "08eb94502b5b9e1dfe655d90",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 1108,
+        "length": 170
+      },
+      "displayText": "The recording belongs to this section. The leaves move in the breeze. This text stays visible even when audio is unavailable.",
+      "spans": [
+        {
+          "range": {
+            "location": 43,
+            "length": 6
+          },
+          "kind": "definition",
+          "lemma": "leaf",
+          "definition": "The flat, green parts of a plant.",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": "fixture_recording",
+      "notice": null
+    },
+    {
+      "id": "9e84192d6fe3fd98f8f1f867",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 1305,
+        "length": 70
+      },
+      "displayText": "This section has no available recording. It still has all of its text.",
+      "spans": [],
+      "audioId": "missing_recording",
+      "notice": null
+    },
+    {
+      "id": "1b9addee82580c10b992600e",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 1381,
+        "length": 21
+      },
+      "displayText": "Readable fallbacks",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "156bb33d0e5ba07f4f69ea55",
+      "kind": "fallback",
+      "sourceRange": {
+        "location": 1404,
+        "length": 21
+      },
+      "displayText": "E = mc^2",
+      "spans": [],
+      "audioId": null,
+      "notice": "Math shown as source"
+    },
+    {
+      "id": "a8ac09c05473389ac42b6554",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 1427,
+        "length": 106
+      },
+      "displayText": "A malformed marker keeps its visible word: unfinished",
+      "spans": [],
+      "audioId": null,
+      "notice": "Malformed definition shown as plain text"
+    },
+    {
+      "id": "019a14ed84ba51fbd1a70316",
+      "kind": "divider",
+      "sourceRange": {
+        "location": 1535,
+        "length": 3
+      },
+      "displayText": "﹡ ﹡ ﹡",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "0e150ed1e9659e2ddd7b9c68",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 1540,
+        "length": 16
+      },
+      "displayText": "Final section",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "1d1520d677aee4776907c1d8",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 1558,
+        "length": 52
+      },
+      "displayText": "The last sentence matters just as much as the first.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    }
+  ]
+}

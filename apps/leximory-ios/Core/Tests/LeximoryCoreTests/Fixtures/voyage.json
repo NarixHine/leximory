@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "revision": "2d1a2d982d3981c811cf00e6111f4f2dcf675564ba8f345459444dad0f52ddc6",
+  "source": "# Le temps de regarder\n\nOn peut voyager sans aller loin. Il suffit parfois de {{ralentir||ralentir||Aller moins vite.}} et de regarder la rue que l'on connaît déjà.\n\n## Un carnet ouvert\n\nUn mot nouveau, une lumière différente, une conversation inattendue. Le carnet garde ces petites découvertes.\n\nLire, c'est aussi prendre le temps de regarder.\n",
+  "blocks": [
+    {
+      "id": "161eeb78a5c94ead3149d829",
+      "kind": "heading1",
+      "sourceRange": {
+        "location": 0,
+        "length": 22
+      },
+      "displayText": "Le temps de regarder",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "43d7a09063ee71ff9cc93756",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 24,
+        "length": 140
+      },
+      "displayText": "On peut voyager sans aller loin. Il suffit parfois de ralentir et de regarder la rue que l'on connaît déjà.",
+      "spans": [
+        {
+          "range": {
+            "location": 54,
+            "length": 8
+          },
+          "kind": "definition",
+          "lemma": "ralentir",
+          "definition": "Aller moins vite.",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "1ec2095bbbf3572c13e0464f",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 166,
+        "length": 19
+      },
+      "displayText": "Un carnet ouvert",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "6a207166d09d1fe82bb47325",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 187,
+        "length": 109
+      },
+      "displayText": "Un mot nouveau, une lumière différente, une conversation inattendue. Le carnet garde ces petites découvertes.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "eec218cc2cd12c5d2f4f43ce",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 298,
+        "length": 47
+      },
+      "displayText": "Lire, c'est aussi prendre le temps de regarder.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    }
+  ]
+}

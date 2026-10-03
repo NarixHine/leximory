@@ -6,7 +6,8 @@
     },
     "exports": {
         ".": "./src/index.ts",
-        "./config": "./src/config.ts"
+        "./config": "./src/config.ts",
+        "./access": "./src/access.ts"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",

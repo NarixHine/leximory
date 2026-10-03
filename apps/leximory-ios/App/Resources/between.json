@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "revision": "84a9081ddcb5bfe64cb83714505b15efc0080808ce9cd8e7e407728f83806ecf",
+  "source": "# 字里行间\n\n翻开一本书，给自己一点安静的时间。每个{{词语||词语||表达意思的语言单位。}}都有自己的故事。\n\n## 慢慢读\n\n不必急着翻页。停下来，看看一句话怎样连接另一个想法。\n\n合上书以后，新的发现仍然留在心里。\n",
+  "blocks": [
+    {
+      "id": "6c63f8e5621f11b4a4282f2b",
+      "kind": "heading1",
+      "sourceRange": {
+        "location": 0,
+        "length": 6
+      },
+      "displayText": "字里行间",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "088786ed0304be712abf72d6",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 8,
+        "length": 49
+      },
+      "displayText": "翻开一本书，给自己一点安静的时间。每个词语都有自己的故事。",
+      "spans": [
+        {
+          "range": {
+            "location": 19,
+            "length": 2
+          },
+          "kind": "definition",
+          "lemma": "词语",
+          "definition": "表达意思的语言单位。",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "52bb19e270b0ee259190e08b",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 59,
+        "length": 6
+      },
+      "displayText": "慢慢读",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "4516f503ca9cf2b6208d5a7c",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 67,
+        "length": 26
+      },
+      "displayText": "不必急着翻页。停下来，看看一句话怎样连接另一个想法。",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "7d2548854296af8714e02a03",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 95,
+        "length": 17
+      },
+      "displayText": "合上书以后，新的发现仍然留在心里。",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    }
+  ]
+}

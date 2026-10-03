@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "revision": "26ed4d1f7e7e78d6d2976fac2026391352fbdd86dcb9be81cb388ca4137eac00",
+  "source": "# A quiet forest\n\nThe forest has no need to hurry. Light moves between the leaves, and every path offers a different way to look.\n\n## Finding room to listen\n\nWe {{notice||notice||To become aware of something.}} the small sounds first: a branch moving, water running over stone, a bird somewhere above us.\n\n![A quiet forest](fixture://forest)\n\nReading can feel like this, too. One word opens into another. A familiar sentence becomes unfamiliar when we give it a little more time.\n\n## Taking it with you\n\nThere is no finish line here. Keep a word, follow a thought, and return when you wish.\n",
+  "blocks": [
+    {
+      "id": "ef12637d6829624863362785",
+      "kind": "heading1",
+      "sourceRange": {
+        "location": 0,
+        "length": 16
+      },
+      "displayText": "A quiet forest",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "719ae8bdc439ac9c2e9fda67",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 18,
+        "length": 111
+      },
+      "displayText": "The forest has no need to hurry. Light moves between the leaves, and every path offers a different way to look.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "02cdaf7625e3cf98b52f1d20",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 131,
+        "length": 25
+      },
+      "displayText": "Finding room to listen",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "4339ac5eca2962af298c842d",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 158,
+        "length": 146
+      },
+      "displayText": "We notice the small sounds first: a branch moving, water running over stone, a bird somewhere above us.",
+      "spans": [
+        {
+          "range": {
+            "location": 3,
+            "length": 6
+          },
+          "kind": "definition",
+          "lemma": "notice",
+          "definition": "To become aware of something.",
+          "etymology": null,
+          "cognates": null
+        }
+      ],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "c0c1c384f5dfcdd6f7a6ed29",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 306,
+        "length": 35
+      },
+      "displayText": "￼ A quiet forest",
+      "spans": [],
+      "audioId": null,
+      "notice": "Image unavailable"
+    },
+    {
+      "id": "e9b56154c772e35c819be25b",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 343,
+        "length": 136
+      },
+      "displayText": "Reading can feel like this, too. One word opens into another. A familiar sentence becomes unfamiliar when we give it a little more time.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "b03a25b665a72f3b683533ae",
+      "kind": "heading2",
+      "sourceRange": {
+        "location": 481,
+        "length": 21
+      },
+      "displayText": "Taking it with you",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    },
+    {
+      "id": "1a8b99dae0e89ae2c84ea8d4",
+      "kind": "paragraph",
+      "sourceRange": {
+        "location": 504,
+        "length": 86
+      },
+      "displayText": "There is no finish line here. Keep a word, follow a thought, and return when you wish.",
+      "spans": [],
+      "audioId": null,
+      "notice": null
+    }
+  ]
+}

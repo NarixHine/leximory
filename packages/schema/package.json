@@ -10,7 +10,8 @@
         "./paper": "./src/paper/index.ts",
         "./question-note": "./src/question-note/index.ts",
         "./chunk-note": "./src/chunk-note/index.ts",
-        "./library": "./src/library/index.ts"
+        "./library": "./src/library/index.ts",
+        "./mobile": "./src/mobile/index.ts"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",
