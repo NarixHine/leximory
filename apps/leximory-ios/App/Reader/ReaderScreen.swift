@@ -113,6 +113,7 @@ struct DefinitionView: View {
     let language: String
     let isPopover: Bool
     @State private var contentHeight: CGFloat = 320
+    @State private var bottomSafeArea: CGFloat = 0
     @State private var lookupAttempt = 0
     @State private var model: DefinitionModel
     @Environment(\.dismiss) private var dismiss
@@ -126,56 +127,62 @@ struct DefinitionView: View {
         return item.definition?.lemma ?? item.source.text
     }
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(lemma).font(LeximoryTypography.prose(28, language: language))
-                    .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
-                    .accessibilityAddTraits(.isHeader)
-                switch model.state {
-                case .ready(let definition, _):
-                    section("释义", content: definition.definition)
-                    if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
-                    if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
-                    HStack(spacing: 16) {
-                        if let client {
-                            Button { model.save(client: client, source: item.source) } label: {
-                                Group {
-                                    if case .saving = model.saveState { ProgressView().tint(LeximoryPalette.paper) }
-                                    else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
-                                }.frame(width: 48, height: 48)
-                                    .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                            }.buttonStyle(.plain).disabled(!canSave)
-                                .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
+        GeometryReader { geometry in
+            let safeAreaBottom = geometry.safeAreaInsets.bottom
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(lemma).font(LeximoryTypography.prose(28, language: language))
+                        .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
+                        .accessibilityAddTraits(.isHeader)
+                    switch model.state {
+                    case .ready(let definition, _):
+                        section("释义", content: definition.definition)
+                        if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
+                        if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
+                        HStack(spacing: 16) {
+                            if let client {
+                                Button { model.save(client: client, source: item.source) } label: {
+                                    Group {
+                                        if case .saving = model.saveState { ProgressView().tint(LeximoryPalette.paper) }
+                                        else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
+                                    }.frame(width: 48, height: 48)
+                                        .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
+                                }.buttonStyle(.plain).disabled(!canSave)
+                                    .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
+                            }
+                            if let dictionaryURL {
+                                Link(destination: dictionaryURL) {
+                                    Image(systemName: "arrow.up.right.square").font(.system(size: 20))
+                                        .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
+                                }.accessibilityLabel("在词典中查看")
+                            }
+                        }.padding(.top, 2)
+                        if case .uncertain = model.saveState {
+                            Text("未能确认收藏结果，请先在网页版查看，避免重复收藏。")
+                                .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
                         }
-                        if let dictionaryURL {
-                            Link(destination: dictionaryURL) {
-                                Image(systemName: "arrow.up.right.square").font(.system(size: 20))
-                                    .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
-                            }.accessibilityLabel("在词典中查看")
-                        }
-                    }.padding(.top, 2)
-                    if case .uncertain = model.saveState {
-                        Text("未能确认收藏结果，请先在网页版查看，避免重复收藏。")
-                            .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                    case .generating(let preview):
+                        if client != nil {
+                            if !preview.isEmpty { section("释义", content: preview) }
+                            ProgressView("正在理解语境……")
+                                .frame(maxWidth: .infinity, minHeight: preview.isEmpty ? 140 : 60, alignment: .center)
+                        } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
+                    case .failed(let message):
+                        Text(message).foregroundStyle(LeximoryPalette.muted)
+                        if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                     }
-                case .generating(let preview):
-                    if client != nil {
-                        if !preview.isEmpty { section("释义", content: preview) }
-                        ProgressView("正在理解语境……")
-                            .frame(maxWidth: .infinity, minHeight: preview.isEmpty ? 140 : 60, alignment: .center)
-                    } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
-                case .failed(let message):
-                    Text(message).foregroundStyle(LeximoryPalette.muted)
-                    if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
-                }
-            }.padding(.horizontal, isPopover ? 28 : 24)
-                .padding(.top, isPopover ? 28 : 24).padding(.bottom, isPopover ? 28 : 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+                }.padding(.horizontal, isPopover ? 28 : 24)
+                    .padding(.top, isPopover ? 28 : 24).padding(.bottom, isPopover ? 28 : 24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+            }
+            .ignoresSafeArea(.container, edges: isPopover ? [] : .bottom)
+            .onGeometryChange(for: CGFloat.self) { _ in safeAreaBottom } action: { bottomSafeArea = $0 }
         }
         .frame(width: isPopover ? 480 : nil)
         .frame(height: isPopover ? min(contentHeight, 620) : nil)
-        .presentationDetents([.height(min(contentHeight, 560)), .large])
+        // A height detent adds the bottom safe area; our content already includes its edge inset.
+        .presentationDetents([.height(max(1, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(LeximoryPalette.shell).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { dismiss() }
         .task(id: "\(item.id):\(lookupAttempt)") {
