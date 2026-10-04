@@ -3,6 +3,31 @@ import Testing
 @testable import LeximoryCore
 
 struct ReadingTests {
+    @Test func annotationIndexKeepsRepeatedWordsAndCanonicalRanges() throws {
+        let document = try fixture()
+        let layout = ReaderLayout(document: document)
+        let annotations = layout.annotations(textID: TextID(rawValue: "fixture"), revision: document.revision)
+        let banks = annotations.filter { $0.selection.text == "bank" }
+        #expect(banks.count == 2)
+        #expect(banks[0].tag != banks[1].tag)
+        #expect(banks[0].definition != banks[1].definition)
+        for occurrence in annotations {
+            #expect(try layout.selection(occurrence.range, document: document, textID: occurrence.selection.textID) == occurrence.selection)
+            #expect(layout.entries(intersecting: occurrence.range).count == 1)
+        }
+        #expect(layout.entries(intersecting: NSRange(location: Int.max, length: 1)).isEmpty)
+    }
+    @Test func longDocumentSelectionOnlyValidatesItsOwnBlock() throws {
+        let document = try fixture("long-reader")
+        let layout = ReaderLayout(document: document)
+        let last = try #require(layout.entries.last)
+        let start = ContinuousClock.now
+        for _ in 0..<1000 {
+            let selection = try layout.selection(last.documentRange, document: document, textID: TextID(rawValue: "fixture"))
+            #expect(selection.text == last.block.displayText)
+        }
+        print("1,000 final-block selections in 90k reader: \(start.duration(to: .now))")
+    }
     @Test func headerTitleDoesNotDuplicateProseOrChangeSelectionOffsets() throws {
         let document = try fixture("reader")
         let title = try #require(document.blocks.first)

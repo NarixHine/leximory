@@ -96,6 +96,7 @@ final class LearningPDFView: PDFView {
     private weak var web: WKWebView?
     private let reader: EbookReaderState
     private var snapshot: UIImage?
+    private var snapshotID = UUID()
     private var paper: UIView?
     private var strips: [CALayer] = []
     private var backs: [CALayer] = []
@@ -103,7 +104,9 @@ final class LearningPDFView: PDFView {
     private var backShades: [CALayer] = []
     private var progress: CGFloat = 0
     private var forward = true
-    private var waitingForPage = false
+    private var previewReady = false
+    private var requestedCommit: Bool?
+    private var resolvingTurn = false
     private var animator: UIViewPropertyAnimator?
     let pan = UIPanGestureRecognizer()
 
@@ -116,14 +119,18 @@ final class LearningPDFView: PDFView {
     }
     func prepare() {
         guard paper == nil, let web, web.bounds.width > 0 else { return }
+        snapshot = nil
+        let request = UUID(); snapshotID = request
+        let location = reader.location
         let configuration = WKSnapshotConfiguration(); configuration.afterScreenUpdates = true
         web.takeSnapshot(with: configuration) { [weak self] image, _ in
-            self?.snapshot = image
+            guard let self, self.snapshotID == request, self.reader.location == location,
+                  self.paper == nil, self.animator == nil else { return }
+            self.snapshot = image
         }
     }
     func pageArrived() {
-        if waitingForPage { finish(to: 1) }
-        else { prepare() }
+        prepare()
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let web else { return false }
@@ -142,25 +149,46 @@ final class LearningPDFView: PDFView {
         case .began:
             forward = pan.velocity(in: web).x < 0
             if !UIAccessibility.isReduceMotionEnabled { makePaper() }
+            if paper != nil { beginPreview() }
         case .changed:
             progress = min(0.85, max(0, pan.translation(in: web).x * (forward ? -1 : 1) / web.bounds.width))
-            pose(progress)
+            if previewReady { pose(progress) }
         case .ended:
             let velocity = pan.velocity(in: web).x * (forward ? -1 : 1)
-            if progress > 0.2 || velocity > 350 {
-                waitingForPage = true
-                reader.navigate(forward ? "next" : "previous")
-                if paper == nil { waitingForPage = false }
-                else {
-                    // Finish even if the renderer cannot relocate at a damaged chapter boundary.
-                    Task { [weak self] in
-                        try? await Task.sleep(for: .milliseconds(700))
-                        if self?.waitingForPage == true { self?.finish(to: 1) }
-                    }
-                }
-            } else { finish(to: 0) }
-        case .cancelled, .failed: finish(to: 0)
+            let commit = progress > 0.2 || velocity > 350
+            if paper == nil {
+                if commit { reader.navigate(forward ? "next" : "previous") }
+                progress = 0
+            } else { requestedCommit = commit; resolveTurn() }
+        case .cancelled, .failed:
+            requestedCommit = false; resolveTurn()
         default: break
+        }
+    }
+    private func beginPreview() {
+        previewReady = false; requestedCommit = nil; resolvingTurn = false
+        Task { [weak self] in
+            guard let self, let web else { return }
+            do {
+                _ = try await web.callAsyncJavaScript("return await window.readerTurn(action)",
+                    arguments: ["action": forward ? "next" : "previous"], in: nil, contentWorld: .page)
+                previewReady = true
+                pose(progress)
+                resolveTurn()
+            } catch { finish(to: 0) }
+        }
+    }
+    private func resolveTurn() {
+        guard previewReady, let commit = requestedCommit, !resolvingTurn else { return }
+        resolvingTurn = true
+        if !commit { finish(to: 0, restore: true); return }
+        Task { [weak self] in
+            guard let self, let web else { return }
+            do {
+                _ = try await web.callAsyncJavaScript("return await window.readerTurn('commit')",
+                    arguments: [:], in: nil, contentWorld: .page)
+                finish(to: 1)
+            } catch { finish(to: 0, restore: true) }
         }
     }
     private func makePaper() {
@@ -211,8 +239,7 @@ final class LearningPDFView: PDFView {
         }
         CATransaction.commit()
     }
-    private func finish(to target: CGFloat) {
-        waitingForPage = false
+    private func finish(to target: CGFloat, restore: Bool = false) {
         guard paper != nil else { progress = 0; prepare(); return }
         let start = progress
         let animation = UIViewPropertyAnimator(duration: 0.28, curve: .easeOut)
@@ -223,10 +250,18 @@ final class LearningPDFView: PDFView {
         animation.addAnimations { self.paper?.alpha = target == 1 ? 0.99 : 1 }
         animation.addCompletion { [weak self, driver] _ in
             driver.stop()
-            self?.paper?.removeFromSuperview(); self?.paper = nil
-            self?.strips = []; self?.backs = []; self?.shades = []; self?.backShades = []
-            self?.progress = 0; self?.animator = nil
-            self?.prepare()
+            Task { [weak self] in
+                guard let self else { return }
+                if restore, let web {
+                    _ = try? await web.callAsyncJavaScript("return await window.readerTurn('cancel')",
+                        arguments: [:], in: nil, contentWorld: .page)
+                }
+                paper?.removeFromSuperview(); paper = nil
+                strips = []; backs = []; shades = []; backShades = []
+                progress = 0; animator = nil; previewReady = false
+                requestedCommit = nil; resolvingTurn = false
+                prepare()
+            }
         }
         animator = animation; driver.start(); animation.startAnimation()
     }

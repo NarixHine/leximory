@@ -125,17 +125,24 @@ final class ReaderUITests: XCTestCase {
         app.buttons["text-fixture-epub"].tap()
         let opening = app.webViews.staticTexts["The river"]
         XCTAssertTrue(opening.waitForExistence(timeout: 20))
+        let pageLabel = app.staticTexts["ebook-page-position"]
+        XCTAssertTrue(pageLabel.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["ebook-running-title"].exists)
+        let initialPageLabel = pageLabel.value as? String
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         let initialPosition = reader.value as? String
         XCTAssertNotNil(initialPosition)
         app.swipeLeft()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", initialPosition!), object: reader)], timeout: 5) == .completed)
+        XCTAssertNotEqual(pageLabel.value as? String, initialPageLabel)
         capture(app, name: "EPUB swipe to next page")
         app.swipeRight()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", initialPosition!), object: reader)], timeout: 5) == .completed)
         revealEbookControls(app)
         reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)).tap()
         XCTAssertFalse(app.buttons["ebook-contents"].exists)
+        XCTAssertTrue(app.staticTexts["ebook-running-title"].exists)
+        XCTAssertTrue(pageLabel.exists)
     }
     @MainActor func testCancelledEPUBDragAndEdgeBack() {
         let app = XCUIApplication()
@@ -374,6 +381,7 @@ final class ReaderUITests: XCTestCase {
         app.launch()
         openArticle(app, id: "fixture-long")
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "The final sentence of the long fixture")).firstMatch.waitForExistence(timeout: 5))
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.exists)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "The final sentence of the long fixture")).firstMatch.waitForExistence(timeout: 5))

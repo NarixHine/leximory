@@ -8,6 +8,46 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ReaderNativeTests {
+    @Test func wrappedAnnotationUsesSeparateTightSegmentsAndReflows() throws {
+        let text = "Before we walked along the winding river bank together after the rain."
+        let marked = "walked along the winding river bank together"
+        let local = (text as NSString).range(of: marked)
+        let payload: [String: Any] = ["version": 1, "revision": String(repeating: "0", count: 64), "source": text,
+            "blocks": [["id": "wrapped", "kind": "paragraph", "sourceRange": ["location": 0, "length": text.utf16.count],
+                "displayText": text, "spans": [["kind": "definition", "range": ["location": local.location, "length": local.length],
+                    "lemma": "walk", "definition": "沿着河岸走。"]]]]]
+        let document = try JSONDecoder().decode(ReadingDocument.self, from: JSONSerialization.data(withJSONObject: payload))
+        try document.validate()
+        let layout = ReaderLayout(document: document)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = UIViewController()
+        let view = RubyTextView(frame: CGRect(x: 0, y: 0, width: 220, height: 600), textContainer: nil)
+        window.rootViewController?.view.addSubview(view)
+        window.isHidden = false
+        defer { window.isHidden = true }
+        view.textContainer.lineFragmentPadding = 0
+        view.readingLayout = layout
+        view.annotations = layout.annotations(textID: TextID(rawValue: "fixture"), revision: document.revision)
+        view.attributedText = ReaderAttributes.build(layout: layout)
+        view.invalidateReaderGeometry(); view.layoutIfNeeded()
+        let occurrence = try #require(view.annotations.first)
+        let segments = view.segments(for: occurrence.range)
+        #expect(segments.count >= 2)
+        #expect(Set(segments.map(\.minY)).count == segments.count)
+        for segment in segments {
+            #expect(segment.minX >= view.textContainerInset.left - 1)
+            #expect(segment.maxX <= view.bounds.width - view.textContainerInset.right + 1)
+            #expect(segment.height > 0 && segment.height < 60)
+        }
+        #expect(try #require(segments.last).width < view.bounds.width - 44)
+        #expect(view.annotation(tag: occurrence.tag)?.selection.text == marked)
+        view.frame.size.width = 420; view.setNeedsLayout(); view.layoutIfNeeded()
+        let wider = view.segments(for: occurrence.range)
+        #expect(wider.count < segments.count)
+        #expect(view.annotation(tag: occurrence.tag)?.selection == occurrence.selection)
+    }
     @Test func ebookSanitizerRemovesExecutableContentAndPreservesProse() async throws {
         let url = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
         let html = try String(contentsOf: url, encoding: .utf8)

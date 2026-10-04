@@ -47,6 +47,7 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
+        view.fixtureScrollsToEnd = jumpToEnd
         let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
         let signature = "\(document.revision):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
         if coordinator.signature != signature {
@@ -55,12 +56,12 @@ struct ReadingTextView: UIViewRepresentable {
             coordinator.signature = signature
             coordinator.layout = ReaderLayout(document: document, openingTitleInHeader: article?.title)
             view.readingLayout = coordinator.layout
-            view.readingDocument = document
-            view.readingTextID = textID
+            view.annotations = coordinator.layout.annotations(textID: textID, revision: document.revision)
             let start = ContinuousClock.now
             coordinator.imageTasks.forEach { $0.cancel() }
             coordinator.imageTasks.removeAll()
             view.attributedText = ReaderAttributes.build(layout: coordinator.layout, language: language, bodySize: bodySize)
+            view.invalidateReaderGeometry()
             coordinator.loadImages(in: view)
             view.rubySpans = coordinator.layout.entries.flatMap { entry in
                 entry.block.spans.compactMap { span in
@@ -102,7 +103,7 @@ struct ReadingTextView: UIViewRepresentable {
                               let self, let view, self.parent.document.revision == revision else { return }
                         attachment.image = image
                         if self.parent.jumpToEnd { view.pendingFinalScroll = true }
-                        view.setNeedsLayout()
+                        view.invalidateReaderGeometry()
                         view.setNeedsDisplay()
                     })
                 }
@@ -118,7 +119,6 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             if let view = scrollView as? RubyTextView { updateTitleVisibility(view) }
-            (scrollView as? RubyTextView)?.setNeedsLayout()
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
@@ -132,11 +132,8 @@ struct ReadingTextView: UIViewRepresentable {
             if case .tag(let tag) = textItem.content, tag.hasPrefix("definition:") {
                 return UIAction { [weak self, weak textView] _ in
                     guard let self, let textView,
-                          let selection = try? self.layout.selection(textItem.range, document: self.parent.document, textID: self.parent.textID),
-                          let block = self.parent.document.blocks.first(where: { $0.id == selection.blockID }),
-                          let span = block.spans.first(where: { $0.range == selection.range }),
-                          case .definition(let definition) = span.style else { return }
-                    self.parent.onDefine(selection, definition, self.rect(textItem.range, in: textView))
+                          let occurrence = (textView as? RubyTextView)?.annotation(tag: tag) else { return }
+                    self.parent.onDefine(occurrence.selection, occurrence.definition, self.rect(occurrence.range, in: textView))
                 }
             }
             return defaultAction
@@ -209,29 +206,39 @@ struct ReadingTextView: UIViewRepresentable {
 
 @MainActor final class RubyTextView: UITextView {
     var pendingFinalScroll = false
+    var fixtureScrollsToEnd = false
     var headerTitleFrame = CGRect.zero
     struct Ruby { let range: NSRange; let pronunciation: String }
     var headerView: UIView?
     var rubySpans: [Ruby] = [] { didSet { setNeedsLayout() } }
     private var pronunciationLabels: [Int: UILabel] = [:]
     private let markerLayer = CAShapeLayer()
+    var annotations: [ReaderLayout.Annotation] = [] {
+        didSet {
+            annotationsByTag = Dictionary(annotations.map { ($0.tag, $0) }, uniquingKeysWith: { first, _ in first })
+            annotationSegments.removeAll(); markerViewport = nil
+        }
+    }
+    private var annotationsByTag: [String: ReaderLayout.Annotation] = [:]
+    private var annotationSegments: [String: [CGRect]] = [:]
+    private var markerViewport: NSRange?
+    private var headerWidth: CGFloat?
+    private var attachmentWidth: CGFloat?
+    private var attachments: [NSTextAttachment] = []
     private var updatingPronunciations = false
     private var paragraphElements: [String: UIAccessibilityElement] = [:]
     var readingLayout: ReaderLayout? { didSet { paragraphElements.removeAll() } }
-    var readingDocument: ReadingDocument?
-    var readingTextID: TextID?
     var accessibleDefine: ((ReadingSelection, Definition, NSRange) -> Void)?
     override var accessibilityElements: [Any]? {
         get {
-            guard let layout = readingLayout, let document = readingDocument, let textID = readingTextID,
+            guard let layout = readingLayout,
                   let manager = textLayoutManager, let storage = manager.textContentManager,
                   let viewport = manager.textViewportLayoutController.viewportRange else { return [] }
             let start = storage.offset(from: storage.documentRange.location, to: viewport.location)
             let end = storage.offset(from: storage.documentRange.location, to: viewport.endLocation)
             guard start >= 0, end >= start else { return [] }
             let visible = NSRange(location: start, length: end - start)
-            let paragraphs = layout.entries.compactMap { entry -> UIAccessibilityElement? in
-                guard NSIntersectionRange(entry.documentRange, visible).length > 0 else { return nil }
+            let paragraphs = layout.entries(intersecting: visible).compactMap { entry -> UIAccessibilityElement? in
                 let element = paragraphElements[entry.block.id] ?? UIAccessibilityElement(accessibilityContainer: self)
                 paragraphElements[entry.block.id] = element
                 element.accessibilityLabel = entry.block.displayText.replacingOccurrences(of: "\u{FFFC}", with: "")
@@ -239,11 +246,11 @@ struct ReadingTextView: UIViewRepresentable {
                 element.accessibilityTraits = entry.block.kind.rawValue.hasPrefix("heading") ? [.header, .staticText] : .staticText
                 element.accessibilityFrameInContainerSpace = self.boundingRect(for: entry.documentRange)
                 element.accessibilityCustomActions = entry.block.spans.compactMap { span in
-                    guard case .definition(let definition) = span.style,
-                          let selection = try? document.selection(textID: textID, blockID: entry.block.id, range: span.range) else { return nil }
-                    let globalRange = NSRange(location: entry.documentRange.location + span.range.location, length: span.range.length)
+                    guard case .definition = span.style,
+                          let occurrence = annotationsByTag["definition:\(entry.block.id):\(span.range.location)"] else { return nil }
+                    let selection = occurrence.selection
                     return UIAccessibilityCustomAction(name: "查看释义 \(selection.text)") { [weak self] _ in
-                        self?.accessibleDefine?(selection, definition, globalRange)
+                        self?.accessibleDefine?(selection, occurrence.definition, occurrence.range)
                         return true
                     }
                 }
@@ -269,23 +276,32 @@ struct ReadingTextView: UIViewRepresentable {
     }
 
     override func layoutSubviews() {
-        if let headerView, bounds.width > 0 {
+        if attachmentWidth != bounds.width {
+            annotationSegments.removeAll(); markerViewport = nil
+            if fixtureScrollsToEnd { pendingFinalScroll = true }
+        }
+        if let headerView, bounds.width > 0, headerWidth != bounds.width {
             let size = headerView.systemLayoutSizeFitting(CGSize(width: bounds.width, height: UIView.layoutFittingCompressedSize.height),
                 withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
             headerView.frame = CGRect(x: 0, y: 0, width: bounds.width, height: size.height)
             if textContainerInset.top != size.height + 28 { textContainerInset.top = size.height + 28 }
+            headerWidth = bounds.width
         }
         let side = max(22, (bounds.width - LeximoryLayout.readingMeasure) / 2)
         if textContainerInset.left != side {
             textContainerInset.left = side
             textContainerInset.right = side
+            annotationSegments.removeAll(); markerViewport = nil
         }
-        textStorage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: textStorage.length)) { value, _, _ in
-            guard let attachment = value as? NSTextAttachment, let image = attachment.image, image.size.width > 0 else { return }
-            let ratio = image.size.height / image.size.width
-            let width = min(560, bounds.width - side * 2, 600 / max(ratio, 0.1))
-            let next = CGRect(x: 0, y: 0, width: width, height: width * ratio)
-            if attachment.bounds != next { attachment.bounds = next }
+        if attachmentWidth != bounds.width {
+            for attachment in attachments {
+                guard let image = attachment.image, image.size.width > 0 else { continue }
+                let ratio = image.size.height / image.size.width
+                let width = min(560, bounds.width - side * 2, 600 / max(ratio, 0.1))
+                let next = CGRect(x: 0, y: 0, width: width, height: width * ratio)
+                if attachment.bounds != next { attachment.bounds = next }
+            }
+            attachmentWidth = bounds.width
         }
         super.layoutSubviews()
         if pendingFinalScroll, bounds.width > 0, bounds.height > 0, textStorage.length > 0 {
@@ -297,30 +313,60 @@ struct ReadingTextView: UIViewRepresentable {
     }
     private func updateMarkers() {
         guard let layout = readingLayout, let manager = textLayoutManager,
-              let storage = manager.textContentManager, let viewport = manager.textViewportLayoutController.viewportRange else { markerLayer.path = nil; return }
+              let storage = manager.textContentManager, let viewport = manager.textViewportLayoutController.viewportRange else {
+            markerLayer.path = nil; markerViewport = nil; return
+        }
         let start = storage.offset(from: storage.documentRange.location, to: viewport.location)
         let end = storage.offset(from: storage.documentRange.location, to: viewport.endLocation)
         guard start >= 0, end >= start else { return }
         let visible = NSRange(location: start, length: end - start)
+        guard markerViewport != visible else { return }
+        markerViewport = visible
         if markerLayer.superlayer == nil { layer.insertSublayer(markerLayer, at: 0) }
         let path = UIBezierPath()
-        for entry in layout.entries where NSIntersectionRange(entry.documentRange, visible).length > 0 {
+        var visibleTags = Set<String>()
+        for entry in layout.entries(intersecting: visible) {
             for span in entry.block.spans {
-                guard case .definition = span.style,
-                      let start = position(from: beginningOfDocument, offset: entry.documentRange.location + span.range.location),
-                      let end = position(from: start, offset: span.range.length),
-                      let range = textRange(from: start, to: end) else { continue }
-                for selection in selectionRects(for: range) where !selection.rect.isEmpty {
-                    let rect = selection.rect
-                    let band = CGRect(x: rect.minX - 1, y: rect.minY + rect.height * 0.47, width: rect.width + 2, height: rect.height * 0.40)
-                    path.append(UIBezierPath(roundedRect: band, cornerRadius: band.height * 0.3))
+                let tag = "definition:\(entry.block.id):\(span.range.location)"
+                guard let occurrence = annotationsByTag[tag], NSIntersectionRange(occurrence.range, visible).length > 0 else { continue }
+                visibleTags.insert(tag)
+                let segments = annotationSegments[tag] ?? segments(for: occurrence.range)
+                annotationSegments[tag] = segments
+                for rect in segments {
+                    let height = max(3, rect.height * 0.28)
+                    let band = CGRect(x: rect.minX - 0.5, y: rect.maxY - height - rect.height * 0.08, width: rect.width + 1, height: height)
+                    path.append(UIBezierPath(roundedRect: band, cornerRadius: height * 0.18))
                 }
             }
         }
+        annotationSegments = annotationSegments.filter { visibleTags.contains($0.key) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
         markerLayer.fillColor = LeximoryPalette.wordHighlightUI.cgColor
         markerLayer.path = path.cgPath
         CATransaction.commit()
+    }
+    func annotation(tag: String) -> ReaderLayout.Annotation? { annotationsByTag[tag] }
+    func invalidateReaderGeometry() {
+        headerWidth = nil; attachmentWidth = nil; markerViewport = nil
+        annotationSegments.removeAll(); attachments.removeAll()
+        textStorage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: textStorage.length)) { value, _, _ in
+            if let attachment = value as? NSTextAttachment { attachments.append(attachment) }
+        }
+        setNeedsLayout()
+    }
+    func segments(for range: NSRange) -> [CGRect] {
+        guard let manager = textLayoutManager, let storage = manager.textContentManager,
+              let start = storage.location(storage.documentRange.location, offsetBy: range.location),
+              let end = storage.location(start, offsetBy: range.length),
+              let textRange = NSTextRange(location: start, end: end) else { return [] }
+        var rectangles: [CGRect] = []
+        manager.enumerateTextSegments(in: textRange, type: .standard, options: .rangeNotRequired) { _, frame, _, _ in
+            if !frame.isEmpty {
+                rectangles.append(frame.offsetBy(dx: self.textContainerInset.left, dy: self.textContainerInset.top))
+            }
+            return true
+        }
+        return rectangles
     }
     private func updatePronunciations() {
         guard !updatingPronunciations else { return }

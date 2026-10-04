@@ -16,6 +16,7 @@ struct EbookChapter: Identifiable {
     var location: String?
     var chapter: String?
     var chapterPage = 1
+    var chapterPages = 0
     var selectionLocation: String?
     var selection: EbookSelection?
     var menuSelection: EbookSelection?
@@ -79,8 +80,16 @@ struct EbookScreen: View {
         .preferredColorScheme(format == "epub" ? EbookAppearance(rawValue: appearance)?.colorScheme : nil)
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
-        .overlay(alignment: .top) { if reader.chromeVisible { topControls.transition(.opacity) } }
-        .overlay(alignment: .bottom) { if reader.chromeVisible { bottomControls.transition(.opacity) } }
+        .overlay(alignment: .top) {
+            if reader.chromeVisible { topControls.transition(.opacity) }
+            else {
+                runningTitle.padding(.horizontal, 28).padding(.top, 12).allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if reader.chromeVisible { bottomControls.transition(.opacity) }
+            else { pageLabel.padding(.bottom, 4).allowsHitTesting(false) }
+        }
         .overlay {
             GeometryReader { geometry in
                 let anchor = definitionAnchor.offsetBy(dx: -geometry.frame(in: .global).minX, dy: -geometry.frame(in: .global).minY)
@@ -163,7 +172,7 @@ struct EbookScreen: View {
             HStack {
                 Button("返回", systemImage: "chevron.left") { dismiss() }
                     .labelStyle(.iconOnly).frame(width: 44, height: 44).buttonStyle(.glass)
-                Spacer()
+                runningTitle.frame(maxWidth: .infinity)
                 HStack(spacing: 0) {
                     Button("目录", systemImage: "list.bullet") { contents = true }
                         .frame(width: 44, height: 44)
@@ -192,12 +201,21 @@ struct EbookScreen: View {
                     .accessibilityValue("第\(Int(scrubPosition ?? Double(reader.location ?? "1") ?? 1))页，共\(reader.totalPages)页")
                     .disabled(reader.totalPages < 2)
             }
-            Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapter ?? "")
-                .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
-                .lineLimit(1).padding(.vertical, 8)
-                .accessibilityLabel("阅读位置")
-                .accessibilityValue(reader.totalPages > 0 ? "第\(reader.location ?? "1")页，共\(reader.totalPages)页" : reader.chapter ?? "")
-        }.padding(.horizontal, 28).padding(.bottom, 8).frame(maxWidth: 540).tint(LeximoryPalette.muted)
+            pageLabel
+        }.padding(.horizontal, 28).padding(.bottom, 4).frame(maxWidth: 540).tint(LeximoryPalette.muted)
+    }
+    private var runningTitle: some View {
+        Text(article.title).editorialFont(14, language: language)
+            .foregroundStyle(LeximoryPalette.muted).lineLimit(1)
+            .accessibilityIdentifier("ebook-running-title")
+    }
+    private var pageLabel: some View {
+        Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapterPages > 0 ? "\(reader.chapterPage) / \(reader.chapterPages)" : "\(reader.chapterPage)")
+            .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
+            .lineLimit(1).padding(.vertical, 4).opacity(reader.ready ? 1 : 0)
+            .accessibilityIdentifier("ebook-page-position")
+            .accessibilityLabel("阅读位置")
+            .accessibilityValue(reader.totalPages > 0 ? "第\(reader.location ?? "1")页，共\(reader.totalPages)页" : "\(reader.chapter ?? article.title)，章节第\(reader.chapterPage)页，共\(reader.chapterPages)页")
     }
 
     private var readingSettings: some View {
@@ -366,6 +384,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             case "location":
                 parent.reader.location = body["location"] as? String
                 parent.reader.chapterPage = body["page"] as? Int ?? 1
+                parent.reader.chapterPages = body["pages"] as? Int ?? 0
                 parent.reader.chapter = body["chapter"] as? String
                 parent.reader.atStart = body["atStart"] as? Bool ?? false
                 parent.reader.atEnd = body["atEnd"] as? Bool ?? false

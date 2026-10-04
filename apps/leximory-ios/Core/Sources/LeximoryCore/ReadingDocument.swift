@@ -134,6 +134,12 @@ public struct ReadingSelection: Hashable, Identifiable, Sendable {
 
 /// Maps a selection from the single TextKit document into one canonical block.
 public struct ReaderLayout: Sendable {
+    public struct Annotation: Sendable {
+        public let range: NSRange
+        public let selection: ReadingSelection
+        public let definition: Definition
+        public var tag: String { "definition:\(selection.blockID):\(selection.range.location)" }
+    }
     public struct Entry: Sendable {
         public let block: RenderBlock
         public let documentRange: NSRange
@@ -163,12 +169,36 @@ public struct ReaderLayout: Sendable {
         self.text = text; self.entries = entries; self.notices = notices
     }
     public func selection(_ range: NSRange, document: ReadingDocument, textID: TextID) throws -> ReadingSelection {
-        _ = try UTF16Range(location: range.location, length: range.length).validated(in: text)
-        guard let entry = entries.first(where: {
-                  range.location >= $0.documentRange.location && range.location <= NSMaxRange($0.documentRange)
-                  && range.length <= NSMaxRange($0.documentRange) - range.location
-              }) else { throw SelectionError.invalidRange }
-        return try document.selection(textID: textID, blockID: entry.block.id,
-                                      range: UTF16Range(location: range.location - entry.documentRange.location, length: range.length))
+        guard range.location >= 0, range.length > 0,
+              let entry = entries(intersecting: range).first,
+              range.location >= entry.documentRange.location,
+              range.length <= NSMaxRange(entry.documentRange) - range.location else { throw SelectionError.invalidRange }
+        let local = UTF16Range(location: range.location - entry.documentRange.location, length: range.length)
+        let indices = try local.validated(in: entry.block.displayText)
+        return ReadingSelection(textID: textID, revision: document.revision, blockID: entry.block.id,
+                                range: local, text: String(entry.block.displayText[indices]))
+    }
+    public func entries(intersecting range: NSRange) -> ArraySlice<Entry> {
+        guard range.location >= 0, range.length > 0, range.length <= Int.max - range.location else { return [] }
+        var lower = 0, upper = entries.count
+        while lower < upper {
+            let middle = (lower + upper) / 2
+            if NSMaxRange(entries[middle].documentRange) <= range.location { lower = middle + 1 }
+            else { upper = middle }
+        }
+        let start = lower
+        while lower < entries.count, entries[lower].documentRange.location < NSMaxRange(range) { lower += 1 }
+        return entries[start..<lower]
+    }
+    public func annotations(textID: TextID, revision: String) -> [Annotation] {
+        entries.flatMap { entry in
+            entry.block.spans.compactMap { span in
+                guard case .definition(let definition) = span.style,
+                      let indices = try? span.range.validated(in: entry.block.displayText) else { return nil }
+                return Annotation(range: NSRange(location: entry.documentRange.location + span.range.location, length: span.range.length),
+                    selection: ReadingSelection(textID: textID, revision: revision, blockID: entry.block.id,
+                        range: span.range, text: String(entry.block.displayText[indices])), definition: definition)
+            }
+        }
     }
 }

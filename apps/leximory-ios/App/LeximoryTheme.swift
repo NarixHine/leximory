@@ -13,7 +13,7 @@ enum LeximoryPalette {
     static let shell = Color(uiColor: adaptive(light: 0xF8FAF8, dark: 0x1A211C))
     static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x90A695))
 
-    static let wordHighlightUI = adaptive(light: 0xD9E8BF, dark: 0x4A6039)
+    static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x91B75B).withAlphaComponent(0.45)
 
     static var readingFont: UIFont {
         UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.proseUI(20))
