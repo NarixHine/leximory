@@ -38,10 +38,35 @@ public struct SavedVocabulary: Decodable, Sendable {
     public let id: String
     public let libraryId: String
 }
+public struct VocabularyFields: Codable, Hashable, Sendable {
+    public var original: String
+    public var lemma: String
+    public var definition: String
+    public var etymology: String?
+    public var cognates: String?
+    public init(original: String, definition: Definition) {
+        self.original = original; lemma = definition.lemma; self.definition = definition.definition
+        etymology = definition.etymology; cognates = definition.cognates
+    }
+    public var note: Definition { Definition(lemma: lemma, definition: definition, etymology: etymology, cognates: cognates) }
+    public var isValid: Bool {
+        !original.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !lemma.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !definition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && [original, lemma, definition, etymology ?? "", cognates ?? ""].allSatisfy { !$0.contains("||") && !$0.contains("{") && !$0.contains("}") }
+        && original.count <= 1024 && lemma.count <= 1024 && [definition, etymology ?? "", cognates ?? ""].allSatisfy { $0.count <= 16000 }
+    }
+}
+public struct SavedWord: Codable, Identifiable, Sendable {
+    public let id: String
+    public let libraryId: String
+    public let fields: VocabularyFields
+    public let createdAt: String?
+    public let protected: Bool?
+}
 public struct RemoteDocument: Decodable, Sendable {
     public let text: CatalogText
     public let library: CatalogLibrary
     public let document: ReadingDocument?
+    public let annotationProgress: String?
 }
 public struct EbookBookmark: Codable, Identifiable, Sendable {
     public let id: Int
@@ -138,6 +163,30 @@ public struct MobileClient: Sendable {
     }
     public func texts(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<CatalogText> {
         try mapped(try await client.texts(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogText>.self)
+    }
+    public struct ArticlePreview: Codable, Sendable { public let title: String; public let content: String }
+    public func extractArticle(libraryID: String, url: String) async throws -> ArticlePreview {
+        try mapped(try await client.extractArticle(path: .init(libraryId: libraryID), body: .json(.init(url: url))).ok.body.json, to: ArticlePreview.self)
+    }
+    public func vocabulary(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<SavedWord> {
+        try mapped(try await client.vocabularyList(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<SavedWord>.self)
+    }
+    public func savedWord(id: String) async throws -> SavedWord {
+        try mapped(try await client.savedWord(path: .init(wordId: id)).ok.body.json, to: SavedWord.self)
+    }
+    public func editWord(id: String, fields: VocabularyFields) async throws -> SavedWord {
+        guard fields.isValid else { throw URLError(.cannotParseResponse) }
+        return try mapped(try await client.editWord(path: .init(wordId: id), body: .json(.init(
+            lemma: fields.lemma, definition: fields.definition, etymology: fields.etymology,
+            cognates: fields.cognates, original: fields.original))).ok.body.json, to: SavedWord.self)
+    }
+    public func importArticle(libraryID: String, title: String, content: String, annotate: Bool, onlyComments: Bool, generateTitle: Bool) async throws -> CatalogText {
+        try mapped(try await client.importArticle(path: .init(libraryId: libraryID), body: .json(.init(
+            title: title, content: content, annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle))).ok.body.json, to: CatalogText.self)
+    }
+    public func uploadEbook(libraryID: String, title: String, filename: String, data: Data) async throws -> CatalogText {
+        guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+        return try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
     }
     public func documentDetails(textID: String) async throws -> RemoteDocument {
         let payload = try await client.document(path: .init(textId: textID)).ok.body.json

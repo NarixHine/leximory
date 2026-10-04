@@ -26,6 +26,7 @@ export interface CatalogStore {
     libraries(subject: MobileSubject, after: string | null, signal: AbortSignal): Promise<LibraryRow[]>
     texts(libraryId: string, after: TextCursor | null, signal: AbortSignal): Promise<TextRow[]>
     archived(subject: MobileSubject, signal: AbortSignal): Promise<string[]>
+    progress?(id: string): Promise<string | null>
     audio(id: string, signal: AbortSignal): Promise<string | null>
 }
 function encodeCursor(cursor: TextCursor) { return Buffer.from(JSON.stringify(cursor)).toString('base64url') }
@@ -77,7 +78,7 @@ export function createCatalog(store: CatalogStore) {
         async document(subject: MobileSubject, textId: string, signal: AbortSignal) {
             const { text, library } = await authorizedText(subject, textId, signal)
             const archived = await store.archived(subject, signal)
-            return { text: summarizeText(text), library: summarizeLibrary(library, subject, archived), document: text.has_ebook ? null : renderDocument(text.content) }
+            return { text: summarizeText(text), library: summarizeLibrary(library, subject, archived), document: text.has_ebook ? null : renderDocument(text.content), annotationProgress: await store.progress?.(textId) ?? null }
         },
         async audio(subject: MobileSubject, textId: string, audioId: string, signal: AbortSignal) {
             const { text } = await authorizedText(subject, textId, signal)

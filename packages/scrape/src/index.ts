@@ -32,9 +32,23 @@ const tabs = new Tabstack({
 
 const MAX_ARTICLE_PAGES = 5
 
-async function getNextArticlePage(url: string) {
+async function fetchArticlePage(url: string, validateURL?: (url: string) => Promise<void>) {
+    if (!validateURL) return fetch(url)
+    let current = url
+    for (let redirects = 0; redirects <= 5; redirects++) {
+        await validateURL(current)
+        const response = await fetch(current, { redirect: 'manual', signal: AbortSignal.timeout(15000) })
+        const location = response.headers.get('location')
+        if (response.status < 300 || response.status >= 400 || !location) return response
+        await response.body?.cancel()
+        current = new URL(location, current).href
+    }
+    throw new Error('Too many redirects')
+}
+
+async function getNextArticlePage(url: string, validateURL?: (url: string) => Promise<void>) {
     try {
-        const response = await fetch(url)
+        const response = await fetchArticlePage(url, validateURL)
         if (!response.ok) return undefined
 
         const html = await response.text()
@@ -102,13 +116,13 @@ async function getNextArticlePage(url: string) {
  * @param url - The URL of the article to extract.
  * @returns An object containing the title and content of the article.
  */
-export async function extractArticleFromUrl(url: string) {
+export async function extractArticleFromUrl(url: string, validateURL?: (url: string) => Promise<void>) {
     const pages = [url]
     const seenUrls = new Set([new URL(url).href])
     let currentUrl = url
 
     while (pages.length < MAX_ARTICLE_PAGES) {
-        const nextUrl = await getNextArticlePage(currentUrl)
+        const nextUrl = await getNextArticlePage(currentUrl, validateURL)
         if (!nextUrl || seenUrls.has(nextUrl)) break
 
         seenUrls.add(nextUrl)

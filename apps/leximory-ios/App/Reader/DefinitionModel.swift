@@ -17,12 +17,12 @@ enum DefinitionSource {
         case .ebook(let id, let quote, let context, let offset): client.ebookDefinitions(textID: id, quote: quote, context: context, offset: offset)
         }
     }
-    func save(client: MobileClient, completionID: String?) async throws {
+    func save(client: MobileClient, completionID: String?) async throws -> SavedVocabulary {
         switch self {
-        case .article(let selection): _ = try await client.save(selection: selection, completionID: completionID)
+        case .article(let selection): return try await client.save(selection: selection, completionID: completionID)
         case .ebook(let id, _, _, _):
             guard let completionID else { throw URLError(.badServerResponse) }
-            _ = try await client.saveEbookVocabulary(textID: id, completionID: completionID)
+            return try await client.saveEbookVocabulary(textID: id, completionID: completionID)
         }
     }
 }
@@ -35,6 +35,7 @@ enum DefinitionSource {
     }
     enum SaveState { case idle, saving, saved, uncertain }
     private(set) var state: State
+    private(set) var savedWord: SavedVocabulary?
     private(set) var saveState: SaveState = .idle
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     init(embedded: Definition?) {
@@ -72,11 +73,14 @@ enum DefinitionSource {
         saveState = .saving
         saveTask = Task {
             do {
-                try await source.save(client: client, completionID: completionID)
+                savedWord = try await source.save(client: client, completionID: completionID)
                 guard !Task.isCancelled else { return }
                 saveState = .saved
             } catch { if !Task.isCancelled { saveState = .uncertain } }
         }
+    }
+    func edited(_ word: SavedWord) {
+        state = .ready(word.fields.note, completionID: nil)
     }
     func cancel() { saveTask?.cancel(); saveTask = nil }
     private struct DefinitionFailure: Error { let message: String }

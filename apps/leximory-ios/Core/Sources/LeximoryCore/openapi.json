@@ -218,6 +218,896 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/libraries/{libraryId}/article-preview": {
+      "post": {
+        "operationId": "extractArticle",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512
+                    },
+                    "content": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 30000
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "content"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/libraries/{libraryId}/vocabulary": {
+      "get": {
+        "operationId": "vocabularyList",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                          },
+                          "libraryId": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                          },
+                          "fields": {
+                            "type": "object",
+                            "properties": {
+                              "lemma": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1024
+                              },
+                              "definition": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 16000
+                              },
+                              "etymology": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 16000
+                              },
+                              "cognates": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 16000
+                              },
+                              "original": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 1024
+                              }
+                            },
+                            "required": [
+                              "lemma",
+                              "definition",
+                              "etymology",
+                              "cognates",
+                              "original"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "createdAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "protected": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "libraryId",
+                          "fields"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vocabulary/{wordId}": {
+      "get": {
+        "operationId": "savedWord",
+        "parameters": [
+          {
+            "name": "wordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "lemma": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1024
+                        },
+                        "definition": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 16000
+                        },
+                        "etymology": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        },
+                        "cognates": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        },
+                        "original": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1024
+                        }
+                      },
+                      "required": [
+                        "lemma",
+                        "definition",
+                        "etymology",
+                        "cognates",
+                        "original"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "protected": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "fields"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "editWord",
+        "parameters": [
+          {
+            "name": "wordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lemma": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024
+                  },
+                  "definition": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16000
+                  },
+                  "etymology": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 16000
+                  },
+                  "cognates": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 16000
+                  },
+                  "original": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024
+                  }
+                },
+                "required": [
+                  "lemma",
+                  "definition",
+                  "etymology",
+                  "cognates",
+                  "original"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "lemma": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1024
+                        },
+                        "definition": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 16000
+                        },
+                        "etymology": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        },
+                        "cognates": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        },
+                        "original": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1024
+                        }
+                      },
+                      "required": [
+                        "lemma",
+                        "definition",
+                        "etymology",
+                        "cognates",
+                        "original"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "protected": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "fields"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/libraries/{libraryId}/articles": {
+      "post": {
+        "operationId": "importArticle",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30000
+                  },
+                  "annotate": {
+                    "type": "boolean"
+                  },
+                  "onlyComments": {
+                    "type": "boolean"
+                  },
+                  "generateTitle": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "title",
+                  "content",
+                  "annotate",
+                  "onlyComments",
+                  "generateTitle"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "emoji": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "format": {
+                      "enum": [
+                        "article",
+                        "ebook"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "title",
+                    "topics",
+                    "emoji",
+                    "createdAt",
+                    "format"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/texts/{textId}/definitions": {
       "post": {
         "operationId": "definitions",
@@ -2516,6 +3406,12 @@
                         "blocks"
                       ],
                       "additionalProperties": false
+                    },
+                    "annotationProgress": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -2721,6 +3617,185 @@
             }
           }
         }
+      }
+    },
+    "/libraries/{libraryId}/ebooks": {
+      "post": {
+        "operationId": "uploadEbook",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Uploaded ebook",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "emoji": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "format": {
+                      "enum": [
+                        "article",
+                        "ebook"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "title",
+                    "topics",
+                    "emoji",
+                    "createdAt",
+                    "format"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   }

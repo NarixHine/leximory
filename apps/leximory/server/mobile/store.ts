@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabase } from '@repo/supabase'
 import { z } from 'zod'
+import { getTextAnnotationProgress } from '@/server/db/text'
 import { libraryRowSchema, textRowSchema, PAGE_SIZE, type CatalogStore, type TextCursor } from './catalog'
 
 // Equal sort keys continue by ID; null manual positions precede numbered texts.
@@ -46,6 +47,7 @@ export const catalogStore: CatalogStore = {
         const { data } = await supabase.from('users').select('archived_libs').eq('id', subject.userId).abortSignal(signal).maybeSingle().throwOnError()
         return z.array(z.string()).nullable().parse(data?.archived_libs ?? null) ?? []
     },
+    async progress(id) { return getTextAnnotationProgress({ id }) },
     async audio(id, signal) {
         signal.throwIfAborted()
         const { data, error } = await supabase.storage.from('user-files').createSignedUrl(`audio/${id}.mp3`, 3600)

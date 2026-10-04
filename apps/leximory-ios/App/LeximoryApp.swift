@@ -78,6 +78,7 @@ struct FixtureLibrary: Hashable, Identifiable {
     var isRemote = false
     var archived = false
     var shadow = false
+    var owned = false
 
     var isCompact: Bool { archived || shadow }
 

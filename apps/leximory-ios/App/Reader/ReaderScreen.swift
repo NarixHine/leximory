@@ -24,6 +24,8 @@ struct ReaderScreen: View {
     @State private var definition: DefinitionPresentation?
     @State private var anchor: CGRect = .zero
     @State private var titlePastViewport = false
+    @State private var refreshedArticle: FixtureArticle?
+    private var currentArticle: FixtureArticle { refreshedArticle ?? article }
     private var jumpToEnd: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains("--reader-end")
@@ -41,7 +43,7 @@ struct ReaderScreen: View {
                     Label("暂时无法打开文章", systemImage: "doc.text")
                 } description: { Text(message) } actions: { Button("重试") { Task { await load() } } }
             case .loaded(let document):
-                ReadingTextView(document: document, article: article, language: language, textID: article.id, jumpToEnd: jumpToEnd,
+                ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, rect in
                         anchor = rect
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
@@ -64,7 +66,7 @@ struct ReaderScreen: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 if titlePastViewport {
-                    Text(article.title).editorialFont(17, language: language)
+                    Text(currentArticle.title).editorialFont(17, language: language)
                         .lineLimit(1).truncationMode(.tail).foregroundStyle(LeximoryPalette.ink)
                         .accessibilityIdentifier("reader-scrolled-title")
                 }
@@ -99,11 +101,29 @@ struct ReaderScreen: View {
     private func load() async {
         state = .loading
         do {
-            let document = try await loadDocument?(article.id) ?? article.document()
-            guard !Task.isCancelled else { return }
-            state = .loaded(document)
+            if let client {
+                for _ in 0..<90 {
+                    let details = try await client.documentDetails(textID: article.id.rawValue)
+                    try Task.checkCancellation()
+                    guard let document = details.document else { throw URLError(.cannotParseResponse) }
+                    refreshedArticle = details.text.preview
+                    if case .loaded(let previous) = state, previous.revision == document.revision { }
+                    else { state = .loaded(document) }
+                    guard ["annotating", "saving"].contains(details.annotationProgress ?? "") else { return }
+                    try await Task.sleep(for: .seconds(2))
+                }
+            } else {
+                let document = try await loadDocument?(article.id) ?? article.document()
+                guard !Task.isCancelled else { return }
+                state = .loaded(document)
+            }
         }
-        catch { if !Task.isCancelled { state = .failed("无法打开文章，请检查网络后重试。") } }
+        catch {
+            if !Task.isCancelled {
+                if case .loaded = state { return }
+                state = .failed("无法打开文章，请检查网络后重试。")
+            }
+        }
     }
 }
 
@@ -115,6 +135,7 @@ struct DefinitionView: View {
     @State private var contentHeight: CGFloat = 320
     @State private var bottomSafeArea: CGFloat = 0
     @State private var lookupAttempt = 0
+    @State private var editing = false
     @State private var model: DefinitionModel
     @Environment(\.dismiss) private var dismiss
     @ScaledMetric(relativeTo: .body) private var bodySize = 20.0
@@ -131,6 +152,11 @@ struct DefinitionView: View {
             let safeAreaBottom = geometry.safeAreaInsets.bottom
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    if editing, let client, let word = model.savedWord {
+                        VocabularyEditor(id: word.id, client: client, language: language, updated: { word in
+                            model.edited(word); editing = false
+                        }, cancel: { editing = false })
+                    } else {
                     Text(lemma).font(LeximoryTypography.prose(28, language: language))
                         .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
                         .accessibilityAddTraits(.isHeader)
@@ -149,6 +175,11 @@ struct DefinitionView: View {
                                         .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
                                 }.buttonStyle(.plain).disabled(!canSave)
                                     .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
+                            }
+                            if model.savedWord != nil {
+                                Button("编辑", systemImage: "pencil") { editing = true }
+                                    .labelStyle(.iconOnly).frame(width: 44, height: 44)
+                                    .foregroundStyle(LeximoryPalette.sage).accessibilityLabel("编辑词汇")
                             }
                             if let dictionaryURL {
                                 Link(destination: dictionaryURL) {
@@ -171,13 +202,15 @@ struct DefinitionView: View {
                         Text(message).foregroundStyle(LeximoryPalette.muted)
                         if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                     }
+                    }
                 }.padding(.horizontal, isPopover ? 28 : 24)
                     .padding(.top, isPopover ? 28 : 24).padding(.bottom, isPopover ? 28 : 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .ignoresSafeArea(.container, edges: isPopover ? [] : .bottom)
-            .onGeometryChange(for: CGFloat.self) { _ in safeAreaBottom } action: { bottomSafeArea = $0 }
+            .onGeometryChange(for: CGFloat.self) { _ in safeAreaBottom } action: { if !editing { bottomSafeArea = $0 } }
         }
         .frame(width: isPopover ? 480 : nil)
         .frame(height: isPopover ? min(contentHeight, 620) : nil)
@@ -207,18 +240,18 @@ struct DefinitionView: View {
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title).font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.illustration)
-            Text(markdown(content)).font(Font(LeximoryTypography.proseUI(bodySize, language: language)))
+            Text(annotationMarkdown(content, size: bodySize)).font(Font(LeximoryTypography.proseUI(bodySize, language: language)))
                 .foregroundStyle(LeximoryPalette.ink).lineSpacing(5).textSelection(.enabled)
         }
     }
-    private func markdown(_ content: String) -> AttributedString {
-        let bracketed = content.replacingOccurrences(of: #"`([^`]+)`"#, with: "`[$1]`", options: .regularExpression)
-        var result = (try? AttributedString(markdown: bracketed, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(content)
-        for run in result.runs {
-            if run.inlinePresentationIntent?.contains(.code) == true {
-                result[run.range].font = Font(LeximoryTypography.face("SourceCodePro-Medium", size: bodySize * 0.85))
-            }
-        }
-        return result
+
+}
+
+func annotationMarkdown(_ content: String, size: CGFloat) -> AttributedString {
+    let bracketed = content.replacingOccurrences(of: #"`([^`]+)`"#, with: "`[$1]`", options: .regularExpression)
+    var result = (try? AttributedString(markdown: bracketed, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(content)
+    for run in result.runs where run.inlinePresentationIntent?.contains(.code) == true {
+        result[run.range].font = Font(LeximoryTypography.face("SourceCodePro-Medium", size: size * 0.85))
     }
+    return result
 }

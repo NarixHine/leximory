@@ -8,7 +8,7 @@ struct AppRootView: View {
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--fixtures") { return }
+        if ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") { return }
         #endif
         var configuration = AppConfiguration.bundled
         #if DEBUG
@@ -39,7 +39,11 @@ struct AppRootView: View {
                 #endif
             } else {
                 #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
+                    AuthoringPreview(playback: fixturePlayback)
+                } else {
                 FixtureLibraryView(playback: fixturePlayback, libraries: ProcessInfo.processInfo.arguments.contains("--ebook-fixtures") ? FixtureLibrary.ebookSamples : ProcessInfo.processInfo.arguments.contains("--catalog-layout-fixtures") ? FixtureLibrary.layoutSamples : FixtureLibrary.samples)
+                }
                 #else
                 ContentUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", description: Text("请稍后重试。"))
                 #endif

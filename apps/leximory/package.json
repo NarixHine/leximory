@@ -8,7 +8,7 @@
         "start": "next start",
         "lint": "next lint",
         "check-types": "tsc --noEmit",
-        "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts",
+        "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts tests/mobile-authoring.test.ts",
         "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts"
     },
     "dependencies": {

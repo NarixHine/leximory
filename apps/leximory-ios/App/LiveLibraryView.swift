@@ -115,6 +115,9 @@ struct RemoteTextGallery: View {
     let client: MobileClient
     let open: (FixtureArticle) -> Void
     @State private var texts: [CatalogText] = []
+    @State private var importing = false
+    @State private var importedArticle: FixtureArticle?
+    @State private var vocabulary = false
     @State private var loading = true
     @State private var error: String?
     var body: some View {
@@ -125,7 +128,7 @@ struct RemoteTextGallery: View {
                     Label("暂时无法加载文章", systemImage: "wifi.exclamationmark")
                 } description: { Text(error) } actions: { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {
-                ContentUnavailableView("还没有文章", systemImage: "doc.text", description: Text("在网页版导入文章后，即可在这里阅读。"))
+                ContentUnavailableView("还没有文章", systemImage: "doc.text", description: nil)
             } else {
                 TextGallery(library: FixtureLibrary(id: library.id, name: library.name, language: library.language,
                     articles: texts.map(\.preview), isRemote: true)) { article in
@@ -133,6 +136,28 @@ struct RemoteTextGallery: View {
                 }
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
+            }
+            if library.owned && !library.shadow {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("导入", systemImage: "plus") { importing = true }.foregroundStyle(LeximoryPalette.sage)
+                }
+            }
+        }
+        .sheet(isPresented: $importing, onDismiss: {
+            if let article = importedArticle {
+                importedArticle = nil
+                open(article)
+            }
+        }) {
+            ContentImportView(library: library, client: client) { text in
+                texts.insert(text, at: 0)
+                importedArticle = text.preview
+            }
+        }
+        .navigationDestination(isPresented: $vocabulary) { VocabularyLibraryView(library: library, client: client) }
         .navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .background(LeximoryPalette.paper)
         .task(id: library.id) { await load() }
@@ -159,7 +184,7 @@ extension CatalogLibrary {
     var preview: FixtureLibrary {
         let language = ["en": "English", "ja": "Japanese", "fr": "French", "zh": "Chinese", "nl": "Dutch"][language] ?? language
         return FixtureLibrary(id: LibraryID(rawValue: id), name: name, language: language,
-            articles: [], isRemote: true, archived: archived, shadow: shadow)
+            articles: [], isRemote: true, archived: archived, shadow: shadow, owned: owned)
     }
 }
 extension CatalogText {

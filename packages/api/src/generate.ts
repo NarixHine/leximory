@@ -10,6 +10,18 @@ const specification = await generator.generate(mobileContract, {
     security: [{ bearerAuth: [] }],
     components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } } },
 })
+specification.paths ??= {}
+specification.paths['/libraries/{libraryId}/ebooks'] = { post: {
+    operationId: 'uploadEbook',
+    parameters: [
+        { name: 'libraryId', in: 'path', required: true, schema: { type: 'string' } },
+        { name: 'title', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+        { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+    ],
+    requestBody: { required: true, content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } } },
+    responses: { '200': { description: 'Uploaded ebook', content: { 'application/json': { schema: specification.paths['/libraries/{libraryId}/articles']!.post!.responses!['200']!.content!['application/json']!.schema } } } },
+    security: [{ bearerAuth: [] }],
+} }
 for (const path of Object.values(specification.paths ?? {})) {
     for (const method of ['get', 'post'] as const) {
         const operation = path?.[method]

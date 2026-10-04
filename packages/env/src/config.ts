@@ -6,7 +6,7 @@ export type Plan = (typeof PLANS)[number]
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
 export const MAX_TTS_LENGTH = 10000
-export const MAX_FILE_SIZE = 4.5 * 1024 * 1024
+export { MAX_FILE_SIZE, maxArticleLength } from './content'
 export const MAX_AVATAR_SIZE = 1 * 1024 * 1024
 export const ALLOWED_IMAGE_REMOTE_PATTERNS = [
     {
@@ -93,18 +93,6 @@ export const ACTION_QUOTA_COST = {
 
 export { LIB_ACCESS_STATUS } from './access'
 
-export const maxArticleLength = (lang: Lang): number => {
-    switch (lang) {
-        case 'en':
-            return 30000
-        case 'ja':
-            return 10000
-        case 'zh':
-            return 5000
-        default:
-            return 10000
-    }
-}
 
 export type PaidTier = 'bilingual' | 'polyglot'
 export const CREEM_PRODUCT_ID: Record<PaidTier, string> = IS_PROD

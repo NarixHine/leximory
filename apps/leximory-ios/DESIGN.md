@@ -56,6 +56,14 @@ Use the native `TabView` for 文库 and 账户. Inactive tab symbols are muted o
 
 Annotation trays use a pale surface, bold prose headword, Libre Baskerville body, and muted 释义/语源/同源词 labels. Never use the title face for annotation content. Initial loading is centered within a stable area. Saving uses the reference's dark circular bookmark action. Phone sheets adapt to measured content without surplus detent height. The solid action has equal 24 pt left and bottom insets measured from the sheet edge; subtract the bottom safe area from the height detent rather than adding it again. Leave their corner radius to iOS so the sheet follows the screen geometry. Long definitions scroll; iPad popovers anchor to the selected occurrence. Pre-annotated article words use a saturated sage-yellow highlighter stroke at 45% opacity behind 28% of the glyph height. Use tight TextKit segments separately on each wrapped line, without extending to blank line tails or forming a rectangular word background. Cache visible geometry and resolve taps through canonical annotation tags. Highlights retain selection and lookup behavior.
 
+## Importing and editing
+
+Every readable library exposes 语料本; owned content libraries also expose 导入. Start 创建文章 with the web's 网址导入外刊 URL field. Extract title and text, allow review, then offer 保存 without AI or 生成 with the canonical annotation options. 手动录入 and 上传电子书 remain alternatives. EPUB/PDF selection uses the native file picker and the same 4.5 MB limit as the web. Keep forms on paper, with quiet cancellation and one solid primary action.
+
+语料本 follows the canonical date groups and compact, centered word chips: two columns on iPhone, three on narrower iPad layouts, four on wide layouts. Use a wrapping library title and Chinese date labels. Open 语料本 as a full collection screen. A word opens a prose popover anchored to its chip on iPad, adapting to a fitted tray on iPhone; edit is an explicit action inside it. Shared-library words and welcome annotations remain read-only. Omit the word lottery, date-range, draw and story controls on native platforms.
+
+After saving a definition, the pencil opens editing in the annotation tray. Existing saved words can also be reopened from 语料本. Preserve the web's 词条 / 释义 / 语源 / 同源词 fields, original occurrence, and prose typography. Editing does not use the display-title face. Confirm with a circular check action and cancel with the neighboring outline action. On iPad, cap form width and retain the same reading measure.
+
 ## Ebooks and Mac
 
 EPUB uses the same bundled epub.js version as the web, preserving CFI navigation and reading positions. PDF uses PDFKit. Authorized book descriptors, user-private bookmarks, and reading-position sync use the existing database tables. Keep article source ranges separate from ebook selection context. Preserve quotas, completed-definition receipts, and library access checks. Do not treat an ebook's bookmark-only `content` as its complete text.
