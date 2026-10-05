@@ -15,7 +15,7 @@ import {
     uploadEbook,
 } from '@/server/db/text'
 import { inngest } from '@/server/inngest/client'
-import { instruction } from '@/lib/prompt'
+import { wordAnnotationInstructions, wordAnnotationPrompt } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
@@ -35,6 +35,25 @@ import { evaluateWithQuota } from './evaluate'
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Bump when the word annotation prompt or model changes, so stale entries are not served. */
+const WORD_ANNOTATION_CACHE_VERSION = 'v2'
+
+/** Cache key for a tap-to-define annotation: version + language + the marked chunk. */
+function commentHash(prompt: string, lang: Lang) {
+    return crypto
+        .createHash('sha256')
+        .update(`${WORD_ANNOTATION_CACHE_VERSION}:${lang}:${prompt}`)
+        .digest('hex')
+}
+
+/** Re-chunks a word annotation stream so the popover fills word by word, not token by token. */
+function smoothWordStream(lang: Lang) {
+    if (lang === 'en' || lang === 'fr') return smoothStream()
+    if (lang === 'zh') return smoothStream({ chunking: /[\u4E00-\u9FFF]|\S+\s+/ })
+    if (lang === 'ja') return smoothStream({ chunking: /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/ })
+    return undefined
+}
 
 // ---------------------------------------------------------------------------
 // Text actions
@@ -207,43 +226,37 @@ export async function generate({
 
 /** Generates a single vocabulary comment, using cache when available. */
 export async function generateSingleComment({ prompt, lang }: { prompt: string; lang: Lang }) {
-    const { userId } = await getUserOrThrow()
-    const hash = crypto.createHash('sha256').update(prompt).digest('hex')
-    const cache = await getAnnotationCache({ hash })
-    if (cache) {
-        return { text: cache }
+    // The cache lookup does not depend on the session, so do not serialize the two.
+    const hash = commentHash(prompt, lang)
+    const [{ userId }, cached] = await Promise.all([getUserOrThrow(), getAnnotationCache({ hash })])
+    if (cached) {
+        return { text: cached }
     }
 
     const { maxArticleLength, exampleSentencePrompt } = getLanguageStrategy(lang)
-    const { getAccentPrompt } = getLanguageServerStrategy(lang)
     if (prompt.length > maxArticleLength) {
         throw new Error('Text too long')
     }
-    if (await incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation)) {
-        return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
+
+    // Passing userId avoids a second session lookup inside incrCommentaryQuota, and deferring
+    // the tag revalidation keeps the quota cache refresh off the critical path.
+    const { getAccentPrompt } = getLanguageServerStrategy(lang)
+    const [overQuota, accent] = await Promise.all([
+        incrCommentaryQuota(ACTION_QUOTA_COST.wordAnnotation, userId, true),
+        getAccentPrompt(userId),
+    ])
+    if (overQuota) {
+        return { error: `本月 ${await maxCommentaryQuota(userId)} 词点额度耗尽。` }
     }
 
     const { textStream } = streamText({
-        instructions: `
-            生成词汇注解（形如<must>vocabulary</must>或[[vocabulary]]的、<must></must>或[[]]中的部分必须注解）。
-            ${instruction[lang]}
-            `,
-        prompt: `下文中仅一个加<must>或双重中括号的语块，你仅需要对它**完整**注解${lang === 'en' ? '（例如如果括号内为"wrap my head around"，则对"wrap one\'s head around"进行注解；如果是"dip suddenly down"，则对"dip down"进行注解）' : lang === 'fr' ? '（例如如果括号内为"se rendre compte"，则对"se rendre compte"整体进行注解；如果是"mettre en perspective"，则对"mettre en perspective"进行注解）' : lang === 'zh' ? '（例如对于"天子[[并命]]"，注释"并命"在古汉语中而非现代汉语中的意思）' : ''}。如果是长句而非词汇则必须完整翻译并解释。不要在最后加多余的||。请依次输出它的原文形式、屈折变化的原形、语境义（含例句）${lang === 'en' || lang === 'fr' ? '、语源、同源词' : ''}${lang === 'ja' ? '、语源（可选）' : ''}即可，但${exampleSentencePrompt}${await getAccentPrompt(userId)}。截断并删去词汇的前后文。\n\n${prompt}`,
+        instructions: wordAnnotationInstructions(lang),
+        prompt: wordAnnotationPrompt({ lang, prompt, exampleSentencePrompt, accent }),
         maxOutputTokens: 500,
         onEnd: async ({ text }) => {
             await setAnnotationCache({ hash, cache: text })
         },
-        experimental_transform:
-            lang === 'zh' || lang === 'ja'
-                ? smoothStream({
-                      chunking:
-                          lang === 'zh'
-                              ? /[\u4E00-\u9FFF]|\S+\s+/
-                              : /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/,
-                  })
-                : lang === 'en' || lang === 'fr'
-                  ? smoothStream()
-                  : undefined,
+        experimental_transform: smoothWordStream(lang),
         ...wordAI,
     })
 

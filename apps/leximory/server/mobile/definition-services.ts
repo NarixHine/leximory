@@ -7,8 +7,8 @@ import { definitionSchema } from '@repo/api'
 import { PLANS, PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { getLanguageName } from '@repo/languages'
 import { revalidateTag } from 'next/cache'
-import { instruction } from '@/lib/prompt'
-import { nanoAI } from '@/server/ai/config'
+import { mobileWordGuide } from '@/lib/prompt'
+import { wordAI } from '@/server/ai/config'
 import { receiptSchema, type DefinitionServices } from './definitions'
 import { MobileError } from './errors'
 
@@ -19,10 +19,10 @@ export const definitionServices: DefinitionServices = {
         return { accent: data?.accent ?? '', limit: PLAN_COMMENTARY_QUOTA[plan] }
     },
     async cached(key) {
-        const value = await redis.get(`mobile:definition:v1:${key}`)
+        const value = await redis.get(`mobile:definition:v3:${key}`)
         return value === null ? null : definitionSchema.parse(value)
     },
-    async cache(key, definition) { await redis.set(`mobile:definition:v1:${key}`, definition, { ex: 86400 }) },
+    async cache(key, definition) { await redis.set(`mobile:definition:v3:${key}`, definition, { ex: 86400 }) },
     async charge(subject, limit) {
         // Same rolling quota and cost as the web; atomically refuse a charge that
         // would exceed the allowance, including simultaneous mobile requests.
@@ -40,8 +40,8 @@ export const definitionServices: DefinitionServices = {
     },
     async *generate(context, language, accent, signal) {
         const { textStream } = streamText({
-            ...nanoAI, abortSignal: signal, maxOutputTokens: 800,
-            instructions: `${instruction[language]}\n只注解上下文中被 [[ ]] 标出的一个完整语块。语境义与解释使用中文。只输出一个 {{原文形式||原形||语境释义||词源||同源词}}，没有词源或同源词时省略相应末尾字段，不输出空字段、代码围栏或其他文字。${language === 'en' ? `用户偏好：${accent}。` : ''}`,
+            ...wordAI, abortSignal: signal, maxOutputTokens: 800,
+            instructions: `${mobileWordGuide(language)}\n只注解上下文中被 [[ ]] 标出的一个完整语块。语境义与解释使用中文。只输出一个 {{原文形式||原形||语境释义||词源||同源词}}，没有词源或同源词时省略相应末尾字段，不输出空字段、代码围栏或其他文字。${language === 'en' ? `用户偏好：${accent}。` : ''}`,
             prompt: context,
         })
         for await (const delta of textStream) yield delta

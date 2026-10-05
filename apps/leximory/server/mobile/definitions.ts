@@ -106,7 +106,8 @@ export function createDefinitionHandler(dependencies: { verify: BearerVerifier; 
                 return occurrence(document, { textId, ...parsed.data }, textId)
             })()
             const preferences = await services.preferences(subject)
-            const key = createHash('sha256').update(JSON.stringify(['mobile-definition-v1', library.lang, preferences.accent, resolved.context])).digest('hex')
+            // Version tag invalidates entries produced by an older guide or model.
+            const key = createHash('sha256').update(JSON.stringify(['mobile-definition-v3', library.lang, preferences.accent, resolved.context])).digest('hex')
             const cached = await services.cached(key)
             if (!cached && !await services.charge(subject, preferences.limit)) throw new MobileError('quota_exceeded')
             request.signal.throwIfAborted()
