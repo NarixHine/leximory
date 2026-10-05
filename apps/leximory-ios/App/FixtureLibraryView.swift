@@ -14,10 +14,12 @@ struct FixtureLibraryView: View {
     var refresh: (() async -> Void)? = nil
     var archive: ((FixtureLibrary, Bool) async throws -> Void)? = nil
     var recentNamespace = "fixtures"
+    var loadingLibraries = false
+    var libraryError: String? = nil
     @State private var recent: [String: FixtureArticle] = [:]
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path: [BrowserDestination] = []
-    @State private var visibility: NavigationSplitViewVisibility = .detailOnly
+    @Environment(\.librarySectionSelection) private var sectionSelection
 
     private var library: FixtureLibrary? {
         guard case .library(let library) = path.first else { return nil }
@@ -34,20 +36,30 @@ struct FixtureLibraryView: View {
     var body: some View {
         Group {
             if sizeClass == .regular {
-                NavigationSplitView(columnVisibility: $visibility) {
-                    gallery(selectedID: library?.id)
-                        .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 400)
-                } detail: {
-                    NavigationStack(path: detailPath) {
-                        if let library {
-                            textGallery(library: library) { path = [.library(library), .article($0)] }
-                                .navigationDestination(for: BrowserDestination.self) { destination($0) }
-                        } else {
-                            gallery(selectedID: nil)
-                        }
+                NavigationStack(path: detailPath) {
+                    HStack(spacing: 0) {
+                        VStack(spacing: 0) {
+                            if let sectionSelection {
+                                LibrarySectionPicker(selection: sectionSelection)
+                                    .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+                            }
+                            gallery(selectedID: library?.id)
+                        }.frame(width: 320)
+                            .accessibilityIdentifier("library-sidebar")
+                        Divider().overlay(LeximoryPalette.border)
+                        Group {
+                            if let library {
+                                textGallery(library: library) { path = [.library(library), .article($0)] }
+                            } else {
+                                LeximoryUnavailableView("选择文库", systemImage: "books.vertical", message: "从左侧打开一本书，开始阅读。")
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                        }.frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
+                    .background(LeximoryPalette.paper)
+                    .toolbar(.hidden, for: .navigationBar)
+                    .navigationDestination(for: BrowserDestination.self) { destination($0) }
                 }
-                .navigationSplitViewStyle(.balanced)
             } else {
                 NavigationStack(path: $path) {
                     gallery(selectedID: nil)
@@ -55,6 +67,7 @@ struct FixtureLibraryView: View {
                 }
             }
         }
+        .toolbar(readerID == nil ? .visible : .hidden, for: .tabBar)
         .onChange(of: openDocument?.text.id, initial: true) { _, _ in
             if let openDocument { path = [.library(openDocument.library.preview), .article(openDocument.text.preview)] }
         }
@@ -69,20 +82,26 @@ struct FixtureLibraryView: View {
                 if let data = try? JSONEncoder().encode(recent) { UserDefaults.standard.set(data, forKey: "recent-access.\(recentNamespace)") }
             }
             playback.leaveReader(unless: readerID)
-            if sizeClass == .regular { visibility = library != nil && readerID == nil ? .all : .detailOnly }
-        }
-        .onChange(of: sizeClass) { _, size in
-            if size == .regular { visibility = library != nil && readerID == nil ? .all : .detailOnly }
         }
     }
-    private func gallery(selectedID: LibraryID?) -> LibraryGallery {
+    private func gallery(selectedID: LibraryID?) -> some View {
         LibraryGallery(libraries: libraries, sampleMode: client == nil, refresh: refresh, archive: archive,
             recentlyOpened: recent, openRecent: { library, article in path = [.library(library), .article(article)] },
             selectedID: selectedID, open: { path = [.library($0)] })
+            .overlay {
+                if loadingLibraries && libraries.isEmpty {
+                    ProgressView { Text("正在打开文库……").font(LeximoryTypography.interface(17)) }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper)
+                } else if let libraryError {
+                    LeximoryUnavailableView("暂时无法打开文库", systemImage: "wifi.exclamationmark", message: libraryError) {
+                        Button("重试") { Task { await refresh?() } }
+                    }.background(LeximoryPalette.paper)
+                }
+            }
     }
     @ViewBuilder private func textGallery(library: FixtureLibrary, open: @escaping (FixtureArticle) -> Void) -> some View {
         if let client { RemoteTextGallery(library: library, client: client, open: open) }
-        else { TextGallery(library: library, open: open) }
+        else { TextGallery(library: library, showsNavigationBar: sizeClass != .regular, open: open) }
     }
     @ViewBuilder private func destination(_ destination: BrowserDestination) -> some View {
         switch destination {

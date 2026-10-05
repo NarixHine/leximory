@@ -14,15 +14,21 @@ struct LeximoryApp: App {
             }
             preferences.set(true, forKey: "ebook.typography.compact.v1")
         }
-        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.interfaceUI(17, semibold: true)]
+        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.editorialUI(17, language: "Chinese")]
         UINavigationBar.appearance().titleTextAttributes = attributes
-        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(16)], for: .normal)
+        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(16, language: "Chinese")], for: .normal)
+        for state in [UIControl.State.normal, .selected] {
+            UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(15, language: "Chinese")], for: state)
+        }
         let tabs = UITabBarAppearance()
         for item in [tabs.stackedLayoutAppearance, tabs.inlineLayoutAppearance, tabs.compactInlineLayoutAppearance] {
             item.normal.iconColor = UIColor(LeximoryPalette.muted)
             item.selected.iconColor = UIColor(LeximoryPalette.sage)
-            item.normal.titleTextAttributes = [.font: LeximoryTypography.interfaceUI(11), .foregroundColor: UIColor(LeximoryPalette.muted)]
-            item.selected.titleTextAttributes = [.font: LeximoryTypography.interfaceUI(11, semibold: true), .foregroundColor: UIColor(LeximoryPalette.sage)]
+            item.normal.titleTextAttributes = [.font: LeximoryTypography.editorialUI(13, language: "Chinese"), .foregroundColor: UIColor(LeximoryPalette.muted)]
+            item.selected.titleTextAttributes = [.font: LeximoryTypography.editorialUI(13, language: "Chinese"), .foregroundColor: UIColor(LeximoryPalette.sage)]
+        }
+        for state in [UIControl.State.normal, .selected] {
+            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(15, language: "Chinese")], for: state)
         }
         UITabBar.appearance().standardAppearance = tabs
         UITabBar.appearance().scrollEdgeAppearance = tabs

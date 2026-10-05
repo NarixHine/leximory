@@ -5,6 +5,18 @@ import ImageIO
 import LeximoryCore
 import os
 
+@MainActor enum ReadingSelectionMenu {
+    static let lookupTitle = "🐈 猫忆查"
+
+    static func removeUnrelatedActions(from builder: UIMenuBuilder) {
+        guard builder.system == .context else { return }
+        builder.remove(menu: .lookup)
+        builder.remove(menu: .share)
+        builder.remove(menu: .replace)
+        builder.remove(menu: .find)
+    }
+}
+
 @MainActor
 struct ReadingTextView: UIViewRepresentable {
     let document: ReadingDocument
@@ -20,6 +32,7 @@ struct ReadingTextView: UIViewRepresentable {
         let view = RubyTextView(frame: .zero, textContainer: nil)
         view.isEditable = false
         view.isSelectable = true
+        view.contentInsetAdjustmentBehavior = .never
         view.backgroundColor = LeximoryPalette.paperUI
         view.textContainerInset = UIEdgeInsets(top: 28, left: 22, bottom: 36, right: 22)
         view.textContainer.lineFragmentPadding = 0
@@ -30,6 +43,7 @@ struct ReadingTextView: UIViewRepresentable {
                 if let view { coordinator?.updateTitleVisibility(view) }
             }))
             header.view.backgroundColor = .clear
+            header.safeAreaRegions = []
             context.coordinator.header = header
             view.headerView = header.view
             view.addSubview(header.view)
@@ -122,7 +136,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
-            let action = UIAction(title: "查词", image: UIImage(systemName: "text.magnifyingglass")) { [weak self, weak textView] _ in
+            let action = UIAction(title: ReadingSelectionMenu.lookupTitle) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
@@ -150,7 +164,7 @@ struct ReadingTextView: UIViewRepresentable {
         let body = UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.proseUI(bodySize, language: language))
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = bodySize < 20 ? 5 : 7
-        output.addAttributes([.font: body, .foregroundColor: UIColor.label, .paragraphStyle: paragraph], range: NSRange(location: 0, length: output.length))
+        output.addAttributes([.font: body, .foregroundColor: language == "Chinese" || language == "Japanese" ? LeximoryPalette.readingInkUI : UIColor.label, .paragraphStyle: paragraph], range: NSRange(location: 0, length: output.length))
         for notice in layout.notices {
             output.addAttributes([.font: UIFontMetrics(forTextStyle: .caption1).scaledFont(for: LeximoryTypography.interfaceUI(12)), .foregroundColor: UIColor.secondaryLabel], range: notice.range)
         }
@@ -205,6 +219,11 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+    }
+
     var pendingFinalScroll = false
     var fixtureScrollsToEnd = false
     var headerTitleFrame = CGRect.zero
@@ -391,7 +410,7 @@ struct ReadingTextView: UIViewRepresentable {
                 addSubview(label)
             }
             label.text = ruby.pronunciation
-            label.font = LeximoryTypography.face("NotoSerifJP-Regular", size: LeximoryPalette.readingFont.pointSize * 0.48)
+            label.font = LeximoryTypography.face("ChillDuanHeiSongProJP_Regular", size: LeximoryPalette.readingFont.pointSize * 0.48)
             let width = max(base.width, label.sizeThatFits(.zero).width)
             label.frame = CGRect(x: base.midX - width / 2, y: base.minY - label.font.lineHeight + 1,
                                  width: width, height: label.font.lineHeight)

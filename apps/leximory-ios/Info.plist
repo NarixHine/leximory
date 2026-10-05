@@ -49,11 +49,10 @@
 		<string>EBGaramond.ttf</string>
 		<string>EBGaramond-Italic.ttf</string>
 		<string>LXGWWenKaiScreen.ttf</string>
-		<string>NotoSerifJP.ttf</string>
-		<string>NotoSerifSC-Medium.ttf</string>
+		<string>ChillDuanHeiSongProJP_Regular.otf</string>
+		<string>ChillDuanHeiSongPro_Regular.otf</string>
 		<string>Raleway-Regular.ttf</string>
 		<string>Raleway-SemiBold.ttf</string>
-		<string>NotoSerifSC-SemiBold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

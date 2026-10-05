@@ -25,12 +25,12 @@ enum EbookAppearance: String, CaseIterable {
     var colorScheme: ColorScheme? {
         switch self { case .automatic: nil; case .night: .dark; case .paper, .sepia: .light }
     }
-    func colors(dark: Bool) -> (paper: String, ink: String) {
+    func colors(dark: Bool, softerInk: Bool = false) -> (paper: String, ink: String) {
         switch self {
-        case .automatic: dark ? ("#100f0f", "#f1f3ef") : ("#ffffff", "#192024")
-        case .paper: ("#ffffff", "#192024")
-        case .sepia: ("#f5f0e5", "#37372e")
-        case .night: ("#100f0f", "#f1f3ef")
+        case .automatic: dark ? ("#100f0f", softerInk ? "#c2c6bf" : "#f1f3ef") : ("#ffffff", softerInk ? "#434943" : "#192024")
+        case .paper: ("#ffffff", softerInk ? "#434943" : "#192024")
+        case .sepia: ("#f5f0e5", softerInk ? "#505047" : "#37372e")
+        case .night: ("#100f0f", softerInk ? "#c2c6bf" : "#f1f3ef")
         }
     }
 }
@@ -38,8 +38,9 @@ enum EbookAppearance: String, CaseIterable {
 @MainActor enum EbookLearningMenu {
     static func insert(into builder: UIMenuBuilder, reader: EbookReaderState) {
         guard builder.system == .context else { return }
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
         let selection = reader.selection
-        let define = UIAction(title: "查词", image: UIImage(systemName: "text.magnifyingglass"), attributes: reader.readOnly ? .disabled : []) { _ in
+        let define = UIAction(title: ReadingSelectionMenu.lookupTitle, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
         let bookmark = UIAction(title: "收藏", image: UIImage(systemName: "bookmark"), attributes: reader.canBookmark && !reader.savingBookmark && !reader.readOnly ? [] : .disabled) { _ in

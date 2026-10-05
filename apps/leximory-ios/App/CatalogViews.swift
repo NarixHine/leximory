@@ -14,12 +14,14 @@ struct LibraryGallery: View {
     let open: (FixtureLibrary) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     private var active: [FixtureLibrary] { libraries.filter { !$0.isCompact } }
     private var compact: [FixtureLibrary] { libraries.filter(\.isCompact).sorted { $0.shadow && !$1.shadow } }
 
     var body: some View {
         GeometryReader { geometry in
-            let columns = geometry.size.width >= 380 && !typeSize.isAccessibilitySize ? 2 : 1
+            let columns = sizeClass == .regular && geometry.size.width >= 380 && !typeSize.isAccessibilitySize ? 2 : 1
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 5) {
@@ -80,7 +82,7 @@ struct LibraryGallery: View {
                         }
                     }
                 }
-                .frame(maxWidth: 760, alignment: .leading)
+                .frame(maxWidth: LeximoryLayout.libraryMeasure, alignment: .leading)
                 .padding(.horizontal, LeximoryLayout.pageInset).padding(.bottom, 32)
                 .frame(maxWidth: .infinity)
             }.refreshable { await refresh?() }
@@ -103,7 +105,7 @@ struct LibraryGallery: View {
         } label: {
             Group {
                 if archiving.contains(library.id) { ProgressView().controlSize(.small) }
-                else { Image(systemName: archived ? "archivebox" : "tray.and.arrow.up").font(.custom("Raleway-Regular", size: 15)) }
+                else { Image(systemName: archived ? "archivebox" : "tray.and.arrow.up").font(.system(size: 15, weight: archived ? .regular : .light)) }
             }.frame(width: 44, height: 44)
         }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.sage).disabled(archiving.contains(library.id))
             .accessibilityLabel(archived ? "归档 \(library.name)" : "取消归档 \(library.name)")
@@ -138,6 +140,9 @@ private struct LibraryCard: View {
 
 struct TextGallery: View {
     let library: FixtureLibrary
+    var showsNavigationBar = true
+    var openVocabulary: (() -> Void)? = nil
+    var importText: (() -> Void)? = nil
     let open: (FixtureArticle) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
@@ -146,9 +151,24 @@ struct TextGallery: View {
             let railCount = geometry.size.width > geometry.size.height ? 5 : 3
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text(library.name).editorialFont(24, language: library.language)
-                        .tracking(-0.4).fixedSize(horizontal: false, vertical: true)
-                        .foregroundStyle(LeximoryPalette.ink).accessibilityAddTraits(.isHeader)
+                    if showsNavigationBar || openVocabulary != nil || importText != nil {
+                        HStack(alignment: .top, spacing: 16) {
+                            if showsNavigationBar {
+                                Text(library.name).editorialFont(24, language: library.language)
+                                    .tracking(-0.4).fixedSize(horizontal: false, vertical: true)
+                                    .foregroundStyle(LeximoryPalette.ink).accessibilityAddTraits(.isHeader)
+                            }
+                            Spacer(minLength: 0)
+                            if let openVocabulary {
+                                Button("语料本", systemImage: "book.closed", action: openVocabulary)
+                                    .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                            }
+                            if let importText {
+                                Button("导入", systemImage: "plus", action: importText)
+                                    .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                            }
+                        }.tint(LeximoryPalette.sage)
+                    }
                     if wide, let first = library.articles.first {
                         HStack(alignment: .top, spacing: 32) {
                             articleCard(first, hero: true).frame(maxWidth: .infinity)
@@ -166,11 +186,11 @@ struct TextGallery: View {
                     }
                 }
                 .padding(.horizontal, 24).padding(.top, 22).padding(.bottom, 32)
-                .frame(maxWidth: 1088).frame(maxWidth: .infinity)
+                .frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
             }.background(LeximoryPalette.paper)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
+        .toolbar(showsNavigationBar ? .visible : .hidden, for: .navigationBar)
         .accessibilityIdentifier("texts-\(library.id.rawValue)")
     }
     private func articleCard(_ article: FixtureArticle, hero: Bool = false) -> some View {
@@ -179,8 +199,8 @@ struct TextGallery: View {
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper)
                     .aspectRatio(4.0 / 3, contentMode: .fit)
                 VStack(spacing: 8) {
-                    Text(article.title).editorialFont(hero ? 36 : 24, language: library.language)
-                        .tracking(-0.4).lineSpacing(1).foregroundStyle(LeximoryPalette.ink)
+                    Text(article.title).editorialFont(hero ? 36 : 24, language: library.language, leading: hero ? .tight : .standard)
+                        .tracking(-0.4).lineSpacing(hero ? 0 : 1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
                 }

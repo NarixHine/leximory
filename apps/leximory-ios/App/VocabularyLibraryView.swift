@@ -48,7 +48,7 @@ struct VocabularyLibraryView: View {
                         .frame(maxWidth: .infinity, minHeight: 58).padding(12)
                         .background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 28))
                 }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
-                    .popover(isPresented: Binding(get: { selected?.id == word.id }, set: { if !$0 { selected = nil } }), arrowEdge: .top) {
+                    .popover(isPresented: Binding(get: { selected?.id == word.id }, set: { if !$0 { selected = nil } }), arrowEdge: nil) {
                         CorpusWordTray(word: word, library: library, client: client, isPopover: sizeClass == .regular) { updated in
                             if let index = words.firstIndex(where: { $0.id == updated.id }) { words[index] = updated }
                         }.presentationCompactAdaptation(.sheet).presentationDragIndicator(.visible)
@@ -110,10 +110,11 @@ private struct CorpusWordTray: View {
                         }
                     }
                 }.foregroundStyle(LeximoryPalette.ink).padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
             }.scrollDismissesKeyboard(.interactively).accessibilityIdentifier("vocabulary-editor-scroll")
                 .ignoresSafeArea(.container, edges: .bottom).onAppear { bottomInset = geometry.safeAreaInsets.bottom }
-        }.frame(width: isPopover ? 420 : nil, height: isPopover ? min(height, 720) : nil)
+        }.frame(width: isPopover ? 420 : nil, height: isPopover ? max(160, min(height, 720)) : nil)
             .background(LeximoryPalette.shell)
             .presentationDetents([.height(max(1, min(height, 720) - bottomInset)), .large])
             .presentationCornerRadius(isPopover ? 32 : nil)

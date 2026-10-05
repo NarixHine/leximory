@@ -59,10 +59,11 @@ struct OnboardingView: View {
                     Image(systemName: "arrow.right").font(.body.weight(.medium))
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 18)
+                .foregroundStyle(LeximoryPalette.paper)
+                .background(LeximoryPalette.ink, in: Capsule())
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(LeximoryPalette.paper)
-            .background(LeximoryPalette.ink, in: Capsule())
             .accessibilityIdentifier("onboarding-start")
             .padding(.horizontal, 24).padding(.bottom, 16).padding(.top, 12)
             .frame(maxWidth: 524).frame(maxWidth: .infinity)
@@ -105,14 +106,9 @@ struct OnboardingView: View {
 private struct HeroIntroduction: View {
     @ScaledMetric(relativeTo: .body) private var bodySize = 17.0
     @ScaledMetric(relativeTo: .body) private var accentSize = 20.0
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var muted: Color {
-        colorScheme == .dark ? Color(red: 0.65, green: 0.65, blue: 0.69) : Color(red: 0.63, green: 0.63, blue: 0.68)
-    }
     private var wordmark: Text {
         Text("Leximory")
-            .font(.custom("EBGaramond-Regular", fixedSize: accentSize).smallCaps())
+            .font(.custom("EBGaramond-Regular", fixedSize: accentSize))
             .foregroundStyle(LeximoryPalette.ink)
             .tracking(0)
     }
@@ -129,8 +125,8 @@ private struct HeroIntroduction: View {
     }
     var body: some View {
         Text("\(wordmark) 是一个搭载 \(ai) 的语言学习平台，旨在通过整合\(feature("文本泛读"))、\(feature("生词释义"))和\(feature("词汇复习"))以最大化语言习得效率。")
-            .font(.custom("NotoSerifSC-SemiBold", fixedSize: bodySize))
-            .foregroundStyle(muted)
+            .font(.custom("ChillDuanHeiSongPro_Regular", fixedSize: bodySize))
+            .foregroundStyle(LeximoryPalette.muted)
             .tracking(-0.35 * bodySize / 17)
             .lineSpacing(6 * bodySize / 17)
             .textRenderer(HeroUnderlineRenderer(offset: 4 * bodySize / 17))

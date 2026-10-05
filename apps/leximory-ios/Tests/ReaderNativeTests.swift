@@ -158,9 +158,10 @@ import LeximoryCore
         #expect(UIFont(name: "EBGaramond-Regular", size: 36) != nil)
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)
         #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) != nil)
-        #expect(UIFont(name: "NotoSerifJP-Regular", size: 29) != nil)
-        #expect(UIFont(name: "NotoSerifSC-Medium", size: 18) != nil)
-        #expect(UIFont(name: "NotoSerifSC-SemiBold", size: 17) != nil)
+        #expect(UIFont(name: "ChillDuanHeiSongProJP_Regular", size: 29) != nil)
+        #expect(UIFont(name: "ChillDuanHeiSongPro_Regular", size: 18) != nil)
+        #expect(LeximoryTypography.proseUI(18, language: "Chinese").fontName == "ChillDuanHeiSongPro_Regular")
+        #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
     }
     @Test func attributedTextKeepsCanonicalOffsetsAndEmbeddedDefinitions() throws {
         let document = try FixtureArticle.samples[0].document()

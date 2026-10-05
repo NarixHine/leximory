@@ -2,7 +2,7 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 28px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),760px);margin:0 auto}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 28px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation;
@@ -23,11 +23,11 @@ function sanitizeDocument(source, svg = false) {
 }
 function proseCSS(theme) {
   return `html,body{background:${theme.paper}!important;color:${theme.ink}!important}
-  body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
-  p,li,blockquote,dd,dt{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
+  body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
+  p,li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
   p{margin:0 0 0.95em!important;text-indent:0!important;text-align:start!important}
   p span,li span,blockquote span{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;letter-spacing:inherit!important}
-  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:1.3em 0 0.7em!important}
+  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:1.3em 0 0.7em!important}
   h1{font-size:1.65em!important}h2{font-size:1.35em!important}h3{font-size:1.15em!important}
   img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:#5a715a}
   blockquote{margin:1em 0!important;padding-left:1em!important;border-left:2px solid #9caea1}

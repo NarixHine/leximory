@@ -40,6 +40,11 @@ struct EbookChapter: Identifiable {
     }
 }
 
+private enum EbookTray: String, Identifiable {
+    case contents, settings
+    var id: String { rawValue }
+}
+
 struct EbookScreen: View {
     let article: FixtureArticle
     let client: MobileClient?
@@ -49,12 +54,10 @@ struct EbookScreen: View {
     @State private var format = "epub"
     @State private var loading = true
     @State private var loadError: String?
-    @State private var contents = false
+    @State private var tray: EbookTray?
     @State private var definition: DefinitionPresentation?
     @State private var positionTask: Task<Void, Never>?
     @State private var scrubPosition: Double?
-    @State private var settings = false
-    @State private var definitionAnchor = CGRect.zero
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
     @AppStorage("ebook.prose.appearance") private var appearance = EbookAppearance.automatic.rawValue
@@ -68,11 +71,9 @@ struct EbookScreen: View {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader).padding(.top, 60).padding(.bottom, 84).padding(.horizontal, 12).frame(maxWidth: 980) }
                 else { NativeEPUBReader(data: data, language: language, reader: reader, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: EbookAppearance(rawValue: appearance) ?? .automatic) }
             }
-            if loading { ProgressView("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
+            if loading { ProgressView { Text("正在打开电子书……").font(LeximoryTypography.interface(17)) }.frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
-                ContentUnavailableView {
-                    Label("暂时无法打开电子书", systemImage: "book.closed")
-                } description: { Text(loadError) } actions: { Button("重试") { Task { await load() } } }
+                LeximoryUnavailableView("暂时无法打开电子书", systemImage: "book.closed", message: loadError) { Button("重试") { Task { await load() } } }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -81,30 +82,23 @@ struct EbookScreen: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .top) {
-            if reader.chromeVisible { topControls.transition(.opacity) }
-            else {
-                runningTitle.padding(.horizontal, 28).padding(.top, 12).allowsHitTesting(false)
-            }
+            ZStack {
+                runningTitle
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, client == nil ? 116 : 160)
+                    .allowsHitTesting(false)
+                if reader.chromeVisible { topControls.transition(.opacity) }
+            }.frame(height: 44).padding(.top, 8)
         }
         .overlay(alignment: .bottom) {
             if reader.chromeVisible { bottomControls.transition(.opacity) }
             else { pageLabel.padding(.bottom, 4).allowsHitTesting(false) }
         }
-        .overlay {
-            GeometryReader { geometry in
-                let anchor = definitionAnchor.offsetBy(dx: -geometry.frame(in: .global).minX, dy: -geometry.frame(in: .global).minY)
-                Color.clear
-                    .popover(item: Binding(get: { sizeClass == .regular ? definition : nil }, set: { definition = $0 }), attachmentAnchor: .rect(.rect(anchor)), arrowEdge: .top) { item in
-                        DefinitionView(item: item, client: client, language: language, isPopover: true)
-                            .frame(width: 480).presentationBackground(LeximoryPalette.shell)
-                    }
-                    .allowsHitTesting(false)
-            }
-        }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reader.chromeVisible)
-        .sheet(item: Binding(get: { sizeClass != .regular ? definition : nil }, set: { definition = $0 })) { item in
+        .sheet(item: $definition) { item in
             DefinitionView(item: item, client: client, language: language, isPopover: false)
-                .presentationDragIndicator(.visible).presentationCornerRadius(nil).presentationBackground(LeximoryPalette.shell)
+                .presentationDragIndicator(.visible)
+                .presentationBackground(LeximoryPalette.shell)
         }
         .alert("暂时无法同步", isPresented: Binding(get: { reader.error != nil }, set: { if !$0 { reader.error = nil } })) {
             Button("完成", role: .cancel) { reader.error = nil }
@@ -119,7 +113,6 @@ struct EbookScreen: View {
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
             if action.kind == .define {
-                definitionAnchor = action.selection.rect
                 definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil)
             } else { Task { await saveBookmark(action.selection) } }
         }
@@ -145,7 +138,7 @@ struct EbookScreen: View {
                 List {
                     Section {
                         ForEach(reader.chapters) { chapter in
-                            Button { reader.navigate("display", value: chapter.location); contents = false } label: {
+                            Button { reader.navigate("display", value: chapter.location); tray = nil } label: {
                                 Text(chapter.title).foregroundStyle(LeximoryPalette.ink)
                                     .padding(.leading, CGFloat(chapter.depth) * 16)
                             }
@@ -154,43 +147,52 @@ struct EbookScreen: View {
                     if !reader.bookmarks.isEmpty {
                         Section("收藏") {
                             ForEach(reader.bookmarks) { bookmark in
-                                Button { if let location = bookmark.location { reader.navigate("display", value: location) }; contents = false } label: {
+                                Button { if let location = bookmark.location { reader.navigate("display", value: location) }; tray = nil } label: {
                                     Text(bookmark.quote).font(LeximoryTypography.prose(16, language: language)).lineLimit(4)
                                 }.disabled(bookmark.location == nil)
                             }
                         }
                     }
-                }.scrollContentBackground(.hidden).background(LeximoryPalette.paper)
+                }.listStyle(.plain)
+                    .scrollContentBackground(.hidden).background(LeximoryPalette.paper)
+                    .listRowBackground(LeximoryPalette.paper)
                     .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { contents = false } } }
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { tray = nil } } }
             }.frame(minWidth: sizeClass == .regular ? 360 : nil, idealHeight: min(540, CGFloat(reader.chapters.count + reader.bookmarks.count) * 48 + 100))
                 .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
-                .presentationBackground(LeximoryPalette.shell)
+                .presentationBackground(LeximoryPalette.paper)
     }
     private var topControls: some View {
-        GlassEffectContainer(spacing: 16) {
-            HStack {
-                Button("返回", systemImage: "chevron.left") { dismiss() }
-                    .labelStyle(.iconOnly).frame(width: 44, height: 44).buttonStyle(.glass)
-                runningTitle.frame(maxWidth: .infinity)
-                HStack(spacing: 0) {
-                    Button("目录", systemImage: "list.bullet") { contents = true }
-                        .frame(width: 44, height: 44)
-                        .accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
-                        .popover(isPresented: $contents) { contentsTray }
-                    Button { settings = true } label: {
-                        Text("Aa").font(LeximoryTypography.prose(18)).accessibilityLabel("阅读选项")
-                    }.frame(width: 44, height: 44)
-                        .accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
-                        .popover(isPresented: $settings) { readingSettings.presentationCompactAdaptation(.sheet) }
-                    if let client {
-                        ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) { Label("分享", systemImage: "square.and.arrow.up") }
-                            .frame(width: 44, height: 44)
-                    }
-                }.labelStyle(.iconOnly).buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink).padding(.horizontal, 4)
-                    .glassEffect(.regular.interactive(), in: .capsule)
-            }.padding(.horizontal, 20).padding(.top, 8)
-        }.tint(LeximoryPalette.ink)
+        HStack {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left").frame(width: 44, height: 44).contentShape(Rectangle())
+            }.accessibilityLabel("返回")
+            Spacer(minLength: 0)
+            readerActions
+        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
+            .padding(.horizontal, 20)
+    }
+    private var readerActions: some View {
+        HStack(spacing: 0) {
+            Button { tray = .contents } label: {
+                Image(systemName: "list.bullet").frame(width: 44, height: 44).contentShape(Rectangle())
+            }.accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
+            Button { tray = .settings } label: {
+                Image(systemName: "textformat").font(.system(size: 18))
+                    .frame(width: 44, height: 44).contentShape(Rectangle())
+            }.accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
+            if let client {
+                ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
+                    Image(systemName: "square.and.arrow.up")
+                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                }.accessibilityLabel("分享")
+            }
+        }.popover(item: $tray) { tray in
+            switch tray {
+            case .contents: contentsTray
+            case .settings: readingSettings.presentationCompactAdaptation(.sheet)
+            }
+        }
     }
     private var bottomControls: some View {
         VStack(spacing: 6) {
@@ -229,13 +231,13 @@ struct EbookScreen: View {
                     }
                 } else {
                     Section("缩放") {
-                        Button("适合页面") { reader.navigate("fit"); settings = false }
-                        Button("适合宽度") { reader.navigate("width"); settings = false }
+                        Button("适合页面") { reader.navigate("fit"); tray = nil }
+                        Button("适合宽度") { reader.navigate("width"); tray = nil }
                     }
                 }
             }.scrollContentBackground(.hidden).background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { settings = false } } }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { tray = nil } } }
         }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: 440)
             .presentationDetents([.medium]).presentationDragIndicator(.visible)
             .presentationBackground(LeximoryPalette.shell).tint(LeximoryPalette.ink)
@@ -330,23 +332,25 @@ private struct NativeEPUBReader: UIViewRepresentable {
         let gestures: EbookGestures
         init(_ parent: NativeEPUBReader) { self.parent = parent; gestures = EbookGestures(reader: parent.reader) }
         func theme(_ web: WKWebView) -> [String: String] {
-            let colors = parent.appearance.colors(dark: parent.scheme == .dark)
+            let colors = parent.appearance.colors(dark: parent.scheme == .dark, softerInk: parent.language == "Chinese" || parent.language == "Japanese")
             let size = UIFontMetrics(forTextStyle: .body).scaledValue(for: parent.fontSize, compatibleWith: web.traitCollection)
-            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": parent.language == "Chinese" ? "500" : "400"]
+            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400"]
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
-            let font = parent.language == "Japanese" ? "NotoSerifJP" : parent.language == "Chinese" ? "NotoSerifSC-Medium" : "LibreBaskerville"
-            let fontData = Bundle.main.url(forResource: font, withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
+            let cjk = parent.language == "Chinese" || parent.language == "Japanese"
+            let font = parent.language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : cjk ? "ChillDuanHeiSongPro_Regular" : "LibreBaskerville"
+            let fontExtension = cjk ? "otf" : "ttf"
+            let fontData = Bundle.main.url(forResource: font, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
             let italicData = Bundle.main.url(forResource: "LibreBaskerville-Italic", withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
             let bookmarks = parent.reader.bookmarks.map { ["location": $0.location ?? "", "quote": $0.quote] }
             let theme = theme(web)
             appliedTheme = theme
-            let displayFont = parent.language == "Chinese" || parent.language == "Japanese" ? font : "EBGaramond"
-            let displayData = Bundle.main.url(forResource: displayFont, withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
+            let displayFont = cjk ? font : "EBGaramond"
+            let displayData = Bundle.main.url(forResource: displayFont, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
             Task { do {
             _ = try await web.callAsyncJavaScript("await window.openBook(bytes, location, fonts, theme, bookmarks)", arguments: [
                 "bytes": parent.data.base64EncodedString(), "location": parent.reader.location ?? "",
-                "fonts": ["regular": "data:font/ttf;base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/ttf;base64," + displayData.base64EncodedString()],
+                "fonts": ["regular": "data:font/\(fontExtension);base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/\(fontExtension);base64," + displayData.base64EncodedString()],
                 "theme": theme, "bookmarks": bookmarks
             ], in: nil, contentWorld: .page)
             } catch { parent.reader.loadFailure = "电子书未能加载，请重试。" } }

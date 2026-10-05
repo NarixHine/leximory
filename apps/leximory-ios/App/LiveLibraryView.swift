@@ -16,27 +16,12 @@ struct LiveLibraryView: View {
     @State private var loading = true
     @State private var error: String?
     @State private var selectedTab = 0
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.displayScale) private var displayScale
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab(value: 0) {
-                libraryBrowser
-            } label: {
-                Label { Text("文库") } icon: {
-                    tabIcon(selectedTab == 0 ? "books.vertical.fill" : "books.vertical", selected: selectedTab == 0)
-                }
-            }
-            Tab(value: 1) {
-                AccountView(session: session, playback: playback)
-            } label: {
-                Label { Text("账户") } icon: {
-                    tabIcon(selectedTab == 1 ? "person.crop.circle.fill" : "person.crop.circle", selected: selectedTab == 1)
-                }
-            }
+        LibraryTabShell(selection: $selectedTab) {
+            libraryBrowser
+        } account: {
+            AccountView(session: session, playback: playback)
         }
-        .tint(LeximoryPalette.sage)
-        .tabBarMinimizeBehavior(.onScrollDown)
         .onChange(of: selectedTab) { _, tab in if tab != 0 { playback.stop() } }
         .task { await load() }
         .task(id: ReadingLinkRequest(textID: pendingText, catalogReady: !loading && error == nil)) {
@@ -59,28 +44,10 @@ struct LiveLibraryView: View {
             Button("完成", role: .cancel) { linkError = nil }
         } message: { Text(linkError ?? "") }
     }
-    private func tabIcon(_ name: String, selected: Bool) -> Image {
-        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        let color = UIColor(selected ? LeximoryPalette.sage : LeximoryPalette.muted).resolvedColor(with: traits)
-        let symbol = UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .regular))!
-            .withTintColor(color, renderingMode: .alwaysOriginal)
-        let format = UIGraphicsImageRendererFormat(); format.scale = displayScale
-        let image = UIGraphicsImageRenderer(size: symbol.size, format: format).image { _ in symbol.draw(at: .zero) }
-        return Image(uiImage: image.withRenderingMode(.alwaysOriginal))
-    }
     private var libraryBrowser: some View {
         FixtureLibraryView(playback: playback, libraries: libraries.map(\.preview), client: session.client,
             openDocument: openDocument, refresh: load, archive: archive,
-            recentNamespace: session.state.accountID ?? "signed-out")
-            .overlay {
-                if loading && libraries.isEmpty { ProgressView("正在打开文库……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
-                else if let error {
-                    ContentUnavailableView {
-                        Label("暂时无法打开文库", systemImage: "wifi.exclamationmark")
-                    } description: { Text(error) } actions: { Button("重试") { Task { await load() } } }
-                        .background(LeximoryPalette.paper)
-                }
-            }
+            recentNamespace: session.state.accountID ?? "signed-out", loadingLibraries: loading, libraryError: error)
     }
     private func archive(_ library: FixtureLibrary, _ archived: Bool) async throws {
         try await session.client.setLibraryArchived(libraryID: library.id.rawValue, archived: archived)
@@ -111,6 +78,7 @@ struct LiveLibraryView: View {
 }
 
 struct RemoteTextGallery: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let library: FixtureLibrary
     let client: MobileClient
     let open: (FixtureArticle) -> Void
@@ -122,28 +90,44 @@ struct RemoteTextGallery: View {
     @State private var error: String?
     var body: some View {
         ZStack {
-            if loading { ProgressView("正在加载文章……") }
+            if loading { ProgressView { Text("正在加载文章……").font(LeximoryTypography.interface(17)) } }
             else if let error {
-                ContentUnavailableView {
-                    Label("暂时无法加载文章", systemImage: "wifi.exclamationmark")
-                } description: { Text(error) } actions: { Button("重试") { Task { await load() } } }
+                LeximoryUnavailableView("暂时无法加载文章", systemImage: "wifi.exclamationmark", message: error) { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {
-                ContentUnavailableView("还没有文章", systemImage: "doc.text", description: nil)
+                LeximoryUnavailableView("还没有文章", systemImage: "doc.text")
             } else {
                 TextGallery(library: FixtureLibrary(id: library.id, name: library.name, language: library.language,
-                    articles: texts.map(\.preview), isRemote: true)) { article in
+                    articles: texts.map(\.preview), isRemote: true), showsNavigationBar: sizeClass != .regular,
+                    openVocabulary: sizeClass == .regular ? { vocabulary = true } : nil,
+                    importText: sizeClass == .regular && library.owned && !library.shadow ? { importing = true } : nil) { article in
                     open(article)
                 }
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
-            }
-            if library.owned && !library.shadow {
+            if sizeClass != .regular {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("导入", systemImage: "plus") { importing = true }.foregroundStyle(LeximoryPalette.sage)
+                    Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
                 }
+                if library.owned && !library.shadow {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("导入", systemImage: "plus") { importing = true }.foregroundStyle(LeximoryPalette.sage)
+                    }
+                }
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if sizeClass == .regular && (loading || error != nil || texts.isEmpty) {
+                HStack {
+                    Spacer()
+                    Button("语料本", systemImage: "book.closed") { vocabulary = true }
+                        .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                    if library.owned && !library.shadow {
+                        Button("导入", systemImage: "plus") { importing = true }
+                            .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                    }
+                }.padding(.horizontal, 24).padding(.top, 22)
+                    .tint(LeximoryPalette.sage).background(LeximoryPalette.paper)
             }
         }
         .sheet(isPresented: $importing, onDismiss: {
@@ -158,7 +142,7 @@ struct RemoteTextGallery: View {
             }
         }
         .navigationDestination(isPresented: $vocabulary) { VocabularyLibraryView(library: library, client: client) }
-        .navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline).toolbar(sizeClass == .regular ? .hidden : .visible, for: .navigationBar)
         .background(LeximoryPalette.paper)
         .task(id: library.id) { await load() }
         .refreshable { await load() }
@@ -215,5 +199,73 @@ private struct AccountView: View {
                 }.padding(28).frame(maxWidth: 560, alignment: .leading).frame(maxWidth: .infinity)
             }.background(LeximoryPalette.paper).toolbar(.hidden, for: .navigationBar)
         }.task { await session.refreshAccount() }
+    }
+}
+
+struct LibraryTabShell<Library: View, Account: View>: View {
+    @Binding var selection: Int
+    @ViewBuilder let library: Library
+    @ViewBuilder let account: Account
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    var body: some View {
+        if sizeClass == .regular {
+            ZStack {
+                library.environment(\.librarySectionSelection, $selection)
+                    .opacity(selection == 0 ? 1 : 0)
+                    .allowsHitTesting(selection == 0).accessibilityHidden(selection != 0)
+                if selection == 1 {
+                    account
+                        .safeAreaInset(edge: .top, alignment: .leading, spacing: 12) {
+                            LibrarySectionPicker(selection: $selection)
+                                .frame(width: 280).padding(.horizontal, 20).padding(.top, 12)
+                        }
+                }
+            }.background(LeximoryPalette.paper)
+        } else {
+            phoneTabs
+        }
+    }
+    private var phoneTabs: some View {
+        TabView(selection: $selection) {
+            Tab(value: 0) { library } label: {
+                Label { Text("文库").editorialFont(16, language: "Chinese") } icon: {
+                    tabIcon(selection == 0 ? "books.vertical.fill" : "books.vertical", selected: selection == 0)
+                }
+            }
+            Tab(value: 1) { account } label: {
+                Label { Text("账户").editorialFont(16, language: "Chinese") } icon: {
+                    tabIcon(selection == 1 ? "person.crop.circle.fill" : "person.crop.circle", selected: selection == 1)
+                }
+            }
+        }
+        .tint(LeximoryPalette.sage)
+        .tabBarMinimizeBehavior(.onScrollDown)
+    }
+    private func tabIcon(_ name: String, selected: Bool) -> Image {
+        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        let color = UIColor(selected ? LeximoryPalette.sage : LeximoryPalette.muted).resolvedColor(with: traits)
+        let symbol = UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .regular))!
+            .withTintColor(color, renderingMode: .alwaysOriginal)
+        let format = UIGraphicsImageRendererFormat(); format.scale = displayScale
+        let image = UIGraphicsImageRenderer(size: symbol.size, format: format).image { _ in symbol.draw(at: .zero) }
+        return Image(uiImage: image.withRenderingMode(.alwaysOriginal))
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var librarySectionSelection: Binding<Int>? = nil
+}
+
+struct LibrarySectionPicker: View {
+    @Binding var selection: Int
+    var body: some View {
+        Picker("导航", selection: $selection) {
+            Text("文库").tag(0)
+            Text("账户").tag(1)
+        }.pickerStyle(.segmented)
+            .font(LeximoryTypography.prose(16, language: "Chinese"))
+            .accessibilityIdentifier("library-section-picker")
     }
 }

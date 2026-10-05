@@ -11,6 +11,7 @@ struct DefinitionPresentation: Identifiable {
     let source: DefinitionSource
     let definition: Definition?
     var id: String { source.id }
+    var isDynamic: Bool { definition == nil }
 }
 
 struct ReaderScreen: View {
@@ -37,11 +38,9 @@ struct ReaderScreen: View {
     var body: some View {
         ZStack {
             switch state {
-            case .loading: ProgressView("正在打开文章……")
+            case .loading: ProgressView { Text("正在打开文章……").font(LeximoryTypography.interface(17)) }
             case .failed(let message):
-                ContentUnavailableView {
-                    Label("暂时无法打开文章", systemImage: "doc.text")
-                } description: { Text(message) } actions: { Button("重试") { Task { await load() } } }
+                LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, rect in
@@ -49,7 +48,7 @@ struct ReaderScreen: View {
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
                     })
                 .background(LeximoryPalette.paper)
-                .popover(item: $definition, attachmentAnchor: .rect(.rect(anchor)), arrowEdge: .top) { item in
+                .popover(item: Binding(get: { sizeClass == .regular && definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }), attachmentAnchor: .rect(.rect(anchor)), arrowEdge: nil) { item in
                     DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
                         .presentationCompactAdaptation(.sheet)
                         .presentationDragIndicator(.visible)
@@ -61,7 +60,13 @@ struct ReaderScreen: View {
                 }
             }
         }
+        .sheet(item: Binding(get: { sizeClass != .regular || definition?.isDynamic == true ? definition : nil }, set: { definition = $0 })) { item in
+            DefinitionView(item: item, client: client, language: language, isPopover: false)
+                .presentationDragIndicator(.visible)
+                .presentationBackground(LeximoryPalette.shell)
+        }
         .toolbar(.hidden, for: .tabBar)
+        .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -194,8 +199,8 @@ struct DefinitionView: View {
                         }
                     case .generating(let preview):
                         if client != nil {
-                            if !preview.isEmpty { section("释义", content: preview) }
-                            ProgressView("正在理解语境……")
+                            section("释义", content: preview)
+                            ProgressView { Text("正在理解语境……").font(LeximoryTypography.interface(17)) }
                                 .frame(maxWidth: .infinity, minHeight: preview.isEmpty ? 140 : 60, alignment: .center)
                         } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
                     case .failed(let message):
@@ -206,16 +211,18 @@ struct DefinitionView: View {
                 }.padding(.horizontal, isPopover ? 28 : 24)
                     .padding(.top, isPopover ? 28 : 24).padding(.bottom, isPopover ? 28 : 24)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+                    .frame(maxWidth: .infinity, alignment: .top)
             }
             .scrollDismissesKeyboard(.interactively)
             .ignoresSafeArea(.container, edges: isPopover ? [] : .bottom)
             .onGeometryChange(for: CGFloat.self) { _ in safeAreaBottom } action: { if !editing { bottomSafeArea = $0 } }
         }
         .frame(width: isPopover ? 480 : nil)
-        .frame(height: isPopover ? min(contentHeight, 620) : nil)
+        .frame(height: isPopover ? max(160, min(contentHeight, 620)) : nil)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
-        .presentationDetents([.height(max(1, min(contentHeight, 560) - bottomSafeArea)), .large])
+        .presentationDetents(item.isDynamic ? [.large] : [.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(LeximoryPalette.shell).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { dismiss() }
         .task(id: "\(item.id):\(lookupAttempt)") {

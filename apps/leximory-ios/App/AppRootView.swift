@@ -1,14 +1,25 @@
 import SwiftUI
 import LeximoryCore
+#if DEBUG
+import OpenAPIRuntime
+import HTTPTypes
+#endif
 
 struct AppRootView: View {
     let fixturePlayback: PlaybackController
     @State private var session: AccountSession?
     @State private var livePlayback: PlaybackController?
+    @State private var fixtureTab = 0
+    private var fixtureClient: MobileClient? = nil
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") { return }
+        if ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
+            if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
+                fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })
+            }
+            return
+        }
         #endif
         var configuration = AppConfiguration.bundled
         #if DEBUG
@@ -42,13 +53,22 @@ struct AppRootView: View {
                 if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
                     AuthoringPreview(playback: fixturePlayback)
                 } else {
-                FixtureLibraryView(playback: fixturePlayback, libraries: ProcessInfo.processInfo.arguments.contains("--ebook-fixtures") ? FixtureLibrary.ebookSamples : ProcessInfo.processInfo.arguments.contains("--catalog-layout-fixtures") ? FixtureLibrary.layoutSamples : FixtureLibrary.samples)
+                if ProcessInfo.processInfo.arguments.contains("--tab-fixtures") {
+                    LibraryTabShell(selection: $fixtureTab) {
+                        fixtureBrowser
+                    } account: {
+                        Text("账户").font(LeximoryTypography.interface(24))
+                    }
+                } else { fixtureBrowser }
                 }
                 #else
-                ContentUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", description: Text("请稍后重试。"))
+                LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: "请稍后重试。")
                 #endif
             }
         }
+    }
+    private var fixtureBrowser: some View {
+        FixtureLibraryView(playback: fixturePlayback, libraries: ProcessInfo.processInfo.arguments.contains("--ebook-fixtures") ? FixtureLibrary.ebookSamples : ProcessInfo.processInfo.arguments.contains("--catalog-layout-fixtures") ? FixtureLibrary.layoutSamples : FixtureLibrary.samples, client: fixtureClient)
     }
 }
 
@@ -60,15 +80,13 @@ private struct AccountRoot: View {
     var body: some View {
         ZStack {
             switch session.state {
-            case .restoring: ProgressView("正在打开文库……").frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .restoring: ProgressView { Text("正在打开文库……").font(LeximoryTypography.interface(17)) }.frame(maxWidth: .infinity, maxHeight: .infinity)
             case .signedOut:
                 if hasOpened { SignInView(session: session) } else { WelcomeGate(session: session) }
             case .expired: SignInView(session: session, notice: "登录已过期，请重新登录。")
             case .signedIn: LiveLibraryView(session: session, playback: playback, pendingText: $pendingText).id(session.generation)
             case .unavailable(let message):
-                ContentUnavailableView {
-                    Label("暂时无法连接", systemImage: "wifi.exclamationmark")
-                } description: { Text(message) } actions: {
+                LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: message) {
                     Button("重试") { Task { await session.restore() } }
                     Button("返回登录") { Task { await session.signOut() } }
                 }
@@ -114,12 +132,47 @@ struct SignInView: View {
                         catch { if !Task.isCancelled { self.error = "登录未成功，请检查邮箱、密码和网络后重试。" } }
                     }
                 } label: {
-                    HStack { Spacer(); if submitting { ProgressView().tint(LeximoryPalette.paper) }; Text(submitting ? "登录中……" : "登录").font(LeximoryTypography.interface(17, semibold: true, style: .headline)); Spacer() }.padding(.vertical, 17)
+                    HStack {
+                        if submitting { ProgressView().tint(LeximoryPalette.paper) }
+                        Text(submitting ? "登录中……" : "登录")
+                            .font(LeximoryTypography.interface(17, semibold: true, style: .headline))
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 17)
+                    .foregroundStyle(LeximoryPalette.paper)
+                    .background(LeximoryPalette.ink, in: Capsule())
+                    .contentShape(Capsule())
                 }
-                .buttonStyle(.plain).foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
+                .buttonStyle(.plain)
                 .disabled(submitting || email.isEmpty || password.isEmpty)
             }.padding(28).frame(maxWidth: 480).frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
     }
 }
+
+#if DEBUG
+private struct GalleryFixtureTransport: ClientTransport {
+    func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+        try await Task.sleep(for: .milliseconds(800))
+        let data = try await MainActor.run {
+            let library = FixtureLibrary.samples[0]
+            func text(_ article: FixtureArticle) -> [String: Any] {
+                ["id": article.id.rawValue, "libraryId": library.id.rawValue, "title": article.title,
+                 "topics": article.topics, "emoji": NSNull(), "createdAt": NSNull(), "format": "article"]
+            }
+            let payload: [String: Any]
+            if operationID == "document" {
+                let article = library.articles.first { request.path?.contains($0.id.rawValue) == true } ?? library.articles[0]
+                guard let documentURL = Bundle.main.url(forResource: article.resource, withExtension: "json") else { throw CocoaError(.fileNoSuchFile) }
+                payload = ["text": text(article),
+                    "library": ["id": library.id.rawValue, "name": library.name, "language": "en", "owned": true, "archived": false, "shadow": false],
+                    "document": try JSONSerialization.jsonObject(with: Data(contentsOf: documentURL)), "annotationProgress": NSNull()]
+            } else {
+                payload = ["items": library.articles.map(text), "nextCursor": NSNull()]
+            }
+            return try JSONSerialization.data(withJSONObject: payload)
+        }
+        return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(data))
+    }
+}
+#endif

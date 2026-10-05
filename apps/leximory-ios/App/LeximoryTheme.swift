@@ -1,5 +1,41 @@
 import SwiftUI
 
+struct LeximoryUnavailableView<Actions: View>: View {
+    let title: String
+    let systemImage: String
+    let message: String?
+    let actions: Actions
+
+    init(_ title: String, systemImage: String, message: String? = nil, @ViewBuilder actions: () -> Actions) {
+        self.title = title
+        self.systemImage = systemImage
+        self.message = message
+        self.actions = actions()
+    }
+
+    var body: some View {
+        ContentUnavailableView {
+            Label {
+                Text(title).font(LeximoryTypography.interface(24, semibold: true, style: .title2))
+            } icon: {
+                Image(systemName: systemImage)
+            }
+        } description: {
+            if let message {
+                Text(message).font(LeximoryTypography.interface(17))
+            }
+        } actions: {
+            actions.font(LeximoryTypography.interface(17))
+        }
+    }
+}
+
+extension LeximoryUnavailableView where Actions == EmptyView {
+    init(_ title: String, systemImage: String, message: String? = nil) {
+        self.init(title, systemImage: systemImage, message: message) { EmptyView() }
+    }
+}
+
 enum LeximoryPalette {
     static let sage = Color(uiColor: adaptive(light: 0x5A715A, dark: 0xA7B9AB))
     static let paperUI = adaptive(light: 0xFFFFFF, dark: 0x100F0F)
@@ -14,6 +50,8 @@ enum LeximoryPalette {
     static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x90A695))
 
     static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x91B75B).withAlphaComponent(0.45)
+
+    static let readingInkUI = adaptive(light: 0x434943, dark: 0xC2C6BF)
 
     static var readingFont: UIFont {
         UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.proseUI(20))
@@ -40,23 +78,23 @@ enum LeximoryTypography {
         UIFont(name: name, size: size)!
     }
     static func editorialUI(_ size: CGFloat, language: String? = nil) -> UIFont {
-        let name = language == "Japanese" ? "NotoSerifJP-Regular" : language == "Chinese" ? "NotoSerifSC-Medium" : "EBGaramond-Regular"
-        let fallback = UIFontDescriptor(name: language == "Japanese" ? "NotoSerifJP-Regular" : "NotoSerifSC-Medium", size: size)
-        return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([.cascadeList: [fallback]]), size: size)
+        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongPro_Regular" : "EBGaramond-Regular"
+        let fallback = UIFontDescriptor(name: language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : "ChillDuanHeiSongPro_Regular", size: size)
+        return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([.cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), fallback]]), size: size)
     }
     static func proseUI(_ size: CGFloat, language: String? = nil) -> UIFont {
-        let name = language == "Japanese" ? "NotoSerifJP-Regular" : language == "Chinese" ? "NotoSerifSC-Medium" : "LibreBaskerville-Regular"
+        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongPro_Regular" : "LibreBaskerville-Regular"
         return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([
-            .cascadeList: [UIFontDescriptor(name: "NotoSerifSC-Medium", size: size)]
+            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), UIFontDescriptor(name: "ChillDuanHeiSongPro_Regular", size: size)]
         ]), size: size)
     }
     static func prose(_ size: CGFloat, language: String? = nil) -> Font {
         Font(UIFontMetrics(forTextStyle: .body).scaledFont(for: proseUI(size, language: language)))
     }
     static func interfaceUI(_ size: CGFloat, semibold: Bool = false) -> UIFont {
-        let fallback = UIFontDescriptor(name: semibold ? "NotoSerifSC-SemiBold" : "NotoSerifSC-Medium", size: size)
+        let fallback = UIFontDescriptor(name: "ChillDuanHeiSongPro_Regular", size: size)
         let latin = face(semibold ? "RalewayRoman-SemiBold" : "RalewayRoman-Regular", size: size)
-        return UIFont(descriptor: latin.fontDescriptor.addingAttributes([.cascadeList: [fallback]]), size: size)
+        return UIFont(descriptor: latin.fontDescriptor.addingAttributes([.cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), fallback]]), size: size)
     }
     static func interface(_ size: CGFloat, semibold: Bool = false, style: UIFont.TextStyle = .body) -> Font {
         Font(UIFontMetrics(forTextStyle: style).scaledFont(for: interfaceUI(size, semibold: semibold)))
@@ -66,18 +104,20 @@ enum LeximoryTypography {
 private struct EditorialTypography: ViewModifier {
     @ScaledMetric private var size: CGFloat
     let language: String?
-    init(size: CGFloat, style: Font.TextStyle, language: String?) {
+    let leading: Font.Leading
+    init(size: CGFloat, style: Font.TextStyle, language: String?, leading: Font.Leading) {
         _size = ScaledMetric(wrappedValue: size, relativeTo: style)
         self.language = language
+        self.leading = leading
     }
     func body(content: Content) -> some View {
-        content.font(Font(LeximoryTypography.editorialUI(size, language: language)))
+        content.font(Font(LeximoryTypography.editorialUI(size, language: language)).leading(leading))
     }
 }
 
 extension View {
-    func editorialFont(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, language: String? = "Chinese") -> some View {
-        modifier(EditorialTypography(size: size, style: style, language: language))
+    func editorialFont(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, language: String? = "Chinese", leading: Font.Leading = .standard) -> some View {
+        modifier(EditorialTypography(size: size, style: style, language: language, leading: leading))
     }
 }
 
@@ -88,5 +128,7 @@ enum LeximoryLayout {
     static let cardTitleBottom: CGFloat = 16
     static let cardRadius: CGFloat = 46
     static let innerCardRadius: CGFloat = 32
-    static let readingMeasure: CGFloat = 680
+    static let readingMeasure: CGFloat = 560
+    static let libraryMeasure: CGFloat = 640
+    static let textGalleryMeasure: CGFloat = 880
 }
