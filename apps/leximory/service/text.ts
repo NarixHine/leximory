@@ -1,7 +1,7 @@
 'use server'
 
 import { Kilpi } from '@repo/service/kilpi'
-import { generateObject, generateText, smoothStream, streamText } from 'ai'
+import { generateText, smoothStream, streamText } from 'ai'
 import { ACTION_QUOTA_COST, Lang, MAX_FILE_SIZE } from '@repo/env/config'
 import {
     createText,
@@ -17,7 +17,6 @@ import {
 import { inngest } from '@/server/inngest/client'
 import { instruction } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
-import { z } from '@repo/schema'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
 import crypto from 'crypto'
 import { getUserOrThrow } from '@repo/user'
@@ -26,7 +25,7 @@ import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { isValidEmoji } from '@/lib/utils'
 import { updateTag } from 'next/cache'
 import { visitText, getVisitedTextIds } from '@/server/db/visited'
-import { miniAI, nanoAI } from '@/server/ai/config'
+import { miniAI, wordAI } from '@/server/ai/config'
 import { getLib } from '@/server/db/lib'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
 import { redirect } from 'next/navigation'
@@ -245,7 +244,7 @@ export async function generateSingleComment({ prompt, lang }: { prompt: string; 
                 : lang === 'en' || lang === 'fr'
                   ? smoothStream()
                   : undefined,
-        ...nanoAI,
+        ...wordAI,
     })
 
     return { text: textStream }
