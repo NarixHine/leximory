@@ -7,13 +7,23 @@ import os
 
 @MainActor enum ReadingSelectionMenu {
     static let lookupTitle = "🐈 猫忆查"
+    static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
 
     static func removeUnrelatedActions(from builder: UIMenuBuilder) {
         guard builder.system == .context else { return }
-        builder.remove(menu: .lookup)
         builder.remove(menu: .share)
         builder.remove(menu: .replace)
         builder.remove(menu: .find)
+        builder.replaceChildren(ofMenu: .standardEdit) { withoutSelectAll($0) }
+    }
+
+    static func withoutSelectAll(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.compactMap { element in
+            if let command = element as? UICommand,
+               command.action == #selector(UIResponderStandardEditActions.selectAll(_:)) { return nil }
+            if let menu = element as? UIMenu { return menu.replacingChildren(withoutSelectAll(menu.children)) }
+            return element
+        }
     }
 }
 
@@ -24,6 +34,7 @@ struct ReadingTextView: UIViewRepresentable {
     var language = "English"
     let textID: TextID
     let jumpToEnd: Bool
+    var bottomObstruction: CGFloat = 0
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
 
@@ -32,7 +43,7 @@ struct ReadingTextView: UIViewRepresentable {
         let view = RubyTextView(frame: .zero, textContainer: nil)
         view.isEditable = false
         view.isSelectable = true
-        view.contentInsetAdjustmentBehavior = .never
+        view.contentInsetAdjustmentBehavior = .automatic
         view.backgroundColor = LeximoryPalette.paperUI
         view.textContainerInset = UIEdgeInsets(top: 28, left: 22, bottom: 36, right: 22)
         view.textContainer.lineFragmentPadding = 0
@@ -61,6 +72,7 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
+        view.contentInset.bottom = bottomObstruction
         view.fixtureScrollsToEnd = jumpToEnd
         let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
         let signature = "\(document.revision):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
@@ -68,7 +80,7 @@ struct ReadingTextView: UIViewRepresentable {
             let selection = view.selectedRange
             let offset = view.contentOffset
             coordinator.signature = signature
-            coordinator.layout = ReaderLayout(document: document, openingTitleInHeader: article?.title)
+            coordinator.layout = ReaderLayout(document: document, openingTitleInHeader: article?.title, showsNotices: false)
             view.readingLayout = coordinator.layout
             view.annotations = coordinator.layout.annotations(textID: textID, revision: document.revision)
             let start = ContinuousClock.now
@@ -105,7 +117,7 @@ struct ReadingTextView: UIViewRepresentable {
         var lastJump = false
         var imageTasks: [Task<Void, Never>] = []
         var header: UIHostingController<ArticleReadingHeader>?
-        init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title) }
+        init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title, showsNotices: false) }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
             for entry in layout.entries {
@@ -136,7 +148,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
-            let action = UIAction(title: ReadingSelectionMenu.lookupTitle) { [weak self, weak textView] _ in
+            let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
@@ -261,7 +273,9 @@ struct ReadingTextView: UIViewRepresentable {
                 let element = paragraphElements[entry.block.id] ?? UIAccessibilityElement(accessibilityContainer: self)
                 paragraphElements[entry.block.id] = element
                 element.accessibilityLabel = entry.block.displayText.replacingOccurrences(of: "\u{FFFC}", with: "")
-                if let notice = entry.block.notice { element.accessibilityLabel = notice + ". " + (element.accessibilityLabel ?? "") }
+                if let notice = entry.block.notice, layout.notices.contains(where: { $0.text == notice }) {
+                    element.accessibilityLabel = notice + ". " + (element.accessibilityLabel ?? "")
+                }
                 element.accessibilityTraits = entry.block.kind.rawValue.hasPrefix("heading") ? [.header, .staticText] : .staticText
                 element.accessibilityFrameInContainerSpace = self.boundingRect(for: entry.documentRange)
                 element.accessibilityCustomActions = entry.block.spans.compactMap { span in

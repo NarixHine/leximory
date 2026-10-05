@@ -2,41 +2,58 @@ import SwiftUI
 
 struct PlaybackBar: View {
     let playback: PlaybackController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var scrubPosition: Double?
+
     var body: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 6) {
             switch playback.state {
             case .idle: EmptyView()
             case .loading:
-                HStack { ProgressView(); Text("正在加载录音……").font(LeximoryTypography.interface(15, style: .subheadline)); Spacer(); close }
+                HStack(spacing: 10) { ProgressView(); Text("正在加载录音……").font(LeximoryTypography.interface(14)) }
+                    .frame(maxWidth: .infinity)
             case .unavailable:
-                HStack { Label("录音暂不可用", systemImage: "speaker.slash").font(LeximoryTypography.interface(15, style: .subheadline)); Spacer(); close }
+                Label("录音暂不可用", systemImage: "speaker.slash")
+                    .font(LeximoryTypography.interface(14)).frame(maxWidth: .infinity)
             case .failed(_, let message):
-                HStack { Text(message).font(LeximoryTypography.interface(15, style: .subheadline)); Spacer(); close }
+                Text(message).font(LeximoryTypography.interface(14))
+                    .frame(maxWidth: .infinity)
             case .ready(let source, let elapsed, let duration, let playing):
-                HStack(spacing: 16) {
-                    Button(playing ? "暂停" : "播放", systemImage: playing ? "pause.fill" : "play.fill") {
-                        if playing { playback.pause() } else { playback.resume() }
-                    }.labelStyle(.iconOnly).font(.title3).frame(minWidth: 44, minHeight: 44)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(source.title).font(LeximoryTypography.interface(15, style: .subheadline)).lineLimit(1)
-                        Text(source.audioID == "fixture_recording" ? "测试音频（示例录音）" : "文章录音").font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+                Button {
+                    if playing { playback.pause() } else { playback.resume() }
+                } label: {
+                    Image(systemName: playing ? "pause.fill" : "play.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
+                        .frame(width: 44, height: 44).contentShape(Circle())
+                }.accessibilityLabel(playing ? "暂停" : "播放")
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        Text(source.title).font(LeximoryTypography.interface(13))
+                            .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(Duration.seconds(scrubPosition ?? elapsed).formatted(.time(pattern: .minuteSecond)))
+                            .font(LeximoryTypography.interface(11).monospacedDigit())
+                            .foregroundStyle(LeximoryPalette.muted)
+                            .accessibilityLabel("已播放时间")
                     }
-                    Spacer()
-                    Text(Duration.seconds(elapsed).formatted(.time(pattern: .minuteSecond)))
-                        .font(LeximoryTypography.interface(12, style: .caption1).monospacedDigit()).foregroundStyle(.secondary)
-                    close
-                }
-                if duration > 0 {
-                    Slider(value: Binding(get: { elapsed }, set: { playback.seek(to: $0) }), in: 0...duration)
-                        .accessibilityLabel("播放进度")
+                    if duration > 0 {
+                        Slider(value: Binding(get: { scrubPosition ?? elapsed }, set: { scrubPosition = $0 }), in: 0...duration) { editing in
+                            if !editing, let position = scrubPosition {
+                                playback.seek(to: position); scrubPosition = nil
+                            }
+                        }.controlSize(.mini).accessibilityLabel("播放进度")
+                    }
                 }
             }
+            Button { playback.stop() } label: {
+                Image(systemName: "xmark").font(.system(size: 13, weight: .medium))
+                    .frame(width: 44, height: 44).contentShape(Circle())
+            }.accessibilityLabel("停止播放")
         }
-        .padding(.horizontal, 20).padding(.vertical, 10).background(.bar)
+        .buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink).tint(LeximoryPalette.ink)
+        .padding(.horizontal, 8).padding(.vertical, 8)
+        .frame(maxWidth: 420)
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 32, style: .continuous))
         .accessibilityIdentifier("playback-bar")
-    }
-    private var close: some View {
-        Button("停止播放", systemImage: "xmark") { playback.stop() }
-            .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
     }
 }

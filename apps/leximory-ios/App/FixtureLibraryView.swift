@@ -51,7 +51,7 @@ struct FixtureLibraryView: View {
                             if let library {
                                 textGallery(library: library) { path = [.library(library), .article($0)] }
                             } else {
-                                LeximoryUnavailableView("选择文库", systemImage: "books.vertical", message: "从左侧打开一本书，开始阅读。")
+                                LeximoryUnavailableView("选择文库", systemImage: "books.vertical", message: "开始阅读文库里的文章和电子书吧！")
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -90,7 +90,7 @@ struct FixtureLibraryView: View {
             selectedID: selectedID, open: { path = [.library($0)] })
             .overlay {
                 if loadingLibraries && libraries.isEmpty {
-                    ProgressView { Text("正在打开文库……").font(LeximoryTypography.interface(17)) }
+                    ReadingLoadingIndicator("正在打开文库……")
                         .frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper)
                 } else if let libraryError {
                     LeximoryUnavailableView("暂时无法打开文库", systemImage: "wifi.exclamationmark", message: libraryError) {

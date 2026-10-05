@@ -98,7 +98,7 @@ private struct CoverTexture: View {
             let phase = time / 18 + Double(seed % 100)
             let color = LeximoryPalette.illustration
             let center = CGPoint(x: size.width * (0.5 + 0.22 * sin(phase)), y: size.height * (0.5 + 0.2 * cos(phase * 0.8)))
-            let wash = Self.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0.006 : chroma * 2, hue + 18 * sin(phase * 0.3))
+            let wash = Self.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0 : chroma * 2, hue + 18 * sin(phase * 0.3))
             context.fill(canvas, with: .radialGradient(Gradient(colors: [wash.opacity(0.7), wash.opacity(0)]), center: center, startRadius: 0, endRadius: max(size.width, size.height) * 0.8))
             let light = dark ? Self.oklch(lightness + 0.035, 0, hue) : Color.white
             context.fill(canvas, with: .radialGradient(Gradient(colors: [light.opacity(0.75), light.opacity(0)]), center: CGPoint(x: size.width - center.x, y: size.height - center.y), startRadius: 0, endRadius: max(size.width, size.height) * 0.7))

@@ -60,7 +60,6 @@ struct EbookScreen: View {
     @State private var scrubPosition: Double?
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
-    @AppStorage("ebook.prose.appearance") private var appearance = EbookAppearance.automatic.rawValue
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -68,17 +67,16 @@ struct EbookScreen: View {
     var body: some View {
         ZStack {
             if let data {
-                if format == "pdf" { NativePDFReader(data: data, reader: reader).padding(.top, 60).padding(.bottom, 84).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: EbookAppearance(rawValue: appearance) ?? .automatic) }
+                if format == "pdf" { NativePDFReader(data: data, reader: reader).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: .automatic) }
             }
-            if loading { ProgressView { Text("正在打开电子书……").font(LeximoryTypography.interface(17)) }.frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
+            if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
                 LeximoryUnavailableView("暂时无法打开电子书", systemImage: "book.closed", message: loadError) { Button("重试") { Task { await load() } } }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(format == "epub" && appearance == EbookAppearance.sepia.rawValue ? Color(red: 245.0 / 255, green: 240.0 / 255, blue: 229.0 / 255) : LeximoryPalette.paper)
-        .preferredColorScheme(format == "epub" ? EbookAppearance(rawValue: appearance)?.colorScheme : nil)
+        .background(LeximoryPalette.paper)
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .top) {
@@ -92,13 +90,14 @@ struct EbookScreen: View {
         }
         .overlay(alignment: .bottom) {
             if reader.chromeVisible { bottomControls.transition(.opacity) }
-            else { pageLabel.padding(.bottom, 4).allowsHitTesting(false) }
+            else { pageLabel.padding(.bottom, 8).allowsHitTesting(false) }
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reader.chromeVisible)
-        .sheet(item: $definition) { item in
-            DefinitionView(item: item, client: client, language: language, isPopover: false)
-                .presentationDragIndicator(.visible)
-                .presentationBackground(LeximoryPalette.shell)
+        .overlay(alignment: .top) {
+            if let item = definition {
+                DefinitionTopTray(item: item, client: client, language: language) { definition = nil }
+                    .id(item.id)
+            }
         }
         .alert("暂时无法同步", isPresented: Binding(get: { reader.error != nil }, set: { if !$0 { reader.error = nil } })) {
             Button("完成", role: .cancel) { reader.error = nil }
@@ -157,7 +156,6 @@ struct EbookScreen: View {
                     .scrollContentBackground(.hidden).background(LeximoryPalette.paper)
                     .listRowBackground(LeximoryPalette.paper)
                     .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { tray = nil } } }
             }.frame(minWidth: sizeClass == .regular ? 360 : nil, idealHeight: min(540, CGFloat(reader.chapters.count + reader.bookmarks.count) * 48 + 100))
                 .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
                 .presentationBackground(LeximoryPalette.paper)
@@ -165,7 +163,10 @@ struct EbookScreen: View {
     private var topControls: some View {
         HStack {
             Button { dismiss() } label: {
-                Image(systemName: "chevron.left").frame(width: 44, height: 44).contentShape(Rectangle())
+                Image(systemName: "chevron.left").font(.system(size: 16))
+                    .frame(width: 36, height: 36)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .frame(width: 44, height: 44).contentShape(Rectangle())
             }.accessibilityLabel("返回")
             Spacer(minLength: 0)
             readerActions
@@ -178,7 +179,7 @@ struct EbookScreen: View {
                 Image(systemName: "list.bullet").frame(width: 44, height: 44).contentShape(Rectangle())
             }.accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
             Button { tray = .settings } label: {
-                Image(systemName: "textformat").font(.system(size: 18))
+                Image(systemName: "slider.horizontal.3").font(.system(size: 18))
                     .frame(width: 44, height: 44).contentShape(Rectangle())
             }.accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
             if let client {
@@ -187,7 +188,9 @@ struct EbookScreen: View {
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }.accessibilityLabel("分享")
             }
-        }.popover(item: $tray) { tray in
+        }.frame(height: 36).padding(.horizontal, 4)
+            .glassEffect(.regular.interactive(), in: Capsule())
+            .popover(item: $tray) { tray in
             switch tray {
             case .contents: contentsTray
             case .settings: readingSettings.presentationCompactAdaptation(.sheet)
@@ -196,7 +199,7 @@ struct EbookScreen: View {
     }
     private var bottomControls: some View {
         VStack(spacing: 6) {
-            if reader.totalPages > 0 {
+            if format != "pdf", reader.totalPages > 0 {
                 Slider(value: Binding(get: { scrubPosition ?? Double(reader.location ?? "1") ?? 1 }, set: { scrubPosition = $0 }), in: 1...Double(max(2, reader.totalPages)), step: 1) { editing in
                     if !editing, let position = scrubPosition { reader.navigate("display", value: String(Int(position))); scrubPosition = nil }
                 }.accessibilityLabel("阅读进度")
@@ -204,16 +207,16 @@ struct EbookScreen: View {
                     .disabled(reader.totalPages < 2)
             }
             pageLabel
-        }.padding(.horizontal, 28).padding(.bottom, 4).frame(maxWidth: 540).tint(LeximoryPalette.muted)
+        }.padding(.horizontal, 28).padding(.bottom, 8).frame(maxWidth: 540).tint(LeximoryPalette.muted)
     }
     private var runningTitle: some View {
-        Text(article.title).editorialFont(14, language: language)
+        Text(article.title).editorialFont(18, language: language)
             .foregroundStyle(LeximoryPalette.muted).lineLimit(1)
             .accessibilityIdentifier("ebook-running-title")
     }
     private var pageLabel: some View {
         Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapterPages > 0 ? "\(reader.chapterPage) / \(reader.chapterPages)" : "\(reader.chapterPage)")
-            .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
+            .font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
             .lineLimit(1).padding(.vertical, 4).opacity(reader.ready ? 1 : 0)
             .accessibilityIdentifier("ebook-page-position")
             .accessibilityLabel("阅读位置")
@@ -222,25 +225,25 @@ struct EbookScreen: View {
 
     private var readingSettings: some View {
         NavigationStack {
-            Form {
-                if format == "epub" {
-                    Section("字号") { Slider(value: $fontSize, in: 16...30, step: 1).accessibilityLabel("字号") }
-                    Section("行距") { Slider(value: $lineHeight, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
-                    Section("纸张") {
-                        Picker("纸张", selection: $appearance) { ForEach(EbookAppearance.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) } }.pickerStyle(.segmented)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    if format == "epub" {
+                        VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: $fontSize, in: 16...30, step: 1).accessibilityLabel("字号") }
+                        VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: $lineHeight, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
+                    } else {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("缩放")
+                            Button("适合页面") { reader.navigate("fit"); tray = nil }
+                            Button("适合宽度") { reader.navigate("width"); tray = nil }
+                        }
                     }
-                } else {
-                    Section("缩放") {
-                        Button("适合页面") { reader.navigate("fit"); tray = nil }
-                        Button("适合宽度") { reader.navigate("width"); tray = nil }
-                    }
-                }
-            }.scrollContentBackground(.hidden).background(LeximoryPalette.paper)
+                }.font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink)
+                    .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+            }.background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { tray = nil } } }
-        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: 440)
+        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: format == "epub" ? 280 : 260)
             .presentationDetents([.medium]).presentationDragIndicator(.visible)
-            .presentationBackground(LeximoryPalette.shell).tint(LeximoryPalette.ink)
+            .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
     private func load() async {
         reader.canBookmark = client != nil
@@ -333,6 +336,11 @@ private struct NativeEPUBReader: UIViewRepresentable {
         init(_ parent: NativeEPUBReader) { self.parent = parent; gestures = EbookGestures(reader: parent.reader) }
         func theme(_ web: WKWebView) -> [String: String] {
             let colors = parent.appearance.colors(dark: parent.scheme == .dark, softerInk: parent.language == "Chinese" || parent.language == "Japanese")
+            if let rgb = UInt32(colors.paper.dropFirst(), radix: 16) {
+                web.backgroundColor = UIColor(red: CGFloat((rgb >> 16) & 255) / 255,
+                                              green: CGFloat((rgb >> 8) & 255) / 255,
+                                              blue: CGFloat(rgb & 255) / 255, alpha: 1)
+            }
             let size = UIFontMetrics(forTextStyle: .body).scaledValue(for: parent.fontSize, compatibleWith: web.traitCollection)
             return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400"]
         }

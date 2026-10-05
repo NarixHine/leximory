@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
             },
         ]
     },
-    allowedDevOrigins: ['localhost-leximory-experiment.time.florist'],
+    allowedDevOrigins: [],
 }
 
 const withMDX = createMDX({})

@@ -225,7 +225,7 @@ struct LawnCatPose {
     }
 }
 
-@MainActor private enum CatFrames {
+@MainActor enum CatFrames {
     static let frames: [UIImage?] = {
         guard let image = UIImage(named: "cat")?.cgImage else { return Array(repeating: nil, count: 9) }
         let width = image.width / 3

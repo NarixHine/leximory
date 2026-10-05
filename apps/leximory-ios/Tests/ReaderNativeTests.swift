@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import Auth
 import Foundation
 import Testing
@@ -8,6 +9,16 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ReaderNativeTests {
+    @Test func diagnosticNoticesCanBeHiddenWithoutLosingFallbackText() throws {
+        let document = try FixtureArticle.samples[0].document()
+        let layout = ReaderLayout(document: document, showsNotices: false)
+        #expect(layout.notices.isEmpty)
+        #expect(!layout.text.contains("Malformed definition shown as plain text"))
+        #expect(layout.text.contains("unfinished"))
+        for entry in layout.entries {
+            #expect((layout.text as NSString).substring(with: entry.documentRange) == entry.block.displayText)
+        }
+    }
     @Test func wrappedAnnotationUsesSeparateTightSegmentsAndReflows() throws {
         let text = "Before we walked along the winding river bank together after the rain."
         let marked = "walked along the winding river bank together"
@@ -89,6 +100,104 @@ import LeximoryCore
             #expect(!before.moving && !after.moving)
             #expect(abs(before.facingAngle - after.facingAngle) > 179)
         }
+    }
+    @Test func darkReadingSurfacesMatchCanonicalWebNeutrals() throws {
+        let traits = UITraitCollection(userInterfaceStyle: .dark)
+        let surfaces: [(UIColor, UInt32)] = [
+            (LeximoryPalette.paperUI, 0x100F0F), (UIColor(LeximoryPalette.shell), 0x18181B),
+            (UIColor(LeximoryPalette.cover), 0x27272A), (UIColor(LeximoryPalette.border), 0x3F3F46),
+            (LeximoryPalette.readingInkUI, 0xCECDC3)
+        ]
+        for (color, expected) in surfaces {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            #expect(color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+            let actual = UInt32((red * 255).rounded()) << 16 | UInt32((green * 255).rounded()) << 8 | UInt32((blue * 255).rounded())
+            #expect(actual == expected)
+        }
+        #expect(EbookAppearance.automatic.colors(dark: true).ink == "#cecdc3")
+        #expect(EbookAppearance.night.colors(dark: false).paper == "#100f0f")
+        #expect(ReadingSelectionMenu.lookupImage != nil)
+    }
+    @Test func pageCurlFollowsFingerHeightAndSettlesFlat() {
+        let upper = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true)
+        let lower = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.9), travelY: 0, forward: true)
+        #expect(upper.axisX > 0 && lower.axisX < 0)
+        let moved = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: true)
+        #expect(moved.axisX > upper.axisX)
+        let center = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.1, y: 0.5), travelY: 0, forward: true)
+        #expect(abs(center.axisX) < 0.000001)
+        #expect(abs(center.angle - upper.angle) > 0.01)
+        let advancing = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: -1, dy: 0))
+        let reversing = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: 1, dy: 0))
+        #expect(abs(advancing.angle) > abs(reversing.angle))
+        let movingDown = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: 0, dy: 1))
+        #expect(movingDown.axisX > upper.axisX)
+        for forward in [true, false] {
+            let start = PageCurlGeometry(progress: 0, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: forward)
+            let end = PageCurlGeometry(progress: 1, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: forward)
+            #expect(abs(start.angle) < 0.000001)
+            #expect(abs(abs(end.angle) - .pi) < 0.000001)
+            #expect(abs(start.axisX) < 0.000001 && abs(end.axisX) < 0.000001)
+        }
+    }
+    @Test func pageTurnReleasePreservesVelocityAndEndsAtRest() {
+        for (start, target, velocity) in [(0.35, 1.0, 1.8), (0.7, 0.0, -2.0), (0.4, 1.0, -0.1), (0.2, 0.0, 0.1), (0.8, 1.0, 8.0)] {
+            let turn = PageTurnSettlement(start: start, target: target, velocity: velocity)
+            let step = 0.00001
+            #expect(abs(turn.value(at: 0) - start) < 0.000001)
+            #expect(abs(turn.value(at: 1) - target) < 0.000001)
+            let initialVelocity = (turn.value(at: step) - start) / (step * turn.duration)
+            let finalVelocity = (target - turn.value(at: 1 - step)) / (step * turn.duration)
+            #expect(abs(initialVelocity - velocity) < 0.001)
+            #expect(abs(finalVelocity) < 0.001)
+            for tick in 0...100 {
+                let value = turn.value(at: CGFloat(tick) / 100)
+                #expect(value >= 0 && value <= 1)
+            }
+        }
+    }
+    @Test func pageCurlBindingStaysFixedAndFacetsShareVerticalEdges() {
+        for angle in stride(from: -CGFloat.pi, through: CGFloat.pi, by: 0.1) {
+            for slope: CGFloat in [-0.1, 0, 0.1] {
+                let transform = PageCurlFacet.transform(angle: angle, slope: slope)
+                for y: CGFloat in [-500, 0, 500] {
+                    // Points on the binding have x = z = 0. Their projected
+                    // position is unchanged regardless of turn angle or tilt.
+                    let x = y * transform.m21 + transform.m41
+                    let height = y * transform.m22 + transform.m42
+                    let z = y * transform.m23 + transform.m43
+                    #expect(abs(x) < 0.000001 && abs(z) < 0.000001)
+                    #expect(abs(height - y) < 0.000001)
+                }
+            }
+        }
+    }
+    @Test func previousPageUnfoldsImmediatelyFromBindingAndEndsFlat() {
+        for fraction: CGFloat in [0, 0.25, 0.5, 0.75, 1] {
+            var lastAngle = -CGFloat.pi / 2
+            for tick in 0...100 {
+                let progress = CGFloat(tick) / 100
+                let curl = PageCurlGeometry(progress: IncomingPageCurl.phase(progress), fraction: fraction,
+                    touch: CGPoint(x: 0.25, y: 0.3), travelY: 0.1, forward: false)
+                let angle = IncomingPageCurl.angle(progress: progress, curvedAngle: curl.angle)
+                #expect(angle >= lastAngle - 0.000001)
+                #expect(angle <= 0 && angle >= -.pi / 2)
+                #expect(-sin(angle) >= 0)
+                if tick > 0 { #expect(cos(angle) > 0) }
+                #expect(cos(angle) >= progress * 0.74)
+                lastAngle = angle
+            }
+            #expect(abs(lastAngle) < 0.000001)
+        }
+    }
+    @Test func readingMenuRemovesSelectAllAndKeepsCopy() {
+        let select = UICommand(title: "全选", action: #selector(UIResponderStandardEditActions.selectAll(_:)))
+        let copy = UICommand(title: "拷贝", action: #selector(UIResponderStandardEditActions.copy(_:)))
+        let children = ReadingSelectionMenu.withoutSelectAll([select, UIMenu(title: "", children: [select, copy])])
+        #expect(children.count == 1)
+        let menu = children.first as? UIMenu
+        #expect(menu?.children.count == 1)
+        #expect((menu?.children.first as? UICommand)?.action == copy.action)
     }
     @Test func sessionExpiryDoesNotTreatNetworkFailuresAsSignout() {
         #expect(AccountSession.requiresSignIn(AuthError.sessionMissing))
@@ -205,6 +314,31 @@ import LeximoryCore
         #expect(presentation.source.text == "bank")
         #expect(view.selectedRange == range)
     }
+    @Test func topAnnotationGrowthKeepsReaderViewportAndTopEdgeFixed() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let layout = ReaderLayout(document: document)
+        let selection = try layout.selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fixture"))
+        let probe = AnnotationLayoutProbe()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: AnnotationLayoutProbeView(source: .article(selection), probe: probe))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        let readerFrame = probe.readerFrame
+        let shortTray = probe.trayFrame
+        #expect(readerFrame.height > 0)
+        #expect(shortTray.height > 0)
+        probe.text = String(repeating: "A long streamed annotation should scroll inside its tray.\n", count: 80)
+        try await Task.sleep(for: .milliseconds(250))
+        host.view.layoutIfNeeded()
+        #expect(probe.readerFrame == readerFrame)
+        #expect(abs(probe.trayFrame.minY - shortTray.minY) < 1)
+        #expect(probe.trayFrame.height > shortTray.height)
+        #expect(probe.trayFrame.height <= 900 * 0.78 + 1)
+    }
     @Test func localMissingRecordingAndNavigationClearPlaybackState() async {
         let playback = PlaybackController(resolve: { _ in nil })
         playback.toggle(textID: TextID(rawValue: "first"), audioID: "missing", title: "First")
@@ -236,4 +370,27 @@ import LeximoryCore
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { continuation?.resume(); continuation = nil }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
+}
+
+@MainActor @Observable private final class AnnotationLayoutProbe {
+    var text = "A short definition."
+    var readerFrame: CGRect = .zero
+    var trayFrame: CGRect = .zero
+}
+
+private struct AnnotationLayoutProbeView: View {
+    let source: DefinitionSource
+    let probe: AnnotationLayoutProbe
+
+    var body: some View {
+        Color.white
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.readerFrame = $0 }
+            .overlay(alignment: .top) {
+                DefinitionView(item: DefinitionPresentation(source: source, definition: Definition(lemma: "word", definition: probe.text)),
+                               client: nil, language: "English", isPopover: false, topTrayHeight: 900, closeTray: {})
+                    .id(probe.text)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.trayFrame = $0 }
+            }
+            .frame(width: 820, height: 900)
+    }
 }

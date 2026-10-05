@@ -37,21 +37,22 @@ extension LeximoryUnavailableView where Actions == EmptyView {
 }
 
 enum LeximoryPalette {
-    static let sage = Color(uiColor: adaptive(light: 0x5A715A, dark: 0xA7B9AB))
+    static let sage = Color(uiColor: adaptive(light: 0x5A715A, dark: 0xA1A1AA))
     static let paperUI = adaptive(light: 0xFFFFFF, dark: 0x100F0F)
     static let paper = Color(uiColor: paperUI)
-    static let ink = Color(uiColor: adaptive(light: 0x192024, dark: 0xF1F3EF))
-    static let muted = Color(uiColor: adaptive(light: 0x67787C, dark: 0xADBBB0))
-    static let border = Color(uiColor: adaptive(light: 0xD9E8BF, dark: 0x4A6039))
-    static let secondaryBorder = Color(uiColor: adaptive(light: 0xD0D6D8, dark: 0x445052))
-    static let secondaryLabel = Color(uiColor: adaptive(light: 0x9CA8AB, dark: 0xADBBB0))
-    static let cover = Color(uiColor: adaptive(light: 0xF1F5F1, dark: 0x222A24))
-    static let shell = Color(uiColor: adaptive(light: 0xF8FAF8, dark: 0x1A211C))
-    static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x90A695))
+    static let ink = Color(uiColor: adaptive(light: 0x192024, dark: 0xCECDC3))
+    static let muted = Color(uiColor: adaptive(light: 0x67787C, dark: 0xA1A1AA))
+    static let border = Color(uiColor: adaptive(light: 0xD9E8BF, dark: 0x3F3F46))
+    static let secondaryBorder = Color(uiColor: adaptive(light: 0xD0D6D8, dark: 0x3F3F46))
+    static let secondaryLabel = Color(uiColor: adaptive(light: 0x9CA8AB, dark: 0xA1A1AA))
+    static let cover = Color(uiColor: adaptive(light: 0xF1F5F1, dark: 0x27272A))
+    static let shell = Color(uiColor: adaptive(light: 0xF8FAF8, dark: 0x18181B))
+    static let annotationSurface = Color(uiColor: adaptive(light: 0xFAFAFA, dark: 0x18181B))
+    static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x878580))
 
-    static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x91B75B).withAlphaComponent(0.45)
+    static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x878580).withAlphaComponent(0.45)
 
-    static let readingInkUI = adaptive(light: 0x434943, dark: 0xC2C6BF)
+    static let readingInkUI = adaptive(light: 0x434943, dark: 0xCECDC3)
 
     static var readingFont: UIFont {
         UIFontMetrics(forTextStyle: .body).scaledFont(for: LeximoryTypography.proseUI(20))
@@ -128,7 +129,51 @@ enum LeximoryLayout {
     static let cardTitleBottom: CGFloat = 16
     static let cardRadius: CGFloat = 46
     static let innerCardRadius: CGFloat = 32
-    static let readingMeasure: CGFloat = 560
+    static let readingMeasure: CGFloat = 640
     static let libraryMeasure: CGFloat = 640
     static let textGalleryMeasure: CGFloat = 880
+}
+
+/// Uses the web's lawn artwork and three running sprite frames.
+struct ReadingLoadingIndicator: View {
+    let label: String
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var origin = Date()
+    init(_ label: String) { self.label = label }
+
+    var body: some View {
+        VStack(spacing: 12) { lawn; caption }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+    }
+    private var caption: some View {
+        Text(label).font(LeximoryTypography.interface(17))
+            .foregroundStyle(LeximoryPalette.muted)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+    private var lawn: some View {
+        let width: CGFloat = 224
+        let height = width * 0.56
+        return TimelineView(.animation(minimumInterval: 1.0 / 30,
+            paused: reduceMotion || scenePhase != .active)) { context in
+            let time = reduceMotion ? 0 : context.date.timeIntervalSince(origin)
+            let phase = time.truncatingRemainder(dividingBy: 4)
+            let outward = phase < 2
+            let distance = (1 - cos(phase * .pi / 2)) / 2
+            let turn = min(1, max(0, (phase.truncatingRemainder(dividingBy: 2) - 1.8) / 0.2))
+            let facing = outward ? turn * 180 : 180 - turn * 180
+            ZStack {
+                Image(uiImage: UIImage(named: scheme == .dark ? "lawn-night.png" : "lawn.png") ?? UIImage())
+                    .resizable().scaledToFit()
+                if let image = CatFrames.frames[reduceMotion ? 0 : 3 + Int(time * 8) % 3] {
+                    Image(uiImage: image).resizable().scaledToFit()
+                        .frame(width: width * 0.32, height: width * 0.32 * 256 / 469)
+                        .rotation3DEffect(.degrees(facing), axis: (x: 0, y: 1, z: 0))
+                        .position(x: width * (0.27 + distance * 0.46), y: height * 0.63)
+                }
+            }.frame(width: width, height: height)
+        }.accessibilityHidden(true)
+    }
 }

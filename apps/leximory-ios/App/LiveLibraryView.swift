@@ -90,7 +90,7 @@ struct RemoteTextGallery: View {
     @State private var error: String?
     var body: some View {
         ZStack {
-            if loading { ProgressView { Text("正在加载文章……").font(LeximoryTypography.interface(17)) } }
+            if loading { ReadingLoadingIndicator("正在加载文章……") }
             else if let error {
                 LeximoryUnavailableView("暂时无法加载文章", systemImage: "wifi.exclamationmark", message: error) { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {
@@ -105,7 +105,7 @@ struct RemoteTextGallery: View {
             }
         }
         .toolbar {
-            if sizeClass != .regular {
+            if sizeClass != .regular && !loading {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
                 }
@@ -117,7 +117,7 @@ struct RemoteTextGallery: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if sizeClass == .regular && (loading || error != nil || texts.isEmpty) {
+            if sizeClass == .regular && !loading && (error != nil || texts.isEmpty) {
                 HStack {
                     Spacer()
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }

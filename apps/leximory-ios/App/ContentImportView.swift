@@ -40,11 +40,11 @@ struct ContentImportView: View {
                         Text("上传电子书").tag(1)
                     }.pickerStyle(.segmented).disabled(busy || uncertain)
                     if kind == 2 {
-                        TextField("https://www.theatlantic.com/", text: $url)
+                        TextField("网址", text: $url, prompt: Text("https://theleximorytimes.com/").foregroundStyle(LeximoryPalette.muted))
                             .focused($focusedField, equals: "网址").submitLabel(.go)
                             .onSubmit { focusedField = nil; if !extracted { Task { await submit(annotate: true) } } }
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .font(LeximoryTypography.interface(17)).padding(16)
+                            .font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink).padding(16)
                             .background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
                             .accessibilityLabel("网址")
                             .onChange(of: url) { extracted = false }
@@ -55,18 +55,17 @@ struct ContentImportView: View {
                         if content.utf16.count > lengthLimit {
                             Text("文本长度超过 \(lengthLimit) 字符").font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted)
                         }
-                        Button("选择文件", systemImage: "doc.badge.plus") { choosingFile = true }
-                            .foregroundStyle(LeximoryPalette.sage)
-                        Text("AI 注解可能含有错误").font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
-                        if library.language != "Chinese" { Toggle("仅生成词摘", isOn: $onlyComments) }
-                        Toggle("AI 生成标题", isOn: $generateTitle)
+                        DisclosureGroup("选项") {
+                            if library.language != "Chinese" { Toggle("仅生成词摘", isOn: $onlyComments) }
+                            Toggle("AI 生成标题", isOn: $generateTitle)
+                        }.font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
                     } else if kind == 1 {
                         Button { choosingFile = true } label: {
                             VStack(spacing: 14) {
                                 Image(systemName: "doc.badge.arrow.up").font(.system(size: 32, weight: .light))
                                 Text(ebook?.name ?? "上传电子书").font(LeximoryTypography.interface(17)).multilineTextAlignment(.center)
                                 if let ebook { Text(ByteCountFormatter.string(fromByteCount: Int64(ebook.data.count), countStyle: .file)).font(LeximoryTypography.interface(13)) }
-                            }.foregroundStyle(LeximoryPalette.sage).frame(maxWidth: .infinity, minHeight: 180)
+                            }.foregroundStyle(LeximoryPalette.muted).frame(maxWidth: .infinity, minHeight: 180)
                                 .background(LeximoryPalette.cover, in: RoundedRectangle(cornerRadius: 28))
                         }.buttonStyle(.plain).accessibilityLabel("选择 EPUB 或 PDF")
                     }
@@ -75,7 +74,7 @@ struct ContentImportView: View {
                         if isText {
                             Button("保存") { Task { await submit(annotate: false) } }
                                 .frame(minWidth: 44, minHeight: 48).contentShape(Rectangle())
-                                .foregroundStyle(LeximoryPalette.sage)
+                                .foregroundStyle(LeximoryPalette.muted)
                         }
                         Button { Task { await submit(annotate: kind != 1) } } label: {
                             HStack(spacing: 8) {
@@ -100,14 +99,14 @@ struct ContentImportView: View {
                 .fileImporter(isPresented: $choosingFile, allowedContentTypes: kind != 1 ? [.plainText, UTType(filenameExtension: "md") ?? .plainText] : [.epub, .pdf]) { result in
                     Task { await readFile(result) }
                 }
-        }.tint(LeximoryPalette.sage).presentationDetents([.large])
+        }.tint(LeximoryPalette.muted).presentationDetents([.large])
     }
     private func input(_ label: String, text: Binding<String>, lines: ClosedRange<Int>) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label).font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.illustration)
-            TextField(label, text: text, axis: .vertical).lineLimit(lines).focused($focusedField, equals: label).accessibilityLabel(label).accessibilityIdentifier("import-\(label)").font(LeximoryTypography.prose(18, language: library.language))
-                .padding(14).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
-        }
+        TextField(label, text: text, prompt: Text(label == "文本" ? "" : label).foregroundStyle(LeximoryPalette.muted), axis: .vertical)
+            .lineLimit(lines).focused($focusedField, equals: label)
+            .accessibilityLabel(label).accessibilityIdentifier("import-\(label)")
+            .font(LeximoryTypography.prose(18, language: library.language)).foregroundStyle(LeximoryPalette.ink)
+            .padding(14).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
     }
     private func readFile(_ result: Result<URL, Error>) async {
         do {

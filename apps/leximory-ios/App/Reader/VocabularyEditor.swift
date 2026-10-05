@@ -35,7 +35,7 @@ struct VocabularyEditor: View {
                     Button("取消", systemImage: "xmark.circle", action: cancel)
                         .labelStyle(.iconOnly).frame(width: 44, height: 44).disabled(saving)
                 }
-            } else if loading { ProgressView { Text("正在加载……").font(LeximoryTypography.interface(17)) }.frame(maxWidth: .infinity, minHeight: 180) }
+            } else if loading { ProgressView { Text("正在加载词汇……").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity, minHeight: 180) }
             if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
             if fields == nil && !loading { Button("重试") { Task { await load() } } }
         }.disabled(loading || saving)
