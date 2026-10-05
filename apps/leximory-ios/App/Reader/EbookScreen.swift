@@ -96,7 +96,7 @@ struct EbookScreen: View {
         }
         .overlay(alignment: .bottom) {
             if reader.chromeVisible { bottomControls.transition(.opacity) }
-            else { pageLabel.padding(.bottom, 8).allowsHitTesting(false) }
+            else { pageLabel.padding(.top, 8).padding(.bottom, 0).allowsHitTesting(false) }
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reader.chromeVisible)
         .overlay(alignment: .top) {
@@ -214,7 +214,7 @@ struct EbookScreen: View {
                     .disabled(reader.totalPages < 2)
             }
             pageLabel
-        }.padding(.horizontal, 28).padding(.bottom, 8).frame(maxWidth: 540).tint(LeximoryPalette.muted)
+        }.padding(.horizontal, 28).padding(.top, 8).padding(.bottom, 0).frame(maxWidth: 540).tint(LeximoryPalette.muted)
     }
     private var runningTitle: some View {
         Text(article.title).editorialFont(18, language: language)
@@ -224,7 +224,7 @@ struct EbookScreen: View {
     private var pageLabel: some View {
         Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapterPages > 0 ? "\(reader.chapterPage) / \(reader.chapterPages)" : "\(reader.chapterPage)")
             .font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
-            .lineLimit(1).padding(.vertical, 4).opacity(reader.ready ? 1 : 0)
+            .lineLimit(1).padding(.top, 8).padding(.bottom, 0).opacity(reader.ready ? 1 : 0)
             .accessibilityIdentifier("ebook-page-position")
             .accessibilityLabel("阅读位置")
             .accessibilityValue(reader.totalPages > 0 ? "第\(reader.location ?? "1")页，共\(reader.totalPages)页" : "\(reader.chapter ?? article.title)，章节第\(reader.chapterPage)页，共\(reader.chapterPages)页")

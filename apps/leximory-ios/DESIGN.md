@@ -90,7 +90,7 @@ On regular-width screens, one NavigationStack owns the library browser and reade
 
 Unarchived libraries use a single column in compact layouts, including iPhone. Two columns require a regular size class and enough gallery width. Archived libraries remain compact chips.
 
-Native section controls and navigation labels use the Chinese serif face. On iPad, omit library names from the text gallery because the selected sidebar card already identifies the library. Featured article titles use tight leading. All emoji use Apple native rendering, including reader font fallback; do not bundle Noto Emoji or replace emoji with web emoji assets.
+Native section controls and navigation labels use the Chinese serif face. On iPad, omit library names from the text gallery because the selected sidebar card already identifies the library. Featured article titles use tight leading. Reader prose and inline emoji keep Apple native rendering; text-cover emoji use the bundled monochrome Noto Emoji, tinted in the web's `default-400` family with the cover's identity-derived hue.
 
 The ebook running title stays in one centered frame as controls appear. Reader buttons own their complete 44 pt hit rectangles without extra button-style padding. The native contents popover uses a plain list on paper, including its rows and presentation background.
 

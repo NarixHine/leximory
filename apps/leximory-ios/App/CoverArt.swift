@@ -2,6 +2,42 @@ import SwiftUI
 
 enum CoverBackground { case varied, newspaper }
 
+/// Identity-derived OKLCH colors shared by the cover paper and its emoji ink.
+enum CoverPalette {
+    static func seed(_ identity: String) -> UInt64 {
+        let hash = identity.utf16.reduce(UInt32(0)) { (($0 &<< 5) &- $0) &+ UInt32($1) }
+        return UInt64(abs(Int(Int32(bitPattern: hash))))
+    }
+
+    static func hue(_ seed: UInt64) -> Double { 120 + Double(seed % 55) }
+
+    /// The emoji shares the cover's hue so every cover stays in one chromatic family,
+    /// while keeping the web's `default-400` lightness and chroma. Dark covers stay neutral.
+    static func emojiInk(identity: String, dark: Bool) -> Color {
+        let seed = seed(identity)
+        let lightness = light(dark ? 0.53 : 0.70, seed, span: dark ? 0.05 : 0.06)
+        let chroma = 0.023 + Double((seed >> 8) % 10) / 10 * 0.008
+        return oklch(lightness, dark ? 0 : chroma, hue(seed))
+    }
+
+    private static func light(_ base: Double, _ seed: UInt64, span: Double) -> Double {
+        base + Double((seed >> 16) % 10) / 10 * span
+    }
+
+    static func oklch(_ lightness: Double, _ chroma: Double, _ hue: Double) -> Color {
+        let angle = hue * .pi / 180, a = chroma * cos(angle), b = chroma * sin(angle)
+        let l = pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3)
+        let m = pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3)
+        let s = pow(lightness - 0.0894841775 * a - 1.291485548 * b, 3)
+        func gamma(_ value: Double) -> Double {
+            min(1, max(0, value <= 0.0031308 ? 12.92 * value : 1.055 * pow(value, 1 / 2.4) - 0.055))
+        }
+        return Color(red: gamma(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+                     green: gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+                     blue: gamma(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s))
+    }
+}
+
 struct CoverArt: View {
     let motif: CoverMotif
     var identity = "invitation"
@@ -11,6 +47,7 @@ struct CoverArt: View {
     var background = CoverBackground.varied
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     @State private var visible = false
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
 
@@ -57,7 +94,8 @@ struct CoverArt: View {
         .overlay {
             if let emoji {
                 GeometryReader { geometry in
-                    Text(emoji).font(.custom("LeximoryNotoColorEmoji", fixedSize: min(geometry.size.width, geometry.size.height) * 0.42))
+                    Text(emoji).font(.custom("LeximoryNotoEmoji", fixedSize: min(geometry.size.width, geometry.size.height) * 0.42))
+                        .foregroundStyle(CoverPalette.emojiInk(identity: identity, dark: colorScheme == .dark))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -82,25 +120,22 @@ private struct CoverTexture: View {
     let time: Double
     let background: CoverBackground
     @Environment(\.colorScheme) private var colorScheme
-    private var seed: UInt64 {
-        let hash = identity.utf16.reduce(UInt32(0)) { (($0 &<< 5) &- $0) &+ UInt32($1) }
-        return UInt64(abs(Int(Int32(bitPattern: hash))))
-    }
+    private var seed: UInt64 { CoverPalette.seed(identity) }
     var body: some View {
         Canvas { context, size in
             let dark = colorScheme == .dark
-            let hue = 120 + Double(seed % 55)
+            let hue = CoverPalette.hue(seed)
             let chroma = 0.003 + Double((seed >> 8) % 10) / 10 * 0.005
             let lightness = dark ? 0.18 + Double((seed >> 16) % 10) / 10 * 0.06 : 0.975 + Double((seed >> 16) % 10) / 10 * 0.02
-            let paper = Self.oklch(lightness, dark ? 0 : chroma, hue)
+            let paper = CoverPalette.oklch(lightness, dark ? 0 : chroma, hue)
             let canvas = Path(CGRect(origin: .zero, size: size))
             context.fill(canvas, with: .color(paper))
             let phase = time / 18 + Double(seed % 100)
             let color = LeximoryPalette.illustration
             let center = CGPoint(x: size.width * (0.5 + 0.22 * sin(phase)), y: size.height * (0.5 + 0.2 * cos(phase * 0.8)))
-            let wash = Self.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0 : chroma * 2, hue + 18 * sin(phase * 0.3))
+            let wash = CoverPalette.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0 : chroma * 2, hue + 18 * sin(phase * 0.3))
             context.fill(canvas, with: .radialGradient(Gradient(colors: [wash.opacity(0.7), wash.opacity(0)]), center: center, startRadius: 0, endRadius: max(size.width, size.height) * 0.8))
-            let light = dark ? Self.oklch(lightness + 0.035, 0, hue) : Color.white
+            let light = dark ? CoverPalette.oklch(lightness + 0.035, 0, hue) : Color.white
             context.fill(canvas, with: .radialGradient(Gradient(colors: [light.opacity(0.75), light.opacity(0)]), center: CGPoint(x: size.width - center.x, y: size.height - center.y), startRadius: 0, endRadius: max(size.width, size.height) * 0.7))
             switch background == .newspaper ? 4 : seed % 4 {
             case 4:
@@ -143,17 +178,5 @@ private struct CoverTexture: View {
             default: break
             }
         }
-    }
-    private static func oklch(_ lightness: Double, _ chroma: Double, _ hue: Double) -> Color {
-        let angle = hue * .pi / 180, a = chroma * cos(angle), b = chroma * sin(angle)
-        let l = pow(lightness + 0.3963377774 * a + 0.2158037573 * b, 3)
-        let m = pow(lightness - 0.1055613458 * a - 0.0638541728 * b, 3)
-        let s = pow(lightness - 0.0894841775 * a - 1.291485548 * b, 3)
-        func gamma(_ value: Double) -> Double {
-            min(1, max(0, value <= 0.0031308 ? 12.92 * value : 1.055 * pow(value, 1 / 2.4) - 0.055))
-        }
-        return Color(red: gamma(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
-                     green: gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
-                     blue: gamma(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s))
     }
 }

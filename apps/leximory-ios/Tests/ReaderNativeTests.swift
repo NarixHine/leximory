@@ -294,20 +294,20 @@ import LeximoryCore
         #expect(annotation.selection.text == "楷書")
         #expect(annotation.selection.range == UTF16Range(location: 0, length: 2))
     }
-    @Test func coverEmojiUsesBundledColorGlyphsIncludingSequences() throws {
-        let font = try #require(UIFont(name: "LeximoryNotoColorEmoji", size: 60))
-        #expect(CTFontCopyTable(font as CTFont, CTFontTableTag(0x73626978), []) != nil)
+    @Test func coverEmojiUsesBundledMonochromeGlyphsIncludingSequences() throws {
+        let font = try #require(UIFont(name: "LeximoryNotoEmoji", size: 60))
+        #expect(CTFontCopyTable(font as CTFont, CTFontTableTag(0x73626978), []) == nil)
         let format = UIGraphicsImageRendererFormat(); format.scale = 1
         let image = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 120), format: format).image { _ in
-            NSAttributedString(string: "📖", attributes: [.font: font]).draw(at: CGPoint(x: 10, y: 10))
+            NSAttributedString(string: "📖", attributes: [.font: font, .foregroundColor: UIColor.red]).draw(at: CGPoint(x: 10, y: 10))
         }
         let pixels = try #require(image.cgImage?.dataProvider?.data) as Data
         #expect(pixels.count > 100)
-        var coloredPixels = 0
-        for offset in stride(from: 0, to: pixels.count - 3, by: 4) {
-            if pixels[offset] != pixels[offset + 1] || pixels[offset + 1] != pixels[offset + 2] { coloredPixels += 1 }
+        var tintedPixels = 0
+        for offset in stride(from: 0, to: pixels.count - 3, by: 4) where pixels[offset + 3] > 0 {
+            if pixels[offset] > pixels[offset + 1] && pixels[offset] > pixels[offset + 2] { tintedPixels += 1 }
         }
-        #expect(coloredPixels > 100, "The bundled emoji must draw color artwork, not empty outlines")
+        #expect(tintedPixels > 100, "The bundled emoji must draw monochrome artwork in the foreground tint")
         for emoji in ["📖", "🧬", "☀️", "☀", "🇯🇵", "👩🏽‍💻", "1️⃣", "🐈‍⬛"] {
             let line = CTLineCreateWithAttributedString(NSAttributedString(string: emoji, attributes: [.font: font]))
             let runs = CTLineGetGlyphRuns(line) as! [CTRun]
@@ -321,6 +321,21 @@ import LeximoryCore
                 #expect(!glyphs.contains(0), "Missing glyph for \(emoji)")
             }
         }
+    }
+    @Test func coverEmojiInkVariesWithinTheCoverChromaticFamily() {
+        func channels(_ color: Color) -> (CGFloat, CGFloat, CGFloat) {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
+            return (r, g, b)
+        }
+        let first = channels(CoverPalette.emojiInk(identity: "alpha", dark: false))
+        let second = channels(CoverPalette.emojiInk(identity: "omega", dark: false))
+        #expect(first != second, "Light emoji ink should vary subtly with each cover identity")
+        #expect(first.1 > first.0 && first.1 > first.2, "Light emoji ink stays in the cover's green family")
+        let darkFirst = channels(CoverPalette.emojiInk(identity: "alpha", dark: true))
+        let darkSecond = channels(CoverPalette.emojiInk(identity: "omega", dark: true))
+        #expect(abs(darkFirst.0 - darkFirst.1) < 0.001 && abs(darkFirst.1 - darkFirst.2) < 0.001, "Dark emoji ink stays neutral")
+        #expect(darkFirst != darkSecond, "Dark emoji ink still varies subtly by identity")
     }
     @Test func editorialFontsAreBundled() {
         #expect(UIFont(name: "LibreBaskerville-Regular", size: 20) != nil)
