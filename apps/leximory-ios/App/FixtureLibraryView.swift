@@ -100,8 +100,8 @@ struct FixtureLibraryView: View {
             }
     }
     @ViewBuilder private func textGallery(library: FixtureLibrary, open: @escaping (FixtureArticle) -> Void) -> some View {
-        if let client { RemoteTextGallery(library: library, client: client, open: open) }
-        else { TextGallery(library: library, showsNavigationBar: sizeClass != .regular, open: open) }
+        if let client { RemoteTextGallery(library: library, client: client, open: open).id(library.id) }
+        else { TextGallery(library: library, showsNavigationBar: sizeClass != .regular, open: open).id(library.id) }
     }
     @ViewBuilder private func destination(_ destination: BrowserDestination) -> some View {
         switch destination {

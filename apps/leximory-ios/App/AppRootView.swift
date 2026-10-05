@@ -158,9 +158,9 @@ struct SignInView: View {
 #if DEBUG
 private struct GalleryFixtureTransport: ClientTransport {
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
-        try await Task.sleep(for: .milliseconds(800))
+        try await Task.detached { try await Task.sleep(for: .milliseconds(800)) }.value
         let data = try await MainActor.run {
-            let library = FixtureLibrary.samples[0]
+            let library = FixtureLibrary.samples.first { request.path?.contains($0.id.rawValue) == true } ?? FixtureLibrary.samples[0]
             func text(_ article: FixtureArticle) -> [String: Any] {
                 ["id": article.id.rawValue, "libraryId": library.id.rawValue, "title": article.title,
                  "topics": article.topics, "emoji": NSNull(), "createdAt": NSNull(), "format": "article"]

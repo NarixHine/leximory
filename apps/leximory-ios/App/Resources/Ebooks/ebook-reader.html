@@ -2,10 +2,10 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
-let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation;
+let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [];
 const send = (kind, payload = {}) => window.webkit.messageHandlers.reader.postMessage({kind,...payload});
 function sanitizeDocument(source, svg = false) {
   let document = new DOMParser().parseFromString(source, svg ? 'image/svg+xml' : 'application/xhtml+xml');
@@ -23,6 +23,12 @@ function sanitizeDocument(source, svg = false) {
 }
 function proseCSS(theme) {
   const vertical = theme.writing === 'vertical-rl';
+  if (vertical) return `html,body{direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;background:${theme.paper}!important;color:${theme.ink}!important}
+  body{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important}
+  p,div{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;text-rendering:optimizeLegibility}
+  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,serif!important}
+  ${theme.paper.toLowerCase() === '#100f0f' ? `*{color:${theme.ink}!important}` : ''}
+  [data-leximory-bookmark]{background:rgb(183 224 143 / .45)!important;color:inherit!important;-webkit-box-decoration-break:clone}`;
   return `html,body{background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
   body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
   p,li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
@@ -40,6 +46,67 @@ function styleContents(contents) {
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
   style.textContent=proseCSS(currentTheme);
 }
+// Keep pronunciation out of quotes and context, matching the web selection helpers.
+function textWithoutRuby(node) {
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll?.('rt,rp,script,style').forEach(element => element.remove());
+  return clone.textContent || '';
+}
+function selectionContext(range) {
+  const quote = textWithoutRuby(range.cloneContents()).trim();
+  if (!quote || quote.length > 1024) return null;
+  const element = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+  const container = element?.closest('p,div,blockquote,li') || range.startContainer.ownerDocument.body;
+  let text = '', line = 0; const lines = [];
+  const blocks = new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','DD','DIV','DL','DT','FIELDSET','FIGCAPTION','FIGURE','FOOTER','FORM','H1','H2','H3','H4','H5','H6','HEADER','HR','LI','MAIN','NAV','OL','P','PRE','SECTION','TABLE','TBODY','TD','TFOOT','TH','THEAD','TR','UL']);
+  const visit = node => {
+    if (node.nodeType === 3) { text += node.data; for(let i=0;i<node.data.length;i++) lines.push(line); return; }
+    if (node.nodeType !== 1 || ['RT','RP','SCRIPT','STYLE'].includes(node.tagName)) return;
+    if (node.tagName === 'BR') { line++; return; }
+    const block = blocks.has(node.tagName); if(block) line++;
+    node.childNodes.forEach(visit); if(block) line++;
+  };
+  visit(container);
+  const prefix = range.cloneRange(); prefix.selectNodeContents(container); prefix.setEnd(range.startContainer,range.startOffset);
+  const offset = textWithoutRuby(prefix.cloneContents()).length + textWithoutRuby(range.cloneContents()).indexOf(quote);
+  if (text.slice(offset, offset+quote.length) !== quote) return null;
+  const radius = currentTheme.writing === 'vertical-rl' ? 300 : 500;
+  const start = Math.max(lines.indexOf(lines[offset]),offset-radius);
+  const end = Math.min(lines.lastIndexOf(lines[offset+quote.length-1])+1,offset+quote.length+radius);
+  return {quote,context:text.slice(start,end),offset:offset-start};
+}
+// The web highlights text in the iframe DOM; SVG overlays lose their anchor on reflow.
+function highlightBookmarks() {
+  if (!rendition) return;
+  for (const contents of rendition.getContents()) {
+    const doc = contents.document;
+    for (const quote of bookmarkQuotes) {
+      const target = quote.replace(/\s+/g,' ').trim(); if (!target) continue;
+      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+      let node, text = '', space = false; const positions = [];
+      while ((node = walker.nextNode())) {
+        if (node.parentElement?.closest('rt,rp,script,style')) continue;
+        for(let i=0;i<node.data.length;i++) {
+          if (/\s/.test(node.data[i])) { if(text.length) space=true; continue; }
+          if(space) {text+=' ';positions.push([node,i]);space=false;}
+          text+=node.data[i];positions.push([node,i]);
+        }
+      }
+      const index = text.indexOf(target); if(index < 0) continue;
+      const start=positions[index], end=positions[index+target.length-1];
+      if(start[0].parentElement.closest('[data-leximory-bookmark]') || end[0].parentElement.closest('[data-leximory-bookmark]')) continue;
+      const range=doc.createRange();range.setStart(start[0],start[1]);range.setEnd(end[0],end[1]+1);
+      const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
+      if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
+      const mark=doc.createElement('span');mark.dataset.leximoryBookmark='true';
+      mark.style.setProperty('background-color',currentTheme.paper.toLowerCase()==='#100f0f' ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
+      mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
+      try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
+    }
+  }
+}
+const retryHighlights = () => { highlightBookmarks(); requestAnimationFrame(highlightBookmarks); setTimeout(highlightBookmarks,100); setTimeout(highlightBookmarks,500); };
+window.readerBookmarks = quotes => { bookmarkQuotes=quotes;retryHighlights(); };
 function pageKey(event) {
   if (!ready || pageTurn || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -51,16 +118,16 @@ function pageKey(event) {
 }
 document.addEventListener('keydown', pageKey);
 window.readerTheme = async theme => {
-  currentTheme=theme; document.body.style.background=theme.paper;
+  if (pageTurn) { pendingTheme = theme; return; }
+  currentTheme=theme; document.body.style.background=theme.paper; document.body.dataset.writing=theme.writing;
   if (!rendition) return;
-  const location=rendition.currentLocation()?.start?.cfi;
   rendition.getContents().forEach(styleContents);
-  rendition.resize();
-  if (location) await rendition.display(location);
+  // epub.js owns relocation during reflow; displaying its reported CFI again can skip a split page.
+  rendition.resize(Math.round(document.getElementById('book').clientWidth), Math.round(document.getElementById('book').clientHeight));
 };
 window.openBook = async (base64, location, fonts, theme, bookmarks) => {
   try {
-    currentTheme=theme;document.body.style.background=theme.paper;
+    currentTheme=theme;document.body.style.background=theme.paper;document.body.dataset.writing=theme.writing;
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
     const archive = await JSZip.loadAsync(bytes);
     const entries = Object.values(archive.files);
@@ -84,6 +151,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const sanitized = await archive.generateAsync({type:'uint8array',compression:'STORE'});
     book = ePub(sanitized.buffer, {replacements:'blobUrl'});
     await book.ready;
+    bookmarkQuotes=(bookmarks || []).map(mark=>mark.quote);
     // Match the web reader: set writing mode before epub.js selects its pagination axis.
     if (theme.writing === 'vertical-rl') book.spine.hooks.content.register(document => {
       for (const element of [document.documentElement, document.body]) {
@@ -93,7 +161,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
         element.style.setProperty('direction', 'ltr', 'important');
       }
     });
-    rendition = book.renderTo('book', {width:'100%',height:'100%',spread:'none',flow:'paginated',gap:0,allowScriptedContent:true});
+    rendition = book.renderTo('book', {width:'100%',height:'100%',spread:'auto',flow:'paginated',allowScriptedContent:true});
     rendition.themes.default({'@font-face':[
       {'font-family':'LeximoryProse','font-weight':'100 900','src':`url('${fonts.regular}')`},
       {'font-family':'LeximoryProse','font-style':'italic','font-weight':'100 900','src':`url('${fonts.italic}')`},
@@ -110,26 +178,21 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       contents.document.addEventListener('selectionchange', () => {
         try {
         const selection = contents.window.getSelection();
-        const quote = selection?.toString().trim();
-        if (!quote || quote.length > 1024) { selected=null; send('selectionCleared'); return; }
+        if (!selection || !selection.rangeCount || selection.isCollapsed) { selected=null; send('selectionCleared'); return; }
         const range = selection.getRangeAt(0);
-        const node = range.commonAncestorContainer;
-        const container = (node.nodeType === 1 ? node : node.parentElement)?.closest('p,li,div,section') || contents.document.body;
-        const prefix = contents.document.createRange();
-        prefix.selectNodeContents(container); prefix.setEnd(range.startContainer, range.startOffset);
-        const paragraph = container.textContent;
-        const offset = prefix.toString().length + selection.toString().indexOf(quote);
-        const start = Math.max(0, offset-1400);
-        const context = paragraph.slice(start, Math.min(paragraph.length,offset+quote.length+1400));
-        if (context.slice(offset-start,offset-start+quote.length) !== quote) { selected=null; send('selectionCleared'); return; }
+        const context = selectionContext(range);
+        if (!context) { selected=null; send('selectionCleared'); return; }
         const bounds=range.getBoundingClientRect();
         const view=rendition.views().all().find(v=>v.contents===contents);
         const frame=view?.iframe.getBoundingClientRect() || {x:0,y:0};
-        selected = {quote,context,offset:offset-start,rect:{x:bounds.x+frame.x,y:bounds.y+frame.y,width:bounds.width,height:bounds.height}};
+        selected = {...context,rect:{x:bounds.x+frame.x,y:bounds.y+frame.y,width:bounds.width,height:bounds.height}};
         send('selected', selected);
         } catch(error) { send('diagnostic', {message:String(error)}); }
       });
     });
+    rendition.on('rendered', retryHighlights);
+    rendition.on('displayed', retryHighlights);
+    rendition.on('relocated', retryHighlights);
     rendition.on('selected', (cfi) => send('selectionLocation', {location:cfi}));
     const relocated = location => {
       const cfi=location.start.cfi,href=location.start.href;
@@ -140,10 +203,8 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     rendition.on('relocated', location => { if(ready && !pageTurn) relocated(location); });
     await rendition.display(location || undefined).catch(() => rendition.display());
     ready = true;
-    for (const mark of bookmarks || []) if (mark.location?.startsWith('epubcfi(')) {
-      try { rendition.annotations.highlight(mark.location, {}, null, 'bookmark', {'fill':'#9caea1','fill-opacity':'0.25'}); } catch (_) {}
-    }
-    relocated(rendition.currentLocation());send('ready');
+    retryHighlights();
+    relocated(rendition.currentLocation());send('ready');resizeBook();
   } catch (error) { send('failed',{message:String(error)}); }
 };
 const painted = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -171,24 +232,33 @@ window.readerTurn = async action => {
     pageTurn = null;
     reportLocation(rendition.currentLocation());
   }
+  if (pendingTheme) {const theme=pendingTheme;pendingTheme=null;await window.readerTheme(theme);}
+  resizeBook();
   return true;
 };
-window.readerCommand = (command,value) => {
+window.readerCommand = async (command,value) => {
   if (!rendition || pageTurn) return;
-  if (command==='next') rendition.next();
-  if (command==='previous') rendition.prev();
-  if (command==='display') rendition.display(value);
+  if (command==='next') await rendition.next();
+  if (command==='previous') await rendition.prev();
+  if (command==='display') await rendition.display(value);
 };
-let resizeFrame;
+let resizeFrame, resizeRetry, viewportSize = '';
 const resizeBook = () => {
   cancelAnimationFrame(resizeFrame);
-  resizeFrame = requestAnimationFrame(async () => {
+  resizeFrame = requestAnimationFrame(() => {
     if (!rendition || !ready || pageTurn) return;
-    const location = rendition.currentLocation()?.start?.cfi;
-    rendition.resize();
-    if (location) await rendition.display(location);
+    const bounds = document.getElementById('book').getBoundingClientRect();
+    const width = Math.round(bounds.width), height = Math.round(bounds.height);
+    const size = `${width}:${height}`;
+    if (!width || !height || size === viewportSize) return;
+    viewportSize = size;
+    rendition.resize(width,height);
   });
 };
+const resizeAfterViewportChange = () => {
+  resizeBook(); clearTimeout(resizeRetry); resizeRetry=setTimeout(resizeBook,100);
+};
 new ResizeObserver(resizeBook).observe(document.getElementById('book'));
-window.addEventListener('resize', resizeBook);
+window.addEventListener('resize', resizeAfterViewportChange);
+window.visualViewport?.addEventListener('resize', resizeAfterViewportChange);
 </script></body></html>

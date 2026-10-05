@@ -144,17 +144,20 @@ struct ReadingLoadingIndicator: View {
     init(_ label: String) { self.label = label }
 
     var body: some View {
-        VStack(spacing: 12) { lawn; caption }
+        GeometryReader { geometry in
+            let width = min(560, geometry.size.width * 0.8, max(224, geometry.size.height * 0.58))
+            VStack(spacing: 20) { lawn(width: width); caption }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
+        .accessibilityLabel(label).accessibilityIdentifier("reading-loading-scene")
     }
     private var caption: some View {
         Text(label).font(LeximoryTypography.interface(17))
             .foregroundStyle(LeximoryPalette.muted)
             .fixedSize(horizontal: true, vertical: false)
     }
-    private var lawn: some View {
-        let width: CGFloat = 224
+    private func lawn(width: CGFloat) -> some View {
         let height = width * 0.56
         return TimelineView(.animation(minimumInterval: 1.0 / 30,
             paused: reduceMotion || scenePhase != .active)) { context in

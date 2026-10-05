@@ -7,9 +7,30 @@ import HTTPTypes
 struct AuthoringPreview: View {
     let playback: PlaybackController
     @State private var client = MobileClient(baseURL: URL(string: "https://authoring.invalid")!, transport: AuthoringPreviewTransport(), token: { _ in "fixture" })
+    @State private var sync: NativeSync?
+    @State private var prepared = false
     private let library = FixtureLibrary(id: LibraryID(rawValue: "library"), name: "测试文库", language: "English", articles: [], isRemote: true, owned: true)
     var body: some View {
-        FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
+        Group {
+            if prepared {
+                FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
+            } else { ProgressView() }
+        }
+        .environment(\.nativeSync, sync)
+        .task {
+            if ProcessInfo.processInfo.arguments.contains("--offline") {
+                do {
+                    let origin = URL(string: "https://authoring.invalid")!
+                    let store = try LocalReadingStore(root: FileManager.default.temporaryDirectory.appending(path: "offline-authoring-fixture"), origin: origin, accountID: "fixture")
+                    let scoped = MobileClient(baseURL: origin, transport: AuthoringPreviewTransport(), token: { _ in "fixture" }, localStore: store)
+                    _ = try await scoped.allVocabulary(libraryID: "library")
+                    await store.setOnline(false)
+                    client = scoped
+                    sync = NativeSync(store: store, client: scoped)
+                } catch { assertionFailure("Offline authoring fixture could not be prepared: \(error)") }
+            }
+            prepared = true
+        }
     }
 }
 private actor AuthoringPreviewTransport: ClientTransport {

@@ -94,19 +94,20 @@ private struct CorpusWordTray: View {
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 16) {
                     if editing {
                         VocabularyEditor(id: word.id, client: client, language: library.language, updated: { value in word = value; updated(value); editing = false }, cancel: { editing = false })
                     } else {
-                        Text(word.fields.lemma).font(LeximoryTypography.prose(28, language: library.language)).bold()
+                        Text(word.fields.lemma).font(LeximoryTypography.prose(24, language: library.language)).bold()
                         section("释义", word.fields.definition)
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
                         HStack(spacing: 16) {
-                            if library.owned && word.protected != true && sync?.online != false {
+                            if library.owned && word.protected != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
                                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.sage, in: Circle())
+                                    .disabled(sync?.online == false)
                             }
                             if let dictionaryURL {
                                 Link(destination: dictionaryURL) {
@@ -121,7 +122,7 @@ private struct CorpusWordTray: View {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
             }.scrollDismissesKeyboard(.interactively).accessibilityIdentifier("vocabulary-editor-scroll")
                 .ignoresSafeArea(.container, edges: .bottom).onAppear { bottomInset = geometry.safeAreaInsets.bottom }
-        }.frame(width: isPopover ? 420 : nil, height: isPopover ? max(160, min(height, 720)) : nil)
+        }.frame(width: isPopover ? 400 : nil, height: isPopover ? max(160, min(height, 720)) : nil)
             .background(LeximoryPalette.shell)
             .presentationDetents([.height(max(1, min(height, 720) - bottomInset)), .large])
             .presentationCornerRadius(isPopover ? 32 : nil)
@@ -139,9 +140,9 @@ private struct CorpusWordTray: View {
     }
     private func section(_ label: String, _ content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label).font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.illustration)
-            Text(annotationMarkdown(content, size: 19))
-                .font(LeximoryTypography.prose(19, language: library.language)).lineSpacing(5).textSelection(.enabled)
+            Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
+            Text(annotationMarkdown(content, size: 17))
+                .font(LeximoryTypography.prose(17, language: library.language)).lineSpacing(3).textSelection(.enabled)
         }
     }
 }

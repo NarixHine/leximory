@@ -1,6 +1,14 @@
 # Leximory on Apple platforms
 
-Japanese EPUBs follow the web's vertical-rl/ltr pagination with bundled Japanese serif and ruby. Reading direction controls gestures and keyboard paging. Local snapshots appear before network refresh, with quiet offline availability labels and a read-only footer that reserves space below prose. The account screen owns manual sync, storage size, and last-complete-sync status. See `../../docs/native-ios/offline-sync.md` for the native storage lifecycle.
+Japanese EPUBs follow the web's vertical-rl/ltr pagination with bundled Japanese serif and ruby. Japanese defaults are 24 pt and 1.7 leading, separately remembered from horizontal-language settings. Preserve publisher paragraph indentation and spacing. Use the web's automatic spread and viewport resize behavior; never re-display the current CFI after a resize. Selection excludes rt/rp and bounds context to its paragraph or br-separated line; bookmarks highlight the iframe text DOM and survive reflow. Reading direction controls gestures and keyboard paging. Local snapshots appear before network refresh. See `../../docs/native-ios/offline-sync.md` for the native storage lifecycle.
+
+## User concerns and automatic behavior
+
+Handle caching, downloading, connectivity recovery, and synchronization automatically. Do not display implementation status such as 尚未下载, 已下载, storage usage, sync timestamps, or redundant 只读 indicators. Preserve editing controls and disable them when an action is unavailable, including offline access; never replace that behavior with labels or hide a normally available editing action. Show a concise recovery message only when the requested content or action actually cannot be provided.
+
+Article text must flow to the bottom edge of the screen. Do not reserve a solid footer, safe-area status bar, or blank white strip. Only an active user-facing control such as audio playback may overlay the reader.
+
+A static annotation responds on touch-down, opens on touch-up, and anchors to the exact tapped highlighted line in the text view's content coordinates. Keep embedded annotation presentation local, compact, and free of network prerequisites. Use content-sized bubbles with restrained typography and spacing. PDF zoom choices are aligned, full-width action rows with consistent 44 pt targets.
 
 The web app is canonical for copy, content, color roles, and typography. Native iOS navigation, selection menus, sheets, and popovers supply platform behavior. Read this before changing any screen. Do not add copy, decorative symbols, metrics, or destinations without a corresponding product function.
 
@@ -100,10 +108,14 @@ Use the web lawn artwork and running cat sprite only in spacious page loading st
 
 Both turn directions keep the left binding stationary. Forward turns peel the current page away; backward turns snapshot the previous page and unfold it over a stationary image of the current page. Remove that temporary image only after the turn completes or the cancelled location is restored.
 
-Audio playback floats in a compact 420 pt maximum Liquid Glass capsule, with play/pause, track title, elapsed time, scrubbing, and dismissal in a single row. Measure its height to leave scrollable space beneath the final prose line without shrinking the reading viewport. Seek after scrub release. Hide renderer diagnostic notices from both displayed prose and VoiceOver while preserving fallback text. Spacious loading states use a 224 pt lawn scene; compact loading contexts use standard spinners.
+Audio playback floats in a compact 420 pt maximum Liquid Glass capsule, with play/pause, track title, elapsed time, scrubbing, and dismissal in a single row. Measure its height to leave scrollable space beneath the final prose line without shrinking the reading viewport. Seek after scrub release. Hide renderer diagnostic notices from both displayed prose and VoiceOver while preserving fallback text. Spacious loading states scale the lawn and cat together to 80% of the available width, capped at 560 pt and constrained by available height; compact loading contexts use standard spinners.
 
 Previous-page previews live outside the WKWebView snapshot area so the stationary current-page cover cannot contaminate the incoming image. Animate the visible unfolding phase from edge-on to flat, with bounded curvature that reveals content immediately as the finger moves. Forward-turn rendering remains unchanged.
 
 Keep the article paper background continuous through the bottom safe area. Previous-page unfolding uses negative angles approaching zero, bringing the sheet toward the reader with the opposite angular velocity to a forward turn; the left binding remains fixed.
 
 URL import uses https://theleximorytimes.com/ as a muted placeholder and neutral control tint. Manual entry has one title prompt and a blank body editor, without duplicate field labels, file selection, or boilerplate AI copy. Keep generation preferences in a collapsed options disclosure; ebook file selection stays in the upload tab.
+
+Texts belong to one library identity. Switching replaces their state immediately: show the selected library’s cache or the proportional lawn loading scene, never old texts under a new font. Cancelled/superseded requests cannot replace the selected snapshot. The texts scroll view has no top progressive blur.
+
+Static definition and corpus popovers use a comfortable 400 pt measure, 24 pt insets, and readable prose. Keep actions below the definition sections in their original row. Content determines height; long content scrolls. Do not compress the bubble or move buttons into the heading to reduce its size. URL import placeholder text stays muted even when it resembles a link.

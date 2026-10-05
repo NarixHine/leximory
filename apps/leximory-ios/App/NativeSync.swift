@@ -132,16 +132,3 @@ import LeximoryCore
 extension EnvironmentValues {
     @Entry var nativeSync: NativeSync? = nil
 }
-
-struct OfflineReadingNotice: View {
-    @Environment(\.nativeSync) private var sync
-    var body: some View {
-        if sync?.online == false {
-            Label("离线阅读 · 只读", systemImage: "wifi.slash")
-                .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(LeximoryPalette.shell, in: Capsule())
-                .accessibilityIdentifier("offline-reading-notice")
-        }
-    }
-}

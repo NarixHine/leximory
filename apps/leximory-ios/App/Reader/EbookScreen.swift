@@ -61,6 +61,10 @@ struct EbookScreen: View {
     @State private var scrubPosition: Double?
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
+    @AppStorage("ebook.japanese.prose.size") private var japaneseFontSize = 24.0
+    @AppStorage("ebook.japanese.prose.leading") private var japaneseLineHeight = 1.7
+    private var proseSize: Binding<Double> { language == "Japanese" ? $japaneseFontSize : $fontSize }
+    private var proseLeading: Binding<Double> { language == "Japanese" ? $japaneseLineHeight : $lineHeight }
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -69,8 +73,8 @@ struct EbookScreen: View {
     var body: some View {
         ZStack {
             if let data {
-                if format == "pdf" { NativePDFReader(data: data, reader: reader).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: .automatic) }
+                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: .automatic) }
             }
             if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
@@ -231,14 +235,23 @@ struct EbookScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if format == "epub" {
-                        VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: $fontSize, in: 16...30, step: 1).accessibilityLabel("字号") }
-                        VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: $lineHeight, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
+                        VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: proseSize, in: 16...30, step: 1).accessibilityLabel("字号") }
+                        VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
                     } else {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("缩放")
-                            Button("适合页面") { reader.navigate("fit"); tray = nil }
-                            Button("适合宽度") { reader.navigate("width"); tray = nil }
-                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("缩放").font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted)
+                            Button { reader.navigate("fit"); tray = nil } label: {
+                                Label("适合页面", systemImage: "arrow.up.left.and.arrow.down.right")
+                                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                            Divider()
+                            Button { reader.navigate("width"); tray = nil } label: {
+                                Label("适合宽度", systemImage: "arrow.left.and.right")
+                                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                        }.buttonStyle(.plain).tint(LeximoryPalette.ink)
                     }
                 }.font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink)
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
@@ -266,12 +279,21 @@ struct EbookScreen: View {
                 format = book.descriptor.format; data = book.data
             } else {
                 format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
+                #if DEBUG
+                if language == "Japanese", let path = ProcessInfo.processInfo.environment["LEXIMORY_EXAMPLE_EPUB"] {
+                    data = try Data(contentsOf: URL(fileURLWithPath: path))
+                } else {
+                    guard let url = Bundle.main.url(forResource: article.resource, withExtension: nil) else { throw CocoaError(.fileNoSuchFile) }
+                    data = try Data(contentsOf: url)
+                }
+                #else
                 guard let url = Bundle.main.url(forResource: article.resource, withExtension: nil) else { throw CocoaError(.fileNoSuchFile) }
                 data = try Data(contentsOf: url)
+                #endif
             }
         } catch {
             if !Task.isCancelled {
-                loading = false; loadError = sync?.online == false ? "这本电子书尚未下载，请联网后打开。" : "请检查网络后重试。"
+                loading = false; loadError = sync?.online == false ? "无法打开电子书，请连接网络后重试。" : "请检查网络后重试。"
             }
         }
     }
@@ -324,6 +346,11 @@ private struct NativeEPUBReader: UIViewRepresentable {
             context.coordinator.appliedTheme = theme
             Task { _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page) }
         }
+        let bookmarks = reader.bookmarks.map { $0.quote }
+        if reader.ready, bookmarks != context.coordinator.appliedBookmarks {
+            context.coordinator.appliedBookmarks = bookmarks
+            Task { _ = try? await web.callAsyncJavaScript("window.readerBookmarks(quotes)", arguments: ["quotes": bookmarks], in: nil, contentWorld: .page) }
+        }
         if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
             Task { _ = try? await web.callAsyncJavaScript("window.readerCommand(action, value)", arguments: ["action": command.action, "value": command.value ?? ""], in: nil, contentWorld: .page) }
@@ -337,6 +364,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
         var parent: NativeEPUBReader
         var commandID: UUID?
         var appliedTheme: [String: String] = [:]
+        var appliedBookmarks: [String] = []
         weak var web: WKWebView?
         var pageTurn: EPUBPageTurn?
         let gestures: EbookGestures
@@ -420,6 +448,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
 private struct NativePDFReader: UIViewRepresentable {
     let data: Data
     let reader: EbookReaderState
+    let command: (id: UUID, action: String, value: String?)?
     func makeCoordinator() -> Coordinator { Coordinator(reader: reader) }
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
@@ -468,7 +497,7 @@ private struct NativePDFReader: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: PDFView, context: Context) {
-        if let command = reader.command, command.id != context.coordinator.commandID {
+        if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
             switch command.action {
             case "next": view.goToNextPage(nil)

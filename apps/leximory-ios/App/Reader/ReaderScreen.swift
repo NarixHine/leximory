@@ -25,7 +25,6 @@ struct ReaderScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var state: DocumentState = .loading
     @State private var definition: DefinitionPresentation?
-    @State private var anchor: CGRect = .zero
     @State private var titlePastViewport = false
     @State private var playbackHeight: CGFloat = 76
     @State private var refreshedArticle: FixtureArticle?
@@ -46,20 +45,13 @@ struct ReaderScreen: View {
                 LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
-                    bottomObstruction: playback.textID == article.id ? playbackHeight + 24 : 0, localStore: client?.localStore, readOnly: sync?.online == false,
-                    onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, rect in
-                        anchor = rect
+                    bottomObstruction: playback.textID == article.id ? playbackHeight + 24 : 0, localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false,
+                    onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, _ in
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
                     })
                 .background(LeximoryPalette.paper)
-                .ignoresSafeArea(.container, edges: .top)
-                .popover(item: Binding(get: { sizeClass == .regular && definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }), attachmentAnchor: .rect(.rect(anchor)), arrowEdge: nil) { item in
-                    DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
-                        .presentationCompactAdaptation(.sheet)
-                        .presentationDragIndicator(.visible)
-                        .presentationCornerRadius(sizeClass == .regular ? 32 : nil)
-                        .presentationBackground(LeximoryPalette.annotationSurface)
-                }
+                .ignoresSafeArea(.container, edges: [.top, .bottom])
+
             }
         }
         .background(LeximoryPalette.paper.ignoresSafeArea())
@@ -137,7 +129,7 @@ struct ReaderScreen: View {
         }
         if sync?.online == false {
             if case .loaded = state { return }
-            state = .failed("这篇文章尚未下载，请联网后打开。")
+            state = .failed("无法打开文章，请连接网络后重试。")
             return
         }
         do {
@@ -191,9 +183,9 @@ struct DefinitionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
     @ScaledMetric(relativeTo: .body) private var compactBodySize = 17.0
-    @ScaledMetric(relativeTo: .body) private var regularBodySize = 20.0
+    @ScaledMetric(relativeTo: .body) private var regularBodySize = 18.0
     private var bodySize: Double {
-        if topTrayHeight != nil { return sizeClass == .regular ? regularBodySize * 0.85 : compactBodySize * 16 / 17 }
+        if topTrayHeight != nil { return sizeClass == .regular ? regularBodySize * 17 / 18 : compactBodySize * 16 / 17 }
         return sizeClass == .regular ? regularBodySize : compactBodySize
     }
     init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil) {
@@ -219,43 +211,25 @@ struct DefinitionView: View {
             GeometryReader { geometry in
                 let safeAreaBottom = geometry.safeAreaInsets.bottom
                 ScrollView {
-                    VStack(alignment: .leading, spacing: topTrayHeight != nil ? 12 : 20) {
+                    VStack(alignment: .leading, spacing: item.isDynamic ? 12 : 16) {
                         if editing, let client, let word = model.savedWord {
                             VocabularyEditor(id: word.id, client: client, language: language, updated: { word in
                                 model.edited(word); editing = false
                             }, cancel: { editing = false })
                         } else {
-                            if !waiting { Text(lemma).font(LeximoryTypography.prose(topTrayHeight != nil ? (sizeClass == .regular ? 22 : 20) : (sizeClass == .regular ? 28 : 24), language: language))
-                                .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
-                                .accessibilityAddTraits(.isHeader) }
+                            if !waiting {
+                                HStack(alignment: .center, spacing: 10) {
+                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language))
+                                        .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
+                                        .accessibilityAddTraits(.isHeader)
+                                }
+                            }
                             switch model.state {
                             case .ready(let definition, _):
                                 section("释义", content: definition.definition)
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
-                                HStack(spacing: 16) {
-                                    if let client {
-                                        Button { model.save(client: client, source: item.source) } label: {
-                                            Group {
-                                                if case .saving = model.saveState { ProgressView().tint(LeximoryPalette.paper) }
-                                                else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
-                                            }.frame(width: 48, height: 48)
-                                                .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                                        }.buttonStyle(.plain).disabled(!canSave || sync?.online == false)
-                                            .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
-                                    }
-                                    if model.savedWord != nil && sync?.online != false {
-                                        Button("编辑", systemImage: "pencil") { editing = true }
-                                            .labelStyle(.iconOnly).frame(width: 44, height: 44)
-                                            .foregroundStyle(LeximoryPalette.sage).accessibilityLabel("编辑词汇")
-                                    }
-                                    if let dictionaryURL {
-                                        Link(destination: dictionaryURL) {
-                                            Image(systemName: "arrow.up.right.square").font(.system(size: 20))
-                                                .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
-                                        }.accessibilityLabel("在词典中查看")
-                                    }
-                                }.padding(.top, 2)
+                                definitionActions
                                 if case .uncertain = model.saveState {
                                     Text("未能确认收藏结果，请先在网页版查看，避免重复收藏。")
                                         .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
@@ -270,8 +244,8 @@ struct DefinitionView: View {
                                 if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                             }
                         }
-                    }.padding(.horizontal, topTrayHeight != nil ? 20 : isPopover ? 28 : 24)
-                        .padding(.vertical, waiting && topTrayHeight != nil ? 16 : topTrayHeight != nil ? 20 : isPopover ? 28 : 24)
+                    }.padding(.horizontal, item.isDynamic ? 20 : 24)
+                        .padding(.vertical, waiting ? 16 : item.isDynamic ? 20 : 24)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
@@ -291,8 +265,8 @@ struct DefinitionView: View {
             .clipped()
         }
         .animation(reduceMotion ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
-        .frame(width: isPopover ? 480 : nil)
-        .frame(height: isPopover ? max(160, min(contentHeight, 620)) : nil)
+        .frame(width: isPopover ? 400 : nil)
+        .frame(height: isPopover ? max(120, min(contentHeight, 520)) : nil)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(LeximoryPalette.annotationSurface).accessibilityIdentifier("definition-tray")
@@ -302,6 +276,32 @@ struct DefinitionView: View {
             else if let client { await model.generate(client: client, source: item.source) }
         }
         .onDisappear { model.cancel() }
+    }
+    private var definitionActions: some View {
+        HStack(spacing: 16) {
+            if let client {
+                Button { model.save(client: client, source: item.source) } label: {
+                    Group {
+                        if case .saving = model.saveState { ProgressView().tint(LeximoryPalette.paper) }
+                        else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
+                    }.frame(width: 48, height: 48)
+                        .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
+                }.buttonStyle(.plain).disabled(!canSave || sync?.online == false)
+                    .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
+            }
+            if model.savedWord != nil {
+                Button("编辑", systemImage: "pencil") { editing = true }
+                    .labelStyle(.iconOnly).frame(width: 44, height: 44)
+                    .foregroundStyle(LeximoryPalette.sage).accessibilityLabel("编辑词汇")
+                    .disabled(sync?.online == false)
+            }
+            if let dictionaryURL {
+                Link(destination: dictionaryURL) {
+                    Image(systemName: "arrow.up.right.square").font(.system(size: 20))
+                        .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
+                }.accessibilityLabel("在词典中查看")
+            }
+        }
     }
     private var saved: Bool { if case .saved = model.saveState { return true }; return false }
     private var canSave: Bool { if case .idle = model.saveState { return true }; return false }
@@ -319,9 +319,9 @@ struct DefinitionView: View {
     }
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(LeximoryTypography.interface(topTrayHeight != nil ? 14 : sizeClass == .regular ? 17 : 15)).foregroundStyle(LeximoryPalette.illustration)
+            Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
             Text(annotationMarkdown(content, size: bodySize)).font(Font(LeximoryTypography.proseUI(bodySize, language: language)))
-                .foregroundStyle(LeximoryPalette.ink).lineSpacing(sizeClass == .regular ? 5 : 3).textSelection(.enabled)
+                .foregroundStyle(LeximoryPalette.ink).lineSpacing(3).textSelection(.enabled)
         }
     }
 
@@ -392,6 +392,8 @@ struct DefinitionTopTray: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .coordinateSpace(name: "annotation-tray")
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("definition-top-tray")
         .onDisappear { entrance?.cancel(); dismissal?.cancel() }
     }
 

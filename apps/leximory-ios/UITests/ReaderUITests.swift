@@ -26,6 +26,38 @@ final class ReaderUITests: XCTestCase {
         capture(app, name: "Japanese vertical landscape")
     }
 
+    @MainActor func testSuppliedJapaneseBookTurnsAndOpensNestedContents() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let path = environment["LEXIMORY_EXAMPLE_EPUB"] ?? environment["TEST_RUNNER_LEXIMORY_EXAMPLE_EPUB"] else { throw XCTSkip("Local example EPUB required") }
+        let app = XCUIApplication(); app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launchEnvironment["LEXIMORY_EXAMPLE_EPUB"] = path
+        app.launch()
+        let library = app.buttons["library-fixture-japanese-ebooks"]
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        let book = app.buttons["text-fixture-japanese-epub"]
+        XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+        let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "epub已打开"), object: reader)], timeout: 30) == .completed)
+        revealEbookControls(app); app.buttons["ebook-contents"].tap()
+        let chapter = app.buttons["殿上の闇討"]
+        XCTAssertTrue(chapter.waitForExistence(timeout: 10)); chapter.tap()
+        let position = app.staticTexts["ebook-page-position"]
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "殿上の闇討"), object: position)], timeout: 10) == .completed)
+        capture(app, name: "Supplied Japanese EPUB portrait")
+        let initial = position.value as? String
+        app.webViews.firstMatch.swipeRight()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", initial ?? ""), object: position)], timeout: 10) == .completed)
+        app.webViews.firstMatch.swipeLeft()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", initial ?? ""), object: position)], timeout: 10) == .completed)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.frame.width > app.frame.height && app.webViews.firstMatch.frame.width > app.webViews.firstMatch.frame.height
+        }, object: app)], timeout: 10) == .completed)
+        Thread.sleep(forTimeInterval: 0.7) // Wait for the native rotation transition before inspecting the page.
+        XCTAssertTrue(reader.exists)
+        capture(app, name: "Supplied Japanese EPUB landscape")
+    }
+
     @MainActor func testCachedLiveAccountArticleAndEbookReopenWithoutNetwork() throws {
         let environment = ProcessInfo.processInfo.environment
         guard let email = environment["LEXIMORY_TEST_EMAIL"] ?? environment["TEST_RUNNER_LEXIMORY_TEST_EMAIL"],
@@ -49,7 +81,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "epub已打开"), object: ebook)], timeout: 60) == .completed)
         app.terminate(); app.launchArguments = ["--offline", "--ebook-read-only"]; app.launch()
         XCTAssertTrue(library.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "offline-reading-notice").firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "offline-reading-notice").firstMatch.exists)
         capture(app, name: "Offline restored account libraries")
         app.open(URL(string: "leximory://read/\(textID)")!)
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 5))
@@ -266,12 +298,20 @@ final class ReaderUITests: XCTestCase {
         openArticle(app)
         let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
         XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
+        let document = app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch
+        XCTAssertEqual(document.frame.maxY, app.frame.maxY, accuracy: 2)
         paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.61, dy: 0.22)).tap()
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
         XCTAssertTrue(tray.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["The land beside a river."].exists)
         XCTAssertLessThan(tray.frame.width, 600)
-        XCTAssertGreaterThan(tray.frame.width, 400)
+        XCTAssertGreaterThan(tray.frame.width, 280)
+        XCTAssertLessThan(tray.frame.width, 440)
+        XCTAssertLessThan(tray.frame.height, 440)
+        XCTAssertGreaterThan(tray.frame.maxY, app.staticTexts["embankment"].frame.maxY + 8)
+        XCTAssertGreaterThan(app.links["在词典中查看"].frame.minY, app.staticTexts["embankment"].frame.maxY)
+        let wordX = paragraph.frame.minX + paragraph.frame.width * 0.61
+        XCTAssertLessThan(abs(tray.frame.midX - wordX), 120)
         capture(app, name: "iPad anchored annotation")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.85)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: tray)], timeout: 5) == .completed)
@@ -306,6 +346,29 @@ final class ReaderUITests: XCTestCase {
         capture(app, name: "EPUB final chapter landscape")
         XCUIDevice.shared.orientation = .portrait
     }
+    @MainActor func testPDFZoomActionsAreAlignedAndUsable() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10)); pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-settings"].tap()
+        let page = app.buttons["适合页面"], width = app.buttons["适合宽度"]
+        XCTAssertTrue(page.waitForExistence(timeout: 5)); XCTAssertTrue(width.exists)
+        XCTAssertGreaterThanOrEqual(page.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(width.frame.height, 44)
+        XCTAssertEqual(page.frame.minX, width.frame.minX, accuracy: 1)
+        XCTAssertEqual(page.frame.width, width.frame.width, accuracy: 1)
+        capture(app, name: "PDF aligned zoom choices")
+        page.tap()
+        XCTAssertFalse(page.exists)
+        app.buttons["ebook-settings"].tap(); width.tap()
+        XCTAssertFalse(width.exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch.exists)
+    }
+
     @MainActor func testPDFNavigation() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
@@ -317,10 +380,10 @@ final class ReaderUITests: XCTestCase {
         revealEbookControls(app)
         XCTAssertTrue(app.buttons["ebook-contents"].waitForExistence(timeout: 15))
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
-        for _ in 0..<3 where app.sliders["阅读进度"].value as? String != "第2页，共2页" {
+        for _ in 0..<3 where app.staticTexts["ebook-page-position"].value as? String != "第2页，共2页" {
             reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)).press(forDuration: 0.05, thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.24)))
         }
-        XCTAssertEqual(app.sliders["阅读进度"].value as? String, "第2页，共2页")
+        XCTAssertEqual(app.staticTexts["ebook-page-position"].value as? String, "第2页，共2页")
         app.buttons["ebook-contents"].tap()
         XCTAssertTrue(app.buttons["1"].waitForExistence(timeout: 10)); app.buttons["1"].tap()
         app.buttons["ebook-contents"].tap()
@@ -398,6 +461,26 @@ final class ReaderUITests: XCTestCase {
         app.sliders["行距"].adjust(toNormalizedSliderPosition: 1.0 / 7.0)
         app.buttons["完成"].tap()
     }
+    @MainActor func testLibrarySwitchNeverDisplaysPreviousLanguageTexts() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Sidebar switching check") }
+        let app = XCUIApplication(); app.launchArguments = ["--fixtures", "--remote-gallery-fixtures"]
+        app.launch()
+        let english = app.buttons["library-fixture-field-notes"]
+        let japanese = app.buttons["library-fixture-japanese"]
+        XCTAssertTrue(english.waitForExistence(timeout: 10)); english.tap()
+        XCTAssertTrue(app.buttons["text-fixture-reader"].waitForExistence(timeout: 10))
+        japanese.tap()
+        XCTAssertFalse(app.buttons["text-fixture-reader"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-loading-scene").firstMatch.exists)
+        english.tap(); japanese.tap()
+        XCTAssertTrue(app.buttons["text-fixture-garden"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["text-fixture-reader"].exists)
+        sleep(2) // The non-cooperative old response must not replace this library.
+        XCTAssertTrue(app.buttons["text-fixture-garden"].exists)
+        XCTAssertFalse(app.buttons["text-fixture-reader"].exists)
+        capture(app, name: "Library switch retains the selected language")
+    }
+
     @MainActor func testIPadTabGutterDoesNotChangeAfterReading() throws {
         guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad tab gutter check") }
         let app = XCUIApplication()
@@ -665,7 +748,9 @@ final class ReaderUITests: XCTestCase {
     }
     @MainActor private func dismissDefinitionTray(_ app: XCUIApplication) {
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
-        if app.buttons["关闭释义"].exists {
+        if app.descendants(matching: .any).matching(identifier: "definition-top-tray").firstMatch.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.8)).tap()
+        } else if app.buttons["关闭释义"].exists {
             app.buttons["关闭释义"].tap()
         } else {
             let origin = app.coordinate(withNormalizedOffset: .zero)

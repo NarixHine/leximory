@@ -14,6 +14,7 @@ import os
         builder.remove(menu: .share)
         builder.remove(menu: .replace)
         builder.remove(menu: .find)
+        builder.remove(menu: .lookup)
         builder.replaceChildren(ofMenu: .standardEdit) { withoutSelectAll($0) }
     }
 
@@ -36,6 +37,8 @@ struct ReadingTextView: UIViewRepresentable {
     let jumpToEnd: Bool
     var bottomObstruction: CGFloat = 0
     var localStore: LocalReadingStore? = nil
+    var client: MobileClient? = nil
+    var sync: NativeSync? = nil
     var readOnly = false
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
@@ -62,11 +65,21 @@ struct ReadingTextView: UIViewRepresentable {
             view.addSubview(header.view)
         }
         view.delegate = context.coordinator
+        let tap = AnnotationTapRecognizer(target: context.coordinator, action: #selector(Coordinator.annotationTapped(_:)))
+        tap.reader = view
+        tap.delegate = context.coordinator
+        view.addGestureRecognizer(tap)
+        view.openAnnotation = { [weak coordinator = context.coordinator, weak view] occurrence, rect in
+            guard let coordinator, let view else { return }
+            coordinator.present(occurrence, at: rect, in: view)
+        }
         view.accessibilityIdentifier = "reading-document"
         view.isAccessibilityElement = false
         view.accessibleDefine = { [weak coordinator = context.coordinator, weak view] selection, definition, range in
             guard let coordinator, let view else { return }
-            coordinator.parent.onDefine(selection, definition, view.presentationRect(for: range))
+            if let occurrence = view.annotations.first(where: { $0.range == range }), let rect = view.segments(for: range).first {
+                coordinator.present(occurrence, at: rect, in: view)
+            }
         }
         view.linkTextAttributes = [.foregroundColor: UIColor(LeximoryPalette.sage), .underlineStyle: NSUnderlineStyle.single.rawValue]
         return view
@@ -109,17 +122,55 @@ struct ReadingTextView: UIViewRepresentable {
 
     static func dismantleUIView(_ view: RubyTextView, coordinator: Coordinator) {
         coordinator.imageTasks.forEach { $0.cancel() }
+        coordinator.popover?.dismiss(animated: false)
+        view.openAnnotation = nil
         view.delegate = nil
     }
 
-    @MainActor final class Coordinator: NSObject, UITextViewDelegate {
+    @MainActor final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         var parent: ReadingTextView
         var layout: ReaderLayout
         var signature = ""
         var lastJump = false
         var imageTasks: [Task<Void, Never>] = []
         var header: UIHostingController<ArticleReadingHeader>?
+        weak var popover: AnnotationPopoverController?
         init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title, showsNotices: false) }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard let view = gestureRecognizer.view as? RubyTextView else { return false }
+            return view.annotation(at: touch.location(in: view)) != nil
+        }
+        @objc func annotationTapped(_ gesture: AnnotationTapRecognizer) {
+            guard gesture.state == .ended, let view = gesture.reader else { return }
+            view.activateAnnotation(at: gesture.location(in: view))
+        }
+        func present(_ occurrence: ReaderLayout.Annotation, at rect: CGRect, in view: RubyTextView) {
+            guard popover == nil else { return }
+            view.highlightAnnotation(occurrence.tag)
+            guard view.traitCollection.horizontalSizeClass == .regular,
+                  let presenter = view.window?.rootViewController else {
+                parent.onDefine(occurrence.selection, occurrence.definition, view.presentationRect(for: occurrence.range))
+                view.highlightAnnotation(nil)
+                return
+            }
+            let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition)
+            let controller = AnnotationPopoverController(rootView: AnyView(EmptyView()))
+            let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
+                closeTray: { [weak controller] in controller?.dismiss(animated: true) })
+                .environment(\.nativeSync, parent.sync)
+            controller.rootView = AnyView(content)
+            controller.onDismiss = { [weak view] in view?.highlightAnnotation(nil) }
+            controller.modalPresentationStyle = .popover
+            controller.sizingOptions = .preferredContentSize
+            controller.safeAreaRegions = []
+            controller.view.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
+            controller.popoverPresentationController?.sourceView = view
+            controller.popoverPresentationController?.sourceRect = rect
+            controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            controller.popoverPresentationController?.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
+            popover = controller
+            presenter.present(controller, animated: true)
+        }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
             for entry in layout.entries {
@@ -155,16 +206,6 @@ struct ReadingTextView: UIViewRepresentable {
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
             return UIMenu(children: [UIMenu(options: .displayInline, children: [action])] + suggestedActions)
-        }
-        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
-            if case .tag(let tag) = textItem.content, tag.hasPrefix("definition:") {
-                return UIAction { [weak self, weak textView] _ in
-                    guard let self, let textView,
-                          let occurrence = (textView as? RubyTextView)?.annotation(tag: tag) else { return }
-                    self.parent.onDefine(occurrence.selection, occurrence.definition, self.rect(occurrence.range, in: textView))
-                }
-            }
-            return defaultAction
         }
         private func rect(_ range: NSRange, in view: UITextView) -> CGRect {
             view.presentationRect(for: range)
@@ -216,9 +257,7 @@ struct ReadingTextView: UIViewRepresentable {
                     let descriptor = font.fontDescriptor.addingAttributes([.featureSettings: [[UIFontDescriptor.FeatureKey.type: kLowerCaseType, .selector: kLowerCaseSmallCapsSelector]]])
                     output.addAttribute(.font, value: UIFont(descriptor: descriptor, size: 0), range: target)
                 case .link(let url): output.addAttribute(.link, value: url, range: target)
-                case .definition:
-                    output.addAttribute(.textItemTag, value: "definition:\(block.id):\(span.range.location)", range: target)
-                case .ruby: break
+                case .definition, .ruby: break
                 case .image(_, let alt):
                     let attachment = NSTextAttachment()
                     attachment.image = UIImage(systemName: "photo")
@@ -246,6 +285,8 @@ struct ReadingTextView: UIViewRepresentable {
     var rubySpans: [Ruby] = [] { didSet { setNeedsLayout() } }
     private var pronunciationLabels: [Int: UILabel] = [:]
     private let markerLayer = CAShapeLayer()
+    private let pressedAnnotationLayer = CAShapeLayer()
+    var openAnnotation: ((ReaderLayout.Annotation, CGRect) -> Void)?
     var annotations: [ReaderLayout.Annotation] = [] {
         didSet {
             annotationsByTag = Dictionary(annotations.map { ($0.tag, $0) }, uniquingKeysWith: { first, _ in first })
@@ -381,6 +422,44 @@ struct ReadingTextView: UIViewRepresentable {
         CATransaction.commit()
     }
     func annotation(tag: String) -> ReaderLayout.Annotation? { annotationsByTag[tag] }
+    func annotation(at point: CGPoint) -> (occurrence: ReaderLayout.Annotation, rect: CGRect)? {
+        for (tag, segments) in annotationSegments {
+            if let rect = segments.first(where: { $0.insetBy(dx: -2, dy: -2).contains(point) }),
+               let occurrence = annotationsByTag[tag] { return (occurrence, rect) }
+        }
+        // TextKit may not have published a viewport on the first painted frame.
+        // Resolve only the touched block, then retain its word geometry for subsequent taps.
+        guard let position = closestPosition(to: point), let layout = readingLayout else { return nil }
+        let offset = offset(from: beginningOfDocument, to: position)
+        for entry in layout.entries(intersecting: NSRange(location: offset, length: 1)) {
+            for span in entry.block.spans {
+                let tag = "definition:\(entry.block.id):\(span.range.location)"
+                guard let occurrence = annotationsByTag[tag], NSLocationInRange(offset, occurrence.range) else { continue }
+                let rectangles = segments(for: occurrence.range)
+                annotationSegments[tag] = rectangles
+                if let rect = rectangles.first(where: { $0.insetBy(dx: -2, dy: -2).contains(point) }) { return (occurrence, rect) }
+            }
+        }
+        return nil
+    }
+    func activateAnnotation(at point: CGPoint) {
+        guard let hit = annotation(at: point) else { return }
+        highlightAnnotation(hit.occurrence.tag)
+        openAnnotation?(hit.occurrence, hit.rect)
+    }
+    func highlightAnnotation(_ tag: String?) {
+        if pressedAnnotationLayer.superlayer == nil { layer.insertSublayer(pressedAnnotationLayer, at: 0) }
+        let path = UIBezierPath()
+        if let tag {
+            for rect in annotationSegments[tag] ?? [] {
+                path.append(UIBezierPath(roundedRect: rect.insetBy(dx: -2, dy: -1), cornerRadius: 3))
+            }
+        }
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        pressedAnnotationLayer.fillColor = UIColor(LeximoryPalette.sage).withAlphaComponent(0.15).cgColor
+        pressedAnnotationLayer.path = path.cgPath
+        CATransaction.commit()
+    }
     func invalidateReaderGeometry() {
         headerWidth = nil; attachmentWidth = nil; markerViewport = nil
         annotationSegments.removeAll(); attachments.removeAll()
@@ -438,6 +517,32 @@ struct ReadingTextView: UIViewRepresentable {
         }
     }
 
+}
+
+@MainActor final class AnnotationTapRecognizer: UITapGestureRecognizer {
+    weak var reader: RubyTextView?
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        if let reader, let touch = touches.first {
+            reader.highlightAnnotation(reader.annotation(at: touch.location(in: reader))?.occurrence.tag)
+        }
+        super.touchesBegan(touches, with: event)
+    }
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesMoved(touches, with: event)
+        if state == .failed || state == .cancelled { reader?.highlightAnnotation(nil) }
+    }
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        reader?.highlightAnnotation(nil)
+        super.touchesCancelled(touches, with: event)
+    }
+}
+
+@MainActor final class AnnotationPopoverController: UIHostingController<AnyView> {
+    var onDismiss: (() -> Void)?
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        onDismiss?()
+    }
 }
 
 private extension UIFont {

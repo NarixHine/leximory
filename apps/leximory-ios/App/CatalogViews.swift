@@ -2,6 +2,7 @@ import SwiftUI
 import LeximoryCore
 
 struct LibraryGallery: View {
+    @Environment(\.nativeSync) private var sync
     var libraries: [FixtureLibrary] = FixtureLibrary.samples
     var sampleMode = true
     var refresh: (() async -> Void)? = nil
@@ -107,7 +108,7 @@ struct LibraryGallery: View {
                 if archiving.contains(library.id) { ProgressView().controlSize(.small) }
                 else { Image(systemName: archived ? "archivebox" : "tray.and.arrow.up").font(.system(size: 15, weight: archived ? .regular : .light)) }
             }.frame(width: 44, height: 44)
-        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.sage).disabled(archiving.contains(library.id))
+        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.sage).disabled(archiving.contains(library.id) || sync?.online == false)
             .accessibilityLabel(archived ? "归档 \(library.name)" : "取消归档 \(library.name)")
             .accessibilityIdentifier("archive-\(library.id.rawValue)")
     }
@@ -139,7 +140,7 @@ private struct LibraryCard: View {
 }
 
 struct TextGallery: View {
-    var offlineTextIDs: Set<String>? = nil
+    @Environment(\.nativeSync) private var sync
     let library: FixtureLibrary
     var showsNavigationBar = true
     var openVocabulary: (() -> Void)? = nil
@@ -167,6 +168,7 @@ struct TextGallery: View {
                             if let importText {
                                 Button("导入", systemImage: "plus", action: importText)
                                     .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                                    .disabled(sync?.online == false)
                             }
                         }.tint(LeximoryPalette.sage)
                     }
@@ -188,7 +190,8 @@ struct TextGallery: View {
                 }
                 .padding(.horizontal, 24).padding(.top, 22).padding(.bottom, 32)
                 .frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
-            }.background(LeximoryPalette.paper)
+            }.scrollEdgeEffectHidden(true, for: .top)
+                .background(LeximoryPalette.paper)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(showsNavigationBar ? .visible : .hidden, for: .navigationBar)
@@ -204,22 +207,11 @@ struct TextGallery: View {
                         .tracking(-0.4).lineSpacing(hero ? 0 : 1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
-                    offlineLabel(article)
                 }
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
         }.buttonStyle(CatalogPressStyle())
             .accessibilityIdentifier("text-\(article.id.rawValue)")
             .accessibilityLabel(article.title)
-    }
-    @ViewBuilder private func offlineLabel(_ article: FixtureArticle) -> some View {
-        if let offlineTextIDs {
-            if offlineTextIDs.contains(article.id.rawValue) {
-                Label("可离线阅读", systemImage: "checkmark.circle")
-                    .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
-            } else {
-                Text("尚未下载").font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.secondaryLabel)
-            }
-        }
     }
     private func compactCard(_ article: FixtureArticle) -> some View {
         Button { open(article) } label: {
@@ -229,7 +221,6 @@ struct TextGallery: View {
                         .tracking(-0.3).lineSpacing(1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics)
-                    offlineLabel(article)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper).frame(width: 88, height: 88)
             }.contentShape(Rectangle())

@@ -54,6 +54,16 @@ import LeximoryCore
         }
         #expect(try #require(segments.last).width < view.bounds.width - 44)
         #expect(view.annotation(tag: occurrence.tag)?.selection.text == marked)
+        let secondLine = try #require(segments.dropFirst().first)
+        let point = CGPoint(x: secondLine.midX, y: secondLine.midY)
+        let hit = try #require(view.annotation(at: point))
+        #expect(hit.occurrence.selection == occurrence.selection)
+        #expect(hit.rect == secondLine)
+        var presented: CGRect?
+        view.openAnnotation = { _, rect in presented = rect }
+        view.activateAnnotation(at: point)
+        #expect(presented == secondLine) // Activation must be synchronous and retain the tapped line.
+
         view.frame.size.width = 420; view.setNeedsLayout(); view.layoutIfNeeded()
         let wider = view.segments(for: occurrence.range)
         #expect(wider.count < segments.count)
@@ -280,10 +290,11 @@ import LeximoryCore
         for entry in layout.entries {
             #expect(attributed.attributedSubstring(from: entry.documentRange).string == entry.block.displayText)
             for span in entry.block.spans {
-                guard case .definition = span.style else { continue }
+                guard case .definition(let definition) = span.style else { continue }
                 let global = entry.documentRange.location + span.range.location
-                let tag = try #require(attributed.attribute(.textItemTag, at: global, effectiveRange: nil) as? String)
-                #expect(tag.hasPrefix("definition:"))
+                let annotation = try #require(layout.annotations(textID: TextID(rawValue: "fixture"), revision: document.revision).first { $0.range.location == global })
+                #expect(annotation.selection.text == (entry.block.displayText as NSString).substring(with: NSRange(location: span.range.location, length: span.range.length)))
+                #expect(annotation.definition == definition)
             }
         }
     }

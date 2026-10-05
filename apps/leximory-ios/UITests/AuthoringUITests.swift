@@ -1,6 +1,24 @@
 import XCTest
 
 final class AuthoringUITests: XCTestCase {
+    @MainActor func testOfflineVocabularyKeepsEditingVisibleButDisabled() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--authoring-fixtures", "--offline"]
+        app.launch()
+        let library = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        app.buttons["语料本"].tap()
+        let word = app.buttons["bank"]
+        XCTAssertTrue(word.waitForExistence(timeout: 10)); word.tap()
+        let edit = app.buttons["编辑词汇"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5))
+        XCTAssertFalse(edit.isEnabled)
+        XCTAssertFalse(app.staticTexts["尚未下载"].exists)
+        XCTAssertFalse(app.staticTexts["已下载"].exists)
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "offline-reading-notice").firstMatch.exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Offline editing disabled without infrastructure labels"; attachment.lifetime = .keepAlways; add(attachment)
+    }
     @MainActor func testSavedVocabularyCanBeEditedAndReopened() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--authoring-fixtures"]
@@ -66,7 +84,9 @@ final class AuthoringUITests: XCTestCase {
         let importButton = app.buttons["导入"]
         XCTAssertTrue(importButton.waitForExistence(timeout: 10)); importButton.tap()
         let url = app.textFields["网址"]
-        XCTAssertTrue(url.waitForExistence(timeout: 10)); url.tap(); url.typeText("https://example.org/article\n")
+        XCTAssertTrue(url.waitForExistence(timeout: 10))
+        let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = "Muted URL import placeholder"; attachment.lifetime = .keepAlways; add(attachment)
+        url.tap(); url.typeText("https://example.org/article\n")
         let title = app.descendants(matching: .any)["import-标题"].firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 10)); XCTAssertEqual(title.value as? String, "导入测试")
         XCTAssertEqual(app.descendants(matching: .any)["import-文本"].firstMatch.value as? String, "Along the river.")

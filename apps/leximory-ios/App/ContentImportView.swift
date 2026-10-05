@@ -40,7 +40,14 @@ struct ContentImportView: View {
                         Text("上传电子书").tag(1)
                     }.pickerStyle(.segmented).disabled(busy || uncertain)
                     if kind == 2 {
-                        TextField("网址", text: $url, prompt: Text("https://theleximorytimes.com/").foregroundStyle(LeximoryPalette.muted))
+                        TextField("", text: $url)
+                            .overlay(alignment: .leading) {
+                                if url.isEmpty {
+                                    Text("https://theleximorytimes.com/")
+                                        .foregroundStyle(LeximoryPalette.muted)
+                                        .allowsHitTesting(false).accessibilityHidden(true)
+                                }
+                            }
                             .focused($focusedField, equals: "网址").submitLabel(.go)
                             .onSubmit { focusedField = nil; if !extracted { Task { await submit(annotate: true) } } }
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
