@@ -141,8 +141,7 @@ private struct CorpusWordTray: View {
     private func section(_ label: String, _ content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
-            Text(annotationMarkdown(content, size: 17))
-                .font(LeximoryTypography.prose(17, language: library.language)).lineSpacing(3).textSelection(.enabled)
+            AnnotationMarkdownText(content: content, size: 17, language: library.language)
         }
     }
 }

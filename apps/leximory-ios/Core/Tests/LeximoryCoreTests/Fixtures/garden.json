@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "revision": "81848d23af8beff8cee42ba13d16e5681b829230431b5ad9f69e5cb755c230cc",
-  "source": "# ことばの庭\n\n朝の光が庭に差し込む。{{言葉||言葉||ことば。考えや気持ちを伝えるもの。}}を一つずつ、ゆっくりと読む。\n\n## 小さな発見\n\n<ruby>東京<rt>とうきょう</rt></ruby>の街を歩く。いつもの道にも、新しい景色がある。\n\n本を閉じたあとも、言葉は心に残る。\n",
+  "revision": "e94aaf9512b1e3abc2b21a93d14466bd8194759cc73d39c12da95f921d9a5f4f",
+  "source": "# ことばの庭\n\n朝の光が庭に差し込む。{{言葉||言葉||**［名］（<ruby>ことば<rt>言葉</rt></ruby>）** 考えや気持ちを伝えるもの。}}を一つずつ、ゆっくりと読む。\n\n## 小さな発見\n\n<ruby>東京<rt>とうきょう</rt></ruby>の街を歩く。いつもの道にも、新しい景色がある。\n\n本を閉じたあとも、言葉は心に残る。\n",
   "blocks": [
     {
-      "id": "b401f349085b686be83dfe12",
+      "id": "79c089574db5fb176b9c2699",
       "kind": "heading1",
       "sourceRange": {
         "location": 0,
@@ -16,11 +16,11 @@
       "notice": null
     },
     {
-      "id": "94c9f9b67a52217f2368dba0",
+      "id": "b7639cb6a2a7ba7446613a0a",
       "kind": "paragraph",
       "sourceRange": {
         "location": 9,
-        "length": 54
+        "length": 87
       },
       "displayText": "朝の光が庭に差し込む。言葉を一つずつ、ゆっくりと読む。",
       "spans": [
@@ -31,7 +31,7 @@
           },
           "kind": "definition",
           "lemma": "言葉",
-          "definition": "ことば。考えや気持ちを伝えるもの。",
+          "definition": "**［名］（<ruby>ことば<rt>言葉</rt></ruby>）** 考えや気持ちを伝えるもの。",
           "etymology": null,
           "cognates": null
         }
@@ -40,10 +40,10 @@
       "notice": null
     },
     {
-      "id": "d4d240474517b84ddc69c4d1",
+      "id": "46c4e39a5eab467a65f09591",
       "kind": "heading2",
       "sourceRange": {
-        "location": 65,
+        "location": 98,
         "length": 8
       },
       "displayText": "小さな発見",
@@ -52,10 +52,10 @@
       "notice": null
     },
     {
-      "id": "4890ebd14d885754ea1176cd",
+      "id": "aa9fde22f136cc623c08cf3d",
       "kind": "paragraph",
       "sourceRange": {
-        "location": 75,
+        "location": 108,
         "length": 52
       },
       "displayText": "東京の街を歩く。いつもの道にも、新しい景色がある。",
@@ -73,10 +73,10 @@
       "notice": null
     },
     {
-      "id": "b5d1a5c49e12d5619a1b1098",
+      "id": "ecdf36869ff9475ced443d7a",
       "kind": "paragraph",
       "sourceRange": {
-        "location": 129,
+        "location": 162,
         "length": 17
       },
       "displayText": "本を閉じたあとも、言葉は心に残る。",

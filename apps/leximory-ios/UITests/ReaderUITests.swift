@@ -1,6 +1,22 @@
 import XCTest
 
 final class ReaderUITests: XCTestCase {
+    @MainActor func testJapaneseDefinitionRubyPopover() throws {
+        let app = XCUIApplication(); app.launchArguments = ["--fixtures"]
+        app.launch()
+        let library = app.buttons["library-fixture-japanese"]
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        app.buttons["text-fixture-garden"].tap()
+        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "朝の光が庭に差し込む。")).firstMatch
+        XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
+        paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).tap()
+        let ruby = app.descendants(matching: .any).matching(identifier: "annotation-markdown-ruby").firstMatch
+        XCTAssertTrue(ruby.waitForExistence(timeout: 5))
+        XCTAssertTrue((ruby.value as? String ?? "").contains("ことば"))
+        XCTAssertFalse((ruby.value as? String ?? "").unicodeScalars.contains { (0xE000...0xF8FF).contains($0.value) })
+        capture(app, name: "Japanese definition ruby")
+    }
+
     @MainActor func testJapaneseVerticalReaderTurnsRightAndKeepsContents() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]

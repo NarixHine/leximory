@@ -51,6 +51,7 @@ public struct RenderSpan: Codable, Hashable, Sendable {
     public let range: UTF16Range
     public let style: Style
     private enum CodingKeys: String, CodingKey { case kind, range, url, alt, pronunciation, lemma, definition, etymology, cognates }
+    init(range: UTF16Range, style: Style) { self.range = range; self.style = style }
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         range = try container.decode(UTF16Range.self, forKey: .range)
@@ -178,7 +179,8 @@ public struct ReaderLayout: Sendable {
         var text = ""
         var entries: [Entry] = []
         var notices: [Notice] = []
-        for (index, block) in document.blocks.enumerated() {
+        for (index, original) in document.blocks.enumerated() {
+            let block = original.recoverRubyDefinitions(in: document.source)
             if index == 0, block.kind == .heading1, block.displayText == openingTitleInHeader,
                block.spans.isEmpty, block.notice == nil { continue }
             if !text.isEmpty { text += "\n" }
@@ -223,5 +225,31 @@ public struct ReaderLayout: Sendable {
                         range: span.range, text: String(entry.block.displayText[indices])), definition: definition)
             }
         }
+    }
+}
+
+
+private extension RenderBlock {
+    func recoverRubyDefinitions(in source: String) -> RenderBlock {
+        guard let indices = try? sourceRange.validated(in: source),
+              let regex = try? NSRegularExpression(pattern: #"\{\{([^}\n]*)\}\}"#) else { return self }
+        let fragment = String(source[indices]) as NSString
+        var markers = regex.matches(in: fragment as String, range: NSRange(location: 0, length: fragment.length))
+            .map { fragment.substring(with: $0.range(at: 1)).components(separatedBy: "||") }
+        let recovered = spans.map { span -> RenderSpan in
+            guard case .definition(let definition) = span.style,
+                  let markerIndex = markers.firstIndex(where: { $0.count >= 3 && $0[1] == definition.lemma }) else { return span }
+            let fields = markers.remove(at: markerIndex)
+            func restored(_ value: String?, field: Int) -> String? {
+                guard let value, field < fields.count, fields[field].localizedCaseInsensitiveContains("<ruby"),
+                      value.unicodeScalars.contains(where: { (0xE000...0xF8FF).contains($0.value) }) else { return value }
+                return fields[field]
+            }
+            return RenderSpan(range: span.range, style: .definition(Definition(lemma: definition.lemma,
+                definition: restored(definition.definition, field: 2) ?? definition.definition,
+                etymology: restored(definition.etymology, field: 3), cognates: restored(definition.cognates, field: 4))))
+        }
+        return RenderBlock(id: id, kind: kind, sourceRange: sourceRange, displayText: displayText,
+                           spans: recovered, audioId: audioId, notice: notice)
     }
 }

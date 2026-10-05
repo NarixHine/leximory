@@ -5,6 +5,7 @@ import Foundation
 import Testing
 import UIKit
 import WebKit
+import CoreText
 import LeximoryCore
 @testable import Leximory
 
@@ -265,6 +266,61 @@ import LeximoryCore
         #expect(!active.isCompact)
         #expect(archived.isCompact)
         #expect(shadow.isCompact)
+    }
+    @Test func definitionRubyPreservesBaselineMarkdownAndCanonicalText() throws {
+        let layout = AnnotationMarkdownLayout(content: "**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体。", size: 17, language: "Japanese")
+        #expect(layout.attributed.string == "［名］（かいしょ／楷书） 漢字の書体。")
+        let ruby = try #require(layout.rubies.first)
+        #expect((layout.attributed.string as NSString).substring(with: ruby.range) == "かいしょ")
+        #expect(ruby.text == "楷書")
+        let font = try #require(layout.attributed.attribute(.font, at: ruby.range.location, effectiveRange: nil) as? UIFont)
+        #expect(font.fontDescriptor.symbolicTraits.contains(.traitBold) || (layout.attributed.attribute(.strokeWidth, at: ruby.range.location, effectiveRange: nil) as? Double ?? 0) < 0)
+        let repeated = AnnotationMarkdownLayout(content: "<ruby>おうかく<rt>横画</rt></ruby>・<ruby>よこかく<rt>横画</rt></ruby>", size: 24, language: "Japanese")
+        #expect(repeated.attributed.string == "おうかく・よこかく")
+        #expect(repeated.rubies.count == 2)
+        #expect(repeated.rubies[1].range.location == 5)
+    }
+    @Test func cachedDefinitionRubyRecoversFromSourceWithoutChangingSelection() throws {
+        let source = "{{楷書||楷書||**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体。||漢語}}では。"
+        let payload: [String: Any] = ["version": 1, "revision": String(repeating: "0", count: 64), "source": source,
+            "blocks": [["id": "ruby", "kind": "paragraph", "sourceRange": ["location": 0, "length": source.utf16.count],
+                        "displayText": "楷書では。", "spans": [["kind": "definition", "range": ["location": 0, "length": 2],
+                        "lemma": "楷書", "definition": "**［名］（\u{E000}\u{E000}／楷书）** 漢字の書体。", "etymology": "漢語"]]]]
+        ]
+        let doc = try JSONDecoder().decode(ReadingDocument.self, from: JSONSerialization.data(withJSONObject: payload))
+        let layout = ReaderLayout(document: doc)
+        let annotation = try #require(layout.annotations(textID: TextID(rawValue: "ruby"), revision: doc.revision).first)
+        #expect(annotation.definition.definition.contains("<ruby>かいしょ<rt>楷書</rt></ruby>"))
+        #expect(annotation.selection.text == "楷書")
+        #expect(annotation.selection.range == UTF16Range(location: 0, length: 2))
+    }
+    @Test func coverEmojiUsesBundledColorGlyphsIncludingSequences() throws {
+        let font = try #require(UIFont(name: "LeximoryNotoColorEmoji", size: 60))
+        #expect(CTFontCopyTable(font as CTFont, CTFontTableTag(0x73626978), []) != nil)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 120), format: format).image { _ in
+            NSAttributedString(string: "📖", attributes: [.font: font]).draw(at: CGPoint(x: 10, y: 10))
+        }
+        let pixels = try #require(image.cgImage?.dataProvider?.data) as Data
+        #expect(pixels.count > 100)
+        var coloredPixels = 0
+        for offset in stride(from: 0, to: pixels.count - 3, by: 4) {
+            if pixels[offset] != pixels[offset + 1] || pixels[offset + 1] != pixels[offset + 2] { coloredPixels += 1 }
+        }
+        #expect(coloredPixels > 100, "The bundled emoji must draw color artwork, not empty outlines")
+        for emoji in ["📖", "🧬", "☀️", "☀", "🇯🇵", "👩🏽‍💻", "1️⃣", "🐈‍⬛"] {
+            let line = CTLineCreateWithAttributedString(NSAttributedString(string: emoji, attributes: [.font: font]))
+            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+            #expect(!runs.isEmpty)
+            for run in runs {
+                let attributes = CTRunGetAttributes(run) as NSDictionary
+                let usedFont = try #require(attributes[kCTFontAttributeName] as? UIFont)
+                #expect(usedFont.fontName == font.fontName, "Unexpected fallback for \(emoji)")
+                var glyphs = [CGGlyph](repeating: 0, count: CTRunGetGlyphCount(run))
+                CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
+                #expect(!glyphs.contains(0), "Missing glyph for \(emoji)")
+            }
+        }
     }
     @Test func editorialFontsAreBundled() {
         #expect(UIFont(name: "LibreBaskerville-Regular", size: 20) != nil)

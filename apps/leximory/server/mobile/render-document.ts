@@ -16,6 +16,16 @@ const plain = (value: string) => {
     parser.end(sanitize(value, { allowedTags: [], allowedAttributes: {} }))
     return text
 }
+const definitionMarkdown = (value: string) => {
+    let output = ''
+    const parser = new Parser({
+        ontext: text => { output += text },
+        onopentag: name => { output += `<${name}>` },
+        onclosetag: name => { output += `</${name}>` },
+    }, { decodeEntities: true })
+    parser.end(sanitize(value, { allowedTags: ['ruby', 'rt', 'rp'], allowedAttributes: {} }))
+    return output
+}
 const safeURL = (value: string) => {
     try {
         const url = new URL(value)
@@ -38,16 +48,9 @@ export function renderDocument(source: string): RenderDocument {
     // Keep source offsets intact while suppressing executable HTML and its body.
     let masked = source.replace(/<\/?article\s*>/gi, value => ' '.repeat(value.length)).replace(/<(script|style|iframe|object)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,
         value => value.replace(/[^\r\n]/g, ' '))
-    masked = masked.replace(/<ruby\b[^>]*>([\s\S]*?)<\/ruby>/gi, (original, body: string) => {
-        const pronunciation = plain(body.match(/<rt\b[^>]*>([\s\S]*?)<\/rt>/i)?.[1] ?? '')
-        const text = plain(body.replace(/<(rt|rp)\b[^>]*>[\s\S]*?<\/\1>/gi, ''))
-        return reserve(original, {
-            text, notice: pronunciation ? null : 'Ruby pronunciation unavailable',
-            span: pronunciation && text ? { kind: 'ruby', range: { location: 0, length: text.length }, pronunciation } : null,
-        })
-    })
     masked = masked.replace(/\{\{([^}\n]*)(?:\}\}|$)/gm, (original, body: string) => {
-        const fields = body.split('||').map(plain)
+        const fields = body.split('||').map((field, index) => index < 2 ? plain(field)
+            : definitionMarkdown(field))
         const text = fields[0] ?? ''
         const lemma = fields[1]
         const definition = fields[2]
@@ -58,6 +61,14 @@ export function renderDocument(source: string): RenderDocument {
                 kind: 'definition', range: { location: 0, length: text.length }, lemma,
                 definition, etymology: fields[3] ?? null, cognates: fields[4] ?? null,
             } : null,
+        })
+    })
+    masked = masked.replace(/<ruby\b[^>]*>([\s\S]*?)<\/ruby>/gi, (original, body: string) => {
+        const pronunciation = plain(body.match(/<rt\b[^>]*>([\s\S]*?)<\/rt>/i)?.[1] ?? '')
+        const text = plain(body.replace(/<(rt|rp)\b[^>]*>[\s\S]*?<\/\1>/gi, ''))
+        return reserve(original, {
+            text, notice: pronunciation ? null : 'Ruby pronunciation unavailable',
+            span: pronunciation && text ? { kind: 'ruby', range: { location: 0, length: text.length }, pronunciation } : null,
         })
     })
     masked = masked.replace(/&&(.+?)&&/g, (original, body: string) => {

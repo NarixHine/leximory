@@ -141,16 +141,26 @@ struct ReadingLoadingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var origin = Date()
+    @State private var showsScene = false
     init(_ label: String) { self.label = label }
 
     var body: some View {
         GeometryReader { geometry in
             let width = min(560, geometry.size.width * 0.8, max(224, geometry.size.height * 0.58))
-            VStack(spacing: 20) { lawn(width: width); caption }
+            VStack(spacing: 20) {
+                if showsScene { lawn(width: width); caption }
+            }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label).accessibilityIdentifier("reading-loading-scene")
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(showsScene ? "reading-loading-scene" : "reading-loading-pending")
+        .task {
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            guard !Task.isCancelled else { return }
+            origin = Date()
+            showsScene = true
+        }
     }
     private var caption: some View {
         Text(label).font(LeximoryTypography.interface(17))

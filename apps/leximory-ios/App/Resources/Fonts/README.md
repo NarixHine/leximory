@@ -11,8 +11,11 @@ Font roles follow `apps/leximory/lib/fonts/index.ts` and the web components, rat
 | Library page heading, hero slogan, topic pills | LXGW WenKai Screen | Converted from the repository's `lib/fonts/kaiti.woff2` |
 | Latin interface labels | Raleway Regular and SemiBold | Google Fonts `ofl/raleway` |
 | Libraries eyebrow | Space Mono Regular | Google Fonts `ofl/spacemono` |
+| Text cover emoji | Noto Color Emoji, converted to Apple sbix | Google Fonts `googlefonts/noto-emoji`, SIL OFL 1.1 |
 | IPA and code | Source Code Pro Medium | Google Fonts `ofl/sourcecodepro` |
 
 The supplied Chinese and Japanese Chill fonts replace the Noto serif faces. Both ship at their original Regular weight, including EPUB reading. Their embedded copyright notices and SIL OFL 1.1 license are preserved in `OFL-ChillDuanHeiSongPro.txt`. Latin faces cascade to the appropriate Chinese or Japanese face, so mixed-language titles retain editorial typography. Variable fonts were instantiated with FontTools and updated PostScript names; native tests verify their registration. Full SIL Open Font Licenses accompany every family.
 
-App-authored text uses these faces, including buttons and navigation headings. SF Symbols, emoji, and operating-system text-selection controls retain their platform rendering. Dynamic Type scales the app's typography. Reader font changes do not alter the canonical UTF-16 text or selection ranges.
+App-authored text uses these faces, including buttons and navigation headings. SF Symbols, inline emoji, and operating-system text-selection controls retain their platform rendering. Dynamic Type scales the app's typography. Reader font changes do not alter the canonical UTF-16 text or selection ranges.
+
+Text covers explicitly use `LeximoryNotoColorEmoji.ttf`. Its PNG glyph artwork, Unicode mappings and GSUB sequence shaping come from Noto Color Emoji. The conversion script changes CBDT/CBLC to Apple's sbix format without redrawing the glyphs, so covers work offline and cannot depend on downloaded fonts. The upstream SHA-256 is pinned in `scripts/convert-noto-emoji.py`. The full OFL accompanies the font.

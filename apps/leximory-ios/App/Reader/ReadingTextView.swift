@@ -90,7 +90,7 @@ struct ReadingTextView: UIViewRepresentable {
         view.contentInset.bottom = bottomObstruction
         view.fixtureScrollsToEnd = jumpToEnd
         let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
-        let signature = "\(document.revision):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
+        let signature = "\(document.hashValue):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
         if coordinator.signature != signature {
             let selection = view.selectedRange
             let offset = view.contentOffset

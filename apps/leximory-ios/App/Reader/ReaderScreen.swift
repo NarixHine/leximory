@@ -123,7 +123,7 @@ struct ReaderScreen: View {
     }
     private func load() async {
         if let cached = await client?.cachedDocument(textID: article.id.rawValue), let document = cached.document {
-            if case .loaded(let previous) = state, previous.revision == document.revision { }
+            if case .loaded(let previous) = state, previous == document { }
             else { state = .loaded(document) }
             refreshedArticle = cached.text.preview
         }
@@ -139,7 +139,7 @@ struct ReaderScreen: View {
                     try Task.checkCancellation()
                     guard let document = details.document else { throw URLError(.cannotParseResponse) }
                     refreshedArticle = details.text.preview
-                    if case .loaded(let previous) = state, previous.revision == document.revision { }
+                    if case .loaded(let previous) = state, previous == document { }
                     else { state = .loaded(document) }
                     guard ["annotating", "saving"].contains(details.annotationProgress ?? "") else { return }
                     try await Task.sleep(for: .seconds(2))
@@ -320,8 +320,8 @@ struct DefinitionView: View {
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
-            Text(annotationMarkdown(content, size: bodySize)).font(Font(LeximoryTypography.proseUI(bodySize, language: language)))
-                .foregroundStyle(LeximoryPalette.ink).lineSpacing(3).textSelection(.enabled)
+            AnnotationMarkdownText(content: content, size: bodySize, language: language)
+                .foregroundStyle(LeximoryPalette.ink)
         }
     }
 

@@ -95,3 +95,17 @@ test('HTML entities, multiline ruby, and article wrappers preserve canonical pro
     assert.equal(definition.definition, 'A & B')
     assert.equal(doc.blocks[2]?.displayText, '東\n京')
 })
+
+
+test('ruby inside embedded definitions stays Markdown, never transport tokens', () => {
+    const definition = '**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体の一種。'
+    const doc = renderDocument(`{{楷書||楷書||${definition}||漢語}}では「糸」。`)
+    assert.equal(doc.blocks[0]?.displayText, '楷書では「糸」。')
+    const span = doc.blocks[0]?.spans[0]
+    assert.ok(span?.kind === 'definition')
+    assert.equal(span.definition, definition)
+    assert.equal(span.etymology, '漢語')
+    assert.doesNotMatch(JSON.stringify(doc.blocks), /[\uE000-\uF8FF]/)
+    const mixed = renderDocument(`<ruby>東京<rt>とうきょう</rt></ruby> {{楷書||楷書||${definition}}}`)
+    assert.deepEqual(mixed.blocks[0]?.spans.map(span => span.kind), ['ruby', 'definition'])
+})

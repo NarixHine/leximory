@@ -57,7 +57,7 @@ struct CoverArt: View {
         .overlay {
             if let emoji {
                 GeometryReader { geometry in
-                    Text(emoji).font(.system(size: min(geometry.size.width, geometry.size.height) * 0.42))
+                    Text(emoji).font(.custom("LeximoryNotoColorEmoji", fixedSize: min(geometry.size.width, geometry.size.height) * 0.42))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
