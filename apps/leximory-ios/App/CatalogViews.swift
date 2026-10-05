@@ -139,6 +139,7 @@ private struct LibraryCard: View {
 }
 
 struct TextGallery: View {
+    var offlineTextIDs: Set<String>? = nil
     let library: FixtureLibrary
     var showsNavigationBar = true
     var openVocabulary: (() -> Void)? = nil
@@ -203,11 +204,22 @@ struct TextGallery: View {
                         .tracking(-0.4).lineSpacing(hero ? 0 : 1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
+                    offlineLabel(article)
                 }
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
         }.buttonStyle(CatalogPressStyle())
             .accessibilityIdentifier("text-\(article.id.rawValue)")
             .accessibilityLabel(article.title)
+    }
+    @ViewBuilder private func offlineLabel(_ article: FixtureArticle) -> some View {
+        if let offlineTextIDs {
+            if offlineTextIDs.contains(article.id.rawValue) {
+                Label("可离线阅读", systemImage: "checkmark.circle")
+                    .font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.muted)
+            } else {
+                Text("尚未下载").font(LeximoryTypography.interface(12)).foregroundStyle(LeximoryPalette.secondaryLabel)
+            }
+        }
     }
     private func compactCard(_ article: FixtureArticle) -> some View {
         Button { open(article) } label: {
@@ -217,6 +229,7 @@ struct TextGallery: View {
                         .tracking(-0.3).lineSpacing(1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics)
+                    offlineLabel(article)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper).frame(width: 88, height: 88)
             }.contentShape(Rectangle())

@@ -62,7 +62,7 @@ public struct SavedWord: Codable, Identifiable, Sendable {
     public let createdAt: String?
     public let protected: Bool?
 }
-public struct RemoteDocument: Decodable, Sendable {
+public struct RemoteDocument: Codable, Sendable {
     public let text: CatalogText
     public let library: CatalogLibrary
     public let document: ReadingDocument?
@@ -106,12 +106,20 @@ private struct APIExpiryDates: DateTranscoder {
 private struct BearerMiddleware: ClientMiddleware {
     let token: @Sendable (String?) async throws -> String
     let unauthorized: @Sendable (String) async -> Void
+    var store: LocalReadingStore? = nil
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+        try await store?.requireOnline()
         var request = request
         let original = try await token(nil)
         request.headerFields[.authorization] = "Bearer \(original)"
-        var result = try await next(request, body, baseURL)
+        var result: (HTTPResponse, HTTPBody?)
+        do {
+            result = try await next(request, body, baseURL)
+        } catch {
+            if MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
+            throw error
+        }
         if result.0.status.code == 401 && request.method == .get {
             request.headerFields[.authorization] = "Bearer \(try await token(original))"
             try Task.checkCancellation()
@@ -120,6 +128,12 @@ private struct BearerMiddleware: ClientMiddleware {
         if result.0.status.code == 401 {
             await unauthorized(request.headerFields[.authorization]?.replacingOccurrences(of: "Bearer ", with: "") ?? original)
         }
+        if [403, 404].contains(result.0.status.code), let path = request.path {
+            let parts = path.split(separator: "?")[0].split(separator: "/")
+            if parts.first == "texts", parts.count > 1 { await store?.removeText(String(parts[1])) }
+            if parts.first == "libraries", parts.count > 1 { await store?.removeLibrary(String(parts[1])) }
+        }
+        if result.0.status.code >= 500 { await store?.setOnline(false) }
         if result.0.status.code >= 400, let responseBody = result.1 {
             let bytes = try await Data(collecting: responseBody, upTo: 65536)
             if let failure = try? JSONDecoder().decode(MobileFailure.self, from: bytes) { throw failure }
@@ -131,17 +145,20 @@ private struct BearerMiddleware: ClientMiddleware {
 public struct MobileClient: Sendable {
     private let client: Client
     public let webURL: URL
+    public let localStore: LocalReadingStore?
     public static func cause(of error: any Error) -> any Error {
         if let clientError = error as? ClientError { return cause(of: clientError.underlyingError) }
         return error
     }
-    public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }) {
+    public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
         webURL = baseURL
-        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: URLSessionTransport(), middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized)])
+        self.localStore = localStore
+        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: ReadCoalescingTransport(URLSessionTransport()), middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)])
     }
-    public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }) {
+    public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
         webURL = baseURL
-        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: transport, middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized)])
+        self.localStore = localStore
+        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: ReadCoalescingTransport(transport), middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)])
     }
     private func mapped<Value: Encodable, Result: Decodable>(_ value: Value, to: Result.Type) throws -> Result {
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
@@ -153,13 +170,16 @@ public struct MobileClient: Sendable {
         return try decoder.decode(Result.self, from: encoder.encode(value))
     }
     public func account() async throws -> Account {
-        try mapped(try await client.me().ok.body.json, to: Account.self)
+        let account = try mapped(try await client.me().ok.body.json, to: Account.self)
+        await localStore?.save(account, for: "account")
+        return account
     }
     public func libraries(cursor: String? = nil) async throws -> CatalogPage<CatalogLibrary> {
         try mapped(try await client.libraries(query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogLibrary>.self)
     }
     public func setLibraryArchived(libraryID: String, archived: Bool) async throws {
         _ = try await client.libraryArchive(path: .init(libraryId: libraryID), body: .json(.init(archived: archived))).ok.body.json
+        await localStore?.setArchived(libraryID: libraryID, archived: archived)
     }
     public func texts(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<CatalogText> {
         try mapped(try await client.texts(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogText>.self)
@@ -172,26 +192,36 @@ public struct MobileClient: Sendable {
         try mapped(try await client.vocabularyList(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<SavedWord>.self)
     }
     public func savedWord(id: String) async throws -> SavedWord {
-        try mapped(try await client.savedWord(path: .init(wordId: id)).ok.body.json, to: SavedWord.self)
+        let word = try mapped(try await client.savedWord(path: .init(wordId: id)).ok.body.json, to: SavedWord.self)
+        await localStore?.upsertWord(word)
+        return word
     }
     public func editWord(id: String, fields: VocabularyFields) async throws -> SavedWord {
         guard fields.isValid else { throw URLError(.cannotParseResponse) }
-        return try mapped(try await client.editWord(path: .init(wordId: id), body: .json(.init(
+        let word = try mapped(try await client.editWord(path: .init(wordId: id), body: .json(.init(
             lemma: fields.lemma, definition: fields.definition, etymology: fields.etymology,
             cognates: fields.cognates, original: fields.original))).ok.body.json, to: SavedWord.self)
+        await localStore?.upsertWord(word)
+        return word
     }
     public func importArticle(libraryID: String, title: String, content: String, annotate: Bool, onlyComments: Bool, generateTitle: Bool) async throws -> CatalogText {
-        try mapped(try await client.importArticle(path: .init(libraryId: libraryID), body: .json(.init(
+        let text = try mapped(try await client.importArticle(path: .init(libraryId: libraryID), body: .json(.init(
             title: title, content: content, annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle))).ok.body.json, to: CatalogText.self)
+        await localStore?.upsertText(text)
+        return text
     }
     public func uploadEbook(libraryID: String, title: String, filename: String, data: Data) async throws -> CatalogText {
         guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
-        return try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        let text = try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        await localStore?.upsertText(text)
+        return text
     }
     public func documentDetails(textID: String) async throws -> RemoteDocument {
+        let version = await localStore?.version(for: "document/\(textID)") ?? 0
         let payload = try await client.document(path: .init(textId: textID)).ok.body.json
         let result = try mapped(payload, to: RemoteDocument.self)
         try result.document?.validate()
+        await localStore?.save(result, for: "document/\(textID)", ifUnchanged: version)
         return result
     }
     public func document(textID: String) async throws -> ReadingDocument {
@@ -202,13 +232,20 @@ public struct MobileClient: Sendable {
         try mapped(try await client.audio(path: .init(textId: textID, audioId: audioID)).ok.body.json, to: AudioDescriptor.self)
     }
     public func ebook(textID: String) async throws -> EbookDescriptor {
-        try mapped(try await client.ebook(path: .init(textId: textID)).ok.body.json, to: EbookDescriptor.self)
+        let version = await localStore?.version(for: "ebook/\(textID)") ?? 0
+        let descriptor = try mapped(try await client.ebook(path: .init(textId: textID)).ok.body.json, to: EbookDescriptor.self)
+        await localStore?.save(descriptor, for: "ebook/\(textID)", ifUnchanged: version)
+        return descriptor
     }
     public func saveEbookPosition(textID: String, location: String) async throws {
         _ = try await client.ebookPosition(path: .init(textId: textID), body: .json(.init(location: location))).ok
+        await localStore?.updateEbookLocation(textID: textID, location: location)
     }
     public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?) async throws -> EbookBookmark {
-        try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location))).ok.body.json, to: EbookBookmark.self)
+        let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location))).ok.body.json, to: EbookBookmark.self)
+        // Refresh authoritative private bookmark metadata after a confirmed save.
+        _ = try? await ebook(textID: textID)
+        return bookmark
     }
     public func ebookDefinitions(textID: String, quote: String, context: String, offset: Int) -> AsyncThrowingStream<DefinitionEvent, Error> {
         definitionStream {
@@ -247,6 +284,102 @@ public struct MobileClient: Sendable {
             occurrence: .init(textId: selection.textID.rawValue, revision: selection.revision, blockId: selection.blockID,
                 range: .init(location: selection.range.location, length: selection.range.length)), completionId: completionID))).ok.body.json
         return try mapped(result, to: SavedVocabulary.self)
+    }
+
+    public static func isAccessFailure(_ error: any Error) -> Bool {
+        guard let failure = cause(of: error) as? MobileFailure else { return false }
+        return ["inaccessible", "unauthenticated"].contains(failure.error.code)
+    }
+    public static func isConnectionFailure(_ error: any Error) -> Bool {
+        guard let error = cause(of: error) as? URLError else { return false }
+        return [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed].contains(error.code)
+    }
+    public func cachedDocument(textID: String) async -> RemoteDocument? {
+        guard let details = await localStore?.value(RemoteDocument.self, for: "document/\(textID)"),
+              (try? details.document?.validate()) != nil || details.document == nil else { return nil }
+        return details
+    }
+    public func allLibraries() async throws -> [CatalogLibrary] {
+        let version = await localStore?.version(for: "libraries")
+        let items = try await collectPages { try await libraries(cursor: $0) }
+        await localStore?.reconcileLibraries(items, ifUnchanged: version)
+        return items
+    }
+    public func allTexts(libraryID: String) async throws -> [CatalogText] {
+        let version = await localStore?.version(for: "texts/\(libraryID)")
+        let items = try await collectPages { try await texts(libraryID: libraryID, cursor: $0) }
+        await localStore?.reconcileTexts(items, libraryID: libraryID, ifUnchanged: version)
+        return items
+    }
+    public func allVocabulary(libraryID: String) async throws -> [SavedWord] {
+        let version = await localStore?.version(for: "words/\(libraryID)") ?? 0
+        let items = try await collectPages { try await vocabulary(libraryID: libraryID, cursor: $0) }
+        await localStore?.save(items, for: "words/\(libraryID)", ifUnchanged: version)
+        return items
+    }
+    private func collectPages<Item: Codable & Identifiable & Sendable>(_ fetch: (String?) async throws -> CatalogPage<Item>) async throws -> [Item] where Item.ID: Sendable {
+        var items: [Item] = [], cursor: String?, seen = Set<String>(), ids = Set<Item.ID>()
+        repeat {
+            let page = try await fetch(cursor)
+            try Task.checkCancellation()
+            items.append(contentsOf: page.items.filter { ids.insert($0.id).inserted })
+            cursor = page.nextCursor
+            if let cursor, !seen.insert(cursor).inserted { throw URLError(.badServerResponse) }
+        } while cursor != nil
+        return items
+    }
+    private static func bookSource(_ url: URL) -> String {
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.query = nil; components?.fragment = nil
+        return components?.string ?? url.absoluteString
+    }
+    public func cachedEbook(textID: String) async -> LocalEbook? {
+        guard let descriptor = await localStore?.value(EbookDescriptor.self, for: "ebook/\(textID)"),
+              let data = await localStore?.data(for: "book/\(textID)"),
+              await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) else { return nil }
+        return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
+    }
+    public func downloadEbook(textID: String) async throws -> LocalEbook {
+        let descriptor = try await ebook(textID: textID)
+        if let data = await localStore?.data(for: "book/\(textID)"),
+           await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) {
+            return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
+        }
+        let data = try await LocalAssetDownloads.shared.load(descriptor.url, limit: 80 * 1024 * 1024)
+        try Task.checkCancellation()
+        try await localStore?.saveData(data, for: "book/\(textID)")
+        await localStore?.save(Self.bookSource(descriptor.url), for: "book-source/\(textID)")
+        return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
+    }
+}
+
+public struct LocalEbook: Sendable {
+    public let descriptor: EbookDescriptor
+    public let data: Data
+    public let location: String?
+}
+
+public actor LocalAssetDownloads {
+    public static let shared = LocalAssetDownloads()
+    private var requests: [URL: Task<Data, Error>] = [:]
+    public func load(_ url: URL, limit: Int) async throws -> Data {
+        guard url.scheme == "https" || url.scheme == "http" && url.host == "localhost" else { throw URLError(.unsupportedURL) }
+        if let task = requests[url] {
+            let data = try await task.value
+            guard data.count <= limit else { throw URLError(.dataLengthExceedsMaximum) }
+            return data
+        }
+        let task = Task {
+            var request = URLRequest(url: url); request.timeoutInterval = 30
+            let (file, response) = try await URLSession.shared.download(for: request)
+            defer { try? FileManager.default.removeItem(at: file) }
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  (try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? .max) <= limit else { throw URLError(.badServerResponse) }
+            return try Data(contentsOf: file)
+        }
+        requests[url] = task
+        defer { requests[url] = nil }
+        return try await task.value
     }
 
 }

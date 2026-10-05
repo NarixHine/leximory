@@ -1,5 +1,7 @@
 # Leximory on Apple platforms
 
+Japanese EPUBs follow the web's vertical-rl/ltr pagination with bundled Japanese serif and ruby. Reading direction controls gestures and keyboard paging. Local snapshots appear before network refresh, with quiet offline availability labels and a read-only footer that reserves space below prose. The account screen owns manual sync, storage size, and last-complete-sync status. See `../../docs/native-ios/offline-sync.md` for the native storage lifecycle.
+
 The web app is canonical for copy, content, color roles, and typography. Native iOS navigation, selection menus, sheets, and popovers supply platform behavior. Read this before changing any screen. Do not add copy, decorative symbols, metrics, or destinations without a corresponding product function.
 
 App-authored Chinese text uses Chinese punctuation, including `，、。！？：；（）` and the full ellipsis `……`. Never use three ASCII periods in Chinese loading messages. Preserve punctuation in imported reading content and system-owned controls.

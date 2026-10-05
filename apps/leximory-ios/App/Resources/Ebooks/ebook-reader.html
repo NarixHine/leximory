@@ -22,15 +22,16 @@ function sanitizeDocument(source, svg = false) {
   return new XMLSerializer().serializeToString(document);
 }
 function proseCSS(theme) {
-  return `html,body{background:${theme.paper}!important;color:${theme.ink}!important}
+  const vertical = theme.writing === 'vertical-rl';
+  return `html,body{background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
   body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
   p,li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
-  p{margin:0 0 0.95em!important;text-indent:0!important;text-align:start!important}
+  p{margin:0!important;margin-block-end:0.95em!important;text-indent:0!important;text-align:start!important}
   p span,li span,blockquote span{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;letter-spacing:inherit!important}
-  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:1.3em 0 0.7em!important}
+  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:0!important;margin-block:1.3em 0.7em!important}
   h1{font-size:1.65em!important}h2{font-size:1.35em!important}h3{font-size:1.15em!important}
   img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:${theme.paper.toLowerCase() === "#100f0f" ? "#a1a1aa" : "#5a715a"}}
-  blockquote{margin:1em 0!important;padding-left:1em!important;border-left:2px solid ${theme.paper.toLowerCase() === "#100f0f" ? "#3f3f46" : "#9caea1"}}
+  blockquote{margin:1em 0!important;padding-inline-start:1em!important;border-inline-start:2px solid ${theme.paper.toLowerCase() === "#100f0f" ? "#3f3f46" : "#9caea1"}}
   table{max-width:100%}sup,sub{font-size:0.75em!important}rt{font-size:0.55em!important}
   pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}`;
 }
@@ -39,6 +40,16 @@ function styleContents(contents) {
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
   style.textContent=proseCSS(currentTheme);
 }
+function pageKey(event) {
+  if (!ready || pageTurn || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  const selection = event.target.ownerDocument?.getSelection();
+  if (selection && !selection.isCollapsed) return;
+  event.preventDefault();
+  const next = currentTheme.writing === 'vertical-rl' ? event.key === 'ArrowLeft' : event.key === 'ArrowRight';
+  window.readerCommand(next ? 'next' : 'previous');
+}
+document.addEventListener('keydown', pageKey);
 window.readerTheme = async theme => {
   currentTheme=theme; document.body.style.background=theme.paper;
   if (!rendition) return;
@@ -73,6 +84,15 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const sanitized = await archive.generateAsync({type:'uint8array',compression:'STORE'});
     book = ePub(sanitized.buffer, {replacements:'blobUrl'});
     await book.ready;
+    // Match the web reader: set writing mode before epub.js selects its pagination axis.
+    if (theme.writing === 'vertical-rl') book.spine.hooks.content.register(document => {
+      for (const element of [document.documentElement, document.body]) {
+        if (!element) continue;
+        element.style.setProperty('writing-mode', 'vertical-rl', 'important');
+        element.style.setProperty('-webkit-writing-mode', 'vertical-rl', 'important');
+        element.style.setProperty('direction', 'ltr', 'important');
+      }
+    });
     rendition = book.renderTo('book', {width:'100%',height:'100%',spread:'none',flow:'paginated',gap:0,allowScriptedContent:true});
     rendition.themes.default({'@font-face':[
       {'font-family':'LeximoryProse','font-weight':'100 900','src':`url('${fonts.regular}')`},
@@ -85,6 +105,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     rendition.hooks.content.register(async contents => {
       contents.document.querySelectorAll('script,object,embed,form').forEach(el => el.remove());
       styleContents(contents);
+      contents.document.addEventListener('keydown', pageKey);
       await contents.document.fonts.load(`${currentTheme.size}px LeximoryProse`);
       contents.document.addEventListener('selectionchange', () => {
         try {
@@ -158,5 +179,16 @@ window.readerCommand = (command,value) => {
   if (command==='previous') rendition.prev();
   if (command==='display') rendition.display(value);
 };
-window.addEventListener('resize', () => { if(rendition) rendition.resize(); });
+let resizeFrame;
+const resizeBook = () => {
+  cancelAnimationFrame(resizeFrame);
+  resizeFrame = requestAnimationFrame(async () => {
+    if (!rendition || !ready || pageTurn) return;
+    const location = rendition.currentLocation()?.start?.cfi;
+    rendition.resize();
+    if (location) await rendition.display(location);
+  });
+};
+new ResizeObserver(resizeBook).observe(document.getElementById('book'));
+window.addEventListener('resize', resizeBook);
 </script></body></html>

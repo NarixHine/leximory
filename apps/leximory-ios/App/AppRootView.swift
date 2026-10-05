@@ -76,6 +76,7 @@ private struct AccountRoot: View {
     let session: AccountSession
     let playback: PlaybackController
     @State private var pendingText: TextID?
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasOpenedLeximory") private var hasOpened = false
     var body: some View {
         ZStack {
@@ -93,7 +94,12 @@ private struct AccountRoot: View {
             }
         }
         .background(LeximoryPalette.paper)
+        .environment(\.nativeSync, session.sync)
         .task { await session.restore() }
+        .task(id: "\(session.state.accountID ?? "")/\(scenePhase == .active)") {
+            guard session.state.isSignedIn, scenePhase == .active else { session.sync?.pause(); return }
+            await session.sync?.run()
+        }
         .onChange(of: session.state.isSignedIn) { _, signedIn in if signedIn { hasOpened = true } }
         .onChange(of: session.generation) { _, _ in playback.stop(); pendingText = nil }
         .onOpenURL { url in pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }

@@ -52,6 +52,16 @@ enum EbookAppearance: String, CaseIterable {
 
 final class LearningWebView: WKWebView {
     var reader: EbookReaderState?
+    override var keyCommands: [UIKeyCommand]? {
+        let paging = [
+            UIKeyCommand(input: UIKeyCommand.inputLeftArrow, modifierFlags: [], action: #selector(previousKey)),
+            UIKeyCommand(input: UIKeyCommand.inputRightArrow, modifierFlags: [], action: #selector(nextKey))
+        ]
+        paging.forEach { $0.wantsPriorityOverSystemBehavior = true }
+        return (super.keyCommands ?? []) + paging
+    }
+    @objc private func previousKey() { reader?.navigate(reader?.rightToLeft == true ? "next" : "previous") }
+    @objc private func nextKey() { reader?.navigate(reader?.rightToLeft == true ? "previous" : "next") }
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         if let reader { EbookLearningMenu.insert(into: builder, reader: reader) }
@@ -151,6 +161,7 @@ enum IncomingPageCurl {
     private var releaseVelocity: CGFloat = 0
     private var castShadow: CAGradientLayer?
     private var forward = true
+    private var advancing = true
     private var previewReady = false
     private var requestedCommit: Bool?
     private var resolvingTurn = false
@@ -187,7 +198,8 @@ enum IncomingPageCurl {
         guard let web, reader.ready, reader.selection == nil, settlementDriver == nil, paper == nil else { return false }
         let velocity = pan.velocity(in: web)
         guard abs(velocity.x) > abs(velocity.y) * 1.5 else { return false }
-        return velocity.x < 0 ? !reader.atEnd : !reader.atStart
+        let advances = reader.rightToLeft ? velocity.x > 0 : velocity.x < 0
+        return advances ? !reader.atEnd : !reader.atStart
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { other is UIPanGestureRecognizer }
     @objc private func dragged() {
@@ -195,6 +207,7 @@ enum IncomingPageCurl {
         switch pan.state {
         case .began:
             forward = pan.velocity(in: web).x < 0
+            advancing = reader.rightToLeft ? !forward : forward
             let translation = pan.translation(in: web)
             let point = pan.location(in: web)
             touchOrigin = CGPoint(x: min(1, max(0, (point.x - translation.x) / web.bounds.width)),
@@ -215,7 +228,7 @@ enum IncomingPageCurl {
             let projected = progress + velocity / web.bounds.width * 0.16
             let commit = velocity >= -180 && (projected > 0.22 || (progress > 0.04 && velocity > 450))
             if paper == nil {
-                if commit { reader.navigate(forward ? "next" : "previous") }
+                if commit { reader.navigate(advancing ? "next" : "previous") }
                 progress = 0
             } else { requestedCommit = commit; resolveTurn() }
         case .cancelled, .failed:
@@ -229,7 +242,7 @@ enum IncomingPageCurl {
             guard let self, let web else { return }
             do {
                 _ = try await web.callAsyncJavaScript("return await window.readerTurn(action)",
-                    arguments: ["action": forward ? "next" : "previous"], in: nil, contentWorld: .page)
+                    arguments: ["action": advancing ? "next" : "previous"], in: nil, contentWorld: .page)
                 if !forward {
                     let configuration = WKSnapshotConfiguration()
                     configuration.afterScreenUpdates = true

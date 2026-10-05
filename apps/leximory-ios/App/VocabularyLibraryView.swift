@@ -4,6 +4,7 @@ import LeximoryCore
 struct VocabularyLibraryView: View {
     let library: FixtureLibrary
     let client: MobileClient
+    @Environment(\.nativeSync) private var sync
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var words: [SavedWord] = []
     @State private var cursor: String?
@@ -64,24 +65,30 @@ struct VocabularyLibraryView: View {
     }
     private func load(reset: Bool) async {
         guard !loading else { return }
-        loading = true; error = nil
+        if let cached = await client.localStore?.value([SavedWord].self, for: "words/\(library.id.rawValue)") { words = cached }
+        guard sync?.online != false else { return }
+        loading = words.isEmpty; error = nil
         defer { loading = false }
-        do {
-            let page = try await client.vocabulary(libraryID: library.id.rawValue, cursor: reset ? nil : cursor)
-            var seen = Set<String>()
-            words = (reset ? page.items : words + page.items).filter { seen.insert($0.id).inserted }
-            cursor = page.nextCursor
-        } catch { if !Task.isCancelled { self.error = "请检查网络后重试。" } }
+        do { words = try await client.allVocabulary(libraryID: library.id.rawValue); cursor = nil }
+        catch {
+            if MobileClient.isAccessFailure(error) { words = []; self.error = "暂时无法访问这个语料本。" }
+            else if !Task.isCancelled, words.isEmpty { self.error = "请联网后同步语料本。" }
+        }
     }
 }
 
 private struct CorpusWordTray: View {
-    @State var word: SavedWord
+    @Environment(\.nativeSync) private var sync
+    @State private var word: SavedWord
     let library: FixtureLibrary
     let client: MobileClient
     let isPopover: Bool
     let updated: (SavedWord) -> Void
     @State private var editing = false
+    init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, updated: @escaping (SavedWord) -> Void) {
+        _word = State(initialValue: word)
+        self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated
+    }
     @State private var height: CGFloat = 320
     @State private var bottomInset: CGFloat = 0
     var body: some View {
@@ -96,7 +103,7 @@ private struct CorpusWordTray: View {
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
                         HStack(spacing: 16) {
-                            if library.owned && word.protected != true {
+                            if library.owned && word.protected != true && sync?.online != false {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
                                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.sage, in: Circle())

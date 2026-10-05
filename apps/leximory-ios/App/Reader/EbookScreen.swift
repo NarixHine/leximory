@@ -26,6 +26,7 @@ struct EbookChapter: Identifiable {
     var canBookmark = false
     var savingBookmark = false
     var readOnly = false
+    var rightToLeft = false
     var command: (id: UUID, action: String, value: String?)?
     var error: String?
     var loadFailure: String?
@@ -60,6 +61,7 @@ struct EbookScreen: View {
     @State private var scrubPosition: Double?
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
+    @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -68,7 +70,7 @@ struct EbookScreen: View {
         ZStack {
             if let data {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: .automatic) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: fontSize + (sizeClass == .regular ? 2 : 0), lineHeight: lineHeight, appearance: .automatic) }
             }
             if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
@@ -104,9 +106,10 @@ struct EbookScreen: View {
         } message: { Text(reader.error ?? "") }
         .accessibilityAction(named: reader.chromeVisible ? "隐藏阅读工具" : "显示阅读工具") { reader.chromeVisible.toggle() }
         .accessibilityScrollAction { edge in
-            if edge == .trailing { reader.navigate("next") }
-            if edge == .leading { reader.navigate("previous") }
+            if edge == .trailing { reader.navigate(reader.rightToLeft ? "previous" : "next") }
+            if edge == .leading { reader.navigate(reader.rightToLeft ? "next" : "previous") }
         }
+        .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
         .onChange(of: reader.backRequest) { _, _ in dismiss() }
         .onDisappear { positionTask?.cancel() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
@@ -119,7 +122,7 @@ struct EbookScreen: View {
         .onChange(of: reader.loadFailure) { _, failure in if let failure { loading = false; loadError = failure } }
         .onChange(of: reader.ready) { _, ready in if ready { loading = false } }
         .onChange(of: reader.location) { previous, location in
-            guard !ProcessInfo.processInfo.arguments.contains("--ebook-read-only"), reader.ready, previous != location, let location, let client else { return }
+            guard !reader.readOnly, reader.ready, previous != location, let location, let client else { return }
             positionTask?.cancel()
             positionTask = Task {
                 do {
@@ -247,17 +250,20 @@ struct EbookScreen: View {
     }
     private func load() async {
         reader.canBookmark = client != nil
-        reader.readOnly = ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
+        reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
+        reader.rightToLeft = language == "Japanese"
         loading = true; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
         do {
             if let client {
-                let descriptor = try await client.ebook(textID: article.id.rawValue)
-                reader.location = descriptor.location; reader.bookmarks = descriptor.bookmarks; format = descriptor.format
-                let (file, response) = try await URLSession.shared.download(from: descriptor.url)
-                defer { try? FileManager.default.removeItem(at: file) }
-                guard (response as? HTTPURLResponse)?.statusCode == 200,
-                      (try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? .max) <= 80 * 1024 * 1024 else { throw URLError(.badServerResponse) }
-                data = try Data(contentsOf: file)
+                let book: LocalEbook
+                if let cached = await client.cachedEbook(textID: article.id.rawValue) { book = cached }
+                else {
+                    guard sync?.online != false else { throw URLError(.notConnectedToInternet) }
+                    book = try await client.downloadEbook(textID: article.id.rawValue)
+                }
+                try Task.checkCancellation()
+                reader.location = book.location; reader.bookmarks = book.descriptor.bookmarks
+                format = book.descriptor.format; data = book.data
             } else {
                 format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
                 guard let url = Bundle.main.url(forResource: article.resource, withExtension: nil) else { throw CocoaError(.fileNoSuchFile) }
@@ -265,12 +271,12 @@ struct EbookScreen: View {
             }
         } catch {
             if !Task.isCancelled {
-                loading = false; loadError = "请检查网络后重试。"
+                loading = false; loadError = sync?.online == false ? "这本电子书尚未下载，请联网后打开。" : "请检查网络后重试。"
             }
         }
     }
     private func saveBookmark(_ selection: EbookSelection) async {
-        guard !ProcessInfo.processInfo.arguments.contains("--ebook-read-only"), let client, !reader.savingBookmark else { return }
+        guard !reader.readOnly, let client, !reader.savingBookmark else { return }
         reader.savingBookmark = true
         defer { reader.savingBookmark = false }
         do {
@@ -284,6 +290,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
     let data: Data
     let language: String
     let reader: EbookReaderState
+    let command: (id: UUID, action: String, value: String?)?
     let fontSize: Double
     let lineHeight: Double
     let appearance: EbookAppearance
@@ -317,7 +324,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             context.coordinator.appliedTheme = theme
             Task { _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page) }
         }
-        if let command = reader.command, command.id != context.coordinator.commandID {
+        if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
             Task { _ = try? await web.callAsyncJavaScript("window.readerCommand(action, value)", arguments: ["action": command.action, "value": command.value ?? ""], in: nil, contentWorld: .page) }
         }
@@ -342,7 +349,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
                                               blue: CGFloat(rgb & 255) / 255, alpha: 1)
             }
             let size = UIFontMetrics(forTextStyle: .body).scaledValue(for: parent.fontSize, compatibleWith: web.traitCollection)
-            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400"]
+            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb"]
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
             let cjk = parent.language == "Chinese" || parent.language == "Japanese"
@@ -375,7 +382,10 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 #if DEBUG
                 NSLog("EPUB bridge: %@", body["message"] as? String ?? "")
                 #endif
-            case "ready": parent.reader.ready = true; pageTurn?.prepare()
+            case "ready":
+                parent.reader.ready = true
+                web?.becomeFirstResponder()
+                pageTurn?.prepare()
             case "failed": parent.reader.loadFailure = "电子书未能加载，请重试。"
             case "contents":
                 parent.reader.chapters = (body["items"] as? [[String: Any]] ?? []).compactMap { item in

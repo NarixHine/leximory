@@ -43,7 +43,7 @@ public struct Definition: Codable, Hashable, Sendable {
     }
 }
 
-public struct RenderSpan: Decodable, Hashable, Sendable {
+public struct RenderSpan: Codable, Hashable, Sendable {
     public enum Style: Hashable, Sendable {
         case strong, emphasis, code, smallcaps
         case link(URL), image(URL, alt: String), ruby(String), definition(Definition)
@@ -71,10 +71,33 @@ public struct RenderSpan: Decodable, Hashable, Sendable {
         default: throw DecodingError.dataCorruptedError(forKey: .kind, in: container, debugDescription: "Unsupported render span")
         }
     }
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(range, forKey: .range)
+        let kind: String
+        switch style {
+        case .strong: kind = "strong"
+        case .emphasis: kind = "emphasis"
+        case .code: kind = "code"
+        case .smallcaps: kind = "smallcaps"
+        case .link(let url): kind = "link"; try container.encode(url, forKey: .url)
+        case .image(let url, let alt):
+            kind = "image"; try container.encode(url, forKey: .url); try container.encode(alt, forKey: .alt)
+        case .ruby(let pronunciation): kind = "ruby"; try container.encode(pronunciation, forKey: .pronunciation)
+        case .definition(let definition):
+            kind = "definition"
+            try container.encode(definition.lemma, forKey: .lemma)
+            try container.encode(definition.definition, forKey: .definition)
+            try container.encodeIfPresent(definition.etymology, forKey: .etymology)
+            try container.encodeIfPresent(definition.cognates, forKey: .cognates)
+        }
+        try container.encode(kind, forKey: .kind)
+    }
+
 }
 
-public struct RenderBlock: Decodable, Hashable, Identifiable, Sendable {
-    public enum Kind: String, Decodable, Sendable {
+public struct RenderBlock: Codable, Hashable, Identifiable, Sendable {
+    public enum Kind: String, Codable, Sendable {
         case paragraph, heading1, heading2, heading3, heading4, heading5, heading6
         case quote, listItem, code, fallback, divider
     }
@@ -88,7 +111,7 @@ public struct RenderBlock: Decodable, Hashable, Identifiable, Sendable {
 }
 
 /// Feasibility contract. The HTTP DTOs will be generator-owned at gate 2.
-public struct ReadingDocument: Decodable, Hashable, Sendable {
+public struct ReadingDocument: Codable, Hashable, Sendable {
     public let version: Int
     public let revision: String
     public let source: String

@@ -57,6 +57,7 @@ actor AccountTokens {
         _ = try await task.value
         guard generation == currentGeneration else { throw CancellationError() }
     }
+    func cachedUserID() -> String? { auth.currentSession?.user.id.uuidString.lowercased() }
     func matches(_ rejected: String) -> Bool { auth.currentSession?.accessToken == rejected }
     func signOut() async {
         generation += 1
@@ -80,7 +81,12 @@ actor AccountTokens {
     private(set) var generation = 0
     let tokens: AccountTokens
     private let configuration: AppConfiguration
-    @ObservationIgnored lazy var client = MobileClient(baseURL: configuration.apiURL, token: { [tokens, weak self] rejected in
+    private(set) var sync: NativeSync?
+    @ObservationIgnored private var scopedClient: MobileClient?
+    var client: MobileClient { scopedClient ?? onlineClient }
+    @ObservationIgnored private lazy var onlineClient = makeClient()
+    private func makeClient(store: LocalReadingStore? = nil) -> MobileClient {
+        MobileClient(baseURL: configuration.apiURL, token: { [tokens, weak self] rejected in
         let current = await self?.generation
         do { return try await tokens.token(rejected: rejected) }
         catch {
@@ -89,7 +95,8 @@ actor AccountTokens {
         }
     }, unauthorized: { [weak self] rejected in
         await self?.expire(rejected: rejected)
-    })
+    }, localStore: store)
+    }
     init(configuration: AppConfiguration) {
         let tokens = AccountTokens(configuration: configuration)
         self.tokens = tokens
@@ -98,22 +105,31 @@ actor AccountTokens {
     func restore() async {
         let current = generation
         do {
+            if scopedClient == nil, let id = await tokens.cachedUserID() { try await openStore(accountID: id) }
+            if let cached = await client.localStore?.value(Account.self, for: "account"),
+               generation == current, !Task.isCancelled {
+                state = .signedIn(cached)
+            }
             let account = try await client.account()
             guard generation == current, !Task.isCancelled else { return }
+            if scopedClient == nil { try await openStore(accountID: account.userId) }
+            await client.localStore?.save(account, for: "account")
             state = .signedIn(account)
         } catch {
             guard generation == current, !Task.isCancelled else { return }
             let cause = MobileClient.cause(of: error)
-            if Self.requiresSignIn(cause) { state = .signedOut }
-            else if let failure = cause as? MobileFailure, failure.error.code == "unauthenticated" { state = .signedOut }
-            else { state = .unavailable("暂时无法连接文库，请稍后重试。") }
+            if Self.requiresSignIn(cause) || (cause as? MobileFailure)?.error.code == "unauthenticated" {
+                await clearStore(); state = .signedOut
+            } else if !state.isSignedIn { state = .unavailable("暂时无法连接文库，请稍后重试。") }
         }
     }
     func signIn(email: String, password: String) async throws {
         let current = generation
         try await tokens.signIn(email: email, password: password)
-        let account = try await client.account()
+        let account = try await onlineClient.account()
         guard generation == current, !Task.isCancelled else { throw CancellationError() }
+        try await openStore(accountID: account.userId)
+        await client.localStore?.save(account, for: "account")
         state = .signedIn(account)
     }
     func refreshAccount() async {
@@ -125,15 +141,29 @@ actor AccountTokens {
             state = .signedIn(account)
         } catch { }
     }
+    private func openStore(accountID: String) async throws {
+        await clearStore()
+        let store = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID.lowercased())
+        let scoped = makeClient(store: store)
+        scopedClient = scoped
+        sync = NativeSync(store: store, client: scoped)
+    }
+    private func clearStore() async {
+        let previous = sync
+        sync = nil; scopedClient = nil
+        await previous?.stop()
+    }
     nonisolated static func requiresSignIn(_ error: any Error) -> Bool {
         guard let authError = error as? AuthError else { return false }
         return [ErrorCode.sessionNotFound, .sessionExpired, .refreshTokenNotFound, .refreshTokenAlreadyUsed, .badJWT, .invalidJWT, .userBanned].contains(authError.errorCode)
     }
     private func expire(generation current: Int) async {
         guard generation == current, state.isSignedIn else { return }
+        if let id = state.accountID { UserDefaults.standard.removeObject(forKey: "recent-access.\(id)") }
         generation += 1
         let expiredGeneration = generation
         state = .restoring
+        await clearStore()
         await tokens.signOut()
         guard generation == expiredGeneration else { return }
         state = .expired
@@ -144,8 +174,10 @@ actor AccountTokens {
         await expire(generation: current)
     }
     func signOut() async {
+        if let id = state.accountID { UserDefaults.standard.removeObject(forKey: "recent-access.\(id)") }
         generation += 1
         state = .restoring
+        await clearStore()
         await tokens.signOut()
         state = .signedOut
     }

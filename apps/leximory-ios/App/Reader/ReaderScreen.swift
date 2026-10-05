@@ -20,6 +20,7 @@ struct ReaderScreen: View {
     var language = "English"
     var client: MobileClient? = nil
     var loadDocument: (@Sendable (TextID) async throws -> ReadingDocument)? = nil
+    @Environment(\.nativeSync) private var sync
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var state: DocumentState = .loading
@@ -45,7 +46,7 @@ struct ReaderScreen: View {
                 LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
-                    bottomObstruction: playback.textID == article.id ? playbackHeight + 24 : 0,
+                    bottomObstruction: playback.textID == article.id ? playbackHeight + 24 : 0, localStore: client?.localStore, readOnly: sync?.online == false,
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, rect in
                         anchor = rect
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
@@ -103,7 +104,7 @@ struct ReaderScreen: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if case .loaded(let document) = state {
                     let audioIDs = Array(Set(document.blocks.compactMap(\.audioId))).sorted()
-                    if !audioIDs.isEmpty {
+                    if !audioIDs.isEmpty && sync?.online != false {
                         Menu("录音", systemImage: "headphones") {
                             ForEach(audioIDs, id: \.self) { audioID in
                                 Button(client != nil ? "播放录音" : audioID == "fixture_recording" ? "播放测试音频" : "录音暂不可用") {
@@ -126,9 +127,19 @@ struct ReaderScreen: View {
             }
         }
         .task(id: article.id) { definition = nil; await load() }
+        .onChange(of: sync?.revision) { _, _ in Task { await load() } }
     }
     private func load() async {
-        state = .loading
+        if let cached = await client?.cachedDocument(textID: article.id.rawValue), let document = cached.document {
+            if case .loaded(let previous) = state, previous.revision == document.revision { }
+            else { state = .loaded(document) }
+            refreshedArticle = cached.text.preview
+        }
+        if sync?.online == false {
+            if case .loaded = state { return }
+            state = .failed("这篇文章尚未下载，请联网后打开。")
+            return
+        }
         do {
             if let client {
                 for _ in 0..<90 {
@@ -149,6 +160,11 @@ struct ReaderScreen: View {
         }
         catch {
             if !Task.isCancelled {
+                if let failure = MobileClient.cause(of: error) as? MobileFailure,
+                   ["inaccessible", "unauthenticated"].contains(failure.error.code) {
+                    state = .failed("暂时无法访问这篇文章。")
+                    return
+                }
                 if case .loaded = state { return }
                 state = .failed("无法打开文章，请检查网络后重试。")
             }
@@ -171,6 +187,7 @@ struct DefinitionView: View {
     @State private var lookupAttempt = 0
     @State private var editing = false
     @State private var model: DefinitionModel
+    @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
     @ScaledMetric(relativeTo: .body) private var compactBodySize = 17.0
@@ -224,10 +241,10 @@ struct DefinitionView: View {
                                                 else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
                                             }.frame(width: 48, height: 48)
                                                 .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                                        }.buttonStyle(.plain).disabled(!canSave)
+                                        }.buttonStyle(.plain).disabled(!canSave || sync?.online == false)
                                             .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
                                     }
-                                    if model.savedWord != nil {
+                                    if model.savedWord != nil && sync?.online != false {
                                         Button("编辑", systemImage: "pencil") { editing = true }
                                             .labelStyle(.iconOnly).frame(width: 44, height: 44)
                                             .foregroundStyle(LeximoryPalette.sage).accessibilityLabel("编辑词汇")
@@ -281,7 +298,8 @@ struct DefinitionView: View {
         .background(LeximoryPalette.annotationSurface).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
         .task(id: "\(item.id):\(lookupAttempt)") {
-            if let client { await model.generate(client: client, source: item.source) }
+            if sync?.online == false, item.definition == nil { model.offline() }
+            else if let client { await model.generate(client: client, source: item.source) }
         }
         .onDisappear { model.cancel() }
     }

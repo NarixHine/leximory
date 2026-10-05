@@ -41,6 +41,7 @@ enum DefinitionSource {
     init(embedded: Definition?) {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
     }
+    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。") }
     func generate(client: MobileClient, source: DefinitionSource) async {
         if case .ready = state { return }
         state = .generating("")

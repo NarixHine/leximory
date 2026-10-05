@@ -1,6 +1,66 @@
 import XCTest
 
 final class ReaderUITests: XCTestCase {
+    @MainActor func testJapaneseVerticalReaderTurnsRightAndKeepsContents() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        let library = app.buttons["library-fixture-japanese-ebooks"]
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        let book = app.buttons["text-fixture-japanese-epub"]
+        XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+        let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "epub已打开"), object: reader)], timeout: 30) == .completed)
+        capture(app, name: "Japanese vertical ruby reading")
+        let position = app.staticTexts["ebook-page-position"]
+        let initial = position.value as? String
+        app.webViews.firstMatch.swipeRight()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", initial ?? ""), object: position)], timeout: 10) == .completed)
+        capture(app, name: "Japanese RTL next page")
+        revealEbookControls(app)
+        app.buttons["ebook-contents"].tap()
+        app.buttons["第二章　朝の光"].tap()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "第二章"), object: reader)], timeout: 10) == .completed)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(reader.exists)
+        capture(app, name: "Japanese vertical landscape")
+    }
+
+    @MainActor func testCachedLiveAccountArticleAndEbookReopenWithoutNetwork() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let email = environment["LEXIMORY_TEST_EMAIL"] ?? environment["TEST_RUNNER_LEXIMORY_TEST_EMAIL"],
+              let password = environment["LEXIMORY_TEST_PASSWORD"] ?? environment["TEST_RUNNER_LEXIMORY_TEST_PASSWORD"] else { throw XCTSkip("Explicit live credentials required") }
+        let app = XCUIApplication(); app.launchArguments = ["--ebook-read-only"]; app.launch()
+        let library = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'library-' AND label CONTAINS %@", "AI,")).firstMatch
+        if !library.waitForExistence(timeout: 5) {
+            let start = app.buttons["onboarding-start"]; if start.waitForExistence(timeout: 5) { start.tap() }
+            let field = app.textFields["sign-in-email"]; XCTAssertTrue(field.waitForExistence(timeout: 15))
+            field.tap(); field.typeText(email)
+            app.secureTextFields["sign-in-password"].tap(); app.secureTextFields["sign-in-password"].typeText(password)
+            app.buttons["登录"].tap()
+        }
+        XCTAssertTrue(library.waitForExistence(timeout: 60)); library.tap()
+        let article = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'text-'")).firstMatch
+        XCTAssertTrue(article.waitForExistence(timeout: 30))
+        let textID = String(article.identifier.dropFirst(5)); article.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 30))
+        app.open(URL(string: "leximory://read/jJoWFnBnjIQE")!)
+        let ebook = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "epub已打开"), object: ebook)], timeout: 60) == .completed)
+        app.terminate(); app.launchArguments = ["--offline", "--ebook-read-only"]; app.launch()
+        XCTAssertTrue(library.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "offline-reading-notice").firstMatch.exists)
+        capture(app, name: "Offline restored account libraries")
+        app.open(URL(string: "leximory://read/\(textID)")!)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: "Offline article with cached annotations")
+        app.open(URL(string: "leximory://read/jJoWFnBnjIQE")!)
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "epub已打开"), object: ebook)], timeout: 15) == .completed)
+        revealEbookControls(app); app.buttons["ebook-contents"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "BOOK I -")).firstMatch.waitForExistence(timeout: 5))
+        capture(app, name: "Offline EPUB contents")
+    }
+
     override func setUp() async throws {
         try await super.setUp()
         await MainActor.run {

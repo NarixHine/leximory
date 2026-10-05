@@ -126,5 +126,7 @@ extension FixtureLibrary {
     static let ebookSamples = [FixtureLibrary(id: LibraryID(rawValue: "fixture-ebooks"), name: "Ebooks", language: "English", articles: [
         FixtureArticle(id: TextID(rawValue: "fixture-epub"), title: "Reading fixture", subtitle: "", resource: "reader-fixture.epub", topics: [], coverEmoji: "📖", format: "ebook"),
         FixtureArticle(id: TextID(rawValue: "fixture-pdf"), title: "PDF fixture", subtitle: "", resource: "reader-fixture.pdf", topics: [], coverEmoji: "📖", format: "ebook"),
+    ]), FixtureLibrary(id: LibraryID(rawValue: "fixture-japanese-ebooks"), name: "雨の庭", language: "Japanese", articles: [
+        FixtureArticle(id: TextID(rawValue: "fixture-japanese-epub"), title: "雨の庭", subtitle: "", resource: "japanese-fixture.epub", topics: [], coverEmoji: "📖", format: "ebook")
     ])]
 }

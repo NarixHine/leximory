@@ -35,6 +35,8 @@ struct ReadingTextView: UIViewRepresentable {
     let textID: TextID
     let jumpToEnd: Bool
     var bottomObstruction: CGFloat = 0
+    var localStore: LocalReadingStore? = nil
+    var readOnly = false
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
 
@@ -125,7 +127,7 @@ struct ReadingTextView: UIViewRepresentable {
                     guard case .image(let url, _) = span.style,
                           let attachment = view.textStorage.attribute(.attachment, at: entry.documentRange.location + span.range.location, effectiveRange: nil) as? NSTextAttachment else { continue }
                     imageTasks.append(Task { [weak self, weak view] in
-                        guard let image = try? await ReaderImage.load(url), !Task.isCancelled,
+                        guard let image = try? await ReaderImage.load(url, store: self?.parent.localStore), !Task.isCancelled,
                               let self, let view, self.parent.document.revision == revision else { return }
                         attachment.image = image
                         if self.parent.jumpToEnd { view.pendingFinalScroll = true }
@@ -148,7 +150,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
-            let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self, weak textView] _ in
+            let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: parent.readOnly ? .disabled : []) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }

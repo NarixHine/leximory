@@ -10,6 +10,7 @@ struct LiveLibraryView: View {
     let session: AccountSession
     let playback: PlaybackController
     @Binding var pendingText: TextID?
+    @Environment(\.nativeSync) private var sync
     @State private var openDocument: RemoteDocument?
     @State private var linkError: String?
     @State private var libraries: [CatalogLibrary] = []
@@ -24,13 +25,21 @@ struct LiveLibraryView: View {
         }
         .onChange(of: selectedTab) { _, tab in if tab != 0 { playback.stop() } }
         .task { await load() }
+        .onChange(of: sync?.revision) { _, _ in Task { await hydrate() } }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if sync?.online == false {
+                OfflineReadingNotice().padding(.vertical, 6).frame(maxWidth: .infinity).background(LeximoryPalette.paper)
+            }
+        }
         .task(id: ReadingLinkRequest(textID: pendingText, catalogReady: !loading && error == nil)) {
             guard !loading, error == nil, let id = pendingText else { return }
             let generation = session.generation
             selectedTab = 0
             openDocument = nil
             do {
-                let document = try await session.client.documentDetails(textID: id.rawValue)
+                let document: RemoteDocument
+                if let cached = await session.client.cachedDocument(textID: id.rawValue) { document = cached }
+                else { document = try await session.client.documentDetails(textID: id.rawValue) }
                 guard !Task.isCancelled, session.generation == generation else { return }
                 openDocument = document
                 pendingText = nil
@@ -44,40 +53,44 @@ struct LiveLibraryView: View {
             Button("完成", role: .cancel) { linkError = nil }
         } message: { Text(linkError ?? "") }
     }
+    private var archiveAction: ((FixtureLibrary, Bool) async throws -> Void)? {
+        if sync?.online == false { return nil }
+        return { library, archived in try await archive(library, archived) }
+    }
     private var libraryBrowser: some View {
         FixtureLibraryView(playback: playback, libraries: libraries.map(\.preview), client: session.client,
-            openDocument: openDocument, refresh: load, archive: archive,
+            openDocument: openDocument, refresh: load, archive: archiveAction,
             recentNamespace: session.state.accountID ?? "signed-out", loadingLibraries: loading, libraryError: error)
     }
     private func archive(_ library: FixtureLibrary, _ archived: Bool) async throws {
         try await session.client.setLibraryArchived(libraryID: library.id.rawValue, archived: archived)
         if let index = libraries.firstIndex(where: { $0.id == library.id.rawValue }) { libraries[index].archived = archived }
     }
+    private func hydrate() async {
+        if let cached = await session.client.localStore?.value([CatalogLibrary].self, for: "libraries") {
+            libraries = cached; loading = false
+        }
+    }
     private func load() async {
-        guard !loading || libraries.isEmpty else { return }
-        loading = true; error = nil
+        await hydrate()
+        guard sync?.online != false else { loading = false; return }
+        loading = libraries.isEmpty; error = nil
         let generation = session.generation
         defer { loading = false }
         do {
-            var all: [CatalogLibrary] = []
-            var cursor: String?
-            var seen: Set<String> = []
-            repeat {
-                let page = try await session.client.libraries(cursor: cursor)
-                all.append(contentsOf: page.items)
-                cursor = page.nextCursor
-                if let cursor, !seen.insert(cursor).inserted { throw URLError(.badServerResponse) }
-                try Task.checkCancellation()
-            } while cursor != nil
-            guard generation == session.generation else { return }
+            let all = try await session.client.allLibraries()
+            guard generation == session.generation, !Task.isCancelled else { return }
             libraries = all
         } catch {
-            if generation == session.generation, !Task.isCancelled { self.error = "请检查网络后重试。" }
+            if generation == session.generation, !Task.isCancelled, libraries.isEmpty {
+                self.error = "请联网后同步文库，再离线阅读。"
+            }
         }
     }
 }
 
 struct RemoteTextGallery: View {
+    @Environment(\.nativeSync) private var sync
     @Environment(\.horizontalSizeClass) private var sizeClass
     let library: FixtureLibrary
     let client: MobileClient
@@ -96,10 +109,10 @@ struct RemoteTextGallery: View {
             } else if texts.isEmpty {
                 LeximoryUnavailableView("还没有文章", systemImage: "doc.text")
             } else {
-                TextGallery(library: FixtureLibrary(id: library.id, name: library.name, language: library.language,
+                TextGallery(offlineTextIDs: sync?.downloadedTextIDs, library: FixtureLibrary(id: library.id, name: library.name, language: library.language,
                     articles: texts.map(\.preview), isRemote: true), showsNavigationBar: sizeClass != .regular,
                     openVocabulary: sizeClass == .regular ? { vocabulary = true } : nil,
-                    importText: sizeClass == .regular && library.owned && !library.shadow ? { importing = true } : nil) { article in
+                    importText: sizeClass == .regular && library.owned && !library.shadow && sync?.online != false ? { importing = true } : nil) { article in
                     open(article)
                 }
             }
@@ -109,7 +122,7 @@ struct RemoteTextGallery: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
                 }
-                if library.owned && !library.shadow {
+                if library.owned && !library.shadow && sync?.online != false {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("导入", systemImage: "plus") { importing = true }.foregroundStyle(LeximoryPalette.sage)
                     }
@@ -122,7 +135,7 @@ struct RemoteTextGallery: View {
                     Spacer()
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }
                         .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-                    if library.owned && !library.shadow {
+                    if library.owned && !library.shadow && sync?.online != false {
                         Button("导入", systemImage: "plus") { importing = true }
                             .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
                     }
@@ -145,23 +158,28 @@ struct RemoteTextGallery: View {
         .navigationBarTitleDisplayMode(.inline).toolbar(sizeClass == .regular ? .hidden : .visible, for: .navigationBar)
         .background(LeximoryPalette.paper)
         .task(id: library.id) { await load() }
+        .onChange(of: sync?.revision) { _, _ in Task { await hydrate() } }
         .refreshable { await load() }
     }
+    private func hydrate() async {
+        if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id.rawValue)") {
+            texts = cached; loading = false
+        }
+    }
     private func load() async {
-        loading = true; error = nil
+        await hydrate()
+        guard sync?.online != false else {
+            loading = false
+            if texts.isEmpty { error = "这个文库尚未同步，请联网后打开。" }
+            return
+        }
+        loading = texts.isEmpty; error = nil
         defer { loading = false }
-        do {
-            var all: [CatalogText] = []
-            var cursor: String?
-            var seen: Set<String> = []
-            repeat {
-                let page = try await client.texts(libraryID: library.id.rawValue, cursor: cursor)
-                all.append(contentsOf: page.items); cursor = page.nextCursor
-                if let cursor, !seen.insert(cursor).inserted { throw URLError(.badServerResponse) }
-                try Task.checkCancellation()
-            } while cursor != nil
-            texts = all
-        } catch { if !Task.isCancelled { self.error = "请检查网络后重试。" } }
+        do { texts = try await client.allTexts(libraryID: library.id.rawValue) }
+        catch {
+            if MobileClient.isAccessFailure(error) { texts = []; self.error = "暂时无法访问这个文库。" }
+            else if !Task.isCancelled, texts.isEmpty { self.error = "请联网后同步文章，再离线阅读。" }
+        }
     }
 }
 extension CatalogLibrary {
@@ -182,6 +200,7 @@ extension CatalogText {
 }
 
 private struct AccountView: View {
+    @Environment(\.nativeSync) private var sync
     let session: AccountSession
     let playback: PlaybackController
     var body: some View {
@@ -191,6 +210,21 @@ private struct AccountView: View {
                     Text("账户").font(.custom("LXGWWenKaiScreen", size: 30, relativeTo: .largeTitle))
                     if case .signedIn(let account) = session.state {
                         LabeledContent("本期词点", value: "\(Int(account.definitions.used)) / \(Int(account.definitions.limit))")
+                    }
+                    if let sync {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("离线阅读").font(LeximoryTypography.interface(18, semibold: true))
+                            Text(sync.online ? sync.syncing ? "正在同步文库……" : sync.incomplete ? "部分内容尚未下载，可重试同步。" : "已下载的文章和电子书可离线阅读。" : "当前为离线只读模式。")
+                                .font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
+                            LabeledContent("电子书", value: "\(sync.savedBooks) 本")
+                            LabeledContent("本地空间", value: ByteCountFormatter.string(fromByteCount: Int64(sync.bytes), countStyle: .file))
+                            if let date = sync.lastSync {
+                                LabeledContent("上次完整同步") { Text(date, format: .dateTime.month().day().hour().minute()) }
+                            }
+                            if sync.storageFailure { Text("本地空间不足，部分内容未保存。清理设备空间后重试。").foregroundStyle(LeximoryPalette.muted) }
+                            Button("同步文库", systemImage: "arrow.triangle.2.circlepath") { Task { await sync.refresh() } }
+                                .disabled(sync.syncing).accessibilityIdentifier("sync-library")
+                        }
                     }
                     Button("退出登录", role: .destructive) {
                         playback.stop()
