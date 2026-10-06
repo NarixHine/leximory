@@ -139,15 +139,6 @@ struct PageSlide {
     }
     /// Whether the veil at this displacement darkens (forward) or lightens (behind).
     static func veilDarkens(forwardOffset: CGFloat) -> Bool { forwardOffset >= 0 }
-    /// The strip places every page by its distance from the shared position:
-    /// pages already passed travel fully off; pages ahead arrive from the short
-    /// inset. A decreasing position (retreating) mirrors this automatically.
-    static func stripOffset(index: Int, position: CGFloat, width: CGFloat) -> CGFloat {
-        let k = CGFloat(index)
-        if k <= position { return -width * min(1, position - k) }
-        return incomingInset * width * min(1, k - position)
-    }
-
     /// Decide a release from the projected landing point, so a quick flick is
     /// enough and a deliberate reverse release cancels. `velocity` is viewport
     /// widths per second in the advancing direction.
@@ -222,27 +213,28 @@ struct PageTurnSpring {
 @MainActor final class EPUBPageTurn: NSObject, UIGestureRecognizerDelegate {
     private weak var web: WKWebView?
     private let reader: EbookReaderState
-
-    private struct Layer {
-        let container: UIView
-        let imageView: UIImageView
-        let veil: UIView
-        let shadow: UIView
-    }
-    private enum Phase { case idle, dragging, settling, committing }
-
-    private var images: [Int: UIImage] = [:]
-    private var layers: [Int: Layer] = [:]
-    private var committedIndex = 0
-    private var desiredIndex = 0
-    private var position: CGFloat = 0
-    private var phase: Phase = .idle
-    private var dragStep = 1
-    private var dragPositionPerX: CGFloat = -1
-    private var isEnsuring = false
-    private var ensureTask: Task<Void, Never>?
-    private var driver: PageSpringDriver?
+    private var snapshot: UIImage?
     private var snapshotID = UUID()
+    private var outgoing: UIView?
+    private var incoming: UIView?
+    private var outgoingImage: UIImageView?
+    private var incomingImage: UIImageView?
+    private var outgoingVeil: UIView?
+    private var incomingVeil: UIView?
+    private var outgoingShadow: UIView?
+    private var incomingShadow: UIView?
+    private var progress: CGFloat = 0
+    private var forward = true
+    private var advances = true
+    private var previewReady = false
+    private var requestedCommit: Bool?
+    private var resolvingTurn = false
+    private var launchVelocity: CGFloat = 0
+    private var settlementDriver: PageTurnFrames?
+    private var settleTarget: CGFloat = 1
+    private var settleRestore = false
+    private var queuedTurns: [Bool] = []
+    private var turnInFlight = false
     let pan = UIPanGestureRecognizer()
     private let zoneTap = UITapGestureRecognizer()
 
@@ -257,48 +249,42 @@ struct PageTurnSpring {
         web.addGestureRecognizer(zoneTap)
     }
     func prepare() {
-        guard phase == .idle, let web, web.bounds.width > 0 else { return }
+        guard turnInFlight == false, let web, web.bounds.width > 0 else { return }
         let request = UUID(); snapshotID = request
         let location = reader.location
         let configuration = WKSnapshotConfiguration(); configuration.afterScreenUpdates = true
         web.takeSnapshot(with: configuration) { [weak self] image, _ in
             guard let self, self.snapshotID == request, self.reader.location == location,
-                  self.phase == .idle, let image else { return }
-            self.images[self.committedIndex] = image
+                  self.turnInFlight == false else { return }
+            self.snapshot = image
         }
     }
     func pageArrived() { prepare() }
-    /// Drop captured pages so the next turn re-reads the current appearance
+    /// Drop a captured page so the next turn re-reads the current appearance
     /// (theme, size, or leading changes would otherwise animate a stale sheet).
-    func invalidateSnapshot() {
-        snapshotID = UUID()
-        guard phase == .idle else { return }
-        for index in layers.keys { removeLayer(index) }
-        images.removeAll()
-        prepare()
-    }
+    func invalidateSnapshot() { snapshotID = UUID(); snapshot = nil }
 
     /// A tap in a far edge turns one page in the language's reading direction.
-    /// Each tap just moves the shared strip one step; the running spring is
-    /// retargeted and every page in flight keeps moving together.
+    /// Rapid taps chain: the running turn speeds up so the next page starts promptly.
     func requestTurn(advancing: Bool) {
         guard reader.ready, reader.selection == nil else { return }
+        guard advancing ? !reader.atEnd : !reader.atStart else { return }
         if UIAccessibility.isReduceMotionEnabled { reader.navigate(advancing ? "next" : "previous"); return }
-        if phase == .idle, advancing ? reader.atEnd : reader.atStart { return }
-        desiredIndex += advancing ? 1 : -1
-        if phase == .idle {
-            phase = .settling
-            Task { [weak self] in
-                guard let self else { return }
-                if self.images[self.committedIndex] == nil { self.images[self.committedIndex] = await self.captureWebImage() }
-                if let image = self.images[self.committedIndex] { self.addLayer(index: self.committedIndex, image: image) }
-                self.ensureImages()
-                self.updateDriverTarget()
-            }
-        } else {
-            ensureImages()
-            updateDriverTarget()
+        if turnInFlight {
+            if queuedTurns.count < 6 { queuedTurns.append(advancing) }
+            accelerateSettle()
+            return
         }
+        beginTurn(advancing: advancing, forward: physicalForward(for: advancing), interactive: false)
+    }
+    /// Hurry the running turn to its endpoint so a queued tap can begin promptly.
+    private func accelerateSettle() {
+        guard let driver = settlementDriver, driver.isRunning else { return }
+        driver.stop()
+        finish(to: settleTarget, restore: settleRestore, quick: true)
+    }
+    private func physicalForward(for advancing: Bool) -> Bool {
+        reader.rightToLeft ? !advancing : advancing
     }
     @objc private func zoneTapped(_ gesture: UITapGestureRecognizer) {
         guard let view = gesture.view, reader.ready, reader.selection == nil else { return }
@@ -313,11 +299,11 @@ struct PageTurnSpring {
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let web, reader.ready, reader.selection == nil else { return false }
         guard gestureRecognizer === pan else { return true }
-        guard phase == .idle else { return false }
+        guard !turnInFlight else { return false }
         let velocity = pan.velocity(in: web)
         guard abs(velocity.x) > abs(velocity.y) * 1.5 else { return false }
-        let advancing = reader.rightToLeft ? velocity.x > 0 : velocity.x < 0
-        return advancing ? !reader.atEnd : !reader.atStart
+        let requestingNext = reader.rightToLeft ? velocity.x > 0 : velocity.x < 0
+        return requestingNext ? !reader.atEnd : !reader.atStart
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
         // Let the zone tap coexist with the center-tap chrome toggle and pan gestures.
@@ -327,187 +313,214 @@ struct PageTurnSpring {
         guard let web else { return }
         switch pan.state {
         case .began:
-            guard phase == .idle else { return }
-            let vx = pan.velocity(in: web).x
-            let advancing = reader.rightToLeft ? vx > 0 : vx < 0
-            dragStep = advancing ? 1 : -1
-            dragPositionPerX = advancing ? (reader.rightToLeft ? 1 : -1) : (reader.rightToLeft ? -1 : 1)
-            phase = .dragging
-            position = CGFloat(committedIndex)
-            desiredIndex = committedIndex + dragStep
-            Task { [weak self] in
-                guard let self else { return }
-                if self.images[self.committedIndex] == nil { self.images[self.committedIndex] = await self.captureWebImage() }
-                if let image = self.images[self.committedIndex] { self.addLayer(index: self.committedIndex, image: image) }
-                self.ensureImages()
+            forward = pan.velocity(in: web).x < 0
+            advances = reader.rightToLeft ? !forward : forward
+            launchVelocity = 0
+            if !UIAccessibility.isReduceMotionEnabled {
+                beginTurn(advancing: advances, forward: forward, interactive: true)
             }
         case .changed:
-            guard phase == .dragging else { return }
-            let width = max(1, web.bounds.width)
-            let raw = CGFloat(committedIndex) + pan.translation(in: web).x * dragPositionPerX / width
-            let lower = min(committedIndex, desiredIndex), upper = max(committedIndex, desiredIndex)
-            let minLoaded = images.keys.min() ?? committedIndex, maxLoaded = images.keys.max() ?? committedIndex
-            position = min(max(raw, CGFloat(max(lower, minLoaded))), CGFloat(min(upper, maxLoaded)))
-            render()
+            guard !UIAccessibility.isReduceMotionEnabled else { return }
+            let translation = pan.translation(in: web)
+            let travel = max(0, translation.x * (forward ? -1 : 1))
+            progress = PageSlide.progress(travel: travel, width: max(1, web.bounds.width))
+            if previewReady { pose() }
         case .ended:
-            guard phase == .dragging else { return }
-            let positionVelocity = pan.velocity(in: web).x * dragPositionPerX / max(1, web.bounds.width)
-            let progress = abs(position - CGFloat(committedIndex))
-            let commit = PageSlide.commits(progress: progress, velocity: positionVelocity * CGFloat(dragStep))
-            desiredIndex = committedIndex + (commit ? dragStep : 0)
-            phase = .settling
-            ensureImages()
-            startDriver(velocity: positionVelocity)
+            let raw = pan.velocity(in: web).x * (forward ? -1 : 1)
+            launchVelocity = raw / max(1, web.bounds.width)
+            if UIAccessibility.isReduceMotionEnabled {
+                if PageSlide.commits(progress: progress, velocity: launchVelocity) { reader.navigate(advances ? "next" : "previous") }
+                return
+            }
+            if turnInFlight {
+                requestedCommit = PageSlide.commits(progress: progress, velocity: launchVelocity)
+                resolveTurn()
+            } else if PageSlide.commits(progress: progress, velocity: launchVelocity) {
+                reader.navigate(advances ? "next" : "previous")
+            }
         case .cancelled, .failed:
-            guard phase == .dragging else { return }
-            desiredIndex = committedIndex
-            phase = .settling
-            startDriver(velocity: 0)
+            requestedCommit = false; resolveTurn()
         default: break
         }
     }
-
-    // MARK: page strip
-
-    /// Step the web view toward the desired page, capturing a snapshot of each
-    /// page as it arrives so the strip always has art for what it reveals.
-    private func ensureImages() {
-        guard !isEnsuring else { return }
-        isEnsuring = true
-        ensureTask = Task { [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled {
-                let target = self.desiredIndex
-                guard self.committedIndex != target, let web = self.web else { break }
-                let step = target > self.committedIndex ? 1 : -1
-                do {
-                    _ = try await web.callAsyncJavaScript("return await window.readerTurn(action)",
-                        arguments: ["action": step > 0 ? "next" : "previous"], in: nil, contentWorld: .page)
-                } catch { break }
-                self.committedIndex += step
-                if let image = await self.captureWebImage() { self.addLayer(index: self.committedIndex, image: image) }
-                self.updateDriverTarget()
-            }
-            self.isEnsuring = false
-            self.ensureTask = nil
-            if self.committedIndex != self.desiredIndex { self.ensureImages() }
+    private func beginTurn(advancing: Bool, forward: Bool, interactive: Bool) {
+        turnInFlight = true
+        advances = advancing; self.forward = forward
+        progress = 0; launchVelocity = 0
+        previewReady = false; requestedCommit = nil; resolvingTurn = false
+        Task { [weak self] in
+            guard let self, let web = self.web else { return }
+            guard let image = await self.ensureSnapshot() else { self.resetTurn(); return }
+            self.installOverlays(image: image)
+            do {
+                _ = try await web.callAsyncJavaScript("return await window.readerTurn(action)",
+                    arguments: ["action": advancing ? "next" : "previous"], in: nil, contentWorld: .page)
+            } catch { self.finish(to: 0, restore: true); return }
+            // Overlays live outside the web view, so a snapshot never captures them.
+            self.incomingImage?.image = await self.captureWebImage(hiding: [])
+            self.previewReady = true
+            self.pose()
+            // Let pagination reflect the page we advanced to without waiting for the glide.
+            _ = try? await web.callAsyncJavaScript("window.readerProgress && window.readerProgress()", arguments: [:], in: nil, contentWorld: .page)
+            if interactive { self.resolveTurn() } else { self.finish(to: 1, programmatic: true, quick: !self.queuedTurns.isEmpty) }
         }
     }
-    private func addLayer(index: Int, image: UIImage) {
-        images[index] = image
-        guard layers[index] == nil, let web else { return }
+    private func resolveTurn() {
+        guard previewReady, let commit = requestedCommit, !resolvingTurn else { return }
+        resolvingTurn = true
+        let quick = !queuedTurns.isEmpty
+        if commit { finish(to: 1, quick: quick) } else { finish(to: 0, restore: true, quick: quick) }
+    }
+    private func ensureSnapshot() async -> UIImage? {
+        if let snapshot { return snapshot }
+        return await captureWebImage(hiding: [])
+    }
+    private func captureWebImage(hiding views: [UIView?]) async -> UIImage? {
+        guard let web else { return nil }
+        let hidden = views.compactMap { $0 }.filter { !$0.isHidden }
+        hidden.forEach { $0.isHidden = true }
+        let configuration = WKSnapshotConfiguration(); configuration.afterScreenUpdates = true
+        let image: UIImage? = await withCheckedContinuation { continuation in
+            web.takeSnapshot(with: configuration) { image, _ in continuation.resume(returning: image) }
+        }
+        hidden.forEach { $0.isHidden = false }
+        return image
+    }
+    private func installOverlays(image: UIImage) {
+        guard let web else { return }
         let host = web.superview ?? web
         let stage = host.bounds
         let paper = web.backgroundColor ?? LeximoryPalette.paperUI
         let radius = displayCornerRadius(for: web)
-        let container = UIView(frame: stage)
-        container.backgroundColor = paper
-        container.isUserInteractionEnabled = false
-        container.layer.cornerRadius = radius
-        container.layer.cornerCurve = .continuous
-        container.clipsToBounds = radius > 0
-        let imageView = UIImageView(frame: web.convert(web.bounds, to: container))
-        imageView.image = image; imageView.contentMode = .scaleToFill; imageView.isUserInteractionEnabled = false
-        container.addSubview(imageView)
-        let veil = UIView(frame: stage)
-        veil.isUserInteractionEnabled = false; veil.alpha = 0
-        veil.layer.cornerRadius = radius; veil.layer.cornerCurve = .continuous; veil.clipsToBounds = radius > 0
-        let shadow = UIView(frame: stage)
-        shadow.isUserInteractionEnabled = false; shadow.backgroundColor = .clear
+        func pageContainer() -> UIView {
+            let view = UIView(frame: stage)
+            // Each sheet shares the screen's rounded corners as it slides.
+            view.backgroundColor = paper
+            view.isUserInteractionEnabled = false
+            view.layer.cornerRadius = radius
+            view.layer.cornerCurve = .continuous
+            view.clipsToBounds = radius > 0
+            return view
+        }
+        func pageImage(in container: UIView) -> UIImageView {
+            // The whole screen is the paper, so each sheet is full-screen with the
+            // book image where the web view sits inside it.
+            let imageView = UIImageView(frame: web.convert(web.bounds, to: container))
+            imageView.contentMode = .scaleToFill; imageView.isUserInteractionEnabled = false
+            container.addSubview(imageView)
+            return imageView
+        }
+        let incoming = pageContainer()
+        let incomingImage = pageImage(in: incoming)
+        let outgoing = pageContainer()
+        let outgoingImage = pageImage(in: outgoing); outgoingImage.image = image
+        let incomingVeil = makeVeil(frame: stage, radius: radius)
+        let outgoingVeil = makeVeil(frame: stage, radius: radius)
+        let incomingShadow = makeShadow(frame: stage, radius: radius)
+        let outgoingShadow = makeShadow(frame: stage, radius: radius)
+        // The turning leaf always sits above the page it reveals: the current page
+        // going forward, the previous page coming back over it. Each leaf casts an
+        // extremely soft shadow so its contour reads against the page below.
+        let order = advances
+            ? [incomingShadow, incoming, incomingVeil, outgoingShadow, outgoing, outgoingVeil]
+            : [outgoingShadow, outgoing, outgoingVeil, incomingShadow, incoming, incomingVeil]
+        order.forEach { host.addSubview($0) }
+        self.incoming = incoming; self.incomingImage = incomingImage
+        self.outgoing = outgoing; self.outgoingImage = outgoingImage
+        self.incomingVeil = incomingVeil; self.outgoingVeil = outgoingVeil
+        self.incomingShadow = incomingShadow; self.outgoingShadow = outgoingShadow
+        pose()
+    }
+    private func makeVeil(frame: CGRect, radius: CGFloat) -> UIView {
+        let veil = UIView(frame: frame)
+        veil.isUserInteractionEnabled = false
+        veil.alpha = 0
+        veil.layer.cornerRadius = radius
+        veil.layer.cornerCurve = .continuous
+        veil.clipsToBounds = radius > 0
+        return veil
+    }
+    private func makeShadow(frame: CGRect, radius: CGFloat) -> UIView {
+        let shadow = UIView(frame: frame)
+        shadow.isUserInteractionEnabled = false
+        shadow.backgroundColor = .clear
         shadow.layer.shadowColor = UIColor.black.cgColor
         shadow.layer.shadowOpacity = 0.06
         shadow.layer.shadowRadius = 12
         shadow.layer.shadowOffset = .zero
         shadow.layer.shadowPath = UIBezierPath(roundedRect: shadow.bounds, cornerRadius: radius).cgPath
-        let z = CGFloat(-index)
-        shadow.layer.zPosition = z - 0.5
-        container.layer.zPosition = z
-        veil.layer.zPosition = z + 0.5
-        host.addSubview(shadow); host.addSubview(container); host.addSubview(veil)
-        layers[index] = Layer(container: container, imageView: imageView, veil: veil, shadow: shadow)
-        render()
-    }
-    private func removeLayer(_ index: Int) {
-        guard let layer = layers.removeValue(forKey: index) else { return }
-        layer.container.removeFromSuperview(); layer.veil.removeFromSuperview(); layer.shadow.removeFromSuperview()
-    }
-    private func render() {
-        guard let web else { return }
-        let width = max(1, web.bounds.width)
-        let dark = web.traitCollection.userInterfaceStyle == .dark
-        for (index, layer) in layers {
-            let offset = PageSlide.stripOffset(index: index, position: position, width: width)
-            let transform = CGAffineTransform(translationX: offset, y: 0)
-            layer.container.transform = transform
-            layer.veil.transform = transform
-            layer.shadow.transform = transform
-            let forwardOffset = reader.rightToLeft ? -offset : offset
-            layer.veil.backgroundColor = (PageSlide.veilDarkens(forwardOffset: forwardOffset) != dark) ? .black : .white
-            layer.veil.alpha = PageSlide.veilAlpha(forwardOffset: forwardOffset, width: width)
-        }
-    }
-    private func clampedDesired() -> CGFloat {
-        guard let minimum = images.keys.min(), let maximum = images.keys.max() else { return CGFloat(committedIndex) }
-        return CGFloat(min(max(desiredIndex, minimum), maximum))
-    }
-    private func updateDriverTarget() {
-        guard phase == .settling else { return }
-        let target = clampedDesired()
-        if let driver, driver.isRunning { driver.target = target } else { startDriver(velocity: 0) }
-    }
-    private func startDriver(velocity: CGFloat) {
-        let driver = PageSpringDriver(position: position, velocity: velocity, target: clampedDesired(), omega: 9)
-        driver.update = { [weak self] value in self?.position = value; self?.render() }
-        driver.canComplete = { [weak self] in
-            guard let self else { return true }
-            // Only finish once the strip has actually arrived at the wanted page,
-            // not merely once the snapshot for it has been captured.
-            return self.committedIndex == self.desiredIndex
-                && abs(self.position - CGFloat(self.desiredIndex)) < 0.0005
-        }
-        driver.completion = { [weak self] in self?.completeStrip() }
-        self.driver = driver
-        driver.start()
-    }
-    private func completeStrip() {
-        guard phase == .settling else { return }
-        phase = .committing
-        driver?.stop(); driver = nil
-        Task { [weak self] in
-            guard let self else { return }
-            await self.ensureTask?.value
-            _ = try? await self.web?.callAsyncJavaScript("return await window.readerTurn('commit')",
-                arguments: [:], in: nil, contentWorld: .page)
-            self.cleanupAfterSettle()
-        }
-    }
-    private func cleanupAfterSettle() {
-        position = CGFloat(committedIndex)
-        let keep = Set((committedIndex - 2)...(committedIndex + 2))
-        for index in layers.keys where !keep.contains(index) { removeLayer(index) }
-        for index in images.keys where !keep.contains(index) { images.removeValue(forKey: index) }
-        phase = .idle
-        driver = nil
-        render()
-        prepare()
-        // Taps that arrived while committing continue the strip at once.
-        if committedIndex != desiredIndex {
-            phase = .settling
-            ensureImages()
-            updateDriverTarget()
-        }
-    }
-    private func captureWebImage() async -> UIImage? {
-        guard let web else { return nil }
-        let configuration = WKSnapshotConfiguration(); configuration.afterScreenUpdates = true
-        return await withCheckedContinuation { continuation in
-            web.takeSnapshot(with: configuration) { image, _ in continuation.resume(returning: image) }
-        }
+        return shadow
     }
     private func displayCornerRadius(for view: UIView) -> CGFloat {
         let selector = NSSelectorFromString("_displayCornerRadius")
         guard let screen = view.window?.screen, screen.responds(to: selector) else { return 0 }
         return (screen.value(forKey: "_displayCornerRadius") as? NSNumber).map { CGFloat($0.doubleValue) } ?? 0
+    }
+    private func pose() {
+        guard let web else { return }
+        let width = max(1, web.bounds.width)
+        // Hold the page flat under the finger until the destination snapshot exists,
+        // otherwise the not-yet-advanced web view shows through and tears.
+        let settled = previewReady ? progress : 0
+        let outgoingOffset = PageSlide.outgoingOffset(progress: settled, width: width, forward: forward, advances: advances)
+        let incomingOffset = PageSlide.incomingOffset(progress: settled, width: width, forward: forward, advances: advances)
+        outgoing?.transform = CGAffineTransform(translationX: outgoingOffset, y: 0)
+        outgoingVeil?.transform = outgoing?.transform ?? .identity
+        outgoingShadow?.transform = outgoing?.transform ?? .identity
+        incoming?.transform = CGAffineTransform(translationX: incomingOffset, y: 0)
+        incomingVeil?.transform = incoming?.transform ?? .identity
+        incomingShadow?.transform = incoming?.transform ?? .identity
+        applyVeil(to: outgoingVeil, offset: outgoingOffset, width: width)
+        applyVeil(to: incomingVeil, offset: incomingOffset, width: width)
+    }
+    private func applyVeil(to veil: UIView?, offset: CGFloat, width: CGFloat) {
+        guard let veil, let web else { return }
+        let forwardOffset = reader.rightToLeft ? -offset : offset
+        let dark = web.traitCollection.userInterfaceStyle == .dark
+        // Every page follows the same law: forward shift moves it away from the
+        // paper, centre and behind stay at full brightness.
+        veil.backgroundColor = (PageSlide.veilDarkens(forwardOffset: forwardOffset) != dark) ? .black : .white
+        veil.alpha = PageSlide.veilAlpha(forwardOffset: forwardOffset, width: width)
+    }
+    private func finish(to target: CGFloat, restore: Bool = false, programmatic: Bool = false, quick: Bool = false) {
+        guard turnInFlight else { resetTurn(); return }
+        settleTarget = target; settleRestore = restore
+        let from = min(1, max(0, progress))
+        // A spring carries the finger's release velocity and eases into the
+        // endpoint, so the motion never starts or stops abruptly. Both the leaving
+        // and the incoming page ride the same trajectory. The linear correction
+        // lands the spring exactly on target, so the last pixels never jump.
+        let velocity = programmatic ? 0 : max(-8, min(8, launchVelocity))
+        let spring = PageTurnSpring(from: from, target: target, velocity: velocity, omega: quick ? 15 : 9)
+        let residual = spring.value(at: 1) - target
+        let driver = PageTurnFrames(duration: spring.duration, update: { [weak self] elapsed in
+            self?.progress = spring.value(at: elapsed) - residual * elapsed
+            self?.pose()
+        }, completion: { [weak self] in self?.settle(restore: restore) })
+        settlementDriver = driver
+        driver.start()
+    }
+    private func settle(restore: Bool) {
+        Task { [weak self] in
+            guard let self else { return }
+            if let web = self.web {
+                _ = try? await web.callAsyncJavaScript("return await window.readerTurn(action)",
+                    arguments: ["action": restore ? "cancel" : "commit"], in: nil, contentWorld: .page)
+            }
+            self.resetTurn()
+        }
+    }
+    private func resetTurn() {
+        for view in [outgoing, incoming, outgoingVeil, incomingVeil, outgoingShadow, incomingShadow] { view?.removeFromSuperview() }
+        outgoing = nil; incoming = nil; outgoingImage = nil; incomingImage = nil
+        outgoingVeil = nil; incomingVeil = nil; outgoingShadow = nil; incomingShadow = nil
+        progress = 0; launchVelocity = 0; previewReady = false
+        requestedCommit = nil; resolvingTurn = false
+        settlementDriver = nil; turnInFlight = false
+        prepare()
+        guard !queuedTurns.isEmpty else { return }
+        let next = queuedTurns.removeFirst()
+        beginTurn(advancing: next, forward: physicalForward(for: next), interactive: false)
     }
 }
 
@@ -536,48 +549,26 @@ struct PageTurnSettlement {
     }
 }
 
-/// A retargetable critically damped spring. Setting a new target mid-flight
-/// keeps the current position and velocity, so a quick tap only redirects the
-/// running motion instead of starting a separate animation.
-@MainActor private final class PageSpringDriver: NSObject {
-    var target: CGFloat
-    private(set) var position: CGFloat
-    private var velocity: CGFloat
-    private let omega: CGFloat
-    var update: ((CGFloat) -> Void)?
-    var canComplete: (() -> Bool)?
-    var completion: (() -> Void)?
+@MainActor private final class PageTurnFrames: NSObject {
     private var link: CADisplayLink?
-    private var last: CFTimeInterval = 0
-    private var startPosition: CGFloat
-
-    init(position: CGFloat, velocity: CGFloat, target: CGFloat, omega: CGFloat) {
-        self.position = position; self.startPosition = position
-        self.velocity = velocity; self.target = target; self.omega = omega
-        super.init()
+    private var started: CFTimeInterval = 0
+    private let duration: CFTimeInterval
+    private let update: (CGFloat) -> Void
+    private let completion: () -> Void
+    init(duration: CFTimeInterval, update: @escaping (CGFloat) -> Void, completion: @escaping () -> Void) {
+        self.duration = duration; self.update = update; self.completion = completion
     }
     func start() {
-        update?(position)
-        last = CACurrentMediaTime()
+        update(0)
+        started = CACurrentMediaTime()
         let link = CADisplayLink(target: self, selector: #selector(tick))
         link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
         self.link = link; link.add(to: .main, forMode: .common)
     }
     @objc private func tick(_ link: CADisplayLink) {
-        let now = link.timestamp
-        let dt = CGFloat(min(1.0 / 30.0, max(0, now - last))); last = now
-        let acceleration = omega * omega * (target - position) - 2 * omega * velocity
-        velocity += acceleration * dt
-        position += velocity * dt
-        // Never overshoot the endpoints, so a page never reveals an unloaded neighbour.
-        let low = min(startPosition, target), high = max(startPosition, target)
-        if position > high { position = high; velocity = min(0, velocity) }
-        if position < low { position = low; velocity = max(0, velocity) }
-        update?(position)
-        guard abs(target - position) < 0.0005, abs(velocity) < 0.005 else { return }
-        position = target; velocity = 0
-        update?(position)
-        if canComplete?() ?? true { stop(); completion?() }
+        let t = min(1, max(0, (link.timestamp - started) / duration))
+        update(CGFloat(t))
+        if t == 1 { stop(); completion() }
     }
     var isRunning: Bool { link != nil }
     func stop() { link?.invalidate(); link = nil }

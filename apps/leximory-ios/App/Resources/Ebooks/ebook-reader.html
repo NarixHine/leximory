@@ -284,6 +284,9 @@ window.readerTurn = async action => {
   resizeBook();
   return true;
 };
+// Report the page we are on without ending the turn, so pagination keeps pace
+// with the native page animation instead of waiting for it to settle.
+window.readerProgress = () => { if (rendition && reportLocation) reportLocation(rendition.currentLocation()); };
 window.readerCommand = async (command,value) => {
   if (!rendition || pageTurn) return;
   if (command==='next') await rendition.next();
