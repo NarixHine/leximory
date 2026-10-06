@@ -74,7 +74,7 @@ struct EbookScreen: View {
         ZStack {
             if let data {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: .automatic) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: .automatic).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
             if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
@@ -82,7 +82,7 @@ struct EbookScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(LeximoryPalette.paper)
+        .background(LeximoryPalette.paper.ignoresSafeArea())
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .top) {
@@ -344,6 +344,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
         let theme = context.coordinator.theme(web)
         if reader.ready, theme != context.coordinator.appliedTheme {
             context.coordinator.appliedTheme = theme
+            context.coordinator.pageTurn?.invalidateSnapshot()
             Task { _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page) }
         }
         let bookmarks = reader.bookmarks.map { $0.quote }
@@ -377,7 +378,11 @@ private struct NativeEPUBReader: UIViewRepresentable {
                                               blue: CGFloat(rgb & 255) / 255, alpha: 1)
             }
             let size = UIFontMetrics(forTextStyle: .body).scaledValue(for: parent.fontSize, compatibleWith: web.traitCollection)
-            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb"]
+            // The paper runs edge to edge, so the prose keeps its own top and
+            // bottom margins clear of the running title and page label.
+            let safeTop = web.window?.safeAreaInsets.top ?? 0
+            let safeBottom = web.window?.safeAreaInsets.bottom ?? 0
+            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb", "top": String(Double(safeTop) + 56), "bottom": String(Double(safeBottom) + 24)]
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
             let cjk = parent.language == "Chinese" || parent.language == "Japanese"

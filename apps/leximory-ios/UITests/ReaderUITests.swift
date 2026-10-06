@@ -251,6 +251,27 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["ebook-running-title"].exists)
         XCTAssertTrue(pageLabel.exists)
     }
+    @MainActor func testEPUBTapZonesTurnPagesInReadingDirection() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        app.buttons["text-fixture-epub"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["The river"].waitForExistence(timeout: 20))
+        let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The river"), object: reader)], timeout: 5) == .completed)
+        let opening = reader.value as? String
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", opening!), object: reader)], timeout: 5) == .completed)
+        let second = reader.value as? String
+        // A second tap keeps turning without waiting for the first animation to be acknowledged.
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", second!), object: reader)], timeout: 5) == .completed)
+        // The far-left quarter turns back one page in an English book.
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", second!), object: reader)], timeout: 5) == .completed)
+        capture(app, name: "EPUB tap zones in reading direction")
+    }
     @MainActor func testCancelledEPUBDragAndEdgeBack() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]

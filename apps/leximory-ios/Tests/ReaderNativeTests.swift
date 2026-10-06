@@ -129,26 +129,67 @@ import LeximoryCore
         #expect(EbookAppearance.night.colors(dark: false).paper == "#100f0f")
         #expect(ReadingSelectionMenu.lookupImage != nil)
     }
-    @Test func pageCurlFollowsFingerHeightAndSettlesFlat() {
-        let upper = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true)
-        let lower = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.9), travelY: 0, forward: true)
-        #expect(upper.axisX > 0 && lower.axisX < 0)
-        let moved = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: true)
-        #expect(moved.axisX > upper.axisX)
-        let center = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.1, y: 0.5), travelY: 0, forward: true)
-        #expect(abs(center.axisX) < 0.000001)
-        #expect(abs(center.angle - upper.angle) > 0.01)
-        let advancing = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: -1, dy: 0))
-        let reversing = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: 1, dy: 0))
-        #expect(abs(advancing.angle) > abs(reversing.angle))
-        let movingDown = PageCurlGeometry(progress: 0.5, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0, forward: true, motion: CGVector(dx: 0, dy: 1))
-        #expect(movingDown.axisX > upper.axisX)
-        for forward in [true, false] {
-            let start = PageCurlGeometry(progress: 0, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: forward)
-            let end = PageCurlGeometry(progress: 1, fraction: 0.7, touch: CGPoint(x: 0.9, y: 0.1), travelY: 0.3, forward: forward)
-            #expect(abs(start.angle) < 0.000001)
-            #expect(abs(abs(end.angle) - .pi) < 0.000001)
-            #expect(abs(start.axisX) < 0.000001 && abs(end.axisX) < 0.000001)
+    @Test func pageSlideLeafTravelsFullAndTheRevealedPageParallaxesShort() {
+        let width: CGFloat = 400
+        let inset = PageSlide.incomingInset * width
+        #expect(PageSlide.progress(travel: 0, width: width) == 0)
+        #expect(PageSlide.progress(travel: 100, width: width) == 0.25)
+        // Going forward in an LTR book: the current page is the leaf and exits fully.
+        #expect(PageSlide.outgoingOffset(progress: 0.5, width: width, forward: true, advances: true) == -200)
+        // Its destination enters from the right but only ever travels the short inset.
+        #expect(PageSlide.incomingOffset(progress: 0, width: width, forward: true, advances: true) == inset)
+        #expect(abs(PageSlide.incomingOffset(progress: 1, width: width, forward: true, advances: true)) < 0.000001)
+        // Going back in an LTR book: the previous page sweeps in fully from the left...
+        #expect(PageSlide.incomingOffset(progress: 0, width: width, forward: false, advances: false) == -width)
+        #expect(abs(PageSlide.incomingOffset(progress: 1, width: width, forward: false, advances: false)) < 0.000001)
+        // ...while the current page underneath only parallaxes the short inset.
+        #expect(PageSlide.outgoingOffset(progress: 0, width: width, forward: false, advances: false) == 0)
+        #expect(abs(PageSlide.outgoingOffset(progress: 1, width: width, forward: false, advances: false) - inset) < 0.000001)
+        for step in 0...10 {
+            let p = CGFloat(step) / 10
+            let reveal = abs(PageSlide.incomingOffset(progress: p, width: width, forward: true, advances: true))
+            #expect(reveal <= inset + 0.000001)
+            let parallax = abs(PageSlide.outgoingOffset(progress: p, width: width, forward: false, advances: false))
+            #expect(parallax <= inset + 0.000001)
+        }
+    }
+    @Test func pageSlideBrightnessRampsWithForwardShift() {
+        let width: CGFloat = 400
+        // At center there is no veil; the ramp is symmetric about center.
+        #expect(PageSlide.veilAlpha(forwardOffset: 0, width: width) == 0)
+        #expect(abs(PageSlide.veilAlpha(forwardOffset: width * PageSlide.incomingInset, width: width) - PageSlide.veilStrength) < 0.000001)
+        #expect(abs(PageSlide.veilAlpha(forwardOffset: -width * PageSlide.incomingInset, width: width) - PageSlide.veilStrength) < 0.000001)
+        #expect(PageSlide.veilAlpha(forwardOffset: width, width: width) == PageSlide.veilStrength)
+        var previous: CGFloat = -1
+        for step in 0...10 {
+            let alpha = PageSlide.veilAlpha(forwardOffset: width * CGFloat(step) / 10, width: width)
+            #expect(alpha >= previous)
+            previous = alpha
+        }
+        #expect(PageSlide.veilDarkens(forwardOffset: 10))
+        #expect(!PageSlide.veilDarkens(forwardOffset: -10))
+    }
+    @Test func pageSlideCommitsPastTheThresholdAndCancelsOnReverseRelease() {
+        #expect(PageSlide.commits(progress: 0.5, velocity: 0))
+        #expect(!PageSlide.commits(progress: 0.2, velocity: 0))
+        #expect(PageSlide.commits(progress: 0.06, velocity: 0.5))
+        #expect(!PageSlide.commits(progress: 0.85, velocity: -6))
+    }
+    @Test func pageTurnCurvesAreMonotonic() {
+        #expect(abs(PageTurnCurve.tap.value(0)) < 0.000001)
+        #expect(abs(PageTurnCurve.tap.value(1) - 1) < 0.000001)
+        // Ease-out: the first fifth of the curve already covers most of the distance.
+        #expect(PageTurnCurve.tap.value(0.2) > 0.5)
+        // Ease-in-out: the settle starts gently, so the first fifth stays below half.
+        #expect(PageTurnCurve.release.value(0.2) < 0.5)
+        #expect(PageTurnCurve.release.value(0.8) > 0.5)
+        for curve in [PageTurnCurve.tap, PageTurnCurve.release] {
+            var previous: CGFloat = -1
+            for step in 0...100 {
+                let value = curve.value(CGFloat(step) / 100)
+                #expect(value >= previous - 0.000001 && value >= -0.000001 && value <= 1.000001)
+                previous = value
+            }
         }
     }
     @Test func pageTurnReleasePreservesVelocityAndEndsAtRest() {
@@ -165,40 +206,6 @@ import LeximoryCore
                 let value = turn.value(at: CGFloat(tick) / 100)
                 #expect(value >= 0 && value <= 1)
             }
-        }
-    }
-    @Test func pageCurlBindingStaysFixedAndFacetsShareVerticalEdges() {
-        for angle in stride(from: -CGFloat.pi, through: CGFloat.pi, by: 0.1) {
-            for slope: CGFloat in [-0.1, 0, 0.1] {
-                let transform = PageCurlFacet.transform(angle: angle, slope: slope)
-                for y: CGFloat in [-500, 0, 500] {
-                    // Points on the binding have x = z = 0. Their projected
-                    // position is unchanged regardless of turn angle or tilt.
-                    let x = y * transform.m21 + transform.m41
-                    let height = y * transform.m22 + transform.m42
-                    let z = y * transform.m23 + transform.m43
-                    #expect(abs(x) < 0.000001 && abs(z) < 0.000001)
-                    #expect(abs(height - y) < 0.000001)
-                }
-            }
-        }
-    }
-    @Test func previousPageUnfoldsImmediatelyFromBindingAndEndsFlat() {
-        for fraction: CGFloat in [0, 0.25, 0.5, 0.75, 1] {
-            var lastAngle = -CGFloat.pi / 2
-            for tick in 0...100 {
-                let progress = CGFloat(tick) / 100
-                let curl = PageCurlGeometry(progress: IncomingPageCurl.phase(progress), fraction: fraction,
-                    touch: CGPoint(x: 0.25, y: 0.3), travelY: 0.1, forward: false)
-                let angle = IncomingPageCurl.angle(progress: progress, curvedAngle: curl.angle)
-                #expect(angle >= lastAngle - 0.000001)
-                #expect(angle <= 0 && angle >= -.pi / 2)
-                #expect(-sin(angle) >= 0)
-                if tick > 0 { #expect(cos(angle) > 0) }
-                #expect(cos(angle) >= progress * 0.74)
-                lastAngle = angle
-            }
-            #expect(abs(lastAngle) < 0.000001)
         }
     }
     @Test func readingMenuRemovesSelectAllAndKeepsCopy() {

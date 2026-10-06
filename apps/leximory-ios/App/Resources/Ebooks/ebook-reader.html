@@ -120,6 +120,8 @@ document.addEventListener('keydown', pageKey);
 window.readerTheme = async theme => {
   if (pageTurn) { pendingTheme = theme; return; }
   currentTheme=theme; document.body.style.background=theme.paper; document.body.dataset.writing=theme.writing;
+  if (theme.top) document.body.style.paddingTop=theme.top+'px';
+  if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
   if (!rendition) return;
   rendition.getContents().forEach(styleContents);
   // epub.js owns relocation during reflow; displaying its reported CFI again can skip a split page.
@@ -128,6 +130,8 @@ window.readerTheme = async theme => {
 window.openBook = async (base64, location, fonts, theme, bookmarks) => {
   try {
     currentTheme=theme;document.body.style.background=theme.paper;document.body.dataset.writing=theme.writing;
+    if (theme.top) document.body.style.paddingTop=theme.top+'px';
+    if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
     const archive = await JSZip.loadAsync(bytes);
     const entries = Object.values(archive.files);
