@@ -254,6 +254,7 @@ struct DefinitionView: View {
                         .frame(maxWidth: .infinity, alignment: .top)
                 }
                 .scrollDisabled(trayDragging)
+                .scrollBounceBehavior(.basedOnSize)
                 .onScrollGeometryChange(for: Bool.self) { geometry in
                     geometry.contentOffset.y <= -geometry.contentInsets.top + 1
                 } action: { _, atTop in onScrollPermission?(atTop) }
@@ -269,7 +270,7 @@ struct DefinitionView: View {
         .frame(height: isPopover ? max(120, min(contentHeight, 520)) : nil)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
-        .background(LeximoryPalette.annotationSurface).accessibilityIdentifier("definition-tray")
+        .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
         .task(id: "\(item.id):\(lookupAttempt)") {
             if sync?.online == false, item.definition == nil { model.offline() }
@@ -366,11 +367,10 @@ struct DefinitionTopTray: View {
                 DefinitionView(item: item, client: client, language: language, isPopover: false,
                                topTrayHeight: geometry.size.height, closeTray: dismissTray,
                                trayDragging: dragging, onScrollPermission: { canMove = $0 })
-                    .frame(width: min(640, geometry.size.width - 24))
-                    .background(LeximoryPalette.annotationSurface)
+                    .frame(width: min(LeximoryLayout.annotationMeasure, geometry.size.width - 24))
                     .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 36, style: .continuous).strokeBorder(LeximoryPalette.ink.opacity(0.06), lineWidth: 0.5))
-                    .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+                    .shadow(color: .black.opacity(0.14), radius: 20, y: 8)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                         extent = height
                         guard !laidOut else { return }

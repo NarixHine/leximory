@@ -130,6 +130,7 @@ enum LeximoryLayout {
     static let cardRadius: CGFloat = 46
     static let innerCardRadius: CGFloat = 32
     static let readingMeasure: CGFloat = 640
+    static let annotationMeasure: CGFloat = 512
     static let libraryMeasure: CGFloat = 640
     static let textGalleryMeasure: CGFloat = 880
 }
