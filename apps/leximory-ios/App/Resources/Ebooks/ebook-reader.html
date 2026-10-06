@@ -5,7 +5,7 @@
 <style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
-let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [];
+let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false;
 const send = (kind, payload = {}) => window.webkit.messageHandlers.reader.postMessage({kind,...payload});
 function sanitizeDocument(source, svg = false) {
   let document = new DOMParser().parseFromString(source, svg ? 'image/svg+xml' : 'application/xhtml+xml');
@@ -161,7 +161,28 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
         element.style.setProperty('direction', 'ltr', 'important');
       }
     });
-    rendition = book.renderTo('book', {width:'100%',height:'100%',spread:'auto',flow:'paginated',allowScriptedContent:true});
+    const initial = document.getElementById('book').getBoundingClientRect();
+    // Fixed dimensions keep epub.js's own window-resize listener from also firing
+    // and clearing the view; every reflow goes through resizeBook.
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:'auto',flow:'paginated',allowScriptedContent:true});
+    // epub.js re-displays the current CFI from inside its resize handler while the
+    // resized section is still re-rendering. That display snaps on the wrong axis
+    // for paginated vertical writing, so the reader lands pages (often a whole
+    // chapter) behind and repeated resizes ratchet to the chapter start. Suppress
+    // it and restore a page-aligned position ourselves.
+    rendition.onResized = function () {};
+    const resizeRendition = rendition.resize.bind(rendition);
+    rendition.resize = function (width, height) {
+      const stage = rendition.manager && rendition.manager._stageSize;
+      if (!stage || width == null || (stage.width === width && stage.height === height)) { resizeRendition(width, height); return; }
+      const anchor = anchorPosition();
+      reflowing = true;
+      resizeRendition(width, height);
+      requestAnimationFrame(() => requestAnimationFrame(() => restorePosition(anchor).then(() => {
+        reflowing = false;
+        if (reportLocation) reportLocation(rendition.currentLocation());
+      }, () => { reflowing = false; })));
+    };
     rendition.themes.default({'@font-face':[
       {'font-family':'LeximoryProse','font-weight':'100 900','src':`url('${fonts.regular}')`},
       {'font-family':'LeximoryProse','font-style':'italic','font-weight':'100 900','src':`url('${fonts.italic}')`},
@@ -200,7 +221,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       send('location',{location:cfi,chapter,page:location.start.displayed?.page||1,pages:location.start.displayed?.total||1,atStart:location.atStart,atEnd:location.atEnd});
     };
     reportLocation = relocated;
-    rendition.on('relocated', location => { if(ready && !pageTurn) relocated(location); });
+    rendition.on('relocated', location => { if(ready && !pageTurn && !reflowing) relocated(location); });
     await rendition.display(location || undefined).catch(() => rendition.display());
     ready = true;
     retryHighlights();
@@ -208,6 +229,29 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
   } catch (error) { send('failed',{message:String(error)}); }
 };
 const painted = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+// The current page within its section. epub.js's own CFI relocation is unreliable
+// at reflow time, so the reader restores the position proportionally by page.
+const anchorPosition = () => {
+  if (!rendition || !rendition.location || !rendition.location.start) return null;
+  const start = rendition.location.start;
+  return {href: start.href, page: start.displayed?.page || 1, total: start.displayed?.total || 1};
+};
+const restorePosition = async anchor => {
+  if (!anchor || !anchor.href) return;
+  await rendition.display(anchor.href);
+  const manager = rendition.manager, start = rendition.currentLocation().start;
+  const vertical = manager.settings.axis === 'vertical';
+  const total = start.displayed?.total || 1;
+  const ratio = (anchor.page - 1) / Math.max(1, anchor.total - 1);
+  // Snap to a whole page so the viewport never shows a split column.
+  const page = Math.min(total, Math.max(1, Math.round(ratio * (total - 1)) + 1));
+  const offset = (page - 1) * (vertical ? manager.layout.height : manager.layout.delta);
+  if (offset > 0) {
+    if (vertical) manager.scrollTo(0, offset, true);
+    else manager.scrollTo(offset, 0, true);
+  }
+  await painted();
+};
 window.readerTurn = async action => {
   if (!rendition) return false;
   if (action === 'next' || action === 'previous') {

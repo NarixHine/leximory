@@ -155,6 +155,106 @@ import WebKit
         #expect(rubyChecks["duplicate"] as? Bool == false)
         #expect(rubyChecks["rubyIntact"] as? Bool == true)
     }
+
+    @Test func resizingKeepsChapterPosition() async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "japanese-fixture", withExtension: "epub"))
+        let font = try #require(Bundle.main.url(forResource: "ChillDuanHeiSongProJP_Regular", withExtension: "otf"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.isHidden = false
+        defer { window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe
+        try await probe.load(web, url: page)
+        let theme = ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": "vertical-rl"]
+        let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        _ = try await web.callAsyncJavaScript("await window.openBook(bytes, '', fonts, theme, [])", arguments: [
+            "bytes": try Data(contentsOf: book).base64EncodedString(),
+            "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL], "theme": theme
+        ], in: nil, contentWorld: .page)
+        #expect(probe.failure == nil); #expect(probe.ready)
+        let readState = """
+            await painted();
+            const loc = rendition.currentLocation();
+            const m = rendition.manager, c = m.container;
+            const vertical = m.settings.axis === 'vertical';
+            const extent = vertical ? m.layout.height : m.layout.delta;
+            const offset = vertical ? c.scrollTop : c.scrollLeft;
+            return { cfi: loc.start.cfi, page: loc.start.displayed.page, total: loc.start.displayed.total, href: loc.start.href, offset: offset, extent: extent };
+            """
+        _ = try await web.callAsyncJavaScript("await window.readerCommand('display', 'epubcfi(/6/2!/4/58/1:0)'); await painted();", arguments: [:], in: nil, contentWorld: .page)
+        let before = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        // Grow and shrink the viewport past the spread threshold repeatedly, the
+        // way a window resize or keyboard does. Before the fix each reflow snapped
+        // the reader back a page or two until it reached the chapter start.
+        for step in 0..<6 {
+            web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 700, height: 500) : CGRect(x: 0, y: 0, width: 1180, height: 820)
+            _ = try await web.callAsyncJavaScript("await new Promise(r => setTimeout(r, 500)); await painted();", arguments: [:], in: nil, contentWorld: .page)
+        }
+        let after = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        let beforeProgress = Double((before["page"] as? Int ?? 1) - 1) / Double(max(1, (before["total"] as? Int ?? 1) - 1))
+        let afterProgress = Double((after["page"] as? Int ?? 1) - 1) / Double(max(1, (after["total"] as? Int ?? 1) - 1))
+        #expect(beforeProgress - afterProgress < 0.15, "resize drifted back \(beforeProgress - afterProgress) of the chapter")
+        // The restored scroll must sit on a whole page so no split column shows.
+        let offset = after["offset"] as? Double ?? 0
+        let extent = after["extent"] as? Double ?? 1
+        #expect(abs((offset / extent).rounded() - offset / extent) < 0.01, "resize left the viewport mid-page at \(offset)/\(extent)")
+    }
+
+    @Test func resizingKeepsChapterPositionInHorizontalBook() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let path = environment["LEXIMORY_HORIZONTAL_EPUB"] ?? environment["TEST_RUNNER_LEXIMORY_HORIZONTAL_EPUB"] else { return }
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let font = try #require(Bundle.main.url(forResource: "LibreBaskerville", withExtension: "ttf"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.isHidden = false
+        defer { window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe
+        try await probe.load(web, url: page)
+        let theme = ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": "horizontal-tb"]
+        let fontURL = "data:font/ttf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        _ = try await web.callAsyncJavaScript("await window.openBook(bytes, '', fonts, theme, [])", arguments: [
+            "bytes": try Data(contentsOf: URL(fileURLWithPath: path)).base64EncodedString(),
+            "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL], "theme": theme
+        ], in: nil, contentWorld: .page)
+        #expect(probe.failure == nil); #expect(probe.ready)
+        let readState = """
+            await painted();
+            const loc = rendition.currentLocation();
+            const m = rendition.manager, c = m.container;
+            const vertical = m.settings.axis === 'vertical';
+            const extent = vertical ? m.layout.height : m.layout.delta;
+            const offset = vertical ? c.scrollTop : c.scrollLeft;
+            return { cfi: loc.start.cfi, page: loc.start.displayed.page, total: loc.start.displayed.total, href: loc.start.href, offset: offset, extent: extent };
+            """
+        // Open a middle chapter and advance a few pages into it.
+        _ = try await web.callAsyncJavaScript("await rendition.display(book.spine.get(9).href); await painted();", arguments: [:], in: nil, contentWorld: .page)
+        for _ in 0..<3 {
+            _ = try await web.callAsyncJavaScript("await rendition.next();", arguments: [:], in: nil, contentWorld: .page)
+        }
+        _ = try await web.callAsyncJavaScript("await painted();", arguments: [:], in: nil, contentWorld: .page)
+        let before = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        // Reflow the page height the way a keyboard or window resize does.
+        for step in 0..<6 {
+            web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 820, height: 560) : CGRect(x: 0, y: 0, width: 820, height: 1180)
+            _ = try await web.callAsyncJavaScript("await new Promise(r => setTimeout(r, 600)); await painted();", arguments: [:], in: nil, contentWorld: .page)
+        }
+        let after = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        #expect(after["href"] as? String == before["href"] as? String, "resize moved to another section: \(after["href"] ?? "nil")")
+        let beforeProgress = Double((before["page"] as? Int ?? 1) - 1) / Double(max(1, (before["total"] as? Int ?? 1) - 1))
+        let afterProgress = Double((after["page"] as? Int ?? 1) - 1) / Double(max(1, (after["total"] as? Int ?? 1) - 1))
+        #expect(beforeProgress - afterProgress < 0.15, "resize drifted back \(beforeProgress - afterProgress) of the chapter")
+        let offset = after["offset"] as? Double ?? 0
+        let extent = after["extent"] as? Double ?? 1
+        #expect(abs((offset / extent).rounded() - offset / extent) < 0.01, "resize left the viewport mid-page at \(offset)/\(extent)")
+    }
 }
 
 @MainActor private final class EbookBridgeProbe: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
