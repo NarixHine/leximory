@@ -2,7 +2,7 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}@media(min-width:760px){#book{width:min(calc(100% - 48px),1232px)}}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false;
@@ -80,6 +80,13 @@ function highlightBookmarks() {
   if (!rendition) return;
   for (const contents of rendition.getContents()) {
     const doc = contents.document;
+    // Remove previous marks so an optimistic bookmark can be rolled back.
+    const activeQuotes = new Set(bookmarkQuotes.map(quote => quote.replace(/\s+/g,' ').trim()));
+    for (const mark of doc.querySelectorAll('[data-leximory-bookmark]')) {
+      if (activeQuotes.has(mark.dataset.quote)) continue;
+      const parent = mark.parentNode;
+      mark.replaceWith(...mark.childNodes); parent.normalize();
+    }
     for (const quote of bookmarkQuotes) {
       const target = quote.replace(/\s+/g,' ').trim(); if (!target) continue;
       const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
@@ -98,7 +105,7 @@ function highlightBookmarks() {
       const range=doc.createRange();range.setStart(start[0],start[1]);range.setEnd(end[0],end[1]+1);
       const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
       if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
-      const mark=doc.createElement('span');mark.dataset.leximoryBookmark='true';
+      const mark=doc.createElement('span');mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
       mark.style.setProperty('background-color',currentTheme.paper.toLowerCase()==='#100f0f' ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
       mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
       try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
@@ -168,7 +175,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const initial = document.getElementById('book').getBoundingClientRect();
     // Fixed dimensions keep epub.js's own window-resize listener from also firing
     // and clearing the view; every reflow goes through resizeBook.
-    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:'auto',flow:'paginated',allowScriptedContent:true});
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:'auto',minSpreadWidth:theme.writing === 'vertical-rl' ? 800 : 700,flow:'paginated',allowScriptedContent:true});
     // epub.js re-displays the current CFI from inside its resize handler while the
     // resized section is still re-rendering. That display snaps on the wrong axis
     // for paginated vertical writing, so the reader lands pages (often a whole
@@ -227,6 +234,9 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     reportLocation = relocated;
     rendition.on('relocated', location => { if(ready && !pageTurn && !reflowing) relocated(location); });
     await rendition.display(location || undefined).catch(() => rendition.display());
+    // Native tap presentation needs an actually painted first page, not merely
+    // a laid-out iframe. Do this during opening, before accepting page turns.
+    await painted();
     ready = true;
     retryHighlights();
     relocated(rendition.currentLocation());send('ready');resizeBook();
@@ -255,6 +265,53 @@ const restorePosition = async anchor => {
     else manager.scrollTo(offset, 0, true);
   }
   await painted();
+};
+// Cancel opposite tap pairs only when their prefix is known to stay inside
+// the book. At an edge, previous/next is not equivalent to doing nothing.
+function compactTapActions(actions, location) {
+  const manager = rendition.manager;
+  const step = manager.settings.axis === 'vertical' ? 1 : manager.layout.divisor;
+  const back = Math.ceil((location.start.displayed.page - 1) / step) + (manager.views.first().section.prev() ? 1 : 0);
+  const ahead = Math.floor((location.start.displayed.total - location.start.displayed.page) / step) + (manager.views.last().section.next() ? 1 : 0);
+  const stack = [], positions = [0], safe = [true];
+  for (const action of actions) {
+    const sign = action === 'next' ? 1 : -1;
+    const count = stack.length;
+    const previous = count ? (stack[count - 1] === 'next' ? 1 : -1) : 0;
+    const before = count ? positions[count - 1] : 0;
+    if (previous === -sign && safe[count - 1] && (previous > 0 ? before < ahead : before > -back)) {
+      stack.pop(); positions.pop(); safe.pop();
+    } else {
+      const position = positions[count] + sign;
+      stack.push(action); positions.push(position);
+      safe.push(safe[count] && position >= -back && position <= ahead);
+    }
+  }
+  return stack;
+}
+// A tap burst advances the existing manager without scheduling a render/paint
+// and location notification for every intermediate page. Preserve action order
+// at book boundaries; publish only the position the reader actually requested.
+window.readerTap = async actions => {
+  if (!rendition) return false;
+  const location = rendition.currentLocation();
+  if (!pageTurn) pageTurn = {origin: location.start.cfi};
+  const compacted = compactTapActions(actions, location);
+  try {
+    for (const action of compacted) {
+      // The manager already clamps at the book edges. Mapping a fresh CFI on
+      // every step is expensive and would recreate a backlog during tap bursts.
+      await (action === 'next' ? rendition.manager.next() : rendition.manager.prev());
+    }
+    rendition.location = rendition.currentLocation();
+    await painted();
+    return true;
+  } catch (error) {
+    await rendition.display(pageTurn.origin);
+    await painted();
+    pageTurn = null;
+    throw error;
+  }
 };
 window.readerTurn = async action => {
   if (!rendition) return false;
@@ -299,6 +356,7 @@ const resizeBook = () => {
   resizeFrame = requestAnimationFrame(() => {
     if (!rendition || !ready || pageTurn) return;
     const bounds = document.getElementById('book').getBoundingClientRect();
+    send('layout',{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height});
     const width = Math.round(bounds.width), height = Math.round(bounds.height);
     const size = `${width}:${height}`;
     if (!width || !height || size === viewportSize) return;

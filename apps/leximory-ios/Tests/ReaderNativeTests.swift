@@ -10,6 +10,229 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ReaderNativeTests {
+    @Test(arguments: [false, true], [false, true])
+    func everyTapMovesVisiblePixelsWithoutWaiting(advancing: Bool, rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let stage = try #require(transition.stage)
+        var requests: [EPUBTapTransition.Request] = []
+        for i in 0..<4 {
+            let before = tapPixels(stage)
+            requests.append(try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft)))
+            #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "Interrupting must preserve the visible composition")
+            now += 0.016; transition.advance(at: now)
+            #expect(pixelDifference(before, tapPixels(stage)) > 0.003, "Every tap must move visible text on its first frame")
+            #expect(stage.subviews.count == 2)
+            let foreground = try #require(stage.subviews.last)
+            let direction: CGFloat = (rightToLeft ? !advancing : advancing) ? -1 : 1
+            #expect(foreground.transform.tx * direction > 4, "A turn must start its full slide, not a short acknowledgement that stalls")
+            let firstOffset = abs(foreground.transform.tx)
+            now += 0.05; transition.advance(at: now)
+            #expect(abs(foreground.transform.tx) > firstOffset + 40, "Motion must continue without a renderer callback")
+            try tapFrame(stage).pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-tap-\(advancing)-\(rightToLeft)-\(i).png"))
+        }
+        for request in requests { transition.resolve(request, image: tapTestPage(.green), rightToLeft: rightToLeft) }
+        now += 0.7; transition.advance(at: now)
+        #expect(!transition.isAnimating)
+        #expect(host.subviews == [web])
+    }
+
+    @Test func tapsSettleLikeSwipeReleasesAndKeepMomentum() throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        _ = try #require(transition.begin(advancing: true, rightToLeft: false))
+        let stage = try #require(transition.stage)
+        now += 0.016; transition.advance(at: now)
+        let firstFrame = abs(try #require(stage.subviews.last).transform.tx)
+        #expect(firstFrame > 4 && firstFrame < 25, "The first frame should respond without throwing most of the page away")
+        let release = PageTurnSpring(from: 0, target: 1, velocity: 1.8)
+        for elapsed in [0.1, 0.3, 0.5] {
+            now = 1 + elapsed; transition.advance(at: now)
+            let offset = abs(try #require(stage.subviews.last).transform.tx)
+            #expect(abs(offset / 400 - release.settledValue(at: elapsed / release.duration)) < 0.00001)
+        }
+        #expect(stage.superview === host, "Keep the gentle settling tail instead of cutting the animation at 280 ms")
+        // Begin a fresh turn, then interrupt it while it still has momentum.
+        _ = try #require(transition.begin(advancing: true, rightToLeft: false))
+        now += 0.1; transition.advance(at: now)
+        _ = try #require(transition.begin(advancing: true, rightToLeft: false))
+        now += 0.016; transition.advance(at: now)
+        #expect(abs(try #require(stage.subviews.last).transform.tx) > firstFrame + 4)
+        _ = try #require(transition.begin(advancing: false, rightToLeft: false))
+        now += 0.016; transition.advance(at: now)
+        #expect(try #require(stage.subviews.last).transform.tx > 4, "A reversal must respond on its first frame")
+    }
+
+    @Test func tapsInOneDisplayFrameCannotFlattenToBlank() throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        // Do not inspect or render the view between these inputs: that would
+        // accidentally flush UIImageView's deferred layer contents for the test.
+        for _ in 0..<26 { _ = try #require(transition.begin(advancing: true, rightToLeft: false)) }
+        now += 0.016; transition.advance(at: now)
+        let pixels = tapPixels(try #require(transition.stage))
+        let red = stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 180 && pixels[$0 + 1] < 80 }.count
+        #expect(Double(red) / Double(pixels.count / 4) > 0.7)
+    }
+
+    @Test func roundedPageFringesNeverFlashBlackDuringTapBursts() throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); web.backgroundColor = .white; host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 36, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.white))
+        for i in 0..<12 {
+            _ = try #require(transition.begin(advancing: i % 3 != 0, rightToLeft: false))
+            now += 0.025; transition.advance(at: now)
+            let pixels = tapPixels(try #require(transition.stage))
+            for y in [20, 780] { for x in stride(from: 40, to: 360, by: 8) {
+                let sample = (y * 400 + x) * 4
+                #expect(pixels[sample] > 32 && pixels[sample + 1] > 32 && pixels[sample + 2] > 32,
+                    "Paper near a moving rounded edge must never become an opaque black fringe")
+            } }
+        }
+    }
+
+    @Test func backwardTurnsAlwaysContainRenderedTextAndReversalHasNoJump() throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let first = try #require(transition.begin(advancing: true, rightToLeft: false))
+        transition.resolve(first, image: tapTestPage(.green), rightToLeft: false)
+        now += 0.04; transition.advance(at: now)
+        let stage = try #require(transition.stage)
+        let beforeReverse = tapPixels(stage)
+        let reverse = try #require(transition.begin(advancing: false, rightToLeft: false))
+        #expect(pixelDifference(beforeReverse, tapPixels(stage)) < 0.002)
+        for frame in 1...40 {
+            now += 0.016; transition.advance(at: now)
+            let pixels = tapPixels(stage)
+            let colored = stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] < 80 || pixels[$0 + 1] < 80 || pixels[$0 + 2] < 80 }.count
+            #expect(Double(colored) / Double(pixels.count / 4) > 0.98, "An incoming page may never be empty paper")
+            if frame == 6 { try tapFrame(stage).pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-backward-visible.png")) }
+        }
+        #expect(transition.isAnimating, "Keep rendered text covering the renderer until the final page is ready")
+        transition.resolve(reverse, image: tapTestPage(.red), rightToLeft: false)
+        #expect(host.subviews == [web])
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func tapBrightnessMatchesTheVisibleDistance(advancing: Bool, rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        _ = try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft))
+        let stage = try #require(transition.stage)
+        for elapsed in [0.003, 0.008] {
+            now = 1 + elapsed; transition.advance(at: now)
+            let offset = try #require(stage.subviews.last).transform.tx
+            let alpha = PageSlide.veilAlpha(forwardOffset: rightToLeft ? -offset : offset, width: 400)
+            let pixels = tapPixels(stage)
+            let sample = (10 * 400 + 200) * 4
+            if advancing {
+                #expect(abs(Double(pixels[sample + 1]) - Double(alpha * 255)) < 3, "Forward displacement must lighten the actual page pixels")
+            } else {
+                #expect(abs(Double(pixels[sample]) - Double((1 - alpha) * 255)) < 3, "Backward displacement must darken the actual page pixels")
+            }
+        }
+    }
+
+    @Test func delayedContentDoesNotRestartACompletedSlide() throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let first = try #require(transition.begin(advancing: true, rightToLeft: false))
+        let final = try #require(transition.begin(advancing: true, rightToLeft: false))
+        now += 0.7; transition.advance(at: now)
+        let stage = try #require(transition.stage)
+        #expect(stage.subviews.last?.transform.tx == -400)
+        transition.resolve(first, image: tapTestPage(.green), rightToLeft: false)
+        #expect(stage.subviews.last?.transform.tx == -400, "Rendering must not launch a second motion")
+        #expect(stage.subviews.first?.transform == .identity)
+        transition.resolve(final, image: tapTestPage(.blue), rightToLeft: false)
+        #expect(host.subviews == [web])
+    }
+
+    private func tapTestPage(_ color: UIColor) -> UIImage {
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        return UIGraphicsImageRenderer(size: CGSize(width: 400, height: 800), format: format).image { context in
+            color.setFill(); context.fill(CGRect(x: 0, y: 0, width: 400, height: 800))
+            UIColor.black.setFill()
+            for row in 0..<18 { context.fill(CGRect(x: 80 + row % 3 * 12, y: 60 + row * 36, width: 210, height: 12)) }
+        }
+    }
+
+    private func tapFrame(_ view: UIView) -> UIImage {
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        return UIGraphicsImageRenderer(bounds: view.bounds, format: format).image { view.layer.render(in: $0.cgContext) }
+    }
+
+    private func tapPixels(_ view: UIView) -> [UInt8] {
+        let image = tapFrame(view).cgImage!
+        var pixels = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        pixels.withUnsafeMutableBytes { buffer in
+            let context = CGContext(data: buffer.baseAddress, width: image.width, height: image.height, bitsPerComponent: 8,
+                bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+        return pixels
+    }
+
+    private func pixelDifference(_ a: [UInt8], _ b: [UInt8]) -> Double {
+        zip(a, b).reduce(0.0) { $0 + abs(Double($1.0) - Double($1.1)) } / Double(a.count) / 255
+    }
+
+    @Test func compactTapBurstsPreserveBookEdgeSemantics() async throws {
+        let url = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let html = try String(contentsOf: url, encoding: .utf8)
+        let start = try #require(html.range(of: "function compactTapActions("))
+        let end = try #require(html.range(of: "// A tap burst advances"))
+        let web = WKWebView()
+        let navigation = EbookTestNavigation(); web.navigationDelegate = navigation
+        try await navigation.load(web, html: "<html><head><script>let rendition;" + html[start.lowerBound..<end.lowerBound] + "</script></head><body></body></html>")
+        let checked = try await web.callAsyncJavaScript("""
+            let checked = 0;
+            for (let total = 1; total <= 7; total++) for (let page = 0; page < total; page++) {
+              for (let back = 0; back <= page; back++) for (let ahead = 0; ahead < total - page; ahead++) {
+                rendition = {manager: {settings:{axis:'vertical'}, layout:{divisor:1},
+                  views:{first:()=>({section:{prev:()=>null}}),last:()=>({section:{next:()=>null}})}}};
+                const location = {start:{displayed:{page:back+1,total:back+ahead+1}},end:{displayed:{page:back+1,total:back+ahead+1}}};
+                for (let bits = 0; bits < 256; bits++) {
+                  const actions = Array.from({length:8}, (_,i)=>bits & (1<<i) ? 'next' : 'previous');
+                  const apply = sequence => sequence.reduce((p,action)=>Math.max(0,Math.min(total-1,p+(action==='next'?1:-1))),page);
+                  const compacted = compactTapActions(actions,location);
+                  if (apply(actions) !== apply(compacted)) throw Error(JSON.stringify({total,page,back,ahead,actions,compacted}));
+                  checked++;
+                }
+              }
+            }
+            return checked;
+            """, arguments: [:], in: nil, contentWorld: .page) as? Int
+        #expect(try #require(checked) > 50000)
+    }
+
     @Test func diagnosticNoticesCanBeHiddenWithoutLosingFallbackText() throws {
         let document = try FixtureArticle.samples[0].document()
         let layout = ReaderLayout(document: document, showsNotices: false)
@@ -176,14 +399,10 @@ import LeximoryCore
         #expect(!PageSlide.commits(progress: 0.85, velocity: -6))
     }
     @Test func pageTurnCurvesAreMonotonic() {
-        #expect(abs(PageTurnCurve.tap.value(0)) < 0.000001)
-        #expect(abs(PageTurnCurve.tap.value(1) - 1) < 0.000001)
-        // Ease-out: the first fifth of the curve already covers most of the distance.
-        #expect(PageTurnCurve.tap.value(0.2) > 0.5)
         // Ease-in-out: the settle starts gently, so the first fifth stays below half.
         #expect(PageTurnCurve.release.value(0.2) < 0.5)
         #expect(PageTurnCurve.release.value(0.8) > 0.5)
-        for curve in [PageTurnCurve.tap, PageTurnCurve.release] {
+        for curve in [PageTurnCurve.release] {
             var previous: CGFloat = -1
             for step in 0...100 {
                 let value = curve.value(CGFloat(step) / 100)

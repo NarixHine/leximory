@@ -5,6 +5,160 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct JapaneseEbookTests {
+    @Test(arguments: [false, true])
+    func nativeTapBurstPublishesOnlyTheFinalPageWithOneVisibleTransition(rightToLeft: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: rightToLeft ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        let host = UIViewController(); window.rootViewController = host
+        host.view.addSubview(web); window.makeKeyAndVisible(); host.view.layoutIfNeeded()
+        let reader = EbookReaderState()
+        let turns = EPUBPageTurn(web: web, reader: reader)
+        defer {
+            turns.stop(); window.isHidden = true
+            config.userContentController.removeScriptMessageHandler(forName: "reader")
+        }
+        web.navigationDelegate = probe
+        try await probe.load(web, url: page)
+        let font = try #require(Bundle.main.url(forResource: "ChillDuanHeiSongProJP_Regular", withExtension: "otf"))
+        let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        _ = try await web.callAsyncJavaScript("""
+            await window.openBook(bytes, '', fonts, theme, []);
+            const origin = rendition.currentLocation().start.cfi;
+            await rendition.next(); await rendition.next(); await painted();
+            window.expectedTapLocation = rendition.currentLocation().start.cfi;
+            await rendition.display(origin); await painted();
+            window.committedTaps = [];
+            window.renderedTapSteps = 0;
+            const next = rendition.manager.next.bind(rendition.manager);
+            const previous = rendition.manager.prev.bind(rendition.manager);
+            rendition.manager.next = () => { window.renderedTapSteps++; return next(); };
+            rendition.manager.prev = () => { window.renderedTapSteps++; return previous(); };
+            const turn = window.readerTurn;
+            const tap = window.readerTap;
+            const gate = new Promise(resolve => { window.releaseTapRendering = resolve; });
+            window.tapTimings = [];
+            window.readerTap = async actions => {
+                await gate;
+                const start = performance.now();
+                const result = await tap(actions);
+                window.tapTimings.push(performance.now() - start);
+                return result;
+            };
+            window.readerTurn = async action => {
+                const result = await turn(action);
+                if (action === 'commit') window.committedTaps.push(rendition.currentLocation().start.cfi);
+                return result;
+            };
+            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(),
+                "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
+                "theme": ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": rightToLeft ? "vertical-rl" : "horizontal-tb"]], in: nil, contentWorld: .page)
+        #expect(probe.ready); #expect(probe.failure == nil)
+        reader.ready = true; reader.atStart = false; reader.rightToLeft = rightToLeft
+        reader.location = probe.location
+        await turns.prime()
+        turns.requestTurn(advancing: true)
+        turns.requestTurn(advancing: true)
+        for _ in 0..<12 {
+            turns.requestTurn(advancing: false)
+            turns.requestTurn(advancing: true)
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        let presentation = try #require(host.view.subviews.last)
+        #expect(presentation !== web)
+        #expect(host.view.subviews.count == 2, "There must be a single visible transition, not hidden stacked sheets")
+        #expect(presentation.subviews.count == 2)
+        #expect(abs(try #require(presentation.subviews.last).transform.tx) > 100, "The full slide must continue while rendering is blocked")
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        let visible = UIGraphicsImageRenderer(bounds: presentation.bounds, format: format).image { presentation.layer.render(in: $0.cgContext) }
+        try visible.pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-real-tap-\(rightToLeft).png"))
+        #expect(visibleInkFraction(visible) > 0.0015, "The actual EPUB presentation must contain prose, not a blank capture")
+        let blockedCommits = try await web.callAsyncJavaScript("return window.committedTaps.length", arguments: [:], in: nil, contentWorld: .page) as? Int
+        #expect(blockedCommits == 0)
+        let releasedAt = CACurrentMediaTime()
+        _ = try await web.callAsyncJavaScript("window.releaseTapRendering()", arguments: [:], in: nil, contentWorld: .page)
+        var commits: [String] = []
+        for _ in 0..<200 {
+            commits = try await web.callAsyncJavaScript("return window.committedTaps", arguments: [:], in: nil, contentWorld: .page) as? [String] ?? []
+            if commits.count == 1 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let expected = try await web.callAsyncJavaScript("return window.expectedTapLocation", arguments: [:], in: nil, contentWorld: .page) as? String
+        #expect(commits.count == 1, "Pagination must catch up once, not replay the tap backlog")
+        print("EPUB burst catch-up seconds", CACurrentMediaTime() - releasedAt)
+        print("EPUB renderer milliseconds", try await web.callAsyncJavaScript("return window.tapTimings", arguments: [:], in: nil, contentWorld: .page) as Any)
+        let renderedSteps = try await web.callAsyncJavaScript("return window.renderedTapSteps", arguments: [:], in: nil, contentWorld: .page) as? Int
+        #expect(renderedSteps == 2, "The renderer must catch up directly, without reloading chapters for cancelled tap pairs")
+        #expect(commits.first == expected, "Coalescing must retain every tap's requested position")
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(host.view.subviews == [web])
+    }
+
+    private func visibleInkFraction(_ image: UIImage) -> Double {
+        let width = 100, height = 144
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        pixels.withUnsafeMutableBytes { buffer in
+            let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            context.draw(image.cgImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        var ink = 0
+        for y in 4..<(height - 4) { for x in 4..<(width - 4) {
+            let i = (y * width + x) * 4
+            if pixels[i] < 180 && pixels[i + 1] < 180 && pixels[i + 2] < 180 { ink += 1 }
+        } }
+        return Double(ink) / Double(width * height)
+    }
+
+    @Test(arguments: [390, 820, 1366])
+    func horizontalColumnsAdaptAndFailedBookmarkHighlightDisappears(width: Int) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: width, height: 1000), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.isHidden = false
+        defer { window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe
+        try await probe.load(web, url: page)
+        let font = try #require(Bundle.main.url(forResource: "LibreBaskerville", withExtension: "ttf"))
+        let fontURL = "data:font/ttf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        _ = try await web.callAsyncJavaScript("await window.openBook(bytes, '', fonts, theme, [])", arguments: [
+            "bytes": try Data(contentsOf: book).base64EncodedString(),
+            "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
+            "theme": ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": "horizontal-tb"]
+        ], in: nil, contentWorld: .page)
+        #expect(probe.failure == nil); #expect(probe.ready)
+        let checks = try #require(try await web.callAsyncJavaScript("""
+            await painted();
+            const doc = rendition.getContents()[0].document;
+            const before = textWithoutRuby(doc.body);
+            const quote = textWithoutRuby(doc.querySelector('p')).trim();
+            window.readerBookmarks([quote]); await painted();
+            const marked = doc.querySelectorAll('[data-leximory-bookmark]').length;
+            window.readerBookmarks([]); await painted();
+            return {columns:rendition.manager.layout.divisor,marked,
+              remaining:doc.querySelectorAll('[data-leximory-bookmark]').length,
+              intact:before === textWithoutRuby(doc.body)};
+            """, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        #expect(checks["columns"] as? Int == (width >= 760 ? 2 : 1))
+        #expect((checks["marked"] as? Int ?? 0) > 0)
+        #expect(checks["remaining"] as? Int == 0)
+        #expect(checks["intact"] as? Bool == true)
+        let image = try await web.takeSnapshot(configuration: nil)
+        try image.pngData()?.write(to: URL(fileURLWithPath: "/tmp/ebook-columns-\(width).png"))
+        web.frame.size.width = width >= 760 ? 390 : 820
+        _ = try await web.callAsyncJavaScript("await new Promise(r => setTimeout(r, 500)); await painted();", arguments: [:], in: nil, contentWorld: .page)
+        let columns = try await web.callAsyncJavaScript("return rendition.manager.layout.divisor", arguments: [:], in: nil, contentWorld: .page) as? Int
+        #expect(columns == (width >= 760 ? 1 : 2))
+    }
+
     @Test func suppliedJapaneseBookKeepsPagesRubyAndViewport() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let path = environment["LEXIMORY_EXAMPLE_EPUB"] ?? environment["TEST_RUNNER_LEXIMORY_EXAMPLE_EPUB"] else { return }

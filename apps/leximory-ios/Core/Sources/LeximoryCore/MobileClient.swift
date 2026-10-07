@@ -74,6 +74,9 @@ public struct EbookBookmark: Codable, Identifiable, Sendable {
     public let chapter: String?
     public let location: String?
     public let createdAt: String?
+    public init(id: Int, quote: String, chapter: String?, location: String?, createdAt: String? = nil) {
+        self.id = id; self.quote = quote; self.chapter = chapter; self.location = location; self.createdAt = createdAt
+    }
 }
 public struct EbookDescriptor: Codable, Sendable {
     public let text: CatalogText

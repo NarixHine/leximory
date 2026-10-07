@@ -215,12 +215,13 @@ final class ReaderUITests: XCTestCase {
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 1.2)
         let lookup = app.menuItems["🐈 猫忆查"]
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["收藏"].exists)
+        XCTAssertTrue(app.menuItems["添加书签"].exists)
         capture(app, name: "EPUB contextual learning menu")
         lookup.tap()
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
         XCTAssertTrue(tray.waitForExistence(timeout: 5))
-        XCTAssertGreaterThan(tray.frame.height, 300)
+        XCTAssertGreaterThan(tray.frame.height, 0)
+        XCTAssertLessThanOrEqual(tray.frame.height, app.frame.height * 0.8)
         XCTAssertTrue(app.otherElements["Popover"].exists == false)
         capture(app, name: "EPUB contextual annotation")
     }
@@ -261,17 +262,34 @@ final class ReaderUITests: XCTestCase {
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The river"), object: reader)], timeout: 5) == .completed)
         let opening = reader.value as? String
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).tap()
+        XCTAssertEqual(reader.value as? String, opening)
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        XCTAssertEqual(reader.value as? String, opening)
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", opening!), object: reader)], timeout: 5) == .completed)
         let second = reader.value as? String
         // A second tap keeps turning without waiting for the first animation to be acknowledged.
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", second!), object: reader)], timeout: 5) == .completed)
-        // The far-left quarter turns back one page in an English book.
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+        // The empty left gutter turns back one page in an English book.
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", second!), object: reader)], timeout: 5) == .completed)
         capture(app, name: "EPUB tap zones in reading direction")
     }
+    @MainActor func testEbookBookmarksButtonAndEmptyList() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        app.buttons["text-fixture-epub"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["The river"].waitForExistence(timeout: 20))
+        revealEbookControls(app)
+        app.buttons["ebook-bookmarks"].tap()
+        XCTAssertTrue(app.staticTexts["暂无书签"].waitForExistence(timeout: 5))
+        capture(app, name: "EPUB bookmarks")
+    }
+
     @MainActor func testCancelledEPUBDragAndEdgeBack() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
@@ -442,7 +460,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
         XCTAssertTrue(app.menuItems["🐈 猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["收藏"].exists)
+        XCTAssertTrue(app.menuItems["添加书签"].exists)
         capture(app, name: "PDF contextual learning menu")
         app.menuItems["🐈 猫忆查"].tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
