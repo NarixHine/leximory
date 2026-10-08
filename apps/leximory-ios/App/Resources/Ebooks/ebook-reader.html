@@ -2,7 +2,7 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}@media(min-width:760px){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 48px),1232px)}}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 88px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 88px),1100px)}@media(min-width:760px) and (orientation:landscape){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 88px),1232px)}}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false;
@@ -126,7 +126,7 @@ function highlightBookmarks() {
 const retryHighlights = () => { highlightBookmarks(); requestAnimationFrame(highlightBookmarks); setTimeout(highlightBookmarks,100); setTimeout(highlightBookmarks,500); };
 window.readerBookmarks = quotes => { bookmarkQuotes=quotes;retryHighlights(); };
 function pageKey(event) {
-  if (!ready || pageTurn || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+  if (!ready || pageTurn && !nativePreviewSession || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   const selection = event.target.ownerDocument?.getSelection();
   if (selection && !selection.isCollapsed) return;
@@ -136,7 +136,7 @@ function pageKey(event) {
 }
 document.addEventListener('keydown', pageKey);
 window.readerTheme = async theme => {
-  if (pageTurn) { pendingTheme = theme; return; }
+  if (pageTurn || nativePreviewSession) { pendingTheme = theme; return; }
   currentTheme=theme; document.body.style.background=theme.paper; document.body.dataset.writing=theme.writing;
   if (theme.top) document.body.style.paddingTop=theme.top+'px';
   if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
@@ -193,7 +193,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const initial = document.getElementById('book').getBoundingClientRect();
     // Fixed dimensions keep epub.js's own window-resize listener from also firing
     // and clearing the view; every reflow goes through resizeBook.
-    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:700,flow:'paginated',allowScriptedContent:true});
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:672,flow:'paginated',allowScriptedContent:true});
     // epub.js re-displays the current CFI from inside its resize handler while the
     // resized section is still re-rendering. That display snaps on the wrong axis
     // for paginated vertical writing, so the reader lands pages (often a whole
@@ -341,6 +341,59 @@ window.readerTap = async actions => {
     throw error;
   }
 };
+// Native adjacent-page snapshots are prepared beneath a source bitmap cover.
+// Keep their temporary relocations out of reading-position and selection state.
+let nativePreview, nativePreviewSession = false, finishNativePreview;
+let nativePreviewFinished = Promise.resolve();
+window.readerPreviewLocation = () => rendition?.currentLocation()?.start?.cfi || null;
+window.readerPreview = async action => {
+  if (!rendition) return false;
+  if (action === 'finish') {
+    if (nativePreview) await window.readerPreview('restore');
+    nativePreviewSession = false;
+    if (!pageTurn && pendingTheme) {
+      const theme = pendingTheme; pendingTheme = null;
+      await window.readerTheme(theme);
+    }
+    finishNativePreview?.(); finishNativePreview = null;
+    resizeBook();
+    return true;
+  }
+  if (action === 'restore') {
+    if (!nativePreview) return false;
+    const saved = nativePreview;
+    try {
+      // Restore the exact physical spread. Displaying a reported CFI can snap
+      // vertical writing to the chapter start, and unnecessarily reload fonts.
+      if (rendition.manager.views.first().section.index !== saved.section) {
+        await rendition.display(saved.href); await painted();
+      }
+      rendition.manager.scrollTo(saved.left, saved.top, true);
+      await painted();
+      rendition.location = rendition.currentLocation();
+    }
+    finally { pageTurn = saved.turn; nativePreview = null; }
+    return true;
+  }
+  if (nativePreview) return false;
+  if (!nativePreviewSession) {
+    nativePreviewSession = true;
+    nativePreviewFinished = new Promise(resolve => { finishNativePreview = resolve; });
+  }
+  const location = rendition.currentLocation().start;
+  const manager = rendition.manager;
+  nativePreview = {location:location.cfi, href:location.href, turn:pageTurn,
+    section:manager.views.first().section.index, left:manager.container.scrollLeft, top:manager.container.scrollTop};
+  pageTurn = pageTurn || {origin:nativePreview.location};
+  try {
+    await (action === 'next' ? rendition.next() : rendition.prev());
+    await painted();
+    return true;
+  } catch (error) {
+    await window.readerPreview('restore');
+    throw error;
+  }
+};
 window.readerTurn = async action => {
   if (!rendition) return false;
   if (action === 'next' || action === 'previous') {
@@ -373,6 +426,7 @@ window.readerTurn = async action => {
 // with the native page animation instead of waiting for it to settle.
 window.readerProgress = () => { if (rendition && reportLocation) reportLocation(rendition.currentLocation()); };
 window.readerCommand = async (command,value) => {
+  if (nativePreviewSession) await nativePreviewFinished;
   if (!rendition || pageTurn) return;
   if (command==='next') await rendition.next();
   if (command==='previous') await rendition.prev();
@@ -382,7 +436,7 @@ let resizeFrame, resizeRetry, viewportSize = '';
 const resizeBook = () => {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
-    if (!rendition || !ready || pageTurn) return;
+    if (!rendition || !ready || pageTurn || nativePreviewSession) return;
     const bounds = document.getElementById('book').getBoundingClientRect();
     send('layout',{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height});
     const width = Math.round(bounds.width), height = Math.round(bounds.height);

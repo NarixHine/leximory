@@ -23,22 +23,113 @@ import LeximoryCore
         for i in 0..<4 {
             let before = tapPixels(stage)
             requests.append(try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft)))
-            #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "Interrupting must preserve the visible composition")
+            #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "New taps must preserve both prose positions and brightness")
             now += 0.016; transition.advance(at: now)
             #expect(pixelDifference(before, tapPixels(stage)) > 0.003, "Every tap must move visible text on its first frame")
-            #expect(stage.subviews.count == 2)
+            if advancing { #expect(stage.subviews.count == 2) }
+            else { #expect(stage.subviews.count >= 2 && stage.subviews.count <= i + 2) }
             let foreground = try #require(stage.subviews.last)
             let direction: CGFloat = (rightToLeft ? !advancing : advancing) ? -1 : 1
-            #expect(foreground.transform.tx * direction > 4, "A turn must start its full slide, not a short acknowledgement that stalls")
-            let firstOffset = abs(foreground.transform.tx)
+            let initialOffset: CGFloat = advancing ? 0 : -direction * 400
+            let firstTravel = (foreground.transform.tx - initialOffset) * direction
+            #expect(firstTravel > 4, "The top leaf must respond on the first frame in either direction")
             now += 0.05; transition.advance(at: now)
-            #expect(abs(foreground.transform.tx) > firstOffset + 40, "Motion must continue without a renderer callback")
+            #expect((foreground.transform.tx - initialOffset) * direction > firstTravel + 40, "Motion must continue without a renderer callback")
             try tapFrame(stage).pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-tap-\(advancing)-\(rightToLeft)-\(i).png"))
         }
         for request in requests { transition.resolve(request, image: tapTestPage(.green), rightToLeft: rightToLeft) }
         now += 0.7; transition.advance(at: now)
         #expect(!transition.isAnimating)
         #expect(host.subviews == [web])
+    }
+
+    @Test(arguments: [false, true])
+    func consecutiveBackwardTapsKeepUnfinishedLeavesMoving(rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let first = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        let stage = try #require(transition.stage)
+        let firstLeaf = try #require(stage.subviews.last)
+        let underneath = try #require(stage.subviews.first)
+        let spring = PageTurnSpring(from: 0, target: 1, velocity: 1.8)
+        now += 0.1; transition.advance(at: now)
+        let before = tapPixels(stage)
+        let firstOffset = firstLeaf.transform.tx
+        let second = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        #expect(firstLeaf.superview === stage, "Do not flatten the unfinished leaf into a still composite")
+        #expect(firstLeaf.transform.tx == firstOffset)
+        #expect(pixelDifference(before, tapPixels(stage)) < 0.002)
+        let secondLeaf = try #require(stage.subviews.last)
+        let secondOffset = secondLeaf.transform.tx
+        now += 0.016; transition.advance(at: now)
+        let progress = spring.settledValue(at: 0.116 / spring.duration)
+        let expected = PageSlide.incomingOffset(progress: progress, width: 400, forward: rightToLeft, advances: false)
+        #expect(abs(firstLeaf.transform.tx - expected) < 0.00001, "The older leaf must retain its original timeline")
+        #expect(abs(firstLeaf.transform.tx) < abs(firstOffset) - 4)
+        #expect(abs(secondLeaf.transform.tx) < abs(secondOffset) - 4, "The new leaf must start immediately, above the moving older leaf")
+        #expect(abs(underneath.transform.tx) <= PageSlide.incomingInset * 400)
+        let third = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        now += 0.016; transition.advance(at: now)
+        #expect(abs(firstLeaf.transform.tx) < abs(expected) - 4)
+        #expect(secondLeaf.superview === stage)
+        // Completed leaves release everything they cover during a sustained burst.
+        now = 1 + spring.duration + 0.001; transition.advance(at: now)
+        #expect(firstLeaf.superview === stage)
+        #expect(underneath.superview === stage, "Keep the rendered backing page until the entire burst finishes")
+        transition.resolve([first, second, third], image: tapTestPage(.green))
+        now += 0.7; transition.advance(at: now)
+        #expect(!transition.isAnimating)
+        #expect(host.subviews == [web], "Older slides must not continue after the final turn settles")
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func backwardBurstShadingFollowsTheNewestLeaf(rightToLeft: Bool, dark: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = host.bounds
+        let controller = UIViewController(); window.rootViewController = controller
+        controller.view.addSubview(host)
+        window.overrideUserInterfaceStyle = dark ? .dark : .light
+        window.isHidden = false
+        defer { window.isHidden = true }
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        #expect(web.traitCollection.userInterfaceStyle == (dark ? .dark : .light))
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(UIColor(white: 0.6, alpha: 1)))
+        _ = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        let stage = try #require(transition.stage)
+        // Include a settled older leaf: its shading must still follow the
+        // newest turn after the original underneath sheet has been removed.
+        for _ in 0..<9 {
+            now += 0.1; transition.advance(at: now)
+            let before = tapPixels(stage)
+            _ = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+            #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "A new tap must not flash the exposed paper to white")
+            let newest = try #require(stage.subviews.last)
+            for elapsed in [0.18, 0.03] {
+                now += elapsed; transition.advance(at: now)
+                let progress = 1 - abs(newest.transform.tx) / 400
+                let expectedAlpha = progress * PageSlide.veilStrength
+                for sheet in stage.subviews.dropLast() {
+                    let veil = try #require(sheet.subviews.last)
+                    #expect(abs(veil.alpha - expectedAlpha) < 0.003,
+                        "Every exposed older leaf must have the hypothetical underneath page's brightness")
+                }
+                let pixels = tapPixels(stage)
+                let x = rightToLeft ? 1 : 398
+                let sample = (10 * 400 + x) * 4
+                let expected = dark ? 153 + 102 * expectedAlpha : 153 * (1 - expectedAlpha)
+                let actual = Double(pixels[sample])
+                #expect(abs(actual - Double(expected)) < 3,
+                    "The forward edge must match a single backward tap at the newest leaf's progress")
+            }
+        }
     }
 
     @Test func tapsSettleLikeSwipeReleasesAndKeepMomentum() throws {
@@ -68,7 +159,7 @@ import LeximoryCore
         #expect(abs(try #require(stage.subviews.last).transform.tx) > firstFrame + 4)
         _ = try #require(transition.begin(advancing: false, rightToLeft: false))
         now += 0.016; transition.advance(at: now)
-        #expect(try #require(stage.subviews.last).transform.tx > 4, "A reversal must respond on its first frame")
+        #expect(try #require(stage.subviews.last).transform.tx > -400 + 4, "A reversal must respond on its first frame")
     }
 
     @Test func tapsInOneDisplayFrameCannotFlattenToBlank() throws {
@@ -144,7 +235,8 @@ import LeximoryCore
         let stage = try #require(transition.stage)
         for elapsed in [0.003, 0.008] {
             now = 1 + elapsed; transition.advance(at: now)
-            let offset = try #require(stage.subviews.last).transform.tx
+            let source = try #require(advancing ? stage.subviews.last : stage.subviews.first)
+            let offset = source.transform.tx
             let alpha = PageSlide.veilAlpha(forwardOffset: rightToLeft ? -offset : offset, width: 400)
             let pixels = tapPixels(stage)
             let sample = (10 * 400 + 200) * 4
@@ -152,6 +244,41 @@ import LeximoryCore
                 #expect(abs(Double(pixels[sample + 1]) - Double(alpha * 255)) < 3, "Forward displacement must lighten the actual page pixels")
             } else {
                 #expect(abs(Double(pixels[sample]) - Double((1 - alpha) * 255)) < 3, "Backward displacement must darken the actual page pixels")
+            }
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func backwardTapsCoverShortParallaxWithThePreviousPage(rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let request = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        transition.resolve(request, image: tapTestPage(.green), rightToLeft: rightToLeft)
+        let stage = try #require(transition.stage)
+        let underneath = try #require(stage.subviews.first)
+        let previous = try #require(stage.subviews.last)
+        let release = PageTurnSpring(from: 0, target: 1, velocity: 1.8)
+        for elapsed in [0.016, 0.1, 0.2, 0.4, 0.6] {
+            now = 1 + elapsed; transition.advance(at: now)
+            let progress = release.settledValue(at: elapsed / release.duration)
+            let outgoing = PageSlide.outgoingOffset(progress: progress, width: 400, forward: rightToLeft, advances: false)
+            let incoming = PageSlide.incomingOffset(progress: progress, width: 400, forward: rightToLeft, advances: false)
+            #expect(abs(underneath.transform.tx - outgoing) < 0.00001)
+            #expect(abs(previous.transform.tx - incoming) < 0.00001)
+            #expect(abs(underneath.transform.tx) <= 400 * PageSlide.incomingInset)
+            let veil = try #require(underneath.subviews.last)
+            #expect(abs(veil.alpha - progress * PageSlide.veilStrength) < 0.00001,
+                "The underneath page must dim gradually with its short parallax, rather than reaching full gray early")
+            let pixels = tapPixels(stage)
+            let center = (10 * 400 + 200) * 4
+            if abs(incoming) < 190 {
+                #expect(pixels[center + 1] > 240, "The previous page must cover the current one, rather than remain hidden underneath")
+            } else {
+                #expect(abs(Double(pixels[center]) - Double((1 - veil.alpha) * 255)) < 3)
             }
         }
     }
@@ -171,8 +298,165 @@ import LeximoryCore
         transition.resolve(first, image: tapTestPage(.green), rightToLeft: false)
         #expect(stage.subviews.last?.transform.tx == -400, "Rendering must not launch a second motion")
         #expect(stage.subviews.first?.transform == .identity)
+        let before = tapPixels(stage)
+        let completedSheets = stage.subviews
+        let transforms = completedSheets.map(\.transform)
         transition.resolve(final, image: tapTestPage(.blue), rightToLeft: false)
-        #expect(host.subviews == [web])
+        #expect(pixelDifference(before, tapPixels(stage)) < 0.002)
+        #expect(completedSheets.map(\.transform) == transforms)
+        #expect(host.subviews == [web], "A late result must uncover the final page immediately, without another frame or slide")
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func rendererCannotRewriteMovingTapSheets(advancing: Bool, rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let first = try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft))
+        now += 0.1; transition.advance(at: now)
+        let final = try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft))
+        now += 0.1; transition.advance(at: now)
+        let stage = try #require(transition.stage)
+        let sheets = stage.subviews
+        let pixels = sheets.map { tapPixels($0) }
+        let transforms = sheets.map(\.transform)
+        let before = tapPixels(stage)
+        transition.resolve(first, image: tapTestPage(.green), rightToLeft: rightToLeft)
+        #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "A superseded result cannot change visible content")
+        transition.resolve(final, image: tapTestPage(.blue), rightToLeft: rightToLeft)
+        #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "A renderer result must leave moving prose untouched")
+        for (index, sheet) in sheets.enumerated() {
+            #expect(tapPixels(sheet) == pixels[index], "Every existing sheet must retain its original prose")
+            #expect(sheet.transform == transforms[index], "Renderer completion cannot stall or restart a sheet")
+        }
+        now += 0.016; transition.advance(at: now)
+        #expect(pixelDifference(before, tapPixels(stage)) > 0.003)
+        now += 0.7; transition.advance(at: now)
+        #expect(!transition.isAnimating)
+    }
+
+    @Test(arguments: [false, true])
+    func rendererCompletionDoesNotStallTheNextBackwardTap(rightToLeft: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        let first = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        now += 0.1; transition.advance(at: now)
+        transition.resolve(first, image: tapTestPage(.green), rightToLeft: rightToLeft)
+        let stage = try #require(transition.stage)
+        let arriving = try #require(stage.subviews.last)
+        now += 0.04; transition.advance(at: now)
+        let offset = arriving.transform.tx
+        let before = tapPixels(stage)
+        _ = try #require(transition.begin(advancing: false, rightToLeft: rightToLeft))
+        #expect(pixelDifference(before, tapPixels(stage)) < 0.002)
+        now += 0.016; transition.advance(at: now)
+        let spring = PageTurnSpring(from: 0, target: 1, velocity: 1.8)
+        let direction: CGFloat = rightToLeft ? -1 : 1
+        let from = spring.settledValue(at: 0.1 / spring.duration)
+        let value = (spring.settledValue(at: 0.156 / spring.duration) - from) / (1 - from)
+        let expected = -direction * 400 * (1 - value)
+        #expect(abs(arriving.transform.tx - expected) < 0.00001)
+        #expect(abs(arriving.transform.tx) < abs(offset) - 4)
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func warmedTapDestinationStaysPinned(advancing: Bool, stale: Bool) throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        var now: CFTimeInterval = 1
+        let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+        defer { transition.removeAll() }
+        transition.cover(image: tapTestPage(.red))
+        transition.cacheNeighbors(previous: tapTestPage(.green), next: tapTestPage(.blue))
+        let request = try #require(transition.begin(advancing: advancing, rightToLeft: false))
+        now += 0.15; transition.advance(at: now)
+        let stage = try #require(transition.stage)
+        let sheets = stage.subviews
+        let before = tapPixels(stage)
+        transition.resolve(request, image: tapTestPage(stale ? .yellow : (advancing ? .blue : .green)), rightToLeft: false)
+        #expect(stage.subviews.count == sheets.count + (stale ? 1 : 0))
+        #expect(sheets.allSatisfy { $0.superview === stage })
+        #expect(tapPixels(stage) == before)
+        now += 0.7; transition.advance(at: now)
+        #expect(!transition.isAnimating)
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func tapMotionDeadlineDoesNotDependOnRendererDelay(advancing: Bool, rightToLeft: Bool) throws {
+        for delay in [0.1, 0.6, 0.8, 2.0] {
+            let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+            let web = WKWebView(frame: host.bounds); host.addSubview(web)
+            var now: CFTimeInterval = 1
+            let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+            defer { transition.removeAll() }
+            transition.cover(image: tapTestPage(.red))
+            var requests: [EPUBTapTransition.Request] = []
+            for _ in 0..<6 {
+                requests.append(try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft)))
+                now += 0.04; transition.advance(at: now)
+            }
+            let lastTap = now - 0.04
+            let stage = try #require(transition.stage)
+            now = lastTap + delay; transition.advance(at: now)
+            let before = tapPixels(stage)
+            let sheets = stage.subviews
+            let transforms = sheets.map(\.transform)
+            transition.resolve(requests, image: tapTestPage(.blue))
+            #expect(sheets.allSatisfy { $0.superview === stage })
+            if delay >= PageTurnSpring(from: 0, target: 1, velocity: 1.8).duration {
+                #expect(stage.subviews == sheets, "Rendering after the deadline must never start another slide")
+            }
+            #expect(sheets.map(\.transform) == transforms)
+            #expect(tapPixels(stage) == before, "Rendering cannot change the contents of native sheets")
+            if delay >= PageTurnSpring(from: 0, target: 1, velocity: 1.8).duration {
+                #expect(host.subviews == [web], "Late rendering must hand off directly to stationary WebKit")
+                #expect(!transition.isAnimating)
+            } else {
+                now = lastTap + 0.62; transition.advance(at: now)
+                #expect(host.subviews == [web], "Only the last tap can set the motion deadline")
+                #expect(!transition.isAnimating)
+            }
+        }
+    }
+
+    @Test(arguments: [false, true], [false, true])
+    func settledTapPixelsAlreadyMatchTheFinalPage(advancing: Bool, rightToLeft: Bool) throws {
+        for delay in [0.1, 0.35, 0.55] {
+            let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+            let web = WKWebView(frame: host.bounds); host.addSubview(web)
+            let finalPage = tapTestPage(.blue)
+            let livePage = UIImageView(image: finalPage); livePage.frame = web.bounds
+            web.addSubview(livePage)
+            var now: CFTimeInterval = 1
+            let transition = EPUBTapTransition(web: web, radius: 0, clock: { now })
+            defer { transition.removeAll() }
+            transition.cover(image: tapTestPage(.red))
+            let first = try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft))
+            now += 0.04; transition.advance(at: now)
+            let final = try #require(transition.begin(advancing: advancing, rightToLeft: rightToLeft))
+            let lastTap = now
+            now += delay; transition.advance(at: now)
+            let stage = try #require(transition.stage)
+            let before = tapPixels(stage)
+            transition.present([first, final], image: finalPage)
+            #expect(pixelDifference(before, tapPixels(stage)) < 0.002, "Accepting the final page cannot change already visible text")
+            now = lastTap + 0.62; transition.advance(at: now)
+            #expect(stage.superview === host, "Keep the real page visible while commit/lookahead finishes")
+            #expect(pixelDifference(tapPixels(stage), tapPixels(livePage)) < 0.002,
+                "The final spring frame must already show the correct page, rather than a stand-in")
+            let beforeHandoff = tapPixels(host)
+            transition.resolve([first, final], image: finalPage)
+            #expect(host.subviews == [web])
+            #expect(pixelDifference(beforeHandoff, tapPixels(host)) < 0.002,
+                "Uncovering WebKit must not change the settled page's text")
+        }
     }
 
     private func tapTestPage(_ color: UIColor) -> UIImage {
@@ -352,6 +636,69 @@ import LeximoryCore
         #expect(EbookAppearance.night.colors(dark: false).paper == "#100f0f")
         #expect(ReadingSelectionMenu.lookupImage != nil)
     }
+    @Test(arguments: [false, true], [false, true])
+    func swipeTracksSmallDragsBeforeDestinationRendering(advancing: Bool, rightToLeft: Bool) async throws {
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = host.bounds
+        let controller = UIViewController(); window.rootViewController = controller
+        controller.view.addSubview(host); window.makeKeyAndVisible()
+        let web = WKWebView(frame: host.bounds); host.addSubview(web)
+        let reader = EbookReaderState(); reader.ready = true; reader.rightToLeft = rightToLeft; reader.location = "origin"
+        let turns = EPUBPageTurn(web: web, reader: reader)
+        defer { turns.stop(); window.isHidden = true }
+        let navigation = EbookTestNavigation(); web.navigationDelegate = navigation
+        try await navigation.load(web, html: """
+            <html><body style="margin:0;background:#d07050;color:#192024;font:24px serif">
+            <script>
+            const paintPage = action => {
+                document.body.style.background = action === 'next' ? '#2060d0' : action === 'previous' ? '#207040' : '#d07050';
+                document.querySelector('p').textContent = action === 'next' ? 'The actual next page.' : action === 'previous' ? 'The actual previous page.' : 'Rendered prose stays visible while the next page is delayed.';
+            };
+            window.readerPreviewLocation = () => 'origin';
+            window.readerPreview = async action => { paintPage(action); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); return true; };
+            window.readerTurn = async action => { await new Promise(resolve => { window.releaseSwipe = resolve; }); paintPage(action); };
+            window.readerProgress = () => {};
+            </script>
+            <p>Rendered prose stays visible while the next page is delayed.</p>
+            </body></html>
+            """)
+        _ = try await web.callAsyncJavaScript("await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))", arguments: [:], in: nil, contentWorld: .page)
+        await turns.prime()
+        let forward = rightToLeft ? !advancing : advancing
+        let sign: CGFloat = forward ? -1 : 1
+        turns.beginTurn(advancing: advancing, forward: forward, translation: sign * 8)
+        let sheets = host.subviews.filter { $0.subviews.first is UIImageView }
+        #expect(sheets.count == 2, "Install rendered source sheets before any asynchronous destination work")
+        let outgoing = try #require(advancing ? sheets.last : sheets.first)
+        let incoming = try #require(advancing ? sheets.first : sheets.last)
+        #expect((outgoing.subviews.first as? UIImageView)?.image != nil)
+        let pinned = try #require((incoming.subviews.first as? UIImageView)?.image)
+        #expect(pinned.pngData() != (outgoing.subviews.first as? UIImageView)?.image?.pngData(), "The incoming page must be the actual neighbor, never a duplicate of the current page")
+        for distance in [CGFloat(8), 12, 24, 48] {
+            turns.updateDrag(translation: sign * distance)
+            let progress = distance / 400
+            #expect(abs(outgoing.transform.tx - PageSlide.outgoingOffset(progress: progress, width: 400, forward: forward, advances: advancing)) < 0.00001)
+            #expect(abs(incoming.transform.tx - PageSlide.incomingOffset(progress: progress, width: 400, forward: forward, advances: advancing)) < 0.00001)
+        }
+        // Let the renderer start but hold its result. The visible displacement
+        // must already follow the finger while the preview promise is pending.
+        var waiting = false
+        for _ in 0..<50 {
+            waiting = try await web.callAsyncJavaScript("return typeof window.releaseSwipe === 'function'", arguments: [:], in: nil, contentWorld: .page) as? Bool ?? false
+            if waiting { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(waiting)
+        let before = tapPixels(host)
+        let offset = outgoing.transform.tx
+        _ = try await web.callAsyncJavaScript("window.releaseSwipe(true)", arguments: [:], in: nil, contentWorld: .page)
+        try await Task.sleep(for: .milliseconds(150))
+        #expect((incoming.subviews.first as? UIImageView)?.image === pinned, "Incoming prose must remain pinned even when a different renderer result arrives")
+        #expect(outgoing.transform.tx == offset, "Preview arrival must never catch up by jumping the page")
+        #expect(pixelDifference(before, tapPixels(host)) < 0.002)
+    }
+
     @Test func pageSlideLeafTravelsFullAndTheRevealedPageParallaxesShort() {
         let width: CGFloat = 400
         let inset = PageSlide.incomingInset * width
