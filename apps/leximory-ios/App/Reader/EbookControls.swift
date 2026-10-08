@@ -367,9 +367,17 @@ struct PageTurnSpring {
         invalidateSnapshot()
     }
     @objc private func zoneTapped(_ gesture: UITapGestureRecognizer) {
-        guard let view = gesture.view, reader.ready, reader.selection == nil else { return }
-        guard let right = reader.gutterSide(at: gesture.location(in: view)) else { return }
-        requestTurn(advancing: right != reader.rightToLeft)
+        guard let web, reader.ready, reader.selection == nil else { return }
+        let point = gesture.location(in: web)
+        Task { [weak self] in
+            guard let self else { return }
+            let side = try? await web.callAsyncJavaScript(
+                "return window.readerGutter(x, y)",
+                arguments: ["x": point.x / max(1, web.bounds.width), "y": point.y / max(1, web.bounds.height)],
+                in: nil, contentWorld: .page) as? String
+            guard !self.stopped, let side else { return }
+            self.requestTurn(advancing: (side == "right") != self.reader.rightToLeft)
+        }
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         guard let web else { return false }

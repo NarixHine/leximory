@@ -2,11 +2,22 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}@media(min-width:760px){#book{width:min(calc(100% - 48px),1232px)}}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 48px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 48px),1100px)}@media(min-width:760px){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 48px),1232px)}}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false;
 const send = (kind, payload = {}) => window.webkit.messageHandlers.reader.postMessage({kind,...payload});
+// Check the live DOM at the tap, including overflowing publisher content.
+// Fractions map native view coordinates to the actual WebKit viewport.
+window.readerGutter = (fractionX, fractionY) => {
+  if (!ready || reflowing) return null;
+  const x = fractionX * window.innerWidth, y = fractionY * window.innerHeight;
+  const bounds = document.getElementById('book').getBoundingClientRect();
+  if (y < bounds.top || y > bounds.bottom || x >= bounds.left && x <= bounds.right) return null;
+  const hit = document.elementFromPoint(x, y);
+  if (hit !== document.body && hit !== document.documentElement) return null;
+  return x < bounds.left ? 'left' : 'right';
+};
 function sanitizeDocument(source, svg = false) {
   let document = new DOMParser().parseFromString(source, svg ? 'image/svg+xml' : 'application/xhtml+xml');
   if (document.querySelector('parsererror') && !svg) document = new DOMParser().parseFromString(source, 'text/html');
@@ -172,10 +183,17 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
         element.style.setProperty('direction', 'ltr', 'important');
       }
     });
+    // Reflowable books follow the reader's window layout, even when their OPF
+    // requests a single page. Preserve fixed-layout publisher spreads.
+    if (theme.writing === 'vertical-rl') {
+      book.package.metadata.spread = 'none';
+    } else if (book.package.metadata.layout !== 'pre-paginated') {
+      book.package.metadata.spread = 'auto';
+    }
     const initial = document.getElementById('book').getBoundingClientRect();
     // Fixed dimensions keep epub.js's own window-resize listener from also firing
     // and clearing the view; every reflow goes through resizeBook.
-    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:'auto',minSpreadWidth:theme.writing === 'vertical-rl' ? 800 : 700,flow:'paginated',allowScriptedContent:true});
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:700,flow:'paginated',allowScriptedContent:true});
     // epub.js re-displays the current CFI from inside its resize handler while the
     // resized section is still re-rendering. That display snaps on the wrong axis
     // for paginated vertical writing, so the reader lands pages (often a whole
@@ -296,12 +314,22 @@ window.readerTap = async actions => {
   if (!rendition) return false;
   const location = rendition.currentLocation();
   if (!pageTurn) pageTurn = {origin: location.start.cfi};
-  const compacted = compactTapActions(actions, location);
+  let compacted = compactTapActions(actions, location);
   try {
-    for (const action of compacted) {
+    while (compacted.length) {
+      const action = compacted.shift();
       // The manager already clamps at the book edges. Mapping a fresh CFI on
       // every step is expensive and would recreate a backlog during tap bursts.
+      const previousSection = rendition.manager.views.first()?.section.index;
       await (action === 'next' ? rendition.manager.next() : rendition.manager.prev());
+      // A newly rendered chapter needs its final font/layout frame before
+      // another spread can be measured. Turns inside one chapter stay batched.
+      if (rendition.manager.views.first()?.section.index !== previousSection) {
+        await painted();
+        // The next chapter's extent is now known. Cancel remaining opposite
+        // pairs against its real boundaries instead of replaying them all.
+        compacted = compactTapActions(compacted, rendition.currentLocation());
+      }
     }
     rendition.location = rendition.currentLocation();
     await painted();

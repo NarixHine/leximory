@@ -18,7 +18,7 @@ import LeximoryCore
         #expect(reader.bookmarkNotice != nil)
     }
 
-    @Test func onlyEmptyOuterGuttersTurnPages() {
+    @Test func pageBoundsIdentifyOuterMarginsForChrome() {
         let reader = EbookReaderState()
         #expect(reader.gutterSide(at: CGPoint(x: 5, y: 200)) == nil)
         reader.pageBounds = CGRect(x: 24, y: 56, width: 342, height: 700)

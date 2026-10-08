@@ -194,25 +194,21 @@ struct EbookScreen: View {
     }
     private var bookmarksTray: some View {
         NavigationStack {
-            List(reader.bookmarks) { bookmark in
-                Button {
-                    if let location = bookmark.location { reader.navigate("display", value: location); tray = nil }
-                } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(bookmark.quote).font(LeximoryTypography.prose(16, language: language)).lineLimit(4)
-                        if format == "pdf", let location = bookmark.location {
-                            Text("第\(location)页").font(.caption).foregroundStyle(.secondary)
-                        } else if let chapter = bookmark.chapter, !chapter.isEmpty {
-                            Text(chapter).font(.caption).foregroundStyle(.secondary)
-                        }
-                    }.foregroundStyle(LeximoryPalette.ink)
-                }.disabled(bookmark.location?.isEmpty != false)
-                    .listRowBackground(LeximoryPalette.paper)
-            }.listStyle(.plain).scrollContentBackground(.hidden)
-                .background(LeximoryPalette.paper)
+            ScrollView {
+                LazyVStack(spacing: 14) {
+                    ForEach(reader.bookmarks) { bookmark in
+                        Button {
+                            if let location = bookmark.location { reader.navigate("display", value: location); tray = nil }
+                        } label: {
+                            EbookBookmarkCard(bookmark: bookmark, language: language, isPDF: format == "pdf")
+                        }.buttonStyle(.plain)
+                            .disabled(bookmark.location?.isEmpty != false)
+                    }
+                }.padding(20)
+            }.background(LeximoryPalette.paper)
                 .overlay { if reader.bookmarks.isEmpty { ContentUnavailableView("暂无书签", systemImage: "bookmark") } }
                 .navigationTitle("书签").navigationBarTitleDisplayMode(.inline)
-        }.frame(minWidth: sizeClass == .regular ? 360 : nil, idealHeight: min(540, max(240, CGFloat(reader.bookmarks.count) * 88 + 80)))
+        }.frame(minWidth: sizeClass == .regular ? 400 : nil, idealHeight: min(620, max(260, CGFloat(reader.bookmarks.count) * 180 + 80)))
             .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
             .presentationBackground(LeximoryPalette.paper)
     }
@@ -229,31 +225,33 @@ struct EbookScreen: View {
         }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
             .padding(.horizontal, 20)
     }
+    private func trayBinding(_ item: EbookTray) -> Binding<Bool> {
+        Binding(get: { tray == item }, set: { presented in
+            if presented { tray = item }
+            else if tray == item { tray = nil }
+        })
+    }
+    private func readerActionIcon(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 17))
+            .frame(width: 36, height: 36)
+            .glassEffect(.regular.interactive(), in: Circle())
+            .frame(width: 44, height: 44).contentShape(Rectangle())
+    }
     private var readerActions: some View {
-        HStack(spacing: 0) {
-            Button { tray = .contents } label: {
-                Image(systemName: "list.bullet").frame(width: 44, height: 44).contentShape(Rectangle())
-            }.accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
-            Button { tray = .bookmarks } label: {
-                Image(systemName: "bookmark").frame(width: 44, height: 44).contentShape(Rectangle())
-            }.accessibilityLabel("书签").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
-            Button { tray = .settings } label: {
-                Image(systemName: "slider.horizontal.3").font(.system(size: 18))
-                    .frame(width: 44, height: 44).contentShape(Rectangle())
-            }.accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
+        HStack(spacing: 8) {
+            Button { tray = .contents } label: { readerActionIcon("list.bullet") }
+                .accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
+                .popover(isPresented: trayBinding(.contents)) { contentsTray }
+            Button { tray = .bookmarks } label: { readerActionIcon("bookmark") }
+                .accessibilityLabel("书签").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
+                .popover(isPresented: trayBinding(.bookmarks)) { bookmarksTray }
+            Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
+                .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
+                .popover(isPresented: trayBinding(.settings)) { readingSettings.presentationCompactAdaptation(.sheet) }
             if let client {
                 ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
-                    Image(systemName: "square.and.arrow.up")
-                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                    readerActionIcon("square.and.arrow.up")
                 }.accessibilityLabel("分享")
-            }
-        }.frame(height: 36).padding(.horizontal, 4)
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .popover(item: $tray) { tray in
-            switch tray {
-            case .contents: contentsTray
-            case .bookmarks: bookmarksTray
-            case .settings: readingSettings.presentationCompactAdaptation(.sheet)
             }
         }
     }
@@ -333,6 +331,14 @@ struct EbookScreen: View {
             } else {
                 format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
                 #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures") {
+                    reader.bookmarks = format == "pdf" ? [
+                        EbookBookmark(id: 1, quote: "The final PDF page", chapter: "The final page", location: "2")
+                    ] : [
+                        EbookBookmark(id: 1, quote: "We walked along the bank. The river was calm.", chapter: "The river", location: "one.xhtml"),
+                        EbookBookmark(id: 2, quote: "The final chapter remains readable after rotation.", chapter: "The garden", location: "two.xhtml")
+                    ]
+                }
                 if language == "Japanese", let path = ProcessInfo.processInfo.environment["LEXIMORY_EXAMPLE_EPUB"] {
                     data = try Data(contentsOf: URL(fileURLWithPath: path))
                 } else {
@@ -357,6 +363,38 @@ struct EbookScreen: View {
             let bookmark = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: pending.quote, chapter: pending.chapter, location: pending.location)
             reader.finishBookmark(pending, saved: bookmark)
         } catch { reader.finishBookmark(pending, saved: nil) }
+    }
+}
+
+struct EbookBookmarkCard: View {
+    let bookmark: EbookBookmark
+    let language: String
+    let isPDF: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "bookmark.fill").font(.system(size: 14)).foregroundStyle(LeximoryPalette.muted)
+                    .accessibilityHidden(true)
+                if let chapter = bookmark.chapter?.trimmingCharacters(in: .whitespacesAndNewlines), !chapter.isEmpty {
+                    Text(chapter).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                } else if isPDF, let page = bookmark.location {
+                    Text("第\(page)页").font(.subheadline.weight(.semibold))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(LeximoryPalette.muted).accessibilityHidden(true)
+            }
+            Text(bookmark.quote).font(LeximoryTypography.prose(17, language: language))
+                .lineSpacing(5).lineLimit(7).frame(maxWidth: .infinity, alignment: .leading)
+            if isPDF, let page = bookmark.location, bookmark.chapter?.isEmpty == false {
+                Text("第\(page)页").font(.caption).foregroundStyle(LeximoryPalette.muted)
+            }
+        }.foregroundStyle(LeximoryPalette.ink).padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 20))
+            .contentShape(RoundedRectangle(cornerRadius: 20))
+            .accessibilityElement(children: .combine)
     }
 }
 

@@ -290,6 +290,42 @@ final class ReaderUITests: XCTestCase {
         capture(app, name: "EPUB bookmarks")
     }
 
+    @MainActor func testBookmarkCardsShowChaptersAndNavigate() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        app.buttons["text-fixture-epub"].tap()
+        revealEbookControls(app)
+        let contents = app.buttons["ebook-contents"], bookmarks = app.buttons["ebook-bookmarks"]
+        XCTAssertGreaterThanOrEqual(bookmarks.frame.minX - contents.frame.maxX, 7)
+        bookmarks.tap()
+        let garden = app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "The garden", "The final chapter remains readable")).firstMatch
+        XCTAssertTrue(garden.waitForExistence(timeout: 5), app.debugDescription)
+        capture(app, name: "Bookmark quote cards with chapter context")
+        garden.tap()
+        let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The garden"), object: reader)], timeout: 10) == .completed)
+    }
+
+    @MainActor func testPDFBookmarkCardsShowPageAndNavigate() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        for _ in 0..<4 where !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-bookmarks"].tap()
+        let bookmark = app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "The final page", "第2页")).firstMatch
+        XCTAssertTrue(bookmark.waitForExistence(timeout: 5), app.debugDescription)
+        capture(app, name: "PDF bookmark chapter and page context")
+        bookmark.tap()
+        let position = app.staticTexts["ebook-page-position"]
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "第2页"), object: position)], timeout: 10) == .completed)
+    }
+
     @MainActor func testCancelledEPUBDragAndEdgeBack() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
