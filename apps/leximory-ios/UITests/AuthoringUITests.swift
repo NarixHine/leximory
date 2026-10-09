@@ -1,6 +1,54 @@
 import XCTest
 
 final class AuthoringUITests: XCTestCase {
+    @MainActor func testCorpusReplacesTextsAndKeepsLibrarySidebar() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad gallery replacement check") }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--authoring-fixtures"]
+        app.launch()
+        let library = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        let openCorpus = app.buttons["语料本"]
+        XCTAssertTrue(openCorpus.waitForExistence(timeout: 10))
+        let sidebarFrame = library.frame
+        openCorpus.tap()
+        let corpus = app.descendants(matching: .any).matching(identifier: "corpus-library").firstMatch
+        XCTAssertTrue(corpus.waitForExistence(timeout: 10))
+        XCTAssertTrue(library.isHittable)
+        XCTAssertEqual(library.frame, sidebarFrame)
+        XCTAssertGreaterThanOrEqual(corpus.frame.minX, sidebarFrame.maxX)
+        XCTAssertLessThan(corpus.frame.width, app.frame.width)
+        XCTAssertFalse(openCorpus.exists)
+        app.buttons["corpus-show-texts"].tap()
+        XCTAssertTrue(openCorpus.waitForExistence(timeout: 10))
+        XCTAssertFalse(corpus.exists)
+        XCTAssertTrue(library.isHittable)
+    }
+
+    @MainActor func testOpeningAnotherWordUsesItsOwnEditor() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad popover reuse check") }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--authoring-fixtures"]
+        app.launch()
+        let library = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch
+        XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+        let corpus = app.buttons["语料本"]
+        XCTAssertTrue(corpus.waitForExistence(timeout: 10)); corpus.tap()
+        for lemma in ["bank", "river", "bank"] {
+            let word = app.buttons[lemma]
+            XCTAssertTrue(word.waitForExistence(timeout: 10)); word.tap()
+            let edit = app.buttons["编辑词汇"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 5)); edit.tap()
+            let field = app.descendants(matching: .any)["edit-词条"].firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 5))
+            XCTAssertEqual(field.value as? String, lemma)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.95)).tap()
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: field)], timeout: 5), .completed)
+        }
+    }
+
     @MainActor func testOfflineVocabularyKeepsEditingVisibleButDisabled() {
         let app = XCUIApplication()
         app.launchArguments = ["--authoring-fixtures", "--offline"]

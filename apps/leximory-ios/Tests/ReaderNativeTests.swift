@@ -515,6 +515,36 @@ import LeximoryCore
         #expect(presentation.source.text == "bank")
         #expect(view.selectedRange == range)
     }
+    @Test func tallAnnotationScrollViewFitsConstrainedPopoverAndKeepsOffset() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fixture"))
+        let definition = Definition(lemma: "word", definition: String(repeating: "A long annotation must remain reachable.\n", count: 80))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView:
+            DefinitionView(item: DefinitionPresentation(source: .article(selection), definition: definition),
+                           client: nil, language: "English", isPopover: true)
+                .frame(width: 400, height: 180, alignment: .top))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        host.view.layoutIfNeeded()
+        func scrollView(in view: UIView) -> UIScrollView? {
+            if let scroll = view as? UIScrollView { return scroll }
+            return view.subviews.lazy.compactMap { scrollView(in: $0) }.first
+        }
+        let scroll = try #require(scrollView(in: host.view))
+        #expect(scroll.bounds.height <= 181)
+        #expect(scroll.contentSize.height > scroll.bounds.height)
+        #expect(abs(scroll.contentOffset.y + scroll.adjustedContentInset.top) < 1)
+        scroll.setContentOffset(CGPoint(x: 0, y: 240), animated: false)
+        host.view.setNeedsLayout()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(abs(scroll.contentOffset.y - 240) < 1)
+    }
     @Test func topAnnotationGrowthKeepsReaderViewportAndTopEdgeFixed() async throws {
         let document = try FixtureArticle.samples[0].document()
         let layout = ReaderLayout(document: document)

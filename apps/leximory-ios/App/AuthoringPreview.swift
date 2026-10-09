@@ -35,20 +35,22 @@ struct AuthoringPreview: View {
 }
 private actor AuthoringPreviewTransport: ClientTransport {
     private var word = #"{"id":"word","libraryId":"library","createdAt":"2026-10-04T00:00:00Z","protected":false,"fields":{"original":"banks","lemma":"bank","definition":"河岸","etymology":"古英语","cognates":"embankment"}}"#
+    private var river = #"{"id":"word-river","libraryId":"library","createdAt":"2026-10-04T00:00:00Z","protected":false,"fields":{"original":"river","lemma":"river","definition":"河流","etymology":null,"cognates":null}}"#
     private var texts: [String] = []
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         let output: String
         switch operationID {
         case "texts": output = "{\"items\":[\(texts.joined(separator: ","))],\"nextCursor\":null}"
-        case "vocabularyList": output = "{\"items\":[\(word)],\"nextCursor\":null}"
-        case "savedWord": output = word
+        case "vocabularyList": output = "{\"items\":[\(word),\(river)],\"nextCursor\":null}"
+        case "savedWord": output = request.path?.contains("word-river") == true ? river : word
         case "extractArticle": output = #"{"title":"导入测试","content":"Along the river."}"#
         case "editWord":
             guard let body else { throw URLError(.badServerResponse) }
             let data = try await Data(collecting: body, upTo: 65536)
             let fields = try JSONSerialization.jsonObject(with: data)
-            word = String(decoding: try JSONSerialization.data(withJSONObject: ["id": "word", "libraryId": "library", "createdAt": "2026-10-04T00:00:00Z", "protected": false, "fields": fields]), as: UTF8.self)
-            output = word
+            let id = request.path?.contains("word-river") == true ? "word-river" : "word"
+            output = String(decoding: try JSONSerialization.data(withJSONObject: ["id": id, "libraryId": "library", "createdAt": "2026-10-04T00:00:00Z", "protected": false, "fields": fields]), as: UTF8.self)
+            if id == "word-river" { river = output } else { word = output }
         case "importArticle":
             guard let body else { throw URLError(.badServerResponse) }
             let data = try await Data(collecting: body, upTo: 65536)

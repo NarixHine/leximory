@@ -4,6 +4,7 @@ import LeximoryCore
 struct VocabularyLibraryView: View {
     let library: FixtureLibrary
     let client: MobileClient
+    let closeCorpus: () -> Void
     @Environment(\.nativeSync) private var sync
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var words: [SavedWord] = []
@@ -13,18 +14,27 @@ struct VocabularyLibraryView: View {
     @State private var selected: SavedWord?
     var body: some View {
         GeometryReader { geometry in
+                let contentWidth = min(geometry.size.width, LeximoryLayout.textGalleryMeasure)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
-                        Text(library.name).editorialFont(32, language: library.language)
-                            .foregroundStyle(LeximoryPalette.ink).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityAddTraits(.isHeader)
-                        timeline(columns: geometry.size.width < 600 ? 2 : geometry.size.width < 1000 ? 3 : 4)
-                    }.padding(24).frame(maxWidth: 1200).frame(maxWidth: .infinity)
+                        HStack(alignment: .top, spacing: 16) {
+                            Text(library.name).editorialFont(32, language: library.language)
+                                .foregroundStyle(LeximoryPalette.ink).fixedSize(horizontal: false, vertical: true)
+                                .accessibilityAddTraits(.isHeader)
+                            Spacer(minLength: 0)
+                            Button("文章", systemImage: "doc.text", action: closeCorpus)
+                                .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+                                .frame(minWidth: 44, minHeight: 44).tint(LeximoryPalette.sage)
+                                .accessibilityIdentifier("corpus-show-texts")
+                        }
+                        timeline(columns: contentWidth < 600 ? 2 : 3)
+                    }.padding(24).frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
                 }.background(LeximoryPalette.paper)
             }.navigationTitle("语料本").navigationBarTitleDisplayMode(.inline)
                 .task { await load(reset: true) }
                 .refreshable { await load(reset: true) }
                 .tint(LeximoryPalette.sage)
+                .accessibilityIdentifier("corpus-\(library.id.rawValue)")
     }
     private func timeline(columns: Int) -> some View {
         LazyVStack(alignment: .leading, spacing: 22) {
@@ -52,7 +62,7 @@ struct VocabularyLibraryView: View {
                     .popover(isPresented: Binding(get: { selected?.id == word.id }, set: { if !$0 { selected = nil } }), arrowEdge: nil) {
                         CorpusWordTray(word: word, library: library, client: client, isPopover: sizeClass == .regular) { updated in
                             if let index = words.firstIndex(where: { $0.id == updated.id }) { words[index] = updated }
-                        }.presentationCompactAdaptation(.sheet).presentationDragIndicator(.visible)
+                        }.id(word.id).presentationCompactAdaptation(.sheet).presentationDragIndicator(.visible)
                     }
             }
         }
@@ -131,8 +141,11 @@ private struct CorpusWordTray: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
             }.scrollDismissesKeyboard(.interactively).accessibilityIdentifier("vocabulary-editor-scroll")
-                .ignoresSafeArea(.container, edges: .bottom).onAppear { bottomInset = geometry.safeAreaInsets.bottom }
-        }.frame(width: isPopover ? 400 : nil, height: isPopover ? max(160, min(height, 720)) : nil)
+                .ignoresSafeArea(.container, edges: isPopover ? [] : .bottom).onAppear { bottomInset = geometry.safeAreaInsets.bottom }
+        }.frame(width: isPopover ? 400 : nil)
+            .frame(idealHeight: isPopover ? max(160, min(height, 720)) : nil,
+                   maxHeight: isPopover ? max(160, min(height, 720)) : nil,
+                   alignment: .top)
             .background(LeximoryPalette.shell)
             .presentationDetents([.height(max(1, min(height, 720) - bottomInset)), .large])
             .presentationCornerRadius(isPopover ? 32 : nil)

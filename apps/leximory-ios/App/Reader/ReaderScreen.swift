@@ -66,6 +66,7 @@ struct ReaderScreen: View {
         .animation(reduceMotion ? nil : .timingCurve(0.25, 1, 0.5, 1, duration: 0.24), value: playback.textID == article.id)
         .sheet(item: Binding(get: { sizeClass != .regular && definition?.isDynamic == false ? definition : nil }, set: { definition = $0 })) { item in
             DefinitionView(item: item, client: client, language: language, isPopover: false)
+                .id(item.id)
                 .presentationDragIndicator(.visible)
                 .presentationBackground(LeximoryPalette.annotationSurface)
         }
@@ -268,7 +269,9 @@ struct DefinitionView: View {
         }
         .animation(reduceMotion ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
         .frame(width: isPopover ? 400 : nil)
-        .frame(height: isPopover ? max(120, min(contentHeight, 520)) : nil)
+        .frame(idealHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
+               maxHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
+               alignment: .top)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")

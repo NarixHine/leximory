@@ -98,7 +98,9 @@ struct RemoteTextGallery: View {
     @State private var requestID = UUID()
     var body: some View {
         ZStack {
-            if loading { ReadingLoadingIndicator("正在加载文章……") }
+            if vocabulary {
+                VocabularyLibraryView(library: library, client: client, closeCorpus: { vocabulary = false })
+            } else if loading { ReadingLoadingIndicator("正在加载文章……") }
             else if let error {
                 LeximoryUnavailableView("暂时无法加载文章", systemImage: "wifi.exclamationmark", message: error) { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {
@@ -113,7 +115,7 @@ struct RemoteTextGallery: View {
             }
         }
         .toolbar {
-            if sizeClass != .regular && !loading {
+            if sizeClass != .regular && !loading && !vocabulary {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }
                         .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(LeximoryPalette.sage)
@@ -128,7 +130,7 @@ struct RemoteTextGallery: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if sizeClass == .regular && !loading && (error != nil || texts.isEmpty) {
+            if sizeClass == .regular && !loading && !vocabulary && (error != nil || texts.isEmpty) {
                 GlassEffectContainer(spacing: 16) {
                     HStack {
                         Spacer()
@@ -155,7 +157,6 @@ struct RemoteTextGallery: View {
                 importedArticle = text.preview
             }
         }
-        .navigationDestination(isPresented: $vocabulary) { VocabularyLibraryView(library: library, client: client) }
         .navigationBarTitleDisplayMode(.inline).toolbar(sizeClass == .regular ? .hidden : .visible, for: .navigationBar)
         .background(LeximoryPalette.paper)
         .task(id: library.id) { await load() }

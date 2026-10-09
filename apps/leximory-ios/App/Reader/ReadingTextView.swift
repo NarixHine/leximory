@@ -161,6 +161,7 @@ struct ReadingTextView: UIViewRepresentable {
             let controller = AnnotationPopoverController(rootView: AnyView(EmptyView()))
             let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
                 closeTray: { [weak controller] in controller?.dismiss(animated: true) })
+                .id(item.id)
                 .environment(\.nativeSync, parent.sync)
             controller.rootView = AnyView(content)
             controller.onDismiss = { [weak view] in view?.highlightAnnotation(nil) }
