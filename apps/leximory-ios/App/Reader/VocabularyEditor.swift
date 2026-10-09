@@ -6,6 +6,7 @@ struct VocabularyEditor: View {
     @Environment(\.nativeSync) private var sync
     @Bindable var model: VocabularyEditModel
     let language: String
+    var failure: String? = nil
     let submit: () -> Void
     let cancel: () -> Void
     @FocusState private var focusedField: String?
@@ -33,7 +34,7 @@ struct VocabularyEditor: View {
                         .labelStyle(.iconOnly).frame(width: 44, height: 44).disabled(model.saving)
                 }
             }
-            if let error = model.error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
+            if let error = failure ?? model.error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
         }.disabled(model.saving)
     }
 

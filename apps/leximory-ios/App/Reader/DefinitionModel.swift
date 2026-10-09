@@ -39,6 +39,8 @@ enum DefinitionSource {
     private(set) var editor: VocabularyEditModel?
     private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
+    @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
+    private var creationDefinition: Definition?
     init(embedded: Definition?) {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
     }
@@ -75,15 +77,19 @@ enum DefinitionSource {
     }
     @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
         guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }
+        let original = creationDefinition ?? definition
+        creationDefinition = original
+        if editor == nil { editor = VocabularyEditModel(fields: VocabularyFields(original: original.lemma, definition: original)) }
         saveError = nil
         saveState = .saving
+        let request = Task { try await operation(completionID) }
+        saveRequest = request
         return Task {
             do {
-                savedWord = try await operation(completionID)
-                if let savedWord {
-                    editor = VocabularyEditModel(word: SavedWord(id: savedWord.id, libraryId: savedWord.libraryId,
-                        fields: VocabularyFields(original: definition.lemma, definition: definition)))
-                }
+                let receipt = try await request.value
+                savedWord = receipt
+                editor?.resolve(word: SavedWord(id: receipt.id, libraryId: receipt.libraryId,
+                    fields: VocabularyFields(original: original.lemma, definition: original)))
                 saveState = .saved
             } catch {
                 if let failure = MobileClient.cause(of: error) as? MobileFailure,
@@ -97,8 +103,25 @@ enum DefinitionSource {
             }
         }
     }
-    func edited(_ word: SavedWord) {
-        state = .ready(word.fields.note, completionID: nil)
+    @discardableResult func submitEdit(client: MobileClient) -> Task<Void, Never>? {
+        submitEdit(persist: { receipt, fields in try await client.editWord(id: receipt.id, fields: fields) },
+            reload: { receipt in try await client.savedWord(id: receipt.id) })
+    }
+    @discardableResult func submitEdit(
+        persist: @escaping @MainActor (SavedVocabulary, VocabularyFields) async throws -> SavedWord,
+        reload: @escaping @MainActor (SavedVocabulary) async throws -> SavedWord
+    ) -> Task<Void, Never>? {
+        guard let editor, let request = saveRequest else { return nil }
+        return editor.submit(persist: { fields in
+            let receipt = try await request.value
+            return try await persist(receipt, fields)
+        }, reload: {
+            let receipt = try await request.value
+            return try await reload(receipt)
+        }, changed: { [weak self] fields in
+            guard let self, case .ready(_, let completionID) = self.state else { return }
+            self.state = .ready(fields.note, completionID: completionID)
+        })
     }
     private struct DefinitionFailure: Error { let message: String }
 }

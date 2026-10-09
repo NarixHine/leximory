@@ -213,9 +213,8 @@ struct DefinitionView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: item.isDynamic ? 12 : 16) {
                         if editing, let client, let editor = model.editor {
-                            VocabularyEditor(model: editor, language: language, submit: {
-                                editor.submit(persist: { try await client.editWord(id: editor.word.id, fields: $0) },
-                                    reload: { try await client.savedWord(id: editor.word.id) }, changed: { model.edited($0) })
+                            VocabularyEditor(model: editor, language: language, failure: model.saveError, submit: {
+                                model.submitEdit(client: client)
                                 editing = false
                             }, cancel: { editing = false })
                         } else {
@@ -294,7 +293,7 @@ struct DefinitionView: View {
                             .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
                             .background(LeximoryPalette.ink, in: Circle())
                     }.buttonStyle(.plain).accessibilityLabel("编辑词汇")
-                        .disabled(model.editor == nil || model.editor?.saving == true || sync?.online == false)
+                        .disabled(model.editor?.saving == true || sync?.online == false)
                 }
             }
             if let dictionaryURL {

@@ -80,13 +80,15 @@ struct VocabularyLibraryView: View {
 private struct CorpusWordTray: View {
     @Environment(\.nativeSync) private var sync
     @State private var editor: VocabularyEditModel
-    private var word: SavedWord { editor.word }
+    private let initialWord: SavedWord
+    private var word: SavedWord { editor.word ?? initialWord }
     let library: FixtureLibrary
     let client: MobileClient
     let isPopover: Bool
     let updated: (SavedWord) -> Void
     @State private var editing = false
     init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, updated: @escaping (SavedWord) -> Void) {
+        initialWord = word
         _editor = State(initialValue: VocabularyEditModel(word: word))
         self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated
     }
@@ -99,7 +101,7 @@ private struct CorpusWordTray: View {
                     if editing {
                         VocabularyEditor(model: editor, language: library.language, submit: {
                             editor.submit(persist: { try await client.editWord(id: word.id, fields: $0) },
-                                reload: { try await client.savedWord(id: word.id) }, changed: { updated($0) })
+                                reload: { try await client.savedWord(id: word.id) }, changed: { _ in if let word = editor.word { updated(word) } })
                             editing = false
                         }, cancel: { editing = false })
                     } else {
