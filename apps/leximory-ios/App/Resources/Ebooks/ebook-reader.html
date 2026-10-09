@@ -18,6 +18,20 @@ window.readerGutter = (fractionX, fractionY) => {
   if (hit !== document.body && hit !== document.documentElement) return null;
   return x < bounds.left ? 'left' : 'right';
 };
+let gutterTouch = null;
+document.addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0) return;
+  gutterTouch = {id:event.pointerId, x:event.clientX, y:event.clientY, time:event.timeStamp};
+});
+document.addEventListener('pointercancel', () => { gutterTouch = null; });
+document.addEventListener('pointerup', event => {
+  const start = gutterTouch; gutterTouch = null;
+  if (!start || start.id !== event.pointerId || event.timeStamp - start.time > 350 ||
+      Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) return;
+  const side = window.readerGutter(event.clientX / innerWidth, event.clientY / innerHeight);
+  if (side) send('pageTap', {side});
+});
+
 function sanitizeDocument(source, svg = false) {
   let document = new DOMParser().parseFromString(source, svg ? 'image/svg+xml' : 'application/xhtml+xml');
   if (document.querySelector('parsererror') && !svg) document = new DOMParser().parseFromString(source, 'text/html');
@@ -145,7 +159,10 @@ window.readerTheme = async theme => {
   // epub.js owns relocation during reflow; displaying its reported CFI again can skip a split page.
   rendition.resize(Math.round(document.getElementById('book').clientWidth), Math.round(document.getElementById('book').clientHeight));
 };
+let preloadConfiguration;
+window.readerPreloadConfiguration = () => preloadConfiguration;
 window.openBook = async (base64, location, fonts, theme, bookmarks) => {
+  preloadConfiguration = {base64, location, fonts, theme, bookmarks};
   try {
     currentTheme=theme;document.body.style.background=theme.paper;document.body.dataset.writing=theme.writing;
     if (theme.top) document.body.style.paddingTop=theme.top+'px';
@@ -252,15 +269,21 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     reportLocation = relocated;
     rendition.on('relocated', location => { if(ready && !pageTurn && !reflowing) relocated(location); });
     await rendition.display(location || undefined).catch(() => rendition.display());
-    // Native tap presentation needs an actually painted first page, not merely
-    // a laid-out iframe. Do this during opening, before accepting page turns.
-    await painted();
+    // Freeze the first page only after its font metrics and extent are final.
+    await chapterPainted();
     ready = true;
     retryHighlights();
     relocated(rendition.currentLocation());send('ready');resizeBook();
   } catch (error) { send('failed',{message:String(error)}); }
 };
 const painted = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+const chapterPainted = async () => {
+  for (const view of rendition.views().all()) {
+    await view.contents?.document.fonts.ready;
+    view.expand();
+  }
+  await painted();
+};
 // The current page within its section. epub.js's own CFI relocation is unreliable
 // at reflow time, so the reader restores the position proportionally by page.
 const anchorPosition = () => {
@@ -312,9 +335,11 @@ function compactTapActions(actions, location) {
 // at book boundaries; publish only the position the reader actually requested.
 window.readerTap = async actions => {
   if (!rendition) return false;
-  const location = rendition.currentLocation();
+  // Preview preparation must never hold a tap behind a bitmap capture.
+  window.interruptReaderPreview();
+  const location = rendition.location;
   if (!pageTurn) pageTurn = {origin: location.start.cfi};
-  let compacted = compactTapActions(actions, location);
+  let compacted = actions.length > 1 ? compactTapActions(actions, rendition.currentLocation()) : [...actions];
   try {
     while (compacted.length) {
       const action = compacted.shift();
@@ -325,14 +350,17 @@ window.readerTap = async actions => {
       // A newly rendered chapter needs its final font/layout frame before
       // another spread can be measured. Turns inside one chapter stay batched.
       if (rendition.manager.views.first()?.section.index !== previousSection) {
-        await painted();
+        await chapterPainted();
         // The next chapter's extent is now known. Cancel remaining opposite
         // pairs against its real boundaries instead of replaying them all.
         compacted = compactTapActions(compacted, rendition.currentLocation());
       }
     }
     rendition.location = rendition.currentLocation();
-    await painted();
+    pageTurn = null;
+    reportLocation(rendition.location);
+    if (pendingTheme) {const theme=pendingTheme;pendingTheme=null;await window.readerTheme(theme);}
+    resizeBook();
     return true;
   } catch (error) {
     await rendition.display(pageTurn.origin);
@@ -345,11 +373,44 @@ window.readerTap = async actions => {
 // Keep their temporary relocations out of reading-position and selection state.
 let nativePreview, nativePreviewSession = false, finishNativePreview;
 let nativePreviewFinished = Promise.resolve();
+window.readerPreloadState = () => ({href:rendition.currentLocation().start.href,
+  left:rendition.manager.container.scrollLeft, top:rendition.manager.container.scrollTop,
+  theme:currentTheme, quotes:bookmarkQuotes});
+window.readerPreloadRestore = async state => {
+  if (JSON.stringify(currentTheme) !== JSON.stringify(state.theme)) await window.readerTheme(state.theme);
+  const manager = rendition.manager;
+  if (rendition.currentLocation().start.href !== state.href) {
+    await rendition.display(state.href);
+    await chapterPainted();
+  }
+  manager.scrollTo(state.left, state.top, true);
+  window.readerBookmarks(state.quotes);
+  await painted();
+  rendition.location = rendition.currentLocation();
+};
+window.readerPreloadStep = async advancing => {
+  await (advancing ? rendition.next() : rendition.prev());
+  await chapterPainted();
+  return rendition.currentLocation().start.cfi;
+};
+window.interruptReaderPreview = () => {
+  if (nativePreview) {
+    // Background previews stay in the loaded chapter, so restoration is a
+    // synchronous scroll, with no font loading or frame wait.
+    const saved = nativePreview;
+    rendition.manager.scrollTo(saved.left, saved.top, true);
+    pageTurn = saved.turn;
+    nativePreview = null;
+  }
+  nativePreviewSession = false;
+  finishNativePreview?.(); finishNativePreview = null;
+};
 window.readerPreviewLocation = () => rendition?.currentLocation()?.start?.cfi || null;
 window.readerPreview = async action => {
   if (!rendition) return false;
   if (action === 'finish') {
     if (nativePreview) await window.readerPreview('restore');
+    await painted();
     nativePreviewSession = false;
     if (!pageTurn && pendingTheme) {
       const theme = pendingTheme; pendingTheme = null;
@@ -362,17 +423,10 @@ window.readerPreview = async action => {
   if (action === 'restore') {
     if (!nativePreview) return false;
     const saved = nativePreview;
-    try {
-      // Restore the exact physical spread. Displaying a reported CFI can snap
-      // vertical writing to the chapter start, and unnecessarily reload fonts.
-      if (rendition.manager.views.first().section.index !== saved.section) {
-        await rendition.display(saved.href); await painted();
-      }
-      rendition.manager.scrollTo(saved.left, saved.top, true);
-      await painted();
-      rendition.location = rendition.currentLocation();
-    }
-    finally { pageTurn = saved.turn; nativePreview = null; }
+    rendition.manager.scrollTo(saved.left, saved.top, true);
+    pageTurn = saved.turn;
+    nativePreview = null;
+    rendition.location = rendition.currentLocation();
     return true;
   }
   if (nativePreview) return false;
@@ -380,13 +434,16 @@ window.readerPreview = async action => {
     nativePreviewSession = true;
     nativePreviewFinished = new Promise(resolve => { finishNativePreview = resolve; });
   }
-  const location = rendition.currentLocation().start;
+  const spread = rendition.currentLocation();
+  // Never unload the reading chapter for speculative bitmap preparation.
+  if (action === 'next' ? spread.end.displayed.page >= spread.end.displayed.total : spread.start.displayed.page <= 1) return false;
+  const location = spread.start;
   const manager = rendition.manager;
   nativePreview = {location:location.cfi, href:location.href, turn:pageTurn,
     section:manager.views.first().section.index, left:manager.container.scrollLeft, top:manager.container.scrollTop};
   pageTurn = pageTurn || {origin:nativePreview.location};
   try {
-    await (action === 'next' ? rendition.next() : rendition.prev());
+    await (action === 'next' ? manager.next() : manager.prev());
     await painted();
     return true;
   } catch (error) {
@@ -400,11 +457,11 @@ window.readerTurn = async action => {
     pageTurn = {origin: rendition.currentLocation().start.cfi};
     try {
       await (action === 'next' ? rendition.next() : rendition.prev());
-      await painted();
+      await chapterPainted();
       return true;
     } catch (error) {
       await rendition.display(pageTurn.origin);
-      await painted();
+      await chapterPainted();
       pageTurn = null;
       throw error;
     }
@@ -412,7 +469,7 @@ window.readerTurn = async action => {
   if (!pageTurn) return false;
   if (action === 'cancel') {
     await rendition.display(pageTurn.origin);
-    await painted();
+    await chapterPainted();
     pageTurn = null;
   } else if (action === 'commit') {
     pageTurn = null;
@@ -422,9 +479,6 @@ window.readerTurn = async action => {
   resizeBook();
   return true;
 };
-// Report the page we are on without ending the turn, so pagination keeps pace
-// with the native page animation instead of waiting for it to settle.
-window.readerProgress = () => { if (rendition && reportLocation) reportLocation(rendition.currentLocation()); };
 window.readerCommand = async (command,value) => {
   if (nativePreviewSession) await nativePreviewFinished;
   if (!rendition || pageTurn) return;

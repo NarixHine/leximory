@@ -161,14 +161,20 @@ struct TextGallery: View {
                                     .foregroundStyle(LeximoryPalette.ink).accessibilityAddTraits(.isHeader)
                             }
                             Spacer(minLength: 0)
-                            if let openVocabulary {
-                                Button("语料本", systemImage: "book.closed", action: openVocabulary)
-                                    .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-                            }
-                            if let importText {
-                                Button("导入", systemImage: "plus", action: importText)
-                                    .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-                                    .disabled(sync?.online == false)
+                            GlassEffectContainer(spacing: 16) {
+                                HStack(spacing: 16) {
+                                    if let openVocabulary {
+                                        Button("语料本", systemImage: "book.closed", action: openVocabulary)
+                                            .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+                                            .frame(minWidth: 44, minHeight: 44)
+                                    }
+                                    if let importText {
+                                        Button("导入", systemImage: "plus", action: importText)
+                                            .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+                                            .frame(minWidth: 44, minHeight: 44)
+                                            .disabled(sync?.online == false)
+                                    }
+                                }
                             }
                         }.tint(LeximoryPalette.sage)
                     }

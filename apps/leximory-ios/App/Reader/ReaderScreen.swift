@@ -212,9 +212,10 @@ struct DefinitionView: View {
                 let safeAreaBottom = geometry.safeAreaInsets.bottom
                 ScrollView {
                     VStack(alignment: .leading, spacing: item.isDynamic ? 12 : 16) {
-                        if editing, let client, let word = model.savedWord {
-                            VocabularyEditor(id: word.id, client: client, language: language, updated: { word in
-                                model.edited(word); editing = false
+                        if editing, let client, let editor = model.editor {
+                            VocabularyEditor(model: editor, language: language, failure: model.saveError, submit: {
+                                model.submitEdit(client: client)
+                                editing = false
                             }, cancel: { editing = false })
                         } else {
                             if !waiting {
@@ -230,8 +231,8 @@ struct DefinitionView: View {
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                                 definitionActions
-                                if case .uncertain = model.saveState {
-                                    Text("未能确认收藏结果，请先在网页版查看，避免重复收藏。")
+                                if let error = model.saveError ?? model.editor?.error {
+                                    Text(error)
                                         .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
                                 }
                             case .generating(let preview):
@@ -276,25 +277,24 @@ struct DefinitionView: View {
             if sync?.online == false, item.definition == nil { model.offline() }
             else if let client { await model.generate(client: client, source: item.source) }
         }
-        .onDisappear { model.cancel() }
     }
     private var definitionActions: some View {
         HStack(spacing: 16) {
             if let client {
-                Button { model.save(client: client, source: item.source) } label: {
-                    Group {
-                        if case .saving = model.saveState { ProgressView().tint(LeximoryPalette.paper) }
-                        else { Image(systemName: saved ? "book.closed.fill" : "book.closed").font(.system(size: 20)) }
-                    }.frame(width: 48, height: 48)
-                        .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                }.buttonStyle(.plain).disabled(!canSave || sync?.online == false)
-                    .accessibilityLabel(saved ? "已收藏" : "收藏词汇")
-            }
-            if model.savedWord != nil {
-                Button("编辑", systemImage: "pencil") { editing = true }
-                    .labelStyle(.iconOnly).frame(width: 44, height: 44)
-                    .foregroundStyle(LeximoryPalette.sage).accessibilityLabel("编辑词汇")
-                    .disabled(sync?.online == false)
+                if case .idle = model.saveState {
+                    Button { model.save(client: client, source: item.source) } label: {
+                        Image(systemName: "book.closed").font(.system(size: 20))
+                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
+                            .background(LeximoryPalette.ink, in: Circle())
+                    }.buttonStyle(.plain).disabled(sync?.online == false).accessibilityLabel("收藏词汇")
+                } else {
+                    Button { editing = true } label: {
+                        Image(systemName: "pencil").font(.system(size: 20))
+                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
+                            .background(LeximoryPalette.ink, in: Circle())
+                    }.buttonStyle(.plain).accessibilityLabel("编辑词汇")
+                        .disabled(model.editor?.saving == true || sync?.online == false)
+                }
             }
             if let dictionaryURL {
                 Link(destination: dictionaryURL) {
@@ -304,8 +304,6 @@ struct DefinitionView: View {
             }
         }
     }
-    private var saved: Bool { if case .saved = model.saveState { return true }; return false }
-    private var canSave: Bool { if case .idle = model.saveState { return true }; return false }
     private var dictionaryURL: URL? {
         let base: URL?
         switch language {

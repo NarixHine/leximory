@@ -1,6 +1,6 @@
 import SwiftUI
 import LeximoryCore
-#if DEBUG
+#if DEBUG && targetEnvironment(simulator)
 import OpenAPIRuntime
 import HTTPTypes
 #endif
@@ -13,7 +13,7 @@ struct AppRootView: View {
     private var fixtureClient: MobileClient? = nil
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
-        #if DEBUG
+        #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
             if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
                 fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })
@@ -22,7 +22,7 @@ struct AppRootView: View {
         }
         #endif
         var configuration = AppConfiguration.bundled
-        #if DEBUG
+        #if DEBUG && targetEnvironment(simulator)
         if configuration == nil && ProcessInfo.processInfo.arguments.contains("--onboarding") {
             configuration = AppConfiguration(apiURL: URL(string: "http://localhost:3001")!,
                 supabaseURL: URL(string: "https://onboarding-preview.invalid")!, anonKey: "preview")
@@ -39,7 +39,7 @@ struct AppRootView: View {
     var body: some View {
         Group {
             if let session, let livePlayback {
-                #if DEBUG
+                #if DEBUG && targetEnvironment(simulator)
                 if ProcessInfo.processInfo.arguments.contains("--onboarding") {
                     WelcomeGate(session: session)
                 } else {
@@ -49,17 +49,19 @@ struct AppRootView: View {
                 AccountRoot(session: session, playback: livePlayback)
                 #endif
             } else {
-                #if DEBUG
+                #if DEBUG && targetEnvironment(simulator)
                 if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
                     AuthoringPreview(playback: fixturePlayback)
+                } else if ProcessInfo.processInfo.arguments.contains("--fixtures") {
+                    if ProcessInfo.processInfo.arguments.contains("--tab-fixtures") {
+                        LibraryTabShell(selection: $fixtureTab) {
+                            fixtureBrowser
+                        } account: {
+                            Text("账户").font(LeximoryTypography.interface(24))
+                        }
+                    } else { fixtureBrowser }
                 } else {
-                if ProcessInfo.processInfo.arguments.contains("--tab-fixtures") {
-                    LibraryTabShell(selection: $fixtureTab) {
-                        fixtureBrowser
-                    } account: {
-                        Text("账户").font(LeximoryTypography.interface(24))
-                    }
-                } else { fixtureBrowser }
+                    LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: "请稍后重试。")
                 }
                 #else
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: "请稍后重试。")
@@ -67,9 +69,11 @@ struct AppRootView: View {
             }
         }
     }
+    #if DEBUG && targetEnvironment(simulator)
     private var fixtureBrowser: some View {
         FixtureLibraryView(playback: fixturePlayback, libraries: ProcessInfo.processInfo.arguments.contains("--ebook-fixtures") ? FixtureLibrary.ebookSamples : ProcessInfo.processInfo.arguments.contains("--catalog-layout-fixtures") ? FixtureLibrary.layoutSamples : FixtureLibrary.samples, client: fixtureClient)
     }
+    #endif
 }
 
 private struct AccountRoot: View {
@@ -155,7 +159,7 @@ struct SignInView: View {
     }
 }
 
-#if DEBUG
+#if DEBUG && targetEnvironment(simulator)
 private struct GalleryFixtureTransport: ClientTransport {
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         try await Task.detached { try await Task.sleep(for: .milliseconds(800)) }.value

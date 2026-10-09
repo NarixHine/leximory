@@ -262,9 +262,9 @@ final class ReaderUITests: XCTestCase {
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The river"), object: reader)], timeout: 5) == .completed)
         let opening = reader.value as? String
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
         XCTAssertEqual(reader.value as? String, opening)
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).tap()
         XCTAssertEqual(reader.value as? String, opening)
         reader.coordinate(withNormalizedOffset: CGVector(dx: 1 - 35 / reader.frame.width, dy: 0.5)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", opening!), object: reader)], timeout: 5) == .completed)

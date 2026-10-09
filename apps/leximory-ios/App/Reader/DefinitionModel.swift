@@ -36,8 +36,11 @@ enum DefinitionSource {
     enum SaveState { case idle, saving, saved, uncertain }
     private(set) var state: State
     private(set) var savedWord: SavedVocabulary?
+    private(set) var editor: VocabularyEditModel?
+    private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
-    @ObservationIgnored private var saveTask: Task<Void, Never>?
+    @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
+    private var creationDefinition: Definition?
     init(embedded: Definition?) {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
     }
@@ -69,20 +72,56 @@ enum DefinitionSource {
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")
         }
     }
-    func save(client: MobileClient, source: DefinitionSource) {
-        guard case .ready(_, let completionID) = state, case .idle = saveState else { return }
+    @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
+        save { completionID in try await source.save(client: client, completionID: completionID) }
+    }
+    @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
+        guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }
+        let original = creationDefinition ?? definition
+        creationDefinition = original
+        if editor == nil { editor = VocabularyEditModel(fields: VocabularyFields(original: original.lemma, definition: original)) }
+        saveError = nil
         saveState = .saving
-        saveTask = Task {
+        let request = Task { try await operation(completionID) }
+        saveRequest = request
+        return Task {
             do {
-                savedWord = try await source.save(client: client, completionID: completionID)
-                guard !Task.isCancelled else { return }
+                let receipt = try await request.value
+                savedWord = receipt
+                editor?.resolve(word: SavedWord(id: receipt.id, libraryId: receipt.libraryId,
+                    fields: VocabularyFields(original: original.lemma, definition: original)))
                 saveState = .saved
-            } catch { if !Task.isCancelled { saveState = .uncertain } }
+            } catch {
+                if let failure = MobileClient.cause(of: error) as? MobileFailure,
+                   !failure.error.retryable {
+                    saveState = .idle
+                    saveError = failure.error.message
+                } else {
+                    saveState = .uncertain
+                    saveError = "未能确认收藏结果，请先在语料本中查看，避免重复收藏。"
+                }
+            }
         }
     }
-    func edited(_ word: SavedWord) {
-        state = .ready(word.fields.note, completionID: nil)
+    @discardableResult func submitEdit(client: MobileClient) -> Task<Void, Never>? {
+        submitEdit(persist: { receipt, fields in try await client.editWord(id: receipt.id, fields: fields) },
+            reload: { receipt in try await client.savedWord(id: receipt.id) })
     }
-    func cancel() { saveTask?.cancel(); saveTask = nil }
+    @discardableResult func submitEdit(
+        persist: @escaping @MainActor (SavedVocabulary, VocabularyFields) async throws -> SavedWord,
+        reload: @escaping @MainActor (SavedVocabulary) async throws -> SavedWord
+    ) -> Task<Void, Never>? {
+        guard let editor, let request = saveRequest else { return nil }
+        return editor.submit(persist: { fields in
+            let receipt = try await request.value
+            return try await persist(receipt, fields)
+        }, reload: {
+            let receipt = try await request.value
+            return try await reload(receipt)
+        }, changed: { [weak self] fields in
+            guard let self, case .ready(_, let completionID) = self.state else { return }
+            self.state = .ready(fields.note, completionID: completionID)
+        })
+    }
     private struct DefinitionFailure: Error { let message: String }
 }
