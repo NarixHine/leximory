@@ -17,20 +17,67 @@ struct EbookSelectionAction {
     let selection: EbookSelection
 }
 
-enum EbookAppearance: String, CaseIterable {
-    case automatic, paper, sepia, night
+enum EbookAppearance: String, CaseIterable, Identifiable {
+    case paper, sepia, sage
+    var id: String { rawValue }
     var title: String {
-        switch self { case .automatic: "跟随系统"; case .paper: "白纸"; case .sepia: "暖纸"; case .night: "夜间" }
-    }
-    var colorScheme: ColorScheme? {
-        switch self { case .automatic: nil; case .night: .dark; case .paper, .sepia: .light }
+        switch self { case .paper: "白纸"; case .sepia: "暖纸"; case .sage: "青纸" }
     }
     func colors(dark: Bool, softerInk: Bool = false) -> (paper: String, ink: String) {
         switch self {
-        case .automatic: dark ? ("#100f0f", "#cecdc3") : ("#ffffff", softerInk ? "#434943" : "#192024")
-        case .paper: ("#ffffff", softerInk ? "#434943" : "#192024")
-        case .sepia: ("#f5f0e5", softerInk ? "#505047" : "#37372e")
-        case .night: ("#100f0f", "#cecdc3")
+        case .paper: dark ? ("#100f0f", "#cecdc3") : ("#ffffff", softerInk ? "#434943" : "#192024")
+        case .sepia: dark ? ("#211c17", "#d8cbb7") : ("#f5f0e5", softerInk ? "#505047" : "#37372e")
+        case .sage: dark ? ("#17201c", "#c7d3c8") : ("#eaf0e7", softerInk ? "#455347" : "#29392e")
+        }
+    }
+    func paperColor(dark: Bool) -> Color {
+        let rgb = UInt32(colors(dark: dark).paper.dropFirst(), radix: 16)!
+        return Color(.sRGB, red: Double((rgb >> 16) & 255) / 255,
+                     green: Double((rgb >> 8) & 255) / 255, blue: Double(rgb & 255) / 255, opacity: 1)
+    }
+}
+
+struct EbookThemePicker: View {
+    @Binding var selection: EbookAppearance
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("主题")
+                Spacer()
+                Text("随系统切换明暗").font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+            }
+            HStack(spacing: 24) {
+                ForEach(EbookAppearance.allCases) { theme in
+                    Button { selection = theme } label: {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle().fill(theme.paperColor(dark: true))
+                                Path { path in
+                                    path.move(to: .zero)
+                                    path.addLine(to: CGPoint(x: 48, y: 0))
+                                    path.addLine(to: CGPoint(x: 0, y: 48))
+                                    path.closeSubpath()
+                                }.fill(theme.paperColor(dark: false))
+                                Path { path in
+                                    path.move(to: CGPoint(x: 0, y: 48))
+                                    path.addLine(to: CGPoint(x: 48, y: 0))
+                                }.stroke(.white.opacity(0.35), lineWidth: 1)
+                            }
+                            .frame(width: 48, height: 48).clipShape(Circle())
+                            .overlay(Circle().strokeBorder(LeximoryPalette.ink.opacity(0.15), lineWidth: 1))
+                            .padding(4)
+                            .overlay(Circle().strokeBorder(selection == theme ? LeximoryPalette.ink : .clear, lineWidth: 2))
+                            Text(theme.title).font(LeximoryTypography.interface(14))
+                        }.frame(minWidth: 56, minHeight: 80).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(theme.title)
+                    .accessibilityHint("随系统自动切换浅色和深色")
+                    .accessibilityAddTraits(selection == theme ? [.isSelected] : [])
+                    .accessibilityIdentifier("ebook-theme-\(theme.rawValue)")
+                }
+            }
         }
     }
 }

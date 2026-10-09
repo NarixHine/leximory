@@ -78,6 +78,8 @@ struct EbookScreen: View {
     @State private var definition: DefinitionPresentation?
     @State private var positionTask: Task<Void, Never>?
     @State private var scrubPosition: Double?
+    @AppStorage("ebook.appearance") private var appearance = EbookAppearance.paper
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
     @AppStorage("ebook.japanese.prose.size") private var japaneseFontSize = 24.0
@@ -93,7 +95,7 @@ struct EbookScreen: View {
         ZStack {
             if let data {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: .automatic).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
             if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
@@ -101,7 +103,7 @@ struct EbookScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(LeximoryPalette.paper.ignoresSafeArea())
+        .background((format == "epub" ? appearance.paperColor(dark: colorScheme == .dark) : LeximoryPalette.paper).ignoresSafeArea())
         .toolbar(.hidden, for: .tabBar)
         .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .top) {
@@ -286,6 +288,7 @@ struct EbookScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if format == "epub" {
+                        EbookThemePicker(selection: $appearance)
                         VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: proseSize, in: 16...30, step: 1).accessibilityLabel("字号") }
                         VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
                     } else {
@@ -308,7 +311,7 @@ struct EbookScreen: View {
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
             }.background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
-        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: format == "epub" ? 280 : 260)
+        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: format == "epub" ? 400 : 260)
             .presentationDetents([.medium]).presentationDragIndicator(.visible)
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
@@ -480,7 +483,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             // bottom margins clear of the running title and page label.
             let safeTop = web.window?.safeAreaInsets.top ?? 0
             let safeBottom = web.window?.safeAreaInsets.bottom ?? 0
-            return ["paper": colors.paper, "ink": colors.ink, "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb", "top": String(Double(safeTop) + 56), "bottom": String(Double(safeBottom) + 24)]
+            return ["paper": colors.paper, "ink": colors.ink, "mode": parent.scheme == .dark ? "dark" : "light", "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb", "top": String(Double(safeTop) + 56), "bottom": String(Double(safeBottom) + 24)]
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
             let cjk = parent.language == "Chinese" || parent.language == "Japanese"
