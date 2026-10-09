@@ -50,26 +50,24 @@ struct EbookThemePicker: View {
             HStack(spacing: 24) {
                 ForEach(EbookAppearance.allCases) { theme in
                     Button { selection = theme } label: {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle().fill(theme.paperColor(dark: true))
-                                Path { path in
-                                    path.move(to: .zero)
-                                    path.addLine(to: CGPoint(x: 48, y: 0))
-                                    path.addLine(to: CGPoint(x: 0, y: 48))
-                                    path.closeSubpath()
-                                }.fill(theme.paperColor(dark: false))
-                                Path { path in
-                                    path.move(to: CGPoint(x: 0, y: 48))
-                                    path.addLine(to: CGPoint(x: 48, y: 0))
-                                }.stroke(.white.opacity(0.35), lineWidth: 1)
-                            }
-                            .frame(width: 48, height: 48).clipShape(Circle())
-                            .overlay(Circle().strokeBorder(LeximoryPalette.ink.opacity(0.15), lineWidth: 1))
-                            .padding(4)
-                            .overlay(Circle().strokeBorder(selection == theme ? LeximoryPalette.ink : .clear, lineWidth: 2))
-                            Text(theme.title).font(LeximoryTypography.interface(14))
-                        }.frame(minWidth: 56, minHeight: 80).contentShape(Rectangle())
+                        ZStack {
+                            Circle().fill(theme.paperColor(dark: true))
+                            Path { path in
+                                path.move(to: .zero)
+                                path.addLine(to: CGPoint(x: 48, y: 0))
+                                path.addLine(to: CGPoint(x: 0, y: 48))
+                                path.closeSubpath()
+                            }.fill(theme.paperColor(dark: false))
+                            Path { path in
+                                path.move(to: CGPoint(x: 0, y: 48))
+                                path.addLine(to: CGPoint(x: 48, y: 0))
+                            }.stroke(.white.opacity(0.35), lineWidth: 1)
+                        }
+                        .frame(width: 48, height: 48).clipShape(Circle())
+                        .overlay(Circle().strokeBorder(LeximoryPalette.ink.opacity(0.15), lineWidth: 1))
+                        .padding(4)
+                        .overlay(Circle().strokeBorder(selection == theme ? LeximoryPalette.ink : .clear, lineWidth: 2))
+                        .frame(minWidth: 56, minHeight: 56).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(theme.title)
