@@ -46,14 +46,17 @@ function sanitizeDocument(source, svg = false) {
   }
   return new XMLSerializer().serializeToString(document);
 }
+function isDarkTheme(theme) {
+  return theme.mode ? theme.mode === 'dark' : theme.paper.toLowerCase() === '#100f0f';
+}
 function proseCSS(theme) {
   const vertical = theme.writing === 'vertical-rl';
   if (vertical) return `html,body{direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;background:${theme.paper}!important;color:${theme.ink}!important}
   body{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important}
   p,div{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;text-rendering:optimizeLegibility}
   h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,serif!important}
-  ${theme.paper.toLowerCase() === '#100f0f' ? `*{color:${theme.ink}!important}` : ''}
-  [data-leximory-bookmark]{background:rgb(183 224 143 / .45)!important;color:inherit!important;-webkit-box-decoration-break:clone}`;
+  ${isDarkTheme(theme) ? `*{color:${theme.ink}!important}` : ''}
+  [data-leximory-bookmark]{background:${isDarkTheme(theme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)'}!important;color:inherit!important;-webkit-box-decoration-break:clone}`;
   return `html,body{background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
   body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
   p,li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
@@ -61,8 +64,8 @@ function proseCSS(theme) {
   p span,li span,blockquote span{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;letter-spacing:inherit!important}
   h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:0!important;margin-block:1.3em 0.7em!important}
   h1{font-size:1.65em!important}h2{font-size:1.35em!important}h3{font-size:1.15em!important}
-  img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:${theme.paper.toLowerCase() === "#100f0f" ? "#a1a1aa" : "#5a715a"}}
-  blockquote{margin:1em 0!important;padding-inline-start:1em!important;border-inline-start:2px solid ${theme.paper.toLowerCase() === "#100f0f" ? "#3f3f46" : "#9caea1"}}
+  img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:${isDarkTheme(theme) ? "#a1a1aa" : "#5a715a"}}
+  blockquote{margin:1em 0!important;padding-inline-start:1em!important;border-inline-start:2px solid ${isDarkTheme(theme) ? "#3f3f46" : "#9caea1"}}
   table{max-width:100%}sup,sub{font-size:0.75em!important}rt{font-size:0.55em!important}
   pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}`;
 }
@@ -70,6 +73,9 @@ function styleContents(contents) {
   let style = contents.document.getElementById('leximory-prose');
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
   style.textContent=proseCSS(currentTheme);
+  contents.document.querySelectorAll('[data-leximory-bookmark]').forEach(mark => {
+    mark.style.setProperty('background-color', isDarkTheme(currentTheme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)', 'important');
+  });
 }
 // Keep pronunciation out of quotes and context, matching the web selection helpers.
 function textWithoutRuby(node) {
@@ -131,7 +137,7 @@ function highlightBookmarks() {
       const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
       if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
       const mark=doc.createElement('span');mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
-      mark.style.setProperty('background-color',currentTheme.paper.toLowerCase()==='#100f0f' ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
+      mark.style.setProperty('background-color',isDarkTheme(currentTheme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
       mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
       try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
     }
@@ -151,13 +157,14 @@ function pageKey(event) {
 document.addEventListener('keydown', pageKey);
 window.readerTheme = async theme => {
   if (pageTurn) { pendingTheme = theme; return; }
+  const needsReflow = !currentTheme || ['size', 'leading', 'weight', 'writing', 'top', 'bottom'].some(key => currentTheme[key] !== theme[key]);
   currentTheme=theme; document.body.style.background=theme.paper; document.body.dataset.writing=theme.writing;
   if (theme.top) document.body.style.paddingTop=theme.top+'px';
   if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
   if (!rendition) return;
   rendition.getContents().forEach(styleContents);
   // epub.js owns relocation during reflow; displaying its reported CFI again can skip a split page.
-  rendition.resize(Math.round(document.getElementById('book').clientWidth), Math.round(document.getElementById('book').clientHeight));
+  if (needsReflow) rendition.resize(Math.round(document.getElementById('book').clientWidth), Math.round(document.getElementById('book').clientHeight));
 };
 let preloadConfiguration;
 window.readerPreloadConfiguration = () => preloadConfiguration;

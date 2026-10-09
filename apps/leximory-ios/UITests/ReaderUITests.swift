@@ -1,6 +1,33 @@
 import XCTest
 
 final class ReaderUITests: XCTestCase {
+    @MainActor func testEPUBThemePickerRemembersSelectionAcrossAppearances() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        for dark in [false, true] {
+            app.launchArguments = ["--fixtures", "--ebook-fixtures"] + (dark ? ["--dark-appearance"] : [])
+            app.launch()
+            let library = app.buttons["library-fixture-ebooks"]
+            XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
+            app.buttons["text-fixture-epub"].tap()
+            revealEbookControls(app)
+            app.buttons["ebook-settings"].tap()
+            let sage = app.buttons["ebook-theme-sage"]
+            XCTAssertTrue(sage.waitForExistence(timeout: 5))
+            if dark { XCTAssertTrue(sage.isSelected) }
+            for name in ["paper", "sepia", "sage"] {
+                let theme = app.buttons["ebook-theme-\(name)"]
+                XCTAssertGreaterThanOrEqual(theme.frame.width, 44)
+                XCTAssertGreaterThanOrEqual(theme.frame.height, 44)
+                theme.tap()
+                XCTAssertTrue(theme.isSelected)
+            }
+            capture(app, name: dark ? "Dark EPUB themes" : "Light EPUB themes")
+            if dark { app.buttons["ebook-theme-paper"].tap() }
+            app.terminate()
+        }
+    }
+
     @MainActor func testJapaneseDefinitionRubyPopover() throws {
         let app = XCUIApplication(); app.launchArguments = ["--fixtures"]
         app.launch()

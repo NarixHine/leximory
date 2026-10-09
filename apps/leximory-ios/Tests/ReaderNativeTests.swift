@@ -174,8 +174,8 @@ import LeximoryCore
             let actual = UInt32((red * 255).rounded()) << 16 | UInt32((green * 255).rounded()) << 8 | UInt32((blue * 255).rounded())
             #expect(actual == expected)
         }
-        #expect(EbookAppearance.automatic.colors(dark: true).ink == "#cecdc3")
-        #expect(EbookAppearance.night.colors(dark: false).paper == "#100f0f")
+        #expect(EbookAppearance.paper.colors(dark: true).ink == "#cecdc3")
+        #expect(EbookAppearance.paper.colors(dark: true).paper == "#100f0f")
         #expect(ReadingSelectionMenu.lookupImage != nil)
     }
     @Test(arguments: [false, true].flatMap { advancing in

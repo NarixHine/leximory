@@ -5,6 +5,45 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct JapaneseEbookTests {
+    @Test(arguments: [false, true])
+    func themeVariantsPreserveLocationAndWritingMode(japanese: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: japanese ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        let host = UIViewController(); window.rootViewController = host
+        host.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let writing = japanese ? "vertical-rl" : "horizontal-tb"
+        var theme = ["paper": "#ffffff", "ink": "#192024", "mode": "light", "size": "20", "leading": "1.6", "weight": "400", "writing": writing]
+        _ = try await web.callAsyncJavaScript("await window.openBook(bytes, '', {}, theme, []); await painted()", arguments: [
+            "bytes": try Data(contentsOf: book).base64EncodedString(), "theme": theme
+        ], in: nil, contentWorld: .page)
+        let location = try #require(try await web.callAsyncJavaScript("return rendition.currentLocation().start.cfi", arguments: [:], in: nil, contentWorld: .page) as? String)
+        for appearance in EbookAppearance.allCases {
+            for dark in [false, true] {
+                let colors = appearance.colors(dark: dark)
+                theme["paper"] = colors.paper; theme["ink"] = colors.ink; theme["mode"] = dark ? "dark" : "light"
+                let checks = try await web.callAsyncJavaScript("""
+                    await window.readerTheme(theme); await painted();
+                    const c = rendition.getContents()[0], doc = c.document;
+                    const expected = doc.createElement('span'); expected.style.color = theme.ink;
+                    expected.style.backgroundColor = theme.paper; doc.body.appendChild(expected);
+                    const actual = c.window.getComputedStyle(doc.body), wanted = c.window.getComputedStyle(expected);
+                    const matches = actual.color === wanted.color && actual.backgroundColor === wanted.backgroundColor;
+                    expected.remove();
+                    return matches && c.window.getComputedStyle(doc.documentElement).writingMode === theme.writing && rendition.currentLocation().start.cfi === location;
+                    """, arguments: ["theme": theme, "location": location], in: nil, contentWorld: .page) as? Bool
+                #expect(checks == true, "Theme \(appearance.rawValue), dark \(dark), Japanese \(japanese)")
+            }
+        }
+        #expect(probe.failure == nil)
+    }
+
     @Test(arguments:[false,true],[false,true]) func tapsTurnPagesWithoutAnimatedSheets(rightToLeft:Bool, advancing:Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
         let book = try #require(Bundle.main.url(forResource: rightToLeft ? "japanese-fixture":"reader-fixture", withExtension: "epub"))

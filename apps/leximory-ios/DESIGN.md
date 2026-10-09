@@ -68,7 +68,7 @@ Audio playback uses a compact glass capsule, at most 420 pt wide, with playback,
 
 ## Ebooks
 
-EPUB currently uses bundled epub.js; PDF uses PDFKit. Preserve CFI positions, private bookmarks, selection context, authorization and quotas. Ebook bookmark content is not the complete book text.
+EPUB currently uses bundled epub.js; PDF uses PDFKit. EPUB reading options offer 白纸、暖纸、青纸 as diagonally split circular previews of their light and dark variants. Remember the selected theme and follow system appearance; color changes preserve pagination. Preserve CFI positions, private bookmarks, selection context, authorization and quotas. Ebook bookmark content is not the complete book text.
 
 A center tap toggles controls without reflow. Running titles are centered and fade when controls appear. Use separate circular glass buttons for back, contents, bookmarks, settings and sharing, with 44 pt touch targets. Titles use 18 pt serif; page labels use 15 pt interface text. EPUB labels include chapter and page; PDF labels give page X of Y.
 

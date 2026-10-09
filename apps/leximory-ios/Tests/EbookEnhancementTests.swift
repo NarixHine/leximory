@@ -4,6 +4,31 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct EbookEnhancementTests {
+    @Test(arguments: EbookAppearance.allCases)
+    func themesHaveReadableLightAndDarkVariants(theme: EbookAppearance) throws {
+        let light = theme.colors(dark: false)
+        let dark = theme.colors(dark: true)
+        #expect(light.paper != dark.paper)
+        #expect(light.ink != dark.ink)
+        #expect(EbookAppearance(rawValue: theme.rawValue) == theme)
+        func luminance(_ hex: String) throws -> Double {
+            let rgb = try #require(UInt32(hex.dropFirst(), radix: 16))
+            let channels = [16, 8, 0].map { shift in
+                let value = Double((rgb >> shift) & 255) / 255
+                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+        }
+        for isDark in [false, true] {
+            for softerInk in [false, true] {
+                let colors = theme.colors(dark: isDark, softerInk: softerInk)
+                let paper = try luminance(colors.paper)
+                let ink = try luminance(colors.ink)
+                #expect((max(paper, ink) + 0.05) / (min(paper, ink) + 0.05) >= 7)
+            }
+        }
+    }
+
     @Test func concurrentBookmarksReconcileIndependently() {
         let reader = EbookReaderState()
         reader.location = "3"; reader.chapter = "Chapter"
