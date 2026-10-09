@@ -79,14 +79,15 @@ struct VocabularyLibraryView: View {
 
 private struct CorpusWordTray: View {
     @Environment(\.nativeSync) private var sync
-    @State private var word: SavedWord
+    @State private var editor: VocabularyEditModel
+    private var word: SavedWord { editor.word }
     let library: FixtureLibrary
     let client: MobileClient
     let isPopover: Bool
     let updated: (SavedWord) -> Void
     @State private var editing = false
     init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, updated: @escaping (SavedWord) -> Void) {
-        _word = State(initialValue: word)
+        _editor = State(initialValue: VocabularyEditModel(word: word))
         self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated
     }
     @State private var height: CGFloat = 320
@@ -96,18 +97,25 @@ private struct CorpusWordTray: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if editing {
-                        VocabularyEditor(id: word.id, client: client, language: library.language, updated: { value in word = value; updated(value); editing = false }, cancel: { editing = false })
+                        VocabularyEditor(model: editor, language: library.language, submit: {
+                            editor.submit(persist: { try await client.editWord(id: word.id, fields: $0) },
+                                reload: { try await client.savedWord(id: word.id) }, changed: { updated($0) })
+                            editing = false
+                        }, cancel: { editing = false })
                     } else {
                         Text(word.fields.lemma).font(LeximoryTypography.prose(24, language: library.language)).bold()
                         section("释义", word.fields.definition)
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
+                        if let error = editor.error {
+                            Text(error).font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                        }
                         HStack(spacing: 16) {
                             if library.owned && word.protected != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
                                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.sage, in: Circle())
-                                    .disabled(sync?.online == false)
+                                    .disabled(editor.saving || sync?.online == false)
                             }
                             if let dictionaryURL {
                                 Link(destination: dictionaryURL) {

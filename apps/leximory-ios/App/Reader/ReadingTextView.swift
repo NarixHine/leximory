@@ -9,12 +9,12 @@ import os
     static let lookupTitle = "🐈 猫忆查"
     static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
 
-    static func removeUnrelatedActions(from builder: UIMenuBuilder) {
+    static func removeUnrelatedActions(from builder: UIMenuBuilder, keepNativeLookup: Bool = false) {
         guard builder.system == .context else { return }
         builder.remove(menu: .share)
         builder.remove(menu: .replace)
         builder.remove(menu: .find)
-        builder.remove(menu: .lookup)
+        if !keepNativeLookup { builder.remove(menu: .lookup) }
         builder.replaceChildren(ofMenu: .standardEdit) { withoutSelectAll($0) }
     }
 
@@ -87,6 +87,10 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
+        if view.keepNativeLookup != readOnly {
+            view.keepNativeLookup = readOnly
+            UIMenuSystem.context.setNeedsRebuild()
+        }
         view.contentInset.bottom = bottomObstruction
         view.fixtureScrollsToEnd = jumpToEnd
         let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
@@ -200,8 +204,9 @@ struct ReadingTextView: UIViewRepresentable {
             if let view = scrollView as? RubyTextView { updateTitleVisibility(view) }
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+            guard !parent.readOnly else { return UIMenu(children: suggestedActions) }
             guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
-            let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: parent.readOnly ? .disabled : []) { [weak self, weak textView] _ in
+            let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
@@ -272,9 +277,10 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
+    var keepNativeLookup = false
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
-        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: keepNativeLookup)
     }
 
     var pendingFinalScroll = false

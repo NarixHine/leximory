@@ -61,6 +61,14 @@ public struct SavedWord: Codable, Identifiable, Sendable {
     public let fields: VocabularyFields
     public let createdAt: String?
     public let protected: Bool?
+    public init(id: String, libraryId: String, fields: VocabularyFields, createdAt: String? = nil, protected: Bool? = nil) {
+        self.id = id; self.libraryId = libraryId; self.fields = fields
+        self.createdAt = createdAt; self.protected = protected
+    }
+    public func replacingFields(_ fields: VocabularyFields) -> SavedWord {
+        SavedWord(id: id, libraryId: libraryId, fields: fields, createdAt: createdAt, protected: protected)
+    }
+
 }
 public struct RemoteDocument: Codable, Sendable {
     public let text: CatalogText

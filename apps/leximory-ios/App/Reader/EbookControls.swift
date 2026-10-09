@@ -38,7 +38,10 @@ enum EbookAppearance: String, CaseIterable {
 @MainActor enum EbookLearningMenu {
     static func insert(into builder: UIMenuBuilder, reader: EbookReaderState) {
         guard builder.system == .context else { return }
-        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: reader.readOnly)
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions(reader: reader)), beforeMenu: .standardEdit)
+    }
+    static func actions(reader: EbookReaderState) -> [UIAction] {
         let selection = reader.selection
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
@@ -46,7 +49,7 @@ enum EbookAppearance: String, CaseIterable {
         let bookmark = UIAction(title: "添加书签", image: UIImage(systemName: "bookmark"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark, selection: selection) }
         }
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [define, bookmark]), beforeMenu: .standardEdit)
+        return reader.readOnly ? [bookmark] : [define, bookmark]
     }
 }
 

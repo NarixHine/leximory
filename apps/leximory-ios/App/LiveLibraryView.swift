@@ -115,11 +115,13 @@ struct RemoteTextGallery: View {
         .toolbar {
             if sizeClass != .regular && !loading {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("语料本", systemImage: "book.closed") { vocabulary = true }.foregroundStyle(LeximoryPalette.sage)
+                    Button("语料本", systemImage: "book.closed") { vocabulary = true }
+                        .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(LeximoryPalette.sage)
                 }
                 if library.owned && !library.shadow {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("导入", systemImage: "plus") { importing = true }.foregroundStyle(LeximoryPalette.sage)
+                        Button("导入", systemImage: "plus") { importing = true }
+                            .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(LeximoryPalette.sage)
                             .disabled(sync?.online == false)
                     }
                 }
@@ -127,17 +129,19 @@ struct RemoteTextGallery: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             if sizeClass == .regular && !loading && (error != nil || texts.isEmpty) {
-                HStack {
-                    Spacer()
-                    Button("语料本", systemImage: "book.closed") { vocabulary = true }
-                        .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-                    if library.owned && !library.shadow {
-                        Button("导入", systemImage: "plus") { importing = true }
-                            .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-                            .disabled(sync?.online == false)
-                    }
-                }.padding(.horizontal, 24).padding(.top, 22)
-                    .tint(LeximoryPalette.sage).background(LeximoryPalette.paper)
+                GlassEffectContainer(spacing: 16) {
+                    HStack {
+                        Spacer()
+                        Button("语料本", systemImage: "book.closed") { vocabulary = true }
+                            .buttonStyle(.glass).buttonBorderShape(.circle).labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                        if library.owned && !library.shadow {
+                            Button("导入", systemImage: "plus") { importing = true }
+                                .buttonStyle(.glass).buttonBorderShape(.circle).labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                                .disabled(sync?.online == false)
+                        }
+                    }.padding(.horizontal, 24).padding(.top, 22)
+                        .tint(LeximoryPalette.sage).background(LeximoryPalette.paper)
+                }
             }
         }
         .sheet(isPresented: $importing, onDismiss: {

@@ -36,8 +36,9 @@ enum DefinitionSource {
     enum SaveState { case idle, saving, saved, uncertain }
     private(set) var state: State
     private(set) var savedWord: SavedVocabulary?
+    private(set) var editor: VocabularyEditModel?
+    private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
-    @ObservationIgnored private var saveTask: Task<Void, Never>?
     init(embedded: Definition?) {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
     }
@@ -69,20 +70,35 @@ enum DefinitionSource {
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")
         }
     }
-    func save(client: MobileClient, source: DefinitionSource) {
-        guard case .ready(_, let completionID) = state, case .idle = saveState else { return }
+    @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
+        save { completionID in try await source.save(client: client, completionID: completionID) }
+    }
+    @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
+        guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }
+        saveError = nil
         saveState = .saving
-        saveTask = Task {
+        return Task {
             do {
-                savedWord = try await source.save(client: client, completionID: completionID)
-                guard !Task.isCancelled else { return }
+                savedWord = try await operation(completionID)
+                if let savedWord {
+                    editor = VocabularyEditModel(word: SavedWord(id: savedWord.id, libraryId: savedWord.libraryId,
+                        fields: VocabularyFields(original: definition.lemma, definition: definition)))
+                }
                 saveState = .saved
-            } catch { if !Task.isCancelled { saveState = .uncertain } }
+            } catch {
+                if let failure = MobileClient.cause(of: error) as? MobileFailure,
+                   !failure.error.retryable {
+                    saveState = .idle
+                    saveError = failure.error.message
+                } else {
+                    saveState = .uncertain
+                    saveError = "未能确认收藏结果，请先在语料本中查看，避免重复收藏。"
+                }
+            }
         }
     }
     func edited(_ word: SavedWord) {
         state = .ready(word.fields.note, completionID: nil)
     }
-    func cancel() { saveTask?.cancel(); saveTask = nil }
     private struct DefinitionFailure: Error { let message: String }
 }
