@@ -76,5 +76,5 @@ export const locationAI = {
  */
 export const wordAI = {
     model: 'deepseek/deepseek-v4.1-flash',
-    reasoning: 'none',
+    reasoning: 'minimal',
 } as const
