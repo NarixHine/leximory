@@ -19,7 +19,7 @@ export interface DefinitionServices {
     generate(context: string, language: Lang, accent: string, signal: AbortSignal): AsyncIterable<string>
     complete(id: string, receipt: Receipt): Promise<void>
     receipt(id: string): Promise<Receipt | null>
-    save(subject: MobileSubject, sourceLibrary: string, language: Lang, definition: CompletedDefinition): Promise<{ id: string; libraryId: string }>
+    save(subject: MobileSubject, sourceLibrary: string, language: Lang, definition: CompletedDefinition, requestId?: string): Promise<{ id: string; libraryId: string }>
 }
 export function parseGeneratedDefinition(value: string): CompletedDefinition {
     const match = /^\s*\{\{([^{}]+)\}\}\s*$/.exec(value)
@@ -65,11 +65,11 @@ export function createDefinitionHandler(dependencies: { verify: BearerVerifier; 
             const ebookRequest = match[2]?.startsWith('ebook-') === true
             if (text.has_ebook !== ebookRequest) throw new MobileError('unsupported_format')
             if (match[2] === 'ebook-vocabulary') {
-                const input = z.object({ completionId: resourceID }).strict().safeParse(body)
+                const input = z.object({ completionId: resourceID, requestId: resourceID.optional() }).strict().safeParse(body)
                 if (!input.success) throw new MobileError('invalid_input')
                 const receipt = await services.receipt(input.data.completionId)
                 if (!receipt || receipt.subject !== subject.userId || receipt.occurrence.textId !== textId || receipt.occurrence.blockId !== 'ebook-selection') throw new MobileError('invalid_input')
-                return Response.json(await services.save(subject, library.id, library.lang, receipt.definition), { headers: { 'Cache-Control': 'private, no-store' } })
+                return Response.json(await services.save(subject, library.id, library.lang, receipt.definition, input.data.requestId), { headers: { 'Cache-Control': 'private, no-store' } })
             }
             const document = renderDocument(text.content)
             if (match[2] === 'vocabulary') {
@@ -86,7 +86,7 @@ export function createDefinitionHandler(dependencies: { verify: BearerVerifier; 
                     if (!span || span.kind !== 'definition') throw new MobileError('invalid_input')
                     definition = definitionSchema.parse({ lemma: span.lemma, definition: span.definition, etymology: span.etymology, cognates: span.cognates })
                 }
-                const saved = await services.save(subject, library.id, library.lang, definition)
+                const saved = await services.save(subject, library.id, library.lang, definition, parsed.data.requestId)
                 return Response.json(saved, { headers: { 'Cache-Control': 'private, no-store' } })
             }
             const resolved = (() => {

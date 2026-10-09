@@ -121,6 +121,8 @@ private struct BearerMiddleware: ClientMiddleware {
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
+        // These operations recover transient failures themselves; keep their next attempt available.
+        let recoversMutation = ["vocabulary", "ebookVocabulary", "editWord", "savedWord"].contains(operationID)
         var request = request
         let original = try await token(nil)
         request.headerFields[.authorization] = "Bearer \(original)"
@@ -128,7 +130,7 @@ private struct BearerMiddleware: ClientMiddleware {
         do {
             result = try await next(request, body, baseURL)
         } catch {
-            if MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
+            if !recoversMutation && MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
             throw error
         }
         if result.0.status.code == 401 && request.method == .get {
@@ -144,7 +146,7 @@ private struct BearerMiddleware: ClientMiddleware {
             if parts.first == "texts", parts.count > 1 { await store?.removeText(String(parts[1])) }
             if parts.first == "libraries", parts.count > 1 { await store?.removeLibrary(String(parts[1])) }
         }
-        if result.0.status.code >= 500 { await store?.setOnline(false) }
+        if !recoversMutation && result.0.status.code >= 500 { await store?.setOnline(false) }
         if result.0.status.code >= 400, let responseBody = result.1 {
             let bytes = try await Data(collecting: responseBody, upTo: 65536)
             if let failure = try? JSONDecoder().decode(MobileFailure.self, from: bytes) { throw failure }
@@ -264,7 +266,10 @@ public struct MobileClient: Sendable {
         }
     }
     public func saveEbookVocabulary(textID: String, completionID: String) async throws -> SavedVocabulary {
-        try mapped(try await client.ebookVocabulary(path: .init(textId: textID), body: .json(.init(completionId: completionID))).ok.body.json, to: SavedVocabulary.self)
+        let requestID = UUID().uuidString
+        return try await MutationRetry.run {
+            try mapped(try await client.ebookVocabulary(path: .init(textId: textID), body: .json(.init(completionId: completionID, requestId: requestID))).ok.body.json, to: SavedVocabulary.self)
+        }
     }
     public func definitions(selection: ReadingSelection) -> AsyncThrowingStream<DefinitionEvent, Error> {
         definitionStream {
@@ -291,10 +296,13 @@ public struct MobileClient: Sendable {
         }
     }
     @discardableResult public func save(selection: ReadingSelection, completionID: String?) async throws -> SavedVocabulary {
-        let result = try await client.vocabulary(path: .init(textId: selection.textID.rawValue), body: .json(.init(
-            occurrence: .init(textId: selection.textID.rawValue, revision: selection.revision, blockId: selection.blockID,
-                range: .init(location: selection.range.location, length: selection.range.length)), completionId: completionID))).ok.body.json
-        return try mapped(result, to: SavedVocabulary.self)
+        let requestID = UUID().uuidString
+        return try await MutationRetry.run {
+            let result = try await client.vocabulary(path: .init(textId: selection.textID.rawValue), body: .json(.init(
+                occurrence: .init(textId: selection.textID.rawValue, revision: selection.revision, blockId: selection.blockID,
+                    range: .init(location: selection.range.location, length: selection.range.length)), completionId: completionID, requestId: requestID))).ok.body.json
+            return try mapped(result, to: SavedVocabulary.self)
+        }
     }
 
     public static func isAccessFailure(_ error: any Error) -> Bool {

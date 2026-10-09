@@ -107,4 +107,86 @@ import Testing
         #expect(model.draft.definition == "河堤")
     }
 
+    @Test func successiveEditsStayOptimisticAndPersistInOrder() async throws {
+        let model = VocabularyEditModel(word: word)
+        let gate = AsyncStream<Void>.makeStream()
+        var writes: [String] = []
+        model.draft.definition = "first"
+        let first = model.submit(persist: { fields in
+            writes.append(fields.definition)
+            for await _ in gate.stream { break }
+            return self.word.replacingFields(fields)
+        }, reload: { self.word }, changed: { _ in })
+        model.draft.definition = "second"
+        let second = model.submit(persist: { fields in
+            #expect(writes == ["first"])
+            writes.append(fields.definition)
+            return self.word.replacingFields(fields)
+        }, reload: { self.word }, changed: { _ in })
+        #expect(second != nil)
+        #expect(model.fields.definition == "second")
+        model.draft.definition = "unsent typing"
+        gate.continuation.yield(())
+        gate.continuation.finish()
+        await first?.value
+        await second?.value
+        #expect(writes == ["first", "second"])
+        #expect(model.fields.definition == "second")
+        #expect(model.draft.definition == "unsent typing")
+        #expect(model.error == nil)
+        #expect(!model.saving)
+    }
+    @Test func failedLatestEditRestoresLastConfirmedEdit() async {
+        let model = VocabularyEditModel(word: word)
+        model.draft.definition = "first"
+        let first = model.submit(persist: { self.word.replacingFields($0) }, reload: { self.word }, changed: { _ in })
+        let confirmed = word.replacingFields(model.draft)
+        model.draft.definition = "second"
+        var writes = 0
+        let second = model.submit(persist: { _ in
+            writes += 1
+            throw MobileFailure(error: .init(code: "invalid_input", message: "invalid", retryable: false))
+        }, reload: { confirmed }, changed: { _ in })
+        await first?.value
+        await second?.value
+        #expect(writes == 1)
+        #expect(model.fields.definition == "first")
+        #expect(model.draft.definition == "second")
+        #expect(model.error != nil)
+    }
+    @Test func transientEditFailureRetriesBeforeReportingFailure() async {
+        let model = VocabularyEditModel(word: word)
+        model.draft.definition = "edited"
+        var writes = 0
+        let task = model.submit(persist: { fields in
+            writes += 1
+            if writes < 3 { throw URLError(.timedOut) }
+            return self.word.replacingFields(fields)
+        }, reload: {
+            #expect(model.error == nil)
+            #expect(model.fields.definition == "edited")
+            return self.word
+        }, changed: { _ in })
+        await task?.value
+        #expect(writes == 3)
+        #expect(model.fields.definition == "edited")
+        #expect(model.error == nil)
+    }
+    @Test func supersededFailureDoesNotRetryOrOverwriteLatestEdit() async {
+        let model = VocabularyEditModel(word: word)
+        var writes = 0
+        model.draft.definition = "first"
+        let first = model.submit(persist: { _ in
+            writes += 1
+            throw URLError(.timedOut)
+        }, reload: { self.word }, changed: { _ in })
+        model.draft.definition = "second"
+        let second = model.submit(persist: { self.word.replacingFields($0) }, reload: { self.word }, changed: { _ in })
+        await first?.value
+        await second?.value
+        #expect(writes == 1)
+        #expect(model.fields.definition == "second")
+        #expect(model.error == nil)
+    }
+
 }

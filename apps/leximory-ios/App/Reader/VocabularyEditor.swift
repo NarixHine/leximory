@@ -24,18 +24,16 @@ struct VocabularyEditor: View {
                         focusedField = nil
                         submit()
                     } label: {
-                        Group {
-                            if model.saving { ProgressView().tint(LeximoryPalette.paper) }
-                            else { Image(systemName: "checkmark.circle").font(.system(size: 22)) }
-                        }.frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
+                        Image(systemName: "checkmark.circle").font(.system(size: 22))
+                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
                             .background(LeximoryPalette.sage, in: Circle())
-                    }.buttonStyle(.plain).disabled(model.saving || !fields.isValid || sync?.online == false).accessibilityLabel("保存修改")
+                    }.buttonStyle(.plain).disabled(!fields.isValid || sync?.online == false).accessibilityLabel("保存修改")
                     Button("取消", systemImage: "xmark.circle", action: cancel)
-                        .labelStyle(.iconOnly).frame(width: 44, height: 44).disabled(model.saving)
+                        .labelStyle(.iconOnly).frame(width: 44, height: 44)
                 }
             }
             if let error = failure ?? model.error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
-        }.disabled(model.saving)
+        }
     }
 
     private func binding(_ key: WritableKeyPath<VocabularyFields, String>) -> Binding<String> {

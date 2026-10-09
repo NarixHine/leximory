@@ -116,8 +116,8 @@ private struct CorpusWordTray: View {
                             if library.owned && word.protected != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
-                                    .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.sage, in: Circle())
-                                    .disabled(editor.saving || sync?.online == false)
+                                    .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
+                                    .disabled(sync?.online == false)
                             }
                             if let dictionaryURL {
                                 Link(destination: dictionaryURL) {

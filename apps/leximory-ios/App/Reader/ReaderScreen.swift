@@ -293,7 +293,7 @@ struct DefinitionView: View {
                             .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
                             .background(LeximoryPalette.ink, in: Circle())
                     }.buttonStyle(.plain).accessibilityLabel("编辑词汇")
-                        .disabled(model.editor?.saving == true || sync?.online == false)
+                        .disabled(sync?.online == false)
                 }
             }
             if let dictionaryURL {

@@ -11,6 +11,7 @@ import { mobileWordGuide } from '@/lib/prompt'
 import { wordAI } from '@/server/ai/config'
 import { receiptSchema, type DefinitionServices } from './definitions'
 import { MobileError } from './errors'
+import { mobileMutationID, saveVocabularyOnce } from './vocabulary-save'
 
 export const definitionServices: DefinitionServices = {
     async preferences(subject) {
@@ -51,23 +52,45 @@ export const definitionServices: DefinitionServices = {
         const value = await redis.get(`mobile:completion:${id}`)
         return value === null ? null : receiptSchema.parse(value)
     },
-    async save(subject, sourceLibrary, language, definition) {
+    async save(subject, sourceLibrary, language, definition, requestId) {
         const { data: source } = await supabase.from('libraries').select('owner').eq('id', sourceLibrary).maybeSingle().throwOnError()
         if (!source) throw new MobileError('inaccessible')
-        let destination = sourceLibrary
-        if (source.owner !== subject.userId) {
-            const { data: shadow } = await supabase.from('libraries').select('id').eq('owner', subject.userId).eq('shadow', true).eq('lang', language).order('id').limit(1).maybeSingle().throwOnError()
-            if (shadow) destination = shadow.id
-            else {
-                const { data } = await supabase.from('libraries').insert({ owner: subject.userId, shadow: true, name: `🗃️ ${getLanguageName(language)}词汇仓库`, lang: language }).select('id').single().throwOnError()
-                destination = data.id
-            }
-        }
         const fields = [definition.lemma, definition.lemma, definition.definition, definition.etymology, definition.cognates].filter(value => value !== null)
         if (fields.some(value => value.includes('||') || /[{}]/.test(value))) throw new MobileError('invalid_input')
         const word = `{{${fields.join('||').replaceAll('\n', '')}}}`
-        const { data } = await supabase.from('lexicon').insert({ lib: destination, word }).select('id').single().throwOnError()
-        revalidateTag(`words:${destination}`, { expire: 0 }); revalidateTag('words', { expire: 0 })
-        return { id: data.id, libraryId: destination }
+        const sourceOwner = source.owner
+        async function destination() {
+            if (sourceOwner === subject.userId) return sourceLibrary
+            const { data: shadow } = await supabase.from('libraries').select('id').eq('owner', subject.userId).eq('shadow', true).eq('lang', language).order('id').limit(1).maybeSingle().throwOnError()
+            if (shadow) return shadow.id
+            const library = { owner: subject.userId, shadow: true, name: `🗃️ ${getLanguageName(language)}词汇仓库`, lang: language }
+            if (requestId) {
+                const id = mobileMutationID('shadow', subject.userId, language)
+                await supabase.from('libraries').upsert({ ...library, id }, { onConflict: 'id', ignoreDuplicates: true }).throwOnError()
+                const { data } = await supabase.from('libraries').select('id,owner,shadow,lang').eq('id', id).single().throwOnError()
+                if (data.owner !== subject.userId || !data.shadow || data.lang !== language) throw new MobileError('inaccessible')
+                return data.id
+            }
+            const { data } = await supabase.from('libraries').insert(library).select('id').single().throwOnError()
+            return data.id
+        }
+        const saved = requestId ? await saveVocabularyOnce({ userId: subject.userId, sourceLibrary, requestId }, {
+            destination,
+            async lookup(id) {
+                const { data } = await supabase.from('lexicon').select('id,lib').eq('id', id).maybeSingle().throwOnError()
+                if (!data?.lib) return null
+                const { data: library } = await supabase.from('libraries').select('owner').eq('id', data.lib).maybeSingle().throwOnError()
+                return { id: data.id, libraryId: data.lib, owner: library?.owner ?? null }
+            },
+            async insertIfAbsent(id, libraryId) {
+                await supabase.from('lexicon').upsert({ id, lib: libraryId, word }, { onConflict: 'id', ignoreDuplicates: true }).throwOnError()
+            },
+        }) : await (async () => {
+            const libraryId = await destination()
+            const { data } = await supabase.from('lexicon').insert({ lib: libraryId, word }).select('id').single().throwOnError()
+            return { id: data.id, libraryId }
+        })()
+        revalidateTag(`words:${saved.libraryId}`, { expire: 0 }); revalidateTag('words', { expire: 0 })
+        return saved
     },
 }

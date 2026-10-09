@@ -93,3 +93,16 @@ test('cache keys separate accent, language and context', async () => {
     }
     assert.notEqual(keys[0], keys[1])
 })
+
+test('save forwards a validated retry identity after checking provenance', async () => {
+    let identity: string | undefined
+    const h = harness({ save: async (_, __, ___, ____, requestId) => {
+        identity = requestId
+        return { id: 'word', libraryId: 'library' }
+    } })
+    const block = document.blocks[1]!
+    const body = { occurrence: { ...selected, blockId: block.id, range: block.spans[0]!.range }, completionId: null, requestId: 'retry-identity' }
+    assert.equal((await h.handler(request('vocabulary', body))).status, 200)
+    assert.equal(identity, 'retry-identity')
+    assert.equal((await h.handler(request('vocabulary', { ...body, requestId: 'invalid/key' }))).status, 400)
+})

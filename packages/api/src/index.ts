@@ -41,7 +41,7 @@ export const definitionFrameSchema = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('completed'), requestId: resourceID, definition: definitionSchema }).strict(),
     z.object({ kind: z.literal('failed'), requestId: resourceID, error: mobileErrorSchema.shape.error }).strict(),
 ])
-export const vocabularyInputSchema = z.object({ occurrence: occurrenceSchema, completionId: resourceID.nullable().optional() }).strict()
+export const vocabularyInputSchema = z.object({ occurrence: occurrenceSchema, completionId: resourceID.nullable().optional(), requestId: resourceID.optional() }).strict()
 export const vocabularyEditSchema = definitionSchema.extend({
     original: z.string().min(1).max(1024),
 }).strict()
@@ -67,7 +67,7 @@ export const mobileContract = {
     ebookDefinitions: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-definitions', spec: spec => ({
         ...spec, responses: { ...spec.responses, 200: { description: 'Contextual ebook definition frames', content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } } } },
     }) }).input(ebookSelectionSchema.extend({ textId: resourceID })).output(z.string()),
-    ebookVocabulary: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-vocabulary' }).input(z.object({ textId: resourceID, completionId: resourceID })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
+    ebookVocabulary: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-vocabulary' }).input(z.object({ textId: resourceID, completionId: resourceID, requestId: resourceID.optional() })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
     me: oc.route({ method: 'GET', path: '/me' }).output(accountSchema),
     libraryArchive: oc.route({ method: 'POST', path: '/libraries/{libraryId}/archive' }).input(z.object({ libraryId: resourceID, archived: z.boolean() })).output(z.object({ archived: z.boolean() })),
     libraries: oc.route({ method: 'GET', path: '/libraries' }).input(pageInput).output(librariesSchema),

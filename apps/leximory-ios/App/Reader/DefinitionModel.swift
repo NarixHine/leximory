@@ -113,15 +113,20 @@ enum DefinitionSource {
     ) -> Task<Void, Never>? {
         guard let editor, let request = saveRequest else { return nil }
         return editor.submit(persist: { fields in
-            let receipt = try await request.value
+            let receipt = try await Self.confirmedReceipt(request)
             return try await persist(receipt, fields)
         }, reload: {
-            let receipt = try await request.value
+            let receipt = try await Self.confirmedReceipt(request)
             return try await reload(receipt)
         }, changed: { [weak self] fields in
             guard let self, case .ready(_, let completionID) = self.state else { return }
             self.state = .ready(fields.note, completionID: completionID)
         })
     }
+    private static func confirmedReceipt(_ request: Task<SavedVocabulary, Error>) async throws -> SavedVocabulary {
+        do { return try await request.value }
+        catch { throw CreationFailed() }
+    }
+    private struct CreationFailed: Error {}
     private struct DefinitionFailure: Error { let message: String }
 }
