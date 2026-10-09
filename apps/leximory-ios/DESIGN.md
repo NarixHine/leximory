@@ -1,123 +1,91 @@
 # Leximory on Apple platforms
 
-Japanese EPUBs always use one spread and follow the web's vertical-rl/ltr pagination with bundled Japanese serif and ruby. Japanese defaults are 24 pt and 1.7 leading, separately remembered from horizontal-language settings. Preserve publisher paragraph indentation and spacing. Use the web's automatic spread and viewport resize behavior; never re-display the current CFI after a resize. Selection excludes rt/rp and bounds context to its paragraph or br-separated line; bookmarks highlight the iframe text DOM and survive reflow. Reading direction controls gestures and keyboard paging. Local snapshots appear before network refresh. See `../../docs/native-ios/offline-sync.md` for the native storage lifecycle.
+The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation; imported text keeps its original punctuation.
 
-## User concerns and automatic behavior
+## Appearance
 
-Handle caching, downloading, connectivity recovery, and synchronization automatically. Do not display implementation status such as 尚未下载, 已下载, storage usage, sync timestamps, or redundant 只读 indicators. Preserve editing controls and disable them when an action is unavailable, including offline access; never replace that behavior with labels or hide a normally available editing action. Show a concise recovery message only when the requested content or action actually cannot be provided.
+Use the canonical palette in `apps/leximory/tailwind.config.ts` and its native equivalents in `App/LeximoryTheme.swift`.
 
-Article text must flow to the bottom edge of the screen. Do not reserve a solid footer, safe-area status bar, or blank white strip. Only an active user-facing control such as audio playback may overlay the reader.
+| Role | Light |
+| --- | --- |
+| Paper | `#FFFFFF` |
+| Shell | `#F8FAF8` |
+| Inset | `#F1F5F1` |
+| Border | `#E7ECE7` |
+| Marker | `#BDD981`, 45% opacity |
+| Illustration | `#9CAEA1` |
+| Secondary label | `#9CA8AB` |
+| Secondary border | `#D0D6D8` |
+| Muted text | `#67787C` |
+| Navigation | `#5A715A` |
+| Ink | `#192024` |
 
-A static annotation responds on touch-down, opens on touch-up, and anchors to the exact tapped highlighted line in the text view's content coordinates. Keep embedded annotation presentation local, compact, and free of network prerequisites. Use content-sized bubbles with restrained typography and spacing. PDF zoom choices are aligned, full-width action rows with consistent 44 pt targets.
+Dark appearance uses neutral paper `#100F0F`, shell `#18181B`, inset `#27272A`, border `#3F3F46` and ink `#CECDC3`. Paper follows the system. Liquid Glass belongs to navigation, playback and controls; reading content stays on paper. Ebook actions use neutral ink.
 
-The web app is canonical for copy, content, color roles, and typography. Native iOS navigation, selection menus, sheets, and popovers supply platform behavior. Read this before changing any screen. Do not add copy, decorative symbols, metrics, or destinations without a corresponding product function.
+Covers retain the web's newspaper rules, artwork and identity-derived paper wash. Draw rules above the wash. Use the bundled monochrome Noto Emoji for cover artwork; prose keeps native emoji.
 
-App-authored Chinese text uses Chinese punctuation, including `，、。！？：；（）` and the full ellipsis `……`. Never use three ASCII periods in Chinese loading messages. Preserve punctuation in imported reading content and system-owned controls.
+## Typography and layout
 
-## Color roles
-
-The source palette lives in `apps/leximory/tailwind.config.ts`; native equivalents live in `App/LeximoryTheme.swift`.
-
-| Role | Light | Use |
+| Role | Face | Default |
 | --- | --- | --- |
-| Paper | `#FFFFFF` | Reading and browsing canvas |
-| Shell | `#F8FAF8` | Outer cards and annotation trays |
-| Inset surface | `#F1F5F1` | Library title panels |
-| Border | `#E7ECE7` | Archive dividers and quiet separation |
-| Marker | `#BDD981` at 45% opacity | Saturated, quiet lower-line annotation strokes |
-| Illustration | `#9CAEA1` | Artwork and language labels |
-| Secondary label | `#9CA8AB` | Archive heading and secondary metadata |
-| Secondary border | `#D0D6D8` | Topic pill outlines |
-| Muted | `#67787C` | Supporting text and dictionary actions |
-| Sage action | `#5A715A` | Navigation tint, links, selection affordances |
-| Ink | `#192024` | Editorial titles and prose |
-
-Use the web's neutral dark tokens: paper #100F0F, shell #18181B, inset surfaces #27272A, borders #3F3F46, and warm text #CECDC3. Dark surfaces, controls, and reading markers must not acquire a green tint. Ink belongs to reading content, not selected navigation icons. Let native Liquid Glass own tab and toolbar backgrounds, optical contrast, safe-area sizing, and selected states. Use sage for app navigation and neutral ink for the ebook control cluster. Glass belongs to navigation and controls; paper cards and prose retain the web's quiet surfaces.
-
-Cover paper follows the web's identity-derived OKLCH formula, rather than the library inset token: lightness 0.975–0.993, hue 120–174, and chroma 0.003–0.0075. A slow colored wash and a white wash brighten different areas. Draw newspaper rules above the washes so they stay legible. Preserve variation between texts; do not flatten the collection into a single gray-green surface. Dark paper uses the web's identity-derived neutral lightness.
-
-## Typography
-
-| Role | Face | Sizing and rhythm |
-| --- | --- | --- |
-| Library eyebrow | Space Mono | 12 pt, tracking 1.2 |
+| Library eyebrow | Space Mono | 12 pt, 1.2 tracking |
 | 我的文库 | WenKai Screen | 30 pt |
-| Library and text titles | EB Garamond with CJK cascade | 24 pt phone library card, 20 pt compact text row, 30 pt wide library card, 36 pt featured text |
-| English/French prose | Libre Baskerville | 18 pt / 5 pt additional line spacing on phone; 20 pt / 7 pt on wide layouts |
-| Chinese prose | ChillDuanHeiSongPro | Supplied Regular OTF |
-| Japanese prose | ChillDuanHeiSongProJP | Supplied Regular OTF; preserve ruby pronunciation |
-| Interface text | Raleway with script cascade | 12–17 pt by role |
-| Topics | WenKai Screen | 12–14 pt, compact pills |
-| IPA/code | Source Code Pro | 85% of prose size for inline IPA |
+| Library/text titles | EB Garamond with CJK cascade | 20–36 pt by role |
+| English/French prose | Libre Baskerville | 18 pt phone, 20 pt wide |
+| Chinese prose | ChillDuanHeiSongPro | Bundled Regular OTF |
+| Japanese prose | ChillDuanHeiSongProJP | Bundled Regular OTF, with ruby |
+| Interface text | Raleway with script cascade | 12–17 pt |
+| Chinese navigation/topics | WenKai Screen | 12–14 pt topics |
+| IPA/code | Source Code Pro | 85% of prose |
 
-Garamond is a display face. Do not use it for English body text. Use real italics for prose. All roles scale with Dynamic Type; titles wrap and containers grow. Full article and library titles belong in wrapping scrolling content. Once the article title leaves the viewport, a secondary 22 pt Garamond title appears in the toolbar and disappears when the full title returns. Native menus and OS-owned controls retain platform typography where the OS owns it.
+Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. System-owned controls retain platform typography.
 
-## Layout and hierarchy
+`LeximoryLayout` owns measurements: 20 pt page inset, 640 pt article/library measure and 880 pt gallery measure. Library cards use 46 pt outer and 32 pt inner corners. Phones use compact text rows with newspaper thumbnails. Wide galleries show a featured cover and up to five supporting entries in landscape or three in portrait. Archived libraries are compact chips.
 
-`LeximoryLayout` owns shared measurements. The page inset is 20 pt and article reading measure is at most 640 pt; library cards cap at 640 pt and text galleries at 880 pt. Cards use 14 pt top and horizontal outer insets, 6 pt beneath their action footer, 46 pt outer radius, and 32 pt inner radius. Title panels have 20 pt top padding and 16 pt bottom padding; their minimum height is 104 pt. Do not add a blank footer to imitate unavailable actions. Archived/shadow libraries form compact chips below a faint 0.5 pt divider in the border color.
+Article covers and wrapping titles scroll with the prose. Phone titles use 28 pt Garamond, wide titles 32 pt. A 22 pt toolbar title appears after the full title scrolls away. Article paper continues through the bottom safe area.
 
-On phones, Texts begins with a wrapping collection title in the content. On iPad, the selected library card identifies the collection. Every text cover uses the newspaper gridline background, with a restrained moving wash. Phones use compact text rows throughout, with small newspaper cover thumbnails; there is no featured hero card. Wide windows use a featured cover and at most five supporting entries in landscape, three in portrait; remaining articles continue below. The reader opens with the web's artwork, topic metadata, and a wrapping title. Wide reading covers have a shell-colored title panel, lighter than the artwork panel. Phone article titles use 28 pt Garamond, tightened tracking and an 8 pt gap before topics; wide titles use 32 pt. The header scrolls with the prose; the native toolbar contains navigation, actual actions, and the conditional secondary title.
+## Navigation and account state
 
-The phone reader's cover is 196 pt tall. Active library cards expose the actual recently opened text when available and a separate 44 pt archive action. Archived libraries expose the inverse action. Recent reading history is scoped to the signed-in account on the device, matching the web's local history behavior.
+Phones use native 文库 and 账户 tabs. Regular-width windows use a library sidebar with the segmented picker inside it and the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
 
-## Navigation and learning
+Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
-On compact-width screens, use the native `TabView` for 文库 and 账户. On regular-width screens, use the native segmented picker inside the library sidebar. Inactive tab symbols are muted outlines; active symbols use sage. Use native toolbars for article navigation and playback. Ebook controls use a separate 36 pt glass back circle and separate circular glass buttons for contents, bookmarks, settings, and sharing. Retain 44 pt touch targets without native glass-button padding. Do not rebuild the tab bar or draw a separator around it. 🐈 猫忆查 precedes Copy in its own inline selection-menu group; ebook selections also expose 添加书签 there. Preserve the native Define and Web Search actions beside custom lookup. Remove share, find, replacement, and 全选 from the reading selection menu. Keep these actions beside the selected text. Both 猫忆查 and 添加书签 have native menu icons, including on Mac. The login tray's 取消 is a quiet text action with no shared glass background.
+Handle downloading, caching, synchronization and recovery automatically. Preserve editing actions and disable them when unavailable. Show an error only when the requested action cannot complete.
 
-Annotation trays use a pale surface, bold prose headword, Libre Baskerville body, and muted 释义/语源/同源词 labels. Never use the title face for annotation content. Dynamic annotation loading occupies a compact row until definition text arrives. Saving uses the reference's dark circular bookmark action. Phone sheets adapt to measured content without surplus detent height. The solid action has equal 24 pt left and bottom insets measured from the sheet edge; subtract the bottom safe area from the height detent rather than adding it again. Leave their corner radius to iOS so the sheet follows the screen geometry. Dynamic definitions use a top-anchored rounded card on every device, following the canonical web annotation card. It overlays the reader so streaming never changes the document viewport or reading offset. Children determine its height, starting with a compact loading row; long content scrolls within a 78% viewport cap. Dragging moves the whole card, with upward distance/velocity dismissal and resisted downward movement. There are no manual resize controls or handle strip. Use continuous 36 pt corners and Vaul's 500 ms drawer easing, with reduced-motion support. Keep only the canonical bookmark, vocabulary editing, and dictionary actions. Tapping outside the tray dismisses it before returning to reading. Static definitions use iPad popovers anchored to the selected occurrence; let the system choose the arrow edge so words near the bottom open above rather than collapsing below. Pre-annotated article words use a saturated sage-yellow highlighter stroke at 45% opacity behind 28% of the glyph height. Use tight TextKit segments separately on each wrapped line, without extending to blank line tails or forming a rectangular word background. Cache visible geometry and resolve taps through canonical annotation tags. Highlights retain selection and lookup behavior.
+Use the lawn and cat together for spacious loading scenes, at 80% width up to 560 pt and constrained by height. Compact loading states use standard spinners. Respect Reduce Motion and inactive scenes.
 
-## Importing and editing
+## Reading and learning
 
-Every readable library exposes 语料本; owned content libraries also expose 导入. Start 创建文章 with the web's 网址导入外刊 URL field. Extract title and text, allow review, then offer 保存 without AI or 生成 with the canonical annotation options. 手动录入 and 上传电子书 remain alternatives. EPUB/PDF selection uses the native file picker and the same 4.5 MB limit as the web. Keep forms on paper, with quiet cancellation and one solid primary action.
+Selection menus offer 猫忆查 before Copy, retain native Define/Web Search, and add 添加书签 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
 
-语料本 follows the canonical date groups and compact, centered word chips: two columns on iPhone, three on narrower iPad layouts, four on wide layouts. Use a wrapping library title and Chinese date labels. Open 语料本 as a full collection screen. A word opens a prose popover anchored to its chip on iPad, adapting to a fitted tray on iPhone; edit is an explicit action inside it. Shared-library words and welcome annotations remain read-only. Omit the word lottery, date-range, draw and story controls on native platforms.
+Static annotations highlight on touch-down and open on touch-up, anchored to the selected line. Use a fitted popover on iPad and tray on phone, with a comfortable 400 pt measure and 24 pt insets. Keep actions below the definition. Article highlights are short sage-yellow strokes behind the lower glyph area, separately fitted to each line.
 
-After saving a definition, the pencil opens editing in the annotation tray. Existing saved words can also be reopened from 语料本. Preserve the web's 词条 / 释义 / 语源 / 同源词 fields, original occurrence, and prose typography. Editing does not use the display-title face. Confirm with a circular check action and cancel with the neighboring outline action. On iPad, cap form width and retain the same reading measure.
+Dynamic definitions overlay the reader in a top-anchored card. Content determines height, capped at 78% of the viewport. Use 36 pt corners and the web's drawer easing. Drag upward or tap outside to dismiss; downward dragging resists. Streaming must preserve the reading viewport and offset.
 
-## Ebooks and Mac
+Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
 
-EPUB uses the same bundled epub.js version as the web, preserving CFI navigation and reading positions. PDF uses PDFKit. Authorized book descriptors, user-private bookmarks, and reading-position sync use the existing database tables. Keep article source ranges separate from ebook selection context. Preserve quotas, completed-definition receipts, and library access checks. Do not treat an ebook's bookmark-only `content` as its complete text.
+Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Seek on scrub release.
 
-Ebooks open with quiet running titles and page counts; action controls stay hidden until a center tap. EPUB page counts describe the current chapter. A center tap toggles the shared edge controls; only a tap on empty outer gutter paper with a minimum 44 pt touch width, confirmed against the current DOM and viewport at the time of the tap, turns one page in the language's reading direction, and every tap immediately redirects one visible, uninterrupted slide using the same critically damped spring as swipe release. Capture the current visible composition when interrupting so consecutive taps and reversals never jump or animate underneath an older sheet. Start the full trajectory on the first display frame; rendering must never pause or restart motion. Reuse recent rendered pages for immediate backward content. Visible sheets retain their original prose throughout taps and swipes. Bind warmed adjacent pages before motion starts. While an uncached destination renders, retain rendered text beneath the moving foreground. Only taps start native motion; the final tap’s spring sets the settling deadline. Accept the final target bitmap before commit and adjacent-page preparation. If it was not already cached, reveal it as an immutable sheet using the remaining progress of the original tap spring; it must reach its final position at the original endpoint, with no independent clock or settling tail. Existing leaves keep their pixels and timelines. Once both rendering and the original motion finish, uncover the identical stationary final WebKit page. Superseded results only populate the cache. Never replace text on a visible sheet or slide a nil-image placeholder over the book. Coalesce pending tap actions into renderer batches, preserve their order at book boundaries, and publish only the final pagination; remove the presentation only after both the final content and motion are complete. Horizontal swipes turn EPUB pages with a flat, interactive slide: the current page tracks the finger's exact travel and lightens as it leaves, while the destination page slides in from the opposite edge over a shorter parallaxed distance. A release past the threshold snaps the turn off screen with a strong ease-out; a cancelled preview restores the original CFI without syncing a temporary reading position; Reduce Motion changes pages directly. The left-edge return gesture takes priority over page turning. PDFs scroll continuously vertically. Controls overlay reserved margins, so revealing them does not reflow the book. Contents and bookmarks live in a paper tray anchored to the reader actions on iPad, adapting to a native sheet on phone. Reading settings use a sliders icon and a plain paper scroll layout, with neutral ink actions. Ebook controls use separate circular glass buttons at the right, with a separate glass back control; the reading-position label is plain muted text. Short contents lists size to their entries; long lists scroll. Paper appearance always follows the system; do not expose a paper picker or honour old manual appearance preferences. EPUB accessibility position includes the chapter as well as its page; PDF announces page X of Y rather than a percentage. EPUB prose defaults to 18 pt on phone, 20 pt on wide layouts, with 1.6 leading and a maximum 560 pt prose measure per column inside a viewport up to 1232 pt wide, 44 pt minimum outer gutters. Override dense publisher paragraph typography while preserving emphasis, poetry, images, tables, and ruby. Reading options adjust size and leading without changing CFI position. PDFs preserve their typeset page in continuous vertical flow and offer fit-page/fit-width and the same contextual learning menu. Capture selection context and location before the system dismisses its menu.
+## Ebooks
 
-Mac Catalyst shares the native implementation. Keyboard navigation, window resizing, selection, and app lifecycle require Mac verification beyond compilation. Browser importing, DRM-protected books, signing, and production delivery remain separate work.
+EPUB currently uses bundled epub.js; PDF uses PDFKit. Preserve CFI positions, private bookmarks, selection context, authorization and quotas. Ebook bookmark content is not the complete book text.
 
-## Review gate
+A center tap toggles controls without reflow. Running titles are centered and fade when controls appear. Use separate circular glass buttons for back, contents, bookmarks, settings and sharing, with 44 pt touch targets. Titles use 18 pt serif; page labels use 15 pt interface text. EPUB labels include chapter and page; PDF labels give page X of Y.
 
-Inspect the signed-in web when a layout is uncertain. Verify real long titles, narrow phone widths, iPad portrait/landscape, dark appearance, and accessibility text sizes. Check supported actions and unavailable states, then capture screenshots. Database mutation tests require explicit authorization; fixtures verify ebook rendering without changing the test account.
+Empty outer gutter taps turn one page in reading order without animation. Swipes use flat, interruptible slides that track the finger and ease into completion or cancellation. Forward turns move the current page away; backward turns bring the previous page over it. The underneath page moves a short distance with proportional shading. Visible text stays stable throughout motion. Preserve the left-edge back gesture and Reduce Motion.
 
-On regular-width screens, one NavigationStack owns the library browser and reader destinations. Its browsing root contains the library sidebar and text gallery side by side. The native 文库/账户 segmented picker belongs to the sidebar, so it does not reserve vertical space over the text gallery. Readers push at full width and return to the same browser root. Text galleries hide the navigation bar and place corpus/import actions beside the heading. Chinese and Japanese Chill body text uses softer adaptive ink while headings keep their original contrast.
+Horizontal EPUB prose defaults to 18 pt phone/20 pt wide with 1.6 leading, a 560 pt maximum column measure and at least 44 pt outer gutters. Use two columns only in landscape windows at least 760 pt wide. Japanese always uses one spread, vertical pagination, bundled Japanese serif, ruby, publisher indentation and paragraph spacing. Its separately remembered defaults are 24 pt and 1.7 leading. Preserve emphasis, poetry, images and tables. Resizing and reading settings retain reading position. Selection excludes ruby pronunciation and stays within its paragraph or line.
 
-Unarchived libraries use a single column in compact layouts, including iPhone. Two columns require a regular size class and enough gallery width. Archived libraries remain compact chips.
+PDFs scroll vertically and offer fit-page/fit-width. Reserve 24 pt below EPUB and 36 pt below PDF, with 8 pt beneath page labels. Contents, bookmarks and settings use paper popovers on iPad and fitted sheets on phone. Short lists fit their content; long lists scroll. Dismiss outside or with the system gesture.
 
-Native section controls and navigation labels use the Chinese serif face. On iPad, omit library names from the text gallery because the selected sidebar card already identifies the library. Featured article titles use tight leading. Reader prose and inline emoji keep Apple native rendering; text-cover emoji use the bundled monochrome Noto Emoji, tinted in the web's `default-400` family with the cover's identity-derived hue.
+Bookmarks use spaced quote cards with chapter names or PDF page numbers. Show and highlight saves immediately, then reconcile the result. Failed saves remove the pending bookmark and announce a brief error. Reading-position sync failures stay silent.
 
-The ebook running title is centered while controls are hidden and fades out when controls appear so actions never overlap it. Reader buttons own their complete 44 pt hit rectangles without extra button-style padding. The native contents popover uses a plain list on paper, including its rows and presentation background.
+## Importing and vocabulary
 
-Ebook contents and reading settings dismiss by clicking outside or by the native sheet gesture; do not add a redundant 完成 action. Dynamic annotation trays first commit a measured offscreen frame, then enter from the top.
+Every readable library exposes 语料本; owned libraries also expose 导入. Start 创建文章 with URL import, followed by review and 保存 or 生成. Manual entry has a title and blank body; ebook upload uses the native picker and the web's 4.5 MB limit. Use the muted `https://theleximorytimes.com/` placeholder, collapsed generation options, quiet cancellation and one primary action.
 
-EPUB swipes install their rendered source sheets synchronously at gesture recognition, including the recognizer’s initial translation. Prepare actual adjacent-page bitmaps before accepting the initial swipe and while native sheets cover subsequent turns. Pin the incoming bitmap for the entire gesture; never use the current page as an incoming substitute or replace prose while the finger is down. Preparation restores the original CFI without publishing temporary positions and remains serialized with other renderer navigation. EPUB page turns follow the finger's exact horizontal travel, project release velocity before choosing completion or cancellation, and carry that momentum into the endpoint. Tap-driven turns use the same critically damped spring as swipe release, with a modest immediate launch velocity and a gentle settling tail. Consecutive taps retain motion in the requested direction; reversals respond immediately. Brightness is a continuous function of each page's forward shift: shifting toward the next page moves the page away from the paper, while centre and behind stay at full brightness; the destination enters over a shorter parallaxed distance. A deliberate reverse release cancels the turn. Respect reduced motion.
+语料本 is a collection screen with Chinese date groups and centered word chips: two columns on phone, three or four on iPad. Words open fitted definitions with an explicit edit action. Shared-library words and welcome annotations remain read-only. Native omits lottery and story controls.
 
-PDF readers expose page labels without a progress slider. Ebook page labels have 8 pt of bottom breathing room, with reserved EPUB footer space so the label cannot cover the last prose line. A deliberate reverse release cancels the turn.
+## Verification
 
-Annotation surfaces use neutral near-white in light mode and charcoal in dark mode. Tapping outside a dynamic annotation card dismisses it with the same exit animation as dragging it away. EPUB reserves 24 pt below its viewport; PDF reserves 36 pt, keeping prose close to the page label without consuming extra reading space.
-
-The slide is strictly two-dimensional: translate and opacity only, never a rotation or perspective. A single display-link trajectory carries release velocity into a stationary endpoint; content commits after the destination settles. Running book titles use 18 pt serif and pagination uses 15 pt interface text. Loading annotations keep a 32 pt indicator row inside equal 16 pt vertical padding. Article navigation has a transparent bar and a Liquid Glass title capsule, with a 5 pt title reveal lasting 240 ms and a 180 ms exit; reduced motion omits the transition.
-
-Use the web lawn artwork and running cat sprite only in spacious page loading states. Compact content, audio, annotation, vocabulary, and button loading states use standard spinners. Pause movement for reduced motion and inactive scenes. Corpus controls stay hidden while a library loads. Dynamic annotation prose is 16 pt on phone and 17 pt on iPad, with 20/22 pt headwords, 14 pt section labels, and tighter content spacing. Preserve Dynamic Type scaling. Ebook selection menus name the bookmark action 添加书签; remove 全选 while retaining Copy and contextual lookup.
-
-The turning leaf always travels the finger's full distance while the page it reveals only parallaxes a short inset. Forward turns slide the current page away; backward turns sweep the previous page back over the current page, which barely moves. Taps and swipes share these offsets and layer ordering; backward shading follows the underneath page’s short parallax distance. Consecutive backward taps preserve unfinished incoming leaves on their existing spring timelines as each new leaf enters above them. Release older moving sheets once a settled leaf covers them, but retain the rendered backing surface until the burst finishes; reversals capture the visible composition. During backward bursts, shade all exposed older sheets by the hypothetical underneath page’s short parallax for the newest leaf’s progress, including older leaves that have already settled. Carry the displayed brightness across taps with a short continuous handoff rather than resetting the exposed paper to white. Backward sheets combine paper and rendered prose into one bitmap, using the same bitmap composition as the forward foreground.
-
-Audio playback floats in a compact 420 pt maximum Liquid Glass capsule, with play/pause, track title, elapsed time, scrubbing, and dismissal in a single row. Measure its height to leave scrollable space beneath the final prose line without shrinking the reading viewport. Seek after scrub release. Hide renderer diagnostic notices from both displayed prose and VoiceOver while preserving fallback text. Spacious loading states scale the lawn and cat together to 80% of the available width, capped at 560 pt and constrained by available height; compact loading contexts use standard spinners.
-
-Both page previews live outside the WKWebView snapshot area so the outgoing cover cannot contaminate the incoming image. Each page is a full-screen paper sheet that moves as one, and every page follows the same brightness law, so no rotation or bending is ever drawn. Forward and backward turns share the same rendering.
-
-Keep the article paper background continuous through the bottom safe area. Page turns never rotate or bend the sheet; the outgoing page translates off toward the finger's direction while the incoming page settles flush from the opposite edge.
-
-URL import uses https://theleximorytimes.com/ as a muted placeholder and neutral control tint. Manual entry has one title prompt and a blank body editor, without duplicate field labels, file selection, or boilerplate AI copy. Keep generation preferences in a collapsed options disclosure; ebook file selection stays in the upload tab.
-
-Texts belong to one library identity. Switching replaces their state immediately: show the selected library’s cache or the proportional lawn loading scene, never old texts under a new font. Cancelled/superseded requests cannot replace the selected snapshot. The texts scroll view has no top progressive blur.
-
-Static definition and corpus popovers use a comfortable 400 pt measure, 24 pt insets, and readable prose. Keep actions below the definition sections in their original row. Content determines height; long content scrolls. Do not compress the bubble or move buttons into the heading to reduce its size. URL import placeholder text stays muted even when it resembles a link.
-
-Ebook selections use 添加书签. The 目录 and 书签 actions have separate circular buttons and separately anchored presentations. Bookmarks use spaced quote cards with prominent chapter names and PDF page numbers, without horizontal list dividers. Bookmarks appear and highlight immediately, then reconcile with the saved result. A failed save removes the pending bookmark and displays a brief material banner with error haptics and a VoiceOver announcement. Reading-position sync failures stay silent. Non-Japanese reflowable EPUBs use two columns only in landscape windows at least 760 pt wide, even when publisher metadata requests one page. Portrait and narrow windows always use one column. Japanese EPUBs never use a two-page spread. Preserve their publisher structure and vertical pagination.
+Check phone and iPad widths, portrait/landscape, dark appearance, long titles and Dynamic Type. Verify selection, bookmarks, real horizontal and Japanese books, and supported offline actions. Mac Catalyst also needs keyboard, resizing and lifecycle checks. Fixtures are for automated verification; hand off the real app in normal account mode. Database mutations and device installation require authorization.

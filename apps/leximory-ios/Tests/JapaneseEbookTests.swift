@@ -5,204 +5,76 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct JapaneseEbookTests {
-    @Test(arguments: [false, true], [false, true])
-    func nativeTapBurstPublishesOnlyTheFinalPageWithOneVisibleTransition(rightToLeft: Bool, renderDuringSlide: Bool) async throws {
+    @Test(arguments:[false,true],[false,true]) func tapsTurnPagesWithoutAnimatedSheets(rightToLeft:Bool, advancing:Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
-        let book = try #require(Bundle.main.url(forResource: rightToLeft ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
+        let book = try #require(Bundle.main.url(forResource: rightToLeft ? "japanese-fixture":"reader-fixture", withExtension: "epub"))
         let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
         let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene); window.frame = web.frame
         let host = UIViewController(); window.rootViewController = host
-        host.view.addSubview(web); window.makeKeyAndVisible(); host.view.layoutIfNeeded()
-        let reader = EbookReaderState()
-        let turns = EPUBPageTurn(web: web, reader: reader)
-        defer {
-            turns.stop(); window.isHidden = true
-            config.userContentController.removeScriptMessageHandler(forName: "reader")
-        }
-        web.navigationDelegate = probe
-        try await probe.load(web, url: page)
-        let font = try #require(Bundle.main.url(forResource: "ChillDuanHeiSongProJP_Regular", withExtension: "otf"))
-        let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        host.view.addSubview(web); window.makeKeyAndVisible()
+        let reader = EbookReaderState(); let turns = EPUBPageTurn(web: web, reader: reader)
+        defer { turns.stop(); window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let font = try #require(Bundle.main.url(forResource: rightToLeft ? "ChillDuanHeiSongProJP_Regular":"LibreBaskerville", withExtension: rightToLeft ? "otf":"ttf"))
+        let fontURL = "data:font/ttf;base64," + (try Data(contentsOf: font)).base64EncodedString()
         _ = try await web.callAsyncJavaScript("""
-            await window.openBook(bytes, '', fonts, theme, []);
-            const origin = rendition.currentLocation().start.cfi;
-            await rendition.next(); await rendition.next(); await painted();
-            window.expectedTapLocation = rendition.currentLocation().start.cfi;
-            await rendition.display(origin); await painted();
-            window.committedTaps = [];
-            window.renderedTapSteps = 0;
-            const next = rendition.manager.next.bind(rendition.manager);
-            const previous = rendition.manager.prev.bind(rendition.manager);
-            rendition.manager.next = () => { if (window.countTapNavigation) window.renderedTapSteps++; return next(); };
-            rendition.manager.prev = () => { if (window.countTapNavigation) window.renderedTapSteps++; return previous(); };
-            const turn = window.readerTurn;
+            const zip = await JSZip.loadAsync(Uint8Array.from(atob(bytes), c => c.charCodeAt(0)));
+            for (const entry of Object.values(zip.files).filter(e => /\\.xhtml$/.test(e.name) && !/nav|toc/.test(e.name))) {
+                const doc = new DOMParser().parseFromString(await entry.async('string'), 'application/xhtml+xml');
+                const body = doc.querySelector('body');
+                body.innerHTML = Array.from({length:180}, (_, i) => `<p>Paragraph ${i}. Every page has its own prose. The river winds through the garden while a reader turns the pages of a long chapter. Words must stay attached to the page that is moving.</p>`).join('');
+                zip.file(entry.name, new XMLSerializer().serializeToString(doc));
+            }
+            await window.openBook(await zip.generateAsync({type:'base64'}), '', fonts, theme, []);
+            if (!advancing) { for (let i=0; i<20; i++) { await rendition.next(); await chapterPainted(); } }
+            const manager = rendition.manager, origin = [manager.container.scrollLeft, manager.container.scrollTop];
+            for (let i=0; i<10; i++) { await (advancing ? rendition.next() : rendition.prev()); await chapterPainted(); }
+            window.expectedBurstLocation = rendition.currentLocation().start.cfi;
+            manager.scrollTo(...origin,true); await painted(); rendition.location = rendition.currentLocation();
             const tap = window.readerTap;
-            const gate = new Promise(resolve => { window.releaseTapRendering = resolve; });
-            window.tapTimings = [];
-            window.readerTap = async actions => {
-                await gate;
-                const start = performance.now();
-                window.countTapNavigation = true;
-                let result;
-                try { result = await tap(actions); } finally { window.countTapNavigation = false; }
-                window.tapTimings.push(performance.now() - start);
+            const gate = new Promise(resolve => { window.releaseBurstRendering = resolve; });
+            window.readerTap = async actions => { await gate; return tap(actions); };
+            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(), "advancing":advancing,
+            "fonts": ["regular":fontURL,"italic":fontURL,"display":fontURL],
+            "theme": ["paper":"#ffffff","ink":"#192024","size":"20","leading":"1.6","weight":"400","writing":rightToLeft ? "vertical-rl":"horizontal-tb"]], in:nil,contentWorld:.page)
+        reader.ready = true; reader.atStart = false; reader.location = probe.location; reader.rightToLeft = rightToLeft
+        await turns.prime()
+        let preloader = try #require(host.view.subviews.compactMap { $0 as? WKWebView }.first { $0 !== web })
+        _ = try await preloader.callAsyncJavaScript("""
+            const step = window.readerPreloadStep;
+            const gate = new Promise(resolve => { window.releaseSlowPreview = resolve; });
+            window.slowPreviewStarted = false;
+            window.readerPreloadStep = async advancing => {
+                const result = await step(advancing);
+                if (!window.slowPreviewStarted) { window.slowPreviewStarted = true; await gate; }
                 return result;
             };
-            window.readerTurn = async action => {
-                const result = await turn(action);
-                if (action === 'commit') window.committedTaps.push(rendition.currentLocation().start.cfi);
-                return result;
-            };
-            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(),
-                "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
-                "theme": ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": rightToLeft ? "vertical-rl" : "horizontal-tb"]], in: nil, contentWorld: .page)
-        #expect(probe.ready); #expect(probe.failure == nil)
-        reader.ready = true; reader.atStart = false; reader.rightToLeft = rightToLeft
-        reader.location = probe.location
-        await turns.prime()
-        turns.requestTurn(advancing: true)
-        turns.requestTurn(advancing: true)
-        for _ in 0..<12 {
-            turns.requestTurn(advancing: false)
-            turns.requestTurn(advancing: true)
+            """, arguments:[:], in:nil, contentWorld:.page)
+        turns.invalidateSnapshot()
+        let preparation = Task { await turns.prime() }
+        for _ in 0..<100 {
+            if try await preloader.callAsyncJavaScript("return window.slowPreviewStarted", arguments:[:], in:nil, contentWorld:.page) as? Bool == true { break }
+            try await Task.sleep(for:.milliseconds(20))
         }
-        try await Task.sleep(for: .milliseconds(100))
-        let presentation = try #require(host.view.subviews.last)
-        #expect(presentation !== web)
-        #expect(host.view.subviews.count == 2, "There must be a single visible transition, not hidden stacked sheets")
-        #expect(presentation.subviews.count == 2)
-        #expect(abs(try #require(presentation.subviews.last).transform.tx) > 100, "The full slide must continue while rendering is blocked")
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
-        let visible = UIGraphicsImageRenderer(bounds: presentation.bounds, format: format).image { presentation.layer.render(in: $0.cgContext) }
-        try visible.pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-real-tap-\(rightToLeft).png"))
-        #expect(visibleInkFraction(visible) > 0.0015, "The actual EPUB presentation must contain prose, not a blank capture")
-        let blockedCommits = try await web.callAsyncJavaScript("return window.committedTaps.length", arguments: [:], in: nil, contentWorld: .page) as? Int
-        #expect(blockedCommits == 0)
-        // Deliberately resolve after native motion has completely stopped.
-        // A late EPUB result must not create a second visible entrance.
-        if !renderDuringSlide { try await Task.sleep(for: .milliseconds(650)) }
-        let settledSheets = presentation.subviews
-        let settledTransforms = settledSheets.map(\.transform)
-        let releasedAt = CACurrentMediaTime()
-        _ = try await web.callAsyncJavaScript("window.releaseTapRendering()", arguments: [:], in: nil, contentWorld: .page)
-        var commits: [String] = []
-        for _ in 0..<200 {
-            if !renderDuringSlide, presentation.superview != nil {
-                #expect(presentation.subviews == settledSheets, "Late rendering cannot add another moving sheet")
-                #expect(settledSheets.map(\.transform) == settledTransforms, "Settled pages cannot move again after tapping stops")
-            }
-            commits = try await web.callAsyncJavaScript("return window.committedTaps", arguments: [:], in: nil, contentWorld: .page) as? [String] ?? []
-            if commits.count == 1 { break }
-            try await Task.sleep(for: .milliseconds(20))
+        #expect(try await preloader.callAsyncJavaScript("return window.slowPreviewStarted", arguments:[:], in:nil, contentWorld:.page) as? Bool == true)
+        let existingViews = host.view.subviews
+        for _ in 0..<10 {
+            turns.requestTurn(advancing:advancing)
+            await Task.yield()
+            #expect(host.view.subviews == existingViews, "Taps must never install animated page sheets")
         }
-        let expected = try await web.callAsyncJavaScript("return window.expectedTapLocation", arguments: [:], in: nil, contentWorld: .page) as? String
-        #expect(commits.count == 1, "Pagination must catch up once, not replay the tap backlog")
-        print("EPUB burst catch-up seconds", CACurrentMediaTime() - releasedAt)
-        print("EPUB renderer milliseconds", try await web.callAsyncJavaScript("return window.tapTimings", arguments: [:], in: nil, contentWorld: .page) as Any)
-        let renderedSteps = try await web.callAsyncJavaScript("return window.renderedTapSteps", arguments: [:], in: nil, contentWorld: .page) as? Int
-        // Wide horizontal spreads can exhaust this short chapter before the
-        // destination chapter's extent is known. Allow one boundary pair, but
-        // never replay the twelve cancelled pairs in the original tap burst.
-        #expect((renderedSteps ?? .max) <= 4, "The renderer must catch up with bounded work across chapter boundaries")
-        #expect(commits.first == expected, "Coalescing must retain every tap's requested position")
-        for _ in 0..<150 {
-            if !renderDuringSlide, presentation.superview != nil {
-                #expect(presentation.subviews == settledSheets)
-                #expect(settledSheets.map(\.transform) == settledTransforms)
-            }
-            if host.view.subviews == [web] { break }
-            try await Task.sleep(for: .milliseconds(20))
+        _ = try await web.callAsyncJavaScript("window.releaseBurstRendering()", arguments:[:], in:nil, contentWorld:.page)
+        for _ in 0..<250 {
+            if try await web.callAsyncJavaScript("return !pageTurn && rendition.currentLocation().start.cfi === window.expectedBurstLocation", arguments:[:], in:nil, contentWorld:.page) as? Bool == true { break }
+            try await Task.sleep(for:.milliseconds(20))
         }
-        #expect(host.view.subviews == [web])
-        if renderDuringSlide {
-            let snapshot = try await web.takeSnapshot(configuration: nil)
-            let settled = UIGraphicsImageRenderer(bounds: presentation.bounds, format: format).image {
-                presentation.layer.render(in: $0.cgContext)
-            }
-            #expect(bitmapDifference(settled, snapshot) < 0.005,
-                "The native sheet must settle on the actual EPUB content before WebKit is uncovered")
-        }
-        let positionScript = "return JSON.stringify([rendition.currentLocation().start.cfi, rendition.manager.container.scrollLeft, rendition.manager.container.scrollTop])"
-        let settledPosition = try await web.callAsyncJavaScript(positionScript, arguments: [:], in: nil, contentWorld: .page) as? String
-        try await Task.sleep(for: .milliseconds(350))
-        let laterPosition = try await web.callAsyncJavaScript(positionScript, arguments: [:], in: nil, contentWorld: .page) as? String
-        #expect(laterPosition == settledPosition, "Reading position and physical scroll must remain fixed after handoff")
-    }
-
-    @Test(arguments: [false, true])
-    func backwardBurstKeepsProseOnTheExposedSide(rightToLeft: Bool) async throws {
-        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
-        let book = try #require(Bundle.main.url(forResource: rightToLeft ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
-        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
-        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
-        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
-        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let window = UIWindow(windowScene: scene); window.frame = web.frame
-        let host = UIViewController(); window.rootViewController = host
-        host.view.addSubview(web); window.makeKeyAndVisible(); host.view.layoutIfNeeded()
-        let reader = EbookReaderState()
-        let turns = EPUBPageTurn(web: web, reader: reader)
-        defer {
-            turns.stop(); window.isHidden = true
-            config.userContentController.removeScriptMessageHandler(forName: "reader")
-        }
-        web.navigationDelegate = probe
-        try await probe.load(web, url: page)
-        let font = try #require(Bundle.main.url(forResource: "ChillDuanHeiSongProJP_Regular", withExtension: "otf"))
-        let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
-        _ = try await web.callAsyncJavaScript("""
-            let fixture = bytes;
-            if (theme.writing === 'horizontal-tb') {
-                // Keep the horizontal fixture long enough to exercise a burst
-                // in the middle of a two-column chapter, with prose on both sides.
-                const archive = await JSZip.loadAsync(Uint8Array.from(atob(bytes), c => c.charCodeAt(0)));
-                for (const path of Object.keys(archive.files).filter(path => /(?:one|two)\\.xhtml$/.test(path))) {
-                    const prose = Array.from({length: 200}, (_, i) => `<p>Passage ${i}. We followed the river through the quiet garden and read the words on the page.</p>`).join('');
-                    archive.file(path, (await archive.file(path).async('string')).replace('</body>', prose + '</body>'));
-                }
-                fixture = await archive.generateAsync({type:'base64'});
-            }
-            await window.openBook(fixture, '', fonts, theme, []);
-            for (let i = 0; i < 3; i++) { await rendition.next(); await painted(); }
-            await painted();
-            const tap = window.readerTap;
-            const gate = new Promise(resolve => { window.releaseBackwardRendering = resolve; });
-            window.readerTap = async actions => { await gate; return await tap(actions); };
-            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(),
-                "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
-                "theme": ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": rightToLeft ? "vertical-rl" : "horizontal-tb"]], in: nil, contentWorld: .page)
-        reader.ready = true; reader.atStart = false; reader.rightToLeft = rightToLeft
-        reader.location = probe.location
-        await turns.prime()
-        for frame in 0..<6 {
-            turns.requestTurn(advancing: false)
-            try await Task.sleep(for: .milliseconds(90))
-            let stage = try #require(host.view.subviews.last)
-            #expect(stage !== web)
-            let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
-            let image = UIGraphicsImageRenderer(bounds: stage.bounds, format: format).image { stage.layer.render(in: $0.cgContext) }
-            // Sample the entire exposed underneath surface. A fixed narrow
-            // stripe can fall inside a moving page's legitimate column margin.
-            let leaf = try #require(stage.subviews.last)
-            let edge = rightToLeft ? leaf.frame.minX : leaf.frame.maxX
-            let exposed = rightToLeft
-                ? CGRect(x: 0, y: 100, width: max(1, edge - 8), height: 900)
-                : CGRect(x: min(819, edge + 8), y: 100, width: max(1, 820 - edge - 8), height: 900)
-            #expect(exposed.width > 40)
-            let crop = try #require(image.cgImage?.cropping(to: exposed))
-            #expect(visibleInkFraction(UIImage(cgImage: crop)) > 0.002,
-                "The exposed underneath side must retain real EPUB prose throughout a backward burst")
-            try image.pngData()?.write(to: URL(fileURLWithPath: "/tmp/epub-backward-prose-\(rightToLeft)-\(frame).png"))
-        }
-        _ = try await web.callAsyncJavaScript("window.releaseBackwardRendering()", arguments: [:], in: nil, contentWorld: .page)
-        for _ in 0..<150 {
-            if host.view.subviews == [web] { break }
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        #expect(host.view.subviews == [web])
+        #expect(host.view.subviews.allSatisfy { $0 is WKWebView })
+        #expect(try await web.callAsyncJavaScript("return rendition.currentLocation().start.cfi === window.expectedBurstLocation", arguments:[:], in:nil, contentWorld:.page) as? Bool == true, "Taps must finish even while preload rendering is blocked")
+        _ = try await preloader.callAsyncJavaScript("window.releaseSlowPreview()", arguments:[:], in:nil, contentWorld:.page)
+        await preparation.value
     }
 
     @Test(arguments: [false, true])
@@ -228,10 +100,9 @@ import WebKit
         let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
         let source = try #require(try await web.callAsyncJavaScript("""
             await window.openBook(bytes, '', fonts, theme, []);
-            for (let i = 0; i < 3; i++) await rendition.next();
-            await painted();
+            for (let i = 0; i < 3; i++) { await rendition.next(); await chapterPainted(); }
             window.swipeSource = rendition.currentLocation().start.cfi;
-            await rendition.prev(); await painted();
+            await rendition.prev(); await chapterPainted();
             return window.swipeSource;
             """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(),
                 "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
@@ -241,7 +112,7 @@ import WebKit
             web.takeSnapshot(with: configuration) { image, _ in continuation.resume(returning: image) }
         }
         let expectedPage = try #require(expected)
-        _ = try await web.callAsyncJavaScript("await rendition.next(); await painted()", arguments: [:], in: nil, contentWorld: .page)
+        _ = try await web.callAsyncJavaScript("await rendition.next(); await chapterPainted()", arguments: [:], in: nil, contentWorld: .page)
         reader.location = source; reader.rightToLeft = rightToLeft
         await turns.prime()
         let restored = try await web.callAsyncJavaScript("return rendition.currentLocation().start.cfi", arguments: [:], in: nil, contentWorld: .page) as? String
@@ -265,6 +136,93 @@ import WebKit
         #expect(incoming.image === pinned, "The renderer must never replace the incoming page while the finger is down")
     }
 
+    @Test(arguments: [false, true], [false, true])
+    func preloadsThreePagesAcrossChapterBoundaries(rightToLeft: Bool, advancing: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        let host = UIViewController(); window.rootViewController = host
+        host.view.addSubview(web); window.makeKeyAndVisible()
+        let reader = EbookReaderState(); reader.ready = true; reader.rightToLeft = rightToLeft
+        let turns = EPUBPageTurn(web: web, reader: reader)
+        defer { turns.stop(); window.isHidden = true; config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let font = try #require(Bundle.main.url(forResource: rightToLeft ? "ChillDuanHeiSongProJP_Regular" : "LibreBaskerville", withExtension: rightToLeft ? "otf" : "ttf"))
+        let fontURL = "data:font/ttf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        reader.location = try await web.callAsyncJavaScript("""
+            const zip = await JSZip.loadAsync(Uint8Array.from(atob(bytes), c => c.charCodeAt(0)));
+            for (const name of ['OEBPS/one.xhtml', 'OEBPS/two.xhtml']) {
+                const doc = new DOMParser().parseFromString(await zip.file(name).async('string'), 'application/xhtml+xml');
+                doc.querySelector('body').innerHTML = Array.from({length:80}, (_, i) => `<p>${name} paragraph ${i}. The river winds through the garden while a reader turns the pages of a long chapter. Every incoming page must already contain its own text.</p>`).join('');
+                zip.file(name, new XMLSerializer().serializeToString(doc));
+            }
+            await window.openBook(await zip.generateAsync({type:'base64'}), '', fonts, theme, []);
+            if (advancing) {
+                while (rendition.currentLocation().end.displayed.page < rendition.currentLocation().end.displayed.total) await rendition.manager.next();
+            } else {
+                await rendition.display('two.xhtml'); await chapterPainted();
+            }
+            window.preloadSourceState = window.readerPreloadState();
+            return rendition.currentLocation().start.cfi;
+            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(), "advancing": advancing,
+                "fonts": ["regular":fontURL, "italic":fontURL, "display":fontURL],
+                "theme": ["paper":"#ffffff", "ink":"#192024", "size":"20", "leading":"1.6", "weight":"400", "writing":rightToLeft ? "vertical-rl":"horizontal-tb"]], in:nil, contentWorld:.page) as? String
+        var expected: [UIImage] = []
+        for _ in 0..<3 {
+            _ = try await web.callAsyncJavaScript("await (advancing ? rendition.next() : rendition.prev()); await chapterPainted()", arguments:["advancing":advancing], in:nil, contentWorld:.page)
+            let image: UIImage? = await withCheckedContinuation { continuation in
+                let configuration = WKSnapshotConfiguration(); configuration.afterScreenUpdates = true
+                web.takeSnapshot(with:configuration) { image, _ in continuation.resume(returning:image) }
+            }
+            expected.append(try #require(image))
+        }
+        _ = try await web.callAsyncJavaScript("await window.readerPreloadRestore(window.preloadSourceState)", arguments:[:], in:nil, contentWorld:.page)
+        await turns.prime()
+        #expect(try await web.callAsyncJavaScript("return rendition.currentLocation().start.cfi", arguments:[:], in:nil, contentWorld:.page) as? String == reader.location)
+        let preloader = try #require(host.view.subviews.compactMap { $0 as? WKWebView }.first { $0 !== web })
+        _ = try await preloader.callAsyncJavaScript("""
+            const step = window.readerPreloadStep;
+            const gate = new Promise(resolve => { window.releasePreloading = resolve; });
+            window.readerPreloadStep = async advancing => { await gate; return step(advancing); };
+            """, arguments:[:], in:nil, contentWorld:.page)
+        for index in 0..<3 {
+            _ = try await web.callAsyncJavaScript("""
+                const turn = window.readerTurn;
+                window.readerTurn = async action => {
+                    if (action === 'next' || action === 'previous') {
+                        await new Promise(resolve => { window.releaseActualPage = resolve; });
+                        window.readerTurn = turn;
+                    }
+                    return turn(action);
+                };
+                window.releaseActualPage = null;
+                """, arguments:[:], in:nil, contentWorld:.page)
+            let forward = rightToLeft ? !advancing : advancing
+            turns.beginTurn(advancing:advancing, forward:forward, translation:forward ? -20 : 20)
+            let sheets = host.view.subviews.filter { $0.subviews.first is UIImageView }
+            let incoming = try #require((advancing ? sheets.first : sheets.last)?.subviews.first as? UIImageView)
+            let pinned = try #require(incoming.image, "Page \(index + 1) must already be preloaded across the chapter boundary")
+            #expect(bitmapDifference(pinned, expected[index]) < 0.005)
+            turns.releaseDrag(velocity:2)
+            for _ in 0..<100 {
+                if try await web.callAsyncJavaScript("return typeof window.releaseActualPage === 'function'", arguments:[:], in:nil, contentWorld:.page) as? Bool == true { break }
+                try await Task.sleep(for:.milliseconds(10))
+            }
+            _ = try await web.callAsyncJavaScript("window.releaseActualPage()", arguments:[:], in:nil, contentWorld:.page)
+            for _ in 0..<100 {
+                if host.view.subviews.allSatisfy({ $0 is WKWebView }) { break }
+                try await Task.sleep(for:.milliseconds(20))
+            }
+            #expect(host.view.subviews.allSatisfy { $0 is WKWebView })
+            reader.location = try await web.callAsyncJavaScript("return rendition.currentLocation().start.cfi", arguments:[:], in:nil, contentWorld:.page) as? String
+        }
+        _ = try await preloader.callAsyncJavaScript("window.releasePreloading()", arguments:[:], in:nil, contentWorld:.page)
+    }
+
     private func bitmapDifference(_ first: UIImage, _ second: UIImage) -> Double {
         let width = 820, height = 1180
         func pixels(_ image: UIImage) -> [UInt8] {
@@ -272,31 +230,13 @@ import WebKit
             result.withUnsafeMutableBytes { bytes in
                 let context = CGContext(data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8,
                     bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-                context.draw(image.cgImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
+                let bitmap = UIImage(data: image.pngData()!)!.cgImage!
+                context.draw(bitmap, in: CGRect(x: 0, y: 0, width: width, height: height))
             }
             return result
         }
         let a = pixels(first), b = pixels(second)
         return zip(a, b).reduce(0.0) { $0 + abs(Double($1.0) - Double($1.1)) } / Double(a.count) / 255
-    }
-
-    private func visibleInkFraction(_ image: UIImage) -> Double {
-        // Inspect native pixels: reducing thin, moving glyphs to a tiny thumbnail
-        // can average their ink into the paper and falsely classify text as blank.
-        let width = image.cgImage!.width, height = image.cgImage!.height
-        let margin = max(4, min(width, height) / 12)
-        var pixels = [UInt8](repeating: 255, count: width * height * 4)
-        pixels.withUnsafeMutableBytes { buffer in
-            let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-            context.draw(image.cgImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
-        }
-        var ink = 0
-        for y in margin..<(height - margin) { for x in margin..<(width - margin) {
-            let i = (y * width + x) * 4
-            if pixels[i] < 180 && pixels[i + 1] < 180 && pixels[i + 2] < 180 { ink += 1 }
-        } }
-        return Double(ink) / Double(width * height)
     }
 
     @Test(arguments: [390, 760, 820, 1366], [false, true])
@@ -336,6 +276,11 @@ import WebKit
             window.readerBookmarks([]); await painted();
             const bounds = document.getElementById('book').getBoundingClientRect();
             const y = bounds.top + 60, x = bounds.left / 2;
+            const pointer = (type, x) => document.dispatchEvent(new PointerEvent(type, {pointerId:1, isPrimary:true, clientX:x, clientY:y}));
+            pointer('pointerdown', x); pointer('pointerup', x);
+            pointer('pointerdown', innerWidth - x); pointer('pointerup', innerWidth - x);
+            pointer('pointerdown', x); pointer('pointerup', x + 30);
+            pointer('pointerdown', x); pointer('pointercancel', x); pointer('pointerup', x);
             const generousLeftGutter = window.readerGutter(35 / innerWidth, y / innerHeight);
             const generousRightGutter = window.readerGutter((innerWidth - 35) / innerWidth, y / innerHeight);
             const emptyGutter = window.readerGutter(x / innerWidth, y / innerHeight);
@@ -345,6 +290,7 @@ import WebKit
             document.getElementById('book').append(overflow);
             const oldRectangleWouldTurn = x < bounds.left;
             const wordTap = window.readerGutter(x / innerWidth, y / innerHeight);
+            pointer('pointerdown', x); pointer('pointerup', x);
             overflow.remove();
             const contents = rendition.getContents()[0];
             const iframe = rendition.views().all().find(view => view.contents === contents).iframe.getBoundingClientRect();
@@ -356,6 +302,7 @@ import WebKit
               remaining:doc.querySelectorAll('[data-leximory-bookmark]').length,
               intact:before === textWithoutRuby(doc.body)};
             """, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        #expect(probe.pageTaps == ["left", "right"], "Gutter input sends one action per tap and none for drags, cancellation or publisher content")
         #expect(checks["columns"] as? Int == (!japanese && width >= 760 && width > 1000 ? 2 : 1))
         #expect((checks["marked"] as? Int ?? 0) > 0)
         #expect(checks["remaining"] as? Int == 0)
@@ -366,8 +313,6 @@ import WebKit
         #expect(checks["oldRectangleWouldTurn"] as? Bool == true)
         #expect(checks["wordTap"] is NSNull)
         #expect(checks["textTap"] is NSNull)
-        let image = try await web.takeSnapshot(configuration: nil)
-        try image.pngData()?.write(to: URL(fileURLWithPath: "/tmp/ebook-revised-columns-\(width)-\(japanese).png"))
         // A wide portrait viewport still has one column. Rotating the same
         // window to landscape enables a spread only for non-Japanese books.
         web.frame.size.height = 560
@@ -430,10 +375,6 @@ import WebKit
         web.frame = CGRect(x: 0, y: 0, width: 1180, height: 820)
         _ = try await web.callAsyncJavaScript("await new Promise(r=>setTimeout(r,500)); await painted()", arguments: [:], in: nil, contentWorld: .page)
         #expect(probe.failure == nil)
-        let image: UIImage? = await withCheckedContinuation { continuation in
-            web.takeSnapshot(with: nil) { image, _ in continuation.resume(returning: image) }
-        }
-        try image?.pngData()?.write(to: URL(fileURLWithPath: "/tmp/leximory-user-example-landscape.png"))
     }
 
     @Test(arguments: [CGSize(width: 390, height: 844), CGSize(width: 820, height: 1180), CGSize(width: 1024, height: 768)])
@@ -617,8 +558,6 @@ import WebKit
         _ = try await web.callAsyncJavaScript("await painted();", arguments: [:], in: nil, contentWorld: .page)
         let before = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
         #expect(before["columns"] as? Int == 1)
-        let image = try await web.takeSnapshot(configuration: nil)
-        try image.pngData()?.write(to: URL(fileURLWithPath: "/tmp/ebook-real-nonjapanese-portrait.png"))
         // Reflow the page height the way a keyboard or window resize does.
         for step in 0..<6 {
             web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 820, height: 560) : CGRect(x: 0, y: 0, width: 820, height: 1180)
@@ -638,6 +577,7 @@ import WebKit
 
 @MainActor private final class EbookBridgeProbe: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
     var ready = false
+    var pageTaps: [String] = []
     var failure: String?
     var location: String?
     var selection: [String: Any]?
@@ -654,6 +594,7 @@ import WebKit
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? [String: Any] else { return }
         switch body["kind"] as? String {
+        case "pageTap": if let side = body["side"] as? String { pageTaps.append(side) }
         case "ready": ready = true
         case "failed": failure = body["message"] as? String
         case "location": location = body["location"] as? String

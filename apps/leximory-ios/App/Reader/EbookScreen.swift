@@ -435,13 +435,19 @@ private struct NativeEPUBReader: UIViewRepresentable {
         if reader.ready, theme != context.coordinator.appliedTheme {
             context.coordinator.appliedTheme = theme
             context.coordinator.pageTurn?.invalidateSnapshot()
-            Task { _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page) }
+            Task { [weak coordinator = context.coordinator] in
+                _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page)
+                coordinator?.pageTurn?.prepare()
+            }
         }
         let bookmarks = reader.bookmarks.map { $0.quote }
         if reader.ready, bookmarks != context.coordinator.appliedBookmarks {
             context.coordinator.appliedBookmarks = bookmarks
             context.coordinator.pageTurn?.invalidateSnapshot()
-            Task { _ = try? await web.callAsyncJavaScript("window.readerBookmarks(quotes)", arguments: ["quotes": bookmarks], in: nil, contentWorld: .page) }
+            Task { [weak coordinator = context.coordinator] in
+                _ = try? await web.callAsyncJavaScript("window.readerBookmarks(quotes)", arguments: ["quotes": bookmarks], in: nil, contentWorld: .page)
+                coordinator?.pageTurn?.prepare()
+            }
         }
         if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
@@ -507,18 +513,22 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 #if DEBUG
                 NSLog("EPUB bridge: %@", body["message"] as? String ?? "")
                 #endif
+            case "pageTap":
+                guard let side = body["side"] as? String, side == "left" || side == "right" else { return }
+                pageTurn?.requestTurn(advancing: (side == "right") != parent.reader.rightToLeft)
             case "layout":
                 if let x = body["x"] as? Double, let y = body["y"] as? Double,
                    let width = body["width"] as? Double, let height = body["height"] as? Double {
-                    parent.reader.pageBounds = CGRect(x: x, y: y, width: width, height: height)
+                    let bounds = CGRect(x: x, y: y, width: width, height: height)
+                    if let previous = parent.reader.pageBounds, previous != bounds {
+                        pageTurn?.invalidateSnapshot()
+                    }
+                    parent.reader.pageBounds = bounds
                 }
             case "ready":
-                Task { [weak self] in
-                    guard let self else { return }
-                    await self.pageTurn?.prime()
-                    self.parent.reader.ready = true
-                    self.web?.becomeFirstResponder()
-                }
+                parent.reader.ready = true
+                web?.becomeFirstResponder()
+                pageTurn?.prepare()
             case "failed": parent.reader.loadFailure = "电子书未能加载，请重试。"
             case "contents":
                 parent.reader.chapters = (body["items"] as? [[String: Any]] ?? []).compactMap { item in
