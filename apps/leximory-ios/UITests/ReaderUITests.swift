@@ -12,10 +12,12 @@ final class ReaderUITests: XCTestCase {
             app.buttons["text-fixture-epub"].tap()
             revealEbookControls(app)
             app.buttons["ebook-settings"].tap()
-            let sage = app.buttons["ebook-theme-sage"]
-            XCTAssertTrue(sage.waitForExistence(timeout: 5))
-            if dark { XCTAssertTrue(sage.isSelected) }
-            for name in ["paper", "sepia", "sage"] {
+            let cream = app.buttons["ebook-theme-cream"]
+            XCTAssertTrue(cream.waitForExistence(timeout: 5))
+            XCTAssertFalse(app.staticTexts["随系统切换明暗"].exists)
+            XCTAssertFalse(app.buttons["ebook-theme-sage"].exists)
+            if dark { XCTAssertTrue(cream.isSelected) }
+            for name in ["paper", "gray", "sepia", "cream"] {
                 let theme = app.buttons["ebook-theme-\(name)"]
                 XCTAssertGreaterThanOrEqual(theme.frame.width, 44)
                 XCTAssertGreaterThanOrEqual(theme.frame.height, 44)

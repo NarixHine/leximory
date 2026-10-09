@@ -18,16 +18,17 @@ struct EbookSelectionAction {
 }
 
 enum EbookAppearance: String, CaseIterable, Identifiable {
-    case paper, sepia, sage
+    case paper, gray, sepia, cream
     var id: String { rawValue }
     var title: String {
-        switch self { case .paper: "白纸"; case .sepia: "暖纸"; case .sage: "青纸" }
+        switch self { case .paper: "白纸"; case .gray: "灰纸"; case .sepia: "暖纸"; case .cream: "米纸" }
     }
     func colors(dark: Bool, softerInk: Bool = false) -> (paper: String, ink: String) {
         switch self {
         case .paper: dark ? ("#100f0f", "#cecdc3") : ("#ffffff", softerInk ? "#434943" : "#192024")
-        case .sepia: dark ? ("#211c17", "#d8cbb7") : ("#f5f0e5", softerInk ? "#505047" : "#37372e")
-        case .sage: dark ? ("#17201c", "#c7d3c8") : ("#eaf0e7", softerInk ? "#455347" : "#29392e")
+        case .gray: dark ? ("#303033", "#d0d0d4") : ("#ededed", softerInk ? "#4e4e50" : "#262628")
+        case .sepia: dark ? ("#211c17", "#d8cbb7") : ("#f2e3c8", softerInk ? "#504438" : "#3d3024")
+        case .cream: dark ? ("#25241f", "#dedbc8") : ("#fffdf2", softerInk ? "#504e43" : "#343227")
         }
     }
     func paperColor(dark: Bool) -> Color {
@@ -42,12 +43,8 @@ struct EbookThemePicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("主题")
-                Spacer()
-                Text("随系统切换明暗").font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
-            }
-            HStack(spacing: 24) {
+            Text("主题")
+            HStack(spacing: 16) {
                 ForEach(EbookAppearance.allCases) { theme in
                     Button { selection = theme } label: {
                         ZStack {
@@ -71,7 +68,6 @@ struct EbookThemePicker: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(theme.title)
-                    .accessibilityHint("随系统自动切换浅色和深色")
                     .accessibilityAddTraits(selection == theme ? [.isSelected] : [])
                     .accessibilityIdentifier("ebook-theme-\(theme.rawValue)")
                 }
