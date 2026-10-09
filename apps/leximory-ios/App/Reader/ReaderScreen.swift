@@ -285,7 +285,7 @@ struct DefinitionView: View {
                     Button { model.save(client: client, source: item.source) } label: {
                         Image(systemName: "book.closed").font(.system(size: 20))
                             .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
-                            .background(LeximoryPalette.ink, in: Circle())
+                            .background(LeximoryPalette.sage, in: Circle())
                     }.buttonStyle(.plain).disabled(sync?.online == false).accessibilityLabel("收藏词汇")
                 } else {
                     Button { editing = true } label: {
