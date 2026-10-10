@@ -2,6 +2,53 @@ import XCTest
 import Network
 
 final class TextBrowserUITests: XCTestCase {
+    @MainActor func testBrowserNavigationAddressEditingAndHistory() throws {
+        let page = try BrowserPageServer()
+        defer { page.listener.cancel() }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--authoring-fixtures"]
+        app.launch()
+        let browse = app.buttons["浏览"].firstMatch
+        XCTAssertTrue(browse.waitForExistence(timeout: 10))
+        let navigation = XCTAttachment(screenshot: app.screenshot()); navigation.name = "Browser navigation"; navigation.lifetime = .keepAlways; add(navigation)
+        browse.tap()
+        let bar = app.buttons["browser-address"]
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["后退"].exists)
+        bar.tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertLessThanOrEqual(input.frame.height, 56)
+        input.typeText(page.url + "\n")
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["后退"].exists)
+        let headingY = app.webViews.staticTexts["A quiet forest"].firstMatch.frame.minY
+        bar.tap()
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.webViews.staticTexts["A quiet forest"].firstMatch.frame.minY, headingY, accuracy: 1)
+        XCTAssertLessThanOrEqual(input.frame.height, 56)
+        let editing = XCTAttachment(screenshot: app.screenshot()); editing.name = "Expanded address"; editing.lifetime = .keepAlways; add(editing)
+        input.typeText("https://example.invalid")
+        XCTAssertEqual(input.value as? String, "https://example.invalid")
+        app.buttons["取消"].tap()
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.exists)
+        app.webViews.links["Continue walking"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["后退"].waitForExistence(timeout: 10))
+        app.buttons["后退"].tap()
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        let gone = NSPredicate(format: "exists == false")
+        expectation(for: gone, evaluatedWith: app.buttons["后退"])
+        waitForExpectations(timeout: 10)
+        app.buttons["关闭"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch.waitForExistence(timeout: 5))
+        browse.tap()
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["关闭"].tap()
+    }
+
     @MainActor func testBookmarkCreationReturnsToLibraryAndOpensWebpage() throws {
         let page = try BrowserPageServer()
         defer { page.listener.cancel() }
@@ -53,7 +100,7 @@ private final class BrowserPageServer {
         </head><body><main><small>FIELD NOTES</small><h1>A quiet forest</h1>
         <p>The morning light fell across the winding river. We walked slowly beneath the trees, noticing the small things along the bank.</p>
         <p>A bird called from somewhere beyond the path. For a moment, the forest seemed to hold its breath.</p>
-        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p></main></body></html>
+        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p><a href="/next">Continue walking</a></main></body></html>
         """
         let response = Data(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html).utf8)
         let ready = XCTestExpectation(description: "Local article server")

@@ -1,6 +1,6 @@
 # Browser and URL Bookmarks
 
-The iOS library gallery has a globe button that opens one webpage at a time. The browser uses WKWebView, native selection, and Liquid Glass controls. Followed links and new-window links stay in the same page. The menu offers forward navigation, reload, sharing, saving a URL, Safari, and vocabulary settings.
+The iOS app has a dedicated 浏览 navigation destination between 文库 and 账户 that opens one webpage at a time. The browser uses WKWebView, native selection, and Liquid Glass controls. Followed links and new-window links stay in the same page. Close, the address, and page options share a floating toolbar. Back appears only when there is history, and its space returns to the address when hidden. Tapping the address expands it into an inline URL field above the keyboard; The full URL is selected automatically, and Cancel restores the current page without navigating or shifting its reading position. Closing the browser returns to the library; reopening its navigation destination resumes the same page. Native glass shapes animate together and respect Reduce Motion. The menu groups sharing, saving a URL, and Safari first, followed by vocabulary settings and page navigation.
 
 Select text and choose **猫忆查** to open the existing definition tray. Its vocabulary saving, editing, and dictionary actions work as they do in the reader. Ordinary browsing shows the saving destination below the definition; tap it to change the current website's library. Selecting a library also selects its language. Jev runs only when no library is selected or mapped.
 
@@ -22,4 +22,4 @@ This version does not persist webpage highlights or import a browser visit as an
 
 ## Verification
 
-Run `pnpm --dir apps/leximory run check-types` and `pnpm --dir apps/leximory run test:mobile`. Swift client coverage is in `BrowserClientTests`, WebKit coverage in `TextBrowserTests`, and the mock creation/navigation flow in `TextBrowserUITests`. The UI test resets its launch arguments and returns to normal account mode.
+Run `pnpm --dir apps/leximory run check-types` and `pnpm --dir apps/leximory run test:mobile`. Swift client coverage is in `BrowserClientTests`, WebKit coverage in `TextBrowserTests`, and the mock creation/navigation flow in `TextBrowserUITests`. The UI tests cover the navigation destination, Bookmark creation and reading, URL autofocus and replacement, Cancel, conditional Back, a compact address field with the keyboard open, a stationary reading viewport, and reopening the same page. They reset launch arguments and return to normal account mode.

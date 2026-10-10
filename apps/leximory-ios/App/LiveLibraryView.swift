@@ -20,6 +20,8 @@ struct LiveLibraryView: View {
     var body: some View {
         LibraryTabShell(selection: $selectedTab) {
             libraryBrowser
+        } browser: {
+            TextBrowserScreen(client: session.client, close: { selectedTab = 0 })
         } account: {
             AccountView(session: session, playback: playback)
         }
@@ -232,9 +234,10 @@ private struct AccountView: View {
     }
 }
 
-struct LibraryTabShell<Library: View, Account: View>: View {
+struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     @Binding var selection: Int
     @ViewBuilder let library: Library
+    @ViewBuilder let browser: Browser
     @ViewBuilder let account: Account
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
@@ -245,7 +248,10 @@ struct LibraryTabShell<Library: View, Account: View>: View {
                 library.environment(\.librarySectionSelection, $selection)
                     .opacity(selection == 0 ? 1 : 0)
                     .allowsHitTesting(selection == 0).accessibilityHidden(selection != 0)
-                if selection == 1 {
+                browser.environment(\.browserActive, selection == 1)
+                    .opacity(selection == 1 ? 1 : 0)
+                    .allowsHitTesting(selection == 1).accessibilityHidden(selection != 1)
+                if selection == 2 {
                     account
                         .safeAreaInset(edge: .top, alignment: .leading, spacing: 12) {
                             LibrarySectionPicker(selection: $selection)
@@ -264,9 +270,14 @@ struct LibraryTabShell<Library: View, Account: View>: View {
                     tabIcon(selection == 0 ? "books.vertical.fill" : "books.vertical", selected: selection == 0)
                 }
             }
-            Tab(value: 1) { account } label: {
+            Tab(value: 1) { browser.environment(\.browserActive, selection == 1) } label: {
+                Label { Text("浏览").editorialFont(16, language: "Chinese") } icon: {
+                    tabIcon("globe", selected: selection == 1)
+                }
+            }
+            Tab(value: 2) { account } label: {
                 Label { Text("账户").editorialFont(16, language: "Chinese") } icon: {
-                    tabIcon(selection == 1 ? "person.crop.circle.fill" : "person.crop.circle", selected: selection == 1)
+                    tabIcon(selection == 2 ? "person.crop.circle.fill" : "person.crop.circle", selected: selection == 2)
                 }
             }
         }
@@ -285,6 +296,7 @@ struct LibraryTabShell<Library: View, Account: View>: View {
 }
 
 extension EnvironmentValues {
+    @Entry var browserActive = true
     @Entry var librarySectionSelection: Binding<Int>? = nil
 }
 
@@ -293,7 +305,8 @@ struct LibrarySectionPicker: View {
     var body: some View {
         Picker("导航", selection: $selection) {
             Text("文库").tag(0)
-            Text("账户").tag(1)
+            Text("浏览").tag(1)
+            Text("账户").tag(2)
         }.pickerStyle(.segmented)
             .font(LeximoryTypography.prose(16, language: "Chinese"))
             .accessibilityIdentifier("library-section-picker")

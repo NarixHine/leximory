@@ -46,7 +46,7 @@ Article covers and wrapping titles scroll with the prose. Phone titles use 28 pt
 
 ## Navigation and account state
 
-Phones use native 文库 and 账户 tabs. Regular-width windows use a library sidebar with the segmented picker inside it and the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
+Phones use native 文库、浏览 and 账户 tabs. Regular-width windows use a library sidebar with the segmented picker inside it and the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
 
 Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
@@ -56,7 +56,7 @@ Use the lawn and cat together for spacious loading scenes, at 80% width up to 56
 
 ## Reading and learning
 
-Selection menus offer 猫忆查 before Copy, retain native Define/Web Search, and add 添加书签 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
+Selection menus offer 猫忆查 before Copy, retain native Define/Web Search, and add 🖍️荧光笔 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
 
 Static annotations highlight on touch-down and open on touch-up, anchored to the selected line. Use a fitted popover on iPad and tray on phone, with a comfortable 400 pt measure and 24 pt insets. Keep actions below the definition. Article highlights are short sage-yellow strokes behind the lower glyph area, separately fitted to each line.
 

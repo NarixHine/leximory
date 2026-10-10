@@ -56,6 +56,9 @@ struct AppRootView: View {
                     if ProcessInfo.processInfo.arguments.contains("--tab-fixtures") {
                         LibraryTabShell(selection: $fixtureTab) {
                             fixtureBrowser
+                        } browser: {
+                            if let fixtureClient { TextBrowserScreen(client: fixtureClient, close: { fixtureTab = 0 }) }
+                            else { ContentUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
                             Text("账户").font(LeximoryTypography.interface(24))
                         }

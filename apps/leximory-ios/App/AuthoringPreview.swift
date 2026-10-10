@@ -9,11 +9,18 @@ struct AuthoringPreview: View {
     @State private var client = MobileClient(baseURL: URL(string: "https://authoring.invalid")!, transport: AuthoringPreviewTransport(), token: { _ in "fixture" })
     @State private var sync: NativeSync?
     @State private var prepared = false
+    @State private var selectedTab = 0
     private let library = FixtureLibrary(id: LibraryID(rawValue: "library"), name: "测试文库", language: "English", articles: [], isRemote: true, owned: true)
     var body: some View {
         Group {
             if prepared {
-                FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
+                LibraryTabShell(selection: $selectedTab) {
+                    FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
+                } browser: {
+                    TextBrowserScreen(client: client, close: { selectedTab = 0 })
+                } account: {
+                    Text("账户")
+                }
             } else { ProgressView() }
         }
         .environment(\.nativeSync, sync)
