@@ -1,6 +1,5 @@
 import SwiftUI
 import LeximoryCore
-import os
 
 struct TextBrowserScreen: View {
     let client: MobileClient
@@ -23,11 +22,8 @@ struct TextBrowserScreen: View {
     @State private var settings = false
     @State private var savingBookmark = false
     @State private var definition: DefinitionPresentation?
-    @State private var lookup: Task<Void, Never>?
-    @State private var resolving = false
     @State private var selectedLibraryID: String?
     @State private var selectedDomain = ""
-    @State private var lookupError: String?
     @State private var openingAttempt = 0
     @State private var lastSelection: BrowserSelection?
 
@@ -59,17 +55,13 @@ struct TextBrowserScreen: View {
                 }.padding(20).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 24))
                     .padding(.top, 70)
             }
-            if resolving {
-                ProgressView().padding(12).glassEffect(in: .circle)
-                    .padding(.top, 8)
-            }
             if editingAddress {
                 Color.black.opacity(0.12).ignoresSafeArea()
                     .onTapGesture { finishEditing() }
                     .transition(.opacity)
             }
-            if let definition, case .browser(_, let target) = definition.source {
-                DefinitionTopTray(item: definition, client: client, language: target.displayLanguage,
+            if let definition {
+                DefinitionTopTray(item: definition, client: client, language: "English",
                     configureBrowser: bookmarkID == nil ? { settings = true } : nil) { self.definition = nil }
                     .id(definition.id)
             }
@@ -86,10 +78,6 @@ struct TextBrowserScreen: View {
         .sheet(isPresented: $savingBookmark) {
             BrowserBookmarkSheet(client: client, url: browser.url?.absoluteString ?? "")
         }
-        .alert("猫忆查", isPresented: Binding(get: { lookupError != nil }, set: { if !$0 { lookupError = nil } })) {
-            Button("重试") { if let lastSelection { define(lastSelection) } }
-            Button("取消", role: .cancel) { lookupError = nil }
-        } message: { Text(lookupError ?? "") }
         .task(id: openingAttempt) {
             browser.web.lookup = { selection in define(selection) }
             guard !opened else { return }
@@ -112,12 +100,12 @@ struct TextBrowserScreen: View {
         }
         .onChange(of: browser.url) { _, _ in rememberPage() }
         .onChange(of: browser.navigationID) { _, _ in
-            lookup?.cancel(); resolving = false; definition = nil; lastSelection = nil; lookupError = nil
+            definition = nil; lastSelection = nil
         }
         .onChange(of: browser.domain) { _, domain in
             if domain != selectedDomain { selectedLibraryID = nil }
         }
-        .onDisappear { rememberPage(); lookup?.cancel(); resolving = false; browser.web.stopLoading() }
+        .onDisappear { rememberPage(); browser.web.stopLoading() }
     }
     private var motion: Animation? {
         reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.86)
@@ -227,28 +215,11 @@ struct TextBrowserScreen: View {
         }
     }
     private func define(_ selection: BrowserSelection) {
-        lookup?.cancel(); definition = nil; resolving = true; lastSelection = selection; lookupError = nil
-        let navigation = browser.navigationID
-        lookup = Task {
-            defer { if browser.navigationID == navigation && !Task.isCancelled { resolving = false } }
-            do {
-                let target = try await client.browserSelection(url: selection.url, quote: selection.quote,
-                    context: selection.context, offset: selection.offset, bookmarkID: bookmarkID, libraryID: selectedLibraryID)
-                guard !Task.isCancelled, browser.navigationID == navigation else { return }
-                definition = DefinitionPresentation(source: .browser(quote: selection.quote, target: target), definition: nil)
-            } catch {
-                guard !Task.isCancelled else { return }
-                let cause = MobileClient.cause(of: error)
-                let failure = cause as? MobileFailure
-                let code = failure?.error.code ?? String((cause as NSError).code)
-                Logger(subsystem: "com.leximory.reader", category: "browser").error("Selection failed: code=\(code, privacy: .public) type=\(String(describing: type(of: cause)), privacy: .public)")
-                if let failure { lookupError = failure.error.message }
-                else if let network = cause as? URLError {
-                    lookupError = network.code == .badServerResponse ? "网页查词服务返回了无效响应。请稍后重试。" : "无法连接查词服务，请检查网络后重试。"
-                } else { lookupError = "网页查词未能完成，请稍后重试。" }
-            }
-        }
+        lastSelection = selection
+        definition = DefinitionPresentation(source: .webpage(id: UUID(), selection: selection,
+            bookmarkID: bookmarkID, libraryID: selectedLibraryID), definition: nil)
     }
+
 }
 
 private struct BrowserAddressField: UIViewRepresentable {

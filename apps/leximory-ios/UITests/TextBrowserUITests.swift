@@ -60,7 +60,7 @@ final class TextBrowserUITests: XCTestCase {
         defer { page.listener.cancel() }
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
-        app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
+        app.launchArguments = ["--authoring-fixtures", "--reset-browser", "--slow-browser-lookup"]
         app.launch()
         let library = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch
         XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
@@ -96,7 +96,15 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertFalse(app.buttons["共享"].exists)
         XCTAssertFalse(app.buttons["全选"].exists)
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
+        let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
         XCTAssertTrue(app.staticTexts["安静的"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["收藏词汇"].tap()
+        XCTAssertTrue(app.buttons["编辑词汇"].waitForExistence(timeout: 5))
+        let saved = XCTAttachment(screenshot: app.screenshot()); saved.name = "Saved browser tray"; saved.lifetime = .keepAlways; add(saved)
+        app.buttons["编辑词汇"].tap()
+        XCTAssertTrue(app.textFields["edit-词条"].waitForExistence(timeout: 5))
+        app.buttons["取消"].tap()
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.6)).tap()
         app.buttons["关闭"].tap()
         XCTAssertTrue(bookmark.waitForExistence(timeout: 5))

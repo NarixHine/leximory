@@ -10,7 +10,7 @@ struct PlaybackBar: View {
             switch playback.state {
             case .idle: EmptyView()
             case .loading:
-                HStack(spacing: 10) { ProgressView(); Text("正在加载录音……").font(LeximoryTypography.interface(14)) }
+                HStack(spacing: 10) { ProgressView(); Text("正在加载录音").font(LeximoryTypography.interface(14)) }
                     .frame(maxWidth: .infinity)
             case .unavailable:
                 Label("录音暂不可用", systemImage: "speaker.slash")

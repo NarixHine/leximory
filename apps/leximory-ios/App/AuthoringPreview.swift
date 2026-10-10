@@ -50,7 +50,10 @@ private actor AuthoringPreviewTransport: ClientTransport {
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         let output: String
         switch operationID {
-        case "browserSelection": output = #"{"selectionId":"selection","language":"en","libraryId":"library","libraryName":"测试文库","shadow":false}"#
+        case "browserSelection":
+            if ProcessInfo.processInfo.arguments.contains("--slow-browser-lookup") { try await Task.sleep(for: .seconds(2)) }
+            output = #"{"selectionId":"selection","language":"en","libraryId":"library","libraryName":"测试文库","shadow":false}"#
+        case "browserVocabulary": output = #"{"id":"word","libraryId":"library"}"#
         case "browserDefinitions":
             let frames = #"{"kind":"started","requestId":"definition"}"# + "\n" + #"{"kind":"completed","requestId":"definition","definition":{"lemma":"quiet","definition":"安静的","etymology":null,"cognates":null}}"# + "\n"
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/x-ndjson"]), HTTPBody(frames))

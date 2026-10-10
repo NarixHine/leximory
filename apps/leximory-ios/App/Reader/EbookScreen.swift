@@ -97,7 +97,7 @@ struct EbookScreen: View {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
                 else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
-            if loading { ReadingLoadingIndicator("正在打开电子书……").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
+            if loading { ReadingLoadingIndicator("正在打开电子书").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
                 LeximoryUnavailableView("暂时无法打开电子书", systemImage: "book.closed", message: loadError) { Button("重试") { Task { await load() } } }
             }

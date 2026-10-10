@@ -42,7 +42,7 @@ struct VocabularyLibraryView: View {
                 if !day.isEmpty { Text(dateLabel(day)).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
                 wordGrid(words.filter { dateKey($0) == day }, columns: columns)
             }
-            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇……").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity) }
+            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity) }
             if cursor != nil && !loading {
                 Button("更多", systemImage: "chevron.down") { Task { await load(reset: false) } }.frame(maxWidth: .infinity, minHeight: 44)
             }

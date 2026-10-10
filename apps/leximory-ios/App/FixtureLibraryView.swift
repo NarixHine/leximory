@@ -90,7 +90,7 @@ struct FixtureLibraryView: View {
             selectedID: selectedID, open: { path = [.library($0)] })
             .overlay {
                 if loadingLibraries && libraries.isEmpty {
-                    ReadingLoadingIndicator("正在打开文库……")
+                    ReadingLoadingIndicator("正在打开文库")
                         .frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper)
                 } else if let libraryError {
                     LeximoryUnavailableView("暂时无法打开文库", systemImage: "wifi.exclamationmark", message: libraryError) {

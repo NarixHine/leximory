@@ -6,17 +6,23 @@ enum DefinitionSource {
     case article(ReadingSelection)
     case ebook(textID: String, quote: String, context: String, offset: Int)
     case browser(quote: String, target: BrowserTarget)
+    case webpage(id: UUID, selection: BrowserSelection, bookmarkID: String?, libraryID: String?)
     var text: String {
-        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote; case .browser(let quote, _): quote }
+        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote; case .browser(let quote, _): quote; case .webpage(_, let selection, _, _): selection.quote }
     }
     var id: String {
-        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset); case .browser(_, let target): target.selectionId }
+        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset); case .browser(_, let target): target.selectionId; case .webpage(let id, _, _, _): id.uuidString }
     }
-    func stream(client: MobileClient) -> AsyncThrowingStream<DefinitionEvent, Error> {
+    func stream(client: MobileClient) async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?) {
         switch self {
-        case .article(let selection): client.definitions(selection: selection)
-        case .ebook(let id, let quote, let context, let offset): client.ebookDefinitions(textID: id, quote: quote, context: context, offset: offset)
-        case .browser(_, let target): client.browserDefinitions(selectionID: target.selectionId)
+        case .article(let selection): return (client.definitions(selection: selection), nil)
+        case .ebook(let id, let quote, let context, let offset): return (client.ebookDefinitions(textID: id, quote: quote, context: context, offset: offset), nil)
+        case .browser(_, let target): return (client.browserDefinitions(selectionID: target.selectionId), target)
+        case .webpage(_, let selection, let bookmarkID, let libraryID):
+            let target = try await client.browserSelection(url: selection.url, quote: selection.quote, context: selection.context,
+                offset: selection.offset, bookmarkID: bookmarkID, libraryID: libraryID)
+            try Task.checkCancellation()
+            return (client.browserDefinitions(selectionID: target.selectionId), target)
         }
     }
     func save(client: MobileClient, completionID: String?) async throws -> SavedVocabulary {
@@ -25,7 +31,7 @@ enum DefinitionSource {
         case .ebook(let id, _, _, _):
             guard let completionID else { throw URLError(.badServerResponse) }
             return try await client.saveEbookVocabulary(textID: id, completionID: completionID)
-        case .browser:
+        case .browser, .webpage:
             guard let completionID else { throw URLError(.badServerResponse) }
             return try await client.saveBrowserVocabulary(completionID: completionID)
         }
@@ -38,8 +44,9 @@ enum DefinitionSource {
         case ready(Definition, completionID: String?)
         case failed(String)
     }
-    enum SaveState { case idle, saving, saved, uncertain }
+    enum SaveState: Equatable { case idle, saving, saved, uncertain }
     private(set) var state: State
+    private(set) var browserTarget: BrowserTarget?
     private(set) var savedWord: SavedVocabulary?
     private(set) var editor: VocabularyEditModel?
     private(set) var saveError: String?
@@ -56,7 +63,9 @@ enum DefinitionSource {
         var raw = ""
         var completed: (String, Definition)?
         do {
-            for try await event in source.stream(client: client) {
+            let stream = try await source.stream(client: client)
+            browserTarget = stream.target
+            for try await event in stream.events {
                 try Task.checkCancellation()
                 switch event {
                 case .started: break

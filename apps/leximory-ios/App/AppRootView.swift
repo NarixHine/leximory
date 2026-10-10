@@ -88,7 +88,7 @@ private struct AccountRoot: View {
     var body: some View {
         ZStack {
             switch session.state {
-            case .restoring: ReadingLoadingIndicator("正在打开文库……").frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .restoring: ReadingLoadingIndicator("正在打开文库").frame(maxWidth: .infinity, maxHeight: .infinity)
             case .signedOut:
                 if hasOpened { SignInView(session: session) } else { WelcomeGate(session: session) }
             case .expired: SignInView(session: session, notice: "登录已过期，请重新登录。")
@@ -147,7 +147,7 @@ struct SignInView: View {
                 } label: {
                     HStack {
                         if submitting { ProgressView().tint(LeximoryPalette.paper) }
-                        Text(submitting ? "登录中……" : "登录").font(LeximoryTypography.interface(17, semibold: true, style: .headline))
+                        Text(submitting ? "登录中" : "登录").font(LeximoryTypography.interface(17, semibold: true, style: .headline))
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 17)
                     .foregroundStyle(LeximoryPalette.paper)

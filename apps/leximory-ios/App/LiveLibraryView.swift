@@ -102,7 +102,7 @@ struct RemoteTextGallery: View {
         ZStack {
             if vocabulary {
                 VocabularyLibraryView(library: library, client: client, closeCorpus: { vocabulary = false })
-            } else if loading { ReadingLoadingIndicator("正在加载文章……") }
+            } else if loading { ReadingLoadingIndicator("正在加载文章") }
             else if let error {
                 LeximoryUnavailableView("暂时无法加载文章", systemImage: "wifi.exclamationmark", message: error) { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {

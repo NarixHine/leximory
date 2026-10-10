@@ -95,15 +95,11 @@ struct ContentImportView: View {
                             HStack(spacing: 8) {
                                 if busy && !savingBookmark { ProgressView().tint(LeximoryPalette.paper) }
                                 else { Image(systemName: kind == 1 ? "arrow.up.doc" : "airplane") }
-                                Text(busy && !savingBookmark ? (kind != 1 ? "导入中……" : "上传中……") : (isText ? "生成" : "导入"))
+                                Text(busy && !savingBookmark ? (kind != 1 ? "导入中" : "上传中") : (isText ? "生成" : "导入"))
                             }.frame(maxWidth: .infinity, minHeight: 48)
                                 .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
                         }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
                     }.disabled(!valid || busy || uncertain)
-                    if kind == 2 && !extracted {
-                        Text("书签打开原网页；导入保存全文。")
-                            .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
-                    }
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy || uncertain)
             }.scrollDismissesKeyboard(.interactively).background(LeximoryPalette.shell)

@@ -40,7 +40,7 @@ struct ReaderScreen: View {
     var body: some View {
         ZStack {
             switch state {
-            case .loading: ReadingLoadingIndicator("正在打开文章……")
+            case .loading: ReadingLoadingIndicator("正在打开文章")
             case .failed(let message):
                 LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
@@ -168,7 +168,8 @@ struct ReaderScreen: View {
 struct DefinitionView: View {
     let item: DefinitionPresentation
     let client: MobileClient?
-    let language: String
+    private let initialLanguage: String
+    private var language: String { model.browserTarget?.displayLanguage ?? initialLanguage }
     let isPopover: Bool
     let topTrayHeight: CGFloat?
     let closeTray: (() -> Void)?
@@ -180,6 +181,7 @@ struct DefinitionView: View {
     @State private var bottomSafeArea: CGFloat = 0
     @State private var lookupAttempt = 0
     @State private var editing = false
+    @State private var saveAcknowledged = false
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
@@ -191,7 +193,7 @@ struct DefinitionView: View {
         return sizeClass == .regular ? regularBodySize : compactBodySize
     }
     init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil, configureBrowser: (() -> Void)? = nil) {
-        self.item = item; self.client = client; self.language = language; self.isPopover = isPopover
+        self.item = item; self.client = client; self.initialLanguage = language; self.isPopover = isPopover
         self.topTrayHeight = topTrayHeight; self.closeTray = closeTray
         self.trayDragging = trayDragging; self.onScrollPermission = onScrollPermission
         self.configureBrowser = configureBrowser
@@ -234,13 +236,18 @@ struct DefinitionView: View {
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                                 definitionActions
-                                if case .browser(_, let target) = item.source {
-                                    Group {
-                                        if let configureBrowser {
-                                            Button("收藏至「" + target.libraryName + "」", systemImage: "chevron.down", action: configureBrowser)
-                                                .buttonStyle(.plain).frame(minHeight: 44)
-                                        } else { Text("收藏至「" + target.libraryName + "」") }
-                                    }.font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                                if let target = model.browserTarget {
+                                    if let configureBrowser {
+                                        Button(action: configureBrowser) {
+                                            HStack(spacing: 8) {
+                                                Text(target.libraryName)
+                                                Image(systemName: "chevron.down").font(.system(size: 10, weight: .medium))
+                                            }.frame(minHeight: 32, alignment: .leading)
+                                        }.buttonStyle(.plain).font(LeximoryTypography.interface(13))
+                                            .foregroundStyle(.secondary).accessibilityLabel("收藏至" + target.libraryName)
+                                    } else {
+                                        Text(target.libraryName).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary)
+                                    }
                                 }
                                 if let error = model.saveError ?? model.editor?.error {
                                     Text(error)
@@ -249,7 +256,7 @@ struct DefinitionView: View {
                             case .generating(let preview):
                                 if client != nil {
                                     if !preview.isEmpty { section("释义", content: preview) }
-                                    HStack(spacing: 10) { ProgressView(); Text("正在理解语境……").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
+                                    HStack(spacing: 10) { ProgressView(); Text("正在理解语境").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
                                 } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
                             case .failed(let message):
                                 Text(message).foregroundStyle(LeximoryPalette.muted)
@@ -257,7 +264,8 @@ struct DefinitionView: View {
                             }
                         }
                     }.padding(.horizontal, item.isDynamic ? 20 : 24)
-                        .padding(.vertical, waiting ? 16 : item.isDynamic ? 20 : 24)
+                        .padding(.top, waiting ? 16 : item.isDynamic ? 20 : 24)
+                        .padding(.bottom, waiting ? 16 : item.isDynamic ? 16 : 24)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
@@ -286,6 +294,12 @@ struct DefinitionView: View {
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
+        .task(id: model.saveState) {
+            saveAcknowledged = false
+            guard case .saved = model.saveState else { return }
+            do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
+            withAnimation(actionMotion) { saveAcknowledged = true }
+        }
         .task(id: "\(item.id):\(lookupAttempt)") {
             if sync?.online == false, item.definition == nil { model.offline() }
             else if let client { await model.generate(client: client, source: item.source) }
@@ -294,20 +308,24 @@ struct DefinitionView: View {
     private var definitionActions: some View {
         HStack(spacing: 16) {
             if let client {
-                if case .idle = model.saveState {
-                    Button { model.save(client: client, source: item.source) } label: {
-                        Image(systemName: "book.closed").font(.system(size: 20))
-                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
-                            .background(LeximoryPalette.sage, in: Circle())
-                    }.buttonStyle(.plain).disabled(sync?.online == false).accessibilityLabel("收藏词汇")
-                } else {
-                    Button { editing = true } label: {
-                        Image(systemName: "pencil").font(.system(size: 20))
-                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
-                            .background(LeximoryPalette.ink, in: Circle())
-                    }.buttonStyle(.plain).accessibilityLabel("编辑词汇")
-                        .disabled(sync?.online == false)
-                }
+                Button {
+                    if case .idle = model.saveState { model.save(client: client, source: item.source) }
+                    else if case .saved = model.saveState, saveAcknowledged { withAnimation(actionMotion) { editing = true } }
+                } label: {
+                    ZStack {
+                        if case .saving = model.saveState {
+                            ProgressView().tint(LeximoryPalette.paper).transition(.opacity)
+                        } else {
+                            Image(systemName: saveSymbol).font(.system(size: 20))
+                                .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+                        }
+                    }.frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
+                        .background(LeximoryPalette.ink, in: Circle())
+                }.buttonStyle(.plain).accessibilityLabel(saveLabel)
+                    .disabled(saveLocked || sync?.online == false)
+                    .animation(actionMotion, value: model.saveState)
+                    .animation(actionMotion, value: saveAcknowledged)
+
             }
             if let dictionaryURL {
                 Link(destination: dictionaryURL) {
@@ -315,6 +333,32 @@ struct DefinitionView: View {
                         .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
                 }.accessibilityLabel("在词典中查看")
             }
+        }
+    }
+    private var actionMotion: Animation? {
+        reduceMotion ? nil : .easeOut(duration: 0.24)
+    }
+    private var saveSymbol: String {
+        switch model.saveState {
+        case .idle: "book.closed"
+        case .saving: "book.closed"
+        case .saved: saveAcknowledged ? "pencil" : "checkmark"
+        case .uncertain: "exclamationmark"
+        }
+    }
+    private var saveLabel: String {
+        switch model.saveState {
+        case .idle: "收藏词汇"
+        case .saving: "正在收藏"
+        case .saved: saveAcknowledged ? "编辑词汇" : "已收藏"
+        case .uncertain: "收藏结果待确认"
+        }
+    }
+    private var saveLocked: Bool {
+        switch model.saveState {
+        case .idle: false
+        case .saving, .uncertain: true
+        case .saved: !saveAcknowledged
         }
     }
     private var dictionaryURL: URL? {

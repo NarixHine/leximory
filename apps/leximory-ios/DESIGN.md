@@ -64,6 +64,8 @@ Dynamic definitions overlay the reader in a top-anchored card. Content determine
 
 Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
 
+Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing; Reduce Motion uses a crossfade. Browser destinations align with the prose, with a trailing chevron and no explanatory prefix. Omit implementation explanations and empty website-setting sections.
+
 Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Seek on scrub release.
 
 ## Ebooks

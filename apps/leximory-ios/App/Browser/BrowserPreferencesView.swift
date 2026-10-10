@@ -21,26 +21,25 @@ struct BrowserPreferencesView: View {
                 if !bookmarkMode {
                     Section {
                         Picker("收藏至", selection: $choice) {
-                            Text("自动识别语言，存至词汇仓库").tag(String?.none)
+                            Text("自动").tag(String?.none)
                             ForEach(libraries) { library in
                                 Text(library.name + " · " + library.preview.localizedLanguage).tag(Optional(library.id))
                             }
                         }
                         Toggle("以后此网站都存这里", isOn: $remember).disabled(choice == nil)
-                    } header: { Text(domain) } footer: {
-                        Text(choice == nil ? "此网站的词汇将按识别出的语言收藏。" : "选择文库后，猫忆查始终使用该文库的语言。")
-                    }
+                    } header: { Text(domain) }
                 }
-                Section("已设置的网站") {
-                    if rules.isEmpty && !busy { Text("未设置的网站按识别语言存至词汇仓库。").foregroundStyle(.secondary) }
-                    ForEach(rules) { rule in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(rule.domain)
-                            Text(libraries.first(where: { $0.id == rule.libraryId })?.name ?? "文库已不可用")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        .swipeActions {
-                            Button("删除", role: .destructive) { Task { await remove(rule) } }.disabled(busy)
+                if !rules.isEmpty {
+                    Section("已设置的网站") {
+                        ForEach(rules) { rule in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(rule.domain)
+                                Text(libraries.first(where: { $0.id == rule.libraryId })?.name ?? "文库已不可用")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            .swipeActions {
+                                Button("删除", role: .destructive) { Task { await remove(rule) } }.disabled(busy)
+                            }
                         }
                     }
                 }
@@ -123,7 +122,7 @@ struct BrowserBookmarkSheet: View {
                         }.foregroundStyle(.primary).disabled(busy)
                     }
                     if libraries.isEmpty && !loading { Text("请先创建一个文库。").foregroundStyle(.secondary) }
-                } header: { Text("选择文库") } footer: { Text("书签打开原网页。") }
+                } header: { Text("选择文库") }
                 if loading || busy { ProgressView() }
                 if let error { Text(error).foregroundStyle(.secondary) }
             }.navigationTitle("存为书签").navigationBarTitleDisplayMode(.inline)
