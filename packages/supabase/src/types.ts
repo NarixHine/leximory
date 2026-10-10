@@ -78,6 +78,32 @@ export type Database = {
                     },
                 ]
             }
+            browser_domain_rules: {
+                Row: {
+                    domain: string
+                    library_id: string
+                    user_id: string
+                }
+                Insert: {
+                    domain: string
+                    library_id: string
+                    user_id: string
+                }
+                Update: {
+                    domain?: string
+                    library_id?: string
+                    user_id?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: 'browser_domain_rules_library_id_fkey'
+                        columns: ['library_id']
+                        isOneToOne: false
+                        referencedRelation: 'libraries'
+                        referencedColumns: ['id']
+                    },
+                ]
+            }
             dictations: {
                 Row: {
                     content: Json
@@ -446,6 +472,7 @@ export type Database = {
             }
             texts: {
                 Row: {
+                    bookmark_url: string | null
                     content: string
                     created_at: string | null
                     emoji: string | null
@@ -458,6 +485,7 @@ export type Database = {
                     updated_at: string | null
                 }
                 Insert: {
+                    bookmark_url?: string | null
                     content?: string
                     created_at?: string | null
                     emoji?: string | null
@@ -470,6 +498,7 @@ export type Database = {
                     updated_at?: string | null
                 }
                 Update: {
+                    bookmark_url?: string | null
                     content?: string
                     created_at?: string | null
                     emoji?: string | null
