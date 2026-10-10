@@ -12,7 +12,8 @@ export const librarySchema = z.object({
 export const textSchema = z.object({
     id: resourceID, libraryId: resourceID, title: z.string(), topics: z.array(z.string()),
     emoji: z.string().nullable(), createdAt: z.string().nullable(),
-    format: z.enum(['article', 'ebook']),
+    format: z.enum(['article', 'ebook', 'bookmark']),
+    bookmarkURL: z.url().nullable().optional(),
 }).strict()
 export const accountSchema = z.object({
     userId: z.string(), plan: z.enum(['beginner', 'bilingual', 'polyglot', 'leximory']),
@@ -51,7 +52,24 @@ export const articleImportSchema = z.object({
     annotate: z.boolean(), onlyComments: z.boolean(), generateTitle: z.boolean(),
 }).strict()
 export const extractedArticleSchema = z.object({ title: z.string().min(1).max(512), content: z.string().min(1).max(30000) }).strict()
+export const browserSelectionSchema = ebookSelectionSchema.extend({
+    url: z.url().max(8192), bookmarkId: resourceID.nullable(), libraryId: resourceID.nullable(),
+}).strict()
+export const browserTargetSchema = z.object({
+    selectionId: resourceID, language: LangSchema, libraryId: resourceID.nullable(),
+    libraryName: z.string(), shadow: z.boolean(),
+}).strict()
+export const domainRuleSchema = z.object({ domain: z.string().min(1).max(253), libraryId: resourceID }).strict()
+export const bookmarkInputSchema = z.object({ url: z.url().max(8192), requestId: resourceID }).strict()
 export const mobileContract = {
+    createBookmark: oc.route({ method: 'POST', path: '/libraries/{libraryId}/bookmarks' }).input(bookmarkInputSchema.extend({ libraryId: resourceID })).output(textSchema),
+    browserSelection: oc.route({ method: 'POST', path: '/browser/selection' }).input(browserSelectionSchema).output(browserTargetSchema),
+    browserDefinitions: oc.route({ method: 'POST', path: '/browser/definitions', spec: spec => ({
+        ...spec, responses: { ...spec.responses, 200: { description: 'Contextual browser definition frames', content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } } } },
+    }) }).input(z.object({ selectionId: resourceID })).output(z.string()),
+    browserVocabulary: oc.route({ method: 'POST', path: '/browser/vocabulary' }).input(z.object({ completionId: resourceID, requestId: resourceID })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
+    browserRules: oc.route({ method: 'GET', path: '/browser/rules' }).output(z.object({ items: z.array(domainRuleSchema) }).strict()),
+    browserRule: oc.route({ method: 'POST', path: '/browser/rules' }).input(z.object({ domain: z.string().min(1).max(253), libraryId: resourceID.nullable() })).output(z.object({ saved: z.boolean() })),
     extractArticle: oc.route({ method: 'POST', path: '/libraries/{libraryId}/article-preview' }).input(z.object({ libraryId: resourceID, url: z.url().max(2048) })).output(extractedArticleSchema),
     vocabularyList: oc.route({ method: 'GET', path: '/libraries/{libraryId}/vocabulary' }).input(pageInput.extend({ libraryId: resourceID })).output(z.object({ items: z.array(savedWordSchema), nextCursor: z.string().nullable() })),
     savedWord: oc.route({ method: 'GET', path: '/vocabulary/{wordId}' }).input(z.object({ wordId: resourceID })).output(savedWordSchema),

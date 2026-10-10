@@ -213,6 +213,9 @@ struct TextGallery: View {
                         .tracking(-0.4).lineSpacing(hero ? 0 : 1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
+                    if article.format == "bookmark" {
+                        Label(article.subtitle, systemImage: "bookmark").font(.caption).foregroundStyle(LeximoryPalette.muted)
+                    }
                 }
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
         }.buttonStyle(CatalogPressStyle())
@@ -227,6 +230,9 @@ struct TextGallery: View {
                         .tracking(-0.3).lineSpacing(1).foregroundStyle(LeximoryPalette.ink)
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics)
+                    if article.format == "bookmark" {
+                        Label(article.subtitle, systemImage: "bookmark").font(.caption).foregroundStyle(LeximoryPalette.muted)
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper).frame(width: 88, height: 88)
             }.contentShape(Rectangle())

@@ -130,7 +130,7 @@ struct EbookScreen: View {
         }
         .overlay(alignment: .top) {
             if reader.bookmarkNotice != nil {
-                Text("书签未能保存，请重试。")
+                Text("标记未能保存，请重试。")
                     .font(.callout).padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.regularMaterial, in: Capsule())
                     .padding(.top, 60).padding(.horizontal, 20)
@@ -141,7 +141,7 @@ struct EbookScreen: View {
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
         .task(id: reader.bookmarkNotice) {
             guard reader.bookmarkNotice != nil else { return }
-            UIAccessibility.post(notification: .announcement, argument: "书签未能保存，请重试。")
+            UIAccessibility.post(notification: .announcement, argument: "标记未能保存，请重试。")
             do { try await Task.sleep(for: .seconds(4)); reader.bookmarkNotice = nil } catch {}
         }
         .accessibilityAction(named: reader.chromeVisible ? "隐藏阅读工具" : "显示阅读工具") { reader.chromeVisible.toggle() }
@@ -208,8 +208,8 @@ struct EbookScreen: View {
                     }
                 }.padding(20)
             }.background(LeximoryPalette.paper)
-                .overlay { if reader.bookmarks.isEmpty { ContentUnavailableView("暂无书签", systemImage: "bookmark") } }
-                .navigationTitle("书签").navigationBarTitleDisplayMode(.inline)
+                .overlay { if reader.bookmarks.isEmpty { ContentUnavailableView("暂无标记", systemImage: "highlighter") } }
+                .navigationTitle("荧光笔").navigationBarTitleDisplayMode(.inline)
         }.frame(minWidth: sizeClass == .regular ? 400 : nil, idealHeight: min(620, max(260, CGFloat(reader.bookmarks.count) * 180 + 80)))
             .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
             .presentationBackground(LeximoryPalette.paper)
@@ -244,8 +244,8 @@ struct EbookScreen: View {
             Button { tray = .contents } label: { readerActionIcon("list.bullet") }
                 .accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.contents)) { contentsTray }
-            Button { tray = .bookmarks } label: { readerActionIcon("bookmark") }
-                .accessibilityLabel("书签").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
+            Button { tray = .bookmarks } label: { readerActionIcon("highlighter") }
+                .accessibilityLabel("🖍️荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.bookmarks)) { bookmarksTray }
             Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
                 .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)

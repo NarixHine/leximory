@@ -19,6 +19,7 @@ public struct CatalogText: Codable, Hashable, Identifiable, Sendable {
     public let emoji: String?
     public let createdAt: String?
     public let format: String
+    public var bookmarkURL: String? = nil
 }
 public struct CatalogPage<Item: Codable & Sendable>: Codable, Sendable {
     public let items: [Item]
@@ -37,6 +38,21 @@ public struct Account: Codable, Sendable {
 public struct SavedVocabulary: Decodable, Sendable {
     public let id: String
     public let libraryId: String
+}
+public struct BrowserTarget: Codable, Sendable {
+    public let selectionId: String
+    public let language: String
+    public let libraryId: String?
+    public let libraryName: String
+    public let shadow: Bool
+    public var displayLanguage: String {
+        ["en": "English", "fr": "French", "zh": "Chinese", "ja": "Japanese", "nl": "Dutch"][language] ?? language
+    }
+}
+public struct BrowserRule: Codable, Identifiable, Sendable {
+    public let domain: String
+    public let libraryId: String
+    public var id: String { domain }
 }
 public struct VocabularyFields: Codable, Hashable, Sendable {
     public var original: String
@@ -122,7 +138,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversMutation = ["vocabulary", "ebookVocabulary", "editWord", "savedWord"].contains(operationID)
+        let recoversMutation = ["vocabulary", "ebookVocabulary", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord"].contains(operationID)
         var request = request
         let original = try await token(nil)
         request.headerFields[.authorization] = "Bearer \(original)"
@@ -200,6 +216,36 @@ public struct MobileClient: Sendable {
     public struct ArticlePreview: Codable, Sendable { public let title: String; public let content: String }
     public func extractArticle(libraryID: String, url: String) async throws -> ArticlePreview {
         try mapped(try await client.extractArticle(path: .init(libraryId: libraryID), body: .json(.init(url: url))).ok.body.json, to: ArticlePreview.self)
+    }
+    public func createBookmark(libraryID: String, url: String, requestID: String = UUID().uuidString) async throws -> CatalogText {
+        let text = try await MutationRetry.run {
+            try mapped(try await client.createBookmark(path: .init(libraryId: libraryID),
+                body: .json(.init(url: url, requestId: requestID))).ok.body.json, to: CatalogText.self)
+        }
+        await localStore?.upsertText(text)
+        return text
+    }
+    public func browserRules() async throws -> [BrowserRule] {
+        struct Rules: Decodable { let items: [BrowserRule] }
+        return try mapped(try await client.browserRules().ok.body.json, to: Rules.self).items
+    }
+    public func setBrowserRule(domain: String, libraryID: String?) async throws {
+        _ = try await client.browserRule(body: .json(.init(domain: domain, libraryId: libraryID))).ok.body.json
+    }
+    public func browserSelection(url: String, quote: String, context: String, offset: Int, bookmarkID: String?, libraryID: String?) async throws -> BrowserTarget {
+        try mapped(try await client.browserSelection(body: .json(.init(quote: quote, context: context, offset: offset,
+            url: url, bookmarkId: bookmarkID, libraryId: libraryID))).ok.body.json, to: BrowserTarget.self)
+    }
+    public func browserDefinitions(selectionID: String) -> AsyncThrowingStream<DefinitionEvent, Error> {
+        definitionStream {
+            try await client.browserDefinitions(body: .json(.init(selectionId: selectionID))).ok.body.application_x_hyphen_ndjson
+        }
+    }
+    public func saveBrowserVocabulary(completionID: String) async throws -> SavedVocabulary {
+        let requestID = UUID().uuidString
+        return try await MutationRetry.run {
+            try mapped(try await client.browserVocabulary(body: .json(.init(completionId: completionID, requestId: requestID))).ok.body.json, to: SavedVocabulary.self)
+        }
     }
     public func vocabulary(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<SavedWord> {
         try mapped(try await client.vocabularyList(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<SavedWord>.self)

@@ -27,7 +27,7 @@ export function parseGeneratedDefinition(value: string): CompletedDefinition {
     if (!portions || portions.length < 3 || portions.length > 5 || portions.some(value => !value)) throw new MobileError('service_unavailable')
     return definitionSchema.parse({ lemma: portions[1], definition: portions[2], etymology: portions[3] ?? null, cognates: portions[4] ?? null })
 }
-async function jsonBody(request: Request): Promise<unknown> {
+export async function jsonBody(request: Request, maxBytes = 8192): Promise<unknown> {
     // Bound request bytes, including chunked requests without Content-Length.
     const reader = request.body?.getReader()
     if (!reader) throw new MobileError('invalid_input')
@@ -37,7 +37,7 @@ async function jsonBody(request: Request): Promise<unknown> {
             const chunk = await reader.read()
             if (chunk.done) break
             count += chunk.value.byteLength
-            if (count > 8192) { await reader.cancel(); throw new MobileError('invalid_input') }
+            if (count > maxBytes) { await reader.cancel(); throw new MobileError('invalid_input') }
             chunks.push(chunk.value)
         }
         return JSON.parse(Buffer.concat(chunks).toString('utf8'))
@@ -63,7 +63,7 @@ export function createDefinitionHandler(dependencies: { verify: BearerVerifier; 
             const body = await jsonBody(request)
             const { text, library } = await catalog.authorizedText(subject, textId, request.signal)
             const ebookRequest = match[2]?.startsWith('ebook-') === true
-            if (text.has_ebook !== ebookRequest) throw new MobileError('unsupported_format')
+            if (text.bookmark_url || text.has_ebook !== ebookRequest) throw new MobileError('unsupported_format')
             if (match[2] === 'ebook-vocabulary') {
                 const input = z.object({ completionId: resourceID, requestId: resourceID.optional() }).strict().safeParse(body)
                 if (!input.success) throw new MobileError('invalid_input')

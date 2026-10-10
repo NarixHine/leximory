@@ -244,7 +244,7 @@ final class ReaderUITests: XCTestCase {
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 1.2)
         let lookup = app.menuItems["🐈 猫忆查"]
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["添加书签"].exists)
+        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
         capture(app, name: "EPUB contextual learning menu")
         lookup.tap()
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
@@ -322,7 +322,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["The river"].waitForExistence(timeout: 20))
         revealEbookControls(app)
         app.buttons["ebook-bookmarks"].tap()
-        XCTAssertTrue(app.staticTexts["暂无书签"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["暂无标记"].waitForExistence(timeout: 5))
         capture(app, name: "EPUB bookmarks")
     }
 
@@ -532,7 +532,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
         XCTAssertTrue(app.menuItems["🐈 猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["添加书签"].exists)
+        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
         capture(app, name: "PDF contextual learning menu")
         app.menuItems["🐈 猫忆查"].tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))

@@ -24,6 +24,7 @@ export async function getTextWithLib(textId: string) {
             )
         `,
         )
+        .is('bookmark_url', null)
         .eq('id', textId)
         .single()
     if (error || !data) throw new Error('Text not found')
@@ -87,6 +88,7 @@ export async function updateText({
     const { data: rec } = await supabase
         .from('texts')
         .update({ title, content, topics, emoji })
+        .is('bookmark_url', null)
         .eq('id', id)
         .select('lib')
         .single()
@@ -98,6 +100,7 @@ export async function deleteText({ id }: { id: string }) {
     const { data: rec } = await supabase
         .from('texts')
         .delete()
+        .is('bookmark_url', null)
         .eq('id', id)
         .select('lib, has_ebook')
         .single()
@@ -128,6 +131,7 @@ export async function getTexts({ lib }: { lib: string }) {
             )
         `,
         )
+        .is('bookmark_url', null)
         .eq('lib', lib)
         .order('no', { nullsFirst: true }) // prioritize manual sorting; newly created texts first
         .order('created_at', { ascending: false })
@@ -165,6 +169,7 @@ async function getTextContentFromDb({ id }: { id: string }) {
             )
         `,
         )
+        .is('bookmark_url', null)
         .eq('id', id)
         .limit(1)
 
@@ -250,6 +255,7 @@ export async function uploadEbook({ id, ebook }: { id: string; ebook: File }) {
     const { data: text, error: updateError } = await supabase
         .from('texts')
         .update({ has_ebook: true })
+        .is('bookmark_url', null)
         .eq('id', id)
         .select('lib')
         .single()
@@ -293,6 +299,7 @@ export async function getLibIdAndLangOfText({ id }: { id: string }) {
             )
         `,
         )
+        .is('bookmark_url', null)
         .eq('id', id)
         .single()
         .throwOnError()

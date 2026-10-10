@@ -17,6 +17,7 @@ struct FixtureLibraryView: View {
     var loadingLibraries = false
     var libraryError: String? = nil
     @State private var recent: [String: FixtureArticle] = [:]
+    @State private var browsing = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path: [BrowserDestination] = []
     @Environment(\.librarySectionSelection) private var sectionSelection
@@ -68,6 +69,9 @@ struct FixtureLibraryView: View {
             }
         }
         .toolbar(readerID == nil ? .visible : .hidden, for: .tabBar)
+        .fullScreenCover(isPresented: $browsing) {
+            if let client { TextBrowserScreen(client: client) }
+        }
         .onChange(of: openDocument?.text.id, initial: true) { _, _ in
             if let openDocument { path = [.library(openDocument.library.preview), .article(openDocument.text.preview)] }
         }
@@ -88,6 +92,14 @@ struct FixtureLibraryView: View {
         LibraryGallery(libraries: libraries, sampleMode: client == nil, refresh: refresh, archive: archive,
             recentlyOpened: recent, openRecent: { library, article in path = [.library(library), .article(article)] },
             selectedID: selectedID, open: { path = [.library($0)] })
+            .overlay(alignment: .topTrailing) {
+                if client != nil {
+                    Button("浏览网页", systemImage: "globe") { browsing = true }
+                        .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
+                        .frame(minWidth: 44, minHeight: 44).padding(20)
+                        .accessibilityIdentifier("open-text-browser")
+                }
+            }
             .overlay {
                 if loadingLibraries && libraries.isEmpty {
                     ReadingLoadingIndicator("正在打开文库……")
@@ -108,7 +120,10 @@ struct FixtureLibraryView: View {
         case .library(let library):
             textGallery(library: library) { path.append(.article($0)) }
         case .article(let article):
-            if article.format == "ebook" {
+            if article.format == "bookmark", let client {
+                TextBrowserScreen(client: client, bookmarkID: article.id.rawValue, initialURL: article.bookmarkURL,
+                    close: { if case .article = path.last { path.removeLast() } })
+            } else if article.format == "ebook" {
                 EbookScreen(article: article, client: client, language: library?.language ?? "English")
             } else if let client {
                 ReaderScreen(article: article, playback: playback, language: library?.language ?? "English", client: client, loadDocument: { id in

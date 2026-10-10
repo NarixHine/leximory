@@ -23,7 +23,7 @@ import LeximoryCore
         reader.readOnly = offline
         let actions = EbookLearningMenu.actions(reader: reader)
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
-        let bookmark = actions.first { $0.title == "添加书签" }
+        let bookmark = actions.first { $0.title == "🖍️荧光笔" }
         #expect(bookmark != nil)
         if offline { #expect(bookmark?.attributes.contains(.disabled) == true) }
     }

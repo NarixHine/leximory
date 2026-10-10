@@ -14,6 +14,7 @@ export const textRowSchema = z.object({
     id: resourceID, lib: resourceID.nullable(), title: z.string(), topics: z.array(z.string()).nullable(),
     emoji: z.string().nullable(), has_ebook: z.boolean(), content: z.string(),
     created_at: z.string().nullable(), no: z.number().nullable(),
+    bookmark_url: z.string().nullable().optional(),
 })
 export type LibraryRow = z.infer<typeof libraryRowSchema>
 export type TextRow = z.infer<typeof textRowSchema>
@@ -45,7 +46,8 @@ export function summarizeLibrary(row: LibraryRow, subject: MobileSubject, archiv
 }
 export function summarizeText(row: TextRow): MobileText {
     if (!row.lib) throw new MobileError('inaccessible')
-    return { id: row.id, libraryId: row.lib, title: row.title, topics: row.topics ?? [], emoji: row.emoji, createdAt: row.created_at, format: row.has_ebook ? 'ebook' : 'article' }
+    return { id: row.id, libraryId: row.lib, title: row.title, topics: row.topics ?? [], emoji: row.emoji, createdAt: row.created_at,
+        format: row.bookmark_url ? 'bookmark' : row.has_ebook ? 'ebook' : 'article', bookmarkURL: row.bookmark_url ?? null }
 }
 export function createCatalog(store: CatalogStore) {
     async function authorizedLibrary(subject: MobileSubject, id: string, signal: AbortSignal) {
@@ -78,11 +80,11 @@ export function createCatalog(store: CatalogStore) {
         async document(subject: MobileSubject, textId: string, signal: AbortSignal) {
             const { text, library } = await authorizedText(subject, textId, signal)
             const archived = await store.archived(subject, signal)
-            return { text: summarizeText(text), library: summarizeLibrary(library, subject, archived), document: text.has_ebook ? null : renderDocument(text.content), annotationProgress: await store.progress?.(textId) ?? null }
+            return { text: summarizeText(text), library: summarizeLibrary(library, subject, archived), document: text.has_ebook || text.bookmark_url ? null : renderDocument(text.content), annotationProgress: text.bookmark_url ? null : await store.progress?.(textId) ?? null }
         },
         async audio(subject: MobileSubject, textId: string, audioId: string, signal: AbortSignal) {
             const { text } = await authorizedText(subject, textId, signal)
-            if (text.has_ebook || !renderDocument(text.content).blocks.some(block => block.audioId === audioId)) throw new MobileError('inaccessible')
+            if (text.has_ebook || text.bookmark_url || !renderDocument(text.content).blocks.some(block => block.audioId === audioId)) throw new MobileError('inaccessible')
             const url = await store.audio(audioId, signal)
             if (!url) throw new MobileError('inaccessible')
             return { url, expiresAt: new Date(Date.now() + 3600_000).toISOString() }

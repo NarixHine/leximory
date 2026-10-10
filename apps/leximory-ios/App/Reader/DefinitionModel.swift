@@ -5,16 +5,18 @@ import LeximoryCore
 enum DefinitionSource {
     case article(ReadingSelection)
     case ebook(textID: String, quote: String, context: String, offset: Int)
+    case browser(quote: String, target: BrowserTarget)
     var text: String {
-        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote }
+        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote; case .browser(let quote, _): quote }
     }
     var id: String {
-        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset) }
+        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset); case .browser(_, let target): target.selectionId }
     }
     func stream(client: MobileClient) -> AsyncThrowingStream<DefinitionEvent, Error> {
         switch self {
         case .article(let selection): client.definitions(selection: selection)
         case .ebook(let id, let quote, let context, let offset): client.ebookDefinitions(textID: id, quote: quote, context: context, offset: offset)
+        case .browser(_, let target): client.browserDefinitions(selectionID: target.selectionId)
         }
     }
     func save(client: MobileClient, completionID: String?) async throws -> SavedVocabulary {
@@ -23,6 +25,9 @@ enum DefinitionSource {
         case .ebook(let id, _, _, _):
             guard let completionID else { throw URLError(.badServerResponse) }
             return try await client.saveEbookVocabulary(textID: id, completionID: completionID)
+        case .browser:
+            guard let completionID else { throw URLError(.badServerResponse) }
+            return try await client.saveBrowserVocabulary(completionID: completionID)
         }
     }
 }

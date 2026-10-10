@@ -154,7 +154,7 @@ struct RemoteTextGallery: View {
         }) {
             ContentImportView(library: library, client: client) { text in
                 texts.insert(text, at: 0)
-                importedArticle = text.preview
+                if text.format != "bookmark" { importedArticle = text.preview }
             }
         }
         .navigationBarTitleDisplayMode(.inline).toolbar(sizeClass == .regular ? .hidden : .visible, for: .navigationBar)
@@ -206,8 +206,8 @@ extension CatalogText {
         let motifs: [CoverMotif] = [.leaf, .bubbles, .orbit, .waves]
         let seed = id.utf8.reduce(0) { ($0 &* 31) &+ Int($1) }
         return FixtureArticle(id: TextID(rawValue: id), title: title,
-            subtitle: "", resource: "", topics: topics,
-            cover: motifs[Int(seed.magnitude % 4)], coverEmoji: emoji ?? (format == "ebook" ? "📖" : nil), format: format)
+            subtitle: bookmarkURL.flatMap { URL(string: $0)?.host } ?? "", resource: "", topics: topics,
+            cover: motifs[Int(seed.magnitude % 4)], coverEmoji: emoji ?? (format == "ebook" ? "📖" : format == "bookmark" ? "🌐" : nil), format: format, bookmarkURL: bookmarkURL)
     }
 }
 

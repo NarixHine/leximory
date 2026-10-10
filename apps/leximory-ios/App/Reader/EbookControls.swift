@@ -87,7 +87,7 @@ struct EbookThemePicker: View {
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
-        let bookmark = UIAction(title: "添加书签", image: UIImage(systemName: "bookmark"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
+        let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark, selection: selection) }
         }
         return reader.readOnly ? [bookmark] : [define, bookmark]

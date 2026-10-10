@@ -27,6 +27,10 @@ const catalogGET = createMobileHandler({
 import { createDefinitionHandler } from './definitions'
 import { definitionServices } from './definition-services'
 const definitionPOST = createDefinitionHandler({ verify, store: catalogStore, services: definitionServices })
+import { createBrowserHandler } from './browser'
+import { browserStore } from './browser-store'
+const browserHandler = createBrowserHandler({ verify, catalog: catalogStore, browser: browserStore, definitions: definitionServices })
+const isBrowserRoute = (request: Request) => /\/(browser\/(selection|definitions|vocabulary|rules)|libraries\/[^/]+\/bookmarks)$/.test(new URL(request.url).pathname)
 import { createEbookHandler } from './ebooks'
 import { ebookStore } from './ebook-store'
 const ebookHandler = createEbookHandler({ verify, catalog: catalogStore, ebooks: ebookStore })
@@ -35,11 +39,11 @@ import { createAuthoringHandler } from './authoring'
 import { authoringStore } from './authoring-store'
 const authoringHandler = createAuthoringHandler({ verify, catalog: catalogStore, authoring: authoringStore })
 const isAuthoringRoute = (request: Request) => /\/(vocabulary\/[^/]+|libraries\/[^/]+\/(articles|ebooks|vocabulary|article-preview))$/.test(new URL(request.url).pathname)
-export const mobileGET = (request: Request) => isAuthoringRoute(request) ? authoringHandler(request) : isEbookRoute(request) ? ebookHandler(request) : catalogGET(request)
+export const mobileGET = (request: Request) => isBrowserRoute(request) ? browserHandler(request) : isAuthoringRoute(request) ? authoringHandler(request) : isEbookRoute(request) ? ebookHandler(request) : catalogGET(request)
 import { createLibraryArchiveHandler } from './library-preferences'
 import { setLibraryArchived } from './library-preference-store'
 const archivePOST = createLibraryArchiveHandler({ verify, catalog: catalogStore, setArchived: async (...input) => {
     await setLibraryArchived(...input)
     revalidateTag('libraries', { expire: 0 })
 } })
-export const mobilePOST = (request: Request) => isAuthoringRoute(request) ? authoringHandler(request) : /\/libraries\/[^/]+\/archive$/.test(new URL(request.url).pathname) ? archivePOST(request) : isEbookRoute(request) ? ebookHandler(request) : definitionPOST(request)
+export const mobilePOST = (request: Request) => isBrowserRoute(request) ? browserHandler(request) : isAuthoringRoute(request) ? authoringHandler(request) : /\/libraries\/[^/]+\/archive$/.test(new URL(request.url).pathname) ? archivePOST(request) : isEbookRoute(request) ? ebookHandler(request) : definitionPOST(request)

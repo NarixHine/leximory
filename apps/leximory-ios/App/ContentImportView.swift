@@ -19,6 +19,8 @@ struct ContentImportView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var uncertain = false
+    @State private var bookmarkRequestID = UUID().uuidString
+    @State private var savingBookmark = false
     @FocusState private var focusedField: String?
     private struct ImportedFile { let name: String; let data: Data }
     private var lengthLimit: Int {
@@ -35,9 +37,9 @@ struct ContentImportView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     Picker("导入方式", selection: $kind) {
-                        Text("网址导入外刊").tag(2)
-                        Text("手动录入").tag(0)
-                        Text("上传电子书").tag(1)
+                        Text("网页").tag(2)
+                        Text("文本").tag(0)
+                        Text("电子书").tag(1)
                     }.pickerStyle(.segmented).disabled(busy || uncertain)
                     if kind == 2 {
                         TextField("", text: $url)
@@ -54,7 +56,8 @@ struct ContentImportView: View {
                             .font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink).padding(16)
                             .background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
                             .accessibilityLabel("网址")
-                            .onChange(of: url) { extracted = false }
+                            .accessibilityIdentifier("import-网址")
+                            .onChange(of: url) { extracted = false; bookmarkRequestID = UUID().uuidString }
                     }
                     if kind != 2 || extracted { input("标题", text: $title, lines: 1...3) }
                     if isText {
@@ -78,6 +81,11 @@ struct ContentImportView: View {
                     }
                     if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
                     HStack(spacing: 16) {
+                        if kind == 2 && !extracted {
+                            Button(savingBookmark ? "保存中……" : "存为书签", systemImage: "bookmark") { Task { await saveBookmark() } }
+                                .buttonStyle(.glass).frame(minHeight: 48)
+                                .accessibilityIdentifier("content-bookmark-submit")
+                        }
                         if isText {
                             Button("保存") { Task { await submit(annotate: false) } }
                                 .frame(minWidth: 44, minHeight: 48).contentShape(Rectangle())
@@ -85,13 +93,17 @@ struct ContentImportView: View {
                         }
                         Button { Task { await submit(annotate: kind != 1) } } label: {
                             HStack(spacing: 8) {
-                                if busy { ProgressView().tint(LeximoryPalette.paper) }
+                                if busy && !savingBookmark { ProgressView().tint(LeximoryPalette.paper) }
                                 else { Image(systemName: kind == 1 ? "arrow.up.doc" : "airplane") }
-                                Text(busy ? (kind != 1 ? "导入中……" : "上传中……") : (isText ? "生成" : "导入"))
+                                Text(busy && !savingBookmark ? (kind != 1 ? "导入中……" : "上传中……") : (isText ? "生成" : "导入"))
                             }.frame(maxWidth: .infinity, minHeight: 48)
                                 .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
                         }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
                     }.disabled(!valid || busy || uncertain)
+                    if kind == 2 && !extracted {
+                        Text("书签打开原网页；导入保存全文。")
+                            .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                    }
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy || uncertain)
             }.scrollDismissesKeyboard(.interactively).background(LeximoryPalette.shell)
@@ -114,6 +126,18 @@ struct ContentImportView: View {
             .accessibilityLabel(label).accessibilityIdentifier("import-\(label)")
             .font(LeximoryTypography.prose(18, language: library.language)).foregroundStyle(LeximoryPalette.ink)
             .padding(14).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
+    }
+    private func saveBookmark() async {
+        guard valid, !busy, !uncertain else { return }
+        focusedField = nil
+        busy = true; savingBookmark = true; error = nil
+        defer { busy = false; savingBookmark = false }
+        do {
+            let text = try await client.createBookmark(libraryID: library.id.rawValue, url: url.trimmingCharacters(in: .whitespacesAndNewlines), requestID: bookmarkRequestID)
+            imported(text); dismiss()
+        } catch {
+            self.error = (MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? "书签未能保存，请重试。"
+        }
     }
     private func readFile(_ result: Result<URL, Error>) async {
         do {

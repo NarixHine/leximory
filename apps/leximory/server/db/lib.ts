@@ -235,6 +235,7 @@ export async function getAllTextsInLib({ libId }: { libId: string }) {
             )
         `,
         )
+        .is('bookmark_url', null)
         .eq('lib', libId)
         .throwOnError()
 

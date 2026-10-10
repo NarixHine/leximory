@@ -62,6 +62,7 @@ struct FixtureArticle: Codable, Hashable, Identifiable {
     var cover: CoverMotif = .leaf
     var coverEmoji: String? = nil
     var format = "article"
+    var bookmarkURL: String? = nil
     static let samples = [
         FixtureArticle(id: TextID(rawValue: "fixture-reader"), title: "The art of noticing", subtitle: "在不同语言间漫步", resource: "reader"),
         FixtureArticle(id: TextID(rawValue: "fixture-long"), title: "A longer walk", subtitle: "800 段长文示例", resource: "long-reader", topics: ["阅读", "长文"], cover: .orbit)

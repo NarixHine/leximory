@@ -44,6 +44,12 @@ private actor AuthoringPreviewTransport: ClientTransport {
         case "vocabularyList": output = "{\"items\":[\(word),\(river)],\"nextCursor\":null}"
         case "savedWord": output = request.path?.contains("word-river") == true ? river : word
         case "extractArticle": output = #"{"title":"导入测试","content":"Along the river."}"#
+        case "createBookmark":
+            guard let body else { throw URLError(.badServerResponse) }
+            let data = try await Data(collecting: body, upTo: 65536)
+            let input = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            output = String(decoding: try JSONSerialization.data(withJSONObject: ["id": "new-bookmark", "libraryId": "library", "title": "A quiet forest", "topics": [], "emoji": "🌐", "createdAt": NSNull(), "format": "bookmark", "bookmarkURL": input["url"]!]), as: UTF8.self)
+            texts = [output]
         case "editWord":
             guard let body else { throw URLError(.badServerResponse) }
             let data = try await Data(collecting: body, upTo: 65536)

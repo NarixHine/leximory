@@ -45,6 +45,7 @@ targets:
         CFBundleLocalizations: [zh-Hans]
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+          NSAllowsArbitraryLoadsInWebContent: true
         UIAppFonts: [LeximoryNotoEmoji.ttf, LibreBaskerville.ttf, LibreBaskerville-Italic.ttf, SpaceMono-Regular.ttf, SourceCodePro-Medium.ttf, EBGaramond.ttf, EBGaramond-Italic.ttf, LXGWWenKaiScreen.ttf, ChillDuanHeiSongProJP_Regular.otf, ChillDuanHeiSongPro_Regular.otf, Raleway-Regular.ttf, Raleway-SemiBold.ttf]
         UILaunchScreen: {}
         UIApplicationSceneManifest:
