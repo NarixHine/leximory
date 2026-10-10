@@ -44,7 +44,7 @@ struct VocabularyEditor: View {
     }
     private func field(_ label: String, value: Binding<String>, lines: ClosedRange<Int>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label).font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.illustration)
+            Text(label).font(LeximoryTypography.interface(15)).foregroundStyle(.secondary)
             Group {
                 if label == "词条" { TextField(label, text: value) }
                 else { TextField(label, text: value, axis: .vertical).lineLimit(lines) }

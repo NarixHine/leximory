@@ -21,7 +21,7 @@ struct LiveLibraryView: View {
         LibraryTabShell(selection: $selectedTab) {
             libraryBrowser
         } browser: {
-            TextBrowserScreen(client: session.client, close: { selectedTab = 0 })
+            TextBrowserScreen(client: session.client, sessionKey: session.state.accountID, close: { selectedTab = 0 })
         } account: {
             AccountView(session: session, playback: playback)
         }
@@ -120,12 +120,12 @@ struct RemoteTextGallery: View {
             if sizeClass != .regular && !loading && !vocabulary {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("语料本", systemImage: "book.closed") { vocabulary = true }
-                        .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(LeximoryPalette.sage)
+                        .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(.primary)
                 }
                 if library.owned && !library.shadow {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("导入", systemImage: "plus") { importing = true }
-                            .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(LeximoryPalette.sage)
+                            .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(.primary)
                             .disabled(sync?.online == false)
                     }
                 }
@@ -144,7 +144,7 @@ struct RemoteTextGallery: View {
                                 .disabled(sync?.online == false)
                         }
                     }.padding(.horizontal, 24).padding(.top, 22)
-                        .tint(LeximoryPalette.sage).background(LeximoryPalette.paper)
+                        .tint(.primary).background(LeximoryPalette.paper)
                 }
             }
         }
@@ -220,7 +220,7 @@ private struct AccountView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("账户").font(.custom("LXGWWenKaiScreen", size: 30, relativeTo: .largeTitle))
+                    Text("账户").editorialFont(30, relativeTo: .largeTitle, language: "Chinese")
                     if case .signedIn(let account) = session.state {
                         LabeledContent("本期词点", value: "\(Int(account.definitions.used)) / \(Int(account.definitions.limit))")
                     }
@@ -239,8 +239,6 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     @ViewBuilder let library: Library
     @ViewBuilder let browser: Browser
     @ViewBuilder let account: Account
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.displayScale) private var displayScale
     @Environment(\.horizontalSizeClass) private var sizeClass
     var body: some View {
         if sizeClass == .regular {
@@ -265,34 +263,14 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     }
     private var phoneTabs: some View {
         TabView(selection: $selection) {
-            Tab(value: 0) { library } label: {
-                Label { Text("文库").editorialFont(16, language: "Chinese") } icon: {
-                    tabIcon(selection == 0 ? "books.vertical.fill" : "books.vertical", selected: selection == 0)
-                }
-            }
-            Tab(value: 1) { browser.environment(\.browserActive, selection == 1) } label: {
-                Label { Text("浏览").editorialFont(16, language: "Chinese") } icon: {
-                    tabIcon("globe", selected: selection == 1)
-                }
-            }
-            Tab(value: 2) { account } label: {
-                Label { Text("账户").editorialFont(16, language: "Chinese") } icon: {
-                    tabIcon(selection == 2 ? "person.crop.circle.fill" : "person.crop.circle", selected: selection == 2)
-                }
-            }
+            Tab("文库", systemImage: "books.vertical", value: 0) { library }
+            Tab("浏览", systemImage: "globe", value: 1) { browser.environment(\.browserActive, selection == 1) }
+            Tab("账户", systemImage: "person.crop.circle", value: 2) { account }
         }
-        .tint(LeximoryPalette.sage)
+        .tint(.primary)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
-    private func tabIcon(_ name: String, selected: Bool) -> Image {
-        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        let color = UIColor(selected ? LeximoryPalette.sage : LeximoryPalette.muted).resolvedColor(with: traits)
-        let symbol = UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .regular))!
-            .withTintColor(color, renderingMode: .alwaysOriginal)
-        let format = UIGraphicsImageRendererFormat(); format.scale = displayScale
-        let image = UIGraphicsImageRenderer(size: symbol.size, format: format).image { _ in symbol.draw(at: .zero) }
-        return Image(uiImage: image.withRenderingMode(.alwaysOriginal))
-    }
+
 }
 
 extension EnvironmentValues {

@@ -15,17 +15,22 @@ import os
         builder.remove(menu: .replace)
         builder.remove(menu: .find)
         if !keepNativeLookup { builder.remove(menu: .lookup) }
-        builder.replaceChildren(ofMenu: .standardEdit) { withoutSelectAll($0) }
+        builder.replaceChildren(ofMenu: .standardEdit) { copyActions($0) }
     }
 
-    static func withoutSelectAll(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+    static func copyActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
         elements.compactMap { element in
-            if let command = element as? UICommand,
-               command.action == #selector(UIResponderStandardEditActions.selectAll(_:)) { return nil }
-            if let menu = element as? UIMenu { return menu.replacingChildren(withoutSelectAll(menu.children)) }
-            return element
+            if let command = element as? UICommand {
+                return command.action == #selector(UIResponderStandardEditActions.copy(_:)) ? command : nil
+            }
+            if let menu = element as? UIMenu {
+                let children = copyActions(menu.children)
+                return children.isEmpty ? nil : menu.replacingChildren(children)
+            }
+            return nil
         }
     }
+
 }
 
 @MainActor

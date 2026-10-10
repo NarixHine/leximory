@@ -2,6 +2,7 @@ import Foundation
 import OpenAPIRuntime
 import OpenAPIURLSession
 import HTTPTypes
+import os
 
 public struct CatalogLibrary: Codable, Hashable, Identifiable, Sendable {
     public let id: String
@@ -138,14 +139,19 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversMutation = ["vocabulary", "ebookVocabulary", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord"].contains(operationID)
+        let recoversMutation = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord"].contains(operationID)
         var request = request
+        let diagnosticID = UUID().uuidString
+        request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
+        let started = ContinuousClock.now
+        let logger = Logger(subsystem: "com.leximory.reader", category: "api")
         let original = try await token(nil)
         request.headerFields[.authorization] = "Bearer \(original)"
         var result: (HTTPResponse, HTTPBody?)
         do {
             result = try await next(request, body, baseURL)
         } catch {
+            logger.error("Request failed: operation=\(operationID, privacy: .public) id=\(diagnosticID, privacy: .public) code=\((error as NSError).code)")
             if !recoversMutation && MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
             throw error
         }
@@ -162,7 +168,7 @@ private struct BearerMiddleware: ClientMiddleware {
             if parts.first == "texts", parts.count > 1 { await store?.removeText(String(parts[1])) }
             if parts.first == "libraries", parts.count > 1 { await store?.removeLibrary(String(parts[1])) }
         }
-        if !recoversMutation && result.0.status.code >= 500 { await store?.setOnline(false) }
+        logger.info("Response: operation=\(operationID, privacy: .public) id=\(diagnosticID, privacy: .public) status=\(result.0.status.code) duration=\(String(describing: started.duration(to: .now)), privacy: .public)")
         if result.0.status.code >= 400, let responseBody = result.1 {
             let bytes = try await Data(collecting: responseBody, upTo: 65536)
             if let failure = try? JSONDecoder().decode(MobileFailure.self, from: bytes) { throw failure }
@@ -233,8 +239,10 @@ public struct MobileClient: Sendable {
         _ = try await client.browserRule(body: .json(.init(domain: domain, libraryId: libraryID))).ok.body.json
     }
     public func browserSelection(url: String, quote: String, context: String, offset: Int, bookmarkID: String?, libraryID: String?) async throws -> BrowserTarget {
-        try mapped(try await client.browserSelection(body: .json(.init(quote: quote, context: context, offset: offset,
-            url: url, bookmarkId: bookmarkID, libraryId: libraryID))).ok.body.json, to: BrowserTarget.self)
+        try await MutationRetry.run {
+            try mapped(try await client.browserSelection(body: .json(.init(quote: quote, context: context, offset: offset,
+                url: url, bookmarkId: bookmarkID, libraryId: libraryID))).ok.body.json, to: BrowserTarget.self)
+        }
     }
     public func browserDefinitions(selectionID: String) -> AsyncThrowingStream<DefinitionEvent, Error> {
         definitionStream {
@@ -332,7 +340,12 @@ public struct MobileClient: Sendable {
                     var decoder = DefinitionFrames()
                     for try await chunk in body {
                         try Task.checkCancellation()
-                        for event in try decoder.append(Data(chunk)) { continuation.yield(event) }
+                        for event in try decoder.append(Data(chunk)) {
+                            if case .failed(let requestID, let failure) = event {
+                                Logger(subsystem: "com.leximory.reader", category: "api").error("Definition failed: id=\(requestID, privacy: .public) code=\(failure.code, privacy: .public)")
+                            }
+                            continuation.yield(event)
+                        }
                     }
                     try decoder.finish()
                     continuation.finish()

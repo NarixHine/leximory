@@ -118,7 +118,7 @@ struct ContentImportView: View {
                 .fileImporter(isPresented: $choosingFile, allowedContentTypes: kind != 1 ? [.plainText, UTType(filenameExtension: "md") ?? .plainText] : [.epub, .pdf]) { result in
                     Task { await readFile(result) }
                 }
-        }.tint(LeximoryPalette.muted).presentationDetents([.large])
+        }.presentationDetents([.large])
     }
     private func input(_ label: String, text: Binding<String>, lines: ClosedRange<Int>) -> some View {
         TextField(label, text: text, prompt: Text(label == "文本" ? "" : label).foregroundStyle(LeximoryPalette.muted), axis: .vertical)

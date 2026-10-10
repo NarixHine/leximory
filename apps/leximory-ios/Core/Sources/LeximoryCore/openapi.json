@@ -447,9 +447,7 @@
                   "quote",
                   "context",
                   "offset",
-                  "url",
-                  "bookmarkId",
-                  "libraryId"
+                  "url"
                 ],
                 "additionalProperties": false
               }
@@ -947,8 +945,7 @@
                   }
                 },
                 "required": [
-                  "domain",
-                  "libraryId"
+                  "domain"
                 ]
               }
             }

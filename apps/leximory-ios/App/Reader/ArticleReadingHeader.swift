@@ -37,7 +37,7 @@ struct ArticleReadingHeader: View {
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("article-header")) } action: { onTitleFrame?($0) }
             CatalogFlowLayout(spacing: 10) {
                 ForEach(Array(article.topics.prefix(3)), id: \.self) { topic in
-                    Text(topic).font(.custom("LXGWWenKaiScreen", size: 14, relativeTo: .caption))
+                    Text(topic).editorialFont(14, relativeTo: .caption, language: "Chinese")
                         .foregroundStyle(LeximoryPalette.muted)
                 }
             }

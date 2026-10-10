@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import LeximoryCore
+import os
 
 struct BrowserSelection: Decodable {
     let quote: String
@@ -42,9 +43,12 @@ final class BrowserWebView: WKWebView {
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         guard builder.system == .context else { return }
+        guard !super.canPerformAction(#selector(UIResponderStandardEditActions.cut(_:)), withSender: nil) else { return }
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+        builder.replaceChildren(ofMenu: .root) { ReadingSelectionMenu.copyActions($0) }
         capturedSelection = nil
         capture { [weak self] selection in self?.capturedSelection = selection }
-        let action = UIAction(title: "猫忆查", image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
+        let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
             guard let self else { return }
             if let capturedSelection { lookup?(capturedSelection) }
             else { capture { [weak self] in if let selection = $0 { self?.lookup?(selection) } } }
@@ -53,11 +57,19 @@ final class BrowserWebView: WKWebView {
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
-            guard let value = try? await callAsyncJavaScript(Self.selectionScript, arguments: [:], in: nil, contentWorld: Self.world),
-                  JSONSerialization.isValidJSONObject(value),
-                  let data = try? JSONSerialization.data(withJSONObject: value),
-                  let selection = try? JSONDecoder().decode(BrowserSelection.self, from: data) else { completion(nil); return }
-            completion(selection)
+            do {
+                guard let value = try await callAsyncJavaScript(Self.selectionScript, arguments: [:], in: nil, contentWorld: Self.world),
+                      JSONSerialization.isValidJSONObject(value) else {
+                    Logger(subsystem: "com.leximory.reader", category: "browser").debug("Selection is outside readable webpage text")
+                    completion(nil); return
+                }
+                let data = try JSONSerialization.data(withJSONObject: value)
+                let selection = try JSONDecoder().decode(BrowserSelection.self, from: data)
+                completion(selection)
+            } catch {
+                Logger(subsystem: "com.leximory.reader", category: "browser").error("Selection capture failed: code=\((error as NSError).code)")
+                completion(nil)
+            }
         }
     }
 }
@@ -71,6 +83,7 @@ final class BrowserWebView: WKWebView {
     private(set) var canGoForward = false
     private(set) var navigationID = UUID()
     var error: String?
+    @ObservationIgnored private var resumeOffset: CGFloat?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
     override init() {
@@ -101,7 +114,11 @@ final class BrowserWebView: WKWebView {
         let host = url?.host?.lowercased() ?? ""
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
-    func load(_ url: URL) { error = nil; web.load(URLRequest(url: url)) }
+    func load(_ url: URL, offset: CGFloat? = nil) {
+        resumeOffset = offset
+        error = nil
+        web.load(URLRequest(url: url))
+    }
     private func update() {
         url = web.url; title = web.title ?? ""; loading = web.isLoading
         canGoBack = web.canGoBack; canGoForward = web.canGoForward
@@ -109,7 +126,13 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         navigationID = UUID(); error = nil; update()
     }
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { update() }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        update()
+        if let resumeOffset {
+            webView.scrollView.setContentOffset(CGPoint(x: 0, y: resumeOffset), animated: false)
+            self.resumeOffset = nil
+        }
+    }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }
     private func failed(_ error: any Error) {

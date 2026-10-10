@@ -20,26 +20,16 @@ struct LeximoryApp: App {
         for state in [UIControl.State.normal, .selected] {
             UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(15, language: "Chinese")], for: state)
         }
-        let tabs = UITabBarAppearance()
-        for item in [tabs.stackedLayoutAppearance, tabs.inlineLayoutAppearance, tabs.compactInlineLayoutAppearance] {
-            item.normal.iconColor = UIColor(LeximoryPalette.muted)
-            item.selected.iconColor = UIColor(LeximoryPalette.sage)
-            item.normal.titleTextAttributes = [.font: LeximoryTypography.editorialUI(13, language: "Chinese"), .foregroundColor: UIColor(LeximoryPalette.muted)]
-            item.selected.titleTextAttributes = [.font: LeximoryTypography.editorialUI(13, language: "Chinese"), .foregroundColor: UIColor(LeximoryPalette.sage)]
-        }
         for state in [UIControl.State.normal, .selected] {
-            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(15, language: "Chinese")], for: state)
+            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(12, language: "Chinese")], for: state)
         }
-        UITabBar.appearance().standardAppearance = tabs
-        UITabBar.appearance().scrollEdgeAppearance = tabs
-        UITabBar.appearance().unselectedItemTintColor = UIColor(LeximoryPalette.muted)
     }
     @State private var playback = PlaybackController()
     var body: some Scene {
         WindowGroup {
             AppRootView(fixturePlayback: playback)
                 .font(LeximoryTypography.interface(17))
-                .tint(LeximoryPalette.sage)
+                .fontDesign(.serif)
                 .preferredColorScheme(previewColorScheme)
         }
     }

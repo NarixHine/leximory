@@ -93,9 +93,9 @@ enum LeximoryTypography {
         Font(UIFontMetrics(forTextStyle: .body).scaledFont(for: proseUI(size, language: language)))
     }
     static func interfaceUI(_ size: CGFloat, semibold: Bool = false) -> UIFont {
-        let fallback = UIFontDescriptor(name: "ChillDuanHeiSongPro_Regular", size: size)
-        let latin = face(semibold ? "RalewayRoman-SemiBold" : "RalewayRoman-Regular", size: size)
-        return UIFont(descriptor: latin.fontDescriptor.addingAttributes([.cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), fallback]]), size: size)
+        let font = editorialUI(size)
+        guard semibold, let descriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) else { return font }
+        return UIFont(descriptor: descriptor, size: size)
     }
     static func interface(_ size: CGFloat, semibold: Bool = false, style: UIFont.TextStyle = .body) -> Font {
         Font(UIFontMetrics(forTextStyle: style).scaledFont(for: interfaceUI(size, semibold: semibold)))

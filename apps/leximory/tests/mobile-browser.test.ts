@@ -9,7 +9,7 @@ const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const own: LibraryRow = { id: 'library', name: 'English News', lang: 'en', owner: 'reader', access: 0, starred_by: null, shadow: false }
 const bookmark: TextRow = { id: 'bookmark', lib: own.id, title: 'BBC', content: '', has_ebook: false, bookmark_url: 'https://bbc.com/start', topics: [], emoji: null, created_at: null, no: null }
 const selection = { url: 'https://example.com/linked-page', quote: 'bonjour', context: 'bonjour tout le monde', offset: 0, bookmarkId: null, libraryId: null }
-function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: string; cached?: boolean; quota?: boolean } = {}) {
+function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: string; cached?: boolean; quota?: boolean; detectionError?: Error } = {}) {
     const library = options.library ?? own
     const receipts = new Map<string, BrowserReceipt>()
     const metrics = { detections: 0, charges: 0, saves: [] as string[], ruleWrites: 0, bookmarkWrites: 0 }
@@ -18,7 +18,7 @@ function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: 
         text: async () => bookmark, libraries: async () => [library], texts: async () => [bookmark], archived: async () => [], audio: async () => null,
     }
     const browser: BrowserStore = {
-        detectLanguage: async () => { metrics.detections++; return 'fr' },
+        detectLanguage: async () => { metrics.detections++; if (options.detectionError) throw options.detectionError; return 'fr' },
         rules: async () => options.rule ? [{ domain: 'example.com', libraryId: options.rule }] : [],
         setRule: async () => { metrics.ruleWrites++ },
         putReceipt: async (id, receipt) => { receipts.set(id, receipt) },
@@ -45,6 +45,23 @@ function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: 
 function request(path: string, body: unknown) {
     return new Request('https://leximory.test/api/mobile/v1/' + path, { method: 'POST', headers: { authorization: 'Bearer verified' }, body: JSON.stringify(body) })
 }
+test('iOS selections may omit unset Bookmark and library IDs', async () => {
+    const { bookmarkId: _bookmark, libraryId: _library, ...webpage } = selection
+    for (const choice of [{}, { bookmarkId: 'bookmark' }, { libraryId: own.id }]) {
+        const h = harness()
+        const response = await h.handler(request('browser/selection', { ...webpage, ...choice }))
+        assert.equal(response.status, 200)
+        const target = await response.json()
+        assert.equal(target.language, Object.keys(choice).length ? 'en' : 'fr')
+        assert.equal(h.metrics.detections, Object.keys(choice).length ? 0 : 1)
+    }
+})
+test('iOS can clear a domain destination by omitting its library ID', async () => {
+    const h = harness()
+    const response = await h.handler(request('browser/rules', { domain: 'example.com' }))
+    assert.equal(response.status, 200)
+    assert.equal(h.metrics.ruleWrites, 1)
+})
 test('Bookmark language stays fixed after following links and never invokes Jev', async () => {
     const h = harness()
     const response = await h.handler(request('browser/selection', { ...selection, bookmarkId: 'bookmark', libraryId: 'ignored' }))
@@ -129,4 +146,22 @@ test('domains normalize www and reject paths, credentials, and oversized labels'
     assert.equal(browserDomain('WWW.Example.com'), 'example.com')
     assert.equal(browserDomain('[2001:db8::1]'), '[2001:db8::1]')
     for (const value of ['example.com/path', 'user:password@example.com', 'a'.repeat(64) + '.com']) assert.throws(() => browserDomain(value))
+})
+
+for (const Failure of [TypeError, SyntaxError]) test(`lookup ${Failure.name} remains a retryable service error with safe stage diagnostics`, async () => {
+    const privateText = 'a private selection that must never appear in logs'
+    const h = harness({ detectionError: new Failure(privateText) })
+    const logs: unknown[][] = []
+    const original = console.error
+    console.error = (...args) => { logs.push(args) }
+    try {
+        const input = request('browser/selection', selection)
+        input.headers.set('X-Leximory-Request-ID', 'diagnostic-test')
+        const response = await h.handler(input)
+        assert.equal(response.status, 503)
+        assert.equal((await response.json()).error.code, 'service_unavailable')
+        assert.equal(response.headers.get('X-Leximory-Request-ID'), 'diagnostic-test')
+        assert.equal((logs[0]?.[1] as { stage: string }).stage, 'selection-language')
+        assert.equal(JSON.stringify(logs).includes(privateText), false)
+    } finally { console.error = original }
 })

@@ -28,10 +28,10 @@ struct LibraryGallery: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(spacing: 6) {
                             Image(systemName: "books.vertical").accessibilityHidden(true)
-                            Text("MY LIBRARIES").font(.custom("SpaceMono-Regular", size: 12, relativeTo: .caption)).tracking(1.2)
-                        }.foregroundStyle(LeximoryPalette.illustration)
+                            Text("MY LIBRARIES").editorialFont(12, relativeTo: .caption, language: "English").tracking(1.2)
+                        }.foregroundStyle(.secondary)
                         Text("我的文库")
-                            .font(.custom("LXGWWenKaiScreen", size: 30, relativeTo: .largeTitle))
+                            .editorialFont(30, relativeTo: .largeTitle, language: "Chinese")
                             .foregroundStyle(LeximoryPalette.ink).accessibilityAddTraits(.isHeader)
                     }.padding(.horizontal, 14).padding(.top, 18)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: columns), alignment: .leading, spacing: 16) {
@@ -47,9 +47,9 @@ struct LibraryGallery: View {
                                     if let recent = recentlyOpened[library.id.rawValue] {
                                         Button { openRecent?(library, recent) } label: {
                                             HStack(spacing: 5) {
-                                                Image(systemName: "clock").font(.custom("Raleway-Regular", size: 14))
+                                                Image(systemName: "clock").font(.system(size: 14))
                                                 Text(recent.title).font(LeximoryTypography.interface(12)).lineLimit(1)
-                                            }.foregroundStyle(LeximoryPalette.illustration)
+                                            }.foregroundStyle(.secondary)
                                         }.buttonStyle(.plain).frame(minHeight: 44)
                                             .accessibilityLabel("最近打开：\(recent.title)")
                                             .accessibilityIdentifier("recent-\(library.id.rawValue)")
@@ -108,7 +108,7 @@ struct LibraryGallery: View {
                 if archiving.contains(library.id) { ProgressView().controlSize(.small) }
                 else { Image(systemName: archived ? "archivebox" : "tray.and.arrow.up").font(.system(size: 15, weight: archived ? .regular : .light)) }
             }.frame(width: 44, height: 44)
-        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.sage).disabled(archiving.contains(library.id) || sync?.online == false)
+        }.buttonStyle(.plain).foregroundStyle(.primary).disabled(archiving.contains(library.id) || sync?.online == false)
             .accessibilityLabel(archived ? "归档 \(library.name)" : "取消归档 \(library.name)")
             .accessibilityIdentifier("archive-\(library.id.rawValue)")
     }
@@ -122,7 +122,7 @@ private struct LibraryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             Text(library.localizedLanguage).font(LeximoryTypography.interface(14, semibold: true, style: .subheadline))
-                .foregroundStyle(LeximoryPalette.illustration)
+                .foregroundStyle(.secondary)
             Text(library.name).editorialFont(titleSize, language: library.language == "Japanese" ? "Japanese" : "English")
                 .foregroundStyle(LeximoryPalette.ink).lineSpacing(1)
                 .fixedSize(horizontal: false, vertical: true)
@@ -176,7 +176,7 @@ struct TextGallery: View {
                                     }
                                 }
                             }
-                        }.tint(LeximoryPalette.sage)
+                        }.tint(.primary)
                     }
                     if wide, let first = library.articles.first {
                         HStack(alignment: .top, spacing: 32) {
@@ -247,7 +247,7 @@ private struct TopicLabels: View {
     var body: some View {
         CatalogFlowLayout(spacing: 6, centered: centered) {
             ForEach(Array(topics.prefix(3)), id: \.self) { text in
-                Text(text).font(.custom("LXGWWenKaiScreen", size: 12, relativeTo: .caption))
+                Text(text).editorialFont(12, relativeTo: .caption, language: "Chinese")
                     .foregroundStyle(LeximoryPalette.muted)
                     .padding(.horizontal, 9).padding(.vertical, 4)
                     .overlay { Capsule().strokeBorder(LeximoryPalette.secondaryBorder, lineWidth: 1) }

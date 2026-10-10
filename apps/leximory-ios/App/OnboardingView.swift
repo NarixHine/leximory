@@ -96,8 +96,8 @@ struct OnboardingView: View {
                 .tracking(-1.1).foregroundStyle(LeximoryPalette.ink)
                 .accessibilityAddTraits(.isHeader)
             Text("语言学地学语言")
-                .font(.custom("LXGWWenKaiScreen", size: 20, relativeTo: .subheadline))
-                .foregroundStyle(LeximoryPalette.sage)
+                .editorialFont(20, relativeTo: .subheadline, language: "Chinese")
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

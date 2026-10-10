@@ -28,17 +28,17 @@ Covers retain the web's newspaper rules, artwork and identity-derived paper wash
 
 | Role | Face | Default |
 | --- | --- | --- |
-| Library eyebrow | Space Mono | 12 pt, 1.2 tracking |
-| 我的文库 | WenKai Screen | 30 pt |
+| Library eyebrow | EB Garamond | 12 pt, 1.2 tracking |
+| 我的文库 | Bundled Chinese serif | 30 pt |
 | Library/text titles | EB Garamond with CJK cascade | 20–36 pt by role |
 | English/French prose | Libre Baskerville | 18 pt phone, 20 pt wide |
 | Chinese prose | ChillDuanHeiSongPro | Bundled Regular OTF |
 | Japanese prose | ChillDuanHeiSongProJP | Bundled Regular OTF, with ruby |
-| Interface text | Raleway with script cascade | 12–17 pt |
-| Chinese navigation/topics | WenKai Screen | 12–14 pt topics |
+| Interface text | EB Garamond with serif CJK cascade | 12–17 pt |
+| Chinese navigation/topics | Bundled Chinese serif | 12–14 pt topics |
 | IPA/code | Source Code Pro | 85% of prose |
 
-Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. System-owned controls retain platform typography.
+Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. App text uses serif typography, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
 
 `LeximoryLayout` owns measurements: 20 pt page inset, 640 pt article/library measure and 880 pt gallery measure. Library cards use 46 pt outer and 32 pt inner corners. Phones use compact text rows with newspaper thumbnails. Wide galleries show a featured cover and up to five supporting entries in landscape or three in portrait. Archived libraries are compact chips.
 
@@ -56,7 +56,7 @@ Use the lawn and cat together for spacious loading scenes, at 80% width up to 56
 
 ## Reading and learning
 
-Selection menus offer 猫忆查 before Copy, retain native Define/Web Search, and add 🖍️荧光笔 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
+Selection menus offer 猫忆查 before Copy, remove unrelated native lookup, sharing, replacement, find, and Select All in learning mode; and add 🖍️荧光笔 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
 
 Static annotations highlight on touch-down and open on touch-up, anchored to the selected line. Use a fitted popover on iPad and tray on phone, with a comfortable 400 pt measure and 24 pt insets. Keep actions below the definition. Article highlights are short sage-yellow strokes behind the lower glyph area, separately fitted to each line.
 

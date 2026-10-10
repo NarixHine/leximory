@@ -331,7 +331,7 @@ struct DefinitionView: View {
     }
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
+            Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: bodySize, language: language)
                 .foregroundStyle(LeximoryPalette.ink)
         }

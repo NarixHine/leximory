@@ -17,7 +17,7 @@ struct AuthoringPreview: View {
                 LibraryTabShell(selection: $selectedTab) {
                     FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
                 } browser: {
-                    TextBrowserScreen(client: client, close: { selectedTab = 0 })
+                    TextBrowserScreen(client: client, sessionKey: "authoring-fixtures", homeURL: nil, close: { selectedTab = 0 })
                 } account: {
                     Text("账户")
                 }
@@ -25,6 +25,9 @@ struct AuthoringPreview: View {
         }
         .environment(\.nativeSync, sync)
         .task {
+            if ProcessInfo.processInfo.arguments.contains("--reset-browser") {
+                UserDefaults.standard.removeObject(forKey: "browser.last-page.authoring-fixtures")
+            }
             if ProcessInfo.processInfo.arguments.contains("--offline") {
                 do {
                     let origin = URL(string: "https://authoring.invalid")!
@@ -47,6 +50,10 @@ private actor AuthoringPreviewTransport: ClientTransport {
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         let output: String
         switch operationID {
+        case "browserSelection": output = #"{"selectionId":"selection","language":"en","libraryId":"library","libraryName":"测试文库","shadow":false}"#
+        case "browserDefinitions":
+            let frames = #"{"kind":"started","requestId":"definition"}"# + "\n" + #"{"kind":"completed","requestId":"definition","definition":{"lemma":"quiet","definition":"安静的","etymology":null,"cognates":null}}"# + "\n"
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/x-ndjson"]), HTTPBody(frames))
         case "texts": output = "{\"items\":[\(texts.joined(separator: ","))],\"nextCursor\":null}"
         case "vocabularyList": output = "{\"items\":[\(word),\(river)],\"nextCursor\":null}"
         case "savedWord": output = request.path?.contains("word-river") == true ? river : word

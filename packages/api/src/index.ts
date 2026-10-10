@@ -53,7 +53,7 @@ export const articleImportSchema = z.object({
 }).strict()
 export const extractedArticleSchema = z.object({ title: z.string().min(1).max(512), content: z.string().min(1).max(30000) }).strict()
 export const browserSelectionSchema = ebookSelectionSchema.extend({
-    url: z.url().max(8192), bookmarkId: resourceID.nullable(), libraryId: resourceID.nullable(),
+    url: z.url().max(8192), bookmarkId: resourceID.nullish(), libraryId: resourceID.nullish(),
 }).strict()
 export const browserTargetSchema = z.object({
     selectionId: resourceID, language: LangSchema, libraryId: resourceID.nullable(),
@@ -69,7 +69,7 @@ export const mobileContract = {
     }) }).input(z.object({ selectionId: resourceID })).output(z.string()),
     browserVocabulary: oc.route({ method: 'POST', path: '/browser/vocabulary' }).input(z.object({ completionId: resourceID, requestId: resourceID })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
     browserRules: oc.route({ method: 'GET', path: '/browser/rules' }).output(z.object({ items: z.array(domainRuleSchema) }).strict()),
-    browserRule: oc.route({ method: 'POST', path: '/browser/rules' }).input(z.object({ domain: z.string().min(1).max(253), libraryId: resourceID.nullable() })).output(z.object({ saved: z.boolean() })),
+    browserRule: oc.route({ method: 'POST', path: '/browser/rules' }).input(z.object({ domain: z.string().min(1).max(253), libraryId: resourceID.nullish() })).output(z.object({ saved: z.boolean() })),
     extractArticle: oc.route({ method: 'POST', path: '/libraries/{libraryId}/article-preview' }).input(z.object({ libraryId: resourceID, url: z.url().max(2048) })).output(extractedArticleSchema),
     vocabularyList: oc.route({ method: 'GET', path: '/libraries/{libraryId}/vocabulary' }).input(pageInput.extend({ libraryId: resourceID })).output(z.object({ items: z.array(savedWordSchema), nextCursor: z.string().nullable() })),
     savedWord: oc.route({ method: 'GET', path: '/vocabulary/{wordId}' }).input(z.object({ wordId: resourceID })).output(savedWordSchema),

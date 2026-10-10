@@ -28,10 +28,10 @@ struct BrowserPreferencesView: View {
                         }
                         Toggle("以后此网站都存这里", isOn: $remember).disabled(choice == nil)
                     } header: { Text(domain) } footer: {
-                        Text(choice == nil ? "自动识别会移除此网站的文库规则。" : "选择文库后，猫忆查始终使用该文库的语言。")
+                        Text(choice == nil ? "此网站的词汇将按识别出的语言收藏。" : "选择文库后，猫忆查始终使用该文库的语言。")
                     }
                 }
-                Section("网站收藏规则") {
+                Section("已设置的网站") {
                     if rules.isEmpty && !busy { Text("未设置的网站按识别语言存至词汇仓库。").foregroundStyle(.secondary) }
                     ForEach(rules) { rule in
                         VStack(alignment: .leading, spacing: 4) {
@@ -88,7 +88,7 @@ struct BrowserPreferencesView: View {
             try await client.setBrowserRule(domain: rule.domain, libraryID: nil)
             rules.removeAll { $0.domain == rule.domain }
             if rule.domain == domain { choice = nil; selected(nil) }
-        } catch { self.error = "规则未能删除，请重试。" }
+        } catch { self.error = "设置未能删除，请重试。" }
     }
 }
 
@@ -120,10 +120,10 @@ struct BrowserBookmarkSheet: View {
                                 Text(library.name)
                                 Text(library.preview.localizedLanguage).font(.caption).foregroundStyle(.secondary)
                             }
-                        }.disabled(busy)
+                        }.foregroundStyle(.primary).disabled(busy)
                     }
                     if libraries.isEmpty && !loading { Text("请先创建一个文库。").foregroundStyle(.secondary) }
-                } header: { Text("选择文库") } footer: { Text("书签打开原网页，不保存全文。") }
+                } header: { Text("选择文库") } footer: { Text("书签打开原网页。") }
                 if loading || busy { ProgressView() }
                 if let error { Text(error).foregroundStyle(.secondary) }
             }.navigationTitle("存为书签").navigationBarTitleDisplayMode(.inline)

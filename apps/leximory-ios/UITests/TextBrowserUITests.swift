@@ -7,7 +7,7 @@ final class TextBrowserUITests: XCTestCase {
         defer { page.listener.cancel() }
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
-        app.launchArguments = ["--authoring-fixtures"]
+        app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
         app.launch()
         let browse = app.buttons["浏览"].firstMatch
         XCTAssertTrue(browse.waitForExistence(timeout: 10))
@@ -47,6 +47,12 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 5))
         app.buttons["关闭"].tap()
+        app.terminate()
+        app.launchArguments = ["--authoring-fixtures"]
+        app.launch()
+        XCTAssertTrue(browse.waitForExistence(timeout: 10)); browse.tap()
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["关闭"].tap()
     }
 
     @MainActor func testBookmarkCreationReturnsToLibraryAndOpensWebpage() throws {
@@ -54,7 +60,7 @@ final class TextBrowserUITests: XCTestCase {
         defer { page.listener.cancel() }
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
-        app.launchArguments = ["--authoring-fixtures"]
+        app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
         app.launch()
         let library = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch
         XCTAssertTrue(library.waitForExistence(timeout: 10)); library.tap()
@@ -81,7 +87,16 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 15), app.debugDescription)
         let browser = XCTAttachment(screenshot: app.screenshot()); browser.name = "Single-page browser"; browser.lifetime = .keepAlways; add(browser)
         heading.press(forDuration: 1)
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
+        XCTAssertTrue(app.menuItems["拷贝"].exists)
+        for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "翻译", "查询", "搜索网页"] {
+            XCTAssertFalse(app.menuItems[title].exists)
+        }
+        XCTAssertFalse(app.buttons["共享"].exists)
+        XCTAssertFalse(app.buttons["全选"].exists)
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["安静的"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.6)).tap()
         app.buttons["关闭"].tap()
         XCTAssertTrue(bookmark.waitForExistence(timeout: 5))

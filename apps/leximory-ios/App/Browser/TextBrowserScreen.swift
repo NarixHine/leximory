@@ -1,15 +1,20 @@
 import SwiftUI
 import LeximoryCore
+import os
 
 struct TextBrowserScreen: View {
     let client: MobileClient
     var bookmarkID: String? = nil
     var initialURL: String? = nil
+    var sessionKey: String? = nil
+    var homeURL: String? = "https://www.cgtn.com"
     var close: (() -> Void)? = nil
     @Environment(\.browserActive) private var active
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var chrome
     @State private var opened = false
+    @State private var addressEditor = BrowserAddressEditor()
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @State private var browser = TextBrowserModel()
@@ -30,6 +35,7 @@ struct TextBrowserScreen: View {
         Group {
             if active { page }
         }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { rememberPage() } }
         .onChange(of: active) { _, active in
             if !active { finishEditing() }
         }
@@ -80,7 +86,7 @@ struct TextBrowserScreen: View {
         .sheet(isPresented: $savingBookmark) {
             BrowserBookmarkSheet(client: client, url: browser.url?.absoluteString ?? "")
         }
-        .alert("猫忆查暂时不可用", isPresented: Binding(get: { lookupError != nil }, set: { if !$0 { lookupError = nil } })) {
+        .alert("猫忆查", isPresented: Binding(get: { lookupError != nil }, set: { if !$0 { lookupError = nil } })) {
             Button("重试") { if let lastSelection { define(lastSelection) } }
             Button("取消", role: .cancel) { lookupError = nil }
         } message: { Text(lookupError ?? "") }
@@ -98,15 +104,20 @@ struct TextBrowserScreen: View {
                     }
                     browser.load(url)
                 } catch { browser.error = "书签暂时无法打开，请重试。" }
+            } else if let saved = savedPage, let url = TextBrowserModel.address(saved.url) {
+                browser.load(url, offset: saved.offset)
+            } else if let homeURL, let url = TextBrowserModel.address(homeURL) {
+                browser.load(url)
             }
         }
+        .onChange(of: browser.url) { _, _ in rememberPage() }
         .onChange(of: browser.navigationID) { _, _ in
             lookup?.cancel(); resolving = false; definition = nil; lastSelection = nil; lookupError = nil
         }
         .onChange(of: browser.domain) { _, domain in
             if domain != selectedDomain { selectedLibraryID = nil }
         }
-        .onDisappear { lookup?.cancel(); resolving = false; browser.web.stopLoading() }
+        .onDisappear { rememberPage(); lookup?.cancel(); resolving = false; browser.web.stopLoading() }
     }
     private var motion: Animation? {
         reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.42, dampingFraction: 0.86)
@@ -131,7 +142,7 @@ struct TextBrowserScreen: View {
                     .glassEffectID("address", in: chrome)
                 if editingAddress {
                     Button("取消") { finishEditing() }
-                        .font(.subheadline).frame(minWidth: 44, minHeight: 48)
+                        .font(LeximoryTypography.prose(15)).frame(minWidth: 44, minHeight: 48)
                         .padding(.horizontal, 8).buttonStyle(.plain)
                         .glassEffect(.regular.interactive(), in: .capsule)
                         .glassEffectID("options", in: chrome)
@@ -144,16 +155,19 @@ struct TextBrowserScreen: View {
                                 Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
                             }
                         }
-                        Section {
-                            Button("词汇收藏设置", systemImage: "book.closed") { settings = true }
-                                .disabled(browser.url == nil)
+                        if bookmarkID == nil {
+                            Section {
+                                Button("词汇收藏设置", systemImage: "book.closed") { settings = true }
+                                    .disabled(browser.url == nil)
+                            }
                         }
                         Section {
                             Button(browser.loading ? "停止" : "重新加载", systemImage: browser.loading ? "xmark" : "arrow.clockwise") {
                                 if browser.loading { browser.web.stopLoading() } else { browser.web.reload() }
                             }.disabled(browser.url == nil)
-                            Button("前进", systemImage: "chevron.right") { browser.web.goForward() }
-                                .disabled(!browser.canGoForward)
+                            if browser.canGoForward {
+                                Button("前进", systemImage: "chevron.right") { browser.web.goForward() }
+                            }
                         }
                     } label: { chromeIcon("ellipsis") }
                         .buttonStyle(.plain).accessibilityLabel("网页选项")
@@ -168,7 +182,7 @@ struct TextBrowserScreen: View {
         HStack(spacing: 8) {
             if editingAddress {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                BrowserAddressField(address: $address, submit: openAddress)
+                BrowserAddressField(address: $address, editor: addressEditor, submit: openAddress)
                     .frame(maxWidth: .infinity).frame(height: 48)
             } else {
                 Button {
@@ -182,7 +196,7 @@ struct TextBrowserScreen: View {
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
-        }.font(.subheadline).frame(maxWidth: .infinity, minHeight: 48)
+        }.font(LeximoryTypography.prose(15)).frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 14)
             .foregroundStyle(.primary)
     }
@@ -193,12 +207,24 @@ struct TextBrowserScreen: View {
             .contentShape(Circle())
     }
     private func finishEditing() {
+        addressEditor.field?.resignFirstResponder()
         withAnimation(motion) { editingAddress = false }
     }
     private func openAddress() {
         guard let url = TextBrowserModel.address(address) else { return }
         finishEditing()
         browser.load(url)
+    }
+    private var savedPage: BrowserSession? {
+        guard let sessionKey, let data = UserDefaults.standard.data(forKey: "browser.last-page." + sessionKey) else { return nil }
+        return try? JSONDecoder().decode(BrowserSession.self, from: data)
+    }
+    private func rememberPage() {
+        guard bookmarkID == nil, let sessionKey, let url = browser.url else { return }
+        let page = BrowserSession(url: url.absoluteString, offset: browser.web.scrollView.contentOffset.y)
+        if let data = try? JSONEncoder().encode(page) {
+            UserDefaults.standard.set(data, forKey: "browser.last-page." + sessionKey)
+        }
     }
     private func define(_ selection: BrowserSelection) {
         lookup?.cancel(); definition = nil; resolving = true; lastSelection = selection; lookupError = nil
@@ -211,7 +237,15 @@ struct TextBrowserScreen: View {
                 guard !Task.isCancelled, browser.navigationID == navigation else { return }
                 definition = DefinitionPresentation(source: .browser(quote: selection.quote, target: target), definition: nil)
             } catch {
-                if !Task.isCancelled { lookupError = (MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? "请重试。" }
+                guard !Task.isCancelled else { return }
+                let cause = MobileClient.cause(of: error)
+                let failure = cause as? MobileFailure
+                let code = failure?.error.code ?? String((cause as NSError).code)
+                Logger(subsystem: "com.leximory.reader", category: "browser").error("Selection failed: code=\(code, privacy: .public) type=\(String(describing: type(of: cause)), privacy: .public)")
+                if let failure { lookupError = failure.error.message }
+                else if let network = cause as? URLError {
+                    lookupError = network.code == .badServerResponse ? "网页查词服务返回了无效响应。请稍后重试。" : "无法连接查词服务，请检查网络后重试。"
+                } else { lookupError = "网页查词未能完成，请稍后重试。" }
             }
         }
     }
@@ -219,14 +253,16 @@ struct TextBrowserScreen: View {
 
 private struct BrowserAddressField: UIViewRepresentable {
     @Binding var address: String
+    let editor: BrowserAddressEditor
     let submit: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> BrowserURLTextField {
         let field = BrowserURLTextField()
+        editor.field = field
         field.delegate = context.coordinator
         field.placeholder = "输入网址"
-        field.font = .preferredFont(forTextStyle: .subheadline)
+        field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.proseUI(15))
         field.adjustsFontForContentSizeCategory = true
         field.keyboardType = .URL
         field.autocapitalizationType = .none
@@ -270,4 +306,13 @@ private final class BrowserURLTextField: UITextField {
             self.becomeFirstResponder()
         }
     }
+}
+
+private final class BrowserAddressEditor {
+    weak var field: UITextField?
+}
+
+struct BrowserSession: Codable {
+    let url: String
+    let offset: CGFloat
 }

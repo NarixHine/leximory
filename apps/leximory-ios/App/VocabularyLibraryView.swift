@@ -24,7 +24,7 @@ struct VocabularyLibraryView: View {
                             Spacer(minLength: 0)
                             Button("文章", systemImage: "doc.text", action: closeCorpus)
                                 .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
-                                .frame(minWidth: 44, minHeight: 44).tint(LeximoryPalette.sage)
+                                .frame(minWidth: 44, minHeight: 44).tint(.primary)
                                 .accessibilityIdentifier("corpus-show-texts")
                         }
                         timeline(columns: contentWidth < 600 ? 2 : 3)
@@ -33,13 +33,13 @@ struct VocabularyLibraryView: View {
             }.navigationTitle("语料本").navigationBarTitleDisplayMode(.inline)
                 .task { await load(reset: true) }
                 .refreshable { await load(reset: true) }
-                .tint(LeximoryPalette.sage)
+                .tint(.primary)
                 .accessibilityIdentifier("corpus-\(library.id.rawValue)")
     }
     private func timeline(columns: Int) -> some View {
         LazyVStack(alignment: .leading, spacing: 22) {
             ForEach(days, id: \.self) { day in
-                if !day.isEmpty { Text(dateLabel(day)).font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.illustration) }
+                if !day.isEmpty { Text(dateLabel(day)).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
                 wordGrid(words.filter { dateKey($0) == day }, columns: columns)
             }
             if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇……").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity) }
@@ -163,7 +163,7 @@ private struct CorpusWordTray: View {
     }
     private func section(_ label: String, _ content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.illustration)
+            Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: 17, language: library.language)
         }
     }
