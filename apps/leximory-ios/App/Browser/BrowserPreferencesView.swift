@@ -12,6 +12,8 @@ struct BrowserPreferencesView: View {
     @State private var rules: [BrowserRule] = []
     @State private var choice: String?
     @State private var remember = true
+    @State private var initialChoice: String?
+    @State private var initialRemember = true
     @State private var busy = true
     @State private var loaded = false
     @State private var error: String?
@@ -66,16 +68,23 @@ struct BrowserPreferencesView: View {
             rules = try await allRules
             choice = selectedLibraryID ?? rules.first(where: { $0.domain == domain })?.libraryId
             if !libraries.contains(where: { $0.id == choice }) { choice = nil }
+            remember = choice == nil || rules.first(where: { $0.domain == domain })?.libraryId == choice
+            initialChoice = choice
+            initialRemember = remember
             loaded = true
         } catch { self.error = "设置未能加载，请重新打开。" }
     }
     private func save() async {
+        guard choice != initialChoice || remember != initialRemember else { dismiss(); return }
         busy = true; error = nil
         defer { busy = false }
         do {
             if !bookmarkMode {
-                if remember || choice == nil { try await client.setBrowserRule(domain: domain, libraryID: choice) }
-                selected(choice)
+                let savedLibraryID = remember ? choice : nil
+                if savedLibraryID != rules.first(where: { $0.domain == domain })?.libraryId {
+                    try await client.setBrowserRule(domain: domain, libraryID: savedLibraryID)
+                }
+                if choice != initialChoice { selected(choice) }
             }
             dismiss()
         } catch { self.error = "设置未能保存，请重试。" }
@@ -86,7 +95,11 @@ struct BrowserPreferencesView: View {
         do {
             try await client.setBrowserRule(domain: rule.domain, libraryID: nil)
             rules.removeAll { $0.domain == rule.domain }
-            if rule.domain == domain { choice = nil; selected(nil) }
+            if rule.domain == domain {
+                choice = nil; remember = true
+                initialChoice = nil; initialRemember = true
+                selected(nil)
+            }
         } catch { self.error = "设置未能删除，请重试。" }
     }
 }

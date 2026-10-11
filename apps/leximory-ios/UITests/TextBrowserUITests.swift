@@ -2,6 +2,39 @@ import XCTest
 import Network
 
 final class TextBrowserUITests: XCTestCase {
+    @MainActor func testAddressBarSettingsDoNotReopenDismissedDefinition() throws {
+        let page = try BrowserPageServer()
+        defer { page.listener.cancel() }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
+        app.launch()
+        let browse = app.buttons["浏览"].firstMatch
+        XCTAssertTrue(browse.waitForExistence(timeout: 10)); browse.tap()
+        app.buttons["browser-address"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
+        let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 15)); heading.press(forDuration: 1)
+        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch
+        XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
+        let definition = app.textViews["annotation-markdown"].firstMatch
+        XCTAssertTrue(definition.waitForExistence(timeout: 10))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.6)).tap()
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: definition)
+        waitForExpectations(timeout: 5)
+        app.buttons["网页选项"].tap()
+        app.buttons["词汇收藏设置"].tap()
+        let done = app.buttons["完成"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10))
+        let enabled = NSPredicate(format: "enabled == true")
+        expectation(for: enabled, evaluatedWith: done); waitForExpectations(timeout: 10)
+        done.tap()
+        XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
+        XCTAssertFalse(definition.exists)
+        XCTAssertFalse(app.staticTexts["正在理解语境"].exists)
+    }
+
     @MainActor func testBrowserNavigationAddressEditingAndHistory() throws {
         let page = try BrowserPageServer()
         defer { page.listener.cancel() }

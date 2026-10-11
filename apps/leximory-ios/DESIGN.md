@@ -52,6 +52,8 @@ Browser navigation uses a Safari-compatible identity and mobile content on iPhon
 
 网页选项 offers 清除浏览数据 with destructive confirmation. Clear all browser history, remembered pages, cookies, and website storage, leaving an empty browser. Preserve Leximory account data, bookmarks, vocabulary, and website library choices.
 
+词汇收藏设置 opened from 网页选项 updates only future lookups; it never starts annotation. Opened from a definition tray, a changed library may refresh that visible definition. 完成 with unchanged settings dismisses just like 取消, without saving or requesting annotation.
+
 The browser fills its safe areas with the webpage’s theme color, falling back to WebKit’s page background. Track color changes without shifting the webpage or controls.
 
 Phones use native 文库、浏览 and 账户 tabs. Regular-width windows use a library sidebar with the segmented picker inside it and the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.

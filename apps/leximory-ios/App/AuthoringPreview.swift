@@ -50,6 +50,9 @@ private actor AuthoringPreviewTransport: ClientTransport {
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         let output: String
         switch operationID {
+        case "libraries":
+            output = #"{"items":[{"id":"library","name":"测试文库","language":"en","owned":true,"archived":false,"shadow":false}],"nextCursor":null}"#
+        case "browserRules": output = #"{"items":[]}"#
         case "browserSelection":
             if ProcessInfo.processInfo.arguments.contains("--slow-browser-lookup") { try await Task.sleep(for: .seconds(2)) }
             output = #"{"selectionId":"selection","language":"en","libraryId":"library","libraryName":"测试文库","shadow":false}"#

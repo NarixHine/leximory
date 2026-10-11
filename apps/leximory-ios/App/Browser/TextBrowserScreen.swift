@@ -20,6 +20,7 @@ struct TextBrowserScreen: View {
     @State private var address = ""
     @State private var editingAddress = false
     @State private var settings = false
+    @State private var settingsFromDefinition = false
     @State private var savingBookmark = false
     @State private var definition: DefinitionPresentation?
     @State private var selectedLibraryID: String?
@@ -77,7 +78,13 @@ struct TextBrowserScreen: View {
             }
             if let definition {
                 DefinitionTopTray(item: definition, client: client, language: "English",
-                    configureBrowser: bookmarkID == nil ? { settings = true } : nil) { self.definition = nil }
+                    configureBrowser: bookmarkID == nil ? {
+                        settingsFromDefinition = true
+                        settings = true
+                    } : nil) {
+                        self.definition = nil
+                        lastSelection = nil
+                    }
                     .id(definition.id)
             }
         }
@@ -88,7 +95,7 @@ struct TextBrowserScreen: View {
             BrowserPreferencesView(client: client, domain: browser.domain, bookmarkMode: bookmarkID != nil,
                 selectedLibraryID: selectedLibraryID) { libraryID in
                     selectedLibraryID = libraryID; selectedDomain = browser.domain
-                    if let lastSelection { define(lastSelection) }
+                    if settingsFromDefinition, definition != nil, let lastSelection { define(lastSelection) }
                 }
         }
         .sheet(isPresented: $savingBookmark) {
@@ -173,7 +180,10 @@ struct TextBrowserScreen: View {
                         }
                         if bookmarkID == nil {
                             Section {
-                                Button("词汇收藏设置", systemImage: "book.closed") { settings = true }
+                                Button("词汇收藏设置", systemImage: "book.closed") {
+                                    settingsFromDefinition = false
+                                    settings = true
+                                }
                                     .disabled(browser.url == nil)
                             }
                         }
