@@ -151,7 +151,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
         guard let reader, let highlight = activeHighlight else { return UIMenu(children: []) }
-        let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: reader.readOnly || !reader.canBookmark || highlight.bookmarkID < 0 ? [.disabled] : []) { [weak self] _ in
+        let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: reader.readOnly || !reader.canBookmark || highlight.bookmarkID < 0 ? [.destructive, .disabled] : [.destructive]) { [weak self] _ in
             reader.bookmarkRemovalRequest = highlight.bookmarkID
             self?.dismissSelection()
         }
