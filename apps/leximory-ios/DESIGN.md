@@ -40,7 +40,7 @@ Covers retain the web's newspaper rules, artwork and identity-derived paper wash
 
 Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. English interface labels use Raleway; Chinese labels use the bundled serif cascade, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
 
-Interface hierarchy uses regular weight and primary/secondary label colors. Empty-state headings, section labels, and library language labels use muted color rather than bold. Preserve authored bold prose and dictionary headwords.
+Interface hierarchy uses regular weight and primary/secondary label colors. Headings, including empty-state headings such as 选择文库, use primary color. Supporting descriptions, metadata, and library language labels use secondary color. Preserve authored bold prose and dictionary headwords.
 
 `LeximoryLayout` owns measurements: 20 pt page inset, 640 pt article/library measure and 880 pt gallery measure. Library cards use 46 pt outer and 32 pt inner corners. Phones use compact text rows with newspaper thumbnails. Wide galleries show a featured cover and up to five supporting entries in landscape or three in portrait. Archived libraries are compact chips.
 

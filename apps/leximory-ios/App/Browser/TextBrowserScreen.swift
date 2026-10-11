@@ -186,7 +186,13 @@ struct TextBrowserScreen: View {
                             }
                         }
                         Section {
-                            Button("清除浏览数据", systemImage: "trash", role: .destructive) { confirmingClear = true }
+                            Button(role: .destructive) { confirmingClear = true } label: {
+                                Label {
+                                    Text("清除浏览数据")
+                                } icon: {
+                                    Image(uiImage: UIImage(systemName: "trash")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) ?? UIImage())
+                                }
+                            }
                         }
                     } label: { chromeIcon("ellipsis") }
                         .buttonStyle(.plain).accessibilityLabel("网页选项")

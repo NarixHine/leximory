@@ -17,13 +17,13 @@ struct LeximoryUnavailableView<Actions: View>: View {
         ContentUnavailableView {
             Label {
                 Text(title).font(LeximoryTypography.interface(24, style: .title2))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             } icon: {
                 Image(systemName: systemImage)
             }
         } description: {
             if let message {
-                Text(message).font(LeximoryTypography.interface(17))
+                Text(message).font(LeximoryTypography.interface(17)).foregroundStyle(.secondary)
             }
         } actions: {
             actions.font(LeximoryTypography.interface(17))

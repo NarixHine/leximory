@@ -125,7 +125,7 @@ struct SignInView: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("继续语言学习之旅")
-                        .font(LeximoryTypography.interface(24, style: .title2)).foregroundStyle(.secondary).tracking(-0.3).lineSpacing(3)
+                        .font(LeximoryTypography.interface(24, style: .title2)).foregroundStyle(.primary).tracking(-0.3).lineSpacing(3)
                 }
                 if let notice { Text(notice).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary) }
                 VStack(spacing: 16) {
