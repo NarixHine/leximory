@@ -225,8 +225,8 @@ struct DefinitionView: View {
                         } else {
                             if !waiting {
                                 HStack(alignment: .center, spacing: 10) {
-                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language))
-                                        .bold().foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
+                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
+                                        .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
                                         .accessibilityAddTraits(.isHeader)
                                 }
                             }
@@ -314,17 +314,28 @@ struct DefinitionView: View {
                 } label: {
                     ZStack {
                         if case .saving = model.saveState {
-                            ProgressView().tint(LeximoryPalette.paper).transition(.opacity)
+                            ProgressView().tint(LeximoryPalette.paper).transition(primarySymbolTransition)
                         } else {
                             Image(systemName: saveSymbol).font(.system(size: 20))
-                                .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+                                .id(saveSymbol).transition(primarySymbolTransition)
                         }
-                    }.frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
-                        .background(LeximoryPalette.ink, in: Circle())
-                }.buttonStyle(.plain).accessibilityLabel(saveLabel)
+                    }.frame(width: 24, height: 24).clipped().frame(width: 48, height: 48)
+                }.buttonStyle(DefinitionPrimaryButtonStyle(reduceMotion: reduceMotion)).accessibilityLabel(saveLabel)
                     .disabled(saveLocked || sync?.online == false)
-                    .animation(actionMotion, value: model.saveState)
+                    .animation(model.saveState == .saving ? nil : actionMotion, value: model.saveState)
                     .animation(actionMotion, value: saveAcknowledged)
+                    .keyframeAnimator(initialValue: DefinitionSuccessMotion(), trigger: model.saveState == .saved && !reduceMotion) { content, motion in
+                        content.scaleEffect(motion.scale).rotationEffect(.degrees(motion.rotation))
+                    } keyframes: { _ in
+                        KeyframeTrack(\.scale) {
+                            CubicKeyframe(1.18, duration: 0.18)
+                            CubicKeyframe(1, duration: 0.26)
+                        }
+                        KeyframeTrack(\.rotation) {
+                            CubicKeyframe(-10, duration: 0.12)
+                            CubicKeyframe(0, duration: 0.32)
+                        }
+                    }
 
             }
             if let dictionaryURL {
@@ -336,7 +347,12 @@ struct DefinitionView: View {
         }
     }
     private var actionMotion: Animation? {
-        reduceMotion ? nil : .easeOut(duration: 0.24)
+        reduceMotion ? nil : .timingCurve(0.22, 1, 0.36, 1, duration: 0.24)
+    }
+    private var primarySymbolTransition: AnyTransition {
+        reduceMotion ? .identity : .asymmetric(
+            insertion: .offset(y: 26).combined(with: .scale(scale: 0.85)),
+            removal: .offset(y: -26).combined(with: .scale(scale: 0.85)))
     }
     private var saveSymbol: String {
         switch model.saveState {
@@ -383,13 +399,21 @@ struct DefinitionView: View {
 
 }
 
-func annotationMarkdown(_ content: String, size: CGFloat) -> AttributedString {
-    let bracketed = content.replacingOccurrences(of: #"`([^`]+)`"#, with: "`[$1]`", options: .regularExpression)
-    var result = (try? AttributedString(markdown: bracketed, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(content)
-    for run in result.runs where run.inlinePresentationIntent?.contains(.code) == true {
-        result[run.range].font = Font(LeximoryTypography.face("SourceCodePro-Medium", size: size * 0.85))
+private struct DefinitionSuccessMotion {
+    var scale: CGFloat = 1
+    var rotation: Double = 0
+}
+
+struct DefinitionPrimaryButtonStyle: ButtonStyle {
+    let reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(LeximoryPalette.paper)
+            .background(LeximoryPalette.ink, in: Circle())
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.92 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
-    return result
 }
 
 /// The card moves independently of the reading document; its children own its height.

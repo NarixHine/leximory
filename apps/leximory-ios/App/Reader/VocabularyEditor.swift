@@ -4,6 +4,7 @@ import LeximoryCore
 
 struct VocabularyEditor: View {
     @Environment(\.nativeSync) private var sync
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var model: VocabularyEditModel
     let language: String
     var failure: String? = nil
@@ -25,9 +26,8 @@ struct VocabularyEditor: View {
                         submit()
                     } label: {
                         Image(systemName: "checkmark.circle").font(.system(size: 22))
-                            .frame(width: 48, height: 48).foregroundStyle(LeximoryPalette.paper)
-                            .background(LeximoryPalette.sage, in: Circle())
-                    }.buttonStyle(.plain).disabled(!fields.isValid || sync?.online == false).accessibilityLabel("保存修改")
+                            .frame(width: 48, height: 48)
+                    }.buttonStyle(DefinitionPrimaryButtonStyle(reduceMotion: reduceMotion)).disabled(!fields.isValid || sync?.online == false).accessibilityLabel("保存修改")
                     Button("取消", systemImage: "xmark.circle", action: cancel)
                         .labelStyle(.iconOnly).frame(width: 44, height: 44)
                 }

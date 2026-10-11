@@ -79,23 +79,30 @@ enum LeximoryTypography {
         UIFont(name: name, size: size)!
     }
     static func editorialUI(_ size: CGFloat, language: String? = nil) -> UIFont {
-        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongPro_Regular" : "EBGaramond-Regular"
-        let fallback = UIFontDescriptor(name: language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : "ChillDuanHeiSongPro_Regular", size: size)
+        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongRegular" : "EBGaramond-Regular"
+        let fallback = UIFontDescriptor(name: language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : "ChillDuanHeiSongRegular", size: size)
         return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([.cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), fallback]]), size: size)
     }
-    static func proseUI(_ size: CGFloat, language: String? = nil) -> UIFont {
-        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongPro_Regular" : "LibreBaskerville-Regular"
-        return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([
-            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), UIFontDescriptor(name: "ChillDuanHeiSongPro_Regular", size: size)]
+    static func proseUI(_ size: CGFloat, language: String? = nil, bold: Bool = false) -> UIFont {
+        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? (bold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular") : "LibreBaskerville-Regular"
+        var font = face(name, size: size)
+        if bold, language != "Chinese",
+           let descriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) {
+            font = UIFont(descriptor: descriptor, size: size)
+        }
+        return UIFont(descriptor: font.fontDescriptor.addingAttributes([
+            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), UIFontDescriptor(name: bold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular", size: size)]
         ]), size: size)
     }
-    static func prose(_ size: CGFloat, language: String? = nil) -> Font {
-        Font(UIFontMetrics(forTextStyle: .body).scaledFont(for: proseUI(size, language: language)))
+    static func prose(_ size: CGFloat, language: String? = nil, bold: Bool = false) -> Font {
+        Font(UIFontMetrics(forTextStyle: .body).scaledFont(for: proseUI(size, language: language, bold: bold)))
     }
     static func interfaceUI(_ size: CGFloat, semibold: Bool = false) -> UIFont {
-        let font = editorialUI(size)
-        guard semibold, let descriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) else { return font }
-        return UIFont(descriptor: descriptor, size: size)
+        let latin = face(semibold ? "RalewayRoman-SemiBold" : "RalewayRoman-Regular", size: size)
+        return UIFont(descriptor: latin.fontDescriptor.addingAttributes([
+            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size),
+                           UIFontDescriptor(name: semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular", size: size)]
+        ]), size: size)
     }
     static func interface(_ size: CGFloat, semibold: Bool = false, style: UIFont.TextStyle = .body) -> Font {
         Font(UIFontMetrics(forTextStyle: style).scaledFont(for: interfaceUI(size, semibold: semibold)))

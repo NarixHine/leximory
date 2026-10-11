@@ -487,9 +487,10 @@ private struct NativeEPUBReader: UIViewRepresentable {
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
             let cjk = parent.language == "Chinese" || parent.language == "Japanese"
-            let font = parent.language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : cjk ? "ChillDuanHeiSongPro_Regular" : "LibreBaskerville"
+            let font = parent.language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : cjk ? "ChillDuanHeiSongRegular" : "LibreBaskerville"
             let fontExtension = cjk ? "otf" : "ttf"
             let fontData = Bundle.main.url(forResource: font, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
+            let boldData = parent.language == "Chinese" ? Bundle.main.url(forResource: "ChillDuanHeiSongBold", withExtension: "otf").flatMap { try? Data(contentsOf: $0) } : nil
             let italicData = Bundle.main.url(forResource: "LibreBaskerville-Italic", withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
             let bookmarks = parent.reader.bookmarks.map { ["location": $0.location ?? "", "quote": $0.quote] }
             let theme = theme(web)
@@ -499,7 +500,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             Task { do {
             _ = try await web.callAsyncJavaScript("await window.openBook(bytes, location, fonts, theme, bookmarks)", arguments: [
                 "bytes": parent.data.base64EncodedString(), "location": parent.reader.location ?? "",
-                "fonts": ["regular": "data:font/\(fontExtension);base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/\(fontExtension);base64," + displayData.base64EncodedString()],
+                "fonts": ["regular": "data:font/\(fontExtension);base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/\(fontExtension);base64," + displayData.base64EncodedString(), "bold": boldData.map { "data:font/otf;base64," + $0.base64EncodedString() } ?? ""],
                 "theme": theme, "bookmarks": bookmarks
             ], in: nil, contentWorld: .page)
             } catch { parent.reader.loadFailure = "电子书未能加载，请重试。" } }

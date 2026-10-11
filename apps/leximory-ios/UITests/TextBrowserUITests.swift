@@ -98,7 +98,9 @@ final class TextBrowserUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
         let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
-        XCTAssertTrue(app.staticTexts["安静的"].firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        let definitionText = app.textViews["annotation-markdown"].firstMatch
+        XCTAssertTrue(definitionText.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(definitionText.value as? String, "安静的")
         app.buttons["收藏词汇"].tap()
         XCTAssertTrue(app.buttons["编辑词汇"].waitForExistence(timeout: 5))
         let saved = XCTAttachment(screenshot: app.screenshot()); saved.name = "Saved browser tray"; saved.lifetime = .keepAlways; add(saved)

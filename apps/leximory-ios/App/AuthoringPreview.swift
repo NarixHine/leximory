@@ -55,7 +55,7 @@ private actor AuthoringPreviewTransport: ClientTransport {
             output = #"{"selectionId":"selection","language":"en","libraryId":"library","libraryName":"测试文库","shadow":false}"#
         case "browserVocabulary": output = #"{"id":"word","libraryId":"library"}"#
         case "browserDefinitions":
-            let frames = #"{"kind":"started","requestId":"definition"}"# + "\n" + #"{"kind":"completed","requestId":"definition","definition":{"lemma":"quiet","definition":"安静的","etymology":null,"cognates":null}}"# + "\n"
+            let frames = #"{"kind":"started","requestId":"definition"}"# + "\n" + #"{"kind":"completed","requestId":"definition","definition":{"lemma":"quiet","definition":"**安静的**","etymology":null,"cognates":null}}"# + "\n"
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/x-ndjson"]), HTTPBody(frames))
         case "texts": output = "{\"items\":[\(texts.joined(separator: ","))],\"nextCursor\":null}"
         case "vocabularyList": output = "{\"items\":[\(word),\(river)],\"nextCursor\":null}"

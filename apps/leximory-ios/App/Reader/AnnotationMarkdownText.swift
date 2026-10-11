@@ -8,13 +8,7 @@ struct AnnotationMarkdownText: View {
     @ScaledMetric(relativeTo: .body) private var scale = 1.0
 
     var body: some View {
-        if content.localizedCaseInsensitiveContains("<ruby") {
-            RubyAnnotationText(content: content, size: size * scale, language: language)
-        } else {
-            Text(annotationMarkdown(content, size: size * scale))
-                .font(LeximoryTypography.prose(size, language: language))
-                .lineSpacing(3).textSelection(.enabled)
-        }
+        RubyAnnotationText(content: content, size: size * scale, language: language)
     }
 }
 
@@ -41,24 +35,29 @@ struct AnnotationMarkdownText: View {
         let output = NSMutableAttributedString()
         let baseFont = LeximoryTypography.proseUI(size, language: language)
         for run in parsed.runs {
-            var font = baseFont
-            var traits: UIFontDescriptor.SymbolicTraits = []
             let intent = run.inlinePresentationIntent ?? []
-            if intent.contains(.stronglyEmphasized) { traits.insert(.traitBold) }
-            if intent.contains(.emphasized) { traits.insert(.traitItalic) }
-            if let descriptor = font.fontDescriptor.withSymbolicTraits(traits), !traits.isEmpty {
-                font = UIFont(descriptor: descriptor, size: size)
+            for segment in Self.scriptSegments(String(parsed[run.range].characters)) {
+                let chineseBold = segment.cjk && language != "Japanese" && intent.contains(.stronglyEmphasized)
+                var font = segment.cjk ? LeximoryTypography.proseUI(size, language: language == "Japanese" ? "Japanese" : "Chinese", bold: chineseBold) : baseFont
+                var traits: UIFontDescriptor.SymbolicTraits = []
+                if intent.contains(.stronglyEmphasized) { traits.insert(.traitBold) }
+                if intent.contains(.emphasized) { traits.insert(.traitItalic) }
+                // CJK variants are separate families; keep explicit faces during matching.
+                if !font.fontName.hasPrefix("ChillDuanHeiSong"),
+                   let descriptor = font.fontDescriptor.withSymbolicTraits(traits), !traits.isEmpty {
+                    font = UIFont(descriptor: descriptor, size: size)
+                }
+                if intent.contains(.code) { font = LeximoryTypography.face("SourceCodePro-Medium", size: size * 0.85) }
+                var attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: LeximoryPalette.readingInkUI]
+                if intent.contains(.stronglyEmphasized), !chineseBold, !font.fontDescriptor.symbolicTraits.contains(.traitBold) {
+                    attributes[.strokeWidth] = -2.5
+                }
+                if intent.contains(.emphasized), !font.fontDescriptor.symbolicTraits.contains(.traitItalic) {
+                    attributes[.obliqueness] = 0.15
+                }
+                if let link = run.link { attributes[.link] = link }
+                output.append(NSAttributedString(string: segment.text, attributes: attributes))
             }
-            if intent.contains(.code) { font = LeximoryTypography.face("SourceCodePro-Medium", size: size * 0.85) }
-            var attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: LeximoryPalette.readingInkUI]
-            if intent.contains(.stronglyEmphasized), !font.fontDescriptor.symbolicTraits.contains(.traitBold) {
-                attributes[.strokeWidth] = -2.5
-            }
-            if intent.contains(.emphasized), !font.fontDescriptor.symbolicTraits.contains(.traitItalic) {
-                attributes[.obliqueness] = 0.15
-            }
-            if let link = run.link { attributes[.link] = link }
-            output.append(NSAttributedString(string: String(parsed[run.range].characters), attributes: attributes))
         }
         var rubies: [Ruby] = []
         // Replace in document order so canonical ranges include only baseline text.
@@ -73,6 +72,19 @@ struct AnnotationMarkdownText: View {
         paragraph.lineSpacing = rubies.isEmpty ? 3 : size * 0.65
         output.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: output.length))
         self.attributed = output; self.rubies = rubies
+    }
+
+    private static func scriptSegments(_ text: String) -> [(text: String, cjk: Bool)] {
+        var result: [(text: String, cjk: Bool)] = []
+        for character in text {
+            let cjk = character.unicodeScalars.contains {
+                (0x2E80...0x9FFF).contains($0.value) || (0xF900...0xFAFF).contains($0.value) ||
+                (0xFF00...0xFFEF).contains($0.value) || (0x20000...0x323AF).contains($0.value)
+            }
+            if let last = result.indices.last, result[last].cjk == cjk { result[last].text.append(character) }
+            else { result.append((String(character), cjk)) }
+        }
+        return result
     }
 
     private static func plain(_ text: String) -> String {
@@ -100,7 +112,8 @@ private struct RubyAnnotationText: UIViewRepresentable {
         let layout = AnnotationMarkdownLayout(content: content, size: size, language: language)
         view.rubies = layout.rubies
         view.rubyFont = LeximoryTypography.proseUI(size * 0.48, language: "Japanese")
-        view.textContainerInset = UIEdgeInsets(top: view.rubyFont.lineHeight, left: 0, bottom: 0, right: 0)
+        view.textContainerInset = UIEdgeInsets(top: layout.rubies.isEmpty ? 0 : view.rubyFont.lineHeight, left: 0, bottom: 0, right: 0)
+        view.accessibilityIdentifier = layout.rubies.isEmpty ? "annotation-markdown" : "annotation-markdown-ruby"
         if !view.attributedText.isEqual(to: layout.attributed) { view.attributedText = layout.attributed }
         view.setNeedsLayout()
     }

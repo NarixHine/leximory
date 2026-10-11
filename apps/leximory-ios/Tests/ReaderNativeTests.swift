@@ -387,6 +387,24 @@ import LeximoryCore
         #expect(archived.isCompact)
         #expect(shadow.isCompact)
     }
+    @Test func boldChineseDefinitionPreservesTheBundledSerifInEnglishLibraries() throws {
+        let layout = AnnotationMarkdownLayout(content: "**河岸**，bank。", size: 17, language: "English")
+        for index in [0, 1] {
+            let font = try #require(layout.attributed.attribute(.font, at: index, effectiveRange: nil) as? UIFont)
+            #expect(font.fontName == "ChillDuanHeiSongBold")
+            #expect(layout.attributed.attribute(.strokeWidth, at: index, effectiveRange: nil) == nil)
+        }
+        let chinese = layout.attributed.attributedSubstring(from: NSRange(location: 0, length: 2))
+        let line = CTLineCreateWithAttributedString(chinese)
+        for run in CTLineGetGlyphRuns(line) as! [CTRun] {
+            let attributes = CTRunGetAttributes(run) as NSDictionary
+            let value = try #require(attributes[kCTFontAttributeName])
+            let font = value as! CTFont
+            #expect(CTFontCopyPostScriptName(font) as String == "ChillDuanHeiSongBold")
+        }
+        #expect(LeximoryTypography.interfaceUI(17).fontName == "RalewayRoman-Regular")
+        #expect(LeximoryTypography.interfaceUI(17, semibold: true).fontName == "RalewayRoman-SemiBold")
+    }
     @Test func definitionRubyPreservesBaselineMarkdownAndCanonicalText() throws {
         let layout = AnnotationMarkdownLayout(content: "**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体。", size: 17, language: "Japanese")
         #expect(layout.attributed.string == "［名］（かいしょ／楷书） 漢字の書体。")
@@ -469,8 +487,10 @@ import LeximoryCore
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)
         #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongProJP_Regular", size: 29) != nil)
-        #expect(UIFont(name: "ChillDuanHeiSongPro_Regular", size: 18) != nil)
-        #expect(LeximoryTypography.proseUI(18, language: "Chinese").fontName == "ChillDuanHeiSongPro_Regular")
+        #expect(UIFont(name: "ChillDuanHeiSongRegular", size: 18) != nil)
+        #expect(UIFont(name: "ChillDuanHeiSongBold", size: 18) != nil)
+        #expect(LeximoryTypography.proseUI(18, language: "Chinese", bold: true).fontName == "ChillDuanHeiSongBold")
+        #expect(LeximoryTypography.proseUI(18, language: "Chinese").fontName == "ChillDuanHeiSongRegular")
         #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
     }
     @Test func attributedTextKeepsCanonicalOffsetsAndEmbeddedDefinitions() throws {

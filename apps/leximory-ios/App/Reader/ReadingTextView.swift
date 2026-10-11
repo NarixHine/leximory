@@ -259,7 +259,8 @@ struct ReadingTextView: UIViewRepresentable {
                 switch span.style {
                 case .strong:
                     let descriptor = font.fontDescriptor.withSymbolicTraits(.traitBold) ?? font.fontDescriptor
-                    output.addAttribute(.font, value: UIFont(descriptor: descriptor, size: 0), range: target)
+                    let bold = language == "Chinese" ? LeximoryTypography.proseUI(font.pointSize, language: language, bold: true) : UIFont(descriptor: descriptor, size: 0)
+                    output.addAttribute(.font, value: bold, range: target)
                 case .emphasis:
                     let italic = language == "Japanese" || language == "Chinese" ? UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(.traitItalic) ?? font.fontDescriptor, size: 0) : LeximoryTypography.face("LibreBaskerville-Italic", size: font.pointSize)
                     output.addAttribute(.font, value: italic, range: target)

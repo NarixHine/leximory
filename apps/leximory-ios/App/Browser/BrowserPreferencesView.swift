@@ -21,12 +21,12 @@ struct BrowserPreferencesView: View {
                 if !bookmarkMode {
                     Section {
                         Picker("收藏至", selection: $choice) {
-                            Text("自动").tag(String?.none)
+                            Text("相应语言的词汇仓库").tag(String?.none)
                             ForEach(libraries) { library in
                                 Text(library.name + " · " + library.preview.localizedLanguage).tag(Optional(library.id))
                             }
                         }
-                        Toggle("以后此网站都存这里", isOn: $remember).disabled(choice == nil)
+                        Toggle("此网站总是存于这里", isOn: $remember).disabled(choice == nil)
                     } header: { Text(domain) }
                 }
                 if !rules.isEmpty {

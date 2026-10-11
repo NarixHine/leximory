@@ -1,4 +1,5 @@
-ChillDuanHeiSongPro_Regular.otf
+ChillDuanHeiSongRegular.otf
+ChillDuanHeiSongBold.otf
 © 2023 ChillType, with Reserved Font Name 'DuanHei'.
 © 2017-2022 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
 

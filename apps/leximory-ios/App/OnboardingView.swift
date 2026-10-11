@@ -125,7 +125,7 @@ private struct HeroIntroduction: View {
     }
     var body: some View {
         Text("\(wordmark) 是一个搭载 \(ai) 的语言学习平台，旨在通过整合\(feature("文本泛读"))、\(feature("生词释义"))和\(feature("词汇复习"))以最大化语言习得效率。")
-            .font(.custom("ChillDuanHeiSongPro_Regular", fixedSize: bodySize))
+            .font(.custom("ChillDuanHeiSongRegular", fixedSize: bodySize))
             .foregroundStyle(LeximoryPalette.muted)
             .tracking(-0.35 * bodySize / 17)
             .lineSpacing(6 * bodySize / 17)

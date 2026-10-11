@@ -14,14 +14,14 @@ struct LeximoryApp: App {
             }
             preferences.set(true, forKey: "ebook.typography.compact.v1")
         }
-        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.editorialUI(17, language: "Chinese")]
+        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.interfaceUI(17)]
         UINavigationBar.appearance().titleTextAttributes = attributes
-        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(16, language: "Chinese")], for: .normal)
+        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(16)], for: .normal)
         for state in [UIControl.State.normal, .selected] {
-            UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(15, language: "Chinese")], for: state)
+            UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(15)], for: state)
         }
         for state in [UIControl.State.normal, .selected] {
-            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.editorialUI(12, language: "Chinese")], for: state)
+            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(12)], for: state)
         }
     }
     @State private var playback = PlaybackController()
@@ -29,7 +29,6 @@ struct LeximoryApp: App {
         WindowGroup {
             AppRootView(fixturePlayback: playback)
                 .font(LeximoryTypography.interface(17))
-                .fontDesign(.serif)
                 .preferredColorScheme(previewColorScheme)
         }
     }

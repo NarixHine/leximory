@@ -115,7 +115,7 @@ private struct CorpusWordTray: View {
                             editing = false
                         }, cancel: { editing = false })
                     } else {
-                        Text(word.fields.lemma).font(LeximoryTypography.prose(24, language: library.language)).bold()
+                        Text(word.fields.lemma).font(LeximoryTypography.prose(24, language: library.language, bold: true))
                         section("释义", word.fields.definition)
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }

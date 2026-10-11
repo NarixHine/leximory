@@ -28,7 +28,7 @@ struct LibraryGallery: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(spacing: 6) {
                             Image(systemName: "books.vertical").accessibilityHidden(true)
-                            Text("MY LIBRARIES").editorialFont(12, relativeTo: .caption, language: "English").tracking(1.2)
+                            Text("MY LIBRARIES").font(LeximoryTypography.interface(12, style: .caption1)).tracking(1.2)
                         }.foregroundStyle(.secondary)
                         Text("我的文库")
                             .editorialFont(30, relativeTo: .largeTitle, language: "Chinese")

@@ -130,7 +130,7 @@ struct TextBrowserScreen: View {
                     .glassEffectID("address", in: chrome)
                 if editingAddress {
                     Button("取消") { finishEditing() }
-                        .font(LeximoryTypography.prose(15)).frame(minWidth: 44, minHeight: 48)
+                        .font(LeximoryTypography.interface(15)).frame(minWidth: 44, minHeight: 48)
                         .padding(.horizontal, 8).buttonStyle(.plain)
                         .glassEffect(.regular.interactive(), in: .capsule)
                         .glassEffectID("options", in: chrome)
@@ -184,7 +184,7 @@ struct TextBrowserScreen: View {
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
-        }.font(LeximoryTypography.prose(15)).frame(maxWidth: .infinity, minHeight: 48)
+        }.font(LeximoryTypography.interface(15)).frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 14)
             .foregroundStyle(.primary)
     }
@@ -233,7 +233,7 @@ private struct BrowserAddressField: UIViewRepresentable {
         editor.field = field
         field.delegate = context.coordinator
         field.placeholder = "输入网址"
-        field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.proseUI(15))
+        field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.interfaceUI(15))
         field.adjustsFontForContentSizeCategory = true
         field.keyboardType = .URL
         field.autocapitalizationType = .none

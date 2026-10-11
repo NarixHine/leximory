@@ -28,17 +28,17 @@ Covers retain the web's newspaper rules, artwork and identity-derived paper wash
 
 | Role | Face | Default |
 | --- | --- | --- |
-| Library eyebrow | EB Garamond | 12 pt, 1.2 tracking |
+| Library eyebrow | Raleway | 12 pt, 1.2 tracking |
 | 我的文库 | Bundled Chinese serif | 30 pt |
 | Library/text titles | EB Garamond with CJK cascade | 20–36 pt by role |
 | English/French prose | Libre Baskerville | 18 pt phone, 20 pt wide |
-| Chinese prose | ChillDuanHeiSongPro | Bundled Regular OTF |
+| Chinese prose | ChillDuanHeiSong | Bundled Regular and Bold OTF; choose Bold explicitly |
 | Japanese prose | ChillDuanHeiSongProJP | Bundled Regular OTF, with ruby |
-| Interface text | EB Garamond with serif CJK cascade | 12–17 pt |
+| Interface text | Raleway with serif CJK cascade | 12–17 pt |
 | Chinese navigation/topics | Bundled Chinese serif | 12–14 pt topics |
 | IPA/code | Source Code Pro | 85% of prose |
 
-Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. App text uses serif typography, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
+Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. English interface labels use Raleway; Chinese labels use the bundled serif cascade, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
 
 `LeximoryLayout` owns measurements: 20 pt page inset, 640 pt article/library measure and 880 pt gallery measure. Library cards use 46 pt outer and 32 pt inner corners. Phones use compact text rows with newspaper thumbnails. Wide galleries show a featured cover and up to five supporting entries in landscape or three in portrait. Archived libraries are compact chips.
 
@@ -64,7 +64,7 @@ Dynamic definitions overlay the reader in a top-anchored card. Content determine
 
 Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
 
-Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing; Reduce Motion uses a crossfade. Browser destinations align with the prose, with a trailing chevron and no explanatory prefix. Omit implementation explanations and empty website-setting sections.
+Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing. Keep the ink circle and paper icon fully colored even when disabled; success has a short scale-and-turn flourish and symbols slide without fading. Reduce Motion changes symbols immediately. Browser destinations align with the prose, with a trailing chevron and no explanatory prefix. Omit implementation explanations and empty website-setting sections.
 
 Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Seek on scrub release.
 

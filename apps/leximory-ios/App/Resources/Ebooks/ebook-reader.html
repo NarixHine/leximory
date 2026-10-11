@@ -237,9 +237,11 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       }, () => { reflowing = false; })));
     };
     rendition.themes.default({'@font-face':[
-      {'font-family':'LeximoryProse','font-weight':'100 900','src':`url('${fonts.regular}')`},
+      {'font-family':'LeximoryProse','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.regular}')`},
+      ...(fonts.bold ? [{'font-family':'LeximoryProse','font-weight':'600 900','src':`url('${fonts.bold}')`}] : []),
       {'font-family':'LeximoryProse','font-style':'italic','font-weight':'100 900','src':`url('${fonts.italic}')`},
-      {'font-family':'LeximoryDisplay','font-weight':'100 900','src':`url('${fonts.display}')`}
+      {'font-family':'LeximoryDisplay','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.display}')`},
+      ...(fonts.bold ? [{'font-family':'LeximoryDisplay','font-weight':'600 900','src':`url('${fonts.bold}')`}] : [])
     ]});
     const flatten = (items, depth=0) => items.flatMap(item => [{title:item.label.trim(),href:item.href,depth},...flatten(item.subitems||[],depth+1)]);
     const navigation = await book.loaded.navigation;
