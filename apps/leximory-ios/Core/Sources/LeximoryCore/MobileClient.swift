@@ -314,6 +314,10 @@ public struct MobileClient: Sendable {
         _ = try? await ebook(textID: textID)
         return bookmark
     }
+    public func removeEbookBookmark(textID: String, bookmarkID: Int) async throws {
+        _ = try await client.removeEbookBookmark(path: .init(textId: textID), body: .json(.init(bookmarkId: bookmarkID))).ok
+        await localStore?.removeEbookBookmark(textID: textID, bookmarkID: bookmarkID)
+    }
     public func ebookDefinitions(textID: String, quote: String, context: String, offset: Int) -> AsyncThrowingStream<DefinitionEvent, Error> {
         definitionStream {
             try await client.ebookDefinitions(path: .init(textId: textID), body: .json(.init(quote: quote, context: context, offset: offset))).ok.body.application_x_hyphen_ndjson

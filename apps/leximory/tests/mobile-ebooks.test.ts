@@ -24,7 +24,7 @@ test('ebook descriptor signs only after authorization and returns user-private w
         asset: async id => { calls.push(id); return { url: 'https://example.com/book.epub', format: 'epub' } },
         location: async (id, uid) => { assert.equal(id, 'book'); assert.equal(uid, 'reader'); return 'epubcfi(/6/2!/4/2)' },
         bookmarks: async (_id, uid) => { assert.equal(uid, 'reader'); return [{ id: 1, quote: 'bank', chapter: null, location: null, createdAt: null }] },
-        savePosition: async () => { throw Error('unexpected write') }, saveBookmark: async () => { throw Error('unexpected write') },
+        savePosition: async () => { throw Error('unexpected write') }, saveBookmark: async () => { throw Error('unexpected write') }, removeBookmark: async () => { throw Error('unexpected write') },
     }
     const denied = createEbookHandler({ verify, catalog: { ...catalog, library: async () => null }, ebooks })
     assert.equal((await denied(request('ebook'))).status, 404); assert.deepEqual(calls, [])
@@ -40,6 +40,7 @@ test('ebook position and bookmark writes validate data and derive their owner', 
     const ebooks: EbookStore = {
         asset: async () => null, location: async () => null, bookmarks: async () => [],
         savePosition: async (...input) => { writes.push(input) },
+        removeBookmark: async input => { writes.push(input) },
         saveBookmark: async input => { writes.push(input); return { id: 1, quote: input.quote, chapter: input.chapter, location: input.location, createdAt: null } },
     }
     const handler = createEbookHandler({ verify, catalog, ebooks })
@@ -48,6 +49,13 @@ test('ebook position and bookmark writes validate data and derive their owner', 
     assert.equal((await handler(request('ebook-bookmarks', { quote: 'bank', chapter: null, location: '3' }))).status, 200)
     assert.deepEqual(writes[0], ['book', 'reader', '3'])
     assert.deepEqual(writes[1], { textId: 'book', userId: 'reader', quote: 'bank', chapter: null, location: '3' })
+    assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: 1, userId: 'other' }))).status, 400)
+    assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: -1 }))).status, 400)
+    const denied = createEbookHandler({ verify, catalog: { ...catalog, library: async () => null }, ebooks })
+    assert.equal((await denied(request('ebook-bookmark-remove', { bookmarkId: 1 }))).status, 404)
+    assert.equal(writes.length, 2)
+    assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: 1 }))).status, 200)
+    assert.deepEqual(writes[2], { textId: 'book', userId: 'reader', bookmarkId: 1 })
 })
 test('ebook lookup applies quota and context validation and saves only its completed receipt', async () => {
     const receipts = new Map<string, Receipt>(); let charged = 0; let saved = 0

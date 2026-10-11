@@ -26,6 +26,19 @@ struct EbookChapter: Identifiable {
     var canBookmark = false
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
+    var bookmarkErrorMessage = "标记未能保存，请重试。"
+    var bookmarkRemovalRequest: Int?
+    private var pendingBookmarkRemovals: [Int: EbookBookmark] = [:]
+    func beginBookmarkRemoval(_ id: Int) -> EbookBookmark? {
+        guard let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
+        let bookmark = bookmarks.remove(at: index)
+        pendingBookmarkRemovals[id] = bookmark
+        return bookmark
+    }
+    func finishBookmarkRemoval(_ id: Int, succeeded: Bool) {
+        guard let bookmark = pendingBookmarkRemovals.removeValue(forKey: id) else { return }
+        if !succeeded { bookmarks.append(bookmark); bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID() }
+    }
     var pageBounds: CGRect?
     var readOnly = false
     var rightToLeft = false
@@ -45,7 +58,7 @@ struct EbookChapter: Identifiable {
     func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
         guard let index = bookmarks.firstIndex(where: { $0.id == pending.id }) else { return }
         if let saved { bookmarks[index] = saved }
-        else { bookmarks.remove(at: index); bookmarkNotice = UUID() }
+        else { bookmarks.remove(at: index); bookmarkErrorMessage = "标记未能保存，请重试。"; bookmarkNotice = UUID() }
     }
     func gutterSide(at point: CGPoint) -> Bool? {
         guard let pageBounds, point.y >= pageBounds.minY, point.y <= pageBounds.maxY else { return nil }
@@ -76,7 +89,7 @@ struct EbookScreen: View {
     @State private var loadError: String?
     @State private var tray: EbookTray?
     @State private var definition: DefinitionPresentation?
-    @State private var positionTask: Task<Void, Never>?
+    @State private var positionSaver: EbookPositionSaver?
     @State private var scrubPosition: Double?
     @AppStorage("ebook.appearance") private var appearance = EbookAppearance.paper
     @Environment(\.colorScheme) private var colorScheme
@@ -130,7 +143,7 @@ struct EbookScreen: View {
         }
         .overlay(alignment: .top) {
             if reader.bookmarkNotice != nil {
-                Text("标记未能保存，请重试。")
+                Text(reader.bookmarkErrorMessage)
                     .font(.callout).padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.regularMaterial, in: Capsule())
                     .padding(.top, 60).padding(.horizontal, 20)
@@ -141,7 +154,7 @@ struct EbookScreen: View {
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
         .task(id: reader.bookmarkNotice) {
             guard reader.bookmarkNotice != nil else { return }
-            UIAccessibility.post(notification: .announcement, argument: "标记未能保存，请重试。")
+            UIAccessibility.post(notification: .announcement, argument: reader.bookmarkErrorMessage)
             do { try await Task.sleep(for: .seconds(4)); reader.bookmarkNotice = nil } catch {}
         }
         .accessibilityAction(named: reader.chromeVisible ? "隐藏阅读工具" : "显示阅读工具") { reader.chromeVisible.toggle() }
@@ -151,25 +164,30 @@ struct EbookScreen: View {
         }
         .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
         .onChange(of: reader.backRequest) { _, _ in dismiss() }
-        .onDisappear { positionTask?.cancel() }
+        .onDisappear { positionSaver?.flush() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
             if action.kind == .define {
                 definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil)
             } else { Task { await saveBookmark(action.selection) } }
         }
+        .onChange(of: reader.bookmarkRemovalRequest) { _, id in
+            reader.bookmarkRemovalRequest = nil
+            guard let id, !reader.readOnly, let bookmark = reader.beginBookmarkRemoval(id) else { return }
+            Task {
+                do {
+                    if let client { try await client.removeEbookBookmark(textID: article.id.rawValue, bookmarkID: bookmark.id) }
+                    else if !ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures") { throw URLError(.unsupportedURL) }
+                    reader.finishBookmarkRemoval(id, succeeded: true)
+                } catch { reader.finishBookmarkRemoval(id, succeeded: false) }
+            }
+        }
         .task(id: article.id) { await load() }
         .onChange(of: reader.loadFailure) { _, failure in if let failure { loading = false; loadError = failure } }
         .onChange(of: reader.ready) { _, ready in if ready { loading = false } }
         .onChange(of: reader.location) { previous, location in
-            guard !reader.readOnly, reader.ready, previous != location, let location, let client else { return }
-            positionTask?.cancel()
-            positionTask = Task {
-                do {
-                    try await Task.sleep(for: .milliseconds(750))
-                    try await client.saveEbookPosition(textID: article.id.rawValue, location: location)
-                } catch { /* Reading-position sync never interrupts reading. */ }
-            }
+            guard !reader.readOnly, reader.ready, previous != location, let location else { return }
+            positionSaver?.schedule(location)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ebook-reader")
@@ -271,16 +289,22 @@ struct EbookScreen: View {
     }
     private var runningTitle: some View {
         Text(article.title).editorialFont(18, language: language)
-            .foregroundStyle(LeximoryPalette.muted).lineLimit(1)
+            .foregroundStyle(readerLabelColor).lineLimit(1)
             .accessibilityIdentifier("ebook-running-title")
     }
     private var pageLabel: some View {
         Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapterPages > 0 ? "\(reader.chapterPage) / \(reader.chapterPages)" : "\(reader.chapterPage)")
-            .font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
+            .font(LeximoryTypography.interface(15)).foregroundStyle(readerLabelColor)
             .lineLimit(1).padding(.top, 8).padding(.bottom, 0).opacity(reader.ready ? 1 : 0)
             .accessibilityIdentifier("ebook-page-position")
             .accessibilityLabel("阅读位置")
             .accessibilityValue(reader.totalPages > 0 ? "第\(reader.location ?? "1")页，共\(reader.totalPages)页" : "\(reader.chapter ?? article.title)，章节第\(reader.chapterPage)页，共\(reader.chapterPages)页")
+    }
+
+    private var readerLabelColor: Color {
+        format == "epub"
+            ? appearance.inkColor(dark: colorScheme == .dark, softerInk: language == "Chinese" || language == "Japanese")
+            : LeximoryPalette.muted
     }
 
     private var readingSettings: some View {
@@ -316,7 +340,13 @@ struct EbookScreen: View {
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
     private func load() async {
-        reader.canBookmark = client != nil
+        positionSaver?.flush()
+        positionSaver = client.map { client in
+            EbookPositionSaver { location in
+                try await client.saveEbookPosition(textID: article.id.rawValue, location: location)
+            }
+        }
+        reader.canBookmark = client != nil || ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures")
         reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.rightToLeft = language == "Japanese"
         loading = true; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
@@ -564,7 +594,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
     }
 }
 
-private struct NativePDFReader: UIViewRepresentable {
+struct NativePDFReader: UIViewRepresentable {
     let data: Data
     let reader: EbookReaderState
     let command: (id: UUID, action: String, value: String?)?
@@ -584,7 +614,7 @@ private struct NativePDFReader: UIViewRepresentable {
         }
         view.document = document
         reader.totalPages = document.pageCount
-        if let page = Int(reader.location ?? ""), let target = view.document?.page(at: max(0, page - 1)) { view.go(to: target) }
+        view.initialPageNumber = Int(reader.location ?? "")
         if let document = view.document {
             func chapters(_ outline: PDFOutline, depth: Int = 0) -> [EbookChapter] {
                 (0..<outline.numberOfChildren).flatMap { index -> [EbookChapter] in
@@ -601,7 +631,9 @@ private struct NativePDFReader: UIViewRepresentable {
 
         }
         context.coordinator.observe(view)
-        Task { context.coordinator.pageChanged(); reader.ready = true }
+        view.onInitialLayout = {
+            Task { reader.ready = true; context.coordinator.pageChanged() }
+        }
         return view
     }
     func updateUIView(_ view: PDFView, context: Context) {
@@ -636,7 +668,7 @@ private struct NativePDFReader: UIViewRepresentable {
                       let selection = target.selection(for: NSRange(range, in: text)) else { continue }
                 for line in selection.selectionsByLine() {
                     for page in line.pages {
-                        let annotation = PDFAnnotation(bounds: line.bounds(for: page), forType: .highlight, withProperties: nil)
+                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id)
                         annotation.color = UIColor(LeximoryPalette.illustration).withAlphaComponent(0.3)
                         page.addAnnotation(annotation)
                         bookmarkAnnotations.append((page, annotation))
@@ -653,7 +685,7 @@ private struct NativePDFReader: UIViewRepresentable {
             NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: view)
         }
         @objc func pageChanged() {
-            guard let document = view?.document, let page = view?.currentPage else { return }
+            guard reader.ready, let document = view?.document, let page = view?.currentPage else { return }
             let index = document.index(for: page)
             reader.location = String(index + 1); reader.chapter = page.label ?? String(index + 1)
             reader.atStart = index == 0; reader.atEnd = index == document.pageCount - 1

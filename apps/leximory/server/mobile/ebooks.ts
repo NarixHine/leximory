@@ -10,6 +10,7 @@ export interface EbookStore {
     location(textId: string, userId: string): Promise<string | null>
     bookmarks(textId: string, userId: string): Promise<z.infer<typeof ebookBookmarkSchema>[]>
     savePosition(textId: string, userId: string, location: string): Promise<void>
+    removeBookmark(input: { textId: string; userId: string; bookmarkId: number }): Promise<void>
     saveBookmark(input: { textId: string; userId: string; quote: string; chapter: string | null; location: string | null }): Promise<z.infer<typeof ebookBookmarkSchema>>
 }
 export function createEbookHandler(dependencies: { verify: BearerVerifier; catalog: CatalogStore; ebooks: EbookStore }) {
@@ -17,7 +18,7 @@ export function createEbookHandler(dependencies: { verify: BearerVerifier; catal
     return async (request: Request): Promise<Response> => {
         try {
             const subject: MobileSubject = await requireMobileSubject(request, dependencies.verify)
-            const match = /^\/api\/mobile\/v1\/texts\/([A-Za-z0-9_-]{1,128})\/(ebook|ebook-position|ebook-bookmarks)$/.exec(new URL(request.url).pathname)
+            const match = /^\/api\/mobile\/v1\/texts\/([A-Za-z0-9_-]{1,128})\/(ebook|ebook-position|ebook-bookmarks|ebook-bookmark-remove)$/.exec(new URL(request.url).pathname)
             const textId = match?.[1]
             if (!textId) throw new MobileError('inaccessible')
             const signal = AbortSignal.any([request.signal, AbortSignal.timeout(20000)])
@@ -50,6 +51,10 @@ export function createEbookHandler(dependencies: { verify: BearerVerifier; catal
                     const input = z.object({ location: z.string().min(1).max(2048) }).strict().parse(body)
                     await store.savePosition(textId, subject.userId, input.location)
                     result = { saved: true }
+                } else if (match[2] === 'ebook-bookmark-remove') {
+                    const input = z.object({ bookmarkId: z.number().int().positive() }).strict().parse(body)
+                    await store.removeBookmark({ textId, userId: subject.userId, bookmarkId: input.bookmarkId })
+                    result = { removed: true }
                 } else if (match[2] === 'ebook-bookmarks') {
                     const input = z.object({ quote: z.string().min(1).max(16000), chapter: z.string().max(512).nullable(), location: z.string().max(2048).nullable() }).strict().parse(body)
                     result = ebookBookmarkSchema.parse(await store.saveBookmark({ ...input, textId, userId: subject.userId }))

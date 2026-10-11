@@ -34,7 +34,7 @@ const isBrowserRoute = (request: Request) => /\/(browser\/(selection|definitions
 import { createEbookHandler } from './ebooks'
 import { ebookStore } from './ebook-store'
 const ebookHandler = createEbookHandler({ verify, catalog: catalogStore, ebooks: ebookStore })
-const isEbookRoute = (request: Request) => /\/(ebook|ebook-position|ebook-bookmarks)$/.test(new URL(request.url).pathname)
+const isEbookRoute = (request: Request) => /\/(ebook|ebook-position|ebook-bookmarks|ebook-bookmark-remove)$/.test(new URL(request.url).pathname)
 import { createAuthoringHandler } from './authoring'
 import { authoringStore } from './authoring-store'
 const authoringHandler = createAuthoringHandler({ verify, catalog: catalogStore, authoring: authoringStore })

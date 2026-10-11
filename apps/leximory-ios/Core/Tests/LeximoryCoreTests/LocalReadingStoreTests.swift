@@ -5,6 +5,27 @@ import OpenAPIRuntime
 @testable import LeximoryCore
 
 struct LocalReadingStoreTests {
+    @Test func removedEbookBookmarkStaysRemovedAfterCacheReopens() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "first")
+        let text = CatalogText(id: "book", libraryId: "library", title: "Book", topics: [], emoji: nil, createdAt: nil, format: "ebook")
+        let library = CatalogLibrary(id: "library", name: "Books", language: "en", owned: true, archived: false, shadow: false)
+        let bookmark = EbookBookmark(id: 42, quote: "Two lines of text", chapter: nil, location: "3")
+        await store.save(EbookDescriptor(text: text, library: library, url: origin.appending(path: "book.pdf"), format: "pdf",
+                                        expiresAt: .distantFuture, location: "3", bookmarks: [bookmark]), for: "ebook/book")
+        let client = MobileClient(baseURL: origin, transport: BookmarkRemovalTransport(), token: { _ in "test" }, localStore: store)
+        try await client.removeEbookBookmark(textID: "book", bookmarkID: 42)
+        let reopened = try LocalReadingStore(root: root, origin: origin, accountID: "first")
+        let book = try #require(await reopened.value(EbookDescriptor.self, for: "ebook/book"))
+        #expect(book.bookmarks.isEmpty)
+        #expect(book.location == "3")
+    }
+    private struct BookmarkRemovalTransport: ClientTransport {
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            #expect(operationID == "removeEbookBookmark")
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"removed":true}"#))
+        }
+    }
     private func root() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

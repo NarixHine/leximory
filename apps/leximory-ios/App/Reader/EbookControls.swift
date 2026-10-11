@@ -32,7 +32,13 @@ enum EbookAppearance: String, CaseIterable, Identifiable {
         }
     }
     func paperColor(dark: Bool) -> Color {
-        let rgb = UInt32(colors(dark: dark).paper.dropFirst(), radix: 16)!
+        color(hex: colors(dark: dark).paper)
+    }
+    func inkColor(dark: Bool, softerInk: Bool = false) -> Color {
+        color(hex: colors(dark: dark, softerInk: softerInk).ink)
+    }
+    private func color(hex: String) -> Color {
+        let rgb = UInt32(hex.dropFirst(), radix: 16)!
         return Color(.sRGB, red: Double((rgb >> 16) & 255) / 255,
                      green: Double((rgb >> 8) & 255) / 255, blue: Double(rgb & 255) / 255, opacity: 1)
     }
@@ -82,7 +88,7 @@ struct EbookThemePicker: View {
         ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: reader.readOnly)
         builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions(reader: reader)), beforeMenu: .standardEdit)
     }
-    static func actions(reader: EbookReaderState) -> [UIAction] {
+    static func actions(reader: EbookReaderState, includeBookmark: Bool = true) -> [UIAction] {
         let selection = reader.selection
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
@@ -90,7 +96,7 @@ struct EbookThemePicker: View {
         let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark, selection: selection) }
         }
-        return reader.readOnly ? [bookmark] : [define, bookmark]
+        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : [])
     }
 }
 
@@ -112,8 +118,72 @@ final class LearningWebView: WKWebView {
     }
 }
 
-final class LearningPDFView: PDFView {
+final class EbookPDFHighlight: PDFAnnotation {
+    let bookmarkID: Int
+    init(bounds: CGRect, bookmarkID: Int) {
+        self.bookmarkID = bookmarkID
+        super.init(bounds: bounds, forType: .highlight, withProperties: nil)
+    }
+    required init?(coder: NSCoder) { return nil }
+}
+
+final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     var reader: EbookReaderState?
+    var highlightAtTouchDown: EbookPDFHighlight?
+    private var activeHighlight: EbookPDFHighlight?
+    private lazy var highlightMenu = UIEditMenuInteraction(delegate: self)
+    func highlight(at point: CGPoint) -> EbookPDFHighlight? {
+        guard let page = page(for: point, nearest: false) else { return nil }
+        let pagePoint = convert(point, to: page)
+        return page.annotations.reversed().compactMap { $0 as? EbookPDFHighlight }.first { $0.bounds.contains(pagePoint) }
+    }
+    @discardableResult func presentHighlightMenu(at point: CGPoint) -> Bool {
+        guard let highlight = highlightAtTouchDown, let page = highlight.page,
+              let reader, let bookmark = reader.bookmarks.first(where: { $0.id == highlight.bookmarkID }) else { return false }
+        dismissSelection()
+        activeHighlight = highlight
+        if let text = page.string, let range = text.range(of: bookmark.quote), let selection = page.selection(for: NSRange(range, in: text)) {
+            setCurrentSelection(selection, animate: false)
+        }
+        if highlightMenu.view == nil { addInteraction(highlightMenu) }
+        highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: nil, sourcePoint: point))
+        return true
+    }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        guard let reader, let highlight = activeHighlight else { return UIMenu(children: []) }
+        let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: reader.readOnly || !reader.canBookmark || highlight.bookmarkID < 0 ? [.disabled] : []) { [weak self] _ in
+            reader.bookmarkRemovalRequest = highlight.bookmarkID
+            self?.dismissSelection()
+        }
+        return UIMenu(children: EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove])
+    }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect {
+        guard let activeHighlight, let page = activeHighlight.page else { return .zero }
+        return convert(activeHighlight.bounds, from: page)
+    }
+    var initialPageNumber: Int?
+    var onInitialLayout: (() -> Void)?
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.width > 0, bounds.height > 0, let document, let onInitialLayout else { return }
+        self.onInitialLayout = nil
+        if let initialPageNumber {
+            let index = min(max(0, initialPageNumber - 1), document.pageCount - 1)
+            if let page = document.page(at: index) { go(to: page) }
+        }
+        onInitialLayout()
+    }
+    @discardableResult func dismissSelection() -> Bool {
+        highlightMenu.dismissMenu()
+        activeHighlight = nil
+        guard currentSelection != nil || reader?.selection != nil || reader?.menuSelection != nil else { return false }
+        clearSelection()
+        reader?.selection = nil
+        reader?.menuSelection = nil
+        documentView?.resignFirstResponder()
+        resignFirstResponder()
+        return true
+    }
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         if let reader { EbookLearningMenu.insert(into: builder, reader: reader) }
@@ -122,6 +192,7 @@ final class LearningPDFView: PDFView {
 
 @MainActor final class EbookGestures: NSObject, UIGestureRecognizerDelegate {
     let reader: EbookReaderState
+    private var pdfSelectionActiveAtTouchDown = false
     init(reader: EbookReaderState) { self.reader = reader }
     @discardableResult func install(on view: UIView, centerTap: Bool) -> UIScreenEdgePanGestureRecognizer {
         if centerTap {
@@ -137,7 +208,10 @@ final class LearningPDFView: PDFView {
         return back
     }
     @objc private func tapped(_ gesture: UITapGestureRecognizer) {
-        guard let view = gesture.view, reader.selection == nil else { return }
+        guard let view = gesture.view else { return }
+        if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) { return }
+        if pdfSelectionActiveAtTouchDown, let pdf = view as? LearningPDFView, pdf.dismissSelection() { return }
+        guard reader.selection == nil else { return }
         let x = gesture.location(in: view).x / max(1, view.bounds.width)
         if reader.pageBounds != nil {
             if reader.gutterSide(at: gesture.location(in: view)) == nil { reader.chromeVisible.toggle() }
@@ -146,7 +220,17 @@ final class LearningPDFView: PDFView {
     @objc private func backSwiped(_ gesture: UIScreenEdgePanGestureRecognizer) {
         if gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 { reader.backRequest = UUID() }
     }
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if let pdf = gestureRecognizer.view as? LearningPDFView {
+            pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil
+            pdf.highlightAtTouchDown = pdf.highlight(at: touch.location(in: pdf))
+            gestureRecognizer.cancelsTouchesInView = pdf.highlightAtTouchDown != nil
+        }
+        return true
+    }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        (gestureRecognizer.view as? LearningPDFView)?.highlightAtTouchDown == nil
+    }
 }
 
 /// Flat page-slide geometry. The current page tracks the finger's exact travel;

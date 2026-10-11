@@ -27,5 +27,9 @@ import LeximoryCore
         #expect(bookmark != nil)
         if offline { #expect(bookmark?.attributes.contains(.disabled) == true) }
     }
+    @Test func existingPDFHighlightOmitsAddHighlight() {
+        let actions = EbookLearningMenu.actions(reader: EbookReaderState(), includeBookmark: false)
+        #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle])
+    }
 
 }

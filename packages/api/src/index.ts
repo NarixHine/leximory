@@ -81,6 +81,7 @@ export const mobileContract = {
     vocabulary: oc.route({ method: 'POST', path: '/texts/{textId}/vocabulary' }).input(vocabularyInputSchema.extend({ textId: resourceID })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
     ebook: oc.route({ method: 'GET', path: '/texts/{textId}/ebook' }).input(z.object({ textId: resourceID })).output(ebookSchema),
     ebookPosition: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-position' }).input(z.object({ textId: resourceID, location: z.string().min(1).max(2048) })).output(z.object({ saved: z.boolean() })),
+    removeEbookBookmark: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-bookmark-remove' }).input(z.object({ textId: resourceID, bookmarkId: z.number().int().positive() })).output(z.object({ removed: z.boolean() })),
     ebookBookmark: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-bookmarks' }).input(z.object({ textId: resourceID, quote: z.string().min(1).max(16000), chapter: z.string().max(512).nullable(), location: z.string().max(2048).nullable() })).output(ebookBookmarkSchema),
     ebookDefinitions: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-definitions', spec: spec => ({
         ...spec, responses: { ...spec.responses, 200: { description: 'Contextual ebook definition frames', content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } } } },

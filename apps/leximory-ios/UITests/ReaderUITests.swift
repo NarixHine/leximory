@@ -344,6 +344,32 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The garden"), object: reader)], timeout: 10) == .completed)
     }
 
+    @MainActor func testPDFHighlightMenuRemovesWholeBookmark() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        for _ in 0..<4 where !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-contents"].tap()
+        app.buttons["2"].tap()
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 10))
+        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+        let remove = app.menuItems["移除"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.menuItems["🖍️荧光笔"].exists)
+        XCTAssertFalse(app.menuItems["颜色"].exists)
+        XCTAssertFalse(app.menuItems["添加备注"].exists)
+        remove.tap()
+        XCTAssertTrue(remove.waitForNonExistence(timeout: 5))
+        app.buttons["ebook-bookmarks"].tap()
+        XCTAssertTrue(app.staticTexts["暂无标记"].waitForExistence(timeout: 5), app.debugDescription)
+    }
+
     @MainActor func testPDFBookmarkCardsShowPageAndNavigate() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
@@ -517,6 +543,31 @@ final class ReaderUITests: XCTestCase {
         app.buttons["2"].tap()
         capture(app, name: "PDF final page")
     }
+    @MainActor func testPDFPageTapDismissesSelectionAndKeepsControlsVisible() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        for _ in 0..<4 where !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-contents"].tap()
+        app.buttons["2"].tap()
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
+        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
+        let lookup = app.menuItems["🐈 猫忆查"]
+        XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
+        let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).tap()
+        XCTAssertTrue(lookup.waitForNonExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["ebook-contents"].exists)
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).tap()
+        XCTAssertTrue(app.buttons["ebook-contents"].waitForNonExistence(timeout: 5))
+    }
+
     @MainActor func testPDFContextualLearningMenu() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
