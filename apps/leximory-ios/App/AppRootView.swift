@@ -58,7 +58,7 @@ struct AppRootView: View {
                             fixtureBrowser
                         } browser: {
                             if let fixtureClient { TextBrowserScreen(client: fixtureClient, close: { fixtureTab = 0 }) }
-                            else { ContentUnavailableView("浏览网页", systemImage: "globe") }
+                            else { LeximoryUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
                             Text("账户").font(LeximoryTypography.interface(24))
                         }
@@ -125,7 +125,7 @@ struct SignInView: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("继续语言学习之旅")
-                        .font(LeximoryTypography.interface(24, semibold: true, style: .title2)).tracking(-0.3).lineSpacing(3)
+                        .font(LeximoryTypography.interface(24, style: .title2)).foregroundStyle(.secondary).tracking(-0.3).lineSpacing(3)
                 }
                 if let notice { Text(notice).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary) }
                 VStack(spacing: 16) {
@@ -147,7 +147,7 @@ struct SignInView: View {
                 } label: {
                     HStack {
                         if submitting { ProgressView().tint(LeximoryPalette.paper) }
-                        Text(submitting ? "登录中" : "登录").font(LeximoryTypography.interface(17, semibold: true, style: .headline))
+                        Text(submitting ? "登录中" : "登录").font(LeximoryTypography.interface(17))
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 17)
                     .foregroundStyle(LeximoryPalette.paper)

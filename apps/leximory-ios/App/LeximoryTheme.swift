@@ -16,7 +16,8 @@ struct LeximoryUnavailableView<Actions: View>: View {
     var body: some View {
         ContentUnavailableView {
             Label {
-                Text(title).font(LeximoryTypography.interface(24, semibold: true, style: .title2))
+                Text(title).font(LeximoryTypography.interface(24, style: .title2))
+                    .foregroundStyle(.secondary)
             } icon: {
                 Image(systemName: systemImage)
             }

@@ -4,6 +4,90 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct TextBrowserTests {
+    @Test func clearingBrowsingDataRemovesCookiesAndAllRememberedPagesOnly() async throws {
+        let suite = "browser-purge-test." + UUID().uuidString
+        let preferences = try #require(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        preferences.set("old page", forKey: "browser.last-page.account-a")
+        preferences.set("another page", forKey: "browser.last-page.account-b")
+        preferences.set("keep", forKey: "browser.domain-rules")
+        preferences.set("keep", forKey: "account.session")
+        let store = WKWebsiteDataStore.nonPersistent()
+        let cookie = try #require(HTTPCookie(properties: [
+            .domain: "example.com", .path: "/", .name: "session", .value: "test",
+            .expires: Date().addingTimeInterval(3600)
+        ]))
+        await store.httpCookieStore.setCookie(cookie)
+        #expect(await store.httpCookieStore.allCookies().count == 1)
+
+        await TextBrowserModel.clearBrowsingData(in: store, preferences: preferences)
+
+        #expect(await store.httpCookieStore.allCookies().isEmpty)
+        #expect(preferences.object(forKey: "browser.last-page.account-a") == nil)
+        #expect(preferences.object(forKey: "browser.last-page.account-b") == nil)
+        #expect(preferences.string(forKey: "browser.domain-rules") == "keep")
+        #expect(preferences.string(forKey: "account.session") == "keep")
+    }
+    @Test func embeddedVerificationFramesCanRunTheirOwnScripts() async throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(model.web)
+        model.web.frame = window.bounds
+        window.makeKeyAndVisible()
+        defer { model.web.stopLoading(); window.isHidden = true }
+        model.web.loadHTMLString("""
+            <html><body><script>window.frameReady=false;addEventListener('message',e=>{if(e.data==='frame-ready')window.frameReady=true})</script>
+            <iframe srcdoc="<script>parent.postMessage('frame-ready','*')</script>"></iframe></body></html>
+            """, baseURL: URL(string: "https://example.com"))
+        for _ in 0..<100 {
+            try await Task.sleep(for: .milliseconds(20))
+            if (try? await model.web.evaluateJavaScript("window.frameReady") as? Bool) == true { return }
+        }
+        Issue.record("Embedded verification content was prevented from loading")
+    }
+
+    @Test func safariIdentityMatchesTheActualBrowserAndDeviceMode() async throws {
+        let version = OperatingSystemVersion(majorVersion: 27, minorVersion: 1, patchVersion: 0)
+        let phone = TextBrowserModel.safariUserAgent(idiom: .phone, version: version)
+        let tablet = TextBrowserModel.safariUserAgent(idiom: .pad, version: version)
+        #expect(phone.contains("Version/27.1 Mobile/15E148 Safari/604.1"))
+        #expect(phone.contains("iPhone OS 18_6"))
+        #expect(tablet.contains("Macintosh; Intel Mac OS X 10_15_7"))
+        #expect(tablet.hasSuffix("Version/27.1 Safari/605.1.15"))
+        let model = TextBrowserModel()
+        let navigation = BrowserTestNavigation(); model.web.navigationDelegate = navigation
+        try await navigation.load(model.web, html: "<html><body>Browser identity</body></html>")
+        let agent = try #require(try await model.web.evaluateJavaScript("navigator.userAgent") as? String)
+        #expect(agent == model.web.customUserAgent)
+        #expect(agent.contains("Version/") && agent.contains("Safari/"))
+        #expect(try await model.web.evaluateJavaScript("navigator.cookieEnabled") as? Bool == true)
+        #expect(model.web.configuration.defaultWebpagePreferences.preferredContentMode == (UIDevice.current.userInterfaceIdiom == .phone ? .mobile : .desktop))
+    }
+    @Test func keywordsSearchBingWithoutChangingURLNavigation() throws {
+        for query in ["occidental", "occidental countries", "文言文词汇 & phrases", "site:nytimes.com books"] {
+            let url = try #require(TextBrowserModel.destination(query))
+            let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+            #expect(components.host == "www.bing.com")
+            #expect(components.path == "/search")
+            #expect(components.queryItems == [URLQueryItem(name: "q", value: query)])
+        }
+        #expect(TextBrowserModel.destination("example.com/article")?.absoluteString == "https://example.com/article")
+        #expect(TextBrowserModel.destination("https://www.nytimes.com/")?.host == "www.nytimes.com")
+        #expect(TextBrowserModel.destination(" ") == nil)
+        #expect(TextBrowserModel.destination("javascript:alert(1)") == nil)
+        #expect(TextBrowserModel.destination("file:///private/article") == nil)
+    }
+    @Test func embeddedWebContentCanNavigateWithoutOpeningNativeSchemes() {
+        for raw in ["about:srcdoc", "blob:https://example.com/id", "data:text/html,frame"] {
+            let url = URL(string: raw)!
+            #expect(TextBrowserModel.allowsNavigation(url, mainFrame: false))
+            #expect(!TextBrowserModel.allowsNavigation(url, mainFrame: true))
+        }
+        #expect(!TextBrowserModel.allowsNavigation(URL(string: "file:///private/article")!, mainFrame: false))
+        #expect(TextBrowserModel.allowsNavigation(URL(string: "https://example.com/challenge")!, mainFrame: false))
+    }
+
     @Test func browserChromeTracksPageThemeAndBackground() async throws {
         let model = TextBrowserModel()
         let navigation = BrowserTestNavigation()

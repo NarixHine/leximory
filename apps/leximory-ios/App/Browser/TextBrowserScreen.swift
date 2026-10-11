@@ -26,6 +26,8 @@ struct TextBrowserScreen: View {
     @State private var selectedDomain = ""
     @State private var openingAttempt = 0
     @State private var lastSelection: BrowserSelection?
+    @State private var confirmingClear = false
+    @State private var clearingData = false
 
     var body: some View {
         Group {
@@ -35,6 +37,17 @@ struct TextBrowserScreen: View {
         .onChange(of: active) { _, active in
             if !active { finishEditing() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: TextBrowserModel.browsingDataWillClear)) { _ in
+            finishEditing()
+            browser.web.stopLoading()
+            browser.web.lookup = nil
+            browser = TextBrowserModel()
+            browser.web.lookup = { selection in define(selection) }
+            opened = true
+            address = ""
+            definition = nil
+            lastSelection = nil
+        }
     }
     private var page: some View {
         ZStack(alignment: .top) {
@@ -42,7 +55,7 @@ struct TextBrowserScreen: View {
                 .ignoresSafeArea(.container, edges: .bottom)
                 .ignoresSafeArea(.keyboard)
             if browser.url == nil && !browser.loading && !editingAddress {
-                ContentUnavailableView("浏览网页", systemImage: "globe", description: Text("输入网址，阅读时选中文字即可猫忆查。"))
+                LeximoryUnavailableView("浏览网页", systemImage: "globe", message: "输入网址或关键词，阅读时选中文字即可猫忆查。")
                     .frame(maxHeight: .infinity)
             }
             if let error = browser.error {
@@ -52,7 +65,9 @@ struct TextBrowserScreen: View {
                         if browser.url == nil { opened = false; openingAttempt += 1 }
                         else { browser.web.reload() }
                     }
-                }.padding(20).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 24))
+                }.padding(20).foregroundStyle(.primary)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                    .accessibilityIdentifier("browser-load-error")
                     .padding(.top, 70)
             }
             if editingAddress {
@@ -78,6 +93,18 @@ struct TextBrowserScreen: View {
         }
         .sheet(isPresented: $savingBookmark) {
             BrowserBookmarkSheet(client: client, url: browser.url?.absoluteString ?? "")
+        }
+        .confirmationDialog("清除所有浏览数据？", isPresented: $confirmingClear, titleVisibility: .visible) {
+            Button("清除浏览数据", role: .destructive) {
+                Task {
+                    clearingData = true
+                    await TextBrowserModel.clearBrowsingData()
+                    clearingData = false
+                }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("将清除浏览记录、Cookie 和网站数据，并退出网站登录。书签和词汇会保留。")
         }
         .task(id: openingAttempt) {
             browser.web.lookup = { selection in define(selection) }
@@ -158,12 +185,15 @@ struct TextBrowserScreen: View {
                                 Button("前进", systemImage: "chevron.right") { browser.web.goForward() }
                             }
                         }
+                        Section {
+                            Button("清除浏览数据", systemImage: "trash", role: .destructive) { confirmingClear = true }
+                        }
                     } label: { chromeIcon("ellipsis") }
                         .buttonStyle(.plain).accessibilityLabel("网页选项")
                         .glassEffectID("options", in: chrome)
                 }
             }
-        }.frame(maxWidth: 640).tint(.primary)
+        }.frame(maxWidth: 640).tint(.primary).disabled(clearingData)
             .animation(motion, value: editingAddress)
             .animation(motion, value: browser.canGoBack)
     }
@@ -181,7 +211,7 @@ struct TextBrowserScreen: View {
                     HStack(spacing: 8) {
                         if browser.loading { ProgressView().controlSize(.small) }
                         else { Image(systemName: "globe").foregroundStyle(.secondary) }
-                        Text(browser.url?.host ?? "输入网址").lineLimit(1)
+                        Text(browser.url?.host ?? "输入网址或搜索").lineLimit(1)
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
@@ -200,7 +230,7 @@ struct TextBrowserScreen: View {
         withAnimation(motion) { editingAddress = false }
     }
     private func openAddress() {
-        guard let url = TextBrowserModel.address(address) else { return }
+        guard let url = TextBrowserModel.destination(address) else { return }
         finishEditing()
         browser.load(url)
     }
@@ -233,10 +263,10 @@ private struct BrowserAddressField: UIViewRepresentable {
         let field = BrowserURLTextField()
         editor.field = field
         field.delegate = context.coordinator
-        field.placeholder = "输入网址"
+        field.placeholder = "输入网址或搜索"
         field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.interfaceUI(15))
         field.adjustsFontForContentSizeCategory = true
-        field.keyboardType = .URL
+        field.keyboardType = .webSearch
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.spellCheckingType = .no

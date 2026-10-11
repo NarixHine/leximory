@@ -208,7 +208,7 @@ struct EbookScreen: View {
                     }
                 }.padding(20)
             }.background(LeximoryPalette.paper)
-                .overlay { if reader.bookmarks.isEmpty { ContentUnavailableView("暂无标记", systemImage: "highlighter") } }
+                .overlay { if reader.bookmarks.isEmpty { LeximoryUnavailableView("暂无标记", systemImage: "highlighter") } }
                 .navigationTitle("荧光笔").navigationBarTitleDisplayMode(.inline)
         }.frame(minWidth: sizeClass == .regular ? 400 : nil, idealHeight: min(620, max(260, CGFloat(reader.bookmarks.count) * 180 + 80)))
             .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
@@ -380,9 +380,9 @@ struct EbookBookmarkCard: View {
                 Image(systemName: "bookmark.fill").font(.system(size: 14)).foregroundStyle(LeximoryPalette.muted)
                     .accessibilityHidden(true)
                 if let chapter = bookmark.chapter?.trimmingCharacters(in: .whitespacesAndNewlines), !chapter.isEmpty {
-                    Text(chapter).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                    Text(chapter).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 } else if isPDF, let page = bookmark.location {
-                    Text("第\(page)页").font(.subheadline.weight(.semibold))
+                    Text("第\(page)页").font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))

@@ -121,7 +121,7 @@ private struct LibraryCard: View {
     let titleSize: CGFloat
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(library.localizedLanguage).font(LeximoryTypography.interface(14, semibold: true, style: .subheadline))
+            Text(library.localizedLanguage).font(LeximoryTypography.interface(14, style: .subheadline))
                 .foregroundStyle(.secondary)
             Text(library.name).editorialFont(titleSize, language: library.language == "Japanese" ? "Japanese" : "English")
                 .foregroundStyle(LeximoryPalette.ink).lineSpacing(1)

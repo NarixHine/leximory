@@ -75,6 +75,7 @@ final class BrowserWebView: WKWebView {
 }
 
 @MainActor @Observable final class TextBrowserModel: NSObject, WKNavigationDelegate, WKUIDelegate {
+    static let browsingDataWillClear = Notification.Name("Leximory.browsingDataWillClear")
     @ObservationIgnored let web: BrowserWebView
     private(set) var url: URL?
     private(set) var title = ""
@@ -87,11 +88,16 @@ final class BrowserWebView: WKWebView {
     @ObservationIgnored private var resumeOffset: CGFloat?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
-    override init() {
+    override convenience init() { self.init(websiteDataStore: .default()) }
+
+    init(websiteDataStore: WKWebsiteDataStore) {
         let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = websiteDataStore
+        configuration.defaultWebpagePreferences.preferredContentMode = UIDevice.current.userInterfaceIdiom == .phone ? .mobile : .desktop
         // No app credentials or native message handlers are exposed to websites.
         web = BrowserWebView(frame: .zero, configuration: configuration)
         super.init()
+        web.customUserAgent = Self.safariUserAgent(idiom: UIDevice.current.userInterfaceIdiom)
         web.navigationDelegate = self
         web.uiDelegate = self
         web.allowsBackForwardNavigationGestures = true
@@ -113,6 +119,30 @@ final class BrowserWebView: WKWebView {
               url.host != nil, url.user == nil, url.password == nil else { return nil }
         return url
     }
+    static func destination(_ input: String) -> URL? {
+        let input = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return nil }
+        if input.contains("://") { return address(input) }
+        if ["javascript:", "data:", "file:", "about:", "http:", "https:"].contains(where: { input.lowercased().hasPrefix($0) }) { return nil }
+        if let url = address(input), let host = url.host,
+           host.contains(".") || host == "localhost" || host.contains(":") { return url }
+        var search = URLComponents(string: "https://www.bing.com/search")!
+        search.queryItems = [URLQueryItem(name: "q", value: input)]
+        return search.url
+    }
+    static func safariUserAgent(idiom: UIUserInterfaceIdiom, version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> String {
+        let safari = "\(version.majorVersion).\(version.minorVersion)"
+        let engine = "AppleWebKit/605.1.15 (KHTML, like Gecko)"
+        if idiom == .phone {
+            return "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) \(engine) Version/\(safari) Mobile/15E148 Safari/604.1"
+        }
+        return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \(engine) Version/\(safari) Safari/605.1.15"
+    }
+    static func allowsNavigation(_ url: URL, mainFrame: Bool) -> Bool {
+        if address(url.absoluteString) != nil { return true }
+        if url.absoluteString == "about:blank" { return true }
+        return !mainFrame && ["about", "blob", "data"].contains(url.scheme?.lowercased() ?? "")
+    }
     var domain: String {
         let host = url?.host?.lowercased() ?? ""
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
@@ -121,6 +151,14 @@ final class BrowserWebView: WKWebView {
         resumeOffset = offset
         error = nil
         web.load(URLRequest(url: url))
+    }
+    static func clearBrowsingData(in store: WKWebsiteDataStore = .default(), preferences: UserDefaults = .standard) async {
+        // Drop every browser's page and back/forward list before clearing shared website storage.
+        NotificationCenter.default.post(name: browsingDataWillClear, object: nil)
+        for key in preferences.dictionaryRepresentation().keys where key.hasPrefix("browser.last-page.") {
+            preferences.removeObject(forKey: key)
+        }
+        await store.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
     }
     private func update() {
         url = web.url; title = web.title ?? ""; loading = web.isLoading
@@ -141,17 +179,28 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }
     private func failed(_ error: any Error) {
         guard (error as NSError).code != NSURLErrorCancelled else { return }
+        let failure = error as NSError
+        Logger(subsystem: "com.leximory.reader", category: "browser").error("Navigation failed: host=\(self.web.url?.host ?? "unknown", privacy: .private) domain=\(failure.domain, privacy: .public) code=\(failure.code)")
         self.error = "网页未能打开，请重试或在 Safari 中打开。"; update()
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let destination = navigationAction.request.url,
-              destination.absoluteString == "about:blank" || Self.address(destination.absoluteString) != nil else { return .cancel }
+              Self.allowsNavigation(destination, mainFrame: navigationAction.targetFrame?.isMainFrame != false) else { return .cancel }
+        return .allow
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if navigationResponse.isForMainFrame, let response = navigationResponse.response as? HTTPURLResponse {
+            Logger(subsystem: "com.leximory.reader", category: "browser").info("Page response: host=\(response.url?.host ?? "unknown", privacy: .private) status=\(response.statusCode)")
+        }
         return .allow
     }
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = navigationAction.request.url, Self.address(url.absoluteString) != nil { load(url) }
+        if let url = navigationAction.request.url, Self.address(url.absoluteString) != nil {
+            resumeOffset = nil; error = nil
+            web.load(navigationAction.request)
+        }
         return nil
     }
 }

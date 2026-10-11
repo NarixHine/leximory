@@ -55,7 +55,7 @@ struct OnboardingView: View {
         .safeAreaInset(edge: .bottom) {
             Button(action: start) {
                 HStack(spacing: 10) {
-                    Text("开始学习").font(LeximoryTypography.interface(17, semibold: true, style: .headline))
+                    Text("开始学习").font(LeximoryTypography.interface(17))
                     Image(systemName: "arrow.right").font(.body.weight(.medium))
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 18)
