@@ -120,7 +120,7 @@ private final class BrowserPageServer {
         let listener = try NWListener(using: .tcp, on: .any)
         self.listener = listener
         let html = """
-        <!doctype html><html><head><title>A quiet forest</title><meta name="viewport" content="width=device-width, initial-scale=1">
+        <!doctype html><html><head><title>A quiet forest</title><meta name="theme-color" content="#d4ddc9"><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>body{margin:0;background:#fffdf7;color:#192024;font:19px/1.7 Georgia,serif}main{max-width:560px;margin:100px auto;padding:24px}small{font:12px sans-serif;letter-spacing:2px;color:#5d7468}h1{font-size:38px;line-height:1.2}p{margin-top:28px}</style>
         </head><body><main><small>FIELD NOTES</small><h1>A quiet forest</h1>
         <p>The morning light fell across the winding river. We walked slowly beneath the trees, noticing the small things along the bank.</p>

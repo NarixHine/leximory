@@ -5,6 +5,7 @@ import { browserSelectionSchema, browserTargetSchema, bookmarkInputSchema, domai
 import { LangSchema, type Lang } from '@repo/schema/library'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { createCatalog, type CatalogStore, type LibraryRow } from './catalog'
+import { getLanguageName } from '@repo/languages'
 import { canWriteLibrary } from '@repo/service/access'
 import { requireMobileSubject, type BearerVerifier } from './auth'
 import { jsonBody, parseGeneratedDefinition, type DefinitionServices } from './definitions'
@@ -21,7 +22,7 @@ export const browserReceiptSchema = z.object({
 })
 export type BrowserReceipt = z.infer<typeof browserReceiptSchema>
 export interface BrowserStore {
-    detectLanguage(context: string): Promise<Lang>
+    detectLanguage(context: string, quote: string): Promise<Lang>
     rules(userId: string): Promise<z.infer<typeof domainRuleSchema>[]>
     setRule(userId: string, domain: string, libraryId: string | null): Promise<void>
     putReceipt(id: string, receipt: BrowserReceipt): Promise<void>
@@ -131,9 +132,9 @@ export function createBrowserHandler(dependencies: { verify: BearerVerifier; cat
                 // Explicit library choices always win. Jev is only the fallback.
                 const context = input.context.slice(0, input.offset) + '[[' + input.quote + ']]' + input.context.slice(input.offset + input.quote.length)
                 stage = 'selection-language'
-                const language = library?.lang ?? await store.detectLanguage(context)
+                const language = library?.lang ?? await store.detectLanguage(context, input.quote)
                 const shadow = !library || library.owner !== subject.userId
-                const libraryName = !shadow && library ? library.name : ({ en: '英语', zh: '中文', fr: '法语', ja: '日语', nl: '荷兰语' }[language] + '词汇仓库')
+                const libraryName = !shadow && library ? library.name : (getLanguageName(language) + '词汇仓库')
                 const selectionId = randomUUID()
                 stage = 'selection-receipt'
                 await store.putReceipt(selectionId, { subject: subject.userId, language, source, context, libraryName })

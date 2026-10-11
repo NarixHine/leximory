@@ -57,7 +57,7 @@ export type MobileSubject = z.infer<typeof mobileSubjectSchema>
 
 export const mobileErrorCodeSchema = z.enum([
     'unauthenticated', 'inaccessible', 'invalid_input', 'stale_revision',
-    'quota_exceeded', 'unsupported_format', 'service_unavailable',
+    'quota_exceeded', 'unsupported_format', 'language_unresolved', 'service_unavailable',
 ])
 export const mobileErrorSchema = z.object({
     error: z.object({

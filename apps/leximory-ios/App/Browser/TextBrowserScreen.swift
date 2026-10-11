@@ -66,6 +66,7 @@ struct TextBrowserScreen: View {
                     .id(definition.id)
             }
         }
+        .background(Color(uiColor: browser.pageColor).ignoresSafeArea())
         .overlay(alignment: .bottom) { controls.padding(.horizontal, 16).padding(.bottom, 8) }
         .toolbar(.hidden, for: .navigationBar).toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $settings) {

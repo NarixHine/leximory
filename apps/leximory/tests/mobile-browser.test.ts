@@ -1,4 +1,6 @@
 import { test } from 'node:test'
+import { browserLanguageQuestion, parseBrowserLanguage } from '../server/mobile/browser-language'
+import { MobileError } from '../server/mobile/errors'
 import assert from 'node:assert/strict'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createBrowserHandler, browserDomain, type BrowserReceipt, type BrowserStore } from '../server/mobile/browser'
@@ -9,7 +11,7 @@ const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const own: LibraryRow = { id: 'library', name: 'English News', lang: 'en', owner: 'reader', access: 0, starred_by: null, shadow: false }
 const bookmark: TextRow = { id: 'bookmark', lib: own.id, title: 'BBC', content: '', has_ebook: false, bookmark_url: 'https://bbc.com/start', topics: [], emoji: null, created_at: null, no: null }
 const selection = { url: 'https://example.com/linked-page', quote: 'bonjour', context: 'bonjour tout le monde', offset: 0, bookmarkId: null, libraryId: null }
-function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: string; cached?: boolean; quota?: boolean; detectionError?: Error } = {}) {
+function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: string; cached?: boolean; quota?: boolean; detectionError?: Error; detectedLanguage?: LibraryRow['lang'] } = {}) {
     const library = options.library ?? own
     const receipts = new Map<string, BrowserReceipt>()
     const metrics = { detections: 0, charges: 0, saves: [] as string[], ruleWrites: 0, bookmarkWrites: 0 }
@@ -18,7 +20,7 @@ function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: 
         text: async () => bookmark, libraries: async () => [library], texts: async () => [bookmark], archived: async () => [], audio: async () => null,
     }
     const browser: BrowserStore = {
-        detectLanguage: async () => { metrics.detections++; if (options.detectionError) throw options.detectionError; return 'fr' },
+        detectLanguage: async () => { metrics.detections++; if (options.detectionError) throw options.detectionError; return options.detectedLanguage ?? 'fr' },
         rules: async () => options.rule ? [{ domain: 'example.com', libraryId: options.rule }] : [],
         setRule: async () => { metrics.ruleWrites++ },
         putReceipt: async (id, receipt) => { receipts.set(id, receipt) },
@@ -164,4 +166,38 @@ for (const Failure of [TypeError, SyntaxError]) test(`lookup ${Failure.name} rem
         assert.equal((logs[0]?.[1] as { stage: string }).stage, 'selection-language')
         assert.equal(JSON.stringify(logs).includes(privateText), false)
     } finally { console.error = original }
+})
+
+test('Latin-script selections cannot be routed to Chinese or Japanese by detection', () => {
+    for (const quote of ['occidental countries', 'Latin occidental']) {
+        const question = browserLanguageQuestion(quote)
+        assert.equal(Object.hasOwn(question.criteria, 'zh'), false)
+        assert.equal(Object.hasOwn(question.criteria, 'ja'), false)
+        for (const choice of ['zh', 'ja', 'other']) {
+            assert.throws(() => parseBrowserLanguage(choice, quote), error => error instanceof MobileError && error.code === 'language_unresolved')
+        }
+    }
+    assert.equal(parseBrowserLanguage('en', 'occidental countries'), 'en')
+    assert.equal(parseBrowserLanguage('fr', 'Latin occidental'), 'fr')
+    assert.equal(parseBrowserLanguage('zh', '學而時習之'), 'zh')
+    assert.equal(parseBrowserLanguage('ja', '日本語'), 'ja')
+})
+test('uncertain phrase language has a language-specific error rather than a format error', async () => {
+    const h = harness({ detectionError: new MobileError('language_unresolved') })
+    const quote = 'Latin occidental'
+    const response = await h.handler(request('browser/selection', { ...selection, quote, context: quote }))
+    assert.equal(response.status, 422)
+    const { error } = await response.json()
+    assert.equal(error.code, 'language_unresolved')
+    assert.match(error.message, /语言/)
+    assert.doesNotMatch(error.message, /iOS|格式/)
+    assert.equal(h.metrics.charges, 0)
+    assert.deepEqual(h.metrics.saves, [])
+})
+test('Classical Chinese browser targets use the canonical vocabulary warehouse name', async () => {
+    const h = harness({ detectedLanguage: 'zh' })
+    const quote = '學而時習之'
+    const response = await h.handler(request('browser/selection', { ...selection, quote, context: quote }))
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).libraryName, '文言文词汇仓库')
 })

@@ -4,6 +4,39 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct TextBrowserTests {
+    @Test func browserChromeTracksPageThemeAndBackground() async throws {
+        let model = TextBrowserModel()
+        let navigation = BrowserTestNavigation()
+        model.web.navigationDelegate = navigation
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(model.web)
+        model.web.frame = window.bounds
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        try await navigation.load(model.web, html: """
+            <html><head><meta name="theme-color" content="#d4ddc9"></head>
+            <body style="background:#fffdf7">A quiet forest</body></html>
+            """)
+        try await expectPageColor(model, red: 212, green: 221, blue: 201)
+        _ = try await model.web.evaluateJavaScript("document.querySelector('meta[name=theme-color]').content = '#c8d6bd'")
+        try await expectPageColor(model, red: 200, green: 214, blue: 189)
+        _ = try await model.web.evaluateJavaScript("document.querySelector('meta[name=theme-color]').remove()")
+        try await expectPageColor(model, red: 255, green: 253, blue: 247)
+    }
+
+    private func expectPageColor(_ model: TextBrowserModel, red: CGFloat, green: CGFloat, blue: CGFloat) async throws {
+        for _ in 0..<100 {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            if model.pageColor.getRed(&r, green: &g, blue: &b, alpha: &a),
+               abs(r - red / 255) < 0.001, abs(g - green / 255) < 0.001, abs(b - blue / 255) < 0.001 {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        Issue.record("Browser chrome did not follow the webpage color")
+    }
+
     @Test func addressesOnlyAllowWebPages() {
         #expect(TextBrowserModel.address("example.com/article")?.absoluteString == "https://example.com/article")
         #expect(TextBrowserModel.address("javascript:alert(1)") == nil)

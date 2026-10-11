@@ -82,6 +82,7 @@ final class BrowserWebView: WKWebView {
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     private(set) var navigationID = UUID()
+    private(set) var pageColor: UIColor = .systemBackground
     var error: String?
     @ObservationIgnored private var resumeOffset: CGFloat?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
@@ -100,6 +101,8 @@ final class BrowserWebView: WKWebView {
             web.observe(\.isLoading, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoBack, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoForward, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
+            web.observe(\.themeColor, options: [.initial, .new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
+            web.observe(\.underPageBackgroundColor, options: [.initial, .new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
         ]
     }
     static func address(_ input: String) -> URL? {
@@ -122,6 +125,7 @@ final class BrowserWebView: WKWebView {
     private func update() {
         url = web.url; title = web.title ?? ""; loading = web.isLoading
         canGoBack = web.canGoBack; canGoForward = web.canGoForward
+        pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         navigationID = UUID(); error = nil; update()

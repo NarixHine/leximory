@@ -7,6 +7,7 @@ const failures = {
     stale_revision: { status: 409, message: '文章已更新，请重新打开。', retryable: false },
     quota_exceeded: { status: 429, message: '本期词点额度已用完。', retryable: false },
     unsupported_format: { status: 422, message: 'iOS 版暂不支持此格式。', retryable: false },
+    language_unresolved: { status: 422, message: '暂时无法识别这段文字的语言，请选择更完整的词句后重试。', retryable: false },
     service_unavailable: { status: 503, message: '服务暂时不可用，请稍后重试。', retryable: true },
 } satisfies Record<MobileErrorCode, { status: number; message: string; retryable: boolean }>
 

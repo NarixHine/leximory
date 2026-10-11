@@ -35,6 +35,7 @@
                   "stale_revision",
                   "quota_exceeded",
                   "unsupported_format",
+                  "language_unresolved",
                   "service_unavailable"
                 ],
                 "type": "string"
@@ -186,6 +187,7 @@
                       "stale_revision",
                       "quota_exceeded",
                       "unsupported_format",
+                      "language_unresolved",
                       "service_unavailable"
                     ],
                     "type": "string"
