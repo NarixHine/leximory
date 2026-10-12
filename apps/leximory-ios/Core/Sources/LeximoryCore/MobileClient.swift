@@ -139,7 +139,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversMutation = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord"].contains(operationID)
+        let recoversFailures = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -152,7 +152,7 @@ private struct BearerMiddleware: ClientMiddleware {
             result = try await next(request, body, baseURL)
         } catch {
             logger.error("Request failed: operation=\(operationID, privacy: .public) id=\(diagnosticID, privacy: .public) code=\((error as NSError).code)")
-            if !recoversMutation && MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
+            if !recoversFailures && MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
             throw error
         }
         if result.0.status.code == 401 && request.method == .get {
@@ -337,26 +337,7 @@ public struct MobileClient: Sendable {
         }
     }
     private func definitionStream(body: @escaping @Sendable () async throws -> HTTPBody) -> AsyncThrowingStream<DefinitionEvent, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let body = try await body()
-                    var decoder = DefinitionFrames()
-                    for try await chunk in body {
-                        try Task.checkCancellation()
-                        for event in try decoder.append(Data(chunk)) {
-                            if case .failed(let requestID, let failure) = event {
-                                Logger(subsystem: "com.leximory.reader", category: "api").error("Definition failed: id=\(requestID, privacy: .public) code=\(failure.code, privacy: .public)")
-                            }
-                            continuation.yield(event)
-                        }
-                    }
-                    try decoder.finish()
-                    continuation.finish()
-                } catch { continuation.finish(throwing: error) }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
+        DefinitionStreaming.events(body: body)
     }
     @discardableResult public func save(selection: ReadingSelection, completionID: String?) async throws -> SavedVocabulary {
         let requestID = UUID().uuidString

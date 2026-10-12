@@ -5,6 +5,38 @@ import LeximoryCore
 
 @MainActor struct DefinitionMutationTests {
     private var definition: Definition { Definition(lemma: "bank", definition: "河岸") }
+    @Test(.timeLimit(.minutes(1))) func generatedDefinitionIsReadyBeforeTheConnectionCloses() async throws {
+        let model = DefinitionModel(embedded: nil)
+        let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        channel.continuation.yield(.started("receipt"))
+        channel.continuation.yield(.completed("receipt", definition))
+        // Leave the body open: completion must not wait for EOF or a transport timeout.
+        await model.generate { (channel.stream, nil) }
+        channel.continuation.finish(throwing: URLError(.networkConnectionLost))
+        guard case .ready(let result, let id) = model.state else { Issue.record("Completion was not retained"); return }
+        #expect(result == definition)
+        #expect(id == "receipt")
+    }
+    @Test(.timeLimit(.minutes(1))) func restartedGenerationReplacesPartialText() async throws {
+        let model = DefinitionModel(embedded: nil)
+        let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        let task = Task { await model.generate { (channel.stream, nil) } }
+        defer { channel.continuation.finish(); task.cancel() }
+        channel.continuation.yield(.started("first"))
+        channel.continuation.yield(.delta("first", "{{bank||bank||old"))
+        channel.continuation.yield(.started("second"))
+        channel.continuation.yield(.delta("second", "{{bank||bank||new"))
+        while true {
+            try Task.checkCancellation()
+            if case .generating("new") = model.state { break }
+            await Task.yield()
+        }
+        channel.continuation.yield(.completed("second", definition))
+        await task.value
+        channel.continuation.finish()
+        guard case .ready(_, let id) = model.state else { Issue.record("Missing recovered definition"); return }
+        #expect(id == "second")
+    }
     @Test func saveSwitchesActionsImmediatelyAndIgnoresDoubleTap() async throws {
         let model = DefinitionModel(embedded: definition)
         let receipt = try JSONDecoder().decode(SavedVocabulary.self, from: Data(#"{"id":"word","libraryId":"library"}"#.utf8))

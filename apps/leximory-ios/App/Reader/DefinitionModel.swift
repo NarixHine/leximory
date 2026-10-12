@@ -58,29 +58,32 @@ enum DefinitionSource {
     }
     func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。") }
     func generate(client: MobileClient, source: DefinitionSource) async {
+        await generate { try await source.stream(client: client) }
+    }
+    func generate(stream: @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) async {
         if case .ready = state { return }
         state = .generating("")
         var raw = ""
-        var completed: (String, Definition)?
         do {
-            let stream = try await source.stream(client: client)
+            let stream = try await stream()
             browserTarget = stream.target
             for try await event in stream.events {
                 try Task.checkCancellation()
                 switch event {
-                case .started: break
+                case .started: raw = ""
                 case .delta(_, let text):
                     raw += text
                     let fields = raw.components(separatedBy: "||")
                     let preview = fields.count >= 3 ? fields[2].replacingOccurrences(of: "}}", with: "") : ""
                     state = .generating(preview)
-                case .completed(let id, let definition): completed = (id, definition)
+                case .completed(let id, let definition):
+                    state = .ready(definition, completionID: id)
+                    return
                 case .failed(_, let error): throw DefinitionFailure(message: error.message)
                 }
             }
             try Task.checkCancellation()
-            guard let completed else { throw URLError(.cannotParseResponse) }
-            state = .ready(completed.1, completionID: completed.0)
+            throw URLError(.cannotParseResponse)
         } catch {
             guard !Task.isCancelled else { return }
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")

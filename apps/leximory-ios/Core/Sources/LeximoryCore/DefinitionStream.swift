@@ -1,4 +1,59 @@
 import Foundation
+import OpenAPIRuntime
+import os
+
+enum DefinitionStreaming {
+    static func events(
+        body: @escaping @Sendable () async throws -> HTTPBody,
+        pause: @escaping @Sendable (Int) async throws -> Void = MutationRetry.pause
+    ) -> AsyncThrowingStream<DefinitionEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                for attempt in 0..<MutationRetry.maxAttempts {
+                    do {
+                        try Task.checkCancellation()
+                        let response = try await body()
+                        var decoder = DefinitionFrames()
+                        func emit(_ events: [DefinitionEvent]) throws -> Bool {
+                            for event in events {
+                                if case .failed(let id, let failure) = event {
+                                    Logger(subsystem: "com.leximory.reader", category: "api").error("Definition failed: id=\(id, privacy: .public) code=\(failure.code, privacy: .public)")
+                                    throw MobileFailure(error: failure)
+                                }
+                                continuation.yield(event)
+                                if case .completed = event { return true }
+                            }
+                            return false
+                        }
+                        for try await chunk in response {
+                            try Task.checkCancellation()
+                            if try emit(decoder.append(Data(chunk))) {
+                                continuation.finish()
+                                return
+                            }
+                        }
+                        try Task.checkCancellation()
+                        _ = try emit(decoder.finishEvents())
+                        continuation.finish()
+                        return
+                    } catch {
+                        guard !Task.isCancelled, attempt + 1 < MutationRetry.maxAttempts,
+                              MutationRetry.isRetryable(error) else {
+                            continuation.finish(throwing: error)
+                            return
+                        }
+                        do { try await pause(attempt) }
+                        catch {
+                            continuation.finish(throwing: error)
+                            return
+                        }
+                    }
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+}
 
 public enum DefinitionEvent: Sendable {
     case started(String)
@@ -48,6 +103,15 @@ public struct DefinitionFrames: Sendable {
     }
     public func finish() throws {
         guard buffer.isEmpty, terminal else { throw URLError(.cannotParseResponse) }
+    }
+    mutating func finishEvents() throws -> [DefinitionEvent] {
+        do {
+            let events = buffer.isEmpty ? [] : try append(Data([10]))
+            try finish()
+            return events
+        } catch is DecodingError {
+            throw URLError(.cannotParseResponse)
+        }
     }
     private struct WireFrame: Decodable {
         enum Kind: String, Decodable { case started, delta, completed, failed }

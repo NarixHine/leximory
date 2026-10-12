@@ -85,6 +85,43 @@ struct MobileClientTests {
         for try await event in client.definitions(selection: selection) { events.append(event) }
         #expect(events.count == 4)
     }
+    @Test(arguments: ["definitions", "ebookDefinitions", "browserDefinitions"])
+    func definitionRequestsRecoverWithoutPuttingTheStoreOffline(operation: String) async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://example.com"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let transport = InterruptedDefinitionTransport(bytes: try streamBytes())
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let events: AsyncThrowingStream<DefinitionEvent, Error>
+        switch operation {
+        case "ebookDefinitions": events = client.ebookDefinitions(textID: "book", quote: "bank", context: "bank", offset: 0)
+        case "browserDefinitions": events = client.browserDefinitions(selectionID: "selection")
+        default:
+            let document = try ReadingTests().fixture()
+            let layout = ReaderLayout(document: document)
+            let entry = try #require(layout.entries.first(where: { $0.block.displayText.contains("We walked") }))
+            let selection = try layout.selection(NSRange(location: entry.documentRange.location, length: 2), document: document, textID: TextID(rawValue: "text"))
+            events = client.definitions(selection: selection)
+        }
+        var result: Definition?
+        for try await event in events {
+            if case .completed(_, let definition) = event { result = definition }
+        }
+        #expect(result?.definition == "河岸 🙂")
+        #expect(await transport.calls == 2)
+        try await store.requireOnline()
+    }
+    private actor InterruptedDefinitionTransport: ClientTransport {
+        var calls = 0
+        let bytes: Data
+        init(bytes: Data) { self.bytes = bytes }
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            calls += 1
+            if calls == 1 { throw URLError(.networkConnectionLost) }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/x-ndjson"]), HTTPBody(bytes))
+        }
+    }
     @Test func nullableCursorAndMetadataDecodeThroughGeneratedClient() async throws {
         let client = MobileClient(baseURL: try #require(URL(string: "https://example.com")), transport: CatalogTransport(), token: { _ in "verified" })
         let result = try await client.texts(libraryID: "library")
