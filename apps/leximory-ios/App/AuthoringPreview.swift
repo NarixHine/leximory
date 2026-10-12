@@ -17,7 +17,7 @@ struct AuthoringPreview: View {
                 LibraryTabShell(selection: $selectedTab) {
                     FixtureLibraryView(playback: playback, libraries: [library], client: client, recentNamespace: "authoring-fixtures")
                 } browser: {
-                    TextBrowserScreen(client: client, sessionKey: "authoring-fixtures", homeURL: nil, close: { selectedTab = 0 })
+                    TextBrowserScreen(client: client, sessionKey: "authoring-fixtures", homeURL: nil)
                 } account: {
                     Text("账户")
                 }

@@ -90,7 +90,8 @@ struct TextBrowserScreen: View {
         }
         .background(Color(uiColor: browser.pageColor).ignoresSafeArea())
         .overlay(alignment: .bottom) { controls.padding(.horizontal, 16).padding(.bottom, 8) }
-        .toolbar(.hidden, for: .navigationBar).toolbar(.hidden, for: .tabBar)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(bookmarkID == nil ? .visible : .hidden, for: .tabBar)
         .sheet(isPresented: $settings) {
             BrowserPreferencesView(client: client, domain: browser.domain, bookmarkMode: bookmarkID != nil,
                 selectedLibraryID: selectedLibraryID) { libraryID in
@@ -149,10 +150,12 @@ struct TextBrowserScreen: View {
         GlassEffectContainer(spacing: 8) {
             HStack(spacing: 8) {
                 if !editingAddress {
-                    Button { if let close { close() } else { dismiss() } } label: { chromeIcon("xmark") }
-                        .buttonStyle(.plain).accessibilityLabel("关闭")
-                        .glassEffectID("close", in: chrome)
-                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                    if bookmarkID != nil {
+                        Button { if let close { close() } else { dismiss() } } label: { chromeIcon("xmark") }
+                            .buttonStyle(.plain).accessibilityLabel("关闭")
+                            .glassEffectID("close", in: chrome)
+                            .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                    }
                     if browser.canGoBack {
                         Button { browser.web.goBack() } label: { chromeIcon("chevron.left") }
                             .buttonStyle(.plain).accessibilityLabel("后退")

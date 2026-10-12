@@ -21,7 +21,7 @@ struct LiveLibraryView: View {
         LibraryTabShell(selection: $selectedTab) {
             libraryBrowser
         } browser: {
-            TextBrowserScreen(client: session.client, sessionKey: session.state.accountID, close: { selectedTab = 0 })
+            TextBrowserScreen(client: session.client, sessionKey: session.state.accountID)
         } account: {
             AccountView(session: session, playback: playback)
         }
@@ -239,34 +239,13 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     @ViewBuilder let library: Library
     @ViewBuilder let browser: Browser
     @ViewBuilder let account: Account
-    @Environment(\.horizontalSizeClass) private var sizeClass
     var body: some View {
-        if sizeClass == .regular {
-            ZStack {
-                library.environment(\.librarySectionSelection, $selection)
-                    .opacity(selection == 0 ? 1 : 0)
-                    .allowsHitTesting(selection == 0).accessibilityHidden(selection != 0)
-                browser.environment(\.browserActive, selection == 1)
-                    .opacity(selection == 1 ? 1 : 0)
-                    .allowsHitTesting(selection == 1).accessibilityHidden(selection != 1)
-                if selection == 2 {
-                    account
-                        .safeAreaInset(edge: .top, alignment: .leading, spacing: 12) {
-                            LibrarySectionPicker(selection: $selection)
-                                .frame(width: 280).padding(.horizontal, 20).padding(.top, 12)
-                        }
-                }
-            }.background(LeximoryPalette.paper)
-        } else {
-            phoneTabs
-        }
-    }
-    private var phoneTabs: some View {
         TabView(selection: $selection) {
             Tab("文库", systemImage: "books.vertical", value: 0) { library }
             Tab("浏览", systemImage: "globe", value: 1) { browser.environment(\.browserActive, selection == 1) }
             Tab("账户", systemImage: "person.crop.circle", value: 2) { account }
         }
+        .tabViewStyle(.tabBarOnly)
         .tint(.primary)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
@@ -275,18 +254,4 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
 
 extension EnvironmentValues {
     @Entry var browserActive = true
-    @Entry var librarySectionSelection: Binding<Int>? = nil
-}
-
-struct LibrarySectionPicker: View {
-    @Binding var selection: Int
-    var body: some View {
-        Picker("导航", selection: $selection) {
-            Text("文库").tag(0)
-            Text("浏览").tag(1)
-            Text("账户").tag(2)
-        }.pickerStyle(.segmented)
-            .font(LeximoryTypography.prose(16, language: "Chinese"))
-            .accessibilityIdentifier("library-section-picker")
-    }
 }

@@ -673,25 +673,37 @@ final class ReaderUITests: XCTestCase {
         let tabs = app.buttons["文库"].firstMatch
         XCTAssertTrue(sidebarHeading.exists)
         XCTAssertTrue(tabs.exists)
-        XCTAssertLessThan(tabs.frame.minY, 60)
+        XCTAssertTrue(tabs.isHittable)
         XCTAssertGreaterThan(sidebarHeading.frame.minY, tabs.frame.maxY)
         let firstTitle = app.buttons["text-fixture-reader"].staticTexts["The art of noticing"].firstMatch
-        XCTAssertLessThan(firstTitle.frame.minY, 200)
+        XCTAssertLessThan(firstTitle.frame.minY, app.frame.height / 3)
         XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == %@", "Field notes")).count, 1)
         let initialSidebarY = sidebarHeading.frame.minY
         let initialTextY = article.frame.minY
         capture(app, name: "Live gallery path after delayed API loading")
         article.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertFalse(tabs.isHittable)
         app.buttons["BackButton"].tap()
         XCTAssertTrue(article.waitForExistence(timeout: 10))
         XCTAssertTrue(tabs.waitForExistence(timeout: 5))
         XCTAssertEqual(sidebarHeading.frame.minY, initialSidebarY, accuracy: 2)
         XCTAssertEqual(article.frame.minY, initialTextY, accuracy: 2)
+        app.buttons["浏览"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["关闭"].exists)
+        tabs.tap()
+        XCTAssertTrue(article.waitForExistence(timeout: 5))
+        XCTAssertEqual(sidebarHeading.frame.minY, initialSidebarY, accuracy: 2)
+        XCTAssertEqual(article.frame.minY, initialTextY, accuracy: 2)
+        app.buttons["账户"].firstMatch.tap()
+        XCTAssertTrue(tabs.isHittable)
+        tabs.tap()
+        XCTAssertTrue(article.waitForExistence(timeout: 5))
         capture(app, name: "Library gutter after returning from text")
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(article.waitForExistence(timeout: 5))
-        XCTAssertLessThan(tabs.frame.minY, 60)
+        XCTAssertTrue(tabs.isHittable)
         capture(app, name: "Library sidebar in landscape")
     }
     @MainActor func testIPadTextRailCounts() throws {

@@ -48,6 +48,11 @@ final class TextBrowserUITests: XCTestCase {
         browse.tap()
         let bar = app.buttons["browser-address"]
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["关闭"].exists)
+        XCTAssertTrue(app.buttons["文库"].firstMatch.isHittable)
+        app.buttons["账户"].firstMatch.tap()
+        XCTAssertTrue(browse.waitForExistence(timeout: 5)); browse.tap()
+        XCTAssertTrue(bar.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["后退"].exists)
         bar.tap()
         let input = app.textFields["browser-address-input"]
@@ -74,18 +79,18 @@ final class TextBrowserUITests: XCTestCase {
         let gone = NSPredicate(format: "exists == false")
         expectation(for: gone, evaluatedWith: app.buttons["后退"])
         waitForExpectations(timeout: 10)
-        app.buttons["关闭"].tap()
+        app.buttons["文库"].firstMatch.tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "测试文库")).firstMatch.waitForExistence(timeout: 5))
         browse.tap()
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 5))
-        app.buttons["关闭"].tap()
+        app.buttons["文库"].firstMatch.tap()
         app.terminate()
         app.launchArguments = ["--authoring-fixtures"]
         app.launch()
         XCTAssertTrue(browse.waitForExistence(timeout: 10)); browse.tap()
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
-        app.buttons["关闭"].tap()
+        app.buttons["文库"].firstMatch.tap()
     }
 
     @MainActor func testBookmarkCreationReturnsToLibraryAndOpensWebpage() throws {

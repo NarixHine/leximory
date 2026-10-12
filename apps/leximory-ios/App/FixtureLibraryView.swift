@@ -19,7 +19,6 @@ struct FixtureLibraryView: View {
     @State private var recent: [String: FixtureArticle] = [:]
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path: [BrowserDestination] = []
-    @Environment(\.librarySectionSelection) private var sectionSelection
 
     private var library: FixtureLibrary? {
         guard case .library(let library) = path.first else { return nil }
@@ -38,13 +37,8 @@ struct FixtureLibraryView: View {
             if sizeClass == .regular {
                 NavigationStack(path: detailPath) {
                     HStack(spacing: 0) {
-                        VStack(spacing: 0) {
-                            if let sectionSelection {
-                                LibrarySectionPicker(selection: sectionSelection)
-                                    .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
-                            }
-                            gallery(selectedID: library?.id)
-                        }.frame(width: 320)
+                        gallery(selectedID: library?.id)
+                            .frame(width: 320)
                             .accessibilityIdentifier("library-sidebar")
                         Divider().overlay(LeximoryPalette.border)
                         Group {

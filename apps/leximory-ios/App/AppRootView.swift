@@ -57,7 +57,7 @@ struct AppRootView: View {
                         LibraryTabShell(selection: $fixtureTab) {
                             fixtureBrowser
                         } browser: {
-                            if let fixtureClient { TextBrowserScreen(client: fixtureClient, close: { fixtureTab = 0 }) }
+                            if let fixtureClient { TextBrowserScreen(client: fixtureClient) }
                             else { LeximoryUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
                             Text("账户").font(LeximoryTypography.interface(24))
