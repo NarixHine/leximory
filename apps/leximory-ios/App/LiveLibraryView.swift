@@ -220,13 +220,20 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     @ViewBuilder let account: Account
     var body: some View {
         TabView(selection: $selection) {
-            Tab("文库", systemImage: "books.vertical", value: 0) { library }
-            Tab("浏览", systemImage: "globe", value: 1) { browser.environment(\.browserActive, selection == 1) }
-            Tab("账号", systemImage: "person.crop.circle", value: 2) { account }
+            Tab(value: 0) { library } label: { tabLabel("文库", symbol: "books.vertical") }
+            Tab(value: 1) { browser.environment(\.browserActive, selection == 1) } label: { tabLabel("冲浪", symbol: "globe") }
+            Tab(value: 2) { account } label: { tabLabel("账号", symbol: "person.crop.circle") }
         }
         .tabViewStyle(.tabBarOnly)
         .tint(.primary)
         .tabBarMinimizeBehavior(.onScrollDown)
+    }
+    private func tabLabel(_ title: String, symbol: String) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(uiImage: UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(weight: .regular)) ?? UIImage())
+        }
     }
 
 }

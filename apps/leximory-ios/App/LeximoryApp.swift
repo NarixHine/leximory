@@ -20,9 +20,16 @@ struct LeximoryApp: App {
         for state in [UIControl.State.normal, .selected] {
             UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(15)], for: state)
         }
-        for state in [UIControl.State.normal, .selected] {
-            UITabBarItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(12)], for: state)
+        let tabAppearance = UITabBarAppearance()
+        for (item, size) in [(tabAppearance.stackedLayoutAppearance, CGFloat(12)),
+                             (tabAppearance.inlineLayoutAppearance, CGFloat(15)),
+                             (tabAppearance.compactInlineLayoutAppearance, CGFloat(15))] {
+            for state in [item.normal, item.selected] {
+                state.titleTextAttributes = [.font: LeximoryTypography.editorialUI(size, language: "Chinese")]
+            }
         }
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
     }
     @State private var playback = PlaybackController()
     var body: some Scene {

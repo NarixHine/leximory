@@ -8,6 +8,7 @@ struct TextBrowserScreen: View {
     var sessionKey: String? = nil
     var homeURL: String? = "https://www.cgtn.com"
     var close: (() -> Void)? = nil
+    @State private var chromeLayout = BrowserChromeLayout()
     @Environment(\.browserActive) private var active
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var chrome
@@ -89,7 +90,19 @@ struct TextBrowserScreen: View {
             }
         }
         .background(Color(uiColor: browser.pageColor).ignoresSafeArea())
-        .overlay(alignment: .bottom) { controls.padding(.horizontal, 16).padding(.bottom, 8) }
+        .overlay(alignment: .bottom) {
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                GeometryReader { geometry in
+                    let row = chromeLayout.controls(in: geometry.size, editing: editingAddress, hasTabs: bookmarkID == nil)
+                    controls.frame(width: row.width, height: 48)
+                        .position(x: row.midX, y: row.midY)
+                        .animation(motion, value: chromeLayout.isMinimized)
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: chromeLayout.keyboardFrame)
+                }
+                .ignoresSafeArea(.container, edges: .bottom)
+                .background(BrowserChromeProbe(layout: $chromeLayout).allowsHitTesting(false))
+            } else { controls.padding(.horizontal, 16).padding(.bottom, 8) }
+        }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(bookmarkID == nil ? .visible : .hidden, for: .tabBar)
         .sheet(isPresented: $settings) {
@@ -118,6 +131,13 @@ struct TextBrowserScreen: View {
             browser.web.lookup = { selection in define(selection) }
             guard !opened else { return }
             opened = true
+            #if DEBUG && targetEnvironment(simulator)
+            if ProcessInfo.processInfo.arguments.contains("--browser-chrome-fixture") {
+                let paragraphs = String(repeating: "<p>We followed the river through the forest, watching the light change beneath the trees.</p>", count: 25)
+                browser.web.loadHTMLString("<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"font:20px/1.7 Georgia;margin:24px\"><h1>A quiet forest</h1>\(paragraphs)</body></html>", baseURL: URL(string: "https://browser-fixture.invalid"))
+                return
+            }
+            #endif
             if let initialURL, let url = TextBrowserModel.address(initialURL) { browser.load(url) }
             else if let bookmarkID {
                 do {
@@ -336,4 +356,112 @@ private final class BrowserAddressEditor {
 struct BrowserSession: Codable {
     let url: String
     let offset: CGFloat
+}
+
+private struct BrowserChromeLayout: Equatable {
+    var tabFrame = CGRect.zero
+    var keyboardFrame = CGRect.zero
+    var bottomInset: CGFloat = 0
+    var isMinimized: Bool { tabFrame.width > 0 && tabFrame.width < tabFrame.height * 1.5 }
+
+    func controls(in size: CGSize, editing: Bool, hasTabs: Bool) -> CGRect {
+        let keyboardVisible = keyboardFrame.height > 100
+        let inline = hasTabs && !editing && !keyboardVisible && isMinimized
+        var left: CGFloat = 16
+        var right = size.width - 16
+        var centerY = size.height - bottomInset - 32
+        if hasTabs && tabFrame.width > 0 {
+            if inline {
+                if tabFrame.midX < size.width / 2 { left = tabFrame.maxX + 12 }
+                else { right = tabFrame.minX - 12 }
+                centerY = tabFrame.midY
+            } else { centerY = tabFrame.minY - 32 }
+        }
+        if keyboardVisible { centerY = min(centerY, keyboardFrame.minY - 32) }
+        if editing { centerY = min(centerY, size.height - bottomInset - 32) }
+        return CGRect(x: left, y: max(24, centerY) - 24, width: max(48, right - left), height: 48)
+    }
+}
+
+private struct BrowserChromeProbe: UIViewRepresentable {
+    @Binding var layout: BrowserChromeLayout
+    func makeUIView(context: Context) -> ProbeView {
+        let view = ProbeView()
+        view.isUserInteractionEnabled = false
+        view.changed = { layout = $0 }
+        return view
+    }
+    func updateUIView(_ uiView: ProbeView, context: Context) { uiView.changed = { layout = $0 } }
+    static func dismantleUIView(_ uiView: ProbeView, coordinator: ()) { uiView.stop() }
+
+    final class ProbeView: UIView {
+        var changed: ((BrowserChromeLayout) -> Void)?
+        private var displayLink: CADisplayLink?
+        private var lastLayout = BrowserChromeLayout()
+        private weak var tabs: UITabBarController?
+        private final class TickTarget: NSObject {
+            weak var view: ProbeView?
+            @objc func tick() { view?.measure() }
+        }
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            stop()
+            guard window != nil else { return }
+            keyboardLayoutGuide.followsUndockedKeyboard = true
+            let target = TickTarget()
+            target.view = self
+            let link = CADisplayLink(target: target, selector: #selector(TickTarget.tick))
+            link.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+            link.add(to: .main, forMode: .common)
+            displayLink = link
+        }
+        func stop() { displayLink?.invalidate(); displayLink = nil }
+        private func findTabs(in controller: UIViewController) -> UITabBarController? {
+            if let tabs = controller as? UITabBarController { return tabs }
+            for child in controller.children {
+                if let tabs = findTabs(in: child) { return tabs }
+            }
+            return nil
+        }
+        private func navigationControls(in view: UIView, titles: Set<String>) -> [UIControl] {
+            let opacity = view.layer.presentation()?.opacity ?? Float(view.alpha)
+            guard !view.isHidden, opacity > 0.01 else { return [] }
+            if let control = view as? UIControl, let label = control.accessibilityLabel,
+               titles.contains(where: { label.contains($0) }) { return [control] }
+            return view.subviews.flatMap { navigationControls(in: $0, titles: titles) }
+        }
+        private func visibleFrame(of view: UIView) -> CGRect {
+            let destination = layer.presentation() ?? layer
+            let source = view.layer.presentation() ?? view.layer
+            var rect = source.convert(source.bounds, to: destination)
+            var ancestor = view.superview
+            while let parent = ancestor {
+                if parent.clipsToBounds {
+                    let clip = parent.layer.presentation() ?? parent.layer
+                    rect = rect.intersection(clip.convert(clip.bounds, to: destination))
+                }
+                ancestor = parent.superview
+            }
+            return rect
+        }
+        private func measure() {
+            guard let window else { return }
+            if tabs == nil, let root = window.rootViewController { tabs = findTabs(in: root) }
+            var frame = CGRect.zero
+            if let tabs {
+                let titles = Set((tabs.tabBar.items ?? []).compactMap(\.title))
+                let targets = navigationControls(in: tabs.view, titles: titles)
+                for target in targets {
+                    let rect = visibleFrame(of: target)
+                    guard !rect.isNull, rect.width > 10, rect.height > 10 else { continue }
+                    frame = frame == .zero ? rect : frame.union(rect)
+                }
+                if frame == .zero, !tabs.tabBar.isHidden { frame = tabs.tabBar.convert(tabs.tabBar.bounds, to: self) }
+            }
+            let next = BrowserChromeLayout(tabFrame: frame, keyboardFrame: keyboardLayoutGuide.layoutFrame, bottomInset: safeAreaInsets.bottom)
+            guard next != lastLayout else { return }
+            lastLayout = next
+            changed?(next)
+        }
+    }
 }

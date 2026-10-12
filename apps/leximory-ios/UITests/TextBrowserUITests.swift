@@ -9,7 +9,7 @@ final class TextBrowserUITests: XCTestCase {
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
         app.launch()
-        let browse = app.buttons["浏览"].firstMatch
+        let browse = app.buttons["冲浪"].firstMatch
         XCTAssertTrue(browse.waitForExistence(timeout: 10)); browse.tap()
         app.buttons["browser-address"].tap()
         let input = app.textFields["browser-address-input"]
@@ -42,7 +42,7 @@ final class TextBrowserUITests: XCTestCase {
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--authoring-fixtures", "--reset-browser"]
         app.launch()
-        let browse = app.buttons["浏览"].firstMatch
+        let browse = app.buttons["冲浪"].firstMatch
         XCTAssertTrue(browse.waitForExistence(timeout: 10))
         let navigation = XCTAttachment(screenshot: app.screenshot()); navigation.name = "Browser navigation"; navigation.lifetime = .keepAlways; add(navigation)
         browse.tap()
@@ -91,6 +91,58 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(browse.waitForExistence(timeout: 10)); browse.tap()
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
         app.buttons["文库"].firstMatch.tap()
+    }
+
+    @MainActor func testPhoneAddressBarSharesCollapsedTabRow() throws {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("iPhone bottom accessory") }
+        let app = XCUIApplication()
+        defer {
+            XCUIDevice.shared.orientation = .portrait
+            app.terminate(); app.launchArguments = []; app.launch()
+        }
+        app.launchArguments = ["--authoring-fixtures", "--reset-browser", "--browser-chrome-fixture"]
+        app.launch()
+        let surf = app.buttons["冲浪"].firstMatch
+        XCTAssertTrue(surf.waitForExistence(timeout: 10)); surf.tap()
+        let address = app.buttons["browser-address"]
+        XCTAssertTrue(address.waitForExistence(timeout: 10))
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 60))
+        let expandedCapture = XCTAttachment(screenshot: app.screenshot())
+        expandedCapture.name = "Separate Browser glass controls"; expandedCapture.lifetime = .keepAlways; add(expandedCapture)
+        let expandedY = address.frame.minY
+        app.webViews.firstMatch.swipeUp()
+        app.webViews.firstMatch.swipeUp()
+        let moved = NSPredicate { _, _ in address.frame.minY > expandedY + 20 }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 5), .completed)
+        XCTAssertTrue(address.frame.maxX <= surf.frame.minX || address.frame.minX >= surf.frame.maxX)
+        XCTAssertEqual(address.frame.midY, surf.frame.midY, accuracy: 12)
+        let collapsedCapture = XCTAttachment(screenshot: app.screenshot())
+        collapsedCapture.name = "Address beside collapsed navigation"; collapsedCapture.lifetime = .keepAlways; add(collapsedCapture)
+        address.tap()
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertLessThanOrEqual(input.frame.height, 56)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertLessThan(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        let keyboardCapture = XCTAttachment(screenshot: app.screenshot())
+        keyboardCapture.name = "Address above keyboard"; keyboardCapture.lifetime = .keepAlways; add(keyboardCapture)
+        input.typeText("https://example.invalid")
+        app.buttons["取消"].tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        for _ in 0..<4 {
+            app.webViews.firstMatch.swipeDown(velocity: .slow)
+            if address.frame.minY < expandedY + 10 { break }
+        }
+        let expanded = NSPredicate { _, _ in address.frame.minY < expandedY + 10 }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: expanded, object: nil)], timeout: 10), .completed)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        address.tap()
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertLessThan(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        app.buttons["取消"].tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
     }
 
     @MainActor func testBookmarkCreationReturnsToLibraryAndOpensWebpage() throws {

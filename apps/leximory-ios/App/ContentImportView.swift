@@ -42,14 +42,8 @@ struct ContentImportView: View {
                         Text("电子书").tag(1)
                     }.pickerStyle(.segmented).disabled(busy || uncertain)
                     if kind == 2 {
-                        TextField("", text: $url)
-                            .overlay(alignment: .leading) {
-                                if url.isEmpty {
-                                    Text("https://theleximorytimes.com/")
-                                        .foregroundStyle(LeximoryPalette.muted)
-                                        .allowsHitTesting(false).accessibilityHidden(true)
-                                }
-                            }
+                        TextField("", text: $url, prompt: Text(verbatim: "https://theleximorytimes.com/")
+                            .foregroundStyle(LeximoryPalette.muted))
                             .focused($focusedField, equals: "网址").submitLabel(.go)
                             .onSubmit { focusedField = nil; if !extracted { Task { await submit(annotate: true) } } }
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -80,26 +74,7 @@ struct ContentImportView: View {
                         }.buttonStyle(.plain).accessibilityLabel("选择 EPUB 或 PDF")
                     }
                     if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
-                    HStack(spacing: 16) {
-                        if kind == 2 && !extracted {
-                            Button(savingBookmark ? "保存中……" : "存为书签", systemImage: "bookmark") { Task { await saveBookmark() } }
-                                .buttonStyle(.glass).frame(minHeight: 48)
-                                .accessibilityIdentifier("content-bookmark-submit")
-                        }
-                        if isText {
-                            Button("保存") { Task { await submit(annotate: false) } }
-                                .frame(minWidth: 44, minHeight: 48).contentShape(Rectangle())
-                                .foregroundStyle(LeximoryPalette.muted)
-                        }
-                        Button { Task { await submit(annotate: kind != 1) } } label: {
-                            HStack(spacing: 8) {
-                                if busy && !savingBookmark { ProgressView().tint(LeximoryPalette.paper) }
-                                else { Image(systemName: kind == 1 ? "arrow.up.doc" : "airplane") }
-                                Text(busy && !savingBookmark ? (kind != 1 ? "导入中" : "上传中") : (isText ? "生成" : "导入"))
-                            }.frame(maxWidth: .infinity, minHeight: 48)
-                                .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
-                        }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
-                    }.disabled(!valid || busy || uncertain)
+                    importActions
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy || uncertain)
             }.scrollDismissesKeyboard(.interactively).background(LeximoryPalette.shell)
@@ -115,6 +90,33 @@ struct ContentImportView: View {
                     Task { await readFile(result) }
                 }
         }.presentationDetents([.large])
+    }
+    private var importActions: some View {
+        HStack(spacing: 16) {
+            if kind == 2 && !extracted {
+                Button { Task { await saveBookmark() } } label: {
+                    Label(savingBookmark ? "保存中……" : "存为书签", systemImage: "bookmark")
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .foregroundStyle(LeximoryPalette.ink)
+                        .background(LeximoryPalette.cover, in: Capsule())
+                }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("content-bookmark-submit")
+            }
+            if isText {
+                Button("保存") { Task { await submit(annotate: false) } }
+                    .frame(minWidth: 44, minHeight: 48).contentShape(Rectangle())
+                    .foregroundStyle(LeximoryPalette.muted)
+            }
+            Button { Task { await submit(annotate: kind != 1) } } label: {
+                HStack(spacing: 8) {
+                    if busy && !savingBookmark { ProgressView().tint(LeximoryPalette.paper) }
+                    else { Image(systemName: kind == 1 ? "arrow.up.doc" : "airplane") }
+                    Text(busy && !savingBookmark ? (kind != 1 ? "导入中" : "上传中") : (isText ? "生成" : "导入"))
+                }.frame(maxWidth: .infinity, minHeight: 48)
+                    .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
+            }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
+        }.disabled(!valid || busy || uncertain)
     }
     private func input(_ label: String, text: Binding<String>, lines: ClosedRange<Int>) -> some View {
         TextField(label, text: text, prompt: Text(label == "文本" ? "" : label).foregroundStyle(LeximoryPalette.muted), axis: .vertical)
