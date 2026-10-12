@@ -213,27 +213,6 @@ extension CatalogText {
     }
 }
 
-private struct AccountView: View {
-    let session: AccountSession
-    let playback: PlaybackController
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    Text("账户").editorialFont(30, relativeTo: .largeTitle, language: "Chinese")
-                    if case .signedIn(let account) = session.state {
-                        LabeledContent("本期词点", value: "\(Int(account.definitions.used)) / \(Int(account.definitions.limit))")
-                    }
-                    Button("退出登录", role: .destructive) {
-                        playback.stop()
-                        Task { await session.signOut() }
-                    }.frame(minHeight: 44)
-                }.padding(28).frame(maxWidth: 560, alignment: .leading).frame(maxWidth: .infinity)
-            }.background(LeximoryPalette.paper).toolbar(.hidden, for: .navigationBar)
-        }.task { await session.refreshAccount() }
-    }
-}
-
 struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
     @Binding var selection: Int
     @ViewBuilder let library: Library
@@ -243,7 +222,7 @@ struct LibraryTabShell<Library: View, Browser: View, Account: View>: View {
         TabView(selection: $selection) {
             Tab("文库", systemImage: "books.vertical", value: 0) { library }
             Tab("浏览", systemImage: "globe", value: 1) { browser.environment(\.browserActive, selection == 1) }
-            Tab("账户", systemImage: "person.crop.circle", value: 2) { account }
+            Tab("账号", systemImage: "person.crop.circle", value: 2) { account }
         }
         .tabViewStyle(.tabBarOnly)
         .tint(.primary)

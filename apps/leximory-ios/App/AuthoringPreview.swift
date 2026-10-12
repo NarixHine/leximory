@@ -19,7 +19,7 @@ struct AuthoringPreview: View {
                 } browser: {
                     TextBrowserScreen(client: client, sessionKey: "authoring-fixtures", homeURL: nil)
                 } account: {
-                    Text("账户")
+                    Text("账号")
                 }
             } else { ProgressView() }
         }

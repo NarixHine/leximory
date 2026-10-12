@@ -1,0 +1,50 @@
+import Foundation
+import Testing
+import OpenAPIRuntime
+import HTTPTypes
+@testable import LeximoryCore
+
+@Suite struct AccountSettingsTests {
+    @Test func generatedClientPreservesFractionalQuotasAndAccountDetails() async throws {
+        let transport = SettingsTransport()
+        let client = MobileClient(baseURL: URL(string: "https://account.example")!, transport: transport, token: { _ in "verified" })
+        let account = try await client.accountSettings()
+        #expect(account.username == "猫忆读者")
+        #expect(account.definitions.used == 3.75)
+        #expect(account.audio.used == 1.5)
+        #expect(account.accent == "BrE")
+        #expect(account.subscriptionPlans.map(\.id) == ["beginner", "bilingual", "polyglot"])
+        #expect(account.activity.last?.count == 36)
+        #expect(try await client.claimDailyLexicoin() == "领取成功，LexiCoin + 1")
+        try await client.setAccountAccent("AmE")
+        #expect(await transport.accent == "AmE")
+        #expect(try await client.accountToken() == "private-token")
+        try await client.revokeAccountToken()
+        #expect(try await client.accountBilling().absoluteString == "https://billing.example/portal")
+        #expect(try await client.accountCheckout(plan: "bilingual").absoluteString == "https://billing.example/checkout")
+    }
+    private actor SettingsTransport: ClientTransport {
+        var accent: String?
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            #expect(request.headerFields[.authorization] == "Bearer verified")
+            let payload: Data
+            switch operationID {
+            case "accountSettings":
+                let url = try #require(Bundle.module.url(forResource: "account-settings", withExtension: "json", subdirectory: "Fixtures"))
+                payload = try Data(contentsOf: url)
+            case "accountClaim": payload = Data(#"{"message":"领取成功，LexiCoin + 1"}"#.utf8)
+            case "accountAccent":
+                struct Input: Decodable { let accent: String }
+                let data = try await Data(collecting: #require(body), upTo: 1024)
+                accent = try JSONDecoder().decode(Input.self, from: data).accent
+                payload = Data(#"{"saved":true}"#.utf8)
+            case "accountToken": payload = Data(#"{"token":"private-token"}"#.utf8)
+            case "accountRevokeToken": payload = Data(#"{"saved":true}"#.utf8)
+            case "accountBilling": payload = Data(#"{"url":"https://billing.example/portal"}"#.utf8)
+            case "accountCheckout": payload = Data(#"{"url":"https://billing.example/checkout"}"#.utf8)
+            default: throw URLError(.unsupportedURL)
+            }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(payload))
+        }
+    }
+}

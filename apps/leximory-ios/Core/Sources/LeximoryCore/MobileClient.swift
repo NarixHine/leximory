@@ -204,6 +204,33 @@ public struct MobileClient: Sendable {
         }
         return try decoder.decode(Result.self, from: encoder.encode(value))
     }
+    public func accountSettings() async throws -> AccountSettings {
+        let settings = try mapped(try await client.accountSettings().ok.body.json, to: AccountSettings.self)
+        await localStore?.save(settings, for: "account-settings")
+        return settings
+    }
+    public func setAccountAccent(_ accent: String) async throws {
+        guard let value = Operations.accountAccent.Input.Body.jsonPayload.accentPayload(rawValue: accent) else { throw URLError(.badURL) }
+        _ = try await client.accountAccent(body: .json(.init(accent: value))).ok.body.json
+    }
+    public func claimDailyLexicoin() async throws -> String {
+        try await client.accountClaim().ok.body.json.message
+    }
+    public func accountToken() async throws -> String { try await client.accountToken().ok.body.json.token }
+    public func revokeAccountToken() async throws { _ = try await client.accountRevokeToken().ok.body.json }
+    public func uploadAccountAvatar(_ data: Data) async throws -> URL {
+        let result = try await client.accountAvatar(body: .json(.init(data: data.base64EncodedString(), contentType: .image_sol_jpeg))).ok.body.json
+        guard let url = URL(string: result.url) else { throw URLError(.badURL) }; return url
+    }
+    public func accountCheckout(plan: String) async throws -> URL {
+        guard let selected = Operations.accountCheckout.Input.Body.jsonPayload.planPayload(rawValue: plan) else { throw URLError(.badURL) }
+        let result = try await client.accountCheckout(body: .json(.init(plan: selected))).ok.body.json
+        guard let url = URL(string: result.url), url.scheme == "https" else { throw URLError(.badURL) }; return url
+    }
+    public func accountBilling() async throws -> URL {
+        let result = try await client.accountBilling().ok.body.json
+        guard let url = URL(string: result.url), url.scheme == "https" else { throw URLError(.badURL) }; return url
+    }
     public func account() async throws -> Account {
         let account = try mapped(try await client.me().ok.body.json, to: Account.self)
         await localStore?.save(account, for: "account")

@@ -21,7 +21,7 @@ function createQuotaUI({
             <GradientCard
                 title={name}
                 caption={ttlText}
-                text={`${quota} / ${max}`}
+                text={`${Math.trunc(quota)} / ${max}`}
                 className={className}
             >
                 <CircularProgress

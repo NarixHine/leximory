@@ -61,7 +61,28 @@ export const browserTargetSchema = z.object({
 }).strict()
 export const domainRuleSchema = z.object({ domain: z.string().min(1).max(253), libraryId: resourceID }).strict()
 export const bookmarkInputSchema = z.object({ url: z.url().max(8192), requestId: resourceID }).strict()
+export const accountSettingsSchema = accountSchema.extend({
+    username: z.string().nullable(), image: z.string().nullable(), email: z.string().nullable(), createdAt: z.string(),
+    planLabel: z.string(), balance: z.number(), dailyAmount: z.number(), hasClaimed: z.boolean(),
+    accent: z.enum(['BrE', 'AmE']), audio: accountSchema.shape.definitions,
+    activity: z.array(z.object({ date: z.string(), count: z.int().nonnegative() }).strict()),
+    today: z.string(),
+    subscriptionPlans: z.array(z.object({
+        id: z.enum(['beginner', 'bilingual', 'polyglot']), name: z.string(), price: z.string(),
+        definitions: z.number(), audio: z.number(), dailyAmount: z.number(),
+    }).strict()),
+}).strict()
+export const avatarInputSchema = z.object({ data: z.string().max(1398104), contentType: z.literal('image/jpeg') }).strict()
 export const mobileContract = {
+    accountSettings: oc.route({ method: 'GET', path: '/account' }).output(accountSettingsSchema),
+    accountAccent: oc.route({ method: 'POST', path: '/account/accent' }).input(z.object({ accent: z.enum(['BrE', 'AmE']) }).strict()).output(z.object({ saved: z.boolean() })),
+    accountClaim: oc.route({ method: 'POST', path: '/account/claim' }).output(z.object({ message: z.string() })),
+    accountToken: oc.route({ method: 'POST', path: '/account/token' }).output(z.object({ token: z.string() })),
+    accountRevokeToken: oc.route({ method: 'POST', path: '/account/revoke-token' }).output(z.object({ saved: z.boolean() })),
+    accountAvatar: oc.route({ method: 'POST', path: '/account/avatar' }).input(avatarInputSchema).output(z.object({ url: z.url() })),
+    accountCheckout: oc.route({ method: 'POST', path: '/account/checkout' }).input(z.object({ plan: z.enum(['bilingual', 'polyglot']) }).strict()).output(z.object({ url: z.url() })),
+    accountBilling: oc.route({ method: 'POST', path: '/account/billing' }).output(z.object({ url: z.url() })),
+
     createBookmark: oc.route({ method: 'POST', path: '/libraries/{libraryId}/bookmarks' }).input(bookmarkInputSchema.extend({ libraryId: resourceID })).output(textSchema),
     browserSelection: oc.route({ method: 'POST', path: '/browser/selection' }).input(browserSelectionSchema).output(browserTargetSchema),
     browserDefinitions: oc.route({ method: 'POST', path: '/browser/definitions', spec: spec => ({

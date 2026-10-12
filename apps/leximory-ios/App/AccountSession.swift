@@ -57,6 +57,14 @@ actor AccountTokens {
         _ = try await task.value
         guard generation == currentGeneration else { throw CancellationError() }
     }
+    func updateUsername(_ username: String) async throws {
+        _ = try await auth.update(user: UserAttributes(data: ["username": .string(username)]))
+    }
+    func updateAvatar(_ url: URL) async throws {
+        _ = try await auth.update(user: UserAttributes(data: ["avatar_url": .string(url.absoluteString)]))
+    }
+    func updateEmail(_ email: String) async throws { _ = try await auth.update(user: UserAttributes(email: email)) }
+    func updatePassword(_ password: String) async throws { _ = try await auth.update(user: UserAttributes(password: password)) }
     func cachedUserID() -> String? { auth.currentSession?.user.id.uuidString.lowercased() }
     func matches(_ rejected: String) -> Bool { auth.currentSession?.accessToken == rejected }
     func signOut() async {

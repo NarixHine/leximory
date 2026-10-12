@@ -56,7 +56,7 @@ Browser navigation uses a Safari-compatible identity and mobile content on iPhon
 
 The browser fills its safe areas with the webpage’s theme color, falling back to WebKit’s page background. Track color changes without shifting the webpage or controls.
 
-iPhone and iPad use the same native 文库、浏览 and 账户 tabs. Browser keeps these tabs available without a separate exit button. Bookmarked webpages retain their close button to return to the text gallery. Regular-width windows use a library sidebar with the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
+iPhone and iPad use the same native 文库、浏览 and 账号 tabs. Browser keeps these tabs available without a separate exit button. Bookmarked webpages retain their close button to return to the text gallery. Regular-width windows use a library sidebar with the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
 
 Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
@@ -101,3 +101,9 @@ Every readable library exposes 语料本; owned libraries also expose 导入. St
 ## Verification
 
 Check phone and iPad widths, portrait/landscape, dark appearance, long titles and Dynamic Type. Verify selection, bookmarks, real horizontal and Japanese books, and supported offline actions. Mac Catalyst also needs keyboard, resizing and lifecycle checks. Fixtures are for automated verification; hand off the real app in normal account mode. Database mutations and device installation require authorization.
+
+## Account
+
+账号 preserves the web settings page's profile header, daily LexiCoin claim, balance, subscription, AI 词点额度 and AI 语点额度, monthly vocabulary calendar, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. Use the Shanghai calendar for activity and daily claims.
+
+Use native navigation, segmented preferences, a photo picker, edit sheets, sharing and destructive confirmations. Plan comparison opens in a native sheet and checkout uses the existing billing service. Account summaries are cached within the account's reading store; editing stays visible and is disabled offline. Passkeys are fetched on demand and never written to the reading cache.

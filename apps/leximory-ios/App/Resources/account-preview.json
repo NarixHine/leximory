@@ -1,0 +1,100 @@
+{
+  "userId": "account-preview",
+  "plan": "beginner",
+  "planLabel": "Beginner—初学者",
+  "username": "猫忆读者",
+  "image": null,
+  "email": "reader@example.com",
+  "createdAt": "2025-03-21T10:00:00Z",
+  "balance": 42,
+  "dailyAmount": 1,
+  "hasClaimed": false,
+  "accent": "BrE",
+  "definitions": {
+    "used": 3.75,
+    "limit": 20,
+    "resetsIn": 7200
+  },
+  "audio": {
+    "used": 1.5,
+    "limit": 3,
+    "resetsIn": 5400
+  },
+  "activity": [
+    {
+      "date": "2026-10-01",
+      "count": 3
+    },
+    {
+      "date": "2026-10-02",
+      "count": 6
+    },
+    {
+      "date": "2026-10-03",
+      "count": 9
+    },
+    {
+      "date": "2026-10-04",
+      "count": 12
+    },
+    {
+      "date": "2026-10-05",
+      "count": 15
+    },
+    {
+      "date": "2026-10-06",
+      "count": 18
+    },
+    {
+      "date": "2026-10-07",
+      "count": 21
+    },
+    {
+      "date": "2026-10-08",
+      "count": 24
+    },
+    {
+      "date": "2026-10-09",
+      "count": 27
+    },
+    {
+      "date": "2026-10-10",
+      "count": 30
+    },
+    {
+      "date": "2026-10-11",
+      "count": 33
+    },
+    {
+      "date": "2026-10-12",
+      "count": 36
+    }
+  ],
+  "today": "2026-10-12",
+  "subscriptionPlans": [
+    {
+      "id": "beginner",
+      "name": "Beginner—初学者",
+      "price": "US$0.00",
+      "definitions": 20,
+      "audio": 3,
+      "dailyAmount": 1
+    },
+    {
+      "id": "bilingual",
+      "name": "Bilingual—双语者",
+      "price": "US$4.49",
+      "definitions": 100,
+      "audio": 10,
+      "dailyAmount": 3
+    },
+    {
+      "id": "polyglot",
+      "name": "Polyglot—语言学人",
+      "price": "US$6.00",
+      "definitions": 300,
+      "audio": 20,
+      "dailyAmount": 10
+    }
+  ]
+}

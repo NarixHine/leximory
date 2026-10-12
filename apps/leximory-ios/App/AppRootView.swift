@@ -14,7 +14,7 @@ struct AppRootView: View {
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
         #if DEBUG && targetEnvironment(simulator)
-        if ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
+        if ProcessInfo.processInfo.arguments.contains("--account-fixtures") || ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
             if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
                 fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })
             }
@@ -50,7 +50,9 @@ struct AppRootView: View {
                 #endif
             } else {
                 #if DEBUG && targetEnvironment(simulator)
-                if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
+                if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
+                    AccountPreview(playback: fixturePlayback)
+                } else if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
                     AuthoringPreview(playback: fixturePlayback)
                 } else if ProcessInfo.processInfo.arguments.contains("--fixtures") {
                     if ProcessInfo.processInfo.arguments.contains("--tab-fixtures") {
@@ -60,7 +62,7 @@ struct AppRootView: View {
                             if let fixtureClient { TextBrowserScreen(client: fixtureClient) }
                             else { LeximoryUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
-                            Text("账户").font(LeximoryTypography.interface(24))
+                            Text("账号").font(LeximoryTypography.interface(24))
                         }
                     } else { fixtureBrowser }
                 } else {

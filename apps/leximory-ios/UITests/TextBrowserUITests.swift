@@ -50,7 +50,7 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["关闭"].exists)
         XCTAssertTrue(app.buttons["文库"].firstMatch.isHittable)
-        app.buttons["账户"].firstMatch.tap()
+        app.buttons["账号"].firstMatch.tap()
         XCTAssertTrue(browse.waitForExistence(timeout: 5)); browse.tap()
         XCTAssertTrue(bar.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["后退"].exists)
