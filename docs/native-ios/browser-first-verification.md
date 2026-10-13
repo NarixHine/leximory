@@ -47,3 +47,5 @@ Home restores the most recently opened webpage per account, including its saved-
 ## Compact composer and search preference
 
 The compact address composer omits the logo, wordmark, and avatar. It renders only its card controls so blank space passes taps to the dismissing backdrop. More includes a native engine picker with Bing, Google, DuckDuckGo, and Baidu, remembered locally and used by both address-entry paths. Continue-reading and recent-webpage links explicitly center wrapped text. Builds pass; final interaction review is left to humans.
+
+Folder headings are restored to their original 17 pt interface face; child titles are reduced to 16 pt. Home renders an avatar UIImage retained by the workspace instead of restarting AsyncImage on each return, using the existing ReaderImage/local-store cache to load it. The compact cards center in the available area after reserving the measured address-bar height. The build verifies integration; visual margins remain for human review.

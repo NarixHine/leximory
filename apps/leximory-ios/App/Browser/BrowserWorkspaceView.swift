@@ -11,6 +11,7 @@ struct BrowserWorkspaceView: View {
     @State private var address = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var avatarURL: URL?
+    @State private var avatarImage: UIImage?
     @State private var editingAddress = false
     @State private var addressEditor = BrowserAddressEditor()
     @State private var choosingFile = false
@@ -52,9 +53,10 @@ struct BrowserWorkspaceView: View {
                     if editingAddress || isHome {
                         BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
                             browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarURL: avatarURL,
+                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarImage: avatarImage,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: editingAddress ? .top : .center)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                            .padding(.bottom, editingAddress ? chromeHeight : 0)
                     }
                     if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting ? "正在提取正文" : "正在打开") }
                 }
@@ -129,10 +131,15 @@ struct BrowserWorkspaceView: View {
         }
         .task(id: isHome) {
             guard isHome, session != nil else { return }
-            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") {
-                avatarURL = cached.image.flatMap(URL.init(string:))
-            } else if let settings = try? await client.accountSettings() {
-                avatarURL = settings.image.flatMap(URL.init(string:))
+            let settings: AccountSettings?
+            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") { settings = cached }
+            else { settings = try? await client.accountSettings() }
+            guard !Task.isCancelled else { return }
+            let url = settings?.image.flatMap(URL.init(string:))
+            guard let url else { avatarURL = nil; avatarImage = nil; return }
+            if avatarURL == url, avatarImage != nil { return }
+            if let image = try? await ReaderImage.load(url, store: client.localStore), !Task.isCancelled {
+                avatarURL = url; avatarImage = image
             }
         }
         .task { await workspace.refresh(online: sync?.online != false) }

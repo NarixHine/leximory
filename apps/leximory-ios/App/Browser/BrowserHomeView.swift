@@ -11,7 +11,7 @@ struct BrowserHomeView: View {
     let bookmarks: () -> Void
     let ebook: () -> Void
     let account: () -> Void
-    var avatarURL: URL? = nil
+    var avatarImage: UIImage? = nil
     let resume: (CatalogText) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -21,7 +21,7 @@ struct BrowserHomeView: View {
         Group {
             if compact {
                 homeCards(squares: false, folded: true)
-                    .padding(.horizontal, 28).padding(.top, 20)
+                    .padding(.horizontal, 28)
                     .frame(maxWidth: 360).frame(maxWidth: .infinity)
             } else {
         GeometryReader { geometry in
@@ -39,10 +39,9 @@ struct BrowserHomeView: View {
                         }.editorialFont(34, relativeTo: .title, language: nil)
                         Spacer()
                         Button(action: account) {
-                            AsyncImage(url: avatarURL) { image in
-                                image.resizable().scaledToFill()
-                            } placeholder: {
-                                Image(systemName: "person.crop.circle").resizable().scaledToFit().foregroundStyle(.secondary)
+                            Group {
+                                if let avatarImage { Image(uiImage: avatarImage).resizable().scaledToFill() }
+                                else { Image(systemName: "person.crop.circle").resizable().scaledToFit().foregroundStyle(.secondary) }
                             }.frame(width: 36, height: 36).clipShape(Circle())
                                 .frame(width: 48, height: 48).contentShape(Circle())
                         }.buttonStyle(.plain).accessibilityLabel("账号")
