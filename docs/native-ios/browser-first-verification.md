@@ -43,3 +43,7 @@ The targeted edge-tap navigation/Cancel regression test passed in `test_sim_2026
 ## Recent webpage and clipboard Home action
 
 Home restores the most recently opened webpage per account, including its saved-link identity where applicable. Clearing browsing data removes that record. The wordmark uses Leximory Browser when it fits. During address editing, the existing first card changes to 跳转到剪贴板 without changing its appearance. Only its explicit tap reads the clipboard; valid HTTP(S) website links open, and invalid contents show a brief native-glass notice and VoiceOver announcement. The simulator build passed; clipboard permission behavior is left for human verification on iOS.
+
+## Compact composer and search preference
+
+The compact address composer omits the logo, wordmark, and avatar. It renders only its card controls so blank space passes taps to the dismissing backdrop. More includes a native engine picker with Bing, Google, DuckDuckGo, and Baidu, remembered locally and used by both address-entry paths. Continue-reading and recent-webpage links explicitly center wrapped text. Builds pass; final interaction review is left to humans.

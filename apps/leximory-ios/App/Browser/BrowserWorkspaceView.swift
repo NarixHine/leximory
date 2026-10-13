@@ -9,6 +9,7 @@ struct BrowserWorkspaceView: View {
     @Binding var pendingText: TextID?
     @State private var workspace: BrowserWorkspaceModel
     @State private var address = ""
+    @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var avatarURL: URL?
     @State private var editingAddress = false
     @State private var addressEditor = BrowserAddressEditor()
@@ -53,6 +54,7 @@ struct BrowserWorkspaceView: View {
                             browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                             ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarURL: avatarURL,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: editingAddress ? .top : .center)
                     }
                     if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting ? "正在提取正文" : "正在打开") }
                 }
@@ -260,14 +262,11 @@ struct BrowserWorkspaceView: View {
                 workspace.go(value.translation.width > 0 ? -1 : 1)
             })
     }
-    private var hasContextActions: Bool {
-        if workspace.current.isWeb { return true }
-        return false
-    }
-    @ViewBuilder private var more: some View {
-        Group {
-            if hasContextActions {
+    private var more: some View {
         Menu {
+            Picker("搜索引擎", selection: $searchEngine) {
+                ForEach(BrowserSearchEngine.allCases) { engine in Text(engine.name).tag(engine) }
+            }.pickerStyle(.menu)
             Section {
                 Button("文章预注释", systemImage: "sparkles") { activitySheet = true }
             }
@@ -289,10 +288,7 @@ struct BrowserWorkspaceView: View {
                 }
             }
         } label: { moreLabel }
-            } else {
-                Button { activitySheet = true } label: { moreLabel }
-            }
-        }.buttonStyle(.plain).accessibilityLabel("更多")
+        .buttonStyle(.plain).accessibilityLabel("更多")
             .accessibilityIdentifier("browser-more")
             .accessibilityValue(workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : "")
     }
@@ -331,7 +327,7 @@ struct BrowserWorkspaceView: View {
         finishEditing(); workspace.openURL(url)
     }
     private func submitAddress() {
-        guard let url = TextBrowserModel.destination(address) else { return }
+        guard let url = TextBrowserModel.destination(address, engine: searchEngine) else { return }
         finishEditing(); workspace.openURL(url)
     }
     private func extract() async {

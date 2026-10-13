@@ -24,6 +24,7 @@ struct TextBrowserScreen: View {
     @State private var localBrowser = TextBrowserModel()
     private var browser: TextBrowserModel { sharedBrowser ?? localBrowser }
     @State private var address = ""
+    @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var editingAddress = false
     @State private var settings = false
     @State private var settingsFromDefinition = false
@@ -277,7 +278,7 @@ struct TextBrowserScreen: View {
         withAnimation(motion) { editingAddress = false }
     }
     private func openAddress() {
-        guard let url = TextBrowserModel.destination(address) else { return }
+        guard let url = TextBrowserModel.destination(address, engine: searchEngine) else { return }
         finishEditing()
         browser.load(url)
     }

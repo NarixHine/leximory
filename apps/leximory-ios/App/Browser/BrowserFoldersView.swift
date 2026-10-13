@@ -103,7 +103,7 @@ struct BrowserFolderLabel: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
-                Text(library.name).foregroundStyle(.primary)
+                Text(library.name).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary)
                 Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
             }
         } icon: { Image(systemName: "folder").foregroundStyle(.secondary) }
@@ -118,7 +118,7 @@ struct BrowserResourceRow: View {
         Button(action: open) {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(text.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
+                    Text(text.title).editorialFont(17, relativeTo: .body, language: nil).foregroundStyle(.primary).lineLimit(2)
                     if !text.topics.isEmpty {
                         HStack(spacing: 12) {
                             ForEach(Array(text.topics.prefix(2)), id: \.self) { topic in Text(topic) }

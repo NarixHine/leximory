@@ -1,6 +1,23 @@
 import SwiftUI
 import WebKit
 import LeximoryCore
+
+enum BrowserSearchEngine: String, CaseIterable, Identifiable {
+    case bing, google, duckDuckGo, baidu
+    var id: String { rawValue }
+    var name: String {
+        switch self { case .bing: "Bing"; case .google: "Google"; case .duckDuckGo: "DuckDuckGo"; case .baidu: "百度" }
+    }
+    var endpoint: String {
+        switch self {
+        case .bing: "https://www.bing.com/search"
+        case .google: "https://www.google.com/search"
+        case .duckDuckGo: "https://duckduckgo.com/"
+        case .baidu: "https://www.baidu.com/s"
+        }
+    }
+    var queryParameter: String { self == .baidu ? "wd" : "q" }
+}
 import os
 
 struct BrowserSelection: Decodable {
@@ -122,15 +139,15 @@ final class BrowserWebView: WKWebView {
               url.host != nil, url.user == nil, url.password == nil else { return nil }
         return url
     }
-    static func destination(_ input: String) -> URL? {
+    static func destination(_ input: String, engine: BrowserSearchEngine = .bing) -> URL? {
         let input = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return nil }
         if input.contains("://") { return address(input) }
         if ["javascript:", "data:", "file:", "about:", "http:", "https:"].contains(where: { input.lowercased().hasPrefix($0) }) { return nil }
         if let url = address(input), let host = url.host,
            host.contains(".") || host == "localhost" || host.contains(":") { return url }
-        var search = URLComponents(string: "https://www.bing.com/search")!
-        search.queryItems = [URLQueryItem(name: "q", value: input)]
+        var search = URLComponents(string: engine.endpoint)!
+        search.queryItems = [URLQueryItem(name: engine.queryParameter, value: input)]
         return search.url
     }
     static func safariUserAgent(idiom: UIUserInterfaceIdiom, version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> String {
