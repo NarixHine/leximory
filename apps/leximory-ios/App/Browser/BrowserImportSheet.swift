@@ -114,7 +114,7 @@ struct BrowserImportSheet: View {
                 switch step {
                 case .folder: BrowserFolderPicker(workspace: workspace, selection: $folderID)
                 case .content:
-                    TextEditor(text: $content).font(.body).padding(16)
+                    TextEditor(text: $content).font(LeximoryTypography.prose(17)).padding(16)
                         .navigationTitle("编辑全文").navigationBarTitleDisplayMode(.inline)
                         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { path.removeLast() } } }
                 }
@@ -134,7 +134,7 @@ struct BrowserImportSheet: View {
                 if folderID == nil, workspace.writableFolders.count == 1 { folderID = workspace.writableFolders.first?.id }
             }
             .interactiveDismissDisabled(busy)
-        }.presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
+        }.font(LeximoryTypography.interface(17)).presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
     }
     private func confirmImport() {
         Task { await submit() }
@@ -179,5 +179,5 @@ private struct SafeArticlePreview: View {
         }
         return value
     }
-    var body: some View { Text(preview).font(.body).lineLimit(10).foregroundStyle(.secondary).textSelection(.enabled) }
+    var body: some View { Text(preview).font(LeximoryTypography.prose(17)).lineLimit(10).foregroundStyle(.secondary).textSelection(.enabled) }
 }

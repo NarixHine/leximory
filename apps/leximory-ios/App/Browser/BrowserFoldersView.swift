@@ -23,7 +23,7 @@ struct BrowserFoldersView: View {
         List {
             Section {
                 HStack {
-                    Text("我的书签").font(.largeTitle).fontWeight(.bold)
+                    Text("我的书签").editorialFont(30, relativeTo: .largeTitle)
                     Spacer()
                     Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }
                         .labelStyle(.iconOnly).disabled(sync?.online == false)
@@ -56,6 +56,11 @@ struct BrowserFoldersView: View {
             if workspace.loading { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .font(LeximoryTypography.interface(17))
+        .frame(maxWidth: LeximoryLayout.libraryMeasure)
+        .frame(maxWidth: .infinity)
+        .background(LeximoryPalette.shell)
         .safeAreaPadding(.bottom, chromeHeight)
         .refreshable {
             await workspace.refresh(online: sync?.online != false)
@@ -118,7 +123,7 @@ struct BrowserFolderLabel: View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
                 Text(library.name).foregroundStyle(.primary)
-                Text(library.preview.localizedLanguage).font(.caption).foregroundStyle(.secondary)
+                Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
             }
         } icon: { Image(systemName: "folder.fill").foregroundStyle(.secondary) }
         .padding(.vertical, 4)
@@ -132,13 +137,12 @@ struct BrowserResourceRow: View {
         Button(action: open) {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(text.title).foregroundStyle(.primary).lineLimit(2)
+                    Text(text.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
                     Text(([text.format == "ebook" ? "电子书" : text.format == "bookmark" ? "网页" : "文章"] + text.topics.prefix(2)).joined(separator: " · "))
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary).lineLimit(1)
                 }
             } icon: {
-                Image(systemName: text.format == "ebook" ? "book.closed" : text.format == "bookmark" ? "globe" : "doc.text")
-                    .foregroundStyle(.secondary)
+                BrowserTextIcon(text: text).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
@@ -162,6 +166,7 @@ struct BrowserFolderPicker: View {
             }
             Section { Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }.disabled(sync?.online == false) }
         }
+        .font(LeximoryTypography.interface(17))
         .navigationTitle("选择文件夹").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { library in
@@ -175,8 +180,8 @@ struct BrowserFolderPicker: View {
             if value { expanded.insert(library.id) } else { expanded.remove(library.id) }
         })) {
             ForEach(workspace.texts[library.id] ?? []) { text in
-                Label(text.title, systemImage: text.format == "ebook" ? "book.closed" : text.format == "bookmark" ? "globe" : "doc.text")
-                    .font(.subheadline).foregroundStyle(.secondary).padding(.leading, 16)
+                Label { Text(text.title) } icon: { BrowserTextIcon(text: text) }
+                    .font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary).padding(.leading, 16)
             }
         } label: {
             HStack {
@@ -222,7 +227,7 @@ struct FolderEditorSheet: View {
             }
             .onAppear { if let library { name = library.name; language = library.language } }
             .interactiveDismissDisabled(busy)
-        }.presentationDetents([.medium]).tint(.primary)
+        }.font(LeximoryTypography.interface(17)).presentationDetents([.medium]).tint(.primary)
     }
     private func save() async {
         busy = true; error = nil
@@ -233,5 +238,18 @@ struct FolderEditorSheet: View {
             else { result = try await client.createFolder(name: name, language: language, requestID: requestID) }
             saved(result); dismiss()
         } catch { self.error = "文件夹未能保存，请重试。" }
+    }
+}
+
+struct BrowserTextIcon: View {
+    let text: CatalogText
+    var body: some View {
+        Group {
+            if let emoji = text.emoji, !emoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(emoji).font(.custom("LeximoryNotoEmoji", size: 22, relativeTo: .body))
+            } else {
+                Image(systemName: text.format == "ebook" ? "book.closed" : text.format == "bookmark" ? "globe" : "doc.text")
+            }
+        }.frame(width: 26).accessibilityHidden(true)
     }
 }

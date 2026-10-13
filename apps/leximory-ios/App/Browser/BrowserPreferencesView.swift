@@ -37,7 +37,7 @@ struct BrowserPreferencesView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(rule.domain)
                                 Text(libraries.first(where: { $0.id == rule.libraryId })?.name ?? "文库已不可用")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
                             }
                             .swipeActions {
                                 Button("删除", role: .destructive) { Task { await remove(rule) } }.disabled(busy)
@@ -130,7 +130,7 @@ struct BrowserBookmarkSheet: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(library.name)
-                                Text(library.preview.localizedLanguage).font(.caption).foregroundStyle(.secondary)
+                                Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
                             }
                         }.foregroundStyle(.primary).disabled(busy)
                     }

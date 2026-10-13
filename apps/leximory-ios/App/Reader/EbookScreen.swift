@@ -442,7 +442,7 @@ struct EbookBookmarkCard: View {
             Text(bookmark.quote).font(LeximoryTypography.prose(17, language: language))
                 .lineSpacing(5).lineLimit(7).frame(maxWidth: .infinity, alignment: .leading)
             if isPDF, let page = bookmark.location, bookmark.chapter?.isEmpty == false {
-                Text("第\(page)页").font(.caption).foregroundStyle(LeximoryPalette.muted)
+                Text("第\(page)页").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
             }
         }.foregroundStyle(LeximoryPalette.ink).padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)

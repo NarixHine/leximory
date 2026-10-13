@@ -19,3 +19,9 @@ Webpage declarations and Defuddle language metadata are not used for language ro
 Deploy the updated mobile API before using folder creation/rename and edited bookmark titles with live accounts. No database schema changes, live Supabase writes, deployment, or physical-device installation were performed. Import and annotation flows were verified with isolated simulator transport and local webpage fixtures, not production accounts.
 
 Verification simulators are returned to normal launch mode; fixture data is removed by the normal root initialization. Existing account data is preserved.
+
+## Typography and layout follow-up
+
+The Home wordmark uses Garamond; Chinese labels use the bundled serif cascade. Large screens show a horizontal row of square cards, while phone and keyboard layouts remain stacked. Home uses the supplied blue, pink, and cream pastels with tinted dark variants. My Bookmarks uses the 640 pt article width cap; saved resource emoji appear in rows, folder previews, the annotation queue, and the address capsule. Account values anchor to each card’s bottom with compact padding, and the native passkey screen is removed.
+
+The follow-up simulator build succeeded. Light/dark Home, iPad square cards, phone Home and keyboard actions, the capped bookmarks list, and account card alignment were checked directly in Simulator. These visual edits did not rerun the earlier full test suites. Both verification simulators were restored to normal account mode.

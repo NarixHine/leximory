@@ -77,7 +77,7 @@ struct BrowserWorkspaceView: View {
             .overlay(alignment: .top) {
                 if completionNotice {
                     Label("预注释已完成", systemImage: "sparkles")
-                        .font(.subheadline).padding(.horizontal, 18).padding(.vertical, 12)
+                        .font(LeximoryTypography.interface(15, style: .subheadline)).padding(.horizontal, 18).padding(.vertical, 12)
                         .glassEffect(.regular, in: .capsule).padding(.top, 16)
                         .transition(.opacity.combined(with: .scale(scale: reduceMotion ? 1 : 0.94)))
                         .allowsHitTesting(false).accessibilityAddTraits(.updatesFrequently)
@@ -231,13 +231,17 @@ struct BrowserWorkspaceView: View {
             } else {
                 Button(action: beginEditing) {
                     HStack(spacing: 6) {
-                        Image(systemName: workspace.current.symbol).foregroundStyle(.secondary)
+                        Group {
+                            if case .document(let document) = workspace.current.resource { BrowserTextIcon(text: document.text) }
+                            else if let id = webBookmarkID, let text = workspace.documents[id]?.text { BrowserTextIcon(text: text) }
+                            else { Image(systemName: workspace.current.symbol) }
+                        }.foregroundStyle(.secondary)
                         Text(workspace.currentTitle)
                             .lineLimit(1).truncationMode(.middle)
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
-        }.font(.subheadline).padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 48)
+        }.font(LeximoryTypography.interface(15, style: .subheadline)).padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 48)
             .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { value in
                 guard !editingAddress, abs(value.translation.width) > 60 else { return }
                 workspace.go(value.translation.width > 0 ? -1 : 1)
@@ -289,7 +293,7 @@ struct BrowserWorkspaceView: View {
                 .glassEffect(.regular.interactive(), in: .circle)
                 .overlay(alignment: .topTrailing) {
                     if workspace.readyCount > 0 {
-                        Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").font(.caption2.weight(.semibold))
+                        Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").font(LeximoryTypography.interface(11, semibold: true, style: .caption2))
                             .foregroundStyle(.white).padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18).background(.red, in: .capsule)
                     } else if workspace.hasPending { Circle().fill(.red).frame(width: 8, height: 8).padding(3) }
                 }

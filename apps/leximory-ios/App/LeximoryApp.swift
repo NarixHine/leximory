@@ -16,6 +16,7 @@ struct LeximoryApp: App {
         }
         let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.interfaceUI(17)]
         UINavigationBar.appearance().titleTextAttributes = attributes
+        UINavigationBar.appearance().largeTitleTextAttributes = [.font: LeximoryTypography.editorialUI(34, language: "Chinese")]
         UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(16)], for: .normal)
         for state in [UIControl.State.normal, .selected] {
             UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(15)], for: state)

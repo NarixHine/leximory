@@ -214,7 +214,7 @@ struct TextGallery: View {
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
                     if article.format == "bookmark" {
-                        Label(article.subtitle, systemImage: "bookmark").font(.caption).foregroundStyle(LeximoryPalette.muted)
+                        Label(article.subtitle, systemImage: "bookmark").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
                     }
                 }
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
@@ -231,7 +231,7 @@ struct TextGallery: View {
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics)
                     if article.format == "bookmark" {
-                        Label(article.subtitle, systemImage: "bookmark").font(.caption).foregroundStyle(LeximoryPalette.muted)
+                        Label(article.subtitle, systemImage: "bookmark").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper).frame(width: 88, height: 88)

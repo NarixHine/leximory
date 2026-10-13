@@ -12,7 +12,6 @@ struct AccountView: View {
     @State private var notice: String?
     @State private var failure: String?
     @State private var editor: AccountEditor.Field?
-    @State private var showsToken = false
     @State private var showsPlans = false
     @State private var confirmsSignOut = false
     @State private var photo: PhotosPickerItem?
@@ -86,7 +85,6 @@ struct AccountView: View {
             .sheet(isPresented: $showsPlans) {
                 if let details { AccountPlansSheet(details: details, session: session) }
             }
-            .sheet(isPresented: $showsToken) { AccountTokenSheet(session: session) }
             .alert("退出登录？", isPresented: $confirmsSignOut) {
                 Button("退出登录", role: .destructive) { playback.stop(); Task { await session.signOut() } }
                 Button("取消", role: .cancel) { }
@@ -175,11 +173,6 @@ struct AccountView: View {
                 Text("美式英语").tag("AmE")
                 Text("英式英语").tag("BrE")
             }.pickerStyle(.segmented).disabled(editingUnavailable)
-            Divider()
-            Button { showsToken = true } label: {
-                HStack { Label("通行密钥", systemImage: "key"); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.tertiary) }
-                    .frame(minHeight: 44).contentShape(Rectangle())
-            }.buttonStyle(.plain).disabled(editingUnavailable)
         }.padding(20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
     }
     private func management(_ value: AccountSettings) -> some View {
@@ -248,10 +241,11 @@ private struct AccountStatCard: View {
     let symbol: String
     let value: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack { Text(title).font(LeximoryTypography.interface(13, style: .caption1)); Spacer(); Image(systemName: symbol) }.foregroundStyle(.secondary)
+            Spacer(minLength: 12)
             Text(value).font(LeximoryTypography.interface(22, style: .title2)).frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(20).frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+        }.frame(maxWidth: .infinity, minHeight: 88, alignment: .leading).padding(16)
             .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
     }
 }
@@ -260,7 +254,7 @@ private struct AccountQuotaCard: View {
     let allowance: Account.Allowance
     private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
                 Spacer(minLength: 4)
@@ -270,12 +264,15 @@ private struct AccountQuotaCard: View {
                     Text("\(Int(fraction * 100))%").font(LeximoryTypography.interface(10, style: .caption2))
                 }.frame(width: 40, height: 40).accessibilityHidden(true)
             }
-            Text("\(Int(allowance.used)) / \(Int(allowance.limit))").font(LeximoryTypography.interface(22, style: .title2)).monospacedDigit()
-            if allowance.resetsIn > 0 {
-                Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
-                    .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("\(Int(allowance.used)) / \(Int(allowance.limit))").font(LeximoryTypography.interface(22, style: .title2)).monospacedDigit()
+                if allowance.resetsIn > 0 {
+                    Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
+                        .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+                }
             }
-        }.padding(20).frame(maxWidth: .infinity, minHeight: 164, alignment: .topLeading)
+        }.frame(maxWidth: .infinity, minHeight: 116, alignment: .leading).padding(16)
             .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
             .accessibilityElement(children: .combine)
     }
@@ -342,61 +339,6 @@ private struct AccountEditor: View {
                 if field == .email { emailUpdated = true } else { dismiss() }
             } catch { message = "更新失败，请检查填写内容后重试。" }
         }
-    }
-}
-
-private struct AccountTokenSheet: View {
-    let session: AccountSession
-    @State private var token: String?
-    @State private var busy = false
-    @State private var error: String?
-    @State private var copied = false
-    @State private var confirmsRevoke = false
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    if let token { Text(token).font(.system(.body, design: .monospaced)).textSelection(.enabled) }
-                    else if busy { ProgressView() }
-                    Button(copied ? "已拷贝" : "拷贝", systemImage: copied ? "checkmark" : "doc.on.doc") {
-                        if let token { UIPasteboard.general.setItems([[UIPasteboard.typeAutomatic: token]], options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(120)]); copied = true }
-                    }.disabled(token == nil || busy)
-                    Button("撤销密钥", role: .destructive) { confirmsRevoke = true }.disabled(token == nil || busy || session.sync?.online == false)
-                } footer: {
-                    Text("通行密钥用于 iOS Shortcut 中向 API 验证你的身份，请妥善保管，不要泄露给他人。")
-                }
-                Section { Link("iOS Shortcut", destination: session.client.webURL.appending(path: "blog/ios-shortcuts")) }
-                if let error {
-                    Section {
-                        Text(error)
-                        Button { Task { await fetch() } } label: {
-                            Label("重试", systemImage: "arrow.clockwise")
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
-                        .disabled(busy)
-                    }
-                }
-            }.font(LeximoryTypography.interface(17)).navigationTitle("通行密钥").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
-                .task { await fetch() }
-                .confirmationDialog("撤销密钥？", isPresented: $confirmsRevoke, titleVisibility: .visible) {
-                    Button("撤销密钥", role: .destructive) {
-                        busy = true
-                        Task {
-                            defer { busy = false }
-                            do { try await session.client.revokeAccountToken(); token = nil; copied = false; dismiss() }
-                            catch { self.error = "撤销失败，请重试。" }
-                        }
-                    }
-                } message: { Text("使用此密钥的快捷指令将无法继续验证身份。") }
-        }.presentationDetents([.medium, .large])
-    }
-    private func fetch() async {
-        busy = true; error = nil
-        defer { busy = false }
-        do { token = try await session.client.accountToken() } catch { self.error = "暂时无法获取密钥。" }
     }
 }
 

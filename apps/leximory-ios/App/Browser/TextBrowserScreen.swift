@@ -70,7 +70,7 @@ struct TextBrowserScreen: View {
             }
             if let error = browser.error {
                 VStack(spacing: 12) {
-                    Text(error).font(.callout)
+                    Text(error).font(LeximoryTypography.interface(16, style: .callout))
                     Button("重试") {
                         if browser.url == nil { opened = false; openingAttempt += 1 }
                         else { browser.web.reload() }
