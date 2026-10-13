@@ -17,7 +17,7 @@ struct BrowserHomeView: View {
             let squares = geometry.size.width >= 760 && !compact && !typeSize.isAccessibilitySize
             let folded = compact && !typeSize.isAccessibilitySize && geometry.size.height > 260
             ScrollView {
-                VStack(spacing: folded ? 18 : 36) {
+                VStack(spacing: folded ? 18 : 28) {
                     HStack(spacing: 12) {
                         if let icon = UIImage(named: "leximory-icon.png") {
                             Image(uiImage: icon).resizable().scaledToFit().frame(width: 40, height: 40)
@@ -28,22 +28,22 @@ struct BrowserHomeView: View {
                         Button("账号", systemImage: "person.crop.circle", action: account)
                             .labelStyle(.iconOnly).font(.title2).frame(width: 48, height: 48)
                     }.padding(.bottom, folded ? 0 : 18)
-                    let layout = squares ? AnyLayout(HStackLayout(spacing: 24)) : AnyLayout(VStackLayout(spacing: folded ? 10 : 20))
+                    let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
                     layout {
-                        card("浏览网页", symbol: "globe", color: tone(0xDFE7FD, 0x283244), border: tone(0x7484AD, 0x8798BF), angle: -3, folded: folded, square: squares, action: browse)
-                        card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x442C34), border: tone(0xAC7A85, 0xC1939F), angle: 2.5, folded: folded, square: squares, action: bookmarks)
-                        card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x3E332C), border: tone(0xAC8A70, 0xBDA08B), angle: -1.5, folded: folded, square: squares, action: ebook)
+                        card("浏览网页", symbol: "globe", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), angle: -7, folded: folded, square: squares, action: browse)
+                        card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), angle: 5, folded: folded, square: squares, action: bookmarks)
+                        card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x292723), border: tone(0xEAE4E9, 0x615B60), angle: -4, folded: folded, square: squares, action: ebook)
                     }.padding(.horizontal, folded ? 0 : 8)
                     if let recent, !compact {
                         Button { resume(recent) } label: {
                             VStack(spacing: 6) {
-                                Text("继续阅读").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                                Text("继续阅读").editorialFont(20, relativeTo: .headline).foregroundStyle(.secondary)
                                 Text(recent.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
                             }.frame(maxWidth: .infinity, minHeight: 44)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.plain).accessibilityIdentifier("browser-resume")
                     }
-                }.padding(.horizontal, 28).padding(.top, folded ? 20 : max(28, min(80, geometry.size.height * 0.10)))
-                    .padding(.bottom, 110).frame(maxWidth: squares ? LeximoryLayout.textGalleryMeasure : 530).frame(maxWidth: .infinity)
+                }.padding(.horizontal, 28).padding(.top, folded ? 20 : 32)
+                    .padding(.bottom, 110).frame(maxWidth: squares ? 560 : 360).frame(maxWidth: .infinity, minHeight: compact ? 0 : max(0, geometry.size.height - 80), alignment: .center)
             }.scrollBounceBehavior(.basedOnSize)
         }
         .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.86), value: compact)
@@ -58,29 +58,30 @@ struct BrowserHomeView: View {
         Button(action: action) {
             cardLabel(title, symbol: symbol, folded: folded, square: square)
                 .foregroundStyle(LeximoryPalette.ink)
-                .background(color, in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
-                .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: 3) }
-                .shadow(color: colorScheme == .dark ? .black.opacity(0.16) : border.opacity(0.16), radius: folded ? 3 : 10, y: folded ? 2 : 6)
+                .background(color.opacity(colorScheme == .dark ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: folded ? 4 : 6) }
+                .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
         }.buttonStyle(BrowserCardButtonStyle()).rotationEffect(.degrees(folded || typeSize.isAccessibilitySize ? 0 : angle))
     }
     @ViewBuilder private func cardLabel(_ title: String, symbol: String, folded: Bool, square: Bool) -> some View {
         if square {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
-                    Image(systemName: symbol).font(.system(size: 38, weight: .medium))
+                    Image(systemName: symbol).font(.system(size: 28, weight: .medium))
                     Spacer(minLength: 0)
                     Image(systemName: "arrow.up.right").font(.body.weight(.medium))
                 }
                 Spacer(minLength: 16)
                 Text(title).font(LeximoryTypography.interface(24, style: .title2)).fixedSize(horizontal: false, vertical: true)
-            }.padding(24).frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
+            }.padding(20).frame(width: 180, height: 180)
         } else {
             HStack(spacing: 20) {
-                Image(systemName: symbol).font(.system(size: folded ? 24 : 34, weight: .medium)).frame(width: 44)
-                Text(title).font(LeximoryTypography.interface(folded ? 17 : 24, style: folded ? .headline : .title2))
+                Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).frame(width: 44)
+                Text(title).font(LeximoryTypography.interface(folded ? 17 : 20, style: folded ? .headline : .title2))
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").font(.body.weight(.medium))
-            }.padding(.horizontal, 24).padding(.vertical, folded ? 14 : 30)
+            }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
                 .frame(maxWidth: .infinity, minHeight: 58)
         }
     }

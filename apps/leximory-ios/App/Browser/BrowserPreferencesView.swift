@@ -25,7 +25,7 @@ struct BrowserPreferencesView: View {
                         Picker("收藏至", selection: $choice) {
                             Text("相应语言的词汇仓库").tag(String?.none)
                             ForEach(libraries) { library in
-                                Text(library.name + " · " + library.preview.localizedLanguage).tag(Optional(library.id))
+                                Text(library.name).tag(Optional(library.id))
                             }
                         }
                         Toggle("此网站总是存于这里", isOn: $remember).disabled(choice == nil)

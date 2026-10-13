@@ -272,6 +272,7 @@ struct TextBrowserScreen: View {
             .contentShape(Circle())
     }
     private func finishEditing() {
+        addressEditor.field?.wantsFocus = false
         addressEditor.field?.resignFirstResponder()
         withAnimation(motion) { editingAddress = false }
     }
@@ -329,11 +330,12 @@ struct BrowserAddressField: UIViewRepresentable {
         if field.text != address { field.text = address }
         field.enablesReturnKeyAutomatically = true
         DispatchQueue.main.async {
-            guard field.window != nil, !field.isFirstResponder else { return }
+            guard field.wantsFocus, field.window != nil, !field.isFirstResponder else { return }
             field.becomeFirstResponder()
         }
     }
     static func dismantleUIView(_ field: BrowserURLTextField, coordinator: Coordinator) {
+        field.wantsFocus = false
         field.resignFirstResponder()
     }
     final class Coordinator: NSObject, UITextFieldDelegate {
@@ -351,18 +353,19 @@ struct BrowserAddressField: UIViewRepresentable {
 }
 
 final class BrowserURLTextField: UITextField {
+    var wantsFocus = true
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard window != nil else { return }
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.window != nil else { return }
+            guard let self, self.wantsFocus, self.window != nil else { return }
             self.becomeFirstResponder()
         }
     }
 }
 
 final class BrowserAddressEditor {
-    weak var field: UITextField?
+    weak var field: BrowserURLTextField?
 }
 
 struct BrowserSession: Codable {

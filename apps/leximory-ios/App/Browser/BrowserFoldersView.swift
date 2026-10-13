@@ -10,15 +10,9 @@ struct BrowserFoldersView: View {
     @Bindable var workspace: BrowserWorkspaceModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.browserChromeHeight) private var chromeHeight
-    @State private var search = ""
     @State private var archiveExpanded = false
     @State private var editor: FolderEditorRequest?
     private var folders: [CatalogLibrary] { workspace.libraries.filter { !$0.shadow } }
-    private var results: [CatalogText] {
-        workspace.texts.values.joined().filter { text in
-            folders.contains { $0.id == text.libraryId } && text.title.localizedStandardContains(search)
-        }.sorted { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
-    }
     var body: some View {
         List {
             Section {
@@ -28,9 +22,8 @@ struct BrowserFoldersView: View {
                     Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }
                         .labelStyle(.iconOnly).disabled(sync?.online == false)
                 }.listRowBackground(Color.clear)
-                Label { TextField("搜索书签", text: $search).textInputAutocapitalization(.never).autocorrectionDisabled() } icon: { Image(systemName: "magnifyingglass").foregroundStyle(.secondary) }
             }
-            if search.isEmpty {
+            Group {
                 if !workspace.recentTexts.isEmpty {
                     Section("继续阅读") {
                         ForEach(workspace.recentTexts.prefix(5)) { recent in BrowserResourceRow(text: recent) { Task { await workspace.open(recent) } } }
@@ -43,15 +36,10 @@ struct BrowserFoldersView: View {
                     Section {
                         DisclosureGroup("已归档", isExpanded: $archiveExpanded) {
                             ForEach(folders.filter(\.archived)) { library in folder(library) }
-                        }.foregroundStyle(.secondary)
+                        }.disclosureGroupStyle(BrowserFolderDisclosureStyle()).foregroundStyle(.secondary)
                     }
                 }
-                if folders.isEmpty && !workspace.loading { ContentUnavailableView("还没有书签", systemImage: "bookmark", description: Text("保存网页，或打开一本电子书。")) }
-            } else {
-                Section("搜索结果") {
-                    ForEach(results) { text in BrowserResourceRow(text: text) { Task { await workspace.open(text) } } }
-                    if results.isEmpty { ContentUnavailableView.search(text: search) }
-                }
+                if folders.isEmpty && !workspace.loading { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }
             }
             if workspace.loading { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
         }
@@ -66,10 +54,6 @@ struct BrowserFoldersView: View {
             await workspace.refresh(online: sync?.online != false)
             for folder in folders where workspace.expandedFolders.contains(folder.id) { await workspace.loadFolder(folder, online: sync?.online != false) }
         }
-        .task(id: search.isEmpty) {
-            guard !search.isEmpty else { return }
-            for folder in folders { await workspace.loadFolder(folder, online: sync?.online != false) }
-        }
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { workspace.upsertFolder($0) }
         }
@@ -83,14 +67,10 @@ struct BrowserFoldersView: View {
         })) {
             BrowserFolderContents(workspace: workspace, library: library)
         } label: {
-            Button {
-                if workspace.expandedFolders.contains(library.id) { workspace.expandedFolders.remove(library.id) }
-                else { workspace.expandedFolders.insert(library.id) }
-            } label: {
-                BrowserFolderLabel(library: library).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-            }.buttonStyle(.borderless).foregroundStyle(.primary)
+            BrowserFolderLabel(library: library).frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("browser-folder-toggle-\(library.id)")
         }
+        .disclosureGroupStyle(BrowserFolderDisclosureStyle())
         .contextMenu {
             if library.owned {
                 Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
@@ -125,7 +105,7 @@ struct BrowserFolderLabel: View {
                 Text(library.name).foregroundStyle(.primary)
                 Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
             }
-        } icon: { Image(systemName: "folder.fill").foregroundStyle(.secondary) }
+        } icon: { Image(systemName: "folder").foregroundStyle(.secondary) }
         .padding(.vertical, 4)
     }
 }
@@ -138,8 +118,11 @@ struct BrowserResourceRow: View {
             Label {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(text.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
-                    Text(([text.format == "ebook" ? "电子书" : text.format == "bookmark" ? "网页" : "文章"] + text.topics.prefix(2)).joined(separator: " · "))
-                        .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary).lineLimit(1)
+                    if !text.topics.isEmpty {
+                        HStack(spacing: 12) {
+                            ForEach(Array(text.topics.prefix(2)), id: \.self) { topic in Text(topic) }
+                        }.font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary).lineLimit(1)
+                    }
                 }
             } icon: {
                 BrowserTextIcon(text: text).foregroundStyle(.secondary)
@@ -251,5 +234,23 @@ struct BrowserTextIcon: View {
                 Image(systemName: text.format == "ebook" ? "book.closed" : text.format == "bookmark" ? "globe" : "doc.text")
             }
         }.frame(width: 26).accessibilityHidden(true)
+    }
+}
+
+private struct BrowserFolderDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { configuration.isExpanded.toggle() }
+            } label: {
+                HStack {
+                    configuration.label
+                    Spacer(minLength: 12)
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .regular))
+                        .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0)).foregroundStyle(.secondary)
+                }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            if configuration.isExpanded { configuration.content }
+        }
     }
 }

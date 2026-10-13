@@ -14,6 +14,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
     @MainActor func testFreshHomeKeyboardCardsAndBottomControls() {
         let app = launch(); defer { restore(app) }
         XCTAssertFalse(app.tabBars.firstMatch.exists)
+        XCTAssertFalse(app.buttons["首页"].exists)
+        XCTAssertFalse(app.buttons["后退"].exists)
+        XCTAssertFalse(app.buttons["前进"].exists)
         XCTAssertTrue(app.buttons["我的书签"].isHittable)
         XCTAssertTrue(app.buttons["打开电子书"].isHittable)
         let address = app.buttons["browser-address"]
@@ -40,6 +43,39 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["前进"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
     }
+    @MainActor func testRecentReadingKeepsNavigationAndAddressCancellationWorking() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let article = app.buttons["browser-resource-fixture-reader"].firstMatch
+        XCTAssertTrue(article.waitForExistence(timeout: 10)); article.tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 10))
+        app.buttons["首页"].tap()
+        let recent = app.buttons["browser-resume"]
+        XCTAssertTrue(recent.waitForExistence(timeout: 5)); recent.tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
+        app.buttons["后退"].tap()
+        XCTAssertTrue(recent.waitForExistence(timeout: 5))
+        app.buttons["前进"].tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
+        app.buttons["browser-address"].tap()
+        XCTAssertTrue(app.textFields["browser-address-input"].waitForExistence(timeout: 5))
+        app.buttons["取消"].tap()
+        XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["browser-address-input"].exists)
+        app.buttons["首页"].tap()
+        XCTAssertTrue(recent.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["首页"].exists)
+    }
+    @MainActor func testMoreOnlyShowsContextAndOpensNativeActivitySheet() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["browser-more"].tap()
+        XCTAssertFalse(app.buttons["已存词汇"].exists)
+        XCTAssertTrue(app.staticTexts["暂无预注释文章"].waitForExistence(timeout: 5))
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
+    }
     @MainActor func testDefuddleImportAndCompletionAcrossDestinations() throws {
         let page = try BrowserPageServer(); defer { page.listener.cancel() }
         let app = launch(extraArguments: ["--workspace-hold-annotations"]); defer { restore(app) }
@@ -58,7 +94,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let more = app.buttons["browser-more"]
         expectation(for: NSPredicate(format: "value == %@", "1 篇预注释已完成"), evaluatedWith: more)
         waitForExpectations(timeout: 15)
-        more.tap(); app.buttons["文章预注释"].tap()
+        more.tap()
         app.buttons["browser-resource-workspace-import"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         XCTAssertEqual(more.value as? String, "")
@@ -73,7 +109,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(reader.waitForExistence(timeout: 15))
         let ready = NSPredicate(format: "value CONTAINS %@", "epub已打开")
         expectation(for: ready, evaluatedWith: reader); waitForExpectations(timeout: 20)
-        app.buttons["browser-more"].tap(); app.buttons["目录"].tap()
+        reader.tap()
+        XCTAssertTrue(app.buttons["ebook-contents"].waitForExistence(timeout: 5))
+        app.buttons["ebook-contents"].tap()
         XCTAssertTrue(app.navigationBars["目录"].waitForExistence(timeout: 5))
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Native ebook contents"; screenshot.lifetime = .keepAlways; add(screenshot)
     }

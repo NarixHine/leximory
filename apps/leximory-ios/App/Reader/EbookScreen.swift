@@ -131,7 +131,7 @@ struct EbookScreen: View {
                     .opacity(reader.chromeVisible ? 0 : 1)
                     .accessibilityHidden(reader.chromeVisible)
                     .allowsHitTesting(false)
-                if reader.chromeVisible && workspace == nil { topControls.transition(.opacity) }
+                if reader.chromeVisible { topControls.transition(.opacity) }
             }.frame(height: 44).padding(.top, 8)
         }
         .overlay(alignment: .bottom) {
@@ -150,7 +150,7 @@ struct EbookScreen: View {
         .overlay(alignment: .top) {
             if reader.bookmarkNotice != nil {
                 Text(reader.bookmarkErrorMessage)
-                    .font(.callout).padding(.horizontal, 20).padding(.vertical, 12)
+                    .font(LeximoryTypography.interface(16, style: .callout)).padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.regularMaterial, in: Capsule())
                     .padding(.top, 60).padding(.horizontal, 20)
                     .allowsHitTesting(false)
@@ -178,13 +178,7 @@ struct EbookScreen: View {
             guard resourceActive, let request else { return }
             tray = EbookTray(rawValue: request); reader.trayRequest = nil
         }
-        .sheet(item: Binding(get: { workspace != nil ? tray : nil }, set: { tray = $0 })) { item in
-            switch item {
-            case .contents: contentsTray
-            case .bookmarks: bookmarksTray
-            case .settings: readingSettings
-            }
-        }
+
         .onDisappear { positionSaver?.flush() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
@@ -255,7 +249,7 @@ struct EbookScreen: View {
     }
     private var topControls: some View {
         HStack {
-            Button { dismiss() } label: {
+            Button { if let workspace { workspace.go(-1) } else { dismiss() } } label: {
                 Image(systemName: "chevron.left").font(.system(size: 16))
                     .frame(width: 36, height: 36)
                     .glassEffect(.regular.interactive(), in: Circle())

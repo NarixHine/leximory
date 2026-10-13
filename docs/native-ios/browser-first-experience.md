@@ -8,17 +8,17 @@ Use one sequential browsing history for websites, saved links, articles, ebooks,
 
 App-authored UI calls libraries 文件夹. My Bookmarks is the collection of saved resources; it is distinct from existing word and ebook-passage bookmarks. Keep that implementation distinction out of UI.
 
-A fresh launch opens Home without loading a webpage. Returning to an existing session preserves the current resource. Home is one tap away and can offer a quiet 继续阅读 shortcut without automatically opening it. Account is available through a recognizable profile button on Home and through More elsewhere.
+A fresh launch opens Home without loading a webpage. Returning to an existing session preserves the current resource. Home is one tap away and can offer a quiet 继续阅读 shortcut without automatically opening it. Account is available through a recognizable profile button on Home .
 
 ## Home
 
 Show the logo and Leximory at the top. Three rounded cards have staggered tilts, icons, rainbow-themed backgrounds, and bold borders in related colors:
 
-- 浏览网页 opens the address composer with an explicit 粘贴并打开 action. Ordinary text does not automatically become a clipboard URL.
+- 浏览网页 opens the address composer. Use the native text-edit menu for pasting; do not add a paste button. Ordinary text does not automatically become a clipboard URL.
 - 我的书签 opens saved resources grouped in expandable folders.
 - 打开电子书 opens the native EPUB/PDF file picker.
 
-When address input and the keyboard appear, the cards fold and morph into compact, labeled actions in the remaining space. They stay fully colored, legible, interactive, and above the iOS overlay background. Preserve comfortable tap targets; use a simpler arrangement for large text and short viewports. Reduce Motion preserves all actions without folding movement.
+When address input and the keyboard appear, the cards fold and morph into compact, labeled actions in the remaining space. They stay fully colored, legible, interactive, and above a single conventional dimming layer. Preserve comfortable tap targets; use a simpler arrangement for large text and short viewports. Reduce Motion preserves all actions without folding movement.
 
 ## History and persistent controls
 
@@ -30,17 +30,17 @@ Use native WebKit history gestures where applicable. Screen-edge gestures and ho
 
 Keep a compact floating bottom bar on iPhone and iPad with Back, Forward, resource identity, and More. Websites additionally expose a separate magic-colored save button. Non-web resources display an appropriate icon and readable title, never a fabricated URL.
 
-Tapping the resource capsule opens the address composer. Keep the current resource until submission; cancelling preserves it. Home remains one tap away. Integrate reading actions into contextual menus and temporary controls instead of stacking permanent toolbars. Coordinate article playback and ebook pagination with the bar. Reading content continues behind translucent controls to the bottom edge. System sheets and file pickers can temporarily cover the bar.
+Tapping the resource capsule opens the address composer. Keep the current resource until submission; cancelling preserves it. Home remains one tap away. Preserve the original EPUB/PDF reader controls. More contains current-resource actions and annotation activity, without destination shortcuts. Coordinate article playback and ebook pagination with the bar. Reading content continues behind translucent controls to the bottom edge. System sheets and file pickers can temporarily cover the bar.
 
 ## My Bookmarks and folder selection
 
-Use native iOS list, disclosure, context-menu, sheet, and form conventions, with a small recent-reading section above folders. Tap a folder to expand its indented resources inline. Show articles, saved links, and ebooks together with distinguishing icons.
+Use native iOS list, disclosure, context-menu, sheet, and form conventions, with a small recent-reading section above folders and no search field. Tap a folder to expand its indented resources inline. Show articles, saved links, and ebooks together with distinguishing icons.
 
-Folders retain one language each. Use muted secondary text for language and metadata; use · between compact metadata items. Preserve cached-first presentation, per-folder isolation, and existing archive categorization. Archived folders appear in a collapsed section. Search finds resources inside collapsed folders.
+Folders retain one language each. Use muted secondary text for language and metadata; use spacing and secondary text for hierarchy, without dot separators. Preserve cached-first presentation, per-folder isolation, and existing archive categorization. Archived folders appear in a collapsed section.
 
 Keep existing management actions, including rename and archive, in native context menus. Offer 新建文件夹 in My Bookmarks and import selection. Its small form asks for name and language, then returns to the previous task with the new folder selected. Import destinations must be writable folders; vocabulary warehouses are not content-import destinations.
 
-Remove the corpus entrypoint. Keep a quiet 已存词汇 entry in More and retain vocabulary editing through definitions and annotations. No save-destination selector appears in the dynamic definition tray.
+Remove the corpus entrypoint. Keep vocabulary editing through definitions and annotations; remove destination shortcuts from More. No save-destination selector appears in the dynamic definition tray.
 
 ## Vocabulary and website preferences
 
