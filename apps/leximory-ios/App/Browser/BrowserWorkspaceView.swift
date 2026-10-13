@@ -9,6 +9,7 @@ struct BrowserWorkspaceView: View {
     @Binding var pendingText: TextID?
     @State private var workspace: BrowserWorkspaceModel
     @State private var address = ""
+    @State private var avatarURL: URL?
     @State private var editingAddress = false
     @State private var addressEditor = BrowserAddressEditor()
     @State private var choosingFile = false
@@ -39,16 +40,17 @@ struct BrowserWorkspaceView: View {
                     TextBrowserScreen(client: client, bookmarkID: webBookmarkID, sharedBrowser: workspace.browser, showsControls: false, restoresSession: false)
                         .id(ObjectIdentifier(workspace.browser))
                         .opacity(workspace.current.isWeb ? 1 : 0)
+                        .blur(radius: editingAddress ? 3 : 0)
                         .allowsHitTesting(workspace.current.isWeb && !editingAddress)
                         .accessibilityHidden(!workspace.current.isWeb)
-                    retainedResources
+                    retainedResources.blur(radius: editingAddress ? 3 : 0).allowsHitTesting(!editingAddress)
                     if editingAddress {
                         Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
                     }
                     if editingAddress || isHome {
                         BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
                             browse: beginEditing, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) },
+                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarURL: avatarURL,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                     }
                     if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting ? "正在提取正文" : "正在打开") }
@@ -119,6 +121,17 @@ struct BrowserWorkspaceView: View {
             }
             Button("取消", role: .cancel) {}
         } message: { Text("将清除浏览记录、Cookie 和网站数据，并退出网站登录。书签和词汇会保留。") }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            if editingAddress { finishEditing() }
+        }
+        .task(id: isHome) {
+            guard isHome, session != nil else { return }
+            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") {
+                avatarURL = cached.image.flatMap(URL.init(string:))
+            } else if let settings = try? await client.accountSettings() {
+                avatarURL = settings.image.flatMap(URL.init(string:))
+            }
+        }
         .task { await workspace.refresh(online: sync?.online != false) }
         .task(id: sync?.revision) { await workspace.refresh(online: sync?.online != false) }
         .task(id: scenePhase) {
@@ -197,22 +210,25 @@ struct BrowserWorkspaceView: View {
                 addressControl.glassEffect(.regular.interactive(), in: .capsule)
                     .glassEffectID("workspace-address", in: chromeNamespace)
                 if editingAddress {
-                    Button("取消", action: finishEditing).contentShape(Rectangle()).frame(minWidth: 44, minHeight: 48)
-                        .padding(.horizontal, 8).buttonStyle(.plain).glassEffect(.regular.interactive(), in: .capsule)
+                    Button(action: finishEditing) {
+                        Text("取消").font(LeximoryTypography.interface(15))
+                            .frame(minWidth: 44, minHeight: 48).padding(.horizontal, 8).contentShape(Capsule())
+                    }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .capsule)
                 } else {
-                    if !isHome { chromeButton("首页", symbol: "house") { workspace.visit(.home) } }
+                    if !isHome { chromeButton("首页", symbol: "house") { withAnimation(motion) { workspace.visit(.home) } } }
                     if workspace.current.isWeb {
                         Button { Task { await extract() } } label: {
                             Image(systemName: "bookmark.fill").font(.system(size: 17, weight: .medium))
                                 .foregroundStyle(LinearGradient(colors: [.purple, .pink, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 44, height: 48).glassEffect(.regular.interactive(), in: .circle)
+                                .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(.regular.interactive(), in: .circle)
                         }.buttonStyle(.plain).disabled(extracting || sync?.online == false || workspace.browser.loading || workspace.browser.error != nil)
                             .accessibilityLabel("保存网页").accessibilityIdentifier("browser-magic-save")
                     }
                     more
                 }
             }
-        }.frame(maxWidth: 720).tint(.primary).animation(motion, value: editingAddress)
+        }.frame(maxWidth: 720).tint(.primary)
+            .animation(motion, value: editingAddress).animation(motion, value: workspace.current.id)
     }
     private var addressControl: some View {
         HStack(spacing: 8) {
@@ -239,7 +255,6 @@ struct BrowserWorkspaceView: View {
     }
     private var hasContextActions: Bool {
         if workspace.current.isWeb { return true }
-        if case .document(let document) = workspace.current.resource { return document.text.format != "ebook" }
         return false
     }
     @ViewBuilder private var more: some View {
@@ -248,20 +263,6 @@ struct BrowserWorkspaceView: View {
         Menu {
             Section {
                 Button("文章预注释", systemImage: "sparkles") { activitySheet = true }
-            }
-            if let id = workspace.current.textID, workspace.ebookTextID != id {
-                ShareLink(item: client.webURL.appending(path: "read/\(id)")) { Label("分享", systemImage: "square.and.arrow.up") }
-                if workspace.ebookTextID != id, let document = workspace.documents[id]?.document {
-                    let audioIDs = Array(Set(document.blocks.compactMap(\.audioId))).sorted()
-                    if !audioIDs.isEmpty {
-                        Section {
-                            ForEach(audioIDs, id: \.self) { audioID in
-                                Button("播放录音", systemImage: "headphones") { playback.toggle(textID: TextID(rawValue: id), audioID: audioID, title: workspace.current.title) }
-                                    .disabled(sync?.online == false)
-                            }
-                        }
-                    }
-                }
             }
             if workspace.current.isWeb, let url = workspace.browser.url {
                 Section {
@@ -272,7 +273,13 @@ struct BrowserWorkspaceView: View {
                     }
                 }
             }
-            if workspace.current.isWeb { Button("清除浏览数据", systemImage: "trash", role: .destructive) { confirmingClear = true } }
+            if workspace.current.isWeb {
+                Button(role: .destructive) { confirmingClear = true } label: {
+                    Label { Text("清除浏览数据") } icon: {
+                        Image(systemName: "trash").symbolRenderingMode(.palette).foregroundStyle(.red)
+                    }.foregroundStyle(.red)
+                }
+            }
         } label: { moreLabel }
             } else {
                 Button { activitySheet = true } label: { moreLabel }
@@ -282,7 +289,7 @@ struct BrowserWorkspaceView: View {
             .accessibilityValue(workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : "")
     }
     private var moreLabel: some View {
-            Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48)
+            Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle())
                 .glassEffect(.regular.interactive(), in: .circle)
                 .overlay(alignment: .topTrailing) {
                     if workspace.readyCount > 0 {
@@ -292,7 +299,7 @@ struct BrowserWorkspaceView: View {
                 }
     }
     private func chromeButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).glassEffect(.regular.interactive(), in: .circle) }
+        Button(action: action) { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle()).glassEffect(.regular.interactive(), in: .circle).glassEffectID(title, in: chromeNamespace) }
             .buttonStyle(.plain).accessibilityLabel(title)
     }
     private func beginEditing() {

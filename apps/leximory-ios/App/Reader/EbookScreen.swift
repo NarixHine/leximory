@@ -249,12 +249,14 @@ struct EbookScreen: View {
     }
     private var topControls: some View {
         HStack {
+            if workspace == nil {
             Button { if let workspace { workspace.go(-1) } else { dismiss() } } label: {
                 Image(systemName: "chevron.left").font(.system(size: 16))
                     .frame(width: 36, height: 36)
                     .glassEffect(.regular.interactive(), in: Circle())
                     .frame(width: 44, height: 44).contentShape(Rectangle())
             }.accessibilityLabel("返回")
+            }
             Spacer(minLength: 0)
             readerActions
         }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)

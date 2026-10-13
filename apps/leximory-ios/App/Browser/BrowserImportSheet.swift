@@ -68,7 +68,9 @@ struct BrowserImportSheet: View {
                         Picker("保存方式", selection: $fullText) {
                             Text("导入并预注释全文").tag(true)
                             Text("存为链接书签").tag(false)
-                        }.pickerStyle(.inline)
+                        }.pickerStyle(.inline).labelsHidden()
+                    } header: {
+                        Text("保存方式").font(LeximoryTypography.interface(13, style: .caption1))
                     }
                 }
                 Section {

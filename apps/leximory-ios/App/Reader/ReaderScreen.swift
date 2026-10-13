@@ -80,6 +80,11 @@ struct ReaderScreen: View {
                     .id(item.id)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            if workspace != nil, resourceActive {
+                articleActions.padding(.horizontal, 20).padding(.top, 8)
+            }
+        }
         .toolbar(.hidden, for: .tabBar)
         .toolbar(workspace == nil ? .visible : .hidden, for: .navigationBar)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
@@ -133,6 +138,36 @@ struct ReaderScreen: View {
         }
         .onChange(of: resourceActive) { _, active in if !active { definition = nil } }
     }
+    private var articleActions: some View {
+        HStack(spacing: 8) {
+            if case .loaded(let document) = state {
+                let audioIDs = Array(Set(document.blocks.compactMap(\.audioId))).sorted()
+                if let audioID = audioIDs.first, audioIDs.count == 1 {
+                    Button { playback.toggle(textID: article.id, audioID: audioID, title: currentArticle.title) } label: {
+                        articleActionIcon("headphones")
+                    }.accessibilityLabel("录音").disabled(sync?.online == false)
+                } else if !audioIDs.isEmpty {
+                    Menu {
+                        ForEach(audioIDs, id: \.self) { audioID in
+                            Button("播放录音") { playback.toggle(textID: article.id, audioID: audioID, title: currentArticle.title) }
+                        }
+                    } label: { articleActionIcon("headphones") }
+                        .accessibilityLabel("录音").disabled(sync?.online == false)
+                }
+            }
+            if let client {
+                ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
+                    articleActionIcon("square.and.arrow.up")
+                }.accessibilityLabel("分享")
+            }
+        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
+    }
+    private func articleActionIcon(_ symbol: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 17))
+            .frame(width: 44, height: 44).contentShape(Circle())
+            .glassEffect(.regular.interactive(), in: .circle)
+    }
+
     private func load() async {
         if let cached = await client?.cachedDocument(textID: article.id.rawValue), let document = cached.document {
             if case .loaded(let previous) = state, previous == document { }
@@ -195,7 +230,6 @@ struct DefinitionView: View {
     let closeTray: (() -> Void)?
     let trayDragging: Bool
     let onScrollPermission: ((Bool) -> Void)?
-    let configureBrowser: (() -> Void)?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var contentHeight: CGFloat = 64
     @State private var bottomSafeArea: CGFloat = 0
@@ -212,11 +246,10 @@ struct DefinitionView: View {
         if topTrayHeight != nil { return sizeClass == .regular ? regularBodySize * 17 / 18 : compactBodySize * 16 / 17 }
         return sizeClass == .regular ? regularBodySize : compactBodySize
     }
-    init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil, configureBrowser: (() -> Void)? = nil) {
+    init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil) {
         self.item = item; self.client = client; self.initialLanguage = language; self.isPopover = isPopover
         self.topTrayHeight = topTrayHeight; self.closeTray = closeTray
         self.trayDragging = trayDragging; self.onScrollPermission = onScrollPermission
-        self.configureBrowser = configureBrowser
         _model = State(initialValue: DefinitionModel(embedded: item.definition))
     }
     private var lemma: String {
@@ -256,19 +289,6 @@ struct DefinitionView: View {
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                                 definitionActions
-                                if let target = model.browserTarget {
-                                    if let configureBrowser {
-                                        Button(action: configureBrowser) {
-                                            HStack(spacing: 8) {
-                                                Text(target.libraryName)
-                                                Image(systemName: "chevron.down").font(.system(size: 10, weight: .medium))
-                                            }.frame(minHeight: 32, alignment: .leading)
-                                        }.buttonStyle(.plain).font(LeximoryTypography.interface(13))
-                                            .foregroundStyle(.secondary).accessibilityLabel("收藏至" + target.libraryName)
-                                    } else {
-                                        Text(target.libraryName).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary)
-                                    }
-                                }
                                 if let error = model.saveError ?? model.editor?.error {
                                     Text(error)
                                         .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
@@ -441,7 +461,6 @@ struct DefinitionTopTray: View {
     let item: DefinitionPresentation
     let client: MobileClient?
     let language: String
-    var configureBrowser: (() -> Void)? = nil
     let close: () -> Void
     @State private var presented = false
     @State private var extent: CGFloat = 100
@@ -466,7 +485,7 @@ struct DefinitionTopTray: View {
                     .accessibilityHidden(true)
                 DefinitionView(item: item, client: client, language: language, isPopover: false,
                                topTrayHeight: geometry.size.height, closeTray: dismissTray,
-                               trayDragging: dragging, onScrollPermission: { canMove = $0 }, configureBrowser: configureBrowser)
+                               trayDragging: dragging, onScrollPermission: { canMove = $0 })
                     .frame(width: min(LeximoryLayout.annotationMeasure, geometry.size.width - 24))
                     .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))

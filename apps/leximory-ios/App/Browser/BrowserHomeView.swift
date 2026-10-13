@@ -8,6 +8,7 @@ struct BrowserHomeView: View {
     let bookmarks: () -> Void
     let ebook: () -> Void
     let account: () -> Void
+    var avatarURL: URL? = nil
     let resume: (CatalogText) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -25,8 +26,14 @@ struct BrowserHomeView: View {
                         }
                         Text("Leximory").editorialFont(34, relativeTo: .title, language: nil)
                         Spacer()
-                        Button("账号", systemImage: "person.crop.circle", action: account)
-                            .labelStyle(.iconOnly).font(.title2).frame(width: 48, height: 48)
+                        Button(action: account) {
+                            AsyncImage(url: avatarURL) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                Image(systemName: "person.crop.circle").resizable().scaledToFit().foregroundStyle(.secondary)
+                            }.frame(width: 36, height: 36).clipShape(Circle())
+                                .frame(width: 48, height: 48).contentShape(Circle())
+                        }.buttonStyle(.plain).accessibilityLabel("账号")
                     }.padding(.bottom, folded ? 0 : 18)
                     let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
                     layout {
@@ -37,7 +44,7 @@ struct BrowserHomeView: View {
                     if let recent, !compact {
                         Button { resume(recent) } label: {
                             VStack(spacing: 6) {
-                                Text("继续阅读").editorialFont(20, relativeTo: .headline).foregroundStyle(.secondary)
+                                Text("继续阅读").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
                                 Text(recent.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
                             }.frame(maxWidth: .infinity, minHeight: 44)
                         }.buttonStyle(.plain).accessibilityIdentifier("browser-resume")

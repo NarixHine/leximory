@@ -36,7 +36,7 @@ struct BrowserFoldersView: View {
                     Section {
                         DisclosureGroup("已归档", isExpanded: $archiveExpanded) {
                             ForEach(folders.filter(\.archived)) { library in folder(library) }
-                        }.disclosureGroupStyle(BrowserFolderDisclosureStyle()).foregroundStyle(.secondary)
+                        }.foregroundStyle(.secondary)
                     }
                 }
                 if folders.isEmpty && !workspace.loading { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }
@@ -44,6 +44,7 @@ struct BrowserFoldersView: View {
             if workspace.loading { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
         }
         .listStyle(.insetGrouped)
+        .animation(.default, value: workspace.expandedFolders)
         .scrollContentBackground(.hidden)
         .font(LeximoryTypography.interface(17))
         .frame(maxWidth: LeximoryLayout.libraryMeasure)
@@ -70,7 +71,7 @@ struct BrowserFoldersView: View {
             BrowserFolderLabel(library: library).frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("browser-folder-toggle-\(library.id)")
         }
-        .disclosureGroupStyle(BrowserFolderDisclosureStyle())
+
         .contextMenu {
             if library.owned {
                 Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
@@ -234,23 +235,5 @@ struct BrowserTextIcon: View {
                 Image(systemName: text.format == "ebook" ? "book.closed" : text.format == "bookmark" ? "globe" : "doc.text")
             }
         }.frame(width: 26).accessibilityHidden(true)
-    }
-}
-
-private struct BrowserFolderDisclosureStyle: DisclosureGroupStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) { configuration.isExpanded.toggle() }
-            } label: {
-                HStack {
-                    configuration.label
-                    Spacer(minLength: 12)
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .regular))
-                        .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0)).foregroundStyle(.secondary)
-                }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-            }.buttonStyle(.plain)
-            if configuration.isExpanded { configuration.content }
-        }
     }
 }
