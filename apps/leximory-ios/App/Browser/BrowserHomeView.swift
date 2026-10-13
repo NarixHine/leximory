@@ -5,6 +5,9 @@ struct BrowserHomeView: View {
     let compact: Bool
     let recent: CatalogText?
     let browse: () -> Void
+    let paste: () -> Void
+    let recentWebpage: RecentWebpage?
+    let openWebpage: (RecentWebpage) -> Void
     let bookmarks: () -> Void
     let ebook: () -> Void
     let account: () -> Void
@@ -24,7 +27,10 @@ struct BrowserHomeView: View {
                             Image(uiImage: icon).resizable().scaledToFit().frame(width: 40, height: 40)
                                 .clipShape(RoundedRectangle(cornerRadius: 12)).accessibilityHidden(true)
                         }
-                        Text("Leximory").editorialFont(34, relativeTo: .title, language: nil)
+                        ViewThatFits(in: .horizontal) {
+                            Text("Leximory Browser").fixedSize()
+                            Text("Leximory").fixedSize()
+                        }.editorialFont(34, relativeTo: .title, language: nil)
                         Spacer()
                         Button(action: account) {
                             AsyncImage(url: avatarURL) { image in
@@ -37,7 +43,7 @@ struct BrowserHomeView: View {
                     }.padding(.bottom, folded ? 0 : 18)
                     let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
                     layout {
-                        card("浏览网页", symbol: "globe", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), angle: -7, folded: folded, square: squares, action: browse)
+                        card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), angle: -7, folded: folded, square: squares, action: compact ? paste : browse)
                         card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), angle: 5, folded: folded, square: squares, action: bookmarks)
                         card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x292723), border: tone(0xEAE4E9, 0x615B60), angle: -4, folded: folded, square: squares, action: ebook)
                     }.padding(.horizontal, folded ? 0 : 8)
@@ -49,6 +55,16 @@ struct BrowserHomeView: View {
                             }.frame(maxWidth: .infinity, minHeight: 44)
                         }.buttonStyle(.plain).accessibilityIdentifier("browser-resume")
                     }
+                    if let recentWebpage, !compact {
+                        Button { openWebpage(recentWebpage) } label: {
+                            VStack(spacing: 6) {
+                                Text("最近浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
+                                Text(recentWebpage.title).editorialFont(20, relativeTo: .headline, language: nil)
+                                    .foregroundStyle(.primary).lineLimit(2)
+                            }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
+                        }.buttonStyle(.plain).accessibilityIdentifier("browser-recent-webpage")
+                    }
+
                 }.padding(.horizontal, 28).padding(.top, folded ? 20 : 32)
                     .padding(.bottom, 110).frame(maxWidth: squares ? 560 : 360).frame(maxWidth: .infinity, minHeight: compact ? 0 : max(0, geometry.size.height - 80), alignment: .center)
             }.scrollBounceBehavior(.basedOnSize)

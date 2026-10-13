@@ -9,7 +9,7 @@ import HTTPTypes
     @Test func leavingAnArticleKeepsItsAnnotationActivityAndOpeningItAcknowledgesCompletion() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
-        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
+        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
         let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
         let details = try await workspace.client.documentDetails(textID: "article")
         await workspace.imported(details.text, annotating: true)
@@ -27,7 +27,7 @@ import HTTPTypes
     @Test func completionInTheCurrentArticleTriggersTheRevealWithoutAnUnreadCount() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
-        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
+        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
         let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
         let details = try await workspace.client.documentDetails(textID: "article")
         await workspace.imported(details.text, annotating: true)
@@ -39,7 +39,7 @@ import HTTPTypes
     @Test func aLateOpenDoesNotReplaceANewerDestination() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
-        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
+        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
         let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
         let details = try await workspace.client.documentDetails(textID: "article")
         await transport.delayNextRead()
@@ -53,7 +53,7 @@ import HTTPTypes
     @Test func clearingHistoryRemovesWebKitHistoryWithoutRemovingAnnotationActivity() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
-        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
+        defer { UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace); UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace); UserDefaults.standard.removeObject(forKey: "recent-access." + namespace) }
         let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
         let details = try await workspace.client.documentDetails(textID: "article")
         await workspace.imported(details.text, annotating: true)

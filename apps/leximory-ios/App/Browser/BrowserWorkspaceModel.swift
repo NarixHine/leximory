@@ -9,6 +9,12 @@ struct WebResource {
     var offset: CGFloat = 0
 }
 
+struct RecentWebpage: Codable, Equatable {
+    let url: URL
+    let title: String
+    var bookmarkID: String? = nil
+}
+
 enum BrowserResource {
     case home, bookmarks, account, vocabulary
     case web(WebResource)
@@ -53,6 +59,7 @@ struct AnnotationActivity: Identifiable, Codable {
 @MainActor @Observable final class BrowserWorkspaceModel {
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
+    private(set) var recentWebpage: RecentWebpage?
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
     private(set) var texts: [String: [CatalogText]] = [:]
@@ -98,6 +105,9 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     init(client: MobileClient, namespace: String) {
         self.client = client; self.namespace = namespace
+        if let data = UserDefaults.standard.data(forKey: "browser.recent-web." + namespace),
+           let page = try? JSONDecoder().decode(RecentWebpage.self, from: data),
+           TextBrowserModel.address(page.url.absoluteString) != nil { recentWebpage = page }
         if let data = UserDefaults.standard.data(forKey: "recent-access." + namespace),
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.annotations." + namespace),
@@ -116,6 +126,7 @@ struct AnnotationActivity: Identifiable, Codable {
         openRequest = UUID(); opening = false
         if rememberingWebPosition { rememberWebPosition() }
         history.visit(BrowserEntry(resource: resource))
+        rememberCurrentWebpage()
         error = nil
     }
     func go(_ distance: Int, rememberingWebPosition: Bool = true) {
@@ -130,6 +141,7 @@ struct AnnotationActivity: Identifiable, Codable {
             else if browser.url != page.url { browser.load(page.url, offset: page.offset) }
             else { restoringWeb = false; browser.web.scrollView.setContentOffset(CGPoint(x: 0, y: page.offset), animated: false) }
         }
+        rememberCurrentWebpage()
         acknowledgeCurrent()
     }
     func openURL(_ url: URL, bookmarkID: String? = nil) {
@@ -144,6 +156,7 @@ struct AnnotationActivity: Identifiable, Codable {
             if case .web(var page) = current.resource {
                 page = WebResource(url: item.url, bookmarkID: page.bookmarkID, item: item, offset: page.offset)
                 var entry = current; entry.resource = .web(page); history.replaceCurrent(entry)
+                rememberCurrentWebpage()
             }
             return
         }
@@ -152,6 +165,14 @@ struct AnnotationActivity: Identifiable, Codable {
             if case .web(let page) = entry.resource { return page.item === item }; return false
         }) { go(index - history.index, rememberingWebPosition: false); return }
         visit(.web(WebResource(url: item.url, item: item)), rememberingWebPosition: false)
+    }
+    func rememberCurrentWebpage() {
+        guard case .web(let page) = current.resource, let item = page.item else { return }
+        let title = browser.url == page.url && !browser.title.isEmpty ? browser.title : item.title ?? page.url.host ?? "网页"
+        let recent = RecentWebpage(url: page.url, title: title, bookmarkID: page.bookmarkID)
+        guard recent != recentWebpage else { return }
+        recentWebpage = recent
+        if let data = try? JSONEncoder().encode(recent) { UserDefaults.standard.set(data, forKey: "browser.recent-web." + namespace) }
     }
     private func handleWebGesture(_ url: URL) -> Bool {
         guard !restoringWeb else { return false }
@@ -298,6 +319,8 @@ struct AnnotationActivity: Identifiable, Codable {
         browser = TextBrowserModel()
         connectBrowser()
         history.reset(to: BrowserEntry(resource: .home))
+        recentWebpage = nil
+        UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace)
         restoringWeb = false
     }
 }

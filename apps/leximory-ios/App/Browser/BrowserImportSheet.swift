@@ -70,7 +70,7 @@ struct BrowserImportSheet: View {
                             Text("存为链接书签").tag(false)
                         }.pickerStyle(.inline).labelsHidden()
                     } header: {
-                        Text("保存方式").font(LeximoryTypography.interface(13, style: .caption1))
+                        sectionHeading("保存方式")
                     }
                 }
                 Section {
@@ -90,11 +90,13 @@ struct BrowserImportSheet: View {
                     if draft != nil { Toggle("本网站总是存于此文件夹", isOn: $remember).disabled(folder == nil) }
                 }
                 if file == nil && fullText {
-                    Section("全文预览") {
+                    Section {
                         SafeArticlePreview(content: content)
                         Button("编辑全文", systemImage: "pencil") { path.append(.content) }
                         if content.utf16.count > limit { Text("全文超过此文件夹的 \(limit) 字符上限，请编辑后重试。").foregroundStyle(.secondary) }
                         if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("未能提取正文。可以存为链接，或手动编辑全文。").foregroundStyle(.secondary) }
+                    } header: {
+                        sectionHeading("全文预览")
                     }
                 }
                 if let error { Section { Text(error).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) } }
@@ -137,6 +139,9 @@ struct BrowserImportSheet: View {
             }
             .interactiveDismissDisabled(busy)
         }.font(LeximoryTypography.interface(17)).presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
+    }
+    private func sectionHeading(_ title: String) -> some View {
+        Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
     }
     private func confirmImport() {
         Task { await submit() }

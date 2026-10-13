@@ -16,6 +16,7 @@ struct BrowserWorkspaceView: View {
     @State private var importRequest: BrowserImportRequest?
     @State private var importedText: (CatalogText, Bool)?
     @State private var extracting = false
+    @State private var clipboardNotice: UUID?
     @State private var activitySheet = false
     @State private var confirmingClear = false
     @State private var chromeHeight: CGFloat = 64
@@ -49,7 +50,7 @@ struct BrowserWorkspaceView: View {
                     }
                     if editingAddress || isHome {
                         BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
-                            browse: beginEditing, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
+                            browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                             ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarURL: avatarURL,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                     }
@@ -69,8 +70,8 @@ struct BrowserWorkspaceView: View {
             }
             .background(LeximoryPalette.paper)
             .overlay(alignment: .top) {
-                if completionNotice {
-                    Label("预注释已完成", systemImage: "sparkles")
+                if completionNotice || clipboardNotice != nil {
+                    Label(clipboardNotice != nil ? "不是有效网页链接" : "预注释已完成", systemImage: clipboardNotice != nil ? "link" : "sparkles")
                         .font(LeximoryTypography.interface(15, style: .subheadline)).padding(.horizontal, 18).padding(.vertical, 12)
                         .glassEffect(.regular, in: .capsule).padding(.top, 16)
                         .transition(.opacity.combined(with: .scale(scale: reduceMotion ? 1 : 0.94)))
@@ -156,6 +157,12 @@ struct BrowserWorkspaceView: View {
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
             withAnimation(motion) { completionNotice = false }
         }
+        .task(id: clipboardNotice) {
+            guard let notice = clipboardNotice else { return }
+            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            if clipboardNotice == notice { withAnimation(motion) { clipboardNotice = nil } }
+        }
+        .onChange(of: workspace.browser.title) { _, _ in workspace.rememberCurrentWebpage() }
         .sensoryFeedback(.success, trigger: workspace.completionID)
         .onChange(of: workspace.current.id) { _, _ in
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
@@ -276,7 +283,8 @@ struct BrowserWorkspaceView: View {
             if workspace.current.isWeb {
                 Button(role: .destructive) { confirmingClear = true } label: {
                     Label { Text("清除浏览数据") } icon: {
-                        Image(systemName: "trash").symbolRenderingMode(.palette).foregroundStyle(.red)
+                        Image(uiImage: UIImage(systemName: "trash")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) ?? UIImage())
+                            .renderingMode(.original)
                     }.foregroundStyle(.red)
                 }
             }
@@ -310,6 +318,17 @@ struct BrowserWorkspaceView: View {
         addressEditor.field?.wantsFocus = false
         editingAddress = false
         addressEditor.field?.resignFirstResponder()
+    }
+    private func openClipboard() {
+        let input = UIPasteboard.general.string ?? UIPasteboard.general.url?.absoluteString
+        guard let input, let url = TextBrowserModel.address(input), let host = url.host,
+              host.contains(".") || host == "localhost" || host.contains(":") else {
+            withAnimation(motion) { clipboardNotice = UUID() }
+            UIAccessibility.post(notification: .announcement, argument: "不是有效网页链接")
+            return
+        }
+        clipboardNotice = nil
+        finishEditing(); workspace.openURL(url)
     }
     private func submitAddress() {
         guard let url = TextBrowserModel.destination(address) else { return }
