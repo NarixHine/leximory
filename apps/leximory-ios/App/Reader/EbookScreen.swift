@@ -22,6 +22,7 @@ struct EbookChapter: Identifiable {
     var menuSelection: EbookSelection?
     var selectionAction: EbookSelectionAction?
     var chromeVisible = false
+    var trayRequest: String?
     var backRequest: UUID?
     var canBookmark = false
     private var nextPendingBookmarkID = -1
@@ -103,12 +104,15 @@ struct EbookScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.browserWorkspace) private var workspace
+    @Environment(\.browserChromeHeight) private var browserChromeHeight
+    @Environment(\.browserResourceActive) private var resourceActive
 
     var body: some View {
         ZStack {
             if let data {
-                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36).padding(.horizontal, 12).frame(maxWidth: 980) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command).padding(.top, 60).padding(.bottom, 36 + browserChromeHeight).padding(.horizontal, 12).frame(maxWidth: 980) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
             if loading { ReadingLoadingIndicator("正在打开电子书").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
@@ -127,12 +131,14 @@ struct EbookScreen: View {
                     .opacity(reader.chromeVisible ? 0 : 1)
                     .accessibilityHidden(reader.chromeVisible)
                     .allowsHitTesting(false)
-                if reader.chromeVisible { topControls.transition(.opacity) }
+                if reader.chromeVisible && workspace == nil { topControls.transition(.opacity) }
             }.frame(height: 44).padding(.top, 8)
         }
         .overlay(alignment: .bottom) {
-            if reader.chromeVisible { bottomControls.transition(.opacity) }
-            else { pageLabel.padding(.top, 8).padding(.bottom, 0).allowsHitTesting(false) }
+            Group {
+                if reader.chromeVisible { bottomControls.transition(.opacity) }
+                else { pageLabel.padding(.top, 8).padding(.bottom, 0).allowsHitTesting(false) }
+            }.padding(.bottom, browserChromeHeight)
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reader.chromeVisible)
         .overlay(alignment: .top) {
@@ -163,7 +169,22 @@ struct EbookScreen: View {
             if edge == .leading { reader.navigate(reader.rightToLeft ? "next" : "previous") }
         }
         .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
-        .onChange(of: reader.backRequest) { _, _ in dismiss() }
+        .onChange(of: reader.backRequest) { _, _ in if let workspace { workspace.go(-1) } else { dismiss() } }
+        .onChange(of: resourceActive, initial: true) { _, active in
+            if active { workspace?.ebookReader = reader; workspace?.ebookTextID = article.id.rawValue }
+            else { definition = nil; tray = nil; positionSaver?.flush() }
+        }
+        .onChange(of: reader.trayRequest) { _, request in
+            guard resourceActive, let request else { return }
+            tray = EbookTray(rawValue: request); reader.trayRequest = nil
+        }
+        .sheet(item: Binding(get: { workspace != nil ? tray : nil }, set: { tray = $0 })) { item in
+            switch item {
+            case .contents: contentsTray
+            case .bookmarks: bookmarksTray
+            case .settings: readingSettings
+            }
+        }
         .onDisappear { positionSaver?.flush() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
@@ -439,8 +460,10 @@ private struct NativeEPUBReader: UIViewRepresentable {
     let fontSize: Double
     let lineHeight: Double
     let appearance: EbookAppearance
+    var bottomChromeHeight: CGFloat = 0
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.browserWorkspace) private var workspace
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -512,7 +535,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             // The paper runs edge to edge, so the prose keeps its own top and
             // bottom margins clear of the running title and page label.
             let safeTop = web.window?.safeAreaInsets.top ?? 0
-            let safeBottom = web.window?.safeAreaInsets.bottom ?? 0
+            let safeBottom = (web.window?.safeAreaInsets.bottom ?? 0) + parent.bottomChromeHeight
             return ["paper": colors.paper, "ink": colors.ink, "mode": parent.scheme == .dark ? "dark" : "light", "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb", "top": String(Double(safeTop) + 56), "bottom": String(Double(safeBottom) + 24)]
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
@@ -537,6 +560,11 @@ private struct NativeEPUBReader: UIViewRepresentable {
 
         }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+            if navigationAction.navigationType == .linkActivated, let url = navigationAction.request.url,
+               TextBrowserModel.address(url.absoluteString) != nil, let workspace = parent.workspace {
+                workspace.openURL(url)
+                return .cancel
+            }
             let scheme = navigationAction.request.url?.scheme
             return ["file", "blob", "about", "data"].contains(scheme ?? "") ? .allow : .cancel
         }

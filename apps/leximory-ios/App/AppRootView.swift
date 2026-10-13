@@ -14,6 +14,9 @@ struct AppRootView: View {
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
         #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures") { return }
+        try? FileManager.default.removeItem(at: FileManager.default.temporaryDirectory.appending(path: "browser-workspace-fixture", directoryHint: .isDirectory))
+        for key in ["browser.annotations.workspace-fixture", "browser.recent.workspace-fixture", "recent-access.workspace-fixture"] { UserDefaults.standard.removeObject(forKey: key) }
         if ProcessInfo.processInfo.arguments.contains("--account-fixtures") || ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
             if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
                 fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })
@@ -50,7 +53,9 @@ struct AppRootView: View {
                 #endif
             } else {
                 #if DEBUG && targetEnvironment(simulator)
-                if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
+                if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures") {
+                    BrowserWorkspacePreview(playback: fixturePlayback)
+                } else if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
                     AccountPreview(playback: fixturePlayback)
                 } else if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
                     AuthoringPreview(playback: fixturePlayback)
@@ -94,7 +99,7 @@ private struct AccountRoot: View {
             case .signedOut:
                 if hasOpened { SignInView(session: session) } else { WelcomeGate(session: session) }
             case .expired: SignInView(session: session, notice: "登录已过期，请重新登录。")
-            case .signedIn: LiveLibraryView(session: session, playback: playback, pendingText: $pendingText).id(session.generation)
+            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText).id(session.generation)
             case .unavailable(let message):
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: message) {
                     Button("重试") { Task { await session.restore() } }

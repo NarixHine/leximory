@@ -60,7 +60,9 @@ export const browserTargetSchema = z.object({
     libraryName: z.string(), shadow: z.boolean(),
 }).strict()
 export const domainRuleSchema = z.object({ domain: z.string().min(1).max(253), libraryId: resourceID }).strict()
-export const bookmarkInputSchema = z.object({ url: z.url().max(8192), requestId: resourceID }).strict()
+export const bookmarkInputSchema = z.object({ url: z.url().max(8192), requestId: resourceID, title: z.string().trim().min(1).max(512).optional() }).strict()
+export const folderCreateSchema = z.object({ name: z.string().trim().min(1).max(128), language: LangSchema, requestId: resourceID }).strict()
+export const folderRenameSchema = z.object({ name: z.string().trim().min(1).max(128) }).strict()
 export const accountSettingsSchema = accountSchema.extend({
     username: z.string().nullable(), image: z.string().nullable(), email: z.string().nullable(), createdAt: z.string(),
     planLabel: z.string(), balance: z.number(), dailyAmount: z.number(), hasClaimed: z.boolean(),
@@ -110,6 +112,8 @@ export const mobileContract = {
     ebookVocabulary: oc.route({ method: 'POST', path: '/texts/{textId}/ebook-vocabulary' }).input(z.object({ textId: resourceID, completionId: resourceID, requestId: resourceID.optional() })).output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
     me: oc.route({ method: 'GET', path: '/me' }).output(accountSchema),
     libraryArchive: oc.route({ method: 'POST', path: '/libraries/{libraryId}/archive' }).input(z.object({ libraryId: resourceID, archived: z.boolean() })).output(z.object({ archived: z.boolean() })),
+    createFolder: oc.route({ method: 'POST', path: '/libraries' }).input(folderCreateSchema).output(librarySchema),
+    renameFolder: oc.route({ method: 'POST', path: '/libraries/{libraryId}/name' }).input(folderRenameSchema.extend({ libraryId: resourceID })).output(librarySchema),
     libraries: oc.route({ method: 'GET', path: '/libraries' }).input(pageInput).output(librariesSchema),
     texts: oc.route({ method: 'GET', path: '/libraries/{libraryId}/texts' }).input(pageInput.extend({ libraryId: resourceID })).output(textsSchema),
     document: oc.route({ method: 'GET', path: '/texts/{textId}' }).input(z.object({ textId: resourceID })).output(documentSchema),

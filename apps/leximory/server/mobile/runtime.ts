@@ -50,4 +50,8 @@ const archivePOST = createLibraryArchiveHandler({ verify, catalog: catalogStore,
     await setLibraryArchived(...input)
     revalidateTag('libraries', { expire: 0 })
 } })
-export const mobilePOST = (request: Request) => isAccountRoute(request) ? accountHandler(request) : isBrowserRoute(request) ? browserHandler(request) : isAuthoringRoute(request) ? authoringHandler(request) : /\/libraries\/[^/]+\/archive$/.test(new URL(request.url).pathname) ? archivePOST(request) : isEbookRoute(request) ? ebookHandler(request) : definitionPOST(request)
+import { createFolderHandler } from './folders'
+import { folderStore } from './folder-store'
+const folderPOST = createFolderHandler({ verify, catalog: catalogStore, folders: folderStore })
+const isFolderRoute = (request: Request) => /^\/api\/mobile\/v1\/libraries(?:\/[^/]+\/name)?$/.test(new URL(request.url).pathname)
+export const mobilePOST = (request: Request) => isAccountRoute(request) ? accountHandler(request) : isFolderRoute(request) ? folderPOST(request) : isBrowserRoute(request) ? browserHandler(request) : isAuthoringRoute(request) ? authoringHandler(request) : /\/libraries\/[^/]+\/archive$/.test(new URL(request.url).pathname) ? archivePOST(request) : isEbookRoute(request) ? ebookHandler(request) : definitionPOST(request)

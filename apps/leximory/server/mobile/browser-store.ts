@@ -120,7 +120,9 @@ export const browserStore: BrowserStore = {
             if (existing.data.lib !== library.id || existing.data.bookmark_url !== input.url) throw new MobileError('invalid_input')
             return summarizeText(textRowSchema.parse(existing.data))
         }
-        const { title, emoji } = await metadata(input.url)
+        const details = await metadata(input.url)
+        const title = input.title ?? details.title
+        const emoji = details.emoji
         await supabase.from('texts').upsert({ id, lib: library.id, title, emoji, content: '', has_ebook: false, bookmark_url: input.url }, { onConflict: 'id', ignoreDuplicates: true }).throwOnError()
         const { data } = await supabase.from('texts').select('*').eq('id', id).single().throwOnError()
         if (data.lib !== library.id || data.bookmark_url !== input.url) throw new MobileError('invalid_input')

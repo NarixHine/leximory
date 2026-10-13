@@ -115,7 +115,7 @@ enum DefinitionSource {
                     saveError = failure.error.message
                 } else {
                     saveState = .uncertain
-                    saveError = "未能确认收藏结果，请先在语料本中查看，避免重复收藏。"
+                    saveError = "未能确认收藏结果，请先在已存词汇中查看，避免重复收藏。"
                 }
             }
         }

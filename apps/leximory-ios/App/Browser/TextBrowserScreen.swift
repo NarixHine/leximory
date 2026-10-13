@@ -6,7 +6,10 @@ struct TextBrowserScreen: View {
     var bookmarkID: String? = nil
     var initialURL: String? = nil
     var sessionKey: String? = nil
-    var homeURL: String? = "https://www.cgtn.com"
+    var homeURL: String? = nil
+    var sharedBrowser: TextBrowserModel? = nil
+    var showsControls = true
+    var restoresSession = true
     var close: (() -> Void)? = nil
     @Environment(\.tabBarPlacement) private var tabBarPlacement
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -18,7 +21,8 @@ struct TextBrowserScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @State private var browser = TextBrowserModel()
+    @State private var localBrowser = TextBrowserModel()
+    private var browser: TextBrowserModel { sharedBrowser ?? localBrowser }
     @State private var address = ""
     @State private var editingAddress = false
     @State private var settings = false
@@ -41,10 +45,11 @@ struct TextBrowserScreen: View {
             if !active { finishEditing() }
         }
         .onReceive(NotificationCenter.default.publisher(for: TextBrowserModel.browsingDataWillClear)) { _ in
+            guard sharedBrowser == nil else { return }
             finishEditing()
             browser.web.stopLoading()
             browser.web.lookup = nil
-            browser = TextBrowserModel()
+            localBrowser = TextBrowserModel()
             browser.web.lookup = { selection in define(selection) }
             opened = true
             address = ""
@@ -52,10 +57,7 @@ struct TextBrowserScreen: View {
             lastSelection = nil
         }
     }
-    private var controlsAtTop: Bool {
-        if let tabBarPlacement { return tabBarPlacement == .bottomBar }
-        return sizeClass == .compact
-    }
+    private var controlsAtTop: Bool { false }
     private var page: some View {
         ZStack(alignment: .top) {
             BrowserWebContent(model: browser, reservesBottomControls: !controlsAtTop).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -84,25 +86,21 @@ struct TextBrowserScreen: View {
                     .transition(.opacity)
             }
             if let definition {
-                DefinitionTopTray(item: definition, client: client, language: "English",
-                    configureBrowser: bookmarkID == nil ? {
-                        settingsFromDefinition = true
-                        settings = true
-                    } : nil) {
-                        self.definition = nil
-                        lastSelection = nil
-                    }
+                DefinitionTopTray(item: definition, client: client, language: "English") {
+                    self.definition = nil
+                    lastSelection = nil
+                }
                     .id(definition.id)
             }
         }
         .background(Color(uiColor: browser.pageColor).ignoresSafeArea())
         .safeAreaInset(edge: .top, spacing: 0) {
-            if controlsAtTop {
+            if showsControls && controlsAtTop {
                 controls.padding(.horizontal, 16).padding(.vertical, 8)
             }
         }
         .overlay(alignment: .bottom) {
-            if !controlsAtTop {
+            if showsControls && !controlsAtTop {
                 controls.padding(.horizontal, 16).padding(.bottom, 8)
             }
         }
@@ -141,6 +139,7 @@ struct TextBrowserScreen: View {
                 return
             }
             #endif
+            guard sharedBrowser == nil else { return }
             if let initialURL, let url = TextBrowserModel.address(initialURL) { browser.load(url) }
             else if let bookmarkID {
                 do {
@@ -151,7 +150,7 @@ struct TextBrowserScreen: View {
                     }
                     browser.load(url)
                 } catch { browser.error = "书签暂时无法打开，请重试。" }
-            } else if let saved = savedPage, let url = TextBrowserModel.address(saved.url) {
+            } else if restoresSession, let saved = savedPage, let url = TextBrowserModel.address(saved.url) {
                 browser.load(url, offset: saved.offset)
             } else if let homeURL, let url = TextBrowserModel.address(homeURL) {
                 browser.load(url)
@@ -160,6 +159,11 @@ struct TextBrowserScreen: View {
         .onChange(of: browser.url) { _, _ in rememberPage() }
         .onChange(of: browser.navigationID) { _, _ in
             definition = nil; lastSelection = nil
+            browser.web.lookup = { selection in define(selection) }
+        }
+        .onChange(of: bookmarkID) { _, _ in
+            definition = nil; lastSelection = nil
+            browser.web.lookup = { selection in define(selection) }
         }
         .onChange(of: browser.domain) { _, domain in
             if domain != selectedDomain { selectedLibraryID = nil }
@@ -288,14 +292,15 @@ struct TextBrowserScreen: View {
         }
     }
     private func define(_ selection: BrowserSelection) {
+        guard !browser.loading, browser.error == nil else { return }
         lastSelection = selection
         definition = DefinitionPresentation(source: .webpage(id: UUID(), selection: selection,
-            bookmarkID: bookmarkID, libraryID: selectedLibraryID), definition: nil)
+            bookmarkID: bookmarkID, libraryID: nil), definition: nil)
     }
 
 }
 
-private struct BrowserAddressField: UIViewRepresentable {
+struct BrowserAddressField: UIViewRepresentable {
     @Binding var address: String
     let editor: BrowserAddressEditor
     let submit: () -> Void
@@ -345,7 +350,7 @@ private struct BrowserAddressField: UIViewRepresentable {
     }
 }
 
-private final class BrowserURLTextField: UITextField {
+final class BrowserURLTextField: UITextField {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard window != nil else { return }
@@ -356,7 +361,7 @@ private final class BrowserURLTextField: UITextField {
     }
 }
 
-private final class BrowserAddressEditor {
+final class BrowserAddressEditor {
     weak var field: UITextField?
 }
 

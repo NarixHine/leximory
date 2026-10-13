@@ -22,7 +22,7 @@ struct VocabularyLibraryView: View {
                                 .foregroundStyle(LeximoryPalette.ink).fixedSize(horizontal: false, vertical: true)
                                 .accessibilityAddTraits(.isHeader)
                             Spacer(minLength: 0)
-                            Button("文章", systemImage: "doc.text", action: closeCorpus)
+                            Button("返回", systemImage: "chevron.left", action: closeCorpus)
                                 .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
                                 .frame(minWidth: 44, minHeight: 44).tint(.primary)
                                 .accessibilityIdentifier("corpus-show-texts")
@@ -30,7 +30,7 @@ struct VocabularyLibraryView: View {
                         timeline(columns: contentWidth < 600 ? 2 : 3)
                     }.padding(24).frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
                 }.background(LeximoryPalette.paper)
-            }.navigationTitle("语料本").navigationBarTitleDisplayMode(.inline)
+            }.navigationTitle("已存词汇").navigationBarTitleDisplayMode(.inline)
                 .task { await load(reset: true) }
                 .refreshable { await load(reset: true) }
                 .tint(.primary)

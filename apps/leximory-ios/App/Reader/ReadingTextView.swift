@@ -45,6 +45,8 @@ struct ReadingTextView: UIViewRepresentable {
     var client: MobileClient? = nil
     var sync: NativeSync? = nil
     var readOnly = false
+    var annotationReveal: UUID? = nil
+    @Environment(\.browserWorkspace) private var workspace
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
 
@@ -127,6 +129,11 @@ struct ReadingTextView: UIViewRepresentable {
             coordinator.lastJump = jumpToEnd
             if jumpToEnd { view.pendingFinalScroll = true; view.setNeedsLayout() }
         }
+        if let annotationReveal, coordinator.lastReveal != annotationReveal {
+            coordinator.lastReveal = annotationReveal
+            view.layoutIfNeeded()
+            view.revealAnnotations()
+        }
     }
 
     static func dismantleUIView(_ view: RubyTextView, coordinator: Coordinator) {
@@ -141,6 +148,7 @@ struct ReadingTextView: UIViewRepresentable {
         var layout: ReaderLayout
         var signature = ""
         var lastJump = false
+        var lastReveal: UUID?
         var imageTasks: [Task<Void, Never>] = []
         var header: UIHostingController<ArticleReadingHeader>?
         weak var popover: AnnotationPopoverController?
@@ -208,6 +216,11 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             if let view = scrollView as? RubyTextView { updateTitleVisibility(view) }
+        }
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+            guard case .link(let url) = textItem.content, parent.workspace != nil,
+                  TextBrowserModel.address(url.absoluteString) != nil else { return defaultAction }
+            return UIAction(title: "打开") { [weak self] _ in self?.parent.workspace?.openURL(url) }
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             guard !parent.readOnly else { return UIMenu(children: suggestedActions) }
@@ -298,6 +311,8 @@ struct ReadingTextView: UIViewRepresentable {
     var rubySpans: [Ruby] = [] { didSet { setNeedsLayout() } }
     private var pronunciationLabels: [Int: UILabel] = [:]
     private let markerLayer = CAShapeLayer()
+    private var revealLayers: [CAShapeLayer] = []
+    private var revealID: UUID?
     private let pressedAnnotationLayer = CAShapeLayer()
     var openAnnotation: ((ReaderLayout.Annotation, CGRect) -> Void)?
     var annotations: [ReaderLayout.Annotation] = [] {
@@ -433,6 +448,36 @@ struct ReadingTextView: UIViewRepresentable {
         markerLayer.fillColor = LeximoryPalette.wordHighlightUI.cgColor
         markerLayer.path = path.cgPath
         CATransaction.commit()
+    }
+    func revealAnnotations() {
+        guard !UIAccessibility.isReduceMotionEnabled, window != nil else { return }
+        revealLayers.forEach { $0.removeFromSuperlayer() }
+        revealLayers.removeAll()
+        let id = UUID(); revealID = id
+        let bands = annotationSegments.values.flatMap { $0 }.filter { bounds.intersects($0) }
+            .sorted { $0.minY == $1.minY ? $0.minX < $1.minX : $0.minY < $1.minY }
+        guard !bands.isEmpty else { return }
+        markerLayer.opacity = 0
+        for (index, rect) in bands.enumerated() {
+            let height = max(3, rect.height * 0.28)
+            let band = CGRect(x: rect.minX - 0.5, y: rect.maxY - height - rect.height * 0.08, width: rect.width + 1, height: height)
+            let marker = CAShapeLayer()
+            marker.bounds = CGRect(origin: .zero, size: band.size)
+            marker.anchorPoint = .zero; marker.position = band.origin
+            marker.path = UIBezierPath(roundedRect: marker.bounds, cornerRadius: height * 0.18).cgPath
+            marker.fillColor = LeximoryPalette.wordHighlightUI.cgColor
+            layer.insertSublayer(marker, at: 0); revealLayers.append(marker)
+            let animation = CABasicAnimation(keyPath: "transform.scale.x")
+            animation.fromValue = 0; animation.toValue = 1; animation.duration = 0.24
+            animation.beginTime = CACurrentMediaTime() + Double(index) / Double(max(1, bands.count)) * 0.3
+            animation.fillMode = .backwards; animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            marker.add(animation, forKey: "reveal")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self, revealID == id else { return }
+            markerLayer.opacity = 1
+            revealLayers.forEach { $0.removeFromSuperlayer() }; revealLayers.removeAll()
+        }
     }
     func annotation(tag: String) -> ReaderLayout.Annotation? { annotationsByTag[tag] }
     func annotation(at point: CGPoint) -> (occurrence: ReaderLayout.Annotation, rect: CGRect)? {

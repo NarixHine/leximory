@@ -139,7 +139,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
+        let recoversFailures = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -250,10 +250,10 @@ public struct MobileClient: Sendable {
     public func extractArticle(libraryID: String, url: String) async throws -> ArticlePreview {
         try mapped(try await client.extractArticle(path: .init(libraryId: libraryID), body: .json(.init(url: url))).ok.body.json, to: ArticlePreview.self)
     }
-    public func createBookmark(libraryID: String, url: String, requestID: String = UUID().uuidString) async throws -> CatalogText {
+    public func createBookmark(libraryID: String, url: String, requestID: String = UUID().uuidString, title: String? = nil) async throws -> CatalogText {
         let text = try await MutationRetry.run {
             try mapped(try await client.createBookmark(path: .init(libraryId: libraryID),
-                body: .json(.init(url: url, requestId: requestID))).ok.body.json, to: CatalogText.self)
+                body: .json(.init(url: url, requestId: requestID, title: title))).ok.body.json, to: CatalogText.self)
         }
         await localStore?.upsertText(text)
         return text
@@ -265,8 +265,27 @@ public struct MobileClient: Sendable {
     public func setBrowserRule(domain: String, libraryID: String?) async throws {
         _ = try await client.browserRule(body: .json(.init(domain: domain, libraryId: libraryID))).ok.body.json
     }
+    public func createFolder(name: String, language: String, requestID: String) async throws -> CatalogLibrary {
+        guard let language = Operations.createFolder.Input.Body.jsonPayload.languagePayload(rawValue: language) else { throw URLError(.cannotParseResponse) }
+        let library = try await MutationRetry.run {
+            try mapped(try await client.createFolder(body: .json(.init(name: name, language: language, requestId: requestID))).ok.body.json, to: CatalogLibrary.self)
+        }
+        await cacheFolder(library)
+        return library
+    }
+    public func renameFolder(libraryID: String, name: String) async throws -> CatalogLibrary {
+        let library = try mapped(try await client.renameFolder(path: .init(libraryId: libraryID), body: .json(.init(name: name))).ok.body.json, to: CatalogLibrary.self)
+        await cacheFolder(library)
+        return library
+    }
+    private func cacheFolder(_ library: CatalogLibrary) async {
+        var libraries = await localStore?.value([CatalogLibrary].self, for: "libraries") ?? []
+        if let index = libraries.firstIndex(where: { $0.id == library.id }) { libraries[index] = library }
+        else { libraries.append(library) }
+        await localStore?.save(libraries, for: "libraries")
+    }
     public func browserSelection(url: String, quote: String, context: String, offset: Int, bookmarkID: String?, libraryID: String?) async throws -> BrowserTarget {
-        try await MutationRetry.run {
+        return try await MutationRetry.run {
             try mapped(try await client.browserSelection(body: .json(.init(quote: quote, context: context, offset: offset,
                 url: url, bookmarkId: bookmarkID, libraryId: libraryID))).ok.body.json, to: BrowserTarget.self)
         }

@@ -23,11 +23,15 @@ struct ReaderScreen: View {
     @Environment(\.nativeSync) private var sync
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.browserWorkspace) private var workspace
+    @Environment(\.browserChromeHeight) private var browserChromeHeight
+    @Environment(\.browserResourceActive) private var resourceActive
     @State private var state: DocumentState = .loading
     @State private var definition: DefinitionPresentation?
     @State private var titlePastViewport = false
     @State private var playbackHeight: CGFloat = 76
     @State private var refreshedArticle: FixtureArticle?
+    @State private var annotationReveal: UUID?
     private var currentArticle: FixtureArticle { refreshedArticle ?? article }
     private var jumpToEnd: Bool {
         #if DEBUG
@@ -45,7 +49,7 @@ struct ReaderScreen: View {
                 LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
-                    bottomObstruction: playback.textID == article.id ? playbackHeight + 24 : 0, localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false,
+                    bottomObstruction: browserChromeHeight + (playback.textID == article.id ? playbackHeight + 24 : 0), localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false, annotationReveal: annotationReveal,
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, _ in
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
                     })
@@ -59,7 +63,7 @@ struct ReaderScreen: View {
             if playback.textID == article.id {
                 PlaybackBar(playback: playback)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { playbackHeight = $0 }
-                    .padding(.horizontal, 16).padding(.bottom, 12)
+                    .padding(.horizontal, 16).padding(.bottom, 12 + browserChromeHeight)
                     .transition(reduceMotion ? .opacity : .offset(y: 8).combined(with: .opacity))
             }
         }
@@ -77,7 +81,7 @@ struct ReaderScreen: View {
             }
         }
         .toolbar(.hidden, for: .tabBar)
-        .toolbar(.visible, for: .navigationBar)
+        .toolbar(workspace == nil ? .visible : .hidden, for: .navigationBar)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -121,6 +125,13 @@ struct ReaderScreen: View {
         }
         .task(id: article.id) { definition = nil; await load() }
         .onChange(of: sync?.revision) { _, _ in Task { await load() } }
+        .onChange(of: workspace?.revision) { _, _ in
+            guard let details = workspace?.documents[article.id.rawValue], let document = details.document else { return }
+            if case .loaded(let previous) = state, previous == document { return }
+            if resourceActive, workspace?.completionID == article.id.rawValue { annotationReveal = UUID() }
+            state = .loaded(document); refreshedArticle = details.text.preview
+        }
+        .onChange(of: resourceActive) { _, active in if !active { definition = nil } }
     }
     private func load() async {
         if let cached = await client?.cachedDocument(textID: article.id.rawValue), let document = cached.document {
@@ -134,6 +145,15 @@ struct ReaderScreen: View {
             return
         }
         do {
+            if let workspace {
+                let details: RemoteDocument
+                if let existing = workspace.documents[article.id.rawValue] { details = existing }
+                else if let client { details = try await client.documentDetails(textID: article.id.rawValue) }
+                else { throw URLError(.cannotParseResponse) }
+                guard let document = details.document else { throw URLError(.cannotParseResponse) }
+                state = .loaded(document); refreshedArticle = details.text.preview
+                return
+            }
             if let client {
                 for _ in 0..<90 {
                     let details = try await client.documentDetails(textID: article.id.rawValue)

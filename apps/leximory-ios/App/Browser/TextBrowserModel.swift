@@ -85,6 +85,9 @@ final class BrowserWebView: WKWebView {
     private(set) var navigationID = UUID()
     private(set) var pageColor: UIColor = .systemBackground
     var error: String?
+    @ObservationIgnored var committed: ((WKBackForwardListItem) -> Void)?
+    @ObservationIgnored var historyGesture: ((URL) -> Bool)?
+    @ObservationIgnored var navigationBegan: (() -> Void)?
     @ObservationIgnored private var resumeOffset: CGFloat?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
@@ -166,6 +169,7 @@ final class BrowserWebView: WKWebView {
         pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        navigationBegan?()
         navigationID = UUID(); error = nil; update()
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -174,6 +178,10 @@ final class BrowserWebView: WKWebView {
             webView.scrollView.setContentOffset(CGPoint(x: 0, y: resumeOffset), animated: false)
             self.resumeOffset = nil
         }
+    }
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        update()
+        if let item = webView.backForwardList.currentItem { committed?(item) }
     }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }
@@ -187,6 +195,8 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let destination = navigationAction.request.url,
               Self.allowsNavigation(destination, mainFrame: navigationAction.targetFrame?.isMainFrame != false) else { return .cancel }
+        if navigationAction.navigationType == .backForward, navigationAction.targetFrame?.isMainFrame != false,
+           historyGesture?(destination) == true { return .cancel }
         return .allow
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
@@ -202,6 +212,29 @@ final class BrowserWebView: WKWebView {
             web.load(navigationAction.request)
         }
         return nil
+    }
+}
+
+struct BrowserArticleDraft: Identifiable {
+    let id = UUID()
+    let url: URL
+    let title: String
+    let content: String
+    var sourceFolderID: String? = nil
+}
+
+extension TextBrowserModel {
+    func extractArticle() async throws -> BrowserArticleDraft {
+        guard let url, let resource = Bundle.main.url(forResource: "defuddle", withExtension: "js") else { throw URLError(.cannotParseResponse) }
+        let source = try String(contentsOf: resource, encoding: .utf8)
+        let navigation = navigationID
+        let script = source + """
+        \nconst result = new globalThis.Defuddle(document.cloneNode(true), {url: location.href, markdown: true}).parse();
+        return {title: result.title || document.title, content: result.contentMarkdown || result.content || ''};
+        """
+        let value = try await web.callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: .world(name: "LeximoryArticleExtraction"))
+        guard navigation == navigationID, let payload = value as? [String: String], let content = payload["content"] else { throw URLError(.cancelled) }
+        return BrowserArticleDraft(url: url, title: payload["title"] ?? title, content: content)
     }
 }
 

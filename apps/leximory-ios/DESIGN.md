@@ -52,11 +52,17 @@ Browser navigation uses a Safari-compatible identity and mobile content on iPhon
 
 网页选项 offers 清除浏览数据 with destructive confirmation. Clear all browser history, remembered pages, cookies, and website storage, leaving an empty browser. Preserve Leximory account data, bookmarks, vocabulary, and website library choices.
 
-词汇收藏设置 opened from 网页选项 updates only future lookups; it never starts annotation. Opened from a definition tray, a changed library may refresh that visible definition. 完成 with unchanged settings dismisses just like 取消, without saving or requesting annotation.
+Vocabulary saves use the saved resource’s folder, then a configured website folder, then the respective language warehouse. Never resolve language when authorized resource or folder metadata supplies it. Do not trust webpage language declarations or Defuddle language metadata. Remove the destination selector from the definition tray. New website navigation evaluates its own rules. The article import switch 本网站总是存于此文件夹 also governs vocabulary routing and future import preselection; future imports still show review.
 
 The browser fills its safe areas with the webpage’s theme color, falling back to WebKit’s page background. Track color changes without shifting the webpage or controls.
 
-iPhone and iPad use the same native 文库、冲浪 and 账号 tabs. Tab labels use the bundled Chinese serif. Browser keeps these tabs available without a separate exit button. Keep the address field and menu as separate glass controls. Follow native tab-bar placement: bottom navigation uses a reserved top safe-area row for Browser controls; top navigation uses bottom Browser controls. When tabs are hidden, use the window’s size class as the fallback. Extend the webpage’s background behind the top safe area when its controls are at the top. Bookmarked webpages retain their close button to return to the text gallery. Regular-width windows use a library sidebar with the gallery alongside. Readers push full width and return to the same browser. Put corpus/import actions beside the gallery heading.
+iPhone and iPad use one browser workspace with no navigation tabs. Fresh launches show Home without opening a URL; returning to an existing session preserves the current resource. Back and Forward share a sequential history across Home, My Bookmarks, websites, articles, and ebooks. Folder expansion, dialogs, and page turns do not create history entries. Restore destination state on return and replace the forward branch after a new visit.
+
+Keep a compact translucent bottom bar with resource identity, Back, Forward, Home, and More. Websites have a separate magic-colored save button. Native WebKit gestures work within webpages; screen-edge and address-bar gestures cross resource boundaries without stealing ebook page turns. Keep reading content through the bottom edge and accommodate audio and ebook controls above the bar. More owns contextual ebook controls and article audio. System sheets may cover the bar.
+
+Home shows the logo, Leximory, and three tilted, colorful bordered cards: 浏览网页、我的书签、打开电子书. Address editing morphs the cards into compact actions above the native material overlay; keep them fully colored and interactive. Use explicit 粘贴并打开. Respect Reduce Motion, large text, and narrow landscape windows.
+
+My Bookmarks uses native grouped rows with inline expandable folders and indented resources. Keep recent reading, search across collapsed folders, archive categorization, native context menus, and folder creation/renaming. App-authored UI calls libraries 文件夹. Keep folders language-specific, with muted metadata and · separators. Account is available from Home and More.
 
 Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
@@ -74,7 +80,7 @@ Dynamic definitions overlay the reader in a top-anchored card. Content determine
 
 Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
 
-Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing. Keep the ink circle and paper icon fully colored even when disabled; success has a short scale-and-turn flourish and symbols slide without fading. Reduce Motion changes symbols immediately. Browser destinations align with the prose, with a trailing chevron and no explanatory prefix. Omit implementation explanations and empty website-setting sections.
+Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing. Keep the ink circle and paper icon fully colored even when disabled; success has a short scale-and-turn flourish and symbols slide without fading. Reduce Motion changes symbols immediately. Browser destinations align with the prose in muted text, without a destination selector. Omit implementation explanations and empty website-setting sections.
 
 Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Seek on scrub release.
 
@@ -94,9 +100,13 @@ Bookmarks use spaced quote cards with chapter names or PDF page numbers. Show an
 
 ## Importing and vocabulary
 
-Every readable library exposes 语料本; owned libraries also expose 导入. Start 创建文章 with URL import, followed by review and 保存 or 生成. Manual entry has a title and blank body; ebook upload uses the native picker and the web's 4.5 MB limit. Use the muted `https://theleximorytimes.com/` placeholder, collapsed generation options, quiet cancellation and one primary action.
+Remove the corpus entrypoint and retain quiet 已存词汇 access in More. Website import runs bundled Defuddle in an isolated world inside the loaded page. The native review offers 导入并预注释全文 by default, or 存为链接书签; both show an editable title, folder selection, and 本网站总是存于此文件夹. Full-text mode adds a safe Markdown preview and a focused 编辑全文 screen. Use the shared native folder selector and one primary action. Full-text import opens the article immediately while annotations prepare.
 
-语料本 is a collection screen with Chinese date groups and centered word chips: two columns on phone, three or four on iPad. Words open fitted definitions with an explicit edit action. Shared-library words and welcome annotations remain read-only. Native omits lottery and story controls.
+Ebook import starts with the native EPUB/PDF picker, then a folder-selection sheet with the filename and optional title edit, then opens the reader. Preserve the 4.5 MB limit. Cancellation creates nothing; failures retain selection. Prevent resubmission when a mutation result cannot be confirmed.
+
+Track article annotation activity across destinations and foreground sessions. More shows a small dot for pending work and a numbered badge for newly ready articles not yet opened. Opening the menu does not acknowledge completion. Opening the article does. Reveal newly completed highlights across the visible text without changing reading position; respect Reduce Motion.
+
+已存词汇 is a collection screen with Chinese date groups and centered word chips: two columns on phone, three or four on iPad. Words open fitted definitions with an explicit edit action. Shared-library words and welcome annotations remain read-only. Native omits lottery and story controls.
 
 ## Verification
 

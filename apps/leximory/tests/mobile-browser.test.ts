@@ -64,6 +64,12 @@ test('iOS can clear a domain destination by omitting its library ID', async () =
     assert.equal(response.status, 200)
     assert.equal(h.metrics.ruleWrites, 1)
 })
+test('webpage language declarations cannot override authenticated resource routing', async () => {
+    const h = harness()
+    const response = await h.handler(request('browser/selection', { ...selection, language: 'en' }))
+    assert.equal(response.status, 400)
+    assert.equal(h.metrics.detections, 0)
+})
 test('Bookmark language stays fixed after following links and never invokes Jev', async () => {
     const h = harness()
     const response = await h.handler(request('browser/selection', { ...selection, bookmarkId: 'bookmark', libraryId: 'ignored' }))

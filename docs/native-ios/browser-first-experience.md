@@ -1,6 +1,6 @@
 # Leximory: a browser for language learning
 
-Agreed product brief, 2026-10-13. This records the design interview; it does not indicate that the experience has been implemented.
+Agreed product brief, 2026-10-13. Implemented locally in the native app and mobile API. See [verification and deployment notes](browser-first-verification.md).
 
 ## Product structure
 
@@ -44,7 +44,7 @@ Remove the corpus entrypoint. Keep a quiet 已存词汇 entry in More and retain
 
 ## Vocabulary and website preferences
 
-Never resolve language when authorized resource or folder metadata already establishes it. Use Jev only when language is genuinely unknown. Preserve the existing language-warehouse behavior.
+Never resolve language when authorized resource or folder metadata already establishes it. Use Jev only when language is genuinely unknown. Do not trust webpage language declarations or Defuddle language metadata for routing or folder suggestions. Preserve the existing language-warehouse behavior.
 
 Vocabulary destination precedence:
 

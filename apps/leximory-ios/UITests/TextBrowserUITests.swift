@@ -193,7 +193,7 @@ final class TextBrowserUITests: XCTestCase {
     }
 }
 
-private final class BrowserPageServer {
+final class BrowserPageServer {
     let listener: NWListener
     let url: String
     init() throws {
