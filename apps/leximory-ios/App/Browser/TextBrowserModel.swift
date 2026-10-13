@@ -207,8 +207,14 @@ final class BrowserWebView: WKWebView {
 
 struct BrowserWebContent: UIViewRepresentable {
     let model: TextBrowserModel
+    var reservesBottomControls = true
     func makeUIView(context: Context) -> BrowserWebView { model.web }
-    func updateUIView(_ uiView: BrowserWebView, context: Context) {}
+    func updateUIView(_ uiView: BrowserWebView, context: Context) {
+        let bottomInset: CGFloat = reservesBottomControls ? 80 : 0
+        if uiView.scrollView.contentInset.bottom != bottomInset {
+            uiView.scrollView.contentInset.bottom = bottomInset
+        }
+    }
     static func dismantleUIView(_ uiView: BrowserWebView, coordinator: ()) {
         uiView.stopLoading(); uiView.lookup = nil
     }

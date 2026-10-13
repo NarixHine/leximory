@@ -47,7 +47,13 @@ struct AccountView: View {
                         ProgressView("正在打开账号").frame(maxWidth: .infinity).padding(.top, 80)
                     } else {
                         LeximoryUnavailableView("暂时无法打开账号", systemImage: "person.crop.circle.badge.exclamationmark") {
-                            Button("重试") { Task { await load() } }
+                            Button { Task { await load() } } label: {
+                                Label("重试", systemImage: "arrow.clockwise")
+                                    .foregroundStyle(LeximoryPalette.paper)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .tint(LeximoryPalette.ink)
                         }
                     }
                 }
@@ -361,7 +367,17 @@ private struct AccountTokenSheet: View {
                     Text("通行密钥用于 iOS Shortcut 中向 API 验证你的身份，请妥善保管，不要泄露给他人。")
                 }
                 Section { Link("iOS Shortcut", destination: session.client.webURL.appending(path: "blog/ios-shortcuts")) }
-                if let error { Section { Text(error); Button("重试") { Task { await fetch() } } } }
+                if let error {
+                    Section {
+                        Text(error)
+                        Button { Task { await fetch() } } label: {
+                            Label("重试", systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .disabled(busy)
+                    }
+                }
             }.font(LeximoryTypography.interface(17)).navigationTitle("通行密钥").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .task { await fetch() }
