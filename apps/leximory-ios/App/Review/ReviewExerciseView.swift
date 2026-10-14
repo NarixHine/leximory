@@ -4,16 +4,14 @@ import LeximoryCore
 struct ReviewExerciseView: View {
     @Bindable var model: ReviewModel
     let index: Int?
+    let availableHeight: CGFloat
+    let close: () -> Void
+    @State private var contentHeight: CGFloat = 160
     @State private var showReference = false
     @State private var editing = false
     @FocusState private var focused: Bool
     @Environment(\.nativeSync) private var sync
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.browserChromeHeight) private var chromeHeight
-    @Environment(\.browserResourceActive) private var resourceActive
-    @ScaledMetric(relativeTo: .body) private var editorHeight: CGFloat = 90
+    @ScaledMetric(relativeTo: .body) private var editorHeight: CGFloat = 50
 
     private var key: String { index.map { "translation-\($0)" } ?? "conversation" }
     private var translation: ReviewTranslation? {
@@ -34,18 +32,18 @@ struct ReviewExerciseView: View {
         return sync?.online != false && !locked && !model.submitting && !model.awaitingConfirmation && status != .pending && !text.isEmpty && text.utf16.count <= limit
     }
     var body: some View {
-        ZStack {
-            GeometryReader { geometry in
-                if let lawn = ReviewArtwork.lawn(dark: colorScheme == .dark, vertical: geometry.size.width < 600) {
-                    Image(uiImage: lawn).resizable().scaledToFit().frame(width: geometry.size.width, height: geometry.size.height)
-                        .accessibilityHidden(true)
-                }
-            }
+        VStack(spacing: 12) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 14) {
                         Text(index == nil ? "每日练笔" : "TRANSLATION")
                             .font(ReviewStyle.mono(12)).foregroundStyle(ReviewStyle.meta)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .overlay(alignment: .trailing) {
+                                Button("关闭", systemImage: "xmark") { focused = false; close() }
+                                    .labelStyle(.iconOnly).frame(width: 44, height: 44).buttonStyle(.plain)
+                                    .accessibilityIdentifier("review-exercise-close")
+                            }
                         AnnotationMarkdownText(content: translation?.prompt ?? conversation?.prompt ?? "", size: 16, language: index == nil ? learningLanguageName(model.selection.language) : "Chinese")
                         if let translation {
                             Text("（\(translation.keyword)）").font(LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).foregroundStyle(ReviewStyle.word)
@@ -54,9 +52,7 @@ struct ReviewExerciseView: View {
                             Text("不妨试试选用 \(keywords.prefix(6).joined(separator: " / "))")
                                 .font(LeximoryTypography.interface(15)).foregroundStyle(.secondary)
                         }
-                    }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(LeximoryPalette.shell.opacity(0.96), in: .rect(cornerRadius: 32))
-                        .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 7) }
+                    }
                     if locked {
                         VStack(alignment: .leading, spacing: 12) {
                             Label("完成六成翻译，小黑猫就会轻声回应。", systemImage: "lock")
@@ -118,46 +114,46 @@ struct ReviewExerciseView: View {
                             .font(LeximoryTypography.interface(16)).disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
                     }
                     if let error = model.error { Text(error).font(LeximoryTypography.interface(15)).foregroundStyle(.secondary) }
-                }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
-            }.scrollDismissesKeyboard(.interactively)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if savedSubmission == nil || editing || status == .failed { composer.padding(.horizontal, 24).padding(.bottom, 16) }
-                }
-                .navigationTitle(index == nil ? "每日练笔" : "词汇复习").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() }.accessibilityIdentifier("review-exercise-close") } }
-                .onChange(of: status) { _, value in if value == .complete { showReference = true } }
-        }.background(LeximoryPalette.paper).safeAreaPadding(.bottom, chromeHeight).tint(.primary)
-            .task(id: scenePhase == .active && resourceActive) { if scenePhase == .active && resourceActive { await model.observe() } }
+                }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+            }.frame(height: min(contentHeight, max(90, availableHeight - editorHeight - 48)))
+                .scrollBounceBehavior(.basedOnSize).scrollDismissesKeyboard(.interactively)
+                .background(LeximoryPalette.shell.opacity(0.96), in: .rect(cornerRadius: 32))
+                .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 7) }
+                .accessibilityIdentifier("review-translation-tray")
+            Spacer(minLength: 0)
+            if savedSubmission == nil || editing || status == .failed { composer }
+        }.frame(maxWidth: 640).frame(maxWidth: .infinity).tint(.primary)
+            .onChange(of: status) { _, value in if value == .complete { showReference = true } }
     }
 
     private var composer: some View {
-        VStack(spacing: 0) {
+        HStack(alignment: .bottom, spacing: 8) {
             ZStack(alignment: .topLeading) {
                 if draft.wrappedValue.isEmpty {
                     Text(index == nil ? "写给小黑猫的话……" : model.selection.language == "zh" ? "译成文言文……" : "Your translation here ...")
                         .font(ReviewStyle.mono(16)).foregroundStyle(LeximoryPalette.secondaryLabel)
                         .padding(.horizontal, 5).padding(.top, 8).allowsHitTesting(false)
                 }
-                TextEditor(text: draft).font(ReviewStyle.mono(16)).frame(height: index == nil ? editorHeight * 1.5 : editorHeight)
+                TextEditor(text: draft).font(ReviewStyle.mono(16)).frame(height: editorHeight)
                     .scrollContentBackground(.hidden).focused($focused)
                     .disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
                     .accessibilityLabel(index == nil ? "写给小黑猫的话" : "你的翻译")
             }
-            HStack {
-                Spacer()
-                Button {
-                    focused = false
-                    Task { await model.submit(index: index, text: draft.wrappedValue); editing = false }
-                } label: {
-                    Group {
-                        if model.submitting || model.awaitingConfirmation { ProgressView().tint(LeximoryPalette.paper) }
-                        else { Image(systemName: "arrow.up").font(.system(size: 16)) }
-                    }.foregroundStyle(LeximoryPalette.paper).frame(width: 32, height: 32)
-                        .background(LeximoryPalette.ink, in: .circle).frame(width: 44, height: 44)
-                }.buttonStyle(.plain).disabled(!canSubmit).opacity(canSubmit ? 1 : 0.4).accessibilityLabel("提交")
-            }
-        }.padding(16).frame(maxWidth: 640)
+            Button {
+                focused = false
+                Task { await model.submit(index: index, text: draft.wrappedValue); editing = false }
+            } label: {
+                Group {
+                    if model.submitting || model.awaitingConfirmation { ProgressView().tint(LeximoryPalette.paper) }
+                    else { Image(systemName: "arrow.up").font(.system(size: 16)) }
+                }.foregroundStyle(LeximoryPalette.paper).frame(width: 32, height: 32)
+                    .background(LeximoryPalette.ink, in: .circle).frame(width: 44, height: 44)
+            }.buttonStyle(.plain).disabled(!canSubmit).opacity(canSubmit ? 1 : 0.4).accessibilityLabel("提交")
+        }.padding(12).frame(maxWidth: 640)
             .background(ReviewStyle.today, in: .rect(cornerRadius: 32))
             .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 1) }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("review-composer")
     }
 }

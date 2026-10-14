@@ -30,6 +30,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
         "PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]": com.leximory.reader.mac
+        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": LeximoryMac.entitlements
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO

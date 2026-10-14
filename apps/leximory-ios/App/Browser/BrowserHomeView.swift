@@ -3,10 +3,10 @@ import LeximoryCore
 
 struct BrowserHomeView: View {
     let compact: Bool
-    let recent: CatalogText?
+    let recent: [CatalogText]
     let browse: () -> Void
     let paste: () -> Void
-    let recentWebpage: RecentWebpage?
+    let recentWebpages: [RecentWebpage]
     let openWebpage: (RecentWebpage) -> Void
     let bookmarks: () -> Void
     let ebook: () -> Void
@@ -48,22 +48,24 @@ struct BrowserHomeView: View {
                         }.buttonStyle(.plain).accessibilityLabel("账号")
                     }.padding(.bottom, 18)
                     homeCards(squares: squares, folded: false)
-                    if let recent, !compact {
-                        Button { resume(recent) } label: {
-                            VStack(spacing: 6) {
-                                Text("继续阅读").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
-                                Text(recent.title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary).lineLimit(2)
-                            }.multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 44)
-                        }.buttonStyle(.plain).accessibilityIdentifier("browser-resume")
+                    if !recent.isEmpty {
+                        VStack(spacing: 6) {
+                            Text("继续阅读").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
+                            ForEach(recent.prefix(3)) { text in
+                                let ebook = text.format == "ebook", webpage = text.format == "bookmark"
+                                recentLink(text.title, symbol: ebook ? "book.closed" : webpage ? "globe" : "doc.text", type: ebook ? "电子书" : webpage ? "网页" : "文章") { resume(text) }
+                                    .accessibilityIdentifier("browser-resume-" + text.id)
+                            }
+                        }.frame(maxWidth: 360).frame(maxWidth: .infinity)
                     }
-                    if let recentWebpage, !compact {
-                        Button { openWebpage(recentWebpage) } label: {
-                            VStack(spacing: 6) {
-                                Text("最近浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
-                                Text(recentWebpage.title).editorialFont(20, relativeTo: .headline, language: nil)
-                                    .foregroundStyle(.primary).lineLimit(2)
-                            }.multilineTextAlignment(.center).frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-                        }.buttonStyle(.plain).accessibilityIdentifier("browser-recent-webpage")
+                    if !recentWebpages.isEmpty {
+                        VStack(spacing: 6) {
+                            Text("最近浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
+                            ForEach(recentWebpages.prefix(3)) { page in
+                                recentLink(page.title, symbol: "globe", type: "网页") { openWebpage(page) }
+                                    .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
+                            }
+                        }.frame(maxWidth: 360).frame(maxWidth: .infinity)
                     }
 
                 }.padding(.horizontal, 28).padding(.top, 32)
@@ -75,6 +77,16 @@ struct BrowserHomeView: View {
         .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.86), value: compact)
         .tint(.primary)
         .accessibilityIdentifier("browser-home")
+    }
+    private func recentLink(_ title: String, symbol: String, type: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: symbol).symbolVariant(.none).font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(.secondary).accessibilityHidden(true)
+                Text(title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary)
+                    .multilineTextAlignment(.center).lineLimit(2)
+            }.frame(maxWidth: .infinity, minHeight: 44).contentShape(.rect)
+        }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }
     private func homeCards(squares: Bool, folded: Bool) -> some View {
         let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))

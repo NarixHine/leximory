@@ -51,8 +51,8 @@ struct BrowserWorkspaceView: View {
                         Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
                     }
                     if editingAddress || isHome {
-                        BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
-                            browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
+                        BrowserHomeView(compact: editingAddress, recent: workspace.recentTexts,
+                            browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                             ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -72,6 +72,7 @@ struct BrowserWorkspaceView: View {
                     }
                 })
             }
+            .ignoresSafeArea(workspace.current.isReviewLawn ? .keyboard : [], edges: .bottom)
             .background(LeximoryPalette.paper)
             .overlay(alignment: .top) {
                 if completionNotice || clipboardNotice != nil {
@@ -171,7 +172,8 @@ struct BrowserWorkspaceView: View {
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
             if clipboardNotice == notice { withAnimation(motion) { clipboardNotice = nil } }
         }
-        .onChange(of: workspace.browser.title) { _, _ in workspace.rememberCurrentWebpage() }
+        .onChange(of: workspace.browser.title) { _, _ in workspace.refreshRecentWebpageTitle() }
+        .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
         .sensoryFeedback(.success, trigger: workspace.completionID)
         .onChange(of: workspace.current.id) { _, _ in
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
@@ -186,6 +188,8 @@ struct BrowserWorkspaceView: View {
             case .account: return ids.insert("account").inserted
             case .vocabulary: return ids.insert("vocabulary").inserted
             case .review: return ids.insert("review").inserted
+            case .reviewSession(let model): return ids.insert("review/" + model.selection.id).inserted
+            case .reviewStory(let model): return ids.insert("review-story/" + model.selection.id).inserted
             case .document(let document): return ids.insert(document.text.id).inserted
             default: return false
             }
@@ -194,6 +198,7 @@ struct BrowserWorkspaceView: View {
     private func active(_ entry: BrowserEntry) -> Bool {
         switch (entry.resource, workspace.current.resource) {
         case (.bookmarks, .bookmarks), (.account, .account), (.vocabulary, .vocabulary), (.review, .review): true
+        case (.reviewSession(let a), .reviewSession(let b)), (.reviewStory(let a), .reviewStory(let b)): a.selection == b.selection
         case (.document(let a), .document(let b)): a.text.id == b.text.id
         default: false
         }
@@ -211,7 +216,11 @@ struct BrowserWorkspaceView: View {
             if let session { AccountView(session: session, playback: playback).safeAreaPadding(.bottom, chromeHeight) }
             else { LeximoryUnavailableView("账号", systemImage: "person.crop.circle") }
         case .vocabulary: BrowserVocabularyView(workspace: workspace)
-        case .review: ReviewTimelineView(client: client)
+        case .review: ReviewTimelineView(client: client, progressOverrides: workspace.reviewProgress, open: workspace.openReview)
+        case .reviewSession(let model):
+            ReviewSessionView(model: model, close: { workspace.go(-1) }, story: { workspace.visit(.reviewStory(model)) }, onProgress: { workspace.updateReview(model) })
+        case .reviewStory(let model):
+            ReviewStoryView(model: model, close: { workspace.go(-1) })
         case .document(let document):
             if document.text.format == "ebook" { EbookScreen(article: document.text.preview, client: client, language: document.library.preview.language) }
             else { ReaderScreen(article: document.text.preview, playback: playback, language: document.library.preview.language, client: client) }

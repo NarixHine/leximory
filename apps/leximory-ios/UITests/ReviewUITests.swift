@@ -22,10 +22,33 @@ final class ReviewUITests: XCTestCase {
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
         app.buttons["review-story-close"].tap()
+        let scene = app.otherElements["review-lawn"]
+        XCTAssertTrue(scene.exists)
+        let sceneFrame = scene.frame
+        let wordFrame = app.buttons["review-task-discover"].frame
         app.buttons["review-task-discover"].tap()
         let editor = app.textViews["你的翻译"]
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
-        XCTAssertTrue(editor.waitForExistence(timeout: 5)); editor.tap(); editor.typeText("We find a quiet place by the river.")
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["review-task-discover"].exists, "The translation opens on the lawn")
+        let composer = app.otherElements["review-composer"]
+        let restingComposer = composer.frame
+        XCTAssertLessThan(restingComposer.height, 100)
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let movedAboveKeyboard = expectation(for: NSPredicate { _, _ in
+            composer.frame.maxY < restingComposer.maxY - 100
+        }, evaluatedWith: composer)
+        wait(for: [movedAboveKeyboard], timeout: 5)
+        let keyboardLayout = XCTAttachment(screenshot: app.screenshot()); keyboardLayout.name = "Review keyboard keeps lawn geometry"; keyboardLayout.lifetime = .keepAlways; add(keyboardLayout)
+        XCTAssertEqual(scene.frame.width, sceneFrame.width, accuracy: 1)
+        XCTAssertEqual(scene.frame.height, sceneFrame.height, accuracy: 1)
+        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
+        XCTAssertEqual(app.buttons["review-task-discover"].frame.minX, wordFrame.minX, accuracy: 1)
+        XCTAssertEqual(app.buttons["review-task-discover"].frame.minY, wordFrame.minY, accuracy: 1)
+        XCTAssertLessThan(composer.frame.maxY, restingComposer.maxY - 100)
+        XCTAssertLessThanOrEqual(composer.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        editor.typeText("We find a quiet place by the river.")
         app.buttons["提交"].tap()
         XCTAssertTrue(app.staticTexts["你的回答"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["意思传达得很清楚。"].waitForExistence(timeout: 12))
@@ -122,5 +145,33 @@ extension ReviewUITests {
         XCTAssertTrue(quiet.waitForExistence(timeout: 5))
         XCTAssertGreaterThan(connection.frame.width, quiet.frame.width + 12)
         XCTAssertLessThan(quiet.frame.maxX, connection.frame.minX)
+    }
+}
+
+
+extension ReviewUITests {
+    @MainActor func testHomeBackAndFreeLawnTaps() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        let card = app.buttons["browser-review"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15)); card.tap()
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 5)); day.tap()
+        let scene = app.otherElements["review-lawn"]
+        XCTAssertTrue(scene.waitForExistence(timeout: 5))
+        scene.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.4)).tap()
+        app.buttons["review-task-discover"].tap()
+        XCTAssertTrue(app.textViews["你的翻译"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["review-task-discover"].exists)
+        scene.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.6)).tap()
+        XCTAssertFalse(app.textViews["你的翻译"].exists)
+        app.buttons["首页"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["review-task-discover"].exists)
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["browser-review"].exists)
     }
 }

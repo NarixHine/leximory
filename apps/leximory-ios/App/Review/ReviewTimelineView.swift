@@ -4,18 +4,19 @@ import LeximoryCore
 
 struct ReviewTimelineView: View {
     let client: MobileClient
+    let progressOverrides: [String: ReviewDay.Progress]
+    let open: (ReviewSelection) -> Void
     @State private var days: [ReviewDay] = []
     @State private var cursor: String?
     @State private var loading = true
     @State private var paginationVisible = false
     @State private var error: String?
-    @State private var selected: ReviewSelection?
     @State private var selectedWord: ReviewDay.Word?
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.browserChromeHeight) private var chromeHeight
 
     var body: some View {
-        NavigationStack {
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -55,28 +56,18 @@ struct ReviewTimelineView: View {
                 }.padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 32).frame(maxWidth: 720).frame(maxWidth: .infinity)
             }.safeAreaPadding(.bottom, chromeHeight).background(LeximoryPalette.paper).scrollBounceBehavior(.basedOnSize)
                 .refreshable { await load(reset: true) }
+                .onChange(of: progressOverrides) { Task { await cache() } }
                 .onChange(of: loading) { _, value in
                     if !value && paginationVisible && cursor != nil && error == nil { Task { await load(reset: false) } }
                 }
-                .toolbar {
-                    ToolbarItem(placement: .principal) { Text("复习").font(LeximoryTypography.interface(17)) }
-                }
-                .navigationBarTitleDisplayMode(.inline)
                 .task {
                     if let cached = await client.localStore?.value(ReviewTimeline.self, for: "review-timeline") {
                         days = cached.days; cursor = cached.nextCursor
                     }
                     await load(reset: true)
                 }
-                .navigationDestination(item: $selected) { selection in
-                    ReviewSessionView(client: client, selection: selection) { snapshot in
-                        if let index = days.firstIndex(where: { $0.date == selection.date }) {
-                            days[index].progressByLang[selection.language] = .init(percentage: snapshot.percentage, conversationCompleted: snapshot.conversation?.status == .complete)
-                            Task { await cache() }
-                        }
-                    }.id(selection.id)
-                }
-        }.toolbar(.visible, for: .navigationBar).tint(.primary)
+
+        }.tint(.primary)
     }
 
     private var dateWidth: CGFloat { sizeClass == .regular ? 64 : 40 }
@@ -101,8 +92,8 @@ struct ReviewTimelineView: View {
                 if !day.isToday {
                     ReviewFlowLayout(spacing: 12, rowSpacing: 0) {
                         ForEach(day.progressByLang.keys.sorted(), id: \.self) { lang in
-                            let progress = day.progressByLang[lang]
-                            Button { selected = ReviewSelection(date: day.date, language: lang) } label: {
+                            let progress = progressOverrides[ReviewSelection(date: day.date, language: lang).id] ?? day.progressByLang[lang]
+                            Button { open(ReviewSelection(date: day.date, language: lang)) } label: {
                                 ReviewProgressView(value: progress?.percentage ?? 0, language: lang,
                                                    conversationCompleted: progress?.conversationCompleted ?? false)
                                     .frame(minHeight: 44).contentShape(.rect)
@@ -147,7 +138,14 @@ struct ReviewTimelineView: View {
             }
     }
     @MainActor private func cache() async {
-        await client.localStore?.save(ReviewTimeline(days: days, nextCursor: cursor), for: "review-timeline")
+        let updated = days.map { day in
+            var value = day
+            for lang in day.progressByLang.keys {
+                if let progress = progressOverrides[ReviewSelection(date: day.date, language: lang).id] { value.progressByLang[lang] = progress }
+            }
+            return value
+        }
+        await client.localStore?.save(ReviewTimeline(days: updated, nextCursor: cursor), for: "review-timeline")
     }
     @MainActor private func load(reset: Bool) async {
         if !reset && loading { return }

@@ -124,6 +124,7 @@ final class BrowserWebView: WKWebView {
         web.scrollView.contentInset.bottom = 80
         observations = [
             web.observe(\.url, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
+            web.observe(\.title, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.isLoading, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoBack, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoForward, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },

@@ -112,6 +112,12 @@ Track article annotation activity across destinations and foreground sessions. M
 
 Check phone and iPad widths, portrait/landscape, dark appearance, long titles and Dynamic Type. Verify selection, bookmarks, real horizontal and Japanese books, and supported offline actions. Mac Catalyst also needs keyboard, resizing and lifecycle checks. Fixtures are for automated verification; hand off the real app in normal account mode. Database mutations and device installation require authorization.
 
+### Mac Catalyst sign-in
+
+Build Catalyst with an Apple development team and automatic provisioning enabled. `LeximoryMac.entitlements` gives the Mac app its own Keychain access group. A development signature without this entitlement cannot save the Supabase session, so successful password authentication is followed by the generic 登录未成功 message. Do not use an unsigned Catalyst build to verify real-account sign-in.
+
+After generating the project, select your development team in Xcode, or pass `DEVELOPMENT_TEAM=<your-team-id>` and `-allowProvisioningUpdates` to `xcodebuild`. When using the current SDK on macOS 26, also pass `MACOSX_DEPLOYMENT_TARGET=26.0`. Run the focused `LeximoryTests/AccountSessionTests` test on the Mac Catalyst destination to verify saving and reopening a dummy Keychain value without accessing an account.
+
 ## Account
 
 账号 preserves the web settings page's profile header, daily LexiCoin claim, balance, subscription, AI 词点额度 and AI 语点额度, monthly vocabulary calendar, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. Use the Shanghai calendar for activity and daily claims.

@@ -58,7 +58,7 @@ public struct ReviewDay: Codable, Identifiable, Sendable {
         public let lang: String
         public let lib: String
     }
-    public struct Progress: Codable, Sendable {
+    public struct Progress: Codable, Equatable, Sendable {
         public let percentage: Int
         public let conversationCompleted: Bool
         public init(percentage: Int, conversationCompleted: Bool) {

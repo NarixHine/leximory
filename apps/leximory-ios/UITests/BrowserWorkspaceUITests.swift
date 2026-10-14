@@ -52,7 +52,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(article.waitForExistence(timeout: 10)); article.tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 10))
         app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
-        let recent = app.buttons["browser-resume"]
+        let recent = app.buttons["browser-resume-fixture-reader"]
         XCTAssertTrue(recent.waitForExistence(timeout: 5)); recent.tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         app.buttons["后退"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
@@ -67,6 +67,48 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
         XCTAssertTrue(recent.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["首页"].exists)
+    }
+    @MainActor func testHomeShowsThreeRecentLinksPerGroupWithResourceTypes() throws {
+        let page = try BrowserPageServer(); defer { page.listener.cancel() }
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        for id in ["fixture-reader", "fixture-forest", "fixture-long", "workspace-epub"] {
+            let resource = app.buttons["browser-resource-" + id].firstMatch
+            XCTAssertTrue(resource.waitForExistence(timeout: 10))
+            if !resource.isHittable { app.swipeUp() }
+            resource.tap()
+            let reader = id == "workspace-epub" ? app.otherElements["ebook-reader"] : app.textViews["reading-document"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            app.buttons["后退"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+        }
+        app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+        let reading = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-resume-"))
+        XCTAssertEqual(reading.count, 3)
+        XCTAssertFalse(app.buttons["browser-resume-fixture-reader"].exists)
+        XCTAssertEqual(app.buttons["browser-resume-workspace-epub"].label, "A river journey，电子书")
+        XCTAssertEqual(app.buttons["browser-resume-fixture-forest"].label, "A quiet forest，文章")
+        for visit in 1...4 {
+            app.buttons["browser-address"].tap()
+            let input = app.textFields["browser-address-input"]
+            XCTAssertTrue(input.waitForExistence(timeout: 5))
+            input.typeText(page.url + "?visit=\(visit)\n")
+            XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
+            app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+            let stored = app.buttons["browser-recent-webpage-" + page.url + "?visit=\(visit)"]
+            expectation(for: NSPredicate(format: "label == %@", "A quiet forest，网页"), evaluatedWith: stored)
+            waitForExpectations(timeout: 5)
+        }
+        let browsed = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-recent-webpage-"))
+        XCTAssertEqual(browsed.count, 3)
+        XCTAssertFalse(app.buttons["browser-recent-webpage-" + page.url + "?visit=1"].exists)
+        for link in browsed.allElementsBoundByIndex { XCTAssertEqual(link.label, "A quiet forest，网页") }
+        app.buttons["browser-recent-webpage-" + page.url + "?visit=2"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+        XCTAssertEqual(browsed.count, 3)
+        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Three recent links with outline resource icons"; screenshot.lifetime = .keepAlways; add(screenshot)
     }
     @MainActor func testMoreOnlyShowsContextAndOpensNativeActivitySheet() {
         let app = launch(); defer { restore(app) }

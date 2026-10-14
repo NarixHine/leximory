@@ -9,14 +9,16 @@ struct WebResource {
     var offset: CGFloat = 0
 }
 
-struct RecentWebpage: Codable, Equatable {
+struct RecentWebpage: Codable, Equatable, Identifiable {
     let url: URL
     let title: String
     var bookmarkID: String? = nil
+    var id: URL { url }
 }
 
 enum BrowserResource {
     case home, bookmarks, account, vocabulary, review
+    case reviewSession(ReviewModel), reviewStory(ReviewModel)
     case web(WebResource)
     case document(RemoteDocument)
 }
@@ -31,6 +33,8 @@ struct BrowserEntry: Identifiable {
         case .account: "账号"
         case .vocabulary: "已存词汇"
         case .review: "每日复习"
+        case .reviewSession(let model): "\(learningLanguageName(model.selection.language)) · 每日复习"
+        case .reviewStory: "连词成文"
         case .web(let page): page.item?.title ?? page.url.host ?? "网页"
         case .document(let document): document.text.title
         }
@@ -41,12 +45,14 @@ struct BrowserEntry: Identifiable {
         case .bookmarks: "bookmark"
         case .account: "person.crop.circle"
         case .vocabulary: "character.book.closed"
-        case .review: "leaf"
+        case .review, .reviewSession: "leaf"
+        case .reviewStory: "book"
         case .web: "globe"
         case .document(let document): document.text.format == "ebook" ? "book.closed" : "doc.text"
         }
     }
     var textID: String? { if case .document(let document) = resource { document.text.id } else { nil } }
+    var isReviewLawn: Bool { if case .reviewSession = resource { true } else { false } }
     var isWeb: Bool { if case .web = resource { true } else { false } }
 }
 
@@ -61,13 +67,15 @@ struct AnnotationActivity: Identifiable, Codable {
 @MainActor @Observable final class BrowserWorkspaceModel {
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
-    private(set) var recentWebpage: RecentWebpage?
+    private(set) var recentWebpages: [RecentWebpage] = []
+    private var recentTextIDs: [String] = []
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
     private(set) var texts: [String: [CatalogText]] = [:]
     private(set) var activities: [AnnotationActivity] = []
     private(set) var documents: [String: RemoteDocument] = [:]
     private(set) var recentlyOpened: [String: FixtureArticle] = [:]
+    private(set) var reviewProgress: [String: ReviewDay.Progress] = [:]
     var expandedFolders: Set<String> = []
     var error: String?
     var loading = true
@@ -92,13 +100,9 @@ struct AnnotationActivity: Identifiable, Codable {
     var readyCount: Int { activities.filter { $0.state == .ready && !$0.seen }.count }
     var hasPending: Bool { activities.contains { $0.state == .pending } }
     var writableFolders: [CatalogLibrary] { libraries.filter { $0.owned && !$0.shadow } }
-    var recentText: CatalogText? {
-        recentTexts.first
-    }
     var recentTexts: [CatalogText] {
         let all = Array(texts.values.joined())
-        let latest = UserDefaults.standard.string(forKey: "browser.recent." + namespace)
-        let ids = [latest].compactMap { $0 } + libraries.compactMap { recentlyOpened[$0.id]?.id.rawValue }
+        let ids = recentTextIDs + libraries.compactMap { recentlyOpened[$0.id]?.id.rawValue }
         var seen = Set<String>()
         return ids.compactMap { id in
             guard seen.insert(id).inserted else { return nil }
@@ -107,9 +111,15 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     init(client: MobileClient, namespace: String) {
         self.client = client; self.namespace = namespace
-        if let data = UserDefaults.standard.data(forKey: "browser.recent-web." + namespace),
-           let page = try? JSONDecoder().decode(RecentWebpage.self, from: data),
-           TextBrowserModel.address(page.url.absoluteString) != nil { recentWebpage = page }
+        let readingKey = "browser.recent." + namespace
+        recentTextIDs = UserDefaults.standard.stringArray(forKey: readingKey)
+            ?? UserDefaults.standard.string(forKey: readingKey).map { [$0] } ?? []
+        if let data = UserDefaults.standard.data(forKey: "browser.recent-web." + namespace) {
+            let pages = (try? JSONDecoder().decode([RecentWebpage].self, from: data))
+                ?? (try? JSONDecoder().decode(RecentWebpage.self, from: data)).map { [$0] } ?? []
+            var seen = Set<URL>()
+            recentWebpages = Array(pages.filter { TextBrowserModel.address($0.url.absoluteString) != nil && seen.insert($0.url).inserted }.prefix(3))
+        }
         if let data = UserDefaults.standard.data(forKey: "recent-access." + namespace),
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.annotations." + namespace),
@@ -128,8 +138,20 @@ struct AnnotationActivity: Identifiable, Codable {
         openRequest = UUID(); opening = false
         if rememberingWebPosition { rememberWebPosition() }
         history.visit(BrowserEntry(resource: resource))
+        rememberCurrentReading()
         rememberCurrentWebpage()
         error = nil
+    }
+    func openReview(_ selection: ReviewSelection) {
+        let existing = history.entries.compactMap { entry -> ReviewModel? in
+            if case .reviewSession(let model) = entry.resource, model.selection == selection { return model }
+            return nil
+        }.first
+        visit(.reviewSession(existing ?? ReviewModel(client: client, selection: selection)))
+    }
+    func updateReview(_ model: ReviewModel) {
+        guard let snapshot = model.snapshot else { return }
+        reviewProgress[model.selection.id] = .init(percentage: snapshot.percentage, conversationCompleted: snapshot.conversation?.status == .complete)
     }
     func go(_ distance: Int, rememberingWebPosition: Bool = true) {
         if rememberingWebPosition { rememberWebPosition() }
@@ -145,6 +167,7 @@ struct AnnotationActivity: Identifiable, Codable {
         }
         rememberCurrentWebpage()
         acknowledgeCurrent()
+        rememberCurrentReading()
     }
     func openURL(_ url: URL, bookmarkID: String? = nil) {
         visit(.web(WebResource(url: url, bookmarkID: bookmarkID)))
@@ -172,9 +195,27 @@ struct AnnotationActivity: Identifiable, Codable {
         guard case .web(let page) = current.resource, let item = page.item else { return }
         let title = browser.url == page.url && !browser.title.isEmpty ? browser.title : item.title ?? page.url.host ?? "网页"
         let recent = RecentWebpage(url: page.url, title: title, bookmarkID: page.bookmarkID)
-        guard recent != recentWebpage else { return }
-        recentWebpage = recent
-        if let data = try? JSONEncoder().encode(recent) { UserDefaults.standard.set(data, forKey: "browser.recent-web." + namespace) }
+        let pages = Array(([recent] + recentWebpages.filter { $0.url != recent.url }).prefix(3))
+        guard pages != recentWebpages else { return }
+        recentWebpages = pages
+        persistRecentWebpages()
+    }
+    func refreshRecentWebpageTitle() {
+        guard !browser.loading, let url = browser.url, !browser.title.isEmpty,
+              let index = recentWebpages.firstIndex(where: { $0.url == url }), recentWebpages[index].title != browser.title else { return }
+        recentWebpages[index] = RecentWebpage(url: url, title: browser.title, bookmarkID: recentWebpages[index].bookmarkID)
+        persistRecentWebpages()
+    }
+    private func persistRecentWebpages() {
+        if let data = try? JSONEncoder().encode(recentWebpages) { UserDefaults.standard.set(data, forKey: "browser.recent-web." + namespace) }
+    }
+    private func rememberCurrentReading() {
+        guard case .document(let details) = current.resource else { return }
+        rememberReading(details.text)
+    }
+    private func rememberReading(_ text: CatalogText) {
+        recentTextIDs = Array(([text.id] + recentTextIDs.filter { $0 != text.id }).prefix(5))
+        UserDefaults.standard.set(recentTextIDs, forKey: "browser.recent." + namespace)
     }
     private func handleWebGesture(_ url: URL) -> Bool {
         guard !restoringWeb else { return false }
@@ -202,7 +243,7 @@ struct AnnotationActivity: Identifiable, Codable {
             if details.text.format == "bookmark", let url = details.text.bookmarkURL.flatMap(TextBrowserModel.address) {
                 openURL(url, bookmarkID: text.id)
             } else { visit(.document(details)) }
-            UserDefaults.standard.set(text.id, forKey: "browser.recent." + namespace)
+            if details.text.format == "bookmark" { rememberReading(details.text) }
             recentlyOpened[details.library.id] = details.text.preview
             if let data = try? JSONEncoder().encode(recentlyOpened) { UserDefaults.standard.set(data, forKey: "recent-access." + namespace) }
             track(details)
@@ -321,7 +362,7 @@ struct AnnotationActivity: Identifiable, Codable {
         browser = TextBrowserModel()
         connectBrowser()
         history.reset(to: BrowserEntry(resource: .home))
-        recentWebpage = nil
+        recentWebpages = []
         UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace)
         restoringWeb = false
     }

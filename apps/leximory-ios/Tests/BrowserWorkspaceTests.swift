@@ -6,6 +6,30 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func recentWebpagesRestoreThreeDistinctValidLinksAndKeepAccountsSeparate() throws {
+        let namespace = "workspace-test." + UUID().uuidString
+        let key = "browser.recent-web." + namespace
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let urls = ["https://one.test", "https://one.test", "file:///private/secret", "https://two.test", "https://three.test", "https://four.test"]
+        let pages = try urls.map { RecentWebpage(url: try #require(URL(string: $0)), title: $0) }
+        UserDefaults.standard.set(try JSONEncoder().encode(pages), forKey: key)
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
+        #expect(workspace.recentWebpages.map(\.url.absoluteString) == ["https://one.test", "https://two.test", "https://three.test"])
+        let otherAccount = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace + ".other")
+        #expect(otherAccount.recentWebpages.isEmpty)
+        workspace.clearHistory()
+        #expect(workspace.recentWebpages.isEmpty)
+        #expect(UserDefaults.standard.object(forKey: key) == nil)
+    }
+    @Test func existingSingleWebpageRemainsAvailableAfterUpgrade() throws {
+        let namespace = "workspace-test." + UUID().uuidString
+        let key = "browser.recent-web." + namespace
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let page = RecentWebpage(url: try #require(URL(string: "https://reading.test/article")), title: "A quiet forest", bookmarkID: "saved-article")
+        UserDefaults.standard.set(try JSONEncoder().encode(page), forKey: key)
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
+        #expect(workspace.recentWebpages == [page])
+    }
     @Test func leavingAnArticleKeepsItsAnnotationActivityAndOpeningItAcknowledgesCompletion() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
