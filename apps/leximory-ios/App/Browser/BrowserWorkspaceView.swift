@@ -218,6 +218,13 @@ struct BrowserWorkspaceView: View {
         default: EmptyView()
         }
     }
+    private var chromeGlass: Glass {
+        if case .document(let document) = workspace.current.resource,
+           document.text.format == "ebook", workspace.ebookReader?.format == "epub", !editingAddress {
+            return .clear.interactive()
+        }
+        return .regular.interactive()
+    }
     private var controls: some View {
         GlassEffectContainer(spacing: 6) {
             HStack(spacing: 6) {
@@ -225,20 +232,20 @@ struct BrowserWorkspaceView: View {
                     if workspace.history.canGoBack { chromeButton("后退", symbol: "chevron.left") { workspace.go(-1) } }
                     if workspace.history.canGoForward { chromeButton("前进", symbol: "chevron.right") { workspace.go(1) } }
                 }
-                addressControl.glassEffect(.regular.interactive(), in: .capsule)
+                addressControl.glassEffect(chromeGlass, in: .capsule)
                     .glassEffectID("workspace-address", in: chromeNamespace)
                 if editingAddress {
                     Button(action: finishEditing) {
                         Text("取消").font(LeximoryTypography.interface(15))
                             .frame(minWidth: 44, minHeight: 48).padding(.horizontal, 8).contentShape(Capsule())
-                    }.buttonStyle(.plain).glassEffect(.regular.interactive(), in: .capsule)
+                    }.buttonStyle(.plain).glassEffect(chromeGlass, in: .capsule)
                 } else {
                     if !isHome { chromeButton("首页", symbol: "house") { withAnimation(motion) { workspace.visit(.home) } } }
                     if workspace.current.isWeb {
                         Button { Task { await extract() } } label: {
                             Image(systemName: "bookmark.fill").font(.system(size: 17, weight: .medium))
                                 .foregroundStyle(LinearGradient(colors: [.purple, .pink, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(.regular.interactive(), in: .circle)
+                                .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle)
                         }.buttonStyle(.plain).disabled(extracting || sync?.online == false || workspace.browser.loading || workspace.browser.error != nil)
                             .accessibilityLabel("保存网页").accessibilityIdentifier("browser-magic-save")
                     }
@@ -303,7 +310,7 @@ struct BrowserWorkspaceView: View {
     }
     private var moreLabel: some View {
             Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle())
-                .glassEffect(.regular.interactive(), in: .circle)
+                .glassEffect(chromeGlass, in: .circle)
                 .overlay(alignment: .topTrailing) {
                     if workspace.readyCount > 0 {
                         Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").font(LeximoryTypography.interface(11, semibold: true, style: .caption2))
@@ -312,7 +319,7 @@ struct BrowserWorkspaceView: View {
                 }
     }
     private func chromeButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle()).glassEffect(.regular.interactive(), in: .circle).glassEffectID(title, in: chromeNamespace) }
+        Button(action: action) { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle).glassEffectID(title, in: chromeNamespace) }
             .buttonStyle(.plain).accessibilityLabel(title)
     }
     private func beginEditing() {

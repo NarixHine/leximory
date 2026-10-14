@@ -264,7 +264,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(opening.waitForExistence(timeout: 20))
         let pageLabel = app.staticTexts["ebook-page-position"]
         XCTAssertTrue(pageLabel.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["ebook-running-title"].exists)
+        XCTAssertFalse(app.staticTexts["ebook-running-title"].exists)
         let initialPageLabel = pageLabel.value as? String
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         let initialPosition = reader.value as? String
@@ -278,7 +278,7 @@ final class ReaderUITests: XCTestCase {
         revealEbookControls(app)
         reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)).tap()
         XCTAssertFalse(app.buttons["ebook-contents"].exists)
-        XCTAssertTrue(app.staticTexts["ebook-running-title"].exists)
+        XCTAssertFalse(app.staticTexts["ebook-running-title"].exists)
         XCTAssertTrue(pageLabel.exists)
     }
     @MainActor func testEPUBTapZonesTurnPagesInReadingDirection() {
@@ -532,6 +532,8 @@ final class ReaderUITests: XCTestCase {
         pdf.tap()
         revealEbookControls(app)
         XCTAssertTrue(app.buttons["ebook-contents"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["ebook-running-title"].exists)
+        XCTAssertEqual(app.staticTexts["ebook-page-position"].frame.midY, app.buttons["ebook-contents"].frame.midY, accuracy: 1)
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         for _ in 0..<3 where app.staticTexts["ebook-page-position"].value as? String != "第2页，共2页" {
             reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)).press(forDuration: 0.05, thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.24)))
@@ -588,7 +590,7 @@ final class ReaderUITests: XCTestCase {
         app.menuItems["🐈 猫忆查"].tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
     }
-    @MainActor func testEPUBControlsHaveFullTargetsAndStableTitle() {
+    @MainActor func testEPUBControlsHaveFullTargetsAndTopPagination() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
         app.launch()
@@ -596,24 +598,21 @@ final class ReaderUITests: XCTestCase {
         app.buttons["text-fixture-epub"].tap()
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         XCTAssertTrue(reader.waitForExistence(timeout: 15))
-        let title = app.staticTexts["ebook-running-title"]
-        XCTAssertTrue(title.waitForExistence(timeout: 5))
-        let originalTitle = title.frame
+        let pagination = app.staticTexts["ebook-page-position"]
+        XCTAssertTrue(pagination.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["ebook-running-title"].exists)
+        XCTAssertLessThan(pagination.frame.maxY, app.frame.height * 0.2)
+        let originalPosition = pagination.frame
         revealEbookControls(app)
-        XCTAssertEqual(title.frame.midX, originalTitle.midX, accuracy: 1)
-        XCTAssertEqual(title.frame.midY, originalTitle.midY, accuracy: 1)
+        XCTAssertEqual(pagination.frame.midY, originalPosition.midY, accuracy: 1)
         let settings = app.buttons["ebook-settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
         settings.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.9)).tap()
         XCTAssertTrue(app.sliders["字号"].waitForExistence(timeout: 5))
-        app.buttons["完成"].tap()
-        let contents = app.buttons["ebook-contents"]
-        contents.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.9)).tap()
-        XCTAssertTrue(app.buttons["完成"].waitForExistence(timeout: 5))
-        app.buttons["完成"].tap()
-        XCTAssertEqual(title.frame.midX, originalTitle.midX, accuracy: 1)
-        XCTAssertEqual(title.frame.midY, originalTitle.midY, accuracy: 1)
-        capture(app, name: "EPUB full control targets and stable title")
+        app.navigationBars["阅读选项"].swipeDown()
+        XCTAssertTrue(app.buttons["ebook-settings"].waitForExistence(timeout: 5))
+        XCTAssertEqual(pagination.frame.midY, originalPosition.midY, accuracy: 1)
+        capture(app, name: "EPUB full control targets and top pagination")
     }
     @MainActor func testEPUBReadingPreferencesPreserveChapter() {
         let app = XCUIApplication()
