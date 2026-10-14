@@ -91,7 +91,7 @@ struct BrowserImportSheet: View {
                 }
                 if file == nil && fullText {
                     Section {
-                        SafeArticlePreview(content: content)
+                        ArticleMarkdownPreview(content: content, language: folder?.preview.language ?? "English")
                         Button("编辑全文", systemImage: "pencil") { path.append(.content) }
                         if content.utf16.count > limit { Text("全文超过此文件夹的 \(limit) 字符上限，请编辑后重试。").foregroundStyle(.secondary) }
                         if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("未能提取正文。可以存为链接，或手动编辑全文。").foregroundStyle(.secondary) }
@@ -175,16 +175,4 @@ struct BrowserImportSheet: View {
             }
         }
     }
-}
-
-private struct SafeArticlePreview: View {
-    let content: String
-    private var preview: AttributedString {
-        var value = (try? AttributedString(markdown: String(content.prefix(1200)), options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(String(content.prefix(1200)))
-        for run in value.runs {
-            if let link = run.link, !["http", "https"].contains(link.scheme?.lowercased() ?? "") { value[run.range].link = nil }
-        }
-        return value
-    }
-    var body: some View { Text(preview).font(LeximoryTypography.prose(17)).lineLimit(10).foregroundStyle(.secondary).textSelection(.enabled) }
 }

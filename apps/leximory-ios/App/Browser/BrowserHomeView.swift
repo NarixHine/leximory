@@ -11,6 +11,7 @@ struct BrowserHomeView: View {
     let bookmarks: () -> Void
     let ebook: () -> Void
     let account: () -> Void
+    var review: () -> Void = {}
     var avatarImage: UIImage? = nil
     let resume: (CatalogText) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -47,6 +48,8 @@ struct BrowserHomeView: View {
                         }.buttonStyle(.plain).accessibilityLabel("账号")
                     }.padding(.bottom, 18)
                     homeCards(squares: squares, folded: false)
+                    card("每日复习", symbol: "leaf", color: tone(0xE7EEDB, 0x242921), border: tone(0xD9E8BF, 0x535F48), angle: 3, folded: false, square: false, action: review)
+                        .accessibilityIdentifier("browser-review")
                     if let recent, !compact {
                         Button { resume(recent) } label: {
                             VStack(spacing: 6) {

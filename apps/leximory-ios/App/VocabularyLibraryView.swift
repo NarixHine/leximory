@@ -87,7 +87,7 @@ struct VocabularyLibraryView: View {
     }
 }
 
-private struct CorpusWordTray: View {
+struct CorpusWordTray: View {
     @Environment(\.nativeSync) private var sync
     @State private var editor: VocabularyEditModel
     private let initialWord: SavedWord

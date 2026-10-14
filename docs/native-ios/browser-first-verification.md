@@ -49,3 +49,9 @@ Home restores the most recently opened webpage per account, including its saved-
 The compact address composer omits the logo, wordmark, and avatar. It renders only its card controls so blank space passes taps to the dismissing backdrop. More includes a native engine picker with Bing, Google, DuckDuckGo, and Baidu, remembered locally and used by both address-entry paths. Continue-reading and recent-webpage links explicitly center wrapped text. Builds pass; final interaction review is left to humans.
 
 Folder headings are restored to their original 17 pt interface face; child titles are reduced to 16 pt. Home renders an avatar UIImage retained by the workspace instead of restarting AsyncImage on each return, using the existing ReaderImage/local-store cache to load it. The compact cards center in the available area after reserving the measured address-bar height. The build verifies integration; visual margins remain for human review.
+
+## Article Markdown preview
+
+Replaced the 1,200-character inline-only/ten-line preview with Foundation full-Markdown parsing and native block views. The preview groups complete blocks and supports expansion, headings, nested lists and continuations, blockquotes, fenced/inline code, and horizontally scrollable tables. It uses the same link regex as the web before parsing and creates rendered runs without links or image URL attributes. Images show their captions without remote requests. The focused tests cover link stripping, block/nested-list preservation, table/image/reference-link safety, and source longer than the former cutoff.
+
+The app and four focused Markdown tests passed in `test_sim_2026-10-13T15-57-24-412Z_pid3226_6e116473.log`, after the concurrently edited review files became available and the project was regenerated. The final run used the normal source set, without exclusions. No browser fixtures, production imports, or remote preview images were opened during verification.

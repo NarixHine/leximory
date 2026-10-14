@@ -20,6 +20,7 @@ struct BrowserWorkspaceView: View {
     @State private var extracting = false
     @State private var clipboardNotice: UUID?
     @State private var activitySheet = false
+    @State private var reviewSheet = false
     @State private var confirmingClear = false
     @State private var chromeHeight: CGFloat = 64
     @State private var completionNotice = false
@@ -53,7 +54,7 @@ struct BrowserWorkspaceView: View {
                     if editingAddress || isHome {
                         BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
                             browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, avatarImage: avatarImage,
+                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); reviewSheet = true }, avatarImage: avatarImage,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                             .padding(.bottom, editingAddress ? chromeHeight : 0)
@@ -102,6 +103,7 @@ struct BrowserWorkspaceView: View {
         }) { request in
             BrowserImportSheet(request: request, workspace: workspace) { text, annotating in importedText = (text, annotating) }
         }
+        .fullScreenCover(isPresented: $reviewSheet) { ReviewTimelineView(client: client) }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
             Task {

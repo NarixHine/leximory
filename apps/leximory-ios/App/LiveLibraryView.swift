@@ -198,7 +198,7 @@ struct RemoteTextGallery: View {
 }
 extension CatalogLibrary {
     var preview: FixtureLibrary {
-        let language = ["en": "English", "ja": "Japanese", "fr": "French", "zh": "Chinese", "nl": "Dutch"][language] ?? language
+        let language = learningLanguageName(language)
         return FixtureLibrary(id: LibraryID(rawValue: id), name: name, language: language,
             articles: [], isRemote: true, archived: archived, shadow: shadow, owned: owned)
     }

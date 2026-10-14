@@ -84,12 +84,14 @@ struct BrowserWorkspacePreview: View {
 }
 
 private actor BrowserWorkspaceFixtureTransport: ClientTransport {
+    private let review = ReviewFixtureTransport()
     var payloads: [String: Data]
     private var pendingReads = 0
     private var completionGate: (@MainActor @Sendable () -> Bool)?
     init(payloads: [String: Data]) { self.payloads = payloads }
     func setCompletionGate(_ gate: @escaping @MainActor @Sendable () -> Bool) { completionGate = gate }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+        if operationID == "review" { return try await review.send(request, body: body, baseURL: baseURL, operationID: operationID) }
         let path = (request.path ?? "").split(separator: "?")[0].split(separator: "/").map(String.init)
         var key = operationID
         if operationID == "texts", path.count >= 2 { key += "/" + path[path.count - 2] }

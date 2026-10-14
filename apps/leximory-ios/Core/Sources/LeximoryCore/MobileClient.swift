@@ -47,7 +47,7 @@ public struct BrowserTarget: Codable, Sendable {
     public let libraryName: String
     public let shadow: Bool
     public var displayLanguage: String {
-        ["en": "English", "fr": "French", "zh": "Chinese", "ja": "Japanese", "nl": "Dutch"][language] ?? language
+        learningLanguageName(language)
     }
 }
 public struct BrowserRule: Codable, Identifiable, Sendable {
@@ -179,6 +179,8 @@ private struct BearerMiddleware: ClientMiddleware {
 }
 public struct MobileClient: Sendable {
     private let client: Client
+    private let transport: any ClientTransport
+    private let bearerMiddleware: BearerMiddleware
     public let webURL: URL
     public let localStore: LocalReadingStore?
     public static func cause(of error: any Error) -> any Error {
@@ -186,14 +188,51 @@ public struct MobileClient: Sendable {
         return error
     }
     public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
-        webURL = baseURL
-        self.localStore = localStore
-        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: ReadCoalescingTransport(URLSessionTransport()), middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)])
+        self.init(baseURL: baseURL, transport: URLSessionTransport(), token: token, unauthorized: unauthorized, localStore: localStore)
     }
     public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
         webURL = baseURL
+        let middleware = BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)
+        let sharedTransport = ReadCoalescingTransport(transport)
+        bearerMiddleware = middleware
+        self.transport = sharedTransport
         self.localStore = localStore
-        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: ReadCoalescingTransport(transport), middlewares: [BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)])
+        client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: sharedTransport, middlewares: [middleware])
+    }
+    private func reviewRequest<Result: Decodable & Sendable>(_ path: String, body: Data? = nil) async throws -> Result {
+        let base = webURL.appending(path: "api/mobile/v1")
+        var request = HTTPRequest(method: body == nil ? .get : .post, scheme: base.scheme, authority: base.host, path: "/review" + path)
+        request.headerFields[.contentType] = "application/json"
+        let (response, responseBody) = try await bearerMiddleware.intercept(request, body: body.map { HTTPBody($0) }, baseURL: base, operationID: "review") { request, body, base in
+            try await transport.send(request, body: body, baseURL: base, operationID: "review")
+        }
+        guard let responseBody else { throw URLError(.badServerResponse) }
+        let data = try await Data(collecting: responseBody, upTo: 4 * 1024 * 1024)
+        guard (200..<300).contains(response.status.code) else {
+            if let failure = try? JSONDecoder().decode(MobileFailure.self, from: data) { throw failure }
+            throw ReviewHTTPError(status: response.status.code)
+        }
+        return try JSONDecoder().decode(Result.self, from: data)
+    }
+    public func reviewTimeline(cursor: String? = nil) async throws -> ReviewTimeline {
+        var query = URLComponents()
+        if let cursor { query.queryItems = [.init(name: "cursor", value: cursor)] }
+        return try await reviewRequest(query.percentEncodedQuery.map { "?" + $0 } ?? "")
+    }
+    public func reviewSnapshot(_ selection: ReviewSelection) async throws -> ReviewSnapshot {
+        var query = URLComponents()
+        query.queryItems = [.init(name: "date", value: selection.date), .init(name: "lang", value: selection.language)]
+        let snapshot: ReviewSnapshot = try await reviewRequest("/check?" + (query.percentEncodedQuery ?? ""))
+        try snapshot.storyDocument?.validate()
+        return snapshot
+    }
+    public func startReview(_ selection: ReviewSelection) async throws {
+        struct Result: Decodable, Sendable { let success: Bool }
+        let _: Result = try await reviewRequest("/start", body: JSONEncoder().encode(ReviewSubmission(date: selection.date, lang: selection.language)))
+    }
+    public func submitReview(_ selection: ReviewSelection, index: Int?, submission: String) async throws {
+        struct Result: Decodable, Sendable { let success: Bool }
+        let _: Result = try await reviewRequest(index == nil ? "/conversation" : "/translation", body: JSONEncoder().encode(ReviewSubmission(date: selection.date, lang: selection.language, index: index, submission: submission)))
     }
     private func mapped<Value: Encodable, Result: Decodable>(_ value: Value, to: Result.Type) throws -> Result {
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601

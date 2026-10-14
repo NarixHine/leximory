@@ -225,18 +225,6 @@ struct LawnCatPose {
     }
 }
 
-@MainActor enum CatFrames {
-    static let frames: [UIImage?] = {
-        guard let image = UIImage(named: "cat")?.cgImage else { return Array(repeating: nil, count: 9) }
-        let width = image.width / 3
-        let height = image.height / 3
-        return (0..<9).map { index in
-            image.cropping(to: CGRect(x: (index % 3) * width, y: (index / 3) * height, width: width, height: height))
-                .map { UIImage(cgImage: $0) }
-        }
-    }()
-}
-
 @MainActor private enum OnboardingArtwork {
     static let icon = UIImage(named: "leximory-icon.png")
     static let day = UIImage(named: "lawn.png")
