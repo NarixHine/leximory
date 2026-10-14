@@ -11,14 +11,14 @@ struct WebResource {
 
 struct RecentWebpage: Codable, Equatable, Identifiable {
     let url: URL
-    let title: String
     var bookmarkID: String? = nil
     var id: URL { url }
+    var domain: String { url.host ?? "网页" }
 }
 
 enum BrowserResource {
     case home, bookmarks, account, vocabulary, review
-    case reviewSession(ReviewModel), reviewStory(ReviewModel)
+    case reviewSession(ReviewModel)
     case web(WebResource)
     case document(RemoteDocument)
 }
@@ -34,7 +34,6 @@ struct BrowserEntry: Identifiable {
         case .vocabulary: "已存词汇"
         case .review: "每日复习"
         case .reviewSession(let model): "\(learningLanguageName(model.selection.language)) · 每日复习"
-        case .reviewStory: "连词成文"
         case .web(let page): page.item?.title ?? page.url.host ?? "网页"
         case .document(let document): document.text.title
         }
@@ -46,7 +45,6 @@ struct BrowserEntry: Identifiable {
         case .account: "person.crop.circle"
         case .vocabulary: "character.book.closed"
         case .review, .reviewSession: "leaf"
-        case .reviewStory: "book"
         case .web: "globe"
         case .document(let document): document.text.format == "ebook" ? "book.closed" : "doc.text"
         }
@@ -92,9 +90,9 @@ struct AnnotationActivity: Identifiable, Codable {
     @ObservationIgnored private var catalogMutation = 0
     @ObservationIgnored private var folderRequests: [String: UUID] = [:]
     var current: BrowserEntry { history.current }
-    var currentTitle: String {
+    var addressLabel: String {
         if let id = current.textID { return documents[id]?.text.title ?? current.title }
-        if case .web(let page) = current.resource, page.item != nil, browser.url == page.url, !browser.title.isEmpty { return browser.title }
+        if case .web(let page) = current.resource { return page.url.host ?? "网页" }
         return current.title
     }
     var readyCount: Int { activities.filter { $0.state == .ready && !$0.seen }.count }
@@ -118,7 +116,7 @@ struct AnnotationActivity: Identifiable, Codable {
             let pages = (try? JSONDecoder().decode([RecentWebpage].self, from: data))
                 ?? (try? JSONDecoder().decode(RecentWebpage.self, from: data)).map { [$0] } ?? []
             var seen = Set<URL>()
-            recentWebpages = Array(pages.filter { TextBrowserModel.address($0.url.absoluteString) != nil && seen.insert($0.url).inserted }.prefix(3))
+            recentWebpages = Array(pages.filter { TextBrowserModel.address($0.url.absoluteString) != nil && seen.insert($0.url).inserted }.prefix(1))
         }
         if let data = UserDefaults.standard.data(forKey: "recent-access." + namespace),
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
@@ -154,6 +152,10 @@ struct AnnotationActivity: Identifiable, Codable {
         reviewProgress[model.selection.id] = .init(percentage: snapshot.percentage, conversationCompleted: snapshot.conversation?.status == .complete)
     }
     func go(_ distance: Int, rememberingWebPosition: Bool = true) {
+        if distance < 0, case .reviewSession(let model) = current.resource, model.exercise != nil {
+            model.exercise = nil
+            return
+        }
         if rememberingWebPosition { rememberWebPosition() }
         guard history.go(distance) else { return }
         openRequest = UUID(); opening = false; error = nil
@@ -192,18 +194,11 @@ struct AnnotationActivity: Identifiable, Codable {
         visit(.web(WebResource(url: item.url, item: item)), rememberingWebPosition: false)
     }
     func rememberCurrentWebpage() {
-        guard case .web(let page) = current.resource, let item = page.item else { return }
-        let title = browser.url == page.url && !browser.title.isEmpty ? browser.title : item.title ?? page.url.host ?? "网页"
-        let recent = RecentWebpage(url: page.url, title: title, bookmarkID: page.bookmarkID)
-        let pages = Array(([recent] + recentWebpages.filter { $0.url != recent.url }).prefix(3))
+        guard case .web(let page) = current.resource, page.item != nil else { return }
+        let recent = RecentWebpage(url: page.url, bookmarkID: page.bookmarkID)
+        let pages = [recent]
         guard pages != recentWebpages else { return }
         recentWebpages = pages
-        persistRecentWebpages()
-    }
-    func refreshRecentWebpageTitle() {
-        guard !browser.loading, let url = browser.url, !browser.title.isEmpty,
-              let index = recentWebpages.firstIndex(where: { $0.url == url }), recentWebpages[index].title != browser.title else { return }
-        recentWebpages[index] = RecentWebpage(url: url, title: browser.title, bookmarkID: recentWebpages[index].bookmarkID)
         persistRecentWebpages()
     }
     private func persistRecentWebpages() {

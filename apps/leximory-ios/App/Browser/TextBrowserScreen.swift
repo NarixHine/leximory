@@ -65,7 +65,7 @@ struct TextBrowserScreen: View {
                 .ignoresSafeArea(.container, edges: .bottom)
                 .ignoresSafeArea(.keyboard)
                 .backgroundExtensionEffect(isEnabled: controlsAtTop)
-            if browser.url == nil && !browser.loading && !editingAddress {
+            if sharedBrowser == nil && browser.url == nil && !browser.loading && !editingAddress {
                 LeximoryUnavailableView("浏览网页", systemImage: "globe", message: "输入网址或关键词，阅读时选中文字即可猫忆查。")
                     .frame(maxHeight: .infinity)
             }
@@ -315,7 +315,7 @@ struct BrowserAddressField: UIViewRepresentable {
         field.placeholder = "输入网址或搜索"
         field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.interfaceUI(15))
         field.adjustsFontForContentSizeCategory = true
-        field.keyboardType = .webSearch
+        field.keyboardType = .URL
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.spellCheckingType = .no
@@ -328,7 +328,7 @@ struct BrowserAddressField: UIViewRepresentable {
     }
     func updateUIView(_ field: BrowserURLTextField, context: Context) {
         context.coordinator.parent = self
-        if field.text != address { field.text = address }
+        if field.markedTextRange == nil && field.text != address { field.text = address }
         field.enablesReturnKeyAutomatically = true
         DispatchQueue.main.async {
             guard field.wantsFocus, field.window != nil, !field.isFirstResponder else { return }

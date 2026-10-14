@@ -10,6 +10,26 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ReaderNativeTests {
+    @Test func reviewCatKeepsItsLeftwardPoseAfterStoppingResizingAndNearbyTaps() throws {
+        let driver = ReviewCatDriver()
+        driver.resize(CGSize(width: 600, height: 400))
+        driver.move(to: CGPoint(x: 100, y: 300), reduceMotion: false)
+        driver.finish(try #require(driver.journey?.id))
+        driver.resize(CGSize(width: 300, height: 200))
+        driver.move(to: CGPoint(x: 52, y: 152), reduceMotion: false)
+        let resting = driver.sample(at: Date())
+        #expect(driver.journey == nil)
+        #expect(resting.position == CGPoint(x: 50, y: 150))
+        #expect(resting.facingLeft)
+        let nose = CGPoint(x: 1, y: 0).applying(resting.spriteTransform)
+        #expect(nose.x < 0 && nose.y > 0)
+        driver.move(to: CGPoint(x: 20, y: 50), reduceMotion: true)
+        let instant = driver.sample(at: Date())
+        #expect(instant.position == CGPoint(x: 20, y: 50))
+        #expect(instant.facingLeft)
+        #expect(CGPoint(x: 1, y: 0).applying(instant.spriteTransform).y < 0)
+    }
+
     private func tapFrame(_ view: UIView) -> UIImage {
         let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
         return UIGraphicsImageRenderer(bounds: view.bounds, format: format).image { view.layer.render(in: $0.cgContext) }

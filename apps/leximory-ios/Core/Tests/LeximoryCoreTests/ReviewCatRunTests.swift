@@ -45,4 +45,12 @@ import Testing
         #expect(run.duration == 0)
         #expect(run.sample(at: 100).position == CGPoint(x: 20, y: 20))
     }
+    @Test(arguments: [CGPoint(x: -100, y: -100), CGPoint(x: -100, y: 100), CGPoint(x: 100, y: -100), CGPoint(x: 100, y: 100)])
+    func renderedNosePointsAlongDiagonalTravel(target: CGPoint) {
+        let run = ReviewCatRun(from: .zero, to: target)
+        let sample = run.sample(at: 0.5)
+        let nose = CGPoint(x: 1, y: 0).applying(sample.spriteTransform)
+        #expect(abs(nose.x - target.x / hypot(target.x, target.y)) < 0.001)
+        #expect(abs(nose.y - target.y / hypot(target.x, target.y)) < 0.001)
+    }
 }

@@ -22,7 +22,9 @@ struct ReviewKeyboardProbe: UIViewRepresentable {
             let rect = window.screen.coordinateSpace.convert(frame, to: window.coordinateSpace)
             let page = convert(bounds, to: window)
             let coversBottom = rect.intersects(page) && rect.maxY >= window.bounds.maxY - 1 && notification.name != UIResponder.keyboardWillHideNotification
-            changed(coversBottom ? max(0, rect.minY - page.minY) : nil, info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25)
+            let top = coversBottom ? max(0, rect.minY - page.minY) : nil
+            let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+            DispatchQueue.main.async { [weak self] in self?.changed(top, duration) }
         }
     }
 }

@@ -1,6 +1,10 @@
 import SwiftUI
 import LeximoryCore
 
+enum ReviewExercise: Hashable {
+    case translation(Int), conversation, story
+}
+
 @MainActor @Observable final class ReviewModel {
     let client: MobileClient
     let selection: ReviewSelection
@@ -10,6 +14,7 @@ import LeximoryCore
     var awaitingConfirmation: Bool { pendingSubmission != nil }
     private var pendingSubmission: (index: Int?, text: String, sentAt: Date)?
     var drafts: [String: String] = [:]
+    var exercise: ReviewExercise?
     private var started = false
     init(client: MobileClient, selection: ReviewSelection) { self.client = client; self.selection = selection }
 

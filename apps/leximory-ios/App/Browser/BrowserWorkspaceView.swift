@@ -172,8 +172,6 @@ struct BrowserWorkspaceView: View {
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
             if clipboardNotice == notice { withAnimation(motion) { clipboardNotice = nil } }
         }
-        .onChange(of: workspace.browser.title) { _, _ in workspace.refreshRecentWebpageTitle() }
-        .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
         .sensoryFeedback(.success, trigger: workspace.completionID)
         .onChange(of: workspace.current.id) { _, _ in
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
@@ -189,7 +187,6 @@ struct BrowserWorkspaceView: View {
             case .vocabulary: return ids.insert("vocabulary").inserted
             case .review: return ids.insert("review").inserted
             case .reviewSession(let model): return ids.insert("review/" + model.selection.id).inserted
-            case .reviewStory(let model): return ids.insert("review-story/" + model.selection.id).inserted
             case .document(let document): return ids.insert(document.text.id).inserted
             default: return false
             }
@@ -198,7 +195,7 @@ struct BrowserWorkspaceView: View {
     private func active(_ entry: BrowserEntry) -> Bool {
         switch (entry.resource, workspace.current.resource) {
         case (.bookmarks, .bookmarks), (.account, .account), (.vocabulary, .vocabulary), (.review, .review): true
-        case (.reviewSession(let a), .reviewSession(let b)), (.reviewStory(let a), .reviewStory(let b)): a.selection == b.selection
+        case (.reviewSession(let a), .reviewSession(let b)): a.selection == b.selection
         case (.document(let a), .document(let b)): a.text.id == b.text.id
         default: false
         }
@@ -218,9 +215,7 @@ struct BrowserWorkspaceView: View {
         case .vocabulary: BrowserVocabularyView(workspace: workspace)
         case .review: ReviewTimelineView(client: client, progressOverrides: workspace.reviewProgress, open: workspace.openReview)
         case .reviewSession(let model):
-            ReviewSessionView(model: model, close: { workspace.go(-1) }, story: { workspace.visit(.reviewStory(model)) }, onProgress: { workspace.updateReview(model) })
-        case .reviewStory(let model):
-            ReviewStoryView(model: model, close: { workspace.go(-1) })
+            ReviewSessionView(model: model, onProgress: { workspace.updateReview(model) })
         case .document(let document):
             if document.text.format == "ebook" { EbookScreen(article: document.text.preview, client: client, language: document.library.preview.language) }
             else { ReaderScreen(article: document.text.preview, playback: playback, language: document.library.preview.language, client: client) }
@@ -237,18 +232,15 @@ struct BrowserWorkspaceView: View {
     private var controls: some View {
         GlassEffectContainer(spacing: 6) {
             HStack(spacing: 6) {
-                if !editingAddress {
+                if editingAddress {
+                    chromeButton("后退", symbol: "chevron.left", action: finishEditing)
+                } else {
                     if workspace.history.canGoBack { chromeButton("后退", symbol: "chevron.left") { workspace.go(-1) } }
                     if workspace.history.canGoForward { chromeButton("前进", symbol: "chevron.right") { workspace.go(1) } }
                 }
                 addressControl.glassEffect(chromeGlass, in: .capsule)
                     .glassEffectID("workspace-address", in: chromeNamespace)
-                if editingAddress {
-                    Button(action: finishEditing) {
-                        Text("取消").font(LeximoryTypography.interface(15))
-                            .frame(minWidth: 44, minHeight: 48).padding(.horizontal, 8).contentShape(Capsule())
-                    }.buttonStyle(.plain).glassEffect(chromeGlass, in: .capsule)
-                } else {
+                if !editingAddress {
                     if !isHome { chromeButton("首页", symbol: "house") { withAnimation(motion) { workspace.visit(.home) } } }
                     if workspace.current.isWeb {
                         Button { Task { await extract() } } label: {
@@ -276,7 +268,7 @@ struct BrowserWorkspaceView: View {
                             else if let id = webBookmarkID, let text = workspace.documents[id]?.text { BrowserTextIcon(text: text) }
                             else { Image(systemName: workspace.current.symbol) }
                         }.foregroundStyle(.secondary)
-                        Text(workspace.currentTitle)
+                        Text(workspace.addressLabel)
                             .lineLimit(1).truncationMode(.middle)
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")

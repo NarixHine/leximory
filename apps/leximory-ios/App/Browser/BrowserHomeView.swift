@@ -48,24 +48,19 @@ struct BrowserHomeView: View {
                         }.buttonStyle(.plain).accessibilityLabel("账号")
                     }.padding(.bottom, 18)
                     homeCards(squares: squares, folded: false)
-                    if !recent.isEmpty {
-                        VStack(spacing: 6) {
-                            Text("继续阅读").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
-                            ForEach(recent.prefix(3)) { text in
-                                let ebook = text.format == "ebook", webpage = text.format == "bookmark"
-                                recentLink(text.title, symbol: ebook ? "book.closed" : webpage ? "globe" : "doc.text", type: ebook ? "电子书" : webpage ? "网页" : "文章") { resume(text) }
+                    if !readingResources.isEmpty || recentWebpage != nil {
+                        VStack(spacing: 3) {
+                            Text("继续浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
+                            ForEach(readingResources) { text in
+                                let ebook = text.format == "ebook"
+                                recentLink(text.title, symbol: ebook ? "book.closed" : "doc.text", type: ebook ? "电子书" : "文章") { resume(text) }
                                     .accessibilityIdentifier("browser-resume-" + text.id)
                             }
-                        }.frame(maxWidth: 360).frame(maxWidth: .infinity)
-                    }
-                    if !recentWebpages.isEmpty {
-                        VStack(spacing: 6) {
-                            Text("最近浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
-                            ForEach(recentWebpages.prefix(3)) { page in
-                                recentLink(page.title, symbol: "globe", type: "网页") { openWebpage(page) }
+                            if let page = recentWebpage {
+                                recentLink(page.domain, symbol: "globe", type: "网页") { openWebpage(page) }
                                     .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
                             }
-                        }.frame(maxWidth: 360).frame(maxWidth: .infinity)
+                        }.frame(maxWidth: 360).frame(maxWidth: .infinity).padding(.top, 8)
                     }
 
                 }.padding(.horizontal, 28).padding(.top, 32)
@@ -77,6 +72,16 @@ struct BrowserHomeView: View {
         .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.86), value: compact)
         .tint(.primary)
         .accessibilityIdentifier("browser-home")
+    }
+    private var readingResources: [CatalogText] {
+        var seen = Set<String>()
+        return Array(recent.filter { $0.format != "bookmark" && seen.insert($0.id).inserted }.prefix(3))
+    }
+    private var recentWebpage: RecentWebpage? {
+        if let page = recentWebpages.first { return page }
+        guard let text = recent.first(where: { $0.format == "bookmark" }),
+              let url = text.bookmarkURL.flatMap(TextBrowserModel.address) else { return nil }
+        return RecentWebpage(url: url, bookmarkID: text.id)
     }
     private func recentLink(_ title: String, symbol: String, type: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {

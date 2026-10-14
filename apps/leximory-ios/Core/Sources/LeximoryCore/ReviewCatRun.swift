@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 /// Distance-driven motion and sprite timing from the web review lawn.
 public struct ReviewCatRun: Sendable {
@@ -9,6 +10,14 @@ public struct ReviewCatRun: Sendable {
         public let facingLeft: Bool
         public let frame: Int
         public let phase: Phase
+
+        public var spriteTransform: CGAffineTransform {
+            CGAffineTransform(scaleX: facingLeft ? -1 : 1, y: 1).rotated(by: angle * .pi / 180)
+        }
+
+        public static func resting(at position: CGPoint, angle: Double, facingLeft: Bool) -> Self {
+            Self(position: position, angle: angle, facingLeft: facingLeft, frame: 0, phase: .idle)
+        }
     }
     public static let height: CGFloat = 100
     public static let width: CGFloat = height * 469 / 256

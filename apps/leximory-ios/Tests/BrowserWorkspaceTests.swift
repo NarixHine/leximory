@@ -6,15 +6,43 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
-    @Test func recentWebpagesRestoreThreeDistinctValidLinksAndKeepAccountsSeparate() throws {
+    @Test func webpageAddressShowsItsDomainImmediatelyAndAfterHistoryNavigation() throws {
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: "workspace-test." + UUID().uuidString)
+        workspace.visit(.web(WebResource(url: try #require(URL(string: "https://reading.example.com/a/long/article?ref=home")))))
+        #expect(workspace.addressLabel == "reading.example.com")
+        workspace.visit(.home)
+        #expect(workspace.addressLabel == "Leximory")
+        workspace.go(-1)
+        #expect(workspace.addressLabel == "reading.example.com")
+    }
+
+    @Test func reviewBackDismissesEachTrayBeforeLeavingTheLawn() {
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: "workspace-test." + UUID().uuidString)
+        workspace.visit(.review)
+        workspace.openReview(ReviewSelection(date: "2026-10-13", language: "en"))
+        guard case .reviewSession(let model) = workspace.current.resource else { Issue.record("Expected a review lawn"); return }
+        let lawnID = workspace.current.id
+        let entries = workspace.history.entries.count
+        for exercise in [ReviewExercise.story, .translation(0), .conversation] {
+            model.exercise = exercise
+            workspace.go(-1)
+            #expect(model.exercise == nil)
+            #expect(workspace.current.id == lawnID)
+            #expect(workspace.history.entries.count == entries)
+        }
+        workspace.go(-1)
+        #expect(workspace.current.title == "每日复习")
+    }
+
+    @Test func recentWebpageRestoresOnlyTheLatestValidLinkAndKeepsAccountsSeparate() throws {
         let namespace = "workspace-test." + UUID().uuidString
         let key = "browser.recent-web." + namespace
         defer { UserDefaults.standard.removeObject(forKey: key) }
         let urls = ["https://one.test", "https://one.test", "file:///private/secret", "https://two.test", "https://three.test", "https://four.test"]
-        let pages = try urls.map { RecentWebpage(url: try #require(URL(string: $0)), title: $0) }
+        let pages = try urls.map { RecentWebpage(url: try #require(URL(string: $0))) }
         UserDefaults.standard.set(try JSONEncoder().encode(pages), forKey: key)
         let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
-        #expect(workspace.recentWebpages.map(\.url.absoluteString) == ["https://one.test", "https://two.test", "https://three.test"])
+        #expect(workspace.recentWebpages.map(\.url.absoluteString) == ["https://one.test"])
         let otherAccount = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace + ".other")
         #expect(otherAccount.recentWebpages.isEmpty)
         workspace.clearHistory()
@@ -25,8 +53,8 @@ import HTTPTypes
         let namespace = "workspace-test." + UUID().uuidString
         let key = "browser.recent-web." + namespace
         defer { UserDefaults.standard.removeObject(forKey: key) }
-        let page = RecentWebpage(url: try #require(URL(string: "https://reading.test/article")), title: "A quiet forest", bookmarkID: "saved-article")
-        UserDefaults.standard.set(try JSONEncoder().encode(page), forKey: key)
+        let page = RecentWebpage(url: try #require(URL(string: "https://reading.test/article")), bookmarkID: "saved-article")
+        UserDefaults.standard.set(try JSONSerialization.data(withJSONObject: ["url": page.url.absoluteString, "title": "A quiet forest", "bookmarkID": "saved-article"]), forKey: key)
         let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
         #expect(workspace.recentWebpages == [page])
     }

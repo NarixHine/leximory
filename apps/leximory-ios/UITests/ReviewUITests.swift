@@ -14,18 +14,29 @@ final class ReviewUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["天连续复习"].exists)
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        let scene = app.otherElements["review-lawn"]
+        XCTAssertTrue(scene.waitForExistence(timeout: 5))
+        let sceneFrame = scene.frame
         let story = app.buttons["review-task-连词成文"]
         XCTAssertTrue(story.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
+        XCTAssertFalse(app.buttons["返回"].exists)
+        XCTAssertFalse(app.buttons["取消"].exists)
+        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
+        let wordFrame = app.buttons["review-task-discover"].frame
+        XCTAssertEqual(story.frame.height, wordFrame.height, accuracy: 1)
         let lawn = XCTAttachment(screenshot: app.screenshot()); lawn.name = "Review lawn"; lawn.lifetime = .keepAlways; add(lawn)
         story.tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
-        app.buttons["review-story-close"].tap()
-        let scene = app.otherElements["review-lawn"]
+        XCTAssertTrue(app.otherElements["review-story-tray"].exists)
+        XCTAssertTrue(scene.exists, "The story opens over the same lawn")
+        XCTAssertTrue(app.buttons["review-task-discover"].exists)
+        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
+        XCTAssertEqual(scene.frame.width, sceneFrame.width, accuracy: 1)
+        let storyTray = XCTAttachment(screenshot: app.screenshot()); storyTray.name = "Story tray over the review lawn"; storyTray.lifetime = .keepAlways; add(storyTray)
+        app.buttons["后退"].tap()
         XCTAssertTrue(scene.exists)
-        let sceneFrame = scene.frame
-        let wordFrame = app.buttons["review-task-discover"].frame
         app.buttons["review-task-discover"].tap()
         let editor = app.textViews["你的翻译"]
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
@@ -34,6 +45,7 @@ final class ReviewUITests: XCTestCase {
         let composer = app.otherElements["review-composer"]
         let restingComposer = composer.frame
         XCTAssertLessThan(restingComposer.height, 100)
+        XCTAssertGreaterThanOrEqual(editor.frame.height, 60)
         editor.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let movedAboveKeyboard = expectation(for: NSPredicate { _, _ in
@@ -48,11 +60,24 @@ final class ReviewUITests: XCTestCase {
         XCTAssertEqual(app.buttons["review-task-discover"].frame.minY, wordFrame.minY, accuracy: 1)
         XCTAssertLessThan(composer.frame.maxY, restingComposer.maxY - 100)
         XCTAssertLessThanOrEqual(composer.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        editor.typeText("We find a quiet place by the river.")
-        app.buttons["提交"].tap()
+        editor.typeText("We find a quiet place by the river.\n")
         XCTAssertTrue(app.staticTexts["你的回答"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["意思传达得很清楚。"].waitForExistence(timeout: 12))
-        app.buttons["review-exercise-close"].tap()
+        XCTAssertTrue(app.staticTexts["参考译文"].exists)
+        XCTAssertFalse(app.buttons["参考译文"].exists)
+        XCTAssertTrue(app.textViews["We discovered a quiet place by the river."].exists)
+        XCTAssertFalse(app.staticTexts["We found"].exists, "Corrections appear in the answer popover, not separate cards")
+        app.textViews["review-annotated-answer"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).tap()
+        XCTAssertTrue(app.staticTexts["润色建议"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textViews["We found"].exists)
+        let correction = XCTAttachment(screenshot: app.screenshot()); correction.name = "Inline correction popover"; correction.lifetime = .keepAlways; add(correction)
+        app.staticTexts["English"].tap()
+        app.buttons["修改回答"].tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        editor.typeText("\n")
+        XCTAssertTrue(app.staticTexts["你的回答"].waitForExistence(timeout: 10))
+        app.buttons["后退"].tap()
         let writing = app.buttons["每日练笔"]
         if !writing.isHittable { app.swipeUp() }
         XCTAssertTrue(writing.waitForExistence(timeout: 5)); writing.tap()
@@ -62,8 +87,8 @@ final class ReviewUITests: XCTestCase {
         app.buttons["提交"].tap()
         XCTAssertTrue(app.staticTexts["小黑猫的回应"].waitForExistence(timeout: 12))
         let feedback = XCTAttachment(screenshot: app.screenshot()); feedback.name = "Daily writing feedback"; feedback.lifetime = .keepAlways; add(feedback)
-        app.buttons["review-exercise-close"].tap()
-        app.buttons["review-session-close"].tap()
+        app.buttons["后退"].tap()
+        app.buttons["后退"].tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 100%")).firstMatch.waitForExistence(timeout: 10))
     }
 }
