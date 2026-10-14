@@ -48,8 +48,8 @@ struct BrowserHomeView: View {
                             }.frame(width: 36, height: 36).clipShape(Circle())
                                 .frame(width: 48, height: 48).contentShape(Circle())
                         }.buttonStyle(.plain).accessibilityLabel("账号")
-                    }.padding(.bottom, 18)
-                    homeCards(squares: squares, folded: false)
+                    }.padding(.bottom, 18).frame(maxWidth: squares ? nil : 304)
+                    homeCards(squares: squares, folded: false).frame(maxWidth: squares ? nil : 304)
                     if !readingResources.isEmpty || recentWebpage != nil {
                         VStack(spacing: 0) {
                             Text("继续浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary).padding(.bottom, 3)
@@ -62,11 +62,11 @@ struct BrowserHomeView: View {
                                 recentLink(text.title, symbol: ebook ? "book.closed" : "doc.text", type: ebook ? "电子书" : "文章") { resume(text) }
                                     .accessibilityIdentifier("browser-resume-" + text.id)
                             }
-                        }.frame(maxWidth: 360).frame(maxWidth: .infinity).padding(.top, 8)
+                        }.frame(maxWidth: 400).frame(maxWidth: .infinity).padding(.top, 8)
                     }
 
                 }.padding(.horizontal, 28).padding(.vertical, 24)
-                    .frame(maxWidth: squares ? 740 : 360, minHeight: max(0, geometry.size.height - chromeHeight), alignment: .center)
+                    .frame(maxWidth: squares ? 740 : 456, minHeight: max(0, geometry.size.height - chromeHeight), alignment: .center)
                     .frame(maxWidth: .infinity).padding(.bottom, chromeHeight)
             }.scrollBounceBehavior(.basedOnSize)
         }
@@ -97,7 +97,7 @@ struct BrowserHomeView: View {
                 Image(systemName: symbol).symbolVariant(.none).font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.secondary).accessibilityHidden(true)
                 Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize)).foregroundStyle(.primary)
-                    .multilineTextAlignment(.center).lineLimit(2)
+                    .lineLimit(1).truncationMode(.tail)
             }.frame(maxWidth: .infinity, minHeight: 32).contentShape(.rect)
         }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }

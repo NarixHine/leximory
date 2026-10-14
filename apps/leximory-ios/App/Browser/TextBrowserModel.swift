@@ -190,8 +190,12 @@ final class BrowserWebView: WKWebView {
         navigationBegan?()
         navigationID = UUID(); error = nil; update()
     }
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        update()
+    }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         update()
+        if let item = webView.backForwardList.currentItem { committed?(item) }
         if let resumeOffset {
             webView.scrollView.setContentOffset(CGPoint(x: 0, y: resumeOffset), animated: false)
             self.resumeOffset = nil

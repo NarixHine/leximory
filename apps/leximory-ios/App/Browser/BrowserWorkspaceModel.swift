@@ -102,7 +102,10 @@ struct AnnotationActivity: Identifiable, Codable {
     var current: BrowserEntry { history.current }
     var addressLabel: String {
         if let id = current.textID { return documents[id]?.text.title ?? current.title }
-        if case .web(let page) = current.resource { return page.url.host ?? "网页" }
+        if case .web(let page) = current.resource {
+            let liveURL = page.item != nil && page.item === browser.web.backForwardList.currentItem ? browser.url : nil
+            return (liveURL ?? page.url).host ?? "网页"
+        }
         return current.title
     }
     var readyCount: Int { activities.filter { $0.state == .ready && !$0.seen }.count }
@@ -195,20 +198,17 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     private func committed(_ item: WKBackForwardListItem) {
         guard current.isWeb else { return }
-        if restoringWeb {
+        if case .web(let page) = current.resource, restoringWeb || page.item === item {
             restoringWeb = false
-            if case .web(var page) = current.resource {
-                page = WebResource(url: item.url, bookmarkID: page.bookmarkID, item: item, offset: page.offset)
-                var entry = current; entry.resource = .web(page); history.replaceCurrent(entry)
-                rememberCurrentWebpage()
-            }
+            let updated = WebResource(url: browser.url ?? item.url, bookmarkID: page.bookmarkID, item: item, offset: page.offset)
+            var entry = current; entry.resource = .web(updated); history.replaceCurrent(entry)
+            rememberCurrentWebpage()
             return
         }
-        if case .web(let page) = current.resource, page.item === item { return }
         if let index = history.entries.firstIndex(where: { entry in
             if case .web(let page) = entry.resource { return page.item === item }; return false
         }) { go(index - history.index, rememberingWebPosition: false); return }
-        visit(.web(WebResource(url: item.url, item: item)), rememberingWebPosition: false)
+        visit(.web(WebResource(url: browser.url ?? item.url, item: item)), rememberingWebPosition: false)
     }
     func rememberCurrentWebpage() {
         guard case .web(let page) = current.resource, page.item != nil else { return }
