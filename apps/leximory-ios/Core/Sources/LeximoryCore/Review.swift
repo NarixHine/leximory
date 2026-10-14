@@ -36,7 +36,6 @@ public struct ReviewSnapshot: Codable, Sendable {
     public let exists: Bool
     public let inProgress: Bool
     public let story: String?
-    public let storyDocument: ReadingDocument?
     public let translations: [ReviewTranslation]?
     public let conversation: ReviewConversation?
     public var completedTranslations: Int { (translations ?? []).filter { $0.status == .complete }.count }

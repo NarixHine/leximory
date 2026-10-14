@@ -2,7 +2,7 @@ import SwiftUI
 import LeximoryCore
 
 enum ReviewExercise: Hashable {
-    case translation(Int), conversation, story
+    case translation(Int), conversation
 }
 
 @MainActor @Observable final class ReviewModel {

@@ -31,18 +31,9 @@ struct ReviewSessionView: View {
                 Text(learningLanguageName(model.selection.language)).font(LeximoryTypography.interface(16)).padding(.top, 12)
                 if let exercise = model.exercise {
                     let usableHeight = max(160, min(geometry.size.height, keyboardTop ?? geometry.size.height) - chromeHeight - 56)
-                    if exercise == .story {
-                        VStack {
-                            Spacer(minLength: 0)
-                            ReviewStoryTray(model: model, close: { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { model.exercise = nil } })
-                                .frame(maxWidth: 640).frame(height: usableHeight * 0.85)
-                        }.padding(.horizontal, 16).padding(.bottom, chromeHeight + 12)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        ReviewExerciseView(model: model, index: { if case .translation(let index) = exercise { return index }; return nil }(), availableHeight: usableHeight)
-                            .id(exercise).frame(height: usableHeight).padding(.horizontal, 16).padding(.top, 48)
-                            .transition(.opacity.combined(with: .offset(y: -12)))
-                    }
+                    ReviewExerciseView(model: model, index: { if case .translation(let index) = exercise { return index }; return nil }(), availableHeight: usableHeight)
+                        .id(exercise).frame(height: usableHeight).padding(.horizontal, 16).padding(.top, 48)
+                        .transition(.opacity.combined(with: .offset(y: -12)))
                 }
             }.background(ReviewKeyboardProbe { top, duration in
                 withAnimation(.easeOut(duration: duration)) { keyboardTop = top }
@@ -71,10 +62,6 @@ struct ReviewSessionView: View {
                     }).accessibilityHidden(true)
             }
             layout {
-                if model.snapshot?.story != nil {
-                    taskPill("连词成文", symbol: "book", completed: false) { open(.story, target: "story") }
-                        .reviewTaskID("story", onPosition: { taskPoints["story"] = $0 })
-                }
                 ForEach(translations) { task in
                     taskPill(task.value.keyword, symbol: task.value.status == .pending ? "hourglass" : nil, completed: task.value.status == .complete) {
                         open(.translation(task.index), target: "translation-\(task.index)")
@@ -107,8 +94,8 @@ struct ReviewSessionView: View {
             HStack(spacing: 6) {
                 if let symbol { Image(systemName: symbol) }
                 Text(title).strikethrough(completed).fixedSize(horizontal: false, vertical: true)
-            }.font(title == "连词成文" ? ReviewStyle.handwriting(18) : LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).foregroundStyle(LeximoryPalette.ink)
-                .padding(.horizontal, 12).padding(.vertical, 4).frame(minHeight: 44)
+            }.font(LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).foregroundStyle(LeximoryPalette.ink)
+                .padding(.horizontal, 16).padding(.vertical, 4).frame(minHeight: 44)
                 .background(LeximoryPalette.shell.opacity(0.96), in: .capsule)
                 .overlay { Capsule().strokeBorder(ReviewStyle.segment, lineWidth: 3) }
         }.buttonStyle(.plain).opacity(completed ? 0.6 : 1).accessibilityIdentifier("review-task-" + title).accessibilityLabel("\(title)\(completed ? "，已完成" : "")")
@@ -123,34 +110,6 @@ private struct ReviewTranslationItem: Identifiable {
     let index: Int
     let value: ReviewTranslation
     var id: Int { index }
-}
-
-private struct ReviewStoryTray: View {
-    @Bindable var model: ReviewModel
-    let close: () -> Void
-    @State private var definition: DefinitionPresentation?
-    var body: some View {
-        VStack(spacing: 0) {
-            Capsule().fill(ReviewStyle.segment).frame(width: 48, height: 5).padding(.top, 12)
-            HStack {
-                Text("连词成文").font(ReviewStyle.handwriting(18))
-                Spacer()
-            }.frame(minHeight: 44).padding(.horizontal, 22).contentShape(.rect)
-                .gesture(DragGesture().onEnded { if $0.translation.height > 60 { close() } })
-            if let document = model.snapshot?.storyDocument {
-                ReadingTextView(document: document, language: learningLanguageName(model.selection.language), textID: TextID(rawValue: model.selection.id), jumpToEnd: false, readOnly: true) { selection, note, _ in
-                    if let note { definition = DefinitionPresentation(source: .article(selection), definition: note) }
-                }
-            } else { ProgressView() }
-        }.background(LeximoryPalette.paper, in: .rect(cornerRadius: 32))
-            .clipShape(.rect(cornerRadius: 32))
-            .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 1) }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("review-story-tray")
-            .sheet(item: $definition) { item in
-                DefinitionView(item: item, client: nil, language: learningLanguageName(model.selection.language), isPopover: false).presentationDragIndicator(.visible)
-            }
-    }
 }
 
 @MainActor enum ReviewArtwork {

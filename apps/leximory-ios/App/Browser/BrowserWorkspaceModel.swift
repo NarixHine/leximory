@@ -9,11 +9,21 @@ struct WebResource {
     var offset: CGFloat = 0
 }
 
+private struct RecentReading: Codable {
+    var ids: [String] = []
+    var texts: [CatalogText] = []
+}
+
 struct RecentWebpage: Codable, Equatable, Identifiable {
     let url: URL
+    var title: String? = nil
     var bookmarkID: String? = nil
     var id: URL { url }
-    var domain: String { url.host ?? "网页" }
+    var displayTitle: String { Self.normalizedTitle(title) ?? "网页" }
+    static func normalizedTitle(_ title: String?) -> String? {
+        guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+        return title
+    }
 }
 
 enum BrowserResource {
@@ -33,7 +43,7 @@ struct BrowserEntry: Identifiable {
         case .account: "账号"
         case .vocabulary: "已存词汇"
         case .review: "每日复习"
-        case .reviewSession(let model): "\(learningLanguageName(model.selection.language)) · 每日复习"
+        case .reviewSession(let model): "\(learningLanguageName(model.selection.language)) 每日复习"
         case .web(let page): page.item?.title ?? page.url.host ?? "网页"
         case .document(let document): document.text.title
         }
@@ -66,7 +76,7 @@ struct AnnotationActivity: Identifiable, Codable {
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
     private(set) var recentWebpages: [RecentWebpage] = []
-    private var recentTextIDs: [String] = []
+    private var recentReading = RecentReading()
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
     private(set) var texts: [String: [CatalogText]] = [:]
@@ -100,18 +110,25 @@ struct AnnotationActivity: Identifiable, Codable {
     var writableFolders: [CatalogLibrary] { libraries.filter { $0.owned && !$0.shadow } }
     var recentTexts: [CatalogText] {
         let all = Array(texts.values.joined())
-        let ids = recentTextIDs + libraries.compactMap { recentlyOpened[$0.id]?.id.rawValue }
+        let ids = recentReading.ids + libraries.compactMap { recentlyOpened[$0.id]?.id.rawValue }
         var seen = Set<String>()
         return ids.compactMap { id in
             guard seen.insert(id).inserted else { return nil }
-            return all.first { $0.id == id }
+            return all.first { $0.id == id } ?? recentReading.texts.first { $0.id == id }
         }
     }
     init(client: MobileClient, namespace: String) {
         self.client = client; self.namespace = namespace
         let readingKey = "browser.recent." + namespace
-        recentTextIDs = UserDefaults.standard.stringArray(forKey: readingKey)
-            ?? UserDefaults.standard.string(forKey: readingKey).map { [$0] } ?? []
+        if let data = UserDefaults.standard.data(forKey: readingKey),
+           let saved = try? JSONDecoder().decode(RecentReading.self, from: data) {
+            var seen = Set<String>()
+            recentReading.ids = Array(saved.ids.filter { seen.insert($0).inserted }.prefix(5))
+            recentReading.texts = saved.texts.filter { seen.contains($0.id) }
+        } else {
+            recentReading.ids = UserDefaults.standard.stringArray(forKey: readingKey)
+                ?? UserDefaults.standard.string(forKey: readingKey).map { [$0] } ?? []
+        }
         if let data = UserDefaults.standard.data(forKey: "browser.recent-web." + namespace) {
             let pages = (try? JSONDecoder().decode([RecentWebpage].self, from: data))
                 ?? (try? JSONDecoder().decode(RecentWebpage.self, from: data)).map { [$0] } ?? []
@@ -195,10 +212,20 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func rememberCurrentWebpage() {
         guard case .web(let page) = current.resource, page.item != nil else { return }
-        let recent = RecentWebpage(url: page.url, bookmarkID: page.bookmarkID)
+        let title = browser.url == page.url ? browser.title : page.item?.title
+        let savedTitle = recentWebpages.first(where: { $0.url == page.url })?.title
+        let bookmarkTitle = recentTexts.first(where: { $0.id == page.bookmarkID })?.title
+        let recent = RecentWebpage(url: page.url, title: RecentWebpage.normalizedTitle(title) ?? savedTitle ?? bookmarkTitle, bookmarkID: page.bookmarkID)
         let pages = [recent]
         guard pages != recentWebpages else { return }
         recentWebpages = pages
+        persistRecentWebpages()
+    }
+    func refreshRecentWebpageTitle() {
+        guard let url = browser.url, let index = recentWebpages.firstIndex(where: { $0.url == url }),
+              let title = RecentWebpage.normalizedTitle(browser.title),
+              recentWebpages[index].title != title else { return }
+        recentWebpages[index].title = title
         persistRecentWebpages()
     }
     private func persistRecentWebpages() {
@@ -209,8 +236,16 @@ struct AnnotationActivity: Identifiable, Codable {
         rememberReading(details.text)
     }
     private func rememberReading(_ text: CatalogText) {
-        recentTextIDs = Array(([text.id] + recentTextIDs.filter { $0 != text.id }).prefix(5))
-        UserDefaults.standard.set(recentTextIDs, forKey: "browser.recent." + namespace)
+        recentReading.ids = Array(([text.id] + recentReading.ids.filter { $0 != text.id }).prefix(5))
+        recentReading.texts.removeAll { $0.id == text.id }
+        recentReading.texts.insert(text, at: 0)
+        persistRecentReading()
+    }
+    private func persistRecentReading() {
+        recentReading.texts = Array(recentTexts.prefix(5))
+        if let data = try? JSONEncoder().encode(recentReading) {
+            UserDefaults.standard.set(data, forKey: "browser.recent." + namespace)
+        }
     }
     private func handleWebGesture(_ url: URL) -> Bool {
         guard !restoringWeb else { return false }
@@ -265,22 +300,25 @@ struct AnnotationActivity: Identifiable, Codable {
         let mutation = catalogMutation
         if let cached = await client.localStore?.value([CatalogLibrary].self, for: "libraries"), catalogRequest == request, catalogMutation == mutation, !Task.isCancelled { libraries = cached; loading = false }
         guard catalogRequest == request, catalogMutation == mutation, !Task.isCancelled else { return }
+        for library in libraries {
+            let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)")
+            guard catalogRequest == request, catalogMutation == mutation, !Task.isCancelled else { return }
+            if let cached { texts[library.id] = cached }
+        }
+        persistRecentReading()
+        loading = false
         if online {
             do {
                 let result = try await client.allLibraries()
                 guard catalogRequest == request, catalogMutation == mutation, !Task.isCancelled else { return }
                 libraries = result
+                let accessible = Set(result.map(\.id))
+                texts = texts.filter { accessible.contains($0.key) }
+                recentReading.texts.removeAll { !accessible.contains($0.libraryId) }
+                persistRecentReading()
             }
             catch { if !Task.isCancelled, libraries.isEmpty { self.error = "暂时无法打开文件夹，请稍后重试。" } }
         }
-        for library in libraries {
-            guard catalogRequest == request, !Task.isCancelled else { return }
-            if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)") { texts[library.id] = cached }
-            for text in texts[library.id] ?? [] where text.format == "article" {
-                if let details = await client.cachedDocument(textID: text.id) { documents[text.id] = details; track(details) }
-            }
-        }
-        loading = false
     }
     func loadFolder(_ library: CatalogLibrary, online: Bool) async {
         let request = UUID(); folderRequests[library.id] = request
@@ -290,10 +328,17 @@ struct AnnotationActivity: Identifiable, Codable {
             let result = try await client.allTexts(libraryID: library.id)
             guard folderRequests[library.id] == request, !Task.isCancelled else { return }
             texts[library.id] = result
+            let available = Set(result.map(\.id))
+            recentReading.texts.removeAll { $0.libraryId == library.id && !available.contains($0.id) }
+            persistRecentReading()
         }
         catch {
             guard folderRequests[library.id] == request, !Task.isCancelled else { return }
-            if MobileClient.isAccessFailure(error) { texts[library.id] = [] }
+            if MobileClient.isAccessFailure(error) {
+                texts[library.id] = []
+                recentReading.texts.removeAll { $0.libraryId == library.id }
+                persistRecentReading()
+            }
             self.error = "文件夹暂时无法打开，请重试。"
         }
     }

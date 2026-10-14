@@ -24,6 +24,7 @@ struct BrowserWorkspaceView: View {
     @State private var chromeHeight: CGFloat = 64
     @State private var completionNotice = false
     @State private var clearingData = false
+    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
     @Environment(\.nativeSync) private var sync
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -143,7 +144,6 @@ struct BrowserWorkspaceView: View {
                 avatarURL = url; avatarImage = image
             }
         }
-        .task { await workspace.refresh(online: sync?.online != false) }
         .task(id: sync?.revision) { await workspace.refresh(online: sync?.online != false) }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
@@ -173,6 +173,8 @@ struct BrowserWorkspaceView: View {
             if clipboardNotice == notice { withAnimation(motion) { clipboardNotice = nil } }
         }
         .sensoryFeedback(.success, trigger: workspace.completionID)
+        .onChange(of: workspace.browser.title) { _, _ in workspace.refreshRecentWebpageTitle() }
+        .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
         .onChange(of: workspace.current.id) { _, _ in
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
         }
@@ -268,12 +270,12 @@ struct BrowserWorkspaceView: View {
                             else if let id = webBookmarkID, let text = workspace.documents[id]?.text { BrowserTextIcon(text: text) }
                             else { Image(systemName: workspace.current.symbol) }
                         }.foregroundStyle(.secondary)
-                        Text(workspace.addressLabel)
+                        Text(LeximoryTypography.scaledChineseText(workspace.addressLabel, size: addressTextSize))
                             .lineLimit(1).truncationMode(.middle)
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
-        }.font(LeximoryTypography.interface(15, style: .subheadline)).padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 48)
+        }.addressFont().padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 48)
             .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { value in
                 guard !editingAddress, abs(value.translation.width) > 60 else { return }
                 workspace.go(value.translation.width > 0 ? -1 : 1)

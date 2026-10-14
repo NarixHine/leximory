@@ -6,6 +6,23 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func recentReadingRestoresTitlesBeforeAnyFolderRefresh() async throws {
+        let namespace = "workspace-test." + UUID().uuidString
+        defer {
+            UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace)
+            UserDefaults.standard.removeObject(forKey: "recent-access." + namespace)
+            UserDefaults.standard.removeObject(forKey: "browser.annotations." + namespace)
+        }
+        let mobile = client(WorkspaceTransport())
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        let details = try await mobile.documentDetails(textID: "article")
+        await workspace.open(details.text)
+        let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        #expect(restored.recentTexts == [details.text])
+        let otherAccount = BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other")
+        #expect(otherAccount.recentTexts.isEmpty)
+    }
+
     @Test func webpageAddressShowsItsDomainImmediatelyAndAfterHistoryNavigation() throws {
         let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: "workspace-test." + UUID().uuidString)
         workspace.visit(.web(WebResource(url: try #require(URL(string: "https://reading.example.com/a/long/article?ref=home")))))
@@ -23,7 +40,7 @@ import HTTPTypes
         guard case .reviewSession(let model) = workspace.current.resource else { Issue.record("Expected a review lawn"); return }
         let lawnID = workspace.current.id
         let entries = workspace.history.entries.count
-        for exercise in [ReviewExercise.story, .translation(0), .conversation] {
+        for exercise in [ReviewExercise.translation(0), .conversation] {
             model.exercise = exercise
             workspace.go(-1)
             #expect(model.exercise == nil)
@@ -53,7 +70,7 @@ import HTTPTypes
         let namespace = "workspace-test." + UUID().uuidString
         let key = "browser.recent-web." + namespace
         defer { UserDefaults.standard.removeObject(forKey: key) }
-        let page = RecentWebpage(url: try #require(URL(string: "https://reading.test/article")), bookmarkID: "saved-article")
+        let page = RecentWebpage(url: try #require(URL(string: "https://reading.test/article")), title: "A quiet forest", bookmarkID: "saved-article")
         UserDefaults.standard.set(try JSONSerialization.data(withJSONObject: ["url": page.url.absoluteString, "title": "A quiet forest", "bookmarkID": "saved-article"]), forKey: key)
         let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
         #expect(workspace.recentWebpages == [page])

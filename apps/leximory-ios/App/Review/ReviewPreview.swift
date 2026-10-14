@@ -43,9 +43,7 @@ actor ReviewFixtureTransport: ClientTransport {
                     pendingConversation = false
                 }
             }
-            let url = Bundle.main.url(forResource: "reader", withExtension: "json")!
-            let document = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
-            payload = ["exists": true, "inProgress": false, "stage": "complete", "story": "A quiet story", "storyDocument": document, "translations": translations, "conversation": conversation]
+            payload = ["exists": true, "inProgress": false, "stage": "complete", "story": "A quiet story", "translations": translations, "conversation": conversation]
         } else {
             let words = translations.enumerated().map { index, item in ["id": "review-\(index)", "word": item["keyword"]!, "lang": "en", "lib": "fixture", "fields": ["original": item["keyword"]!, "lemma": item["keyword"]!, "definition": "A word remembered from your reading."]] }
             let completed = translations.filter { $0["status"] as? String == "complete" }.count

@@ -10,14 +10,14 @@ struct ReviewTests {
         let items = (0..<5).map { index in
             ReviewTranslation(prompt: "Translate", answer: "Answer", keyword: "word", submission: nil, status: index < completed ? .complete : .idle, feedback: nil)
         }
-        let review = ReviewSnapshot(exists: true, inProgress: false, story: "Story", storyDocument: nil, translations: items, conversation: nil)
+        let review = ReviewSnapshot(exists: true, inProgress: false, story: "Story", translations: items, conversation: nil)
         #expect(review.conversationUnlocked == unlocked)
         #expect(review.percentage == percentage)
         #expect(review.requiredTranslations == 3)
     }
     @Test func writingCompletesTheReviewAndEmptyTranslationsStayLocked() {
         let writing = ReviewConversation(prompt: "Write", keywords: [], submission: "Hello", status: .complete, feedback: nil, reply: "Hello")
-        let review = ReviewSnapshot(exists: true, inProgress: false, story: "Story", storyDocument: nil, translations: [], conversation: writing)
+        let review = ReviewSnapshot(exists: true, inProgress: false, story: "Story", translations: [], conversation: writing)
         #expect(review.percentage == 100)
         #expect(!review.conversationUnlocked)
         #expect(!review.needsRefresh)

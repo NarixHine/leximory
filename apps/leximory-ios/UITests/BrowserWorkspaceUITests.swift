@@ -105,13 +105,14 @@ final class BrowserWorkspaceUITests: XCTestCase {
             XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
             app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
             let stored = app.buttons["browser-recent-webpage-" + page.url + "?visit=\(visit)"]
-            expectation(for: NSPredicate(format: "label == %@", URL(string: page.url)!.host! + "，网页"), evaluatedWith: stored)
+            expectation(for: NSPredicate(format: "label == %@", "A quiet forest，网页"), evaluatedWith: stored)
             waitForExpectations(timeout: 5)
         }
         let browsed = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-recent-webpage-"))
         XCTAssertEqual(browsed.count, 1)
+        XCTAssertLessThan(browsed.firstMatch.frame.minY, reading.firstMatch.frame.minY)
         XCTAssertFalse(app.buttons["browser-recent-webpage-" + page.url + "?visit=1"].exists)
-        for link in browsed.allElementsBoundByIndex { XCTAssertEqual(link.label, URL(string: page.url)!.host! + "，网页") }
+        for link in browsed.allElementsBoundByIndex { XCTAssertEqual(link.label, "A quiet forest，网页") }
         app.buttons["browser-recent-webpage-" + page.url + "?visit=4"].tap()
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
         app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()

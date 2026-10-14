@@ -75,6 +75,40 @@ enum LeximoryPalette {
 }
 
 enum LeximoryTypography {
+    static let addressSize: CGFloat = 18
+    static let chineseGlyphScale: CGFloat = 0.85
+    static var addressUI: UIFont {
+        UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: editorialUI(addressSize))
+    }
+
+    static func scaledChineseText(_ string: String, size: CGFloat) -> AttributedString {
+        var text = AttributedString(string)
+        text.font = Font(editorialUI(size))
+        let chinese = Font(editorialUI(size * chineseGlyphScale, language: "Chinese"))
+        for index in text.characters.indices where isChinese(text.characters[index]) {
+            text[index..<text.characters.index(after: index)].font = chinese
+        }
+        return text
+    }
+
+    static func addressAttributedUI(_ string: String) -> NSAttributedString {
+        let latin = addressUI
+        let text = NSMutableAttributedString(string: string, attributes: [.font: latin])
+        let chinese = editorialUI(latin.pointSize * chineseGlyphScale, language: "Chinese")
+        for index in string.indices where isChinese(string[index]) {
+            text.addAttribute(.font, value: chinese, range: NSRange(index..<string.index(after: index), in: string))
+        }
+        return text
+    }
+
+    private static func isChinese(_ character: Character) -> Bool {
+        character.unicodeScalars.contains {
+            (0x3400...0x9FFF).contains($0.value) || (0xF900...0xFAFF).contains($0.value)
+                || (0x20000...0x323AF).contains($0.value) || (0x3000...0x303F).contains($0.value)
+                || (0xFF01...0xFF60).contains($0.value)
+        }
+    }
+
     static func face(_ name: String, size: CGFloat) -> UIFont {
         // Bundled faces are verified by the native test target.
         UIFont(name: name, size: size)!
@@ -125,6 +159,10 @@ private struct EditorialTypography: ViewModifier {
 }
 
 extension View {
+    func addressFont() -> some View {
+        editorialFont(LeximoryTypography.addressSize, relativeTo: .subheadline, language: nil)
+    }
+
     func editorialFont(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, language: String? = "Chinese", leading: Font.Leading = .standard) -> some View {
         modifier(EditorialTypography(size: size, style: style, language: language, leading: leading))
     }

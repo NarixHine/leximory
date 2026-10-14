@@ -222,9 +222,7 @@ public struct MobileClient: Sendable {
     public func reviewSnapshot(_ selection: ReviewSelection) async throws -> ReviewSnapshot {
         var query = URLComponents()
         query.queryItems = [.init(name: "date", value: selection.date), .init(name: "lang", value: selection.language)]
-        let snapshot: ReviewSnapshot = try await reviewRequest("/check?" + (query.percentEncodedQuery ?? ""))
-        try snapshot.storyDocument?.validate()
-        return snapshot
+        return try await reviewRequest("/check?" + (query.percentEncodedQuery ?? ""))
     }
     public func startReview(_ selection: ReviewSelection) async throws {
         struct Result: Decodable, Sendable { let success: Bool }

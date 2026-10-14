@@ -1,7 +1,7 @@
 import XCTest
 
 final class ReviewUITests: XCTestCase {
-    @MainActor func testHomeTimelineStoryTranslationAndWriting() {
+    @MainActor func testHomeTimelineTranslationAndWriting() {
         let app = XCUIApplication()
         app.launchArguments = ["--browser-workspace-fixtures"]
         app.launch()
@@ -17,26 +17,14 @@ final class ReviewUITests: XCTestCase {
         let scene = app.otherElements["review-lawn"]
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
         let sceneFrame = scene.frame
-        let story = app.buttons["review-task-连词成文"]
-        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["review-task-连词成文"].exists)
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
         XCTAssertFalse(app.buttons["返回"].exists)
         XCTAssertFalse(app.buttons["取消"].exists)
         XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
         let wordFrame = app.buttons["review-task-discover"].frame
-        XCTAssertEqual(story.frame.height, wordFrame.height, accuracy: 1)
         let lawn = XCTAttachment(screenshot: app.screenshot()); lawn.name = "Review lawn"; lawn.lifetime = .keepAlways; add(lawn)
-        story.tap()
-        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["browser-address"].isHittable)
-        XCTAssertTrue(app.otherElements["review-story-tray"].exists)
-        XCTAssertTrue(scene.exists, "The story opens over the same lawn")
-        XCTAssertTrue(app.buttons["review-task-discover"].exists)
-        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
-        XCTAssertEqual(scene.frame.width, sceneFrame.width, accuracy: 1)
-        let storyTray = XCTAttachment(screenshot: app.screenshot()); storyTray.name = "Story tray over the review lawn"; storyTray.lifetime = .keepAlways; add(storyTray)
-        app.buttons["后退"].tap()
-        XCTAssertTrue(scene.exists)
         app.buttons["review-task-discover"].tap()
         let editor = app.textViews["你的翻译"]
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
@@ -107,8 +95,8 @@ extension ReviewUITests {
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         if !day.isHittable { app.swipeUp() }
         day.tap()
-        let story = app.buttons["review-task-连词成文"]
-        XCTAssertTrue(story.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["review-lawn"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["review-task-连词成文"].exists)
         let word = app.buttons["review-task-discover"]
         for _ in 0..<4 where !word.isHittable { app.swipeUp() }
         XCTAssertTrue(word.isHittable)
@@ -128,7 +116,7 @@ extension ReviewUITests {
         XCTAssertTrue(card.waitForExistence(timeout: 15)); card.tap()
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
-        XCTAssertTrue(app.buttons["review-task-连词成文"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 10))
         XCUIDevice.shared.orientation = .landscapeLeft
         let word = app.buttons["review-task-connection"]
         let scroll = app.scrollViews["review-session-scroll"]

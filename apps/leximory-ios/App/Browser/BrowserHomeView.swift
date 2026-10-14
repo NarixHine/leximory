@@ -17,6 +17,8 @@ struct BrowserHomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.browserChromeHeight) private var chromeHeight
+    @ScaledMetric(relativeTo: .headline) private var recentTitleSize: CGFloat = 20
     @Namespace private var cardNamespace
     var body: some View {
         Group {
@@ -49,22 +51,23 @@ struct BrowserHomeView: View {
                     }.padding(.bottom, 18)
                     homeCards(squares: squares, folded: false)
                     if !readingResources.isEmpty || recentWebpage != nil {
-                        VStack(spacing: 3) {
-                            Text("继续浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary)
+                        VStack(spacing: 0) {
+                            Text("继续浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary).padding(.bottom, 3)
+                            if let page = recentWebpage {
+                                recentLink(page.displayTitle, symbol: "globe", type: "网页") { openWebpage(page) }
+                                    .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
+                            }
                             ForEach(readingResources) { text in
                                 let ebook = text.format == "ebook"
                                 recentLink(text.title, symbol: ebook ? "book.closed" : "doc.text", type: ebook ? "电子书" : "文章") { resume(text) }
                                     .accessibilityIdentifier("browser-resume-" + text.id)
                             }
-                            if let page = recentWebpage {
-                                recentLink(page.domain, symbol: "globe", type: "网页") { openWebpage(page) }
-                                    .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
-                            }
                         }.frame(maxWidth: 360).frame(maxWidth: .infinity).padding(.top, 8)
                     }
 
-                }.padding(.horizontal, 28).padding(.top, 32)
-                    .padding(.bottom, 110).frame(maxWidth: squares ? 740 : 360).frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80), alignment: .center)
+                }.padding(.horizontal, 28).padding(.vertical, 24)
+                    .frame(maxWidth: squares ? 740 : 360, minHeight: max(0, geometry.size.height - chromeHeight), alignment: .center)
+                    .frame(maxWidth: .infinity).padding(.bottom, chromeHeight)
             }.scrollBounceBehavior(.basedOnSize)
         }
             }
@@ -78,19 +81,24 @@ struct BrowserHomeView: View {
         return Array(recent.filter { $0.format != "bookmark" && seen.insert($0.id).inserted }.prefix(3))
     }
     private var recentWebpage: RecentWebpage? {
-        if let page = recentWebpages.first { return page }
+        if var page = recentWebpages.first {
+            if RecentWebpage.normalizedTitle(page.title) == nil {
+                page.title = recent.first { $0.id == page.bookmarkID || $0.bookmarkURL == page.url.absoluteString }?.title
+            }
+            return page
+        }
         guard let text = recent.first(where: { $0.format == "bookmark" }),
               let url = text.bookmarkURL.flatMap(TextBrowserModel.address) else { return nil }
-        return RecentWebpage(url: url, bookmarkID: text.id)
+        return RecentWebpage(url: url, title: text.title, bookmarkID: text.id)
     }
     private func recentLink(_ title: String, symbol: String, type: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: symbol).symbolVariant(.none).font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.secondary).accessibilityHidden(true)
-                Text(title).editorialFont(20, relativeTo: .headline, language: nil).foregroundStyle(.primary)
+                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize)).foregroundStyle(.primary)
                     .multilineTextAlignment(.center).lineLimit(2)
-            }.frame(maxWidth: .infinity, minHeight: 44).contentShape(.rect)
+            }.frame(maxWidth: .infinity, minHeight: 32).contentShape(.rect)
         }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }
     private func homeCards(squares: Bool, folded: Bool) -> some View {

@@ -36,6 +36,7 @@ struct TextBrowserScreen: View {
     @State private var lastSelection: BrowserSelection?
     @State private var confirmingClear = false
     @State private var clearingData = false
+    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
 
     var body: some View {
         Group {
@@ -258,11 +259,11 @@ struct TextBrowserScreen: View {
                     HStack(spacing: 8) {
                         if browser.loading { ProgressView().controlSize(.small) }
                         else { Image(systemName: "globe").foregroundStyle(.secondary) }
-                        Text(browser.url?.host ?? "输入网址或搜索").lineLimit(1)
+                        Text(LeximoryTypography.scaledChineseText(browser.url?.host ?? "输入网址或搜索", size: addressTextSize)).lineLimit(1)
                     }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Capsule())
                 }.buttonStyle(.plain).accessibilityLabel("地址").accessibilityIdentifier("browser-address")
             }
-        }.font(LeximoryTypography.interface(15)).frame(maxWidth: .infinity, minHeight: 48)
+        }.addressFont().frame(maxWidth: .infinity, minHeight: 48)
             .padding(.horizontal, 14)
             .foregroundStyle(.primary)
     }
@@ -313,7 +314,7 @@ struct BrowserAddressField: UIViewRepresentable {
         editor.field = field
         field.delegate = context.coordinator
         field.placeholder = "输入网址或搜索"
-        field.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: LeximoryTypography.interfaceUI(15))
+        field.font = LeximoryTypography.addressUI
         field.adjustsFontForContentSizeCategory = true
         field.keyboardType = .URL
         field.autocapitalizationType = .none
@@ -329,6 +330,7 @@ struct BrowserAddressField: UIViewRepresentable {
     func updateUIView(_ field: BrowserURLTextField, context: Context) {
         context.coordinator.parent = self
         if field.markedTextRange == nil && field.text != address { field.text = address }
+        context.coordinator.applyTypography(to: field)
         field.enablesReturnKeyAutomatically = true
         DispatchQueue.main.async {
             guard field.wantsFocus, field.window != nil, !field.isFirstResponder else { return }
@@ -342,7 +344,24 @@ struct BrowserAddressField: UIViewRepresentable {
     final class Coordinator: NSObject, UITextFieldDelegate {
         var parent: BrowserAddressField
         init(_ parent: BrowserAddressField) { self.parent = parent }
-        @objc func changed(_ field: UITextField) { parent.address = field.text ?? "" }
+        @objc func changed(_ field: UITextField) {
+            parent.address = field.text ?? ""
+            applyTypography(to: field)
+        }
+        func applyTypography(to field: UITextField) {
+            guard field.markedTextRange == nil else { return }
+            let styled = LeximoryTypography.addressAttributedUI(field.text ?? "")
+            guard field.attributedText?.isEqual(to: styled) != true else { return }
+            let selection = field.selectedTextRange.map {
+                NSRange(location: field.offset(from: field.beginningOfDocument, to: $0.start), length: field.offset(from: $0.start, to: $0.end))
+            }
+            field.attributedText = styled
+            if let selection,
+               let start = field.position(from: field.beginningOfDocument, offset: selection.location),
+               let end = field.position(from: start, offset: selection.length) {
+                field.selectedTextRange = field.textRange(from: start, to: end)
+            }
+        }
         func textFieldDidBeginEditing(_ field: UITextField) {
             DispatchQueue.main.async { field.selectAll(nil) }
         }
