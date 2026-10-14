@@ -47,6 +47,41 @@ function harness(options: { library?: LibraryRow; rule?: string; receiptOwner?: 
 function request(path: string, body: unknown) {
     return new Request('https://leximory.test/api/mobile/v1/' + path, { method: 'POST', headers: { authorization: 'Bearer verified' }, body: JSON.stringify(body) })
 }
+test('Shortcut words use Jev and save to the detected language shadow library', async () => {
+    for (const language of ['en', 'fr', 'ja'] as const) {
+        const h = harness({ detectedLanguage: language, rule: own.id })
+        const response = await h.handler(request('shortcuts/selection', { word: ' bonjour ' }))
+        assert.equal(response.status, 200)
+        const target = await response.json()
+        assert.equal(target.language, language)
+        assert.equal(target.libraryId, null)
+        assert.equal(target.shadow, true)
+        assert.equal(h.metrics.detections, 1)
+        const frames = (await (await h.handler(request('browser/definitions', { selectionId: target.selectionId }))).text()).trim().split('\n').map(line => JSON.parse(line))
+        assert.equal(frames.at(-1).kind, 'completed')
+        const saved = await h.handler(request('browser/vocabulary', { completionId: frames.at(-1).requestId, requestId: 'shortcut-save' }))
+        assert.equal(saved.status, 200)
+        assert.deepEqual(h.metrics.saves, ['personal-shadow:' + language])
+        assert.equal(h.metrics.charges, 1)
+    }
+})
+test('Shortcut rejects empty, oversized, and destination-forged input before AI', async () => {
+    const h = harness()
+    for (const body of [{ word: '   ' }, { word: 'a'.repeat(1025) }, { word: 'bonjour', libraryId: own.id }]) {
+        assert.equal((await h.handler(request('shortcuts/selection', body))).status, 400)
+    }
+    assert.equal(h.metrics.detections, 0)
+    assert.deepEqual(h.metrics.saves, [])
+})
+test('Shortcut respects quotas and account-scoped receipts', async () => {
+    for (const options of [{ quota: false }, { receiptOwner: 'another-reader' }]) {
+        const h = harness(options)
+        const target = await (await h.handler(request('shortcuts/selection', { word: 'bonjour' }))).json()
+        const response = await h.handler(request('browser/definitions', { selectionId: target.selectionId }))
+        assert.equal(response.status, options.quota === false ? 429 : 400)
+        assert.deepEqual(h.metrics.saves, [])
+    }
+})
 test('iOS selections may omit unset Bookmark and library IDs', async () => {
     const { bookmarkId: _bookmark, libraryId: _library, ...webpage } = selection
     for (const choice of [{}, { bookmarkId: 'bookmark' }, { libraryId: own.id }]) {

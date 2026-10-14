@@ -3,7 +3,7 @@ import Observation
 import Auth
 import LeximoryCore
 
-struct AppConfiguration: Decodable, Sendable {
+struct AppConfiguration: Decodable, Sendable, Equatable {
     let apiURL: URL
     let supabaseURL: URL
     let anonKey: String
@@ -25,6 +25,7 @@ struct AppConfiguration: Decodable, Sendable {
     }
 }
 actor AccountTokens {
+    static let bundled = AppConfiguration.bundled.map { AccountTokens(configuration: $0) }
     private let auth: AuthClient
     private var generation = 0
     private var signingIn: Task<Session, Error>?
@@ -106,7 +107,9 @@ actor AccountTokens {
     }, localStore: store)
     }
     init(configuration: AppConfiguration) {
-        let tokens = AccountTokens(configuration: configuration)
+        let tokens = configuration == AppConfiguration.bundled
+            ? (AccountTokens.bundled ?? AccountTokens(configuration: configuration))
+            : AccountTokens(configuration: configuration)
         self.tokens = tokens
         self.configuration = configuration
     }

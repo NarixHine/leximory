@@ -1,5 +1,11 @@
 # Leximory on Apple platforms
 
+## Save a word with Shortcuts
+
+In Apple's Shortcuts app, open Leximory and choose 保存词汇. Run it to enter a word. Jev identifies its supported language, Leximory generates the definition, and the word is saved to that language's personal vocabulary warehouse. The system shows the destination after saving. You can also add the action to another shortcut and pass text into 词语.
+
+Sign in to Leximory first. The shortcut runs without opening the app and requires an unlocked device and an internet connection. Existing AI quotas apply. Unresolved languages and failed lookups do not save a word. This requires the mobile API containing `/shortcuts/selection` to be deployed alongside the app.
+
 The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation; imported text keeps its original punctuation.
 
 ## Appearance

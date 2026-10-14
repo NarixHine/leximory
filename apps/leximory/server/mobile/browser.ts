@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto'
 import { isIP } from 'node:net'
 import { z } from 'zod'
-import { browserSelectionSchema, browserTargetSchema, bookmarkInputSchema, domainRuleSchema, resourceID, definitionSchema, textSchema } from '@repo/api'
+import { browserSelectionSchema, browserTargetSchema, shortcutSelectionSchema, bookmarkInputSchema, domainRuleSchema, resourceID, definitionSchema, textSchema } from '@repo/api'
 import { LangSchema, type Lang } from '@repo/schema/library'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { createCatalog, type CatalogStore, type LibraryRow } from './catalog'
@@ -97,6 +97,17 @@ export function createBrowserHandler(dependencies: { verify: BearerVerifier; cat
                 return json({ saved: true })
             }
             if (request.method !== 'POST') throw new MobileError('inaccessible')
+            if (path.endsWith('/shortcuts/selection')) {
+                stage = 'shortcut-validation'
+                const { word } = shortcutSelectionSchema.parse(await jsonBody(request, 8192))
+                const context = '[[' + word + ']]'
+                stage = 'shortcut-language'
+                const language = await store.detectLanguage(context, word)
+                const libraryName = getLanguageName(language) + '词汇仓库'
+                const selectionId = randomUUID()
+                await store.putReceipt(selectionId, { subject: subject.userId, language, source: { kind: 'shadow' }, context, libraryName })
+                return json(browserTargetSchema.parse({ selectionId, language, libraryId: null, libraryName, shadow: true }))
+            }
             const bookmark = /\/libraries\/([A-Za-z0-9_-]{1,128})\/bookmarks$/.exec(path)
             if (bookmark?.[1]) {
                 const library = await catalog.authorizedLibrary(subject, bookmark[1], signal)

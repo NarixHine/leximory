@@ -34,7 +34,7 @@ const definitionPOST = createDefinitionHandler({ verify, store: catalogStore, se
 import { createBrowserHandler } from './browser'
 import { browserStore } from './browser-store'
 const browserHandler = createBrowserHandler({ verify, catalog: catalogStore, browser: browserStore, definitions: definitionServices })
-const isBrowserRoute = (request: Request) => /\/(browser\/(selection|definitions|vocabulary|rules)|libraries\/[^/]+\/bookmarks)$/.test(new URL(request.url).pathname)
+const isBrowserRoute = (request: Request) => /\/(shortcuts\/selection|browser\/(selection|definitions|vocabulary|rules)|libraries\/[^/]+\/bookmarks)$/.test(new URL(request.url).pathname)
 import { createEbookHandler } from './ebooks'
 import { ebookStore } from './ebook-store'
 const ebookHandler = createEbookHandler({ verify, catalog: catalogStore, ebooks: ebookStore })

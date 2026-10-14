@@ -332,6 +332,20 @@ public struct MobileClient: Sendable {
             try await client.browserDefinitions(body: .json(.init(selectionId: selectionID))).ok.body.application_x_hyphen_ndjson
         }
     }
+    public func saveShortcutWord(_ word: String) async throws -> BrowserTarget {
+        let target = try mapped(try await client.shortcutSelection(body: .json(.init(word: word))).ok.body.json, to: BrowserTarget.self)
+        for try await event in browserDefinitions(selectionID: target.selectionId) {
+            try Task.checkCancellation()
+            switch event {
+            case .completed(let completionID, _):
+                _ = try await saveBrowserVocabulary(completionID: completionID)
+                return target
+            case .failed(_, let failure): throw MobileFailure(error: failure)
+            case .started, .delta: break
+            }
+        }
+        throw URLError(.cannotParseResponse)
+    }
     public func saveBrowserVocabulary(completionID: String) async throws -> SavedVocabulary {
         let requestID = UUID().uuidString
         return try await MutationRetry.run {

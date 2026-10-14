@@ -59,6 +59,7 @@ export const browserTargetSchema = z.object({
     selectionId: resourceID, language: LangSchema, libraryId: resourceID.nullable(),
     libraryName: z.string(), shadow: z.boolean(),
 }).strict()
+export const shortcutSelectionSchema = z.object({ word: z.string().trim().min(1).max(1024) }).strict()
 export const domainRuleSchema = z.object({ domain: z.string().min(1).max(253), libraryId: resourceID }).strict()
 export const bookmarkInputSchema = z.object({ url: z.url().max(8192), requestId: resourceID, title: z.string().trim().min(1).max(512).optional() }).strict()
 export const folderCreateSchema = z.object({ name: z.string().trim().min(1).max(128), language: LangSchema, requestId: resourceID }).strict()
@@ -87,6 +88,7 @@ export const mobileContract = {
 
     createBookmark: oc.route({ method: 'POST', path: '/libraries/{libraryId}/bookmarks' }).input(bookmarkInputSchema.extend({ libraryId: resourceID })).output(textSchema),
     browserSelection: oc.route({ method: 'POST', path: '/browser/selection' }).input(browserSelectionSchema).output(browserTargetSchema),
+    shortcutSelection: oc.route({ method: 'POST', path: '/shortcuts/selection' }).input(shortcutSelectionSchema).output(browserTargetSchema),
     browserDefinitions: oc.route({ method: 'POST', path: '/browser/definitions', spec: spec => ({
         ...spec, responses: { ...spec.responses, 200: { description: 'Contextual browser definition frames', content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } } } },
     }) }).input(z.object({ selectionId: resourceID })).output(z.string()),
