@@ -2,7 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import { LangSchema } from '@repo/schema/library'
 import { parseCommentParams } from '@/lib/comment'
-import type { getTimelineData, getReviewStreakData } from '@/server/db/review'
+import type { getTimelineData } from '@/server/db/review'
 import { renderDocument } from './render-document'
 import { requireMobileSubject, type BearerVerifier } from './auth'
 import { MobileError, mobileErrorResponse } from './errors'
@@ -13,7 +13,6 @@ type ReviewOperation = (request: Request, userId: string) => Promise<Response>
 type ReviewDependencies = {
     verify: BearerVerifier
     timeline: typeof getTimelineData
-    streak: typeof getReviewStreakData
     check: ReviewOperation
     start: ReviewOperation
     translation: ReviewOperation
@@ -28,7 +27,7 @@ export function createReviewHandler(dependencies: ReviewDependencies) {
             const path = url.pathname.slice('/api/mobile/v1/review'.length)
             if (request.method === 'GET' && path === '') {
                 const cursor = z.string().max(100).optional().parse(url.searchParams.get('cursor') ?? undefined)
-                const [timeline, streak] = await Promise.all([dependencies.timeline(userId, cursor), dependencies.streak(userId)])
+                const timeline = await dependencies.timeline(userId, cursor)
                 const days = timeline.days.map(day => ({ ...day, words: day.words.map(word => {
                     const [original, lemma, definition, etymology, cognates] = parseCommentParams(word.word)
                     return { ...word, word: original ?? lemma ?? '', fields: definition ? {
@@ -36,7 +35,7 @@ export function createReviewHandler(dependencies: ReviewDependencies) {
                         etymology: etymology || null, cognates: cognates || null,
                     } : null }
                 }) }))
-                return Response.json({ ...timeline, days, streak }, { headers: { 'Cache-Control': 'private, no-store' } })
+                return Response.json({ ...timeline, days }, { headers: { 'Cache-Control': 'private, no-store' } })
             }
             if (request.method === 'GET' && path === '/check') {
                 selection.parse(Object.fromEntries(url.searchParams))

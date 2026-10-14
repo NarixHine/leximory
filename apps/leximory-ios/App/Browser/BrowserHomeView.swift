@@ -48,8 +48,6 @@ struct BrowserHomeView: View {
                         }.buttonStyle(.plain).accessibilityLabel("账号")
                     }.padding(.bottom, 18)
                     homeCards(squares: squares, folded: false)
-                    card("每日复习", symbol: "leaf", color: tone(0xE7EEDB, 0x242921), border: tone(0xD9E8BF, 0x535F48), angle: 3, folded: false, square: false, action: review)
-                        .accessibilityIdentifier("browser-review")
                     if let recent, !compact {
                         Button { resume(recent) } label: {
                             VStack(spacing: 6) {
@@ -69,7 +67,7 @@ struct BrowserHomeView: View {
                     }
 
                 }.padding(.horizontal, 28).padding(.top, 32)
-                    .padding(.bottom, 110).frame(maxWidth: squares ? 560 : 360).frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80), alignment: .center)
+                    .padding(.bottom, 110).frame(maxWidth: squares ? 740 : 360).frame(maxWidth: .infinity, minHeight: max(0, geometry.size.height - 80), alignment: .center)
             }.scrollBounceBehavior(.basedOnSize)
         }
             }
@@ -81,9 +79,11 @@ struct BrowserHomeView: View {
     private func homeCards(squares: Bool, folded: Bool) -> some View {
         let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
         return layout {
-            card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), angle: -7, folded: folded, square: squares, action: compact ? paste : browse)
-            card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), angle: 5, folded: folded, square: squares, action: bookmarks)
-            card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x292723), border: tone(0xEAE4E9, 0x615B60), angle: -4, folded: folded, square: squares, action: ebook)
+            card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), angle: -7, folded: folded, square: squares, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
+            card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), angle: 5, folded: folded, square: squares, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
+            card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x292723), border: tone(0xEAE4E9, 0x615B60), angle: -4, folded: folded, square: squares, action: ebook).accessibilityIdentifier("browser-ebook")
+            card("每日复习", symbol: "leaf.fill", color: tone(0xE7EEDB, 0x242921), border: tone(0xD9E8BF, 0x535F48), angle: 3, folded: folded, square: squares, action: review)
+                .accessibilityIdentifier("browser-review")
         }.padding(.horizontal, folded ? 0 : 8)
     }
     private func tone(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -92,7 +92,7 @@ struct BrowserHomeView: View {
     }
     private func card(_ title: String, symbol: String, color: Color, border: Color, angle: Double, folded: Bool, square: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            cardLabel(title, symbol: symbol, folded: folded, square: square)
+            cardLabel(title, symbol: symbol, iconColor: border.mix(with: LeximoryPalette.ink, by: colorScheme == .dark ? 0.35 : 0.2), folded: folded, square: square)
                 .foregroundStyle(LeximoryPalette.ink)
                 .background(color.opacity(colorScheme == .dark ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
                 .background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
@@ -100,23 +100,23 @@ struct BrowserHomeView: View {
                 .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
         }.buttonStyle(BrowserCardButtonStyle()).matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || typeSize.isAccessibilitySize ? 0 : angle))
     }
-    @ViewBuilder private func cardLabel(_ title: String, symbol: String, folded: Bool, square: Bool) -> some View {
+    @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool) -> some View {
         if square {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
-                    Image(systemName: symbol).font(.system(size: 28, weight: .medium))
+                    Image(systemName: symbol).font(.system(size: 28, weight: .medium)).foregroundStyle(iconColor)
                     Spacer(minLength: 0)
-                    Image(systemName: "arrow.up.right").font(.body.weight(.medium))
+                    Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
                 }
                 Spacer(minLength: 16)
                 Text(title).font(LeximoryTypography.interface(24, style: .title2)).fixedSize(horizontal: false, vertical: true)
             }.padding(20).frame(width: 180, height: 180)
         } else {
             HStack(spacing: 20) {
-                Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).frame(width: 44)
+                Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
                 Text(title).font(LeximoryTypography.interface(folded ? 17 : 20, style: folded ? .headline : .title2))
                 Spacer(minLength: 0)
-                Image(systemName: "arrow.up.right").font(.body.weight(.medium))
+                Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
             }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
                 .frame(maxWidth: .infinity, minHeight: 58)
         }

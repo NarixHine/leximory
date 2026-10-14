@@ -20,7 +20,6 @@ struct BrowserWorkspaceView: View {
     @State private var extracting = false
     @State private var clipboardNotice: UUID?
     @State private var activitySheet = false
-    @State private var reviewSheet = false
     @State private var confirmingClear = false
     @State private var chromeHeight: CGFloat = 64
     @State private var completionNotice = false
@@ -54,7 +53,7 @@ struct BrowserWorkspaceView: View {
                     if editingAddress || isHome {
                         BrowserHomeView(compact: editingAddress, recent: workspace.recentText,
                             browse: beginEditing, paste: openClipboard, recentWebpage: workspace.recentWebpage, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); reviewSheet = true }, avatarImage: avatarImage,
+                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                             .padding(.bottom, editingAddress ? chromeHeight : 0)
@@ -103,7 +102,6 @@ struct BrowserWorkspaceView: View {
         }) { request in
             BrowserImportSheet(request: request, workspace: workspace) { text, annotating in importedText = (text, annotating) }
         }
-        .fullScreenCover(isPresented: $reviewSheet) { ReviewTimelineView(client: client) }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
             Task {
@@ -187,6 +185,7 @@ struct BrowserWorkspaceView: View {
             case .bookmarks: return ids.insert("bookmarks").inserted
             case .account: return ids.insert("account").inserted
             case .vocabulary: return ids.insert("vocabulary").inserted
+            case .review: return ids.insert("review").inserted
             case .document(let document): return ids.insert(document.text.id).inserted
             default: return false
             }
@@ -194,7 +193,7 @@ struct BrowserWorkspaceView: View {
     }
     private func active(_ entry: BrowserEntry) -> Bool {
         switch (entry.resource, workspace.current.resource) {
-        case (.bookmarks, .bookmarks), (.account, .account), (.vocabulary, .vocabulary): true
+        case (.bookmarks, .bookmarks), (.account, .account), (.vocabulary, .vocabulary), (.review, .review): true
         case (.document(let a), .document(let b)): a.text.id == b.text.id
         default: false
         }
@@ -212,6 +211,7 @@ struct BrowserWorkspaceView: View {
             if let session { AccountView(session: session, playback: playback).safeAreaPadding(.bottom, chromeHeight) }
             else { LeximoryUnavailableView("账号", systemImage: "person.crop.circle") }
         case .vocabulary: BrowserVocabularyView(workspace: workspace)
+        case .review: ReviewTimelineView(client: client)
         case .document(let document):
             if document.text.format == "ebook" { EbookScreen(article: document.text.preview, client: client, language: document.library.preview.language) }
             else { ReaderScreen(article: document.text.preview, playback: playback, language: document.library.preview.language, client: client) }

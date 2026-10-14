@@ -74,24 +74,11 @@ public struct ReviewDay: Codable, Identifiable, Sendable {
     public let isToday: Bool
     public var id: String { date }
 }
-public struct ReviewStreak: Codable, Sendable {
-    public struct Day: Codable, Identifiable, Sendable {
-        public let date: String
-        public let displayDate: String
-        public let dayOfWeek: String
-        public let completed: Bool
-        public var id: String { date }
-    }
-    public let total: Int
-    public let checkDays: [Day]
-    public let threshold: Int
-}
 public struct ReviewTimeline: Codable, Sendable {
     public let days: [ReviewDay]
     public let nextCursor: String?
-    public let streak: ReviewStreak
-    public init(days: [ReviewDay], nextCursor: String?, streak: ReviewStreak) {
-        self.days = days; self.nextCursor = nextCursor; self.streak = streak
+    public init(days: [ReviewDay], nextCursor: String?) {
+        self.days = days; self.nextCursor = nextCursor
     }
 }
 public struct ReviewSelection: Hashable, Identifiable, Sendable {

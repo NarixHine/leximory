@@ -77,7 +77,16 @@ import LeximoryCore
         }
         var font: UIFont
         if case .header(let level) = kind {
-            let headingSize = size * (level == 1 ? 1.5 : level == 2 ? 1.3 : 1.15)
+            let baseSize: CGFloat
+            switch level {
+            case 1: baseSize = 24
+            case 2: baseSize = 22
+            case 3: baseSize = 20
+            case 4: baseSize = 19
+            case 5: baseSize = 18
+            default: baseSize = 17
+            }
+            let headingSize = baseSize * size / 17
             font = LeximoryTypography.editorialUI(headingSize, language: language)
         } else {
             font = LeximoryTypography.proseUI(size, language: language, bold: inline.contains(.stronglyEmphasized))

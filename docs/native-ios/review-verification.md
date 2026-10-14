@@ -1,8 +1,8 @@
 # Native review
 
-The iOS Home card 每日复习 opens an account-scoped timeline. Each earlier day's language entry opens the lawn, story, translations and daily writing. Today remains a collection day. Returning from a review updates that day's progress without replacing loaded history or its cursor.
+The iOS Home card 每日复习 opens an account-scoped timeline inside the browser workspace. The address bar remains visible through the timeline, lawn, story and exercises. Each earlier day's language entry opens the lawn, story, translations and daily writing. Home uses four matching square cards on wide screens, with filled icons tinted to each border palette. Today remains a collection day. Returning from a review updates that day's progress without replacing loaded history or its cursor.
 
-The native flow retains the web artwork, copy, annotated stories, evaluation feedback and progress rules. At least 60% of translations must be complete to unlock writing. Completing writing sets progress to 100%. Reading, editing, keyboard dismissal and feedback details use native sheets, popovers and controls. Story definitions are read-only; timeline definitions use the existing vocabulary editor.
+The native flow retains the web artwork, copy, annotated stories, evaluation feedback and progress rules. At least 60% of translations must be complete to unlock writing. Completing writing sets progress to 100%. Reading and exercises use native navigation inside the workspace; editing, keyboard dismissal and feedback details use native controls and popovers. Story definitions are read-only; timeline definitions use the existing vocabulary editor.
 
 ## API
 
@@ -10,7 +10,7 @@ All native requests require a verified Supabase bearer token. The mobile adapter
 
 | Endpoint under `/api/mobile/v1/review` | Method | Purpose |
 | --- | --- | --- |
-| `/` | GET | Dated words, per-language progress, pagination and streak |
+| `/` | GET | Dated words, per-language progress, pagination |
 | `/check` | GET | Generation and evaluation state, plus the native annotated story document |
 | `/start` | POST | Existing review generation workflow |
 | `/translation` | POST | Existing translation submission and evaluation |
@@ -22,7 +22,9 @@ The adapter separates vocabulary labels from their serialized annotations. It pr
 
 - `pnpm --dir apps/leximory run check-types`
 - `pnpm --dir apps/leximory run test:mobile`: 114 passing checks, including verified ownership, unauthenticated access, invalid selections, timeline annotation projection and annotated story rendering.
-- `swift test --package-path apps/leximory-ios/Core`: the existing 58 tests passed. The four additional review tests verify progress thresholds, completed writing, bearer refresh, submission identity and mutation failures without replay.
-- `LeximoryUITests/ReviewUITests`: Home entry, story reading, translation submission and feedback, writing unlock and reply, 100% progress on return, dark appearance, accessibility-size text, and landscape control bounds. Tests use isolated iPhone and iPad simulators.
+- `swift test --package-path apps/leximory-ios/Core`: 62 tests passed. Review tests verify progress thresholds, completed writing, bearer refresh, submission identity and mutation failures without replay.
+- `LeximoryUITests/ReviewUITests`: Home entry, story reading, translation submission and feedback, writing unlock and reply, 100% progress on return, dark appearance, accessibility-size text, landscape control bounds, persistent address-bar access in each step, content-sized word wrapping, and four matching square cards on iPad. Tests use isolated iPhone and iPad simulators.
 
-The UI transport is restricted to DEBUG simulator builds and the existing browser workspace fixture mode. Each UI test relaunches without fixture arguments; normal launch removes the workspace fixture cache. No physical device installation or live database/AI mutations were used for verification. Live generation and evaluation remain connected to the existing authenticated server workflow and were not exercised against a real account.
+The UI transport is restricted to DEBUG simulator builds and the existing browser workspace fixture mode. Each UI test relaunches without fixture arguments; normal launch removes the workspace fixture cache. The supplied test account was also used to compare the live web and native timeline, story and translation prompt. Opening the web day prepared its review through the normal product workflow. No live translation or writing answers were submitted, and no physical device was used.
+
+Use a signed Simulator build (`CODE_SIGNING_ALLOWED=YES`, or the default Xcode signing settings) for real-account verification. An unsigned build can authenticate remotely but cannot retain its session in Keychain. Keep passwords out of source files, launch arguments and test fixtures.

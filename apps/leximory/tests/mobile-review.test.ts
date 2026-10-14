@@ -7,7 +7,7 @@ import { mobileSubjectSchema } from '@repo/schema/mobile'
 const subject = mobileSubjectSchema.parse({ userId: '00000000-0000-4000-8000-000000000001' })
 const verify: BearerVerifier = async () => ({ kind: 'authenticated', subject })
 const unused = async () => { throw new Error('Unexpected review operation') }
-const dependencies = { verify, timeline: unused, streak: unused, check: unused, start: unused, translation: unused, conversation: unused }
+const dependencies = { verify, timeline: unused, check: unused, start: unused, translation: unused, conversation: unused }
 const request = (path: string, body?: unknown) => new Request(`https://leximory.test/api/mobile/v1/review${path}`, {
     method: body === undefined ? 'GET' : 'POST', headers: { authorization: 'Bearer valid', 'Content-Type': 'application/json' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -55,7 +55,6 @@ test('native stories preserve embedded vocabulary in the existing reader contrac
 test('native timeline separates display words from definition markup', async () => {
     const handler = createReviewHandler({ ...dependencies,
         timeline: async () => ({ nextCursor: undefined, days: [{ date: '2026-10-12', displayDate: '10月12日', dayOfWeek: '周一', count: 1, isToday: false, progressByLang: {}, words: [{ id: 'word', lib: 'folder', lang: 'en', word: '{{bank||bank||河岸||Old Norse||embankment}}' }] }] }),
-        streak: async () => ({ total: 0, threshold: 60, checkDays: [] }),
     })
     const response = await handler(request(''))
     const data = await response.json()

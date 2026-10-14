@@ -1,7 +1,7 @@
 import SwiftUI
 import LeximoryCore
 
-private enum ReviewPanel: Identifiable {
+private enum ReviewPanel: Identifiable, Hashable {
     case story, translation(Int), conversation
     var id: String {
         switch self { case .story: "story"; case .translation(let index): "translation-\(index)"; case .conversation: "conversation" }
@@ -12,123 +12,124 @@ struct ReviewSessionView: View {
     let onExit: (ReviewSnapshot) -> Void
     @State private var model: ReviewModel
     @State private var panel: ReviewPanel?
-    @State private var catPoint = UnitPoint(x: 0.4, y: 0.78)
+    @State private var catPoint = UnitPoint(x: 0.5, y: 0.5)
     @State private var moving = false
+    @State private var pendingPanel: ReviewPanel?
+    @State private var taskPoints: [String: UnitPoint] = [:]
     @State private var retryID = UUID()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.browserChromeHeight) private var chromeHeight
+    @Environment(\.browserResourceActive) private var resourceActive
 
     init(client: MobileClient, selection: ReviewSelection, onExit: @escaping (ReviewSnapshot) -> Void = { _ in }) {
         self.onExit = onExit
         _model = State(initialValue: ReviewModel(client: client, selection: selection))
     }
     var body: some View {
-        NavigationStack {
+        Group {
             GeometryReader { geometry in
                 ScrollView {
                     VStack(spacing: 20) {
-                        VStack(spacing: 10) {
-                            Text(model.selection.date).font(.system(size: 12, design: .monospaced)).foregroundStyle(.secondary)
-                            Text("回忆旧知，创造新知").editorialFont(26, relativeTo: .title2)
-                            if let snapshot = model.snapshot, snapshot.exists {
-                                ReviewProgressView(value: snapshot.percentage)
-                            }
-                            if model.snapshot?.exists != true && model.error == nil {
-                                HStack(spacing: 10) { ProgressView(); Text("正在准备你的复习").font(LeximoryTypography.interface(14)).foregroundStyle(.secondary) }
-                            }
-                        }.padding(.top, 16)
+                        if model.snapshot?.exists != true && model.error == nil {
+                            HStack(spacing: 10) { ProgressView(); Text("正在准备你的复习").font(LeximoryTypography.interface(14)).foregroundStyle(.secondary) }
+                                .padding(.top, 16)
+                        }
                         if let error = model.error, model.snapshot?.exists != true && model.snapshot?.inProgress != true {
                             LeximoryUnavailableView("复习暂时无法打开", systemImage: "leaf", message: error) {
                                 Button("重试") { retryID = UUID() }
                             }
                         } else {
-                            lawn(width: min(840, max(0, geometry.size.width - 40)), availableHeight: geometry.size.height - 150)
+                            lawn(width: min(896, max(0, geometry.size.width - 24)), availableHeight: geometry.size.height - 72)
                         }
-                    }.padding(.horizontal, 20).frame(maxWidth: 880).frame(maxWidth: .infinity)
+                    }.padding(.horizontal, 12).padding(.top, 40).frame(maxWidth: 920).frame(maxWidth: .infinity)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
             }.background(LeximoryPalette.paper)
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden()
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("返回", systemImage: "xmark") { if let snapshot = model.snapshot { onExit(snapshot) }; dismiss() }.accessibilityIdentifier("review-session-close") }
+                    ToolbarItem(placement: .cancellationAction) { Button("返回", systemImage: "xmark") { dismiss() }.accessibilityIdentifier("review-session-close") }
                     ToolbarItem(placement: .principal) { Text(learningLanguageName(model.selection.language)).font(LeximoryTypography.interface(16)) }
                 }
-                .sheet(item: $panel) { item in
+                .navigationDestination(item: $panel) { item in
                     switch item {
-                    case .story: ReviewStorySheet(document: model.snapshot?.storyDocument, language: learningLanguageName(model.selection.language), identity: model.selection.id)
-                    case .translation(let index): ReviewExerciseSheet(model: model, index: index)
-                    case .conversation: ReviewExerciseSheet(model: model, index: nil)
+                    case .story: ReviewStoryView(document: model.snapshot?.storyDocument, language: learningLanguageName(model.selection.language), identity: model.selection.id)
+                    case .translation(let index): ReviewExerciseView(model: model, index: index)
+                    case .conversation: ReviewExerciseView(model: model, index: nil)
                     }
                 }
-        }.tint(.primary)
-            .task(id: "\(retryID):\(scenePhase == .active)") { if scenePhase == .active { await model.observe() } }
+        }.safeAreaPadding(.bottom, chromeHeight).tint(.primary)
+            .onDisappear { if let snapshot = model.snapshot { onExit(snapshot) } }
+            .task(id: pendingPanel) {
+                guard let item = pendingPanel else { return }
+                do { try await Task.sleep(for: .milliseconds(450)) } catch { return }
+                moving = false; panel = item; pendingPanel = nil
+            }
+            .task(id: "\(retryID):\(scenePhase == .active && resourceActive)") { if scenePhase == .active && resourceActive { await model.observe() } }
     }
 
     private func lawn(width: CGFloat, availableHeight: CGFloat) -> some View {
         let translations = (model.snapshot?.translations ?? []).enumerated().map { ReviewTranslationItem(index: $0.offset, value: $0.element) }
-        let columns = width > 700 && !typeSize.isAccessibilitySize ? 3 : typeSize.isAccessibilitySize ? 1 : 2
-        let rows = Int(ceil(Double(translations.count) / Double(columns)))
-        let baseHeight = width >= 700 ? min(availableHeight, width * 0.65) : availableHeight
-        let height = max(420, baseHeight, CGFloat(rows) * (typeSize.isAccessibilitySize ? 144 : 100) + 320)
+        let vertical = width < 600
+        let accessible = typeSize.isAccessibilitySize || translations.count > (vertical ? 6 : 12)
+        let height = accessible ? max(availableHeight, CGFloat(translations.count + 2) * 100) : width * (vertical ? 1.79 : 0.558)
+        let layout = accessible ? AnyLayout(VStackLayout(spacing: 24)) : AnyLayout(ReviewLawnLayout(seed: "\(model.selection.date)-\(model.selection.language)", portrait: vertical, height: height))
         return ZStack {
-            if let lawn = ReviewArtwork.lawn(dark: colorScheme == .dark, vertical: width < 700) {
-                Image(uiImage: lawn).resizable().scaledToFill().frame(width: width, height: height).clipped().accessibilityHidden(true)
+            if let lawn = ReviewArtwork.lawn(dark: colorScheme == .dark, vertical: vertical) {
+                Image(uiImage: lawn).resizable().scaledToFit().frame(width: width, height: height).accessibilityHidden(true)
             }
-            VStack(spacing: 28) {
+            layout {
                 if model.snapshot?.story != nil {
-                    taskPill("连词成文", symbol: "book", completed: false) { open(.story, at: UnitPoint(x: 0.5, y: 0.18)) }
+                    taskPill("连词成文", symbol: "book", completed: false) { open(.story, target: "story") }
+                        .reviewTaskID("story", onPosition: recordTarget("story", width: width, height: height))
                 }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: columns), spacing: 20) {
-                    ForEach(translations) { task in
-                        let index = task.index
-                        let item = task.value
-                        taskPill(item.keyword, symbol: item.status == .pending ? "hourglass" : nil, completed: item.status == .complete) {
-                            let point = UnitPoint(x: (Double(index % columns) + 0.5) / Double(columns), y: 0.25 + 0.42 * (Double(index / columns) + 0.5) / Double(max(1, rows)))
-                            open(.translation(index), at: point)
-                        }
-                    }
-                }.padding(.horizontal, 12)
-                Spacer(minLength: 60)
+                ForEach(translations) { task in
+                    taskPill(task.value.keyword, symbol: task.value.status == .pending ? "hourglass" : nil, completed: task.value.status == .complete) {
+                        open(.translation(task.index), target: "translation-\(task.index)")
+                    }.reviewTaskID("translation-\(task.index)", onPosition: recordTarget("translation-\(task.index)", width: width, height: height))
+                }
                 if model.snapshot?.conversation != nil {
-                    Button { open(.conversation, at: UnitPoint(x: 0.7, y: 0.82)) } label: {
-                        VStack(spacing: 0) {
-                            ReviewCat(black: true, moving: false).frame(width: 146, height: 80)
-                            Label(model.snapshot?.conversation?.status == .complete ? "每日练笔 · 已完成" : "每日练笔", systemImage: model.snapshot?.conversationUnlocked == true ? "pencil.line" : "lock")
-                                .font(LeximoryTypography.interface(15)).foregroundStyle(.primary)
-                                .padding(.horizontal, 16).padding(.vertical, 10)
-                                .background(LeximoryPalette.paper.opacity(0.92), in: .capsule)
-                        }
-                    }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .trailing)
+                    Button { open(.conversation, target: "conversation") } label: {
+                        ReviewCat(black: true, moving: false).frame(width: 146, height: 80)
+                            .contentShape(.rect)
+                    }.buttonStyle(.plain).reviewTaskID("conversation", onPosition: recordTarget("conversation", width: width, height: height))
                         .accessibilityLabel(model.snapshot?.conversationUnlocked == true ? "每日练笔" : "每日练笔，完成六成翻译后解锁")
+                        .accessibilityIdentifier("review-task-conversation")
                 }
-            }.padding(.horizontal, 16).padding(.top, 55).padding(.bottom, 48)
-            GeometryReader { geometry in
-                ReviewCat(black: false, moving: moving)
-                    .frame(width: 110, height: 60)
-                    .position(x: catPoint.x * geometry.size.width, y: catPoint.y * geometry.size.height)
-                    .allowsHitTesting(false).accessibilityHidden(true)
+            }.frame(width: width, height: height).disabled(moving)
+            ReviewCat(black: false, moving: moving)
+                .frame(width: 110, height: 60)
+                .position(x: catPoint.x * width, y: catPoint.y * height)
+                .allowsHitTesting(false).accessibilityHidden(true)
+        }.frame(width: width, height: height).coordinateSpace(name: "review-lawn")
+            .overlay(alignment: .top) {
+                if let snapshot = model.snapshot, snapshot.exists {
+                    ReviewProgressView(value: snapshot.percentage, conversationCompleted: snapshot.conversation?.status == .complete, showThresholds: true)
+                        .offset(y: -32)
+                }
             }
-        }.frame(width: width, height: height).clipShape(.rect(cornerRadius: 36))
+            .frame(minHeight: max(0, availableHeight), alignment: .center)
     }
     private func taskPill(_ title: String, symbol: String?, completed: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 if let symbol { Image(systemName: symbol) }
                 Text(title).strikethrough(completed).fixedSize(horizontal: false, vertical: true)
-                if completed { Image(systemName: "checkmark").font(.caption) }
-            }.font(LeximoryTypography.interface(16)).foregroundStyle(completed ? .secondary : .primary)
-                .padding(.horizontal, 14).padding(.vertical, 10).frame(minHeight: 44)
+
+            }.font(title == "连词成文" ? ReviewStyle.handwriting(14) : LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.ink)
+                .padding(.horizontal, 12).padding(.vertical, 4).frame(minHeight: 44)
                 .background(LeximoryPalette.shell.opacity(0.96), in: .capsule)
-                .overlay { Capsule().strokeBorder(LeximoryPalette.secondaryBorder, lineWidth: 3) }
-        }.buttonStyle(.plain).accessibilityIdentifier("review-task-" + title).accessibilityLabel("\(title)\(completed ? "，已完成" : "")")
+                .overlay { Capsule().strokeBorder(ReviewStyle.segment, lineWidth: 3) }
+        }.buttonStyle(.plain).opacity(completed ? 0.6 : 1).accessibilityIdentifier("review-task-" + title).accessibilityLabel("\(title)\(completed ? "，已完成" : "")")
     }
-    private func open(_ item: ReviewPanel, at point: UnitPoint) {
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) { catPoint = point }
-        moving = !reduceMotion
-        panel = item
-        Task { try? await Task.sleep(for: .milliseconds(500)); moving = false }
+    private func recordTarget(_ id: String, width: CGFloat, height: CGFloat) -> (CGPoint) -> Void {
+        { point in taskPoints[id] = UnitPoint(x: point.x / max(1, width), y: point.y / max(1, height)) }
+    }
+    private func open(_ item: ReviewPanel, target: String) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) { catPoint = taskPoints[target] ?? .center }
+        if reduceMotion { panel = item } else { moving = true; pendingPanel = item }
     }
 }
 
@@ -136,28 +137,6 @@ private struct ReviewTranslationItem: Identifiable {
     let index: Int
     let value: ReviewTranslation
     var id: Int { index }
-}
-
-private struct ReviewProgressView: View {
-    let value: Int
-    var body: some View {
-        let state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
-        HStack(spacing: 12) {
-            VStack(spacing: 7) {
-                HStack {
-                    ForEach(["0%", "1%", "30%", "60%"], id: \.self) { label in
-                        Text(label).frame(maxWidth: .infinity)
-                    }
-                }.font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
-                HStack(spacing: 3) {
-                    ForEach(1...3, id: \.self) { step in
-                        RoundedRectangle(cornerRadius: 2).fill(state >= step ? LeximoryPalette.muted : LeximoryPalette.secondaryBorder).frame(height: 7)
-                    }
-                }.padding(.horizontal, 16)
-            }
-            Image(systemName: value == 100 ? "star.fill" : "star").foregroundStyle(.secondary)
-        }.frame(maxWidth: 210).accessibilityElement(children: .ignore).accessibilityLabel("复习进度 \(value)%")
-    }
 }
 
 private struct ReviewCat: View {
@@ -174,14 +153,15 @@ private struct ReviewCat: View {
     }
 }
 
-private struct ReviewStorySheet: View {
+private struct ReviewStoryView: View {
     let document: ReadingDocument?
     let language: String
     let identity: String
     @State private var definition: DefinitionPresentation?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.browserChromeHeight) private var chromeHeight
     var body: some View {
-        NavigationStack {
+        Group {
             Group {
                 if let document {
                     ReadingTextView(document: document, language: language, textID: TextID(rawValue: identity), jumpToEnd: false, readOnly: true) { selection, note, _ in
@@ -195,19 +175,26 @@ private struct ReviewStorySheet: View {
                     DefinitionView(item: item, client: nil, language: language, isPopover: false)
                         .presentationDragIndicator(.visible)
                 }
-        }.presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
+        }.safeAreaPadding(.bottom, chromeHeight).tint(.primary)
     }
 }
 
-@MainActor private enum ReviewArtwork {
+@MainActor enum ReviewArtwork {
     static let blackFrames = CatFrames.load("review-black-cat.webp")
     private static let day = UIImage(named: "lawn.png")
     private static let night = UIImage(named: "lawn-night.png")
-    private static let portrait = UIImage(named: "lawn-portrait.png")
+    private static let portrait = rotate(day)
+    private static let portraitNight = rotate(night)
     static func lawn(dark: Bool, vertical: Bool) -> UIImage? {
         if !vertical { return dark ? night : day }
-        if !dark { return portrait }
-        guard let night, let pixels = night.cgImage else { return nil }
-        return UIImage(cgImage: pixels, scale: night.scale, orientation: .right)
+        return dark ? portraitNight : portrait
+    }
+    private static func rotate(_ image: UIImage?) -> UIImage? {
+        guard let image else { return nil }
+        return UIGraphicsImageRenderer(size: CGSize(width: image.size.height, height: image.size.width)).image { context in
+            context.cgContext.translateBy(x: image.size.height, y: 0)
+            context.cgContext.rotate(by: .pi / 2)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
     }
 }

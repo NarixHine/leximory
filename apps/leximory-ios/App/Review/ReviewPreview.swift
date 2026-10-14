@@ -50,9 +50,8 @@ actor ReviewFixtureTransport: ClientTransport {
             let words = translations.enumerated().map { index, item in ["id": "review-\(index)", "word": item["keyword"]!, "lang": "en", "lib": "fixture", "fields": ["original": item["keyword"]!, "lemma": item["keyword"]!, "definition": "A word remembered from your reading."]] }
             let completed = translations.filter { $0["status"] as? String == "complete" }.count
             let percentage = conversation["status"] as? String == "complete" ? 100 : completed * 12
-            payload = ["days": [["date": "2026-10-12", "displayDate": "10月12日", "dayOfWeek": "周一", "words": words, "count": 5,
-                                 "progressByLang": ["en": ["percentage": percentage, "conversationCompleted": percentage == 100]], "isToday": false]],
-                       "streak": ["total": 3, "threshold": 60, "checkDays": (6...12).map { day in ["date": "2026-10-\(day)", "displayDate": "10/\(day)", "dayOfWeek": "", "completed": day > 9] }]]
+            payload = ["days": [["date": "2026-10-12", "displayDate": "10/12", "dayOfWeek": "Mon", "words": words, "count": 5,
+                                 "progressByLang": ["en": ["percentage": percentage, "conversationCompleted": percentage == 100]], "isToday": false]]]
         }
         return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: payload)))
     }

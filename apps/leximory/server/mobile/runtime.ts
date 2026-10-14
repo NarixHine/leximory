@@ -57,11 +57,11 @@ const isFolderRoute = (request: Request) => /^\/api\/mobile\/v1\/libraries(?:\/[
 export const mobilePOST = (request: Request) => isReviewRoute(request) ? reviewHandler(request) : isAccountRoute(request) ? accountHandler(request) : isFolderRoute(request) ? folderPOST(request) : isBrowserRoute(request) ? browserHandler(request) : isAuthoringRoute(request) ? authoringHandler(request) : /\/libraries\/[^/]+\/archive$/.test(new URL(request.url).pathname) ? archivePOST(request) : isEbookRoute(request) ? ebookHandler(request) : definitionPOST(request)
 
 import { createReviewHandler } from './review'
-import { getTimelineData, getReviewStreakData } from '@/server/db/review'
+import { getTimelineData } from '@/server/db/review'
 import { checkReview } from '@/server/review/check'
 import { startReview } from '@/server/review/start'
 import { submitReviewTranslation } from '@/server/review/translation'
 import { submitReviewConversation } from '@/server/review/conversation'
-const reviewHandler = createReviewHandler({ verify, timeline: getTimelineData, streak: getReviewStreakData,
+const reviewHandler = createReviewHandler({ verify, timeline: getTimelineData,
     check: checkReview, start: startReview, translation: submitReviewTranslation, conversation: submitReviewConversation })
 const isReviewRoute = (request: Request) => /^\/api\/mobile\/v1\/review(?:\/[^/]+)?$/.test(new URL(request.url).pathname)

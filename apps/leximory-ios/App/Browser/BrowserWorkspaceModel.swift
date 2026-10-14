@@ -16,7 +16,7 @@ struct RecentWebpage: Codable, Equatable {
 }
 
 enum BrowserResource {
-    case home, bookmarks, account, vocabulary
+    case home, bookmarks, account, vocabulary, review
     case web(WebResource)
     case document(RemoteDocument)
 }
@@ -30,6 +30,7 @@ struct BrowserEntry: Identifiable {
         case .bookmarks: "我的书签"
         case .account: "账号"
         case .vocabulary: "已存词汇"
+        case .review: "每日复习"
         case .web(let page): page.item?.title ?? page.url.host ?? "网页"
         case .document(let document): document.text.title
         }
@@ -40,6 +41,7 @@ struct BrowserEntry: Identifiable {
         case .bookmarks: "bookmark"
         case .account: "person.crop.circle"
         case .vocabulary: "character.book.closed"
+        case .review: "leaf"
         case .web: "globe"
         case .document(let document): document.text.format == "ebook" ? "book.closed" : "doc.text"
         }
