@@ -109,7 +109,14 @@ private struct AccountRoot: View {
         }
         .background(LeximoryPalette.paper)
         .environment(\.nativeSync, session.sync)
-        .task { await session.restore() }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            repeat {
+                await session.restore()
+                guard case .restoring = session.state else { return }
+                do { try await Task.sleep(for: .seconds(15)) } catch { return }
+            } while !Task.isCancelled
+        }
         .task(id: "\(session.state.accountID ?? "")/\(scenePhase == .active)") {
             guard session.state.isSignedIn, scenePhase == .active else { session.sync?.pause(); return }
             await session.sync?.run()
@@ -149,7 +156,7 @@ struct SignInView: View {
                     Task {
                         defer { password = ""; submitting = false }
                         do { try await session.signIn(email: email.trimmingCharacters(in: .whitespacesAndNewlines), password: password) }
-                        catch { if !Task.isCancelled { self.error = "登录未成功，请检查邮箱、密码和网络后重试。" } }
+                        catch { if !Task.isCancelled && !MobileClient.isConnectionFailure(error) { self.error = "登录未成功，请检查邮箱、密码和网络后重试。" } }
                     }
                 } label: {
                     HStack {

@@ -37,9 +37,12 @@ struct EbookChapter: Identifiable {
         pendingBookmarkRemovals[id] = bookmark
         return bookmark
     }
-    func finishBookmarkRemoval(_ id: Int, succeeded: Bool) {
+    func finishBookmarkRemoval(_ id: Int, succeeded: Bool, reportFailure: Bool = true) {
         guard let bookmark = pendingBookmarkRemovals.removeValue(forKey: id) else { return }
-        if !succeeded { bookmarks.append(bookmark); bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID() }
+        if !succeeded {
+            bookmarks.append(bookmark)
+            if reportFailure { bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID() }
+        }
     }
     var pageBounds: CGRect?
     var readOnly = false
@@ -57,10 +60,13 @@ struct EbookChapter: Identifiable {
         self.selection = nil; menuSelection = nil
         return bookmark
     }
-    func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
+    func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?, reportFailure: Bool = true) {
         guard let index = bookmarks.firstIndex(where: { $0.id == pending.id }) else { return }
         if let saved { bookmarks[index] = saved }
-        else { bookmarks.remove(at: index); bookmarkErrorMessage = "标记未能保存，请重试。"; bookmarkNotice = UUID() }
+        else {
+            bookmarks.remove(at: index)
+            if reportFailure { bookmarkErrorMessage = "标记未能保存，请重试。"; bookmarkNotice = UUID() }
+        }
     }
     func gutterSide(at point: CGPoint) -> Bool? {
         guard let pageBounds, point.y >= pageBounds.minY, point.y <= pageBounds.maxY else { return nil }
@@ -185,7 +191,7 @@ struct EbookScreen: View {
                     if let client { try await client.removeEbookBookmark(textID: article.id.rawValue, bookmarkID: bookmark.id) }
                     else if !ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures") { throw URLError(.unsupportedURL) }
                     reader.finishBookmarkRemoval(id, succeeded: true)
-                } catch { reader.finishBookmarkRemoval(id, succeeded: false) }
+                } catch { reader.finishBookmarkRemoval(id, succeeded: false, reportFailure: !MobileClient.isConnectionFailure(error)) }
             }
         }
         .task(id: article.id) { await load() }
@@ -394,8 +400,9 @@ struct EbookScreen: View {
                 #endif
             }
         } catch {
-            if !Task.isCancelled {
-                loading = false; loadError = sync?.online == false ? "无法打开电子书，请连接网络后重试。" : "请检查网络后重试。"
+            loading = false
+            if !Task.isCancelled && !MobileClient.isConnectionFailure(error) {
+                loadError = sync?.online == false ? "无法打开电子书，请连接网络后重试。" : "请检查网络后重试。"
             }
         }
     }
@@ -405,7 +412,7 @@ struct EbookScreen: View {
         do {
             let bookmark = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: pending.quote, chapter: pending.chapter, location: pending.location)
             reader.finishBookmark(pending, saved: bookmark)
-        } catch { reader.finishBookmark(pending, saved: nil) }
+        } catch { reader.finishBookmark(pending, saved: nil, reportFailure: !MobileClient.isConnectionFailure(error)) }
     }
 }
 

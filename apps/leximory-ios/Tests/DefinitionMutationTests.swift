@@ -4,6 +4,13 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct DefinitionMutationTests {
+    @Test func networkFailureDoesNotReplaceDefinitionWithAnError() async {
+        let model = DefinitionModel(embedded: nil)
+        await model.generate { throw URLError(.networkConnectionLost) }
+        guard case .generating = model.state else { Issue.record("Network failure must stay silent"); return }
+        #expect(model.saveError == nil)
+    }
+
     private var definition: Definition { Definition(lemma: "bank", definition: "河岸") }
     @Test(.timeLimit(.minutes(1))) func generatedDefinitionIsReadyBeforeTheConnectionCloses() async throws {
         let model = DefinitionModel(embedded: nil)

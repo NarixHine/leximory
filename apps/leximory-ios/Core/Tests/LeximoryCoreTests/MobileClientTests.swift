@@ -5,6 +5,16 @@ import HTTPTypes
 @testable import LeximoryCore
 
 struct MobileClientTests {
+    @Test(arguments: [URLError.Code.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .dnsLookupFailed, .secureConnectionFailed, .serverCertificateUntrusted])
+    func connectionFailuresAreClassifiedForSilentRecovery(_ code: URLError.Code) {
+        #expect(MobileClient.isConnectionFailure(URLError(code)))
+    }
+    @Test func validationAndAuthorizationRemainActionable() {
+        #expect(!MobileClient.isConnectionFailure(URLError(.badURL)))
+        #expect(!MobileClient.isConnectionFailure(URLError(.cannotParseResponse)))
+        #expect(!MobileClient.isConnectionFailure(MobileFailure(error: .init(code: "unauthenticated", message: "登录已过期", retryable: false))))
+    }
+
     @Test func expiredReadsRefreshOnceThenReportTheRejectedToken() async throws {
         let transport = RejectedTransport()
         let rejected = RejectedTokens()

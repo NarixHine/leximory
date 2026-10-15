@@ -211,6 +211,7 @@ final class BrowserWebView: WKWebView {
         guard (error as NSError).code != NSURLErrorCancelled else { return }
         let failure = error as NSError
         Logger(subsystem: "com.leximory.reader", category: "browser").error("Navigation failed: host=\(self.web.url?.host ?? "unknown", privacy: .private) domain=\(failure.domain, privacy: .public) code=\(failure.code)")
+        guard !MobileClient.isConnectionFailure(error) else { update(); return }
         self.error = "网页未能打开，请重试或在 Safari 中打开。"; update()
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }

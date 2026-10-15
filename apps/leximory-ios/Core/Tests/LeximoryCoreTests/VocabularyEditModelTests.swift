@@ -51,7 +51,7 @@ import Testing
         await task.value
         #expect(model.word?.fields == word.fields)
         #expect(model.draft.definition == "河堤")
-        #expect(model.error != nil)
+        #expect(model.error == nil)
         #expect(!model.saving)
         #expect(updates == ["河堤", "河岸"])
         let retryPending = model.submit(persist: { self.word.replacingFields($0) }, reload: { self.word }, changed: { _ in })
@@ -94,7 +94,7 @@ import Testing
         #expect(model.word?.id == word.id)
         #expect(model.fields == word.fields)
         #expect(model.draft.definition == "河堤")
-        #expect(model.error != nil)
+        #expect(model.error == nil)
     }
     @Test func lateCreationResponseCannotReplaceConfirmedEdit() async {
         let model = VocabularyEditModel(fields: word.fields)

@@ -221,7 +221,7 @@ struct FolderEditorSheet: View {
             if let library { result = try await client.renameFolder(libraryID: library.id, name: name) }
             else { result = try await client.createFolder(name: name, language: language, requestID: requestID) }
             saved(result); dismiss()
-        } catch { self.error = "文件夹未能保存，请重试。" }
+        } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "文件夹未能保存，请重试。" }
     }
 }
 

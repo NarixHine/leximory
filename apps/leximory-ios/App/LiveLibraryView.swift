@@ -41,7 +41,7 @@ struct LiveLibraryView: View {
                 openDocument = document
                 pendingText = nil
             } catch {
-                guard !Task.isCancelled, session.generation == generation else { return }
+                guard !Task.isCancelled, session.generation == generation, !MobileClient.isConnectionFailure(error) else { return }
                 linkError = "暂时无法打开文章，请检查访问权限和网络后重试。"
                 pendingText = nil
             }
@@ -78,7 +78,7 @@ struct LiveLibraryView: View {
             guard generation == session.generation, !Task.isCancelled else { return }
             libraries = all
         } catch {
-            if generation == session.generation, !Task.isCancelled, libraries.isEmpty {
+            if generation == session.generation, !Task.isCancelled, !MobileClient.isConnectionFailure(error), libraries.isEmpty {
                 self.error = "请联网后同步文库，再离线阅读。"
             }
         }
@@ -180,7 +180,6 @@ struct RemoteTextGallery: View {
         guard !Task.isCancelled, requestID == request else { return }
         guard sync?.online != false else {
             loading = false
-            if texts.isEmpty { error = "暂时无法打开文章，请联网后重试。" }
             return
         }
         loading = texts.isEmpty; error = nil
@@ -191,6 +190,7 @@ struct RemoteTextGallery: View {
             texts = result
         } catch {
             guard !Task.isCancelled, requestID == request else { return }
+            if MobileClient.isConnectionFailure(error) { return }
             if MobileClient.isAccessFailure(error) { texts = []; self.error = "暂时无法访问这个文库。" }
             else if texts.isEmpty { self.error = "暂时无法打开文章，请联网后重试。" }
         }

@@ -159,7 +159,7 @@ struct BrowserWorkspaceView: View {
                 guard !Task.isCancelled else { return }
                 pendingText = nil
                 await workspace.open(document.text)
-            } catch { workspace.error = "暂时无法打开文章，请稍后重试。"; pendingText = nil }
+            } catch { guard !MobileClient.isConnectionFailure(error) else { return }; workspace.error = "暂时无法打开文章，请稍后重试。"; pendingText = nil }
         }
         .task(id: workspace.completionID) {
             guard workspace.completionID != nil else { return }
@@ -359,7 +359,7 @@ struct BrowserWorkspaceView: View {
             if let id = webBookmarkID { draft.sourceFolderID = workspace.documents[id]?.library.id }
             importRequest = BrowserImportRequest(source: .article(draft))
         }
-        catch { if (error as? URLError)?.code != .cancelled { workspace.error = "正文暂时无法提取，请重新加载网页后重试。" } }
+        catch { if (error as? URLError)?.code != .cancelled && !MobileClient.isConnectionFailure(error) { workspace.error = "正文暂时无法提取，请重新加载网页后重试。" } }
     }
 }
 

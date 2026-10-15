@@ -175,8 +175,6 @@ struct ReaderScreen: View {
             refreshedArticle = cached.text.preview
         }
         if sync?.online == false {
-            if case .loaded = state { return }
-            state = .failed("无法打开文章，请连接网络后重试。")
             return
         }
         do {
@@ -207,7 +205,7 @@ struct ReaderScreen: View {
             }
         }
         catch {
-            if !Task.isCancelled {
+            if !Task.isCancelled && !MobileClient.isConnectionFailure(error) {
                 if let failure = MobileClient.cause(of: error) as? MobileFailure,
                    ["inaccessible", "unauthenticated"].contains(failure.error.code) {
                     state = .failed("暂时无法访问这篇文章。")

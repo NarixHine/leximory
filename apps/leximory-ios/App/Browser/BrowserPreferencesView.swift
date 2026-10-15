@@ -72,7 +72,7 @@ struct BrowserPreferencesView: View {
             initialChoice = choice
             initialRemember = remember
             loaded = true
-        } catch { self.error = "设置未能加载，请重新打开。" }
+        } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "设置未能加载，请重新打开。" }
     }
     private func save() async {
         guard choice != initialChoice || remember != initialRemember else { dismiss(); return }
@@ -87,7 +87,7 @@ struct BrowserPreferencesView: View {
                 if choice != initialChoice { selected(choice) }
             }
             dismiss()
-        } catch { self.error = "设置未能保存，请重试。" }
+        } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "设置未能保存，请重试。" }
     }
     private func remove(_ rule: BrowserRule) async {
         busy = true; error = nil
@@ -100,7 +100,7 @@ struct BrowserPreferencesView: View {
                 initialChoice = nil; initialRemember = true
                 selected(nil)
             }
-        } catch { self.error = "设置未能删除，请重试。" }
+        } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "设置未能删除，请重试。" }
     }
 }
 
@@ -125,7 +125,7 @@ struct BrowserBookmarkSheet: View {
                                 do {
                                     _ = try await client.createBookmark(libraryID: library.id, url: url, requestID: requestID)
                                     dismiss()
-                                } catch { self.error = "书签未能保存，请重试。" }
+                                } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "书签未能保存，请重试。" }
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
@@ -144,7 +144,7 @@ struct BrowserBookmarkSheet: View {
                 .task {
                     defer { loading = false }
                     do { libraries = try await client.allLibraries().filter { $0.owned && !$0.shadow } }
-                    catch { self.error = "文库未能加载，请重新打开。" }
+                    catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "文库未能加载，请重新打开。" }
                 }
         }
     }

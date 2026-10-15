@@ -50,7 +50,8 @@ export function testMobileHandler(operations: Record<string, MobileOperation>, v
             if (!id) return new Response(null, { status: 405 })
             const operation = operations[id]
             if (!operation) return new Response(null, { status: 404 })
-            return mobileEndpoint(verify, operation, 60000)(request, { params: Promise.resolve(params) })
+            const context = { params: Object.keys(params).length ? Promise.resolve(params) : undefined }
+            return mobileEndpoint(verify, operation, 60000)(request, context)
         }
         return new Response(null, { status: 404 })
     }

@@ -34,3 +34,13 @@ Earlier decision-log rows record intermediate checkpoints and combine some claim
 - `pnpm format <edited supported paths>` and `pnpm format:check <edited supported paths>`
 
 The Swift app build uses the existing Xcode project and the iOS Simulator destination. Regenerate the project from `project.yml` if no generated project is present.
+
+## Static-route regression correction
+
+After deployment, the user reported that requests and sign-in failed. The shared boundary incorrectly required `context.params` to exist. Installed Next.js passes `params: undefined` on static routes, so authenticated `/me`, `/libraries`, `/account`, and other static operations returned 400. Native sign-in authenticates with Supabase and then loads `/me`, making that failure appear as sign-in failure.
+
+The original test adapter supplied a promise of `{}` for static routes. The real-route smoke check sent no bearer credentials and returned before the broken parameter parsing. Those checks did not verify the authenticated framework boundary.
+
+The boundary now normalizes absent params to `{}` and its type matches that runtime shape. The adapter passes undefined for static routes. A regression test failed with 400 before the fix. All 155 existing server tests pass after it. The real Next.js regression is now part of the default mobile suite, bringing it to 156 tests. `test:mobile-runtime` starts an isolated real Next.js server and verifies authenticated static GET/POST, authenticated dynamic params, and an unauthenticated rejection without any account, database access, or production test route. That integration test passes. Leximory type checking passes.
+
+Evidence: `/tmp/leximory-static-route-regression-before.log`, `/tmp/leximory-static-route-regression-after.log`, `/tmp/leximory-static-route-next-runtime.log`, and `/tmp/leximory-static-route-types.log`. This correction is server-side and needs server deployment. It does not require a native client rebuild.

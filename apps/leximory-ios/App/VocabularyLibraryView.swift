@@ -81,6 +81,7 @@ struct VocabularyLibraryView: View {
         defer { loading = false }
         do { words = try await client.allVocabulary(libraryID: library.id.rawValue); cursor = nil }
         catch {
+            if MobileClient.isConnectionFailure(error) { return }
             if MobileClient.isAccessFailure(error) { words = []; self.error = "暂时无法访问这个语料本。" }
             else if !Task.isCancelled, words.isEmpty { self.error = "请联网后同步语料本。" }
         }

@@ -56,7 +56,7 @@ enum DefinitionSource {
     init(embedded: Definition?) {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
     }
-    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。") }
+    func offline() { }
     func generate(client: MobileClient, source: DefinitionSource) async {
         await generate { try await source.stream(client: client) }
     }
@@ -85,7 +85,7 @@ enum DefinitionSource {
             try Task.checkCancellation()
             throw URLError(.cannotParseResponse)
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !MobileClient.isConnectionFailure(error) else { return }
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")
         }
     }

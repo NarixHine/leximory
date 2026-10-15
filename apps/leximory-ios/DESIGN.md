@@ -48,7 +48,7 @@ Article covers and wrapping titles scroll with the prose. Phone titles use 28 pt
 
 ## Navigation and account state
 
-Browser navigation uses a Safari-compatible identity and mobile content on iPhone, desktop content on iPad and Mac. Keywords use the selected search engine, defaulting to Bing; URLs open directly. Preserve webpage cookies and verification frames. Load failures use a Liquid Glass surface above the page.
+Browser navigation uses a Safari-compatible identity and mobile content on iPhone, desktop content on iPad and Mac. Keywords use the selected search engine, defaulting to Bing; URLs open directly. Preserve webpage cookies and verification frames. Network failures stay silent and preserve the current page. Actionable non-network load failures use a Liquid Glass surface above the page.
 
 网页选项 offers 清除浏览数据 with destructive confirmation. Clear all browser history, remembered pages, cookies, and website storage, leaving an empty browser. Preserve Leximory account data, bookmarks, vocabulary, and website library choices.
 
@@ -66,7 +66,7 @@ My Bookmarks is capped at the 640 pt article measure. Resource icons use the tex
 
 Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
-Handle downloading, caching, synchronization and recovery automatically. Preserve editing actions and disable them when unavailable. Show an error only when the requested action cannot complete.
+Handle downloading, caching, synchronization and recovery automatically. Preserve editing actions and disable them when unavailable. Network failures and non-crucial failures stay silent, including on initial loads and user-triggered requests. Preserve cached content and drafts and recover automatically. Do not show network error messages, retry prompts, or false empty/success states. Show only actionable non-network errors.
 
 Use the lawn and cat together for spacious loading scenes, at 80% width up to 560 pt and constrained by height. Compact loading states use standard spinners. Respect Reduce Motion and inactive scenes.
 

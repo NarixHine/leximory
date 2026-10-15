@@ -76,6 +76,7 @@ import Observation
                 }
             }
             var failed = false
+            var connectionFailed = false
             for attempt in 0..<MutationRetry.maxAttempts {
                 do {
                     let word = try await persist(submitted)
@@ -83,6 +84,7 @@ import Observation
                     failed = false
                     break
                 } catch {
+                    connectionFailed = MobileClient.isConnectionFailure(error) || (error as? URLError)?.code == .cancelled || error is CancellationError
                     // A read-back confirms lost responses before an idempotent edit is retried.
                     if let word = try? await reload() {
                         confirmed = .saved(word)
@@ -107,9 +109,9 @@ import Observation
                 return
             }
             record = confirmed
-            if failed {
+            if failed && !connectionFailed {
                 error = "修改未能确认，请重新编辑后重试。草稿已保留。"
-            } else if draft == submitted {
+            } else if !failed && draft == submitted {
                 draft = confirmed.fields
             }
             changed(fields)

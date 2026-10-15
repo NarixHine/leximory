@@ -8,12 +8,13 @@
         "start": "next start",
         "lint": "next lint",
         "check-types": "tsc --noEmit",
-        "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts tests/mobile-authoring.test.ts tests/mobile-vocabulary-save.test.ts tests/mobile-browser.test.ts tests/mobile-folders.test.ts tests/mobile-review.test.ts tests/mobile-http.test.ts tests/mobile-shortcuts.test.ts tests/mobile-account.test.ts",
+        "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts tests/mobile-authoring.test.ts tests/mobile-vocabulary-save.test.ts tests/mobile-browser.test.ts tests/mobile-folders.test.ts tests/mobile-review.test.ts tests/mobile-http.test.ts tests/mobile-shortcuts.test.ts tests/mobile-account.test.ts tests/mobile-next-runtime.test.ts",
         "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts",
         "generate:mobile-routes": "node --import tsx scripts/mobile-routes.ts --write",
         "check:mobile-routes": "pnpm --dir ../../packages/api run check && node --import tsx scripts/mobile-routes.ts",
         "format": "prettier --write",
-        "smoke:mobile-routes": "node --import tsx scripts/smoke-mobile-routes.ts"
+        "smoke:mobile-routes": "node --import tsx scripts/smoke-mobile-routes.ts",
+        "test:mobile-runtime": "node --conditions=react-server --import tsx --test tests/mobile-next-runtime.test.ts"
     },
     "dependencies": {
         "@ai-sdk-tools/devtools": "^1.2.0",

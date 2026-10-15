@@ -10,7 +10,9 @@ struct ReviewTimelineView: View {
     @State private var cursor: String?
     @State private var loading = true
     @State private var paginationVisible = false
-    @State private var error: String?
+    @State private var loadFailed = false
+    @State private var hasLoaded = false
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedWord: ReviewDay.Word?
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.browserChromeHeight) private var chromeHeight
@@ -37,17 +39,14 @@ struct ReviewTimelineView: View {
                             .accessibilityLabel("每日已存词汇数量")
                     }
                     if loading && days.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(60) }
-                    if let error {
-                        Text(error).foregroundStyle(.secondary)
-                        Button("重试") { Task { await load(reset: days.isEmpty) } }
-                    } else if !loading && days.isEmpty {
+                    if hasLoaded && !loading && days.isEmpty {
                         LeximoryUnavailableView("还没有可复习的词汇", systemImage: "leaf", message: "阅读时保存词汇，明天在这里回忆旧知。")
                     }
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(days) { day in
                             dayRow(day)
                         }
-                        if cursor != nil {
+                        if cursor != nil && !loadFailed {
                             ProgressView().frame(maxWidth: .infinity)
                                 .onAppear { paginationVisible = true; if !loading { Task { await load(reset: false) } } }
                                 .onDisappear { paginationVisible = false }
@@ -58,11 +57,14 @@ struct ReviewTimelineView: View {
                 .refreshable { await load(reset: true) }
                 .onChange(of: progressOverrides) { Task { await cache() } }
                 .onChange(of: loading) { _, value in
-                    if !value && paginationVisible && cursor != nil && error == nil { Task { await load(reset: false) } }
+                    if !value && paginationVisible && cursor != nil && !loadFailed { Task { await load(reset: false) } }
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active && !loading { Task { await load(reset: true) } }
                 }
                 .task {
                     if let cached = await client.localStore?.value(ReviewTimeline.self, for: "review-timeline") {
-                        days = cached.days; cursor = cached.nextCursor
+                        days = cached.days; cursor = cached.nextCursor; hasLoaded = true
                     }
                     await load(reset: true)
                 }
@@ -150,6 +152,7 @@ struct ReviewTimelineView: View {
     @MainActor private func load(reset: Bool) async {
         if !reset && loading { return }
         loading = true
+        loadFailed = false
         defer { loading = false }
         do {
             let result = try await client.reviewTimeline(cursor: reset ? nil : cursor)
@@ -163,8 +166,8 @@ struct ReviewTimelineView: View {
                     } else { days.append(day) }
                 }
             }
-            cursor = result.nextCursor; error = nil
+            cursor = result.nextCursor; hasLoaded = true
             await cache()
-        } catch { if !Task.isCancelled { self.error = "复习记录暂时无法打开。" } }
+        } catch { loadFailed = true }
     }
 }

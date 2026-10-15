@@ -15,15 +15,12 @@ export interface MobileContext {
 export type MobileOperation = (context: MobileContext) => Promise<unknown>
 
 export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperation, timeout = 20000) {
-    return async (
-        request: Request,
-        context: { params: Promise<Record<string, string>> } = { params: Promise.resolve({}) },
-    ): Promise<Response> => {
+    return async (request: Request, context: { params?: Promise<Record<string, string>> } = {}): Promise<Response> => {
         const supplied = request.headers.get('X-Leximory-Request-ID')
         const traceId = supplied && /^[a-zA-Z0-9-]{1,64}$/.test(supplied) ? supplied : randomUUID()
         try {
             const subject = await requireMobileSubject(request, verify)
-            const params = z.record(z.string(), resourceID).parse(await context.params)
+            const params = z.record(z.string(), resourceID).parse((await context.params) ?? {})
             const signal = AbortSignal.any([request.signal, AbortSignal.timeout(timeout)])
             signal.throwIfAborted()
             const result = await operation({ request, subject, signal, params, traceId })

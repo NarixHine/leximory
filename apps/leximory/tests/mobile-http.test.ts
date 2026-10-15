@@ -6,6 +6,15 @@ import { mobileEndpoint, jsonBody, query, checkedResponse } from '../server/mobi
 
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const verify = async () => ({ kind: 'authenticated' as const, subject })
+test('authenticated static routes accept Next.js context without dynamic params', async () => {
+    const endpoint = mobileEndpoint(verify, async ({ params, subject }) => ({ params, userId: subject.userId }))
+    const response = await endpoint(
+        new Request('https://leximory.test/api/mobile/v1/me', { headers: { authorization: 'Bearer verified' } }),
+        { params: undefined },
+    )
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), { params: {}, userId: 'reader' })
+})
 function request(body: string, headers: Record<string, string> = {}) {
     return new Request('https://leximory.test/api/mobile/v1/example', {
         method: 'POST',

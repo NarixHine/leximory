@@ -450,7 +450,13 @@ public struct MobileClient: Sendable {
     }
     public static func isConnectionFailure(_ error: any Error) -> Bool {
         guard let error = cause(of: error) as? URLError else { return false }
-        return [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed].contains(error.code)
+        return [
+            .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost,
+            .cannotFindHost, .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed,
+            .cannotLoadFromNetwork, .resourceUnavailable, .secureConnectionFailed,
+            .serverCertificateHasBadDate, .serverCertificateUntrusted, .serverCertificateHasUnknownRoot,
+            .serverCertificateNotYetValid, .clientCertificateRejected, .clientCertificateRequired,
+        ].contains(error.code)
     }
     public func cachedDocument(textID: String) async -> RemoteDocument? {
         guard let details = await localStore?.value(RemoteDocument.self, for: "document/\(textID)"),
