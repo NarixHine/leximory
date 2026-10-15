@@ -1,8 +1,33 @@
 import Foundation
 import Testing
+import SwiftUI
+import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ArticleMarkdownPreviewTests {
+    @Test func snippetUsesSystemFontsForBothChineseAndEnglish() throws {
+        let document = ArticleMarkdownDocument(content: "**测试 test** 与 *example* 和 `code`。", size: 17, language: "English", typography: .system)
+        let text = try #require(document.blocks.first).text
+        #expect(String(text.characters) == "测试 test 与 example 和 code。")
+        for run in text.runs {
+            let intent = run.inlinePresentationIntent ?? []
+            let expected: Font = intent.contains(.code) ? .system(size: 15.3, design: .monospaced) : .system(size: 17)
+            #expect(run.font == (intent.contains(.stronglyEmphasized) ? expected.bold() : intent.contains(.emphasized) ? expected.italic() : expected))
+        }
+    }
+
+    @Test(arguments: [ColorScheme.light, .dark])
+    func shortcutResultRendersWithSystemAppearance(scheme: ColorScheme) throws {
+        let result = try JSONDecoder().decode(ShortcutWordResult.self, from: Data(#"{"language":"en","annotation":{"lemma":"test","definition":"**v. 测试，检验（某事物的性能、可靠性等）** `test` examine or try something to see how well it works: *Engineers will test the new battery under extreme temperatures.*","etymology":"语源\"陶罐（检验金属的容器）\"：*test*（earthen pot, as in testum）→ 引申为\"检验\"","cognates":"*test*（检验）→ **testify**（作证）；*test*（检验）→ **testament**（证言、遗嘱）"}}"#.utf8))
+        let renderer = ImageRenderer(content: ShortcutAnnotationView(result: result)
+            .frame(width: 390)
+            .background(scheme == .dark ? Color.black : Color.white)
+            .environment(\.colorScheme, scheme))
+        renderer.scale = 2
+        let data = try #require(renderer.uiImage?.pngData())
+        Attachment.record(data, named: "shortcut-\(scheme == .dark ? "dark" : "light").png")
+    }
+
     @Test func webLinkRegexKeepsVisibleTextAndImages() {
         #expect(ArticleMarkdownDocument.strippingLinks("Read [**this**](https://example.com) and ![cover](https://example.com/cover.png).") == "Read **this** and ![cover](https://example.com/cover.png).")
     }

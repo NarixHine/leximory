@@ -67,34 +67,65 @@ struct ShortcutAnnotationView: View {
     let result: ShortcutWordResult
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(result.annotation.lemma)
-                    .font(LeximoryTypography.prose(24, language: learningLanguageName(result.language), bold: true))
-                    .accessibilityAddTraits(.isHeader)
-                ArticleMarkdownPreview(content: result.annotation.definition, language: learningLanguageName(result.language), blockLimit: nil)
-                if let etymology = result.annotation.etymology, !etymology.isEmpty {
-                    section("语源", content: etymology)
-                }
-                if let cognates = result.annotation.cognates, !cognates.isEmpty {
-                    section("同源词", content: cognates)
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            Text(result.annotation.lemma)
+                .font(.title2.weight(.semibold))
+                .accessibilityAddTraits(.isHeader)
+            ShortcutMarkdownText(content: result.annotation.definition)
+            if let etymology = result.annotation.etymology, !etymology.isEmpty {
+                section("语源", content: etymology)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
+            if let cognates = result.annotation.cognates, !cognates.isEmpty {
+                section("同源词", content: cognates)
+            }
         }
-        .frame(maxHeight: 360)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
         .foregroundStyle(.primary)
-        .background(LeximoryPalette.paper)
         .accessibilityIdentifier("shortcut-annotation")
     }
 
     private func section(_ title: String, content: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
                 .accessibilityAddTraits(.isHeader)
-            ArticleMarkdownPreview(content: content, language: learningLanguageName(result.language), blockLimit: nil)
+            ShortcutMarkdownText(content: content)
         }
+    }
+}
+
+private struct ShortcutMarkdownText: View {
+    let content: String
+    @ScaledMetric(relativeTo: .body) private var size: CGFloat = 17
+
+    var body: some View {
+        let document = ArticleMarkdownDocument(content: content, size: size, language: "", typography: .system)
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(document.blocks) { block in
+                HStack(alignment: .top, spacing: 8) {
+                    if let marker = block.marker { Text(marker).foregroundStyle(.secondary) }
+                    if case .table = block.kind {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(block.cells.keys.sorted(), id: \.self) { row in
+                                HStack(alignment: .top, spacing: 12) {
+                                    ForEach(Array(block.columns.indices), id: \.self) { column in
+                                        Text(block.cells[row]?[column] ?? AttributedString())
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                            }
+                        }
+                    } else if case .thematicBreak = block.kind {
+                        Divider()
+                    } else {
+                        Text(block.text).lineSpacing(3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.leading, CGFloat(block.indentation) * 12 + (block.quoted ? 12 : 0))
+            }
+        }
+        .font(.body)
     }
 }
 

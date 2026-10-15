@@ -2,6 +2,7 @@ import SwiftUI
 import LeximoryCore
 
 @MainActor struct ArticleMarkdownDocument {
+    enum Typography { case editorial, system }
     struct Block: Identifiable {
         let id: Int
         let kind: PresentationIntent.Kind
@@ -20,7 +21,7 @@ import LeximoryCore
         content.replacingOccurrences(of: #"(?<!!)\[([^\[]+)\]\(([^)]+)\)"#, with: "$1", options: .regularExpression)
     }
 
-    init(content: String, size: CGFloat, language: String) {
+    init(content: String, size: CGFloat, language: String, typography: Typography = .editorial) {
         let source = Self.strippingLinks(content)
         let parsed = (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .full))) ?? AttributedString(source)
         var output: [Block] = []
@@ -50,7 +51,12 @@ import LeximoryCore
             if intents.contains(where: { $0.kind == .tableHeaderRow }) { inline.insert(.stronglyEmphasized) }
             let text = String(parsed[run.range].characters)
             var rendered = AttributedString(text)
-            rendered.font = Font(Self.font(kind: kind, inline: inline, size: size, language: language))
+            switch typography {
+            case .editorial:
+                rendered.font = Font(Self.font(kind: kind, inline: inline, size: size, language: language))
+            case .system:
+                rendered.font = Self.systemFont(kind: kind, inline: inline, size: size)
+            }
             rendered.inlinePresentationIntent = inline
             // Build new runs without link or image URL attributes. Nothing in this view navigates or fetches remote content.
             if table != nil {
@@ -67,6 +73,19 @@ import LeximoryCore
             }
         }
         blocks = output
+    }
+
+    private static func systemFont(kind: PresentationIntent.Kind, inline: InlinePresentationIntent, size: CGFloat) -> Font {
+        var font = Font.system(size: size)
+        switch kind {
+        case .header(let level): font = .system(size: size * (level == 1 ? 1.4 : 1.2), weight: .semibold)
+        case .codeBlock: font = .system(size: size * 0.9, design: .monospaced)
+        default: break
+        }
+        if inline.contains(.code) { font = .system(size: size * 0.9, design: .monospaced) }
+        if inline.contains(.stronglyEmphasized) { font = font.bold() }
+        if inline.contains(.emphasized) { font = font.italic() }
+        return font
     }
 
     private static func font(kind: PresentationIntent.Kind, inline: InlinePresentationIntent, size: CGFloat, language: String) -> UIFont {
