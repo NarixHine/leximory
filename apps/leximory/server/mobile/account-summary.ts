@@ -5,6 +5,7 @@ import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { checkedResponse } from './http'
+import { readAccountAllowance } from './account-allowance'
 
 export async function accountSummary(subject: MobileSubject, signal: AbortSignal) {
     const { data } = await supabase
@@ -15,12 +16,16 @@ export async function accountSummary(subject: MobileSubject, signal: AbortSignal
         .maybeSingle()
         .throwOnError()
     const plan = checkedResponse(z.enum(PLANS), data?.plan ?? 'beginner')
-    const key = `user:${subject.userId}:commentary_quota`
-    const [used, resetsIn] = await Promise.all([redis.get<number>(key), redis.ttl(key)])
+    const definitions = await readAccountAllowance({
+        store: redis,
+        userId: subject.userId,
+        type: 'commentary',
+        limit: PLAN_COMMENTARY_QUOTA[plan],
+    })
     signal.throwIfAborted()
     return {
         userId: subject.userId,
         plan,
-        definitions: { used: used ?? 0, limit: PLAN_COMMENTARY_QUOTA[plan], resetsIn },
+        definitions,
     }
 }

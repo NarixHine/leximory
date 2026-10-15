@@ -1,3 +1,5 @@
+import { Redis } from '@upstash/redis'
+import { readAccountAllowance } from '../server/mobile/account-allowance'
 import { testMobileHandler } from './helpers/mobile'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -224,3 +226,60 @@ test('store identity mismatches fail closed before following library membership'
     const wrongText = createCatalog(store({ text: async () => ({ ...article, id: 'other' }) }))
     await assert.rejects(wrongText.document(subject, 'text', signal), { code: 'service_unavailable' })
 })
+
+for (const [raw, expected] of [
+    [null, 0],
+    ['0', 0],
+    ['0.25', 0.25],
+    ['0.29999999999999999', 0.3],
+    ['1.05000000000000000004', 1.05],
+    ['100.00000000000000001', 100],
+] as const) {
+    test(`sign-in account endpoint accepts Redis usage ${raw}`, async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => Response.json({ result: raw }))
+        const redis = new Redis({ url: 'https://quota.fixture.invalid', token: 'fixture', enableAutoPipelining: false })
+        const quotaStore = { get: (key: string) => redis.get(key), ttl: async () => (raw === null ? -2 : 300) }
+        const handler = testMobileHandler(
+            createCatalogOperations({
+                store: store(),
+                account: async ({ userId }) => ({
+                    userId,
+                    plan: 'beginner',
+                    definitions: await readAccountAllowance({
+                        store: quotaStore,
+                        userId,
+                        type: 'commentary',
+                        limit: 20,
+                    }),
+                }),
+            }),
+            async () => ({ kind: 'authenticated', subject }),
+        )
+        const response = await handler(
+            new Request('https://example.com/api/mobile/v1/me', {
+                headers: { authorization: 'Bearer verified' },
+            }),
+        )
+        assert.equal(response.status, 200)
+        assert.equal(response.headers.get('cache-control'), 'private, no-store')
+        assert.deepEqual(await response.json(), {
+            userId: 'reader',
+            plan: 'beginner',
+            definitions: { used: expected, limit: 20, resetsIn: raw === null ? -2 : 300 },
+        })
+    })
+}
+
+for (const used of ['', ' ', 'not-a-number', 'Infinity', '1e999', '-1', -1, true, {}, undefined]) {
+    test(`invalid stored usage still fails as a service error: ${JSON.stringify(used)}`, async () => {
+        await assert.rejects(
+            readAccountAllowance({
+                store: { get: async () => used, ttl: async () => 300 },
+                userId: 'reader',
+                type: 'audio',
+                limit: 3,
+            }),
+            { code: 'service_unavailable' },
+        )
+    })
+}

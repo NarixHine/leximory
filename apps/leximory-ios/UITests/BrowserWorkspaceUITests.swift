@@ -123,7 +123,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let app = launch(); defer { restore(app) }
         app.buttons["browser-more"].tap()
         XCTAssertFalse(app.buttons["已存词汇"].exists)
-        app.buttons["文章预注释"].tap()
+        app.buttons["文章注释队列"].tap()
         XCTAssertTrue(app.staticTexts["暂无预注释文章"].waitForExistence(timeout: 5))
         app.buttons["完成"].tap()
         XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
@@ -146,7 +146,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let more = app.buttons["browser-more"]
         expectation(for: NSPredicate(format: "value == %@", "1 篇预注释已完成"), evaluatedWith: more)
         waitForExpectations(timeout: 15)
-        more.tap(); app.buttons["文章预注释"].tap()
+        more.tap(); app.buttons["文章注释队列"].tap()
         app.buttons["browser-resource-workspace-import"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         XCTAssertEqual(more.value as? String, "")

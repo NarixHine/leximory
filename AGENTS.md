@@ -6,7 +6,7 @@
 - Before changing **any Next.js code**, find and read the relevant installed documentation in `node_modules/next/dist/docs/`. The installed Next.js 16 docs are authoritative.
 - Use `pnpm`, never npm. Verify Leximory changes with `pnpm --dir apps/leximory run check-types`; for the full repository use `turbo check-types`. Do not invoke `tsc` directly.
 - Leximory development runs on port **3001** and also starts local Inngest and QStash: `pnpm --dir apps/leximory dev`.
-- Failures should use contextual, proportionate feedback that fits the surrounding design. Background refresh failures stay unobtrusive and preserve existing content. A failed user action must keep its inputs and offer recovery beside that action; do not hide it behind a blank screen, endless spinner, or false success. Reserve modal alerts for decisions that require an interruption. Treat first-load, cached, pagination, and mutation failures as distinct UI states.
+- Failures with automatic recovery must not notify the user. Keep cached content and drafts while retrying in the background. Notify only when the user must act or their requested action remains unresolved after recovery is exhausted. Feedback must belong to the affected control or a deliberately designed page state, never unexplained error labels inserted into normal content. Reserve modal alerts for decisions that require an interruption. Treat first-load, cached, pagination, and mutation failures separately.
 - NEVER directly modify db schema. NEVER run any operation on Supabase with side effects without explicit authorization.
 
 ## Repository map

@@ -6,6 +6,22 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func automaticallyReconciledReviewFailureDoesNotNotifyOrLoseTheDraft() async throws {
+        let client = MobileClient(baseURL: try #require(URL(string: "https://workspace.test")), transport: OfflineTransport(), token: { _ in "verified" })
+        let model = ReviewModel(client: client, selection: ReviewSelection(date: "2026-10-13", language: "en"))
+        model.drafts["translation-0"] = "My answer"
+        await model.submit(index: 0, text: "My answer")
+        #expect(model.error == nil)
+        #expect(model.drafts["translation-0"] == "My answer")
+        #expect(model.awaitingConfirmation)
+        #expect(!model.submitting)
+    }
+    private struct OfflineTransport: ClientTransport {
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            throw URLError(.networkConnectionLost)
+        }
+    }
+
     @Test func recentReadingRestoresTitlesBeforeAnyFolderRefresh() async throws {
         let namespace = "workspace-test." + UUID().uuidString
         defer {

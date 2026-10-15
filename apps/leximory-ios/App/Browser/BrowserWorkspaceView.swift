@@ -287,7 +287,7 @@ struct BrowserWorkspaceView: View {
                 ForEach(BrowserSearchEngine.allCases) { engine in Text(engine.name).tag(engine) }
             }.pickerStyle(.menu)
             Section {
-                Button("文章预注释", systemImage: "sparkles") { activitySheet = true }
+                Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
             }
             if workspace.current.isWeb, let url = workspace.browser.url {
                 Section {
@@ -380,7 +380,7 @@ private struct BrowserAnnotationSheet: View {
                     }
                 }
             }.overlay { if workspace.activities.isEmpty { LeximoryUnavailableView("暂无预注释文章", systemImage: "sparkles") } }
-                .navigationTitle("文章预注释").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("文章注释队列").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
         }.presentationDetents([.medium, .large]).tint(.primary)
     }

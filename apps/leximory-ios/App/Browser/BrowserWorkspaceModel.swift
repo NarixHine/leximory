@@ -317,7 +317,7 @@ struct AnnotationActivity: Identifiable, Codable {
                 recentReading.texts.removeAll { !accessible.contains($0.libraryId) }
                 persistRecentReading()
             }
-            catch { if !Task.isCancelled, libraries.isEmpty { self.error = "暂时无法打开文件夹，请稍后重试。" } }
+            catch { }
         }
     }
     func loadFolder(_ library: CatalogLibrary, online: Bool) async {
@@ -368,6 +368,7 @@ struct AnnotationActivity: Identifiable, Codable {
                 revision += 1
             } catch {
                 guard !Task.isCancelled else { return }
+                if MutationRetry.isRetryable(error) { continue }
                 if let index = activities.firstIndex(where: { $0.id == activity.id }) { activities[index].state = .failed }
             }
         }

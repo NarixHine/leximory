@@ -220,7 +220,7 @@ struct AccountView: View {
             let result = try await session.client.accountSettings()
             guard !Task.isCancelled, result.userId == session.state.accountID else { return }
             details = result
-        } catch { if details == nil && !Task.isCancelled { failure = "暂时无法打开账号，请稍后重试。" } }
+        } catch { }
     }
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
         #if DEBUG && targetEnvironment(simulator)

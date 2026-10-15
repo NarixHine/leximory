@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Auth
 import LeximoryCore
+import os
 
 struct AppConfiguration: Decodable, Sendable, Equatable {
     let apiURL: URL
@@ -81,6 +82,49 @@ actor AccountTokens {
     }
 }
 
+struct SignInFailure: LocalizedError {
+    enum Stage: String { case authentication, account, storage }
+    let stage: Stage
+    let underlying: any Error
+
+    var errorDescription: String? {
+        let cause = MobileClient.cause(of: underlying)
+        if let auth = cause as? AuthError {
+            switch auth.errorCode {
+            case .invalidCredentials: return "邮箱或密码不正确，请重试或重设密码。"
+            case .emailNotConfirmed: return "请先通过确认邮件验证邮箱，再登录。"
+            case .userBanned: return "此账号暂时无法登录，请联系支持。"
+            case .overRequestRateLimit: return "登录尝试过于频繁，请稍后重试。"
+            default: break
+            }
+        }
+        if MobileClient.isConnectionFailure(underlying) {
+            return "暂时无法连接，请检查网络后重试。"
+        }
+        switch stage {
+        case .authentication: return "暂时无法登录，请稍后重试。"
+        case .account: return "暂时无法登录，请稍后重试。"
+        case .storage: return "暂时无法登录，请稍后重试。"
+        }
+    }
+
+    func log() {
+        let cause = MobileClient.cause(of: underlying)
+        let logger = Logger(subsystem: "com.leximory.reader", category: "sign-in")
+        let code = (cause as? AuthError)?.errorCode.rawValue ?? (cause as? MobileFailure)?.error.code ?? "unclassified"
+        logger.error("Sign-in failed: stage=\(stage.rawValue, privacy: .public) code=\(code, privacy: .public) domain=\((cause as NSError).domain, privacy: .public) number=\((cause as NSError).code)")
+        if let decoding = cause as? DecodingError {
+            let context: DecodingError.Context
+            switch decoding {
+            case .dataCorrupted(let value), .keyNotFound(_, let value), .typeMismatch(_, let value), .valueNotFound(_, let value): context = value
+            @unknown default: return
+            }
+            let path = context.codingPath.map(\.stringValue).joined(separator: ".")
+            logger.error("Sign-in decoding failed: stage=\(stage.rawValue, privacy: .public) path=\(path, privacy: .public)")
+        }
+    }
+}
+
 @MainActor @Observable final class AccountSession {
     enum State {
         case restoring, signedOut, expired, signedIn(Account), unavailable(String)
@@ -131,17 +175,27 @@ actor AccountTokens {
             let cause = MobileClient.cause(of: error)
             if Self.requiresSignIn(cause) || (cause as? MobileFailure)?.error.code == "unauthenticated" {
                 await clearStore(); state = .signedOut
-            } else if !state.isSignedIn { state = .unavailable("暂时无法连接文库，请稍后重试。") }
+            } else if !state.isSignedIn && !MobileClient.isConnectionFailure(error) { state = .unavailable("暂时无法连接文库，请稍后重试。") }
         }
     }
     func signIn(email: String, password: String) async throws {
         let current = generation
-        try await tokens.signIn(email: email, password: password)
-        let account = try await onlineClient.account()
-        guard generation == current, !Task.isCancelled else { throw CancellationError() }
-        try await openStore(accountID: account.userId)
-        await client.localStore?.save(account, for: "account")
-        state = .signedIn(account)
+        var stage = SignInFailure.Stage.authentication
+        do {
+            try await tokens.signIn(email: email, password: password)
+            stage = .account
+            let account = try await onlineClient.account()
+            guard generation == current, !Task.isCancelled else { throw CancellationError() }
+            stage = .storage
+            try await openStore(accountID: account.userId)
+            await client.localStore?.save(account, for: "account")
+            state = .signedIn(account)
+        } catch {
+            guard generation == current, !Task.isCancelled, !(error is CancellationError) else { throw CancellationError() }
+            let failure = SignInFailure(stage: stage, underlying: error)
+            failure.log()
+            throw failure
+        }
     }
     func refreshAccount() async {
         let current = generation

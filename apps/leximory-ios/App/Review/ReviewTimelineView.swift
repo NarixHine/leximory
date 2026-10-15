@@ -8,10 +8,12 @@ struct ReviewTimelineView: View {
     let open: (ReviewSelection) -> Void
     @State private var days: [ReviewDay] = []
     @State private var cursor: String?
-    @State private var loading = true
+    @State private var loading = false
     @State private var paginationVisible = false
     @State private var loadFailed = false
     @State private var hasLoaded = false
+    @State private var retryReset = true
+    @Environment(\.browserResourceActive) private var resourceActive
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedWord: ReviewDay.Word?
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -38,21 +40,13 @@ struct ReviewTimelineView: View {
                             .frame(height: 112).padding(.vertical, 8)
                             .accessibilityLabel("每日已存词汇数量")
                     }
-                    if loading && days.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(60) }
-                    if loadFailed && !hasLoaded && !loading {
-                        reloadHistory
-                            .padding(.leading, dateWidth + 24)
-                    }
+                    if !hasLoaded { ProgressView().frame(maxWidth: .infinity).padding(60) }
                     if hasLoaded && !loading && days.isEmpty {
                         LeximoryUnavailableView("还没有可复习的词汇", systemImage: "leaf", message: "阅读时保存词汇，明天在这里回忆旧知。")
                     }
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(days) { day in
                             dayRow(day)
-                        }
-                        if cursor != nil && loadFailed && !loading {
-                            reloadHistory
-                                .frame(maxWidth: .infinity)
                         }
                         if cursor != nil && !loadFailed {
                             ProgressView().frame(maxWidth: .infinity)
@@ -67,31 +61,25 @@ struct ReviewTimelineView: View {
                 .onChange(of: loading) { _, value in
                     if !value && paginationVisible && cursor != nil && !loadFailed { Task { await load(reset: false) } }
                 }
-                .onChange(of: scenePhase) { _, phase in
-                    if phase == .active && !loading { Task { await load(reset: true) } }
-                }
-                .task {
-                    if let cached = await client.localStore?.value(ReviewTimeline.self, for: "review-timeline") {
+                .task(id: scenePhase == .active && resourceActive) {
+                    guard scenePhase == .active && resourceActive else { return }
+                    if !hasLoaded, let cached = await client.localStore?.value(ReviewTimeline.self, for: "review-timeline") {
                         days = cached.days; cursor = cached.nextCursor; hasLoaded = true
                     }
                     await load(reset: true)
                 }
+                .task(id: loadFailed && scenePhase == .active && resourceActive) {
+                    guard loadFailed && scenePhase == .active && resourceActive else { return }
+                    var delay = 5
+                    while !Task.isCancelled && loadFailed {
+                        do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                        guard !Task.isCancelled else { return }
+                        if !loading { await load(reset: retryReset) }
+                        delay = min(delay * 2, 30)
+                    }
+                }
 
         }.tint(.primary)
-    }
-
-    private var reloadHistory: some View {
-        Button {
-            Task { await load(reset: !hasLoaded) }
-        } label: {
-            Label("重新载入", systemImage: "arrow.clockwise")
-                .font(LeximoryTypography.interface(14))
-                .foregroundStyle(ReviewStyle.meta)
-                .frame(minHeight: 44)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("重新载入复习记录")
     }
 
     private var dateWidth: CGFloat { sizeClass == .regular ? 64 : 40 }
@@ -172,9 +160,9 @@ struct ReviewTimelineView: View {
         await client.localStore?.save(ReviewTimeline(days: updated, nextCursor: cursor), for: "review-timeline")
     }
     @MainActor private func load(reset: Bool) async {
-        if !reset && loading { return }
+        guard !loading else { return }
         loading = true
-        loadFailed = false
+        retryReset = reset
         defer { loading = false }
         do {
             let result = try await client.reviewTimeline(cursor: reset ? nil : cursor)
@@ -188,8 +176,8 @@ struct ReviewTimelineView: View {
                     } else { days.append(day) }
                 }
             }
-            cursor = result.nextCursor; hasLoaded = true
+            cursor = result.nextCursor; hasLoaded = true; loadFailed = false
             await cache()
-        } catch { loadFailed = true }
+        } catch { if !Task.isCancelled { loadFailed = true } }
     }
 }

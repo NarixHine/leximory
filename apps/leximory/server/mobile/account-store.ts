@@ -21,6 +21,7 @@ import { createRequest } from '@/server/db/creem'
 import { creem } from '@/server/client/creem'
 import { MobileError } from './errors'
 import { checkedResponse } from './http'
+import { readAccountAllowance } from './account-allowance'
 import type { AccountScope, AccountStore } from './account'
 
 const profileMetadata = z.object({ username: z.string().nullish(), avatar_url: z.string().nullish() })
@@ -39,20 +40,14 @@ async function loadAccount({ subject, signal }: AccountScope) {
     return { user, plan, today, hasClaimed }
 }
 
-async function allowance(userId: string, type: 'commentary' | 'audio', limit: number) {
-    const key = `user:${userId}:${type}_quota`
-    const [used, resetsIn] = await Promise.all([redis.get<number>(key), redis.ttl(key)])
-    return { used: used ?? 0, limit, resetsIn }
-}
-
 export const accountStore: AccountStore = {
     async settings(context) {
         const { user, plan, today, hasClaimed } = await loadAccount(context)
         const { userId } = context.subject
         const [profile, definitions, audio, libs] = await Promise.all([
             supabase.auth.admin.getUserById(userId),
-            allowance(userId, 'commentary', PLAN_COMMENTARY_QUOTA[plan]),
-            allowance(userId, 'audio', PLAN_AUDIO_QUOTA[plan]),
+            readAccountAllowance({ store: redis, userId, type: 'commentary', limit: PLAN_COMMENTARY_QUOTA[plan] }),
+            readAccountAllowance({ store: redis, userId, type: 'audio', limit: PLAN_AUDIO_QUOTA[plan] }),
             listLibs({ owner: userId }),
         ])
         if (profile.error || !profile.data.user) throw new MobileError('service_unavailable')
