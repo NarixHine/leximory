@@ -316,11 +316,11 @@ struct BrowserAddressField: UIViewRepresentable {
         field.placeholder = "输入网址或搜索"
         field.font = LeximoryTypography.addressUI
         field.adjustsFontForContentSizeCategory = true
-        field.keyboardType = .URL
+        field.keyboardType = .default
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.spellCheckingType = .no
-        field.returnKeyType = .go
+        field.returnKeyType = .search
         field.clearButtonMode = .whileEditing
         field.accessibilityIdentifier = "browser-address-input"
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
