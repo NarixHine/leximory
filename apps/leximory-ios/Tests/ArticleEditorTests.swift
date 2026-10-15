@@ -121,7 +121,7 @@ import HTTPTypes
     private struct EditorSheetTransport: ClientTransport {
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             #expect(operationID == "editableText")
-            let source = #"{"text":{"id":"article","libraryId":"folder","title":"Along the river: notes on a quieter morning","topics":["自然","阅读"],"emoji":"🌿","createdAt":null,"format":"article"},"content":"A river runs through the garden.","revision":"initial","contentEditable":true}"#
+            let source = #"{"text":{"id":"article","libraryId":"folder","title":"Along the river: notes on a quieter morning","topics":["自然，阅读","Reading and reflections on quiet mornings beside the river"],"emoji":"🌿","createdAt":null,"format":"article"},"content":"A river runs through the garden.","revision":"initial","contentEditable":true}"#
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(source))
         }
     }

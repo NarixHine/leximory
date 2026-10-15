@@ -4571,6 +4571,7 @@
                     }
                   },
                   "emoji": {
+                    "default": null,
                     "type": [
                       "string",
                       "null"
@@ -4589,7 +4590,6 @@
                 "required": [
                   "title",
                   "topics",
-                  "emoji",
                   "content",
                   "revision"
                 ],

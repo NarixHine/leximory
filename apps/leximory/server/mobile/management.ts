@@ -100,6 +100,7 @@ export function createManagementOperations(dependencies: {
     }
     const replaceEbook: MobileOperation = async (context) => {
         const { text } = await writableText(context)
+        if (!text.has_ebook) throw new MobileError('unsupported_format')
         const filename = z
             .string()
             .min(1)

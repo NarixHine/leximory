@@ -206,7 +206,7 @@ test('ebook and pending-annotation source is retained while metadata remains edi
     }
 })
 test('replacement accepts bounded EPUB/PDF bytes and rejects disguised or empty files before writing', async () => {
-    const { handler, writes } = harness()
+    const { handler, writes } = harness({ text: { ...article, has_ebook: true } })
     const upload = (filename: string, bytes: Uint8Array<ArrayBuffer> | string) =>
         handler(
             new Request('https://leximory.test/api/mobile/v1/texts/article/ebook-replace?filename=' + filename, {
@@ -294,4 +294,94 @@ test('generated bodyless file-removal requests work and reject misleading length
         ).status,
         400,
     )
+})
+
+test('production edit query uses PostgreSQL array literals through the real Supabase client', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const { editTextRecord } = await import('../server/mobile/text-edit-store')
+    for (const [topics, expected] of [
+        [null, 'is.null'],
+        [[], 'eq.{}'],
+        [['Nature'], 'eq.{"Nature"}'],
+        [['Nature', 'Reading'], 'eq.{"Nature","Reading"}'],
+        [
+            ['history, geography', 'quote"', 'back\\slash', 'line\nbreak'],
+            'eq.{"history, geography","quote\\\"","back\\\\slash","line\nbreak"}',
+        ],
+    ] satisfies [string[] | null, string][]) {
+        let requests = 0
+        const database = createClient<import('@repo/supabase/types').Database>('https://database.test', 'test-key', {
+            auth: { persistSession: false, autoRefreshToken: false },
+            global: {
+                fetch: async (input, init) => {
+                    requests++
+                    const url = new URL(String(input))
+                    assert.equal(init?.method, 'PATCH')
+                    assert.equal(url.searchParams.get('topics'), expected)
+                    assert.equal(url.searchParams.get('id'), 'eq.article')
+                    assert.equal(url.searchParams.get('lib'), 'eq.folder')
+                    assert.equal(url.searchParams.get('content'), 'eq.' + article.content)
+                    assert.equal(url.searchParams.get('title'), 'eq.River')
+                    assert.equal(url.searchParams.get('emoji'), 'is.null')
+                    assert.deepEqual(JSON.parse(String(init?.body)), fieldsWithoutRevision)
+                    return Response.json({ ...article, ...fieldsWithoutRevision })
+                },
+            },
+        })
+        const fieldsWithoutRevision = {
+            title: 'Changed title',
+            content: article.content,
+            emoji: null,
+            topics: ['Updated'],
+        }
+        const saved = await editTextRecord({ database, text: { ...article, topics }, fields: fieldsWithoutRevision })
+        assert.equal(saved.title, 'Changed title')
+        assert.deepEqual(saved.topics, ['Updated'])
+        assert.equal(requests, 1)
+    }
+})
+test('production edit query preserves conflict detection when the stored row has changed', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const { editTextRecord } = await import('../server/mobile/text-edit-store')
+    const database = createClient<import('@repo/supabase/types').Database>('https://database.test', 'test-key', {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: {
+            fetch: async () =>
+                Response.json(
+                    {
+                        code: 'PGRST116',
+                        details: 'The result contains 0 rows',
+                        message: 'Cannot coerce the result to a single JSON object',
+                    },
+                    { status: 406 },
+                ),
+        },
+    })
+    await assert.rejects(
+        editTextRecord({
+            database,
+            text: article,
+            fields: { title: 'Stale title', topics: [], emoji: null, content: article.content },
+        }),
+        { code: 'stale_revision' },
+    )
+})
+test('ebook replacement cannot turn an article into an ebook', async () => {
+    const { handler, writes } = harness()
+    const response = await handler(
+        new Request('https://leximory.test/api/mobile/v1/texts/article/ebook-replace?filename=book.pdf', {
+            method: 'POST',
+            headers: { authorization: 'Bearer test' },
+            body: '%PDF-1.7',
+        }),
+    )
+    assert.equal(response.status, 422)
+    assert.deepEqual(writes, [])
+})
+
+test('text edits accept Swift-encoded empty cover emoji and preserve canonical null', async () => {
+    const { handler, writes } = harness()
+    const { emoji: _, ...swiftPayload } = fields
+    assert.equal((await handler(request('texts/article/edit', swiftPayload))).status, 200)
+    assert.deepEqual(writes, [{ title: fields.title, topics: fields.topics, content: fields.content, emoji: null }])
 })

@@ -122,6 +122,9 @@ struct ManagementTests {
                 let json = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
                 #expect(json["content"] as? String == "A {{bank||bank||河岸}}.")
                 #expect(json["revision"] as? String == "revision")
+                // The generated client omits a nil emoji; the API treats it as a cleared cover.
+                #expect(json["emoji"] == nil)
+                #expect(json["topics"] as? [String] == [])
                 response = text
             case "replaceEbook":
                 #expect(try await Data(collecting: #require(body), upTo: 100) == Data("%PDF-1.7".utf8))

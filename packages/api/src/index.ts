@@ -31,7 +31,7 @@ export const textEditSchema = z
     .object({
         title: z.string().trim().min(1).max(512),
         topics: z.array(z.string().trim().min(1).max(128)).max(32),
-        emoji: z.string().max(64).nullable(),
+        emoji: z.string().max(64).nullable().default(null),
         content: z.string().max(180000),
     })
     .strict()

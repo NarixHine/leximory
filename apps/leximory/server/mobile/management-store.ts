@@ -4,8 +4,7 @@ import { redis } from '@repo/kv/redis'
 import { changeEbookFile, type EbookFiles } from './ebook-file-change'
 import { supabase } from '@repo/supabase'
 import { revalidateTag } from 'next/cache'
-import { textRowSchema } from './catalog'
-import { checkedResponse } from './http'
+import { editTextRecord } from './text-edit-store'
 import { MobileError } from './errors'
 import type { ManagementStore } from './management'
 
@@ -58,21 +57,9 @@ async function withTextMutation<T>(id: string, operation: () => Promise<T>): Pro
 }
 const operations: ManagementStore = {
     async edit(text, fields) {
-        let write = supabase
-            .from('texts')
-            .update(fields)
-            .eq('id', text.id)
-            .eq('lib', text.lib!)
-            .is('bookmark_url', null)
-            .eq('content', text.content)
-            .eq('title', text.title)
-            .eq('has_ebook', text.has_ebook)
-        write = text.emoji === null ? write.is('emoji', null) : write.eq('emoji', text.emoji)
-        write = text.topics === null ? write.is('topics', null) : write.eq('topics', text.topics)
-        const { data } = await write.select('*').maybeSingle().throwOnError()
-        if (!data) throw new MobileError('stale_revision')
+        const updated = await editTextRecord({ database: supabase, text, fields })
         expireText(text.lib!)
-        return checkedResponse(textRowSchema, data)
+        return updated
     },
     async remove(text) {
         const removeRecord = async () => {
