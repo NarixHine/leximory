@@ -8,7 +8,13 @@ import { MobileError } from './errors'
 import { checkedResponse } from './http'
 import type { ShortcutStore } from './shortcuts'
 
-const receiptSchema = z.object({ word: z.string(), result: shortcutWordResultSchema.optional() }).strict()
+const storedResultSchema = shortcutWordResultSchema.partial({ annotation: true }).strip()
+const receiptSchema = z.object({ word: z.string(), result: storedResultSchema.optional() }).strict()
+function completedResult(receipt: z.infer<typeof receiptSchema>) {
+    const result = receipt.result
+    // Receipts from older app versions are completed again using the cached definition and the same mutation ID.
+    return result?.annotation ? { ...result, annotation: result.annotation } : null
+}
 const key = (userId: string, requestId: string) => 'mobile:shortcut:' + mobileMutationID(userId, requestId)
 
 export const shortcutStore: ShortcutStore = {
@@ -20,9 +26,10 @@ export const shortcutStore: ShortcutStore = {
             signal.throwIfAborted()
             const receipt = checkedResponse(receiptSchema, await redis.get(id))
             if (receipt.word !== word) throw new MobileError('invalid_input')
-            if (receipt.result) return receipt.result
+            const result = completedResult(receipt)
+            if (result) return result
             const acquired = await redis.set(id + ':lease', lease, { nx: true, ex: 65 })
-            if (acquired) return checkedResponse(receiptSchema, await redis.get(id)).result ?? null
+            if (acquired) return completedResult(checkedResponse(receiptSchema, await redis.get(id)))
             await delay(pause, undefined, { signal })
             pause = Math.min(pause * 2, 1000)
         }

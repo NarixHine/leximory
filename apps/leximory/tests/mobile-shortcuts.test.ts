@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createShortcutOperations, type ShortcutStore, type ShortcutWordResult } from '../server/mobile/shortcuts'
-import type { DefinitionServices } from '../server/mobile/definitions'
+import type { CompletedDefinition, DefinitionServices } from '../server/mobile/definitions'
 import { MobileError } from '../server/mobile/errors'
 import { testMobileHandler } from './helpers/mobile'
 
@@ -16,13 +16,19 @@ function harness(
         loseSave?: boolean
         delayGeneration?: number
         failGenerationOnce?: boolean
+        deferSave?: boolean
+        failSave?: boolean
     } = {},
 ) {
     const metrics = { detections: 0, charges: 0, generations: 0, saves: [] as string[], libraries: 0 }
     const receipts = new Map<string, { word: string; result?: ShortcutWordResult }>()
     const chargedRequests = new Set<string>()
     const leases = new Map<string, string>()
-    const cache = new Map<string, { lemma: string; definition: string; etymology: null; cognates: null }>()
+    const cache = new Map<string, CompletedDefinition>()
+    const pending: (() => Promise<void>)[] = []
+    async function flush() {
+        for (const work of pending.splice(0)) await work()
+    }
     const shortcuts: ShortcutStore = {
         async begin(owner, id, word, lease, signal) {
             const key = owner.userId + id
@@ -50,7 +56,7 @@ function harness(
         preferences: async () => ({ accent: '', limit: 10 }),
         cached: async (key) => cache.get(key) ?? null,
         cache: async (key, value) => {
-            cache.set(key, { ...value, etymology: null, cognates: null })
+            cache.set(key, value)
         },
         charge: async (_subject, _limit, requestId) => {
             assert.ok(requestId)
@@ -64,7 +70,9 @@ function harness(
             metrics.generations++
             if (options.failGenerationOnce && metrics.generations === 1) throw new TypeError('provider disconnected')
             if (options.delayGeneration) await delay(options.delayGeneration)
-            yield options.malformed ? '{{x||x||' + 'a'.repeat(17000) + '}}' : '{{bonjour||bonjour||你好}}'
+            yield options.malformed
+                ? '{{x||x||' + 'a'.repeat(17000) + '}}'
+                : '{{bonjour||bonjour||**你好**\n\n礼貌的问候。||来自 *bon* 与 *jour*。||**jour**：一天。}}'
         },
         complete: async () => {},
         receipt: async () => null,
@@ -74,6 +82,7 @@ function harness(
             assert.equal(language, 'fr')
             assert.equal(definition.lemma, 'bonjour')
             metrics.saves.push(requestId ?? '')
+            if (options.failSave) throw new TypeError('save unavailable')
             if (options.loseSave && metrics.saves.length === 1) throw new TypeError('response lost')
             return { id: 'word', libraryId: library }
         },
@@ -81,6 +90,9 @@ function harness(
     const operations = createShortcutOperations({
         definitions,
         shortcuts,
+        after: (work) => {
+            pending.push(work)
+        },
         detectLanguage: async () => {
             metrics.detections++
             if (options.invalidLanguage) throw new MobileError('language_unresolved')
@@ -91,7 +103,17 @@ function harness(
             return 'french-shadow'
         },
     })
-    return { metrics, handler: testMobileHandler(operations, async () => ({ kind: 'authenticated', subject })) }
+    const endpoint = testMobileHandler(operations, async () => ({ kind: 'authenticated', subject }))
+    return {
+        metrics,
+        flush,
+        leases,
+        handler: async (request: Request) => {
+            const response = await endpoint(request)
+            if (!options.deferSave) await flush()
+            return response
+        },
+    }
 }
 const request = (body: unknown, bearer = true) =>
     new Request('https://leximory.test/api/mobile/v1/shortcuts/words', {
@@ -99,15 +121,18 @@ const request = (body: unknown, bearer = true) =>
         headers: bearer ? { authorization: 'Bearer verified' } : {},
         body: JSON.stringify(body),
     })
-test('Shortcut saves with Jev and returns its shadow destination in one HTTP request', async () => {
+test('Shortcut returns its complete Markdown annotation in one HTTP request', async () => {
     const h = harness()
     const response = await h.handler(request({ word: ' bonjour ', requestId: 'save' }))
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), {
-        id: 'word',
-        libraryId: 'french-shadow',
         language: 'fr',
-        libraryName: '法文词汇仓库',
+        annotation: {
+            lemma: 'bonjour',
+            definition: '**你好**\n\n礼貌的问候。',
+            etymology: '来自 *bon* 与 *jour*。',
+            cognates: '**jour**：一天。',
+        },
     })
     assert.equal(h.metrics.detections, 1)
     assert.equal(h.metrics.charges, 1)
@@ -119,18 +144,51 @@ test('a completed retry returns the original result without AI or saving again',
     const first = await (await h.handler(request(body))).json()
     const retry = await (await h.handler(request(body))).json()
     assert.deepEqual(retry, first)
+    assert.equal(retry.annotation.definition, '**你好**\n\n礼貌的问候。')
+    assert.equal(retry.annotation.etymology, '来自 *bon* 与 *jour*。')
     assert.equal(h.metrics.detections, 1)
     assert.equal(h.metrics.charges, 1)
     assert.deepEqual(h.metrics.saves, ['save'])
     assert.equal((await h.handler(request({ ...body, word: 'different' }))).status, 400)
 })
-test('retry after an uncertain save keeps mutation identity and uses its cached definition', async () => {
+test('an uncertain background save retries with the same mutation identity without delaying the annotation', async () => {
     const h = harness({ loseSave: true })
     const body = { word: 'bonjour', requestId: 'save' }
-    assert.equal((await h.handler(request(body))).status, 503)
-    assert.equal((await h.handler(request(body))).status, 200)
+    const response = await h.handler(request(body))
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).annotation.cognates, '**jour**：一天。')
     assert.equal(h.metrics.charges, 1)
     assert.deepEqual(h.metrics.saves, ['save', 'save'])
+})
+
+test('the annotation returns before any library or save work and saving survives request cancellation', async () => {
+    const h = harness({ deferSave: true })
+    const controller = new AbortController()
+    const response = await h.handler(
+        new Request(request({ word: 'bonjour', requestId: 'save' }), { signal: controller.signal }),
+    )
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).annotation.definition, '**你好**\n\n礼貌的问候。')
+    assert.equal(h.metrics.libraries, 0)
+    assert.deepEqual(h.metrics.saves, [])
+    assert.equal(h.leases.size, 1)
+    controller.abort()
+    await h.flush()
+    assert.deepEqual(h.metrics.saves, ['save'])
+    assert.equal(h.leases.size, 0)
+})
+
+test('an exhausted background save releases its lease and does not record a completed save', async () => {
+    const h = harness({ deferSave: true, failSave: true })
+    const body = { word: 'bonjour', requestId: 'save' }
+    assert.equal((await h.handler(request(body))).status, 200)
+    await assert.rejects(h.flush(), /save unavailable/)
+    assert.equal(h.leases.size, 0)
+    assert.deepEqual(h.metrics.saves, ['save', 'save', 'save'])
+    assert.equal((await h.handler(request(body))).status, 200)
+    await assert.rejects(h.flush(), /save unavailable/)
+    assert.equal(h.metrics.charges, 1)
+    assert.equal(h.metrics.generations, 1)
 })
 test('invalid inputs and cookie-only authentication fail before language detection', async () => {
     const h = harness()

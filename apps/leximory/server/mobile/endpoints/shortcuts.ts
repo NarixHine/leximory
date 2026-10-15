@@ -1,4 +1,5 @@
 import 'server-only'
+import { after } from 'next/server'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createShortcutOperations } from '../shortcuts'
@@ -12,5 +13,6 @@ const operations = createShortcutOperations({
     shadowLibrary,
     definitions: definitionServices,
     shortcuts: shortcutStore,
+    after,
 })
 export const saveShortcutWord = mobileEndpoint(verify, operations.saveShortcutWord, 60000)

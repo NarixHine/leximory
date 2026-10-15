@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
+import { setTimeout as delay } from 'node:timers/promises'
 import { shortcutWordSchema, shortcutWordResultSchema } from '@repo/api'
-import { getLanguageName } from '@repo/languages'
 import type { z } from 'zod'
 import type { MobileSubject } from '@repo/schema/mobile'
 import type { BrowserStore } from './browser'
 import type { DefinitionServices } from './definitions'
 import { prepareDefinition } from './definition-generation'
 import { jsonBody, query, checkedResponse, type MobileOperation } from './http'
+import { MobileError } from './errors'
 
 export type ShortcutWordResult = z.infer<typeof shortcutWordResultSchema>
 export interface ShortcutStore {
@@ -31,12 +32,14 @@ export function createShortcutOperations(dependencies: {
     shadowLibrary: BrowserStore['shadowLibrary']
     definitions: DefinitionServices
     shortcuts: ShortcutStore
+    after: (work: () => Promise<void>) => void
 }) {
     return {
         saveShortcutWord: async ({ request, subject, signal }) => {
             query(request, [])
             const { word, requestId } = shortcutWordSchema.parse(await jsonBody(request, 16384, signal))
             const lease = randomUUID()
+            let deferred = false
             try {
                 const saved = await dependencies.shortcuts.begin(subject, requestId, word, lease, signal)
                 if (saved) return checkedResponse(shortcutWordResultSchema, saved)
@@ -53,18 +56,32 @@ export function createShortcutOperations(dependencies: {
                 })
                 const definition = await generate(signal)
                 signal.throwIfAborted()
-                const libraryId = await dependencies.shadowLibrary(subject, language)
-                signal.throwIfAborted()
-                const receipt = await dependencies.definitions.save(subject, libraryId, language, definition, requestId)
                 const result = checkedResponse(shortcutWordResultSchema, {
-                    ...receipt,
                     language,
-                    libraryName: getLanguageName(language) + '词汇仓库',
+                    annotation: definition,
                 })
-                await dependencies.shortcuts.complete(subject, requestId, word, result, lease)
+                dependencies.after(async () => {
+                    try {
+                        for (let attempt = 0; ; attempt++) {
+                            try {
+                                const libraryId = await dependencies.shadowLibrary(subject, language)
+                                await dependencies.definitions.save(subject, libraryId, language, definition, requestId)
+                                await dependencies.shortcuts.complete(subject, requestId, word, result, lease)
+                                break
+                            } catch (error) {
+                                if (attempt >= 2 || (error instanceof MobileError && !error.body.error.retryable))
+                                    throw error
+                                await delay(250 * 2 ** attempt)
+                            }
+                        }
+                    } finally {
+                        await dependencies.shortcuts.release(subject, requestId, lease)
+                    }
+                })
+                deferred = true
                 return result
             } finally {
-                await dependencies.shortcuts.release(subject, requestId, lease)
+                if (!deferred) await dependencies.shortcuts.release(subject, requestId, lease)
             }
         },
     } satisfies Record<string, MobileOperation>

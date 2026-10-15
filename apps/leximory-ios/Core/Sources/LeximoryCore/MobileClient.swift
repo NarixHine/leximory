@@ -41,10 +41,15 @@ public struct SavedVocabulary: Decodable, Sendable {
     public let libraryId: String
 }
 public struct ShortcutWordResult: Decodable, Sendable {
-    public let id: String
-    public let libraryId: String
     public let language: String
-    public let libraryName: String
+    public let annotation: Definition
+
+    public var markdown: String {
+        var sections = [annotation.lemma, annotation.definition]
+        if let etymology = annotation.etymology, !etymology.isEmpty { sections.append("### 语源\n\n" + etymology) }
+        if let cognates = annotation.cognates, !cognates.isEmpty { sections.append("### 同源词\n\n" + cognates) }
+        return sections.joined(separator: "\n\n")
+    }
 }
 public struct BrowserTarget: Codable, Sendable {
     public let selectionId: String

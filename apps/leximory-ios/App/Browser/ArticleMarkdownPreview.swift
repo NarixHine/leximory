@@ -101,12 +101,13 @@ import LeximoryCore
 struct ArticleMarkdownPreview: View {
     let content: String
     let language: String
+    var blockLimit: Int? = 5
     @State private var expanded = false
     @ScaledMetric(relativeTo: .body) private var size: CGFloat = 17
     var body: some View {
         let document = ArticleMarkdownDocument(content: content, size: size, language: language)
         VStack(alignment: .leading, spacing: 18) {
-            ForEach(expanded ? document.blocks : Array(document.blocks.prefix(5))) { block in
+            ForEach(expanded ? document.blocks : Array(document.blocks.prefix(blockLimit ?? document.blocks.count))) { block in
                 HStack(alignment: .top, spacing: 10) {
                     if block.isList { Text(block.marker ?? "").font(LeximoryTypography.interface(size)).foregroundStyle(.secondary).frame(width: 24, alignment: .trailing) }
                     blockContent(block)
@@ -116,7 +117,7 @@ struct ArticleMarkdownPreview: View {
                     }
                     .padding(.leading, CGFloat(block.indentation) * 18)
             }
-            if document.blocks.count > 5 {
+            if let blockLimit, document.blocks.count > blockLimit {
                 Button(expanded ? "收起全文" : "展开全文") { expanded.toggle() }
                     .font(LeximoryTypography.interface(15)).buttonStyle(.plain).foregroundStyle(.secondary)
             }

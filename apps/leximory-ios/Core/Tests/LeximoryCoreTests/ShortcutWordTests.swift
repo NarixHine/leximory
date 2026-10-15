@@ -13,9 +13,9 @@ struct ShortcutWordTests {
         let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
         let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
         let result = try await client.saveShortcutWord("bonjour")
-        #expect(result.id == "saved-word")
         #expect(result.language == "fr")
-        #expect(result.libraryName == "法文词汇仓库")
+        #expect(result.annotation.definition == "**你好**\n\n礼貌的问候。")
+        #expect(result.markdown == "bonjour\n\n**你好**\n\n礼貌的问候。\n\n### 语源\n\n来自 *bon* 与 *jour*。\n\n### 同源词\n\n**jour**：一天。")
         #expect(await transport.operations == ["saveShortcutWord", "saveShortcutWord"])
         let requests = await transport.requestIDs
         #expect(requests.count == 2)
@@ -51,7 +51,7 @@ struct ShortcutWordTests {
                 throw MobileFailure(error: .init(code: code, message: "无法保存", retryable: false))
             }
             if requestIDs.count == 1 { throw URLError(.networkConnectionLost) }
-            return (HTTPResponse(status: .ok), HTTPBody(#"{"id":"saved-word","libraryId":"french-shadow","language":"fr","libraryName":"法文词汇仓库"}"#))
+            return (HTTPResponse(status: .ok), HTTPBody(#"{"language":"fr","annotation":{"lemma":"bonjour","definition":"**你好**\n\n礼貌的问候。","etymology":"来自 *bon* 与 *jour*。","cognates":"**jour**：一天。"}}"#))
         }
     }
 }

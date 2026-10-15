@@ -2,9 +2,11 @@
 
 ## Save a word with Shortcuts
 
-In Apple's Shortcuts app, open Leximory and choose 保存词汇. Run it to enter a word. Jev identifies its supported language, Leximory generates the definition, and the word is saved to that language's personal vocabulary warehouse. The system shows the destination after saving. You can also add the action to another shortcut and pass text into 词语.
+In Apple's Shortcuts app, open Leximory and choose 保存词汇. Run it to enter a word. Jev identifies its supported language, Leximory generates the definition, and the word is saved to that language's personal vocabulary warehouse. Shortcuts shows native progress while the action runs, then displays the annotation with Markdown formatting, including available etymology and cognates. The annotation comes back in the save response without a second API request. The action also returns Markdown text for subsequent shortcut actions. You can pass text into 词语 from another action.
 
 Sign in to Leximory first. The shortcut runs without opening the app and requires an unlocked device and an internet connection. Existing AI quotas apply. Unresolved languages and failed lookups do not save a word. This requires the mobile API containing `/shortcuts/words` to be deployed alongside the app.
+
+Only the mobile Shortcuts endpoint defers its library lookup and vocabulary save with Next.js `after()`. It returns the generated annotation first, retries transient persistence failures up to three times with the same mutation identity, and records completion after saving. Other vocabulary save endpoints still wait for persistence before responding.
 
 The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation; imported text keeps its original punctuation.
 

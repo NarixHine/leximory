@@ -140,7 +140,10 @@ export const browserTargetSchema = z
     .strict()
 export const shortcutWordSchema = z.object({ word: z.string().trim().min(1).max(1024), requestId: resourceID }).strict()
 export const shortcutWordResultSchema = z
-    .object({ id: resourceID, libraryId: resourceID, language: LangSchema, libraryName: z.string() })
+    .object({
+        language: LangSchema,
+        annotation: definitionSchema,
+    })
     .strict()
 export const domainRuleSchema = z.object({ domain: z.string().min(1).max(253), libraryId: resourceID }).strict()
 export const bookmarkInputSchema = z

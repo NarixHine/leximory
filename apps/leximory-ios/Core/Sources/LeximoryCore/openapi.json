@@ -3060,14 +3060,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
-                      "type": "string",
-                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
-                    },
-                    "libraryId": {
-                      "type": "string",
-                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
-                    },
                     "language": {
                       "enum": [
                         "zh",
@@ -3078,15 +3070,46 @@
                       ],
                       "type": "string"
                     },
-                    "libraryName": {
-                      "type": "string"
+                    "annotation": {
+                      "type": "object",
+                      "properties": {
+                        "lemma": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1024
+                        },
+                        "definition": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 16000
+                        },
+                        "etymology": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        },
+                        "cognates": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 16000
+                        }
+                      },
+                      "required": [
+                        "lemma",
+                        "definition",
+                        "etymology",
+                        "cognates"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
-                    "id",
-                    "libraryId",
                     "language",
-                    "libraryName"
+                    "annotation"
                   ],
                   "additionalProperties": false
                 }
