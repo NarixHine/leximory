@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { MobileErrorBody, MobileErrorCode } from '@repo/schema/mobile'
 
 const failures = {
@@ -7,7 +8,11 @@ const failures = {
     stale_revision: { status: 409, message: '文章已更新，请重新打开。', retryable: false },
     quota_exceeded: { status: 429, message: '本期词点额度已用完。', retryable: false },
     unsupported_format: { status: 422, message: 'iOS 版暂不支持此格式。', retryable: false },
-    language_unresolved: { status: 422, message: '暂时无法识别这段文字的语言，请选择更完整的词句后重试。', retryable: false },
+    language_unresolved: {
+        status: 422,
+        message: '暂时无法识别这段文字的语言，请选择更完整的词句后重试。',
+        retryable: false,
+    },
     service_unavailable: { status: 503, message: '服务暂时不可用，请稍后重试。', retryable: true },
 } satisfies Record<MobileErrorCode, { status: number; message: string; retryable: boolean }>
 
@@ -16,7 +21,9 @@ export class MobileError extends Error {
         super(failures[code].message)
         this.name = 'MobileError'
     }
-    get status(): number { return failures[this.code].status }
+    get status(): number {
+        return failures[this.code].status
+    }
     get body(): MobileErrorBody {
         const { message, retryable } = failures[this.code]
         return { error: { code: this.code, message, retryable } }
@@ -24,7 +31,10 @@ export class MobileError extends Error {
 }
 
 export function mobileErrorResponse(error: unknown): Response {
-    const failure = error instanceof MobileError ? error : new MobileError('service_unavailable')
+    const failure =
+        error instanceof MobileError
+            ? error
+            : new MobileError(error instanceof z.ZodError ? 'invalid_input' : 'service_unavailable')
     return Response.json(failure.body, {
         status: failure.status,
         headers: {
@@ -32,4 +42,24 @@ export function mobileErrorResponse(error: unknown): Response {
             ...(failure.code === 'unauthenticated' ? { 'WWW-Authenticate': 'Bearer' } : {}),
         },
     })
+}
+
+export function mobileErrorFromStatus(status: number): MobileError {
+    switch (status) {
+        case 400:
+            return new MobileError('invalid_input')
+        case 401:
+            return new MobileError('unauthenticated')
+        case 403:
+        case 404:
+            return new MobileError('inaccessible')
+        case 409:
+            return new MobileError('stale_revision')
+        case 422:
+            return new MobileError('unsupported_format')
+        case 429:
+            return new MobileError('quota_exceeded')
+        default:
+            return new MobileError('service_unavailable')
+    }
 }

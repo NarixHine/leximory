@@ -1,6 +1,6 @@
 import { OpenAPIGenerator } from '@orpc/openapi'
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { mobileContract, mobileErrorSchema, definitionFrameSchema } from './index'
 const generator = new OpenAPIGenerator({ schemaConverters: [new ZodToJsonSchemaConverter()] })
 const specification = await generator.generate(mobileContract, {
@@ -11,17 +11,32 @@ const specification = await generator.generate(mobileContract, {
     components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } } },
 })
 specification.paths ??= {}
-specification.paths['/libraries/{libraryId}/ebooks'] = { post: {
-    operationId: 'uploadEbook',
-    parameters: [
-        { name: 'libraryId', in: 'path', required: true, schema: { type: 'string' } },
-        { name: 'title', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
-        { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
-    ],
-    requestBody: { required: true, content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } } },
-    responses: { '200': { description: 'Uploaded ebook', content: { 'application/json': { schema: specification.paths['/libraries/{libraryId}/articles']!.post!.responses!['200']!.content!['application/json']!.schema } } } },
-    security: [{ bearerAuth: [] }],
-} }
+specification.paths['/libraries/{libraryId}/ebooks'] = {
+    post: {
+        operationId: 'uploadEbook',
+        parameters: [
+            { name: 'libraryId', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'title', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+            { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+        ],
+        requestBody: {
+            required: true,
+            content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } },
+        },
+        responses: {
+            '200': {
+                description: 'Uploaded ebook',
+                content: {
+                    'application/json': {
+                        schema: specification.paths['/libraries/{libraryId}/articles']!.post!.responses!['200']!
+                            .content!['application/json']!.schema,
+                    },
+                },
+            },
+        },
+        security: [{ bearerAuth: [] }],
+    },
+}
 for (const path of Object.values(specification.paths ?? {})) {
     for (const method of ['get', 'post'] as const) {
         const operation = path?.[method]
@@ -47,8 +62,17 @@ function normalize(value: unknown): unknown {
     }
     const branches = record.anyOf
     if (Array.isArray(branches) && branches.length === 2) {
-        const nullable = branches.some(branch => typeof branch === 'object' && branch !== null && 'type' in branch && branch.type === 'null')
-        const concrete = branches.find(branch => typeof branch === 'object' && branch !== null && 'type' in branch && typeof branch.type === 'string' && branch.type !== 'null')
+        const nullable = branches.some(
+            (branch) => typeof branch === 'object' && branch !== null && 'type' in branch && branch.type === 'null',
+        )
+        const concrete = branches.find(
+            (branch) =>
+                typeof branch === 'object' &&
+                branch !== null &&
+                'type' in branch &&
+                typeof branch.type === 'string' &&
+                branch.type !== 'null',
+        )
         if (nullable && typeof concrete === 'object' && concrete !== null && 'type' in concrete) {
             const { anyOf: _, ...rest } = record
             return { ...rest, ...concrete, type: [concrete.type, 'null'] }
@@ -56,4 +80,10 @@ function normalize(value: unknown): unknown {
     }
     return record
 }
-await writeFile(new URL('../../../apps/leximory-ios/Core/Sources/LeximoryCore/openapi.json', import.meta.url), JSON.stringify(normalize(specification), null, 2) + '\n')
+const target = new URL('../../../apps/leximory-ios/Core/Sources/LeximoryCore/openapi.json', import.meta.url)
+const output = JSON.stringify(normalize(specification), null, 2) + '\n'
+if (process.argv.includes('--check')) {
+    if ((await readFile(target, 'utf8')) !== output)
+        throw new Error('Generated mobile OpenAPI is stale. Run pnpm --dir packages/api run generate.')
+    console.info('Mobile OpenAPI matches its source contract.')
+} else await writeFile(target, output)

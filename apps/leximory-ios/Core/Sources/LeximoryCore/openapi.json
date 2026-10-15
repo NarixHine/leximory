@@ -220,6 +220,1434 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/review": {
+      "get": {
+        "operationId": "reviewTimeline",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "days": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string"
+                          },
+                          "displayDate": {
+                            "type": "string"
+                          },
+                          "dayOfWeek": {
+                            "type": "string"
+                          },
+                          "isToday": {
+                            "type": "boolean"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "words": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                },
+                                "word": {
+                                  "type": "string"
+                                },
+                                "lang": {
+                                  "enum": [
+                                    "zh",
+                                    "en",
+                                    "fr",
+                                    "ja",
+                                    "nl"
+                                  ],
+                                  "type": "string"
+                                },
+                                "lib": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                },
+                                "fields": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "lemma": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 1024
+                                    },
+                                    "definition": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 16000
+                                    },
+                                    "etymology": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ],
+                                      "maxLength": 16000
+                                    },
+                                    "cognates": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ],
+                                      "maxLength": 16000
+                                    },
+                                    "original": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 1024
+                                    }
+                                  },
+                                  "required": [
+                                    "lemma",
+                                    "definition",
+                                    "etymology",
+                                    "cognates",
+                                    "original"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "word",
+                                "lang",
+                                "lib",
+                                "fields"
+                              ]
+                            }
+                          },
+                          "progressByLang": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "percentage": {
+                                  "type": "number"
+                                },
+                                "conversationCompleted": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "percentage",
+                                "conversationCompleted"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "date",
+                          "displayDate",
+                          "dayOfWeek",
+                          "isToday",
+                          "count",
+                          "words",
+                          "progressByLang"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "days",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/check": {
+      "get": {
+        "operationId": "reviewCheck",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "zh",
+                "en",
+                "fr",
+                "ja",
+                "nl"
+              ],
+              "type": "string"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exists": {
+                      "type": "boolean"
+                    },
+                    "inProgress": {
+                      "type": "boolean"
+                    },
+                    "story": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "translations": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "prompt": {
+                            "type": "string"
+                          },
+                          "answer": {
+                            "type": "string"
+                          },
+                          "keyword": {
+                            "type": "string"
+                          },
+                          "submission": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "enum": [
+                              "idle",
+                              "pending",
+                              "complete",
+                              "failed"
+                            ],
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "feedback": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "rationale": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "badPairs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "original": {
+                                      "type": "string"
+                                    },
+                                    "improved": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "original",
+                                    "improved"
+                                  ]
+                                }
+                              },
+                              "goodPairs": {
+                                "type": [
+                                  "array",
+                                  "null"
+                                ],
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "original": {
+                                      "type": "string"
+                                    },
+                                    "note": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "original",
+                                    "note"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "badPairs"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "prompt",
+                          "answer",
+                          "keyword"
+                        ]
+                      }
+                    },
+                    "conversation": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "prompt": {
+                          "type": "string"
+                        },
+                        "keywords": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "submission": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "enum": [
+                            "idle",
+                            "pending",
+                            "complete",
+                            "failed"
+                          ],
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "feedback": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "rationale": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "badPairs": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "original": {
+                                    "type": "string"
+                                  },
+                                  "improved": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "original",
+                                  "improved"
+                                ]
+                              }
+                            },
+                            "goodPairs": {
+                              "type": [
+                                "array",
+                                "null"
+                              ],
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "original": {
+                                    "type": "string"
+                                  },
+                                  "note": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "original",
+                                  "note"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "badPairs"
+                          ]
+                        },
+                        "reply": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "prompt",
+                        "keywords"
+                      ]
+                    },
+                    "storyDocument": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "version": {
+                          "enum": [
+                            1
+                          ],
+                          "type": "integer"
+                        },
+                        "revision": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "blocks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "enum": [
+                                  "paragraph",
+                                  "heading1",
+                                  "heading2",
+                                  "heading3",
+                                  "heading4",
+                                  "heading5",
+                                  "heading6",
+                                  "quote",
+                                  "listItem",
+                                  "code",
+                                  "fallback",
+                                  "divider"
+                                ],
+                                "type": "string"
+                              },
+                              "sourceRange": {
+                                "type": "object",
+                                "properties": {
+                                  "location": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "length": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991,
+                                    "exclusiveMinimum": 0
+                                  }
+                                },
+                                "required": [
+                                  "location",
+                                  "length"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "displayText": {
+                                "type": "string"
+                              },
+                              "spans": {
+                                "type": "array",
+                                "items": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "strong"
+                                          ],
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "emphasis"
+                                          ],
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "code"
+                                          ],
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "smallcaps"
+                                          ],
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "link"
+                                          ],
+                                          "type": "string"
+                                        },
+                                        "url": {
+                                          "type": "string",
+                                          "format": "uri"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind",
+                                        "url"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "ruby"
+                                          ],
+                                          "type": "string"
+                                        },
+                                        "pronunciation": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind",
+                                        "pronunciation"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "definition"
+                                          ],
+                                          "type": "string"
+                                        },
+                                        "lemma": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "definition": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "etymology": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cognates": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind",
+                                        "lemma",
+                                        "definition",
+                                        "etymology",
+                                        "cognates"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "range": {
+                                          "type": "object",
+                                          "properties": {
+                                            "location": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "length": {
+                                              "type": "integer",
+                                              "minimum": -9007199254740991,
+                                              "maximum": 9007199254740991,
+                                              "exclusiveMinimum": 0
+                                            }
+                                          },
+                                          "required": [
+                                            "location",
+                                            "length"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "kind": {
+                                          "enum": [
+                                            "image"
+                                          ],
+                                          "type": "string"
+                                        },
+                                        "url": {
+                                          "type": "string",
+                                          "format": "uri"
+                                        },
+                                        "alt": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "range",
+                                        "kind",
+                                        "url",
+                                        "alt"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                }
+                              },
+                              "audioId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "pattern": "^[A-Za-z0-9_-]+$"
+                              },
+                              "notice": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "sourceRange",
+                              "displayText",
+                              "spans",
+                              "audioId",
+                              "notice"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "version",
+                        "revision",
+                        "source",
+                        "blocks"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "exists",
+                    "inProgress"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/start": {
+      "post": {
+        "operationId": "reviewStart",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lang": {
+                    "enum": [
+                      "zh",
+                      "en",
+                      "fr",
+                      "ja",
+                      "nl"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "date",
+                  "lang"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/translation": {
+      "post": {
+        "operationId": "reviewTranslation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lang": {
+                    "enum": [
+                      "zh",
+                      "en",
+                      "fr",
+                      "ja",
+                      "nl"
+                    ],
+                    "type": "string"
+                  },
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "submission": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "date",
+                  "lang",
+                  "index",
+                  "submission"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/review/conversation": {
+      "post": {
+        "operationId": "reviewConversation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lang": {
+                    "enum": [
+                      "zh",
+                      "en",
+                      "fr",
+                      "ja",
+                      "nl"
+                    ],
+                    "type": "string"
+                  },
+                  "submission": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1200
+                  }
+                },
+                "required": [
+                  "date",
+                  "lang",
+                  "submission"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/account": {
       "get": {
         "operationId": "accountSettings",
@@ -1595,9 +3023,9 @@
         }
       }
     },
-    "/shortcuts/selection": {
+    "/shortcuts/words": {
       "post": {
-        "operationId": "shortcutSelection",
+        "operationId": "saveShortcutWord",
         "requestBody": {
           "required": true,
           "content": {
@@ -1609,10 +3037,15 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 1024
+                  },
+                  "requestId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
                   }
                 },
                 "required": [
-                  "word"
+                  "word",
+                  "requestId"
                 ],
                 "additionalProperties": false
               }
@@ -1627,7 +3060,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "selectionId": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
                       "type": "string",
                       "pattern": "^[A-Za-z0-9_-]{1,128}$"
                     },
@@ -1641,26 +3078,15 @@
                       ],
                       "type": "string"
                     },
-                    "libraryId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
-                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
-                    },
                     "libraryName": {
                       "type": "string"
-                    },
-                    "shadow": {
-                      "type": "boolean"
                     }
                   },
                   "required": [
-                    "selectionId",
-                    "language",
+                    "id",
                     "libraryId",
-                    "libraryName",
-                    "shadow"
+                    "language",
+                    "libraryName"
                   ],
                   "additionalProperties": false
                 }
@@ -3335,7 +4761,8 @@
                   }
                 },
                 "required": [
-                  "occurrence"
+                  "occurrence",
+                  "requestId"
                 ],
                 "additionalProperties": false
               }
@@ -4295,7 +5722,8 @@
                   }
                 },
                 "required": [
-                  "completionId"
+                  "completionId",
+                  "requestId"
                 ]
               }
             }

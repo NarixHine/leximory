@@ -40,6 +40,12 @@ public struct SavedVocabulary: Decodable, Sendable {
     public let id: String
     public let libraryId: String
 }
+public struct ShortcutWordResult: Decodable, Sendable {
+    public let id: String
+    public let libraryId: String
+    public let language: String
+    public let libraryName: String
+}
 public struct BrowserTarget: Codable, Sendable {
     public let selectionId: String
     public let language: String
@@ -139,7 +145,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
+        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -332,19 +338,11 @@ public struct MobileClient: Sendable {
             try await client.browserDefinitions(body: .json(.init(selectionId: selectionID))).ok.body.application_x_hyphen_ndjson
         }
     }
-    public func saveShortcutWord(_ word: String) async throws -> BrowserTarget {
-        let target = try mapped(try await client.shortcutSelection(body: .json(.init(word: word))).ok.body.json, to: BrowserTarget.self)
-        for try await event in browserDefinitions(selectionID: target.selectionId) {
-            try Task.checkCancellation()
-            switch event {
-            case .completed(let completionID, _):
-                _ = try await saveBrowserVocabulary(completionID: completionID)
-                return target
-            case .failed(_, let failure): throw MobileFailure(error: failure)
-            case .started, .delta: break
-            }
+    public func saveShortcutWord(_ word: String) async throws -> ShortcutWordResult {
+        let requestID = UUID().uuidString
+        return try await MutationRetry.run {
+            try mapped(try await client.saveShortcutWord(body: .json(.init(word: word, requestId: requestID))).ok.body.json, to: ShortcutWordResult.self)
         }
-        throw URLError(.cannotParseResponse)
     }
     public func saveBrowserVocabulary(completionID: String) async throws -> SavedVocabulary {
         let requestID = UUID().uuidString

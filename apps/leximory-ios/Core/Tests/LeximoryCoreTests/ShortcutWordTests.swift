@@ -5,65 +5,53 @@ import OpenAPIRuntime
 @testable import LeximoryCore
 
 struct ShortcutWordTests {
-    @Test func savesOnlyTheCompletedDefinitionAndKeepsRetryIdentity() async throws {
+    @Test func savesWithOneEndpointAndKeepsRetryIdentity() async throws {
         let transport = ShortcutTransport()
-        let client = MobileClient(baseURL: URL(string: "https://example.com")!, transport: transport, token: { _ in "verified" })
-        let target = try await client.saveShortcutWord("bonjour")
-        #expect(target.language == "fr")
-        #expect(target.libraryName == "法语词汇仓库")
-        #expect(target.shadow)
-        #expect(await transport.operations == ["shortcutSelection", "browserDefinitions", "browserVocabulary", "browserVocabulary"])
-        let requests = await transport.saveRequestIDs
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = URL(string: "https://example.com")!
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let result = try await client.saveShortcutWord("bonjour")
+        #expect(result.id == "saved-word")
+        #expect(result.language == "fr")
+        #expect(result.libraryName == "法文词汇仓库")
+        #expect(await transport.operations == ["saveShortcutWord", "saveShortcutWord"])
+        let requests = await transport.requestIDs
         #expect(requests.count == 2)
         #expect(requests.first == requests.last)
     }
 
-    @Test(arguments: ["quota", "incomplete", "language", "signedOut"])
-    func failedLookupsNeverSave(failure: String) async throws {
+    @Test(arguments: ["quota", "language", "signedOut"])
+    func permanentFailuresDoNotRetry(failure: String) async throws {
         let transport = ShortcutTransport(failure: failure)
         let client = MobileClient(baseURL: URL(string: "https://example.com")!, transport: transport, token: { _ in "verified" })
         await #expect(throws: (any Error).self) { try await client.saveShortcutWord("bonjour") }
-        #expect(await transport.saveRequestIDs.isEmpty)
+        #expect(await transport.operations == ["saveShortcutWord"])
     }
 
     private actor ShortcutTransport: ClientTransport {
         let failure: String?
         var operations: [String] = []
-        var saveRequestIDs: [String] = []
+        var requestIDs: [String] = []
         init(failure: String? = nil) { self.failure = failure }
 
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             operations.append(operationID)
+            #expect(operationID == "saveShortcutWord")
             #expect(request.headerFields[.authorization] == "Bearer verified")
+            #expect(baseURL.path == "/api/mobile/v1")
+            #expect(request.path == "/shortcuts/words")
             let data = try await Data(collecting: #require(body), upTo: 65536)
             let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: String])
-            switch operationID {
-            case "shortcutSelection":
-                #expect(baseURL.path == "/api/mobile/v1")
-                #expect(request.path == "/shortcuts/selection")
-                #expect(json == ["word": "bonjour"])
-                if failure == "language" { throw MobileFailure(error: .init(code: "language_unresolved", message: "无法判断语言", retryable: false)) }
-                if failure == "signedOut" { throw MobileFailure(error: .init(code: "unauthenticated", message: "请登录", retryable: false)) }
-                return response(#"{"selectionId":"selection","language":"fr","libraryId":null,"libraryName":"法语词汇仓库","shadow":true}"#)
-            case "browserDefinitions":
-                #expect(json == ["selectionId": "selection"])
-                if failure == "quota" { throw MobileFailure(error: .init(code: "quota_exceeded", message: "额度不足", retryable: false)) }
-                let started = #"{"kind":"started","requestId":"completion"}"# + "\n"
-                if failure == "incomplete" { return response(started) }
-                return response(started + #"{"kind":"completed","requestId":"completion","definition":{"lemma":"bonjour","definition":"你好","etymology":null,"cognates":null}}"# + "\n")
-            case "browserVocabulary":
-                #expect(json["completionId"] == "completion")
-                saveRequestIDs.append(try #require(json["requestId"]))
-                if saveRequestIDs.count == 1 { throw URLError(.networkConnectionLost) }
-                return response(#"{"id":"saved-word","libraryId":"french-shadow"}"#)
-            default:
-                Issue.record("Unexpected request: \(operationID)")
-                throw URLError(.badURL)
+            #expect(json["word"] == "bonjour")
+            requestIDs.append(try #require(json["requestId"]))
+            if let failure {
+                let code = failure == "quota" ? "quota_exceeded" : failure == "language" ? "language_unresolved" : "unauthenticated"
+                throw MobileFailure(error: .init(code: code, message: "无法保存", retryable: false))
             }
-        }
-
-        private func response(_ json: String) -> (HTTPResponse, HTTPBody?) {
-            (HTTPResponse(status: .ok), HTTPBody(json))
+            if requestIDs.count == 1 { throw URLError(.networkConnectionLost) }
+            return (HTTPResponse(status: .ok), HTTPBody(#"{"id":"saved-word","libraryId":"french-shadow","language":"fr","libraryName":"法文词汇仓库"}"#))
         }
     }
 }

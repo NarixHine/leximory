@@ -6,8 +6,7 @@ export type Plan = (typeof PLANS)[number]
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 
 export const MAX_TTS_LENGTH = 10000
-export { MAX_FILE_SIZE, maxArticleLength } from './content'
-export const MAX_AVATAR_SIZE = 1 * 1024 * 1024
+export { MAX_AVATAR_SIZE, MAX_FILE_SIZE, maxArticleLength } from './content'
 export const ALLOWED_IMAGE_REMOTE_PATTERNS = [
     {
         protocol: 'https',
@@ -27,14 +26,12 @@ export const EXAMPLE_SHARED_LIB = {
     price: 0,
 } as const
 
-export const prefixUrl = (url: string) =>
-    `${IS_PROD ? env.NEXT_PUBLIC_LEXIMORY_URL : 'http://localhost:3001'}${url}`
+export const prefixUrl = (url: string) => `${IS_PROD ? env.NEXT_PUBLIC_LEXIMORY_URL : 'http://localhost:3001'}${url}`
 export const prefixPathname = ({ path, next }: { path: string; next?: string }) =>
     prefixUrl(next ? `${path}?next=${encodeURIComponent(next)}` : path)
 export const EXAMPLE_EBOOK_LINK = '/library/1309fe3b/2dd46083' as const
 export const BILIBILI_LINK = 'https://space.bilibili.com/3494376432994441/' as const
-export const FYP_GITHUB_LINK =
-    'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
+export const FYP_GITHUB_LINK = 'https://github.com/NarixHine/leximory/tree/main/app/fix-your-paper' as const
 export const FYP_BLOG_LINK = 'https://hello.leximory.com/blog/fix-your-paper' as const
 
 export { SUPPORTED_LANGS } from '@repo/schema/library'
@@ -93,7 +90,6 @@ export const ACTION_QUOTA_COST = {
 
 export { LIB_ACCESS_STATUS } from './access'
 
-
 export type PaidTier = 'bilingual' | 'polyglot'
 export const CREEM_PRODUCT_ID: Record<PaidTier, string> = IS_PROD
     ? ({
@@ -104,9 +100,7 @@ export const CREEM_PRODUCT_ID: Record<PaidTier, string> = IS_PROD
           bilingual: 'prod_1rKh3LrLlDsk3F91W97Wjk',
           polyglot: 'prod_4zgqjFSYwLoPNE7IRFw7QR',
       } as const)
-export const getPlanFromProductId = (
-    productId: (typeof CREEM_PRODUCT_ID)[keyof typeof CREEM_PRODUCT_ID],
-): PaidTier => {
+export const getPlanFromProductId = (productId: (typeof CREEM_PRODUCT_ID)[keyof typeof CREEM_PRODUCT_ID]): PaidTier => {
     switch (productId) {
         case CREEM_PRODUCT_ID.bilingual:
             return 'bilingual'

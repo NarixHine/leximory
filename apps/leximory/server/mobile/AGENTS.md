@@ -1,0 +1,9 @@
+# Mobile API changes
+
+- Next.js owns route matching and HTTP methods. Each file under `app/api/mobile/v1` reexports a named endpoint from `endpoints/<feature>.ts`. Do not introduce a catch-all router or dispatch by pathname inside an operation.
+- Endpoint composition wires production dependencies. Feature modules export `create<Feature>Operations` with keys matching the operation IDs in `@repo/api`. Change business logic in those modules, not in route files or composition.
+- `http.ts` owns bearer authentication, cancellation, private responses, typed errors, body limits, and query parsing. Read inputs with `jsonBody` or `bodyBytes`; validate provider/database output with `checkedResponse` so bad server data returns 503 rather than blaming the client with 400.
+- Keep library ownership/access checks, definition provenance, quotas, protected welcome words, file signatures, and retry identities. `definition-generation.ts` owns generation/cache/quota preparation and NDJSON framing. `shadow-library.ts` owns deterministic shadow-library creation.
+- Add the contract operation in `packages/api/src/index.ts`, add its feature membership in `scripts/mobile-routes.ts`, and export its endpoint. Run `pnpm --dir packages/api run generate` then `pnpm --dir apps/leximory run generate:mobile-routes`. The route generator refuses unregistered routes; remove a deleted operation's route file explicitly.
+- Verify with `pnpm --dir apps/leximory run check:mobile-routes`, `pnpm --dir apps/leximory run test:mobile`, and `pnpm --dir apps/leximory run check-types`. Tests inject external stores and use the real route exports through `tests/helpers/mobile.ts`. Do not access live accounts for verification.
+- Format edited supported files with `pnpm format <paths>`. Swift and generated OpenAPI files use their existing tooling.

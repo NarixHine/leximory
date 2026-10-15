@@ -4,7 +4,7 @@
 
 In Apple's Shortcuts app, open Leximory and choose 保存词汇. Run it to enter a word. Jev identifies its supported language, Leximory generates the definition, and the word is saved to that language's personal vocabulary warehouse. The system shows the destination after saving. You can also add the action to another shortcut and pass text into 词语.
 
-Sign in to Leximory first. The shortcut runs without opening the app and requires an unlocked device and an internet connection. Existing AI quotas apply. Unresolved languages and failed lookups do not save a word. This requires the mobile API containing `/shortcuts/selection` to be deployed alongside the app.
+Sign in to Leximory first. The shortcut runs without opening the app and requires an unlocked device and an internet connection. Existing AI quotas apply. Unresolved languages and failed lookups do not save a word. This requires the mobile API containing `/shortcuts/words` to be deployed alongside the app.
 
 The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation; imported text keeps its original punctuation.
 
@@ -12,19 +12,19 @@ The web app defines copy, colors, typography and product actions. Use native nav
 
 Use the canonical palette in `apps/leximory/tailwind.config.ts` and its native equivalents in `App/LeximoryTheme.swift`.
 
-| Role | Light |
-| --- | --- |
-| Paper | `#FFFFFF` |
-| Shell | `#F8FAF8` |
-| Inset | `#F1F5F1` |
-| Border | `#E7ECE7` |
-| Marker | `#BDD981`, 45% opacity |
-| Illustration | `#9CAEA1` |
-| Secondary label | `#9CA8AB` |
-| Secondary border | `#D0D6D8` |
-| Muted text | `#67787C` |
-| Navigation | `#5A715A` |
-| Ink | `#192024` |
+| Role             | Light                  |
+| ---------------- | ---------------------- |
+| Paper            | `#FFFFFF`              |
+| Shell            | `#F8FAF8`              |
+| Inset            | `#F1F5F1`              |
+| Border           | `#E7ECE7`              |
+| Marker           | `#BDD981`, 45% opacity |
+| Illustration     | `#9CAEA1`              |
+| Secondary label  | `#9CA8AB`              |
+| Secondary border | `#D0D6D8`              |
+| Muted text       | `#67787C`              |
+| Navigation       | `#5A715A`              |
+| Ink              | `#192024`              |
 
 Dark appearance uses neutral paper `#100F0F`, shell `#18181B`, inset `#27272A`, border `#3F3F46` and ink `#CECDC3`. Paper follows the system. Liquid Glass belongs to navigation, playback and controls; reading content stays on paper. Ebook actions use neutral ink.
 
@@ -32,17 +32,17 @@ Covers retain the web's newspaper rules, artwork and identity-derived paper wash
 
 ## Typography and layout
 
-| Role | Face | Default |
-| --- | --- | --- |
-| Library eyebrow | Raleway | 12 pt, 1.2 tracking |
-| 我的文库 | Bundled Chinese serif | 30 pt |
-| Library/text titles | EB Garamond with CJK cascade | 20–36 pt by role |
-| English/French prose | Libre Baskerville | 18 pt phone, 20 pt wide |
-| Chinese prose | ChillDuanHeiSong | Bundled Regular and Bold OTF; choose Bold explicitly |
-| Japanese prose | ChillDuanHeiSongProJP | Bundled Regular OTF, with ruby |
-| Interface text | Raleway with serif CJK cascade | 12–17 pt |
-| Chinese navigation/topics | Bundled Chinese serif | 12–14 pt topics |
-| IPA/code | Source Code Pro | 85% of prose |
+| Role                      | Face                           | Default                                              |
+| ------------------------- | ------------------------------ | ---------------------------------------------------- |
+| Library eyebrow           | Raleway                        | 12 pt, 1.2 tracking                                  |
+| 我的文库                  | Bundled Chinese serif          | 30 pt                                                |
+| Library/text titles       | EB Garamond with CJK cascade   | 20–36 pt by role                                     |
+| English/French prose      | Libre Baskerville              | 18 pt phone, 20 pt wide                              |
+| Chinese prose             | ChillDuanHeiSong               | Bundled Regular and Bold OTF; choose Bold explicitly |
+| Japanese prose            | ChillDuanHeiSongProJP          | Bundled Regular OTF, with ruby                       |
+| Interface text            | Raleway with serif CJK cascade | 12–17 pt                                             |
+| Chinese navigation/topics | Bundled Chinese serif          | 12–14 pt topics                                      |
+| IPA/code                  | Source Code Pro                | 85% of prose                                         |
 
 Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. English interface labels use Raleway; Chinese labels use the bundled serif cascade, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
 
