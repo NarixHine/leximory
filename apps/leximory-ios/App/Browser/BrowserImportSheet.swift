@@ -141,7 +141,7 @@ struct BrowserImportSheet: View {
         }.font(LeximoryTypography.interface(17)).presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
     }
     private func sectionHeading(_ title: String) -> some View {
-        Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+        Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.primary)
     }
     private func confirmImport() {
         Task { await submit() }

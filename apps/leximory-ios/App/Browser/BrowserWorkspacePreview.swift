@@ -40,6 +40,8 @@ struct BrowserWorkspacePreview: View {
                         }
                     }
                 }
+                UserDefaults.standard.removeObject(forKey: "browser.hidden-home-recents.workspace-fixture")
+                UserDefaults.standard.removeObject(forKey: "browser.home-pins.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "browser.annotations.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "browser.recent.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")

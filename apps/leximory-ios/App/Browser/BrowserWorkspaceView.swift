@@ -19,6 +19,10 @@ struct BrowserWorkspaceView: View {
     @State private var importedText: (CatalogText, Bool)?
     @State private var extracting = false
     @State private var clipboardNotice: UUID?
+    @State private var finding = false
+    @State private var findRequest: UUID?
+    @State private var findInteraction: UIFindInteraction?
+    @State private var editingPin: BrowserHomePin?
     @State private var activitySheet = false
     @State private var confirmingClear = false
     @State private var chromeHeight: CGFloat = 64
@@ -52,7 +56,13 @@ struct BrowserWorkspaceView: View {
                         Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
                     }
                     if editingAddress || isHome {
-                        BrowserHomeView(compact: editingAddress, recent: workspace.recentTexts,
+                        BrowserHomeView(pins: workspace.homePins,
+                            openPin: { pin in Task { await workspace.openPin(pin) } },
+                            editPin: { editingPin = $0 }, deletePin: workspace.deletePin,
+                            hiddenRecentTextIDs: workspace.hiddenHomeRecents.textIDs,
+                            hiddenRecentWebURLs: workspace.hiddenHomeRecents.webpageURLs,
+                            hideRecentText: workspace.hideRecentText, hideRecentWebpage: workspace.hideRecentWebpage,
+                            compact: editingAddress, recent: workspace.recentTexts,
                             browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                             ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
@@ -64,11 +74,12 @@ struct BrowserWorkspaceView: View {
                 .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { gesture in
                     guard !editingAddress, abs(gesture.translation.width) > abs(gesture.translation.height) * 1.5 else { return }
                     if gesture.startLocation.x < 20, gesture.translation.width > 60 {
-                        if workspace.current.isWeb && workspace.browser.canGoBack { return }
-                        if case .document(let document) = workspace.current.resource, document.text.format == "ebook" { return }
+                        guard workspace.canSwipe(-1) else { return }
+                        if workspace.browser.canGoBack { return }
                         workspace.go(-1)
                     } else if gesture.startLocation.x > geometry.size.width - 20, gesture.translation.width < -60 {
-                        if workspace.current.isWeb && workspace.browser.canGoForward { return }
+                        guard workspace.canSwipe(1) else { return }
+                        if workspace.browser.canGoForward { return }
                         workspace.go(1)
                     }
                 })
@@ -90,6 +101,7 @@ struct BrowserWorkspaceView: View {
         }
         .overlay(alignment: .bottom) {
                 controls.padding(.horizontal, 12).padding(.bottom, 8)
+                    .opacity(finding ? 0 : 1).allowsHitTesting(!finding).accessibilityHidden(finding)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { chromeHeight = $0 }
             }
         .environment(\.browserWorkspace, workspace)
@@ -103,6 +115,9 @@ struct BrowserWorkspaceView: View {
             if let (text, annotating) = importedText { importedText = nil; Task { await workspace.imported(text, annotating: annotating) } }
         }) { request in
             BrowserImportSheet(request: request, workspace: workspace) { text, annotating in importedText = (text, annotating) }
+        }
+        .sheet(item: $editingPin) { pin in
+            BrowserPinEditor(pin: pin) { workspace.savePin($0) }
         }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
@@ -161,6 +176,19 @@ struct BrowserWorkspaceView: View {
                 await workspace.open(document.text)
             } catch { workspace.error = "暂时无法打开文章，请稍后重试。"; pendingText = nil }
         }
+        .task(id: findRequest) {
+            guard let request = findRequest, let interaction = findInteraction else { return }
+            // Let the menu finish dismissing before presenting UIKit's find controls.
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            interaction.presentFindNavigator(showingReplace: false)
+            finding = true
+            // UIKit does not publish navigator visibility changes. Observe only during this find session.
+            repeat {
+                do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            } while interaction.isFindNavigatorVisible
+            guard findRequest == request else { return }
+            finding = false; findInteraction = nil
+        }
         .task(id: workspace.completionID) {
             guard workspace.completionID != nil else { return }
             withAnimation(motion) { completionNotice = true }
@@ -174,10 +202,21 @@ struct BrowserWorkspaceView: View {
         }
         .sensoryFeedback(.success, trigger: workspace.completionID)
         .onChange(of: workspace.browser.title) { _, _ in workspace.refreshRecentWebpageTitle() }
+        .onChange(of: workspace.canSwipe(-1) || workspace.canSwipe(1), initial: true) { _, enabled in
+            workspace.browser.web.allowsBackForwardNavigationGestures = enabled
+        }
         .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
         .onChange(of: workspace.current.id) { _, _ in
+            workspace.browser.web.findInteraction?.dismissFindNavigator()
+            findInteraction?.dismissFindNavigator()
+            findRequest = nil; finding = false; findInteraction = nil
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
         }
+    }
+    private func beginFind(_ interaction: UIFindInteraction?) {
+        guard let interaction else { return }
+        findInteraction = interaction
+        findRequest = UUID()
     }
     private var isHome: Bool { if case .home = workspace.current.resource { true } else { false } }
     private var retainedEntries: [BrowserEntry] {
@@ -247,7 +286,11 @@ struct BrowserWorkspaceView: View {
                     if workspace.current.isWeb {
                         Button { Task { await extract() } } label: {
                             Image(systemName: "bookmark.fill").font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(LinearGradient(colors: [.purple, .pink, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .foregroundStyle(LinearGradient(colors: [
+                                    Color(red: 188 / 255.0, green: 231 / 255.0, blue: 132 / 255.0),
+                                    Color(red: 93 / 255.0, green: 211 / 255.0, blue: 158 / 255.0),
+                                    Color(red: 52 / 255.0, green: 138 / 255.0, blue: 167 / 255.0)
+                                ], startPoint: .topLeading, endPoint: .bottomTrailing))
                                 .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle)
                         }.buttonStyle(.plain).disabled(extracting || sync?.online == false || workspace.browser.loading || workspace.browser.error != nil)
                             .accessibilityLabel("保存网页").accessibilityIdentifier("browser-magic-save")
@@ -278,35 +321,57 @@ struct BrowserWorkspaceView: View {
         }.addressFont().padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 48)
             .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { value in
                 guard !editingAddress, abs(value.translation.width) > 60 else { return }
-                workspace.go(value.translation.width > 0 ? -1 : 1)
+                let distance = value.translation.width > 0 ? -1 : 1
+                guard workspace.canSwipe(distance) else { return }
+                workspace.go(distance)
             })
     }
     private var more: some View {
         Menu {
-            Picker("搜索引擎", selection: $searchEngine) {
-                ForEach(BrowserSearchEngine.allCases) { engine in Text(engine.name).tag(engine) }
-            }.pickerStyle(.menu)
-            Section {
-                Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
+            if let pin = workspace.currentPin {
+                Section {
+                    if workspace.current.isWeb {
+                        Button("在网页中查找", systemImage: "magnifyingglass") {
+                            beginFind(workspace.browser.web.findInteraction)
+                        }
+                    } else if let reader = workspace.ebookReader, workspace.ebookTextID == workspace.current.textID,
+                              reader.format == "pdf", reader.canFind {
+                        Button("在 PDF 中查找", systemImage: "magnifyingglass") { beginFind(reader.findInteraction) }
+                    }
+                    Button("固定到主页", systemImage: "pin") { editingPin = pin }
+                    if workspace.current.isWeb, workspace.browser.url != nil {
+                        Button(workspace.browser.loading ? "停止" : "重新加载", systemImage: workspace.browser.loading ? "xmark" : "arrow.clockwise") {
+                            if workspace.browser.loading { workspace.browser.web.stopLoading() } else { workspace.browser.web.reload() }
+                        }
+                    }
+                }
             }
             if workspace.current.isWeb, let url = workspace.browser.url {
                 Section {
                     ShareLink(item: url) { Label("分享", systemImage: "square.and.arrow.up") }
                     Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
-                    Button(workspace.browser.loading ? "停止" : "重新加载", systemImage: workspace.browser.loading ? "xmark" : "arrow.clockwise") {
-                        if workspace.browser.loading { workspace.browser.web.stopLoading() } else { workspace.browser.web.reload() }
+                }
+            }
+            Section {
+                Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
+                Picker(selection: $searchEngine) {
+                    ForEach(BrowserSearchEngine.allCases) { engine in Text(engine.name).tag(engine) }
+                } label: {
+                    Label("搜索引擎", systemImage: "slider.horizontal.3")
+                }.pickerStyle(.menu)
+            }
+            if workspace.current.isWeb {
+                Section {
+                    Button(role: .destructive) { confirmingClear = true } label: {
+                        Label { Text("清除浏览数据") } icon: {
+                            Image(uiImage: UIImage(systemName: "trash")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) ?? UIImage())
+                                .renderingMode(.original)
+                        }.foregroundStyle(.red)
                     }
                 }
             }
-            if workspace.current.isWeb {
-                Button(role: .destructive) { confirmingClear = true } label: {
-                    Label { Text("清除浏览数据") } icon: {
-                        Image(uiImage: UIImage(systemName: "trash")?.withTintColor(.systemRed, renderingMode: .alwaysOriginal) ?? UIImage())
-                            .renderingMode(.original)
-                    }.foregroundStyle(.red)
-                }
-            }
         } label: { moreLabel }
+        .menuOrder(.fixed)
         .buttonStyle(.plain).accessibilityLabel("更多")
             .accessibilityIdentifier("browser-more")
             .accessibilityValue(workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : "")

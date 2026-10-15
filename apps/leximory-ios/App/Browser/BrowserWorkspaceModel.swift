@@ -14,6 +14,11 @@ private struct RecentReading: Codable {
     var texts: [CatalogText] = []
 }
 
+struct HiddenHomeRecents: Codable {
+    var textIDs: Set<String> = []
+    var webpageURLs: Set<URL> = []
+}
+
 struct RecentWebpage: Codable, Equatable, Identifiable {
     let url: URL
     var title: String? = nil
@@ -23,6 +28,32 @@ struct RecentWebpage: Codable, Equatable, Identifiable {
     static func normalizedTitle(_ title: String?) -> String? {
         guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
         return title
+    }
+}
+
+struct BrowserHomePin: Codable, Equatable, Identifiable {
+    enum Destination: Codable, Equatable {
+        case webpage(URL, bookmarkID: String? = nil)
+        case document(CatalogText)
+    }
+    let id: UUID
+    var title: String
+    var destination: Destination
+    var faviconURL: URL? = nil
+    var iconURL: URL? {
+        guard case .webpage(let url, _) = destination else { return nil }
+        if let faviconURL { return faviconURL }
+        var origin = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        origin?.path = "/favicon.ico"
+        origin?.query = nil
+        origin?.fragment = nil
+        return origin?.url
+    }
+    var symbol: String {
+        switch destination {
+        case .webpage: "globe"
+        case .document(let text): text.format == "ebook" ? "book.closed" : "doc.text"
+        }
     }
 }
 
@@ -75,6 +106,8 @@ struct AnnotationActivity: Identifiable, Codable {
 @MainActor @Observable final class BrowserWorkspaceModel {
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
+    private(set) var homePins: [BrowserHomePin] = []
+    private(set) var hiddenHomeRecents = HiddenHomeRecents()
     private(set) var recentWebpages: [RecentWebpage] = []
     private var recentReading = RecentReading()
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
@@ -122,6 +155,8 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     init(client: MobileClient, namespace: String) {
         self.client = client; self.namespace = namespace
+        if let data = UserDefaults.standard.data(forKey: "browser.hidden-home-recents." + namespace),
+           let hidden = try? JSONDecoder().decode(HiddenHomeRecents.self, from: data) { hiddenHomeRecents = hidden }
         let readingKey = "browser.recent." + namespace
         if let data = UserDefaults.standard.data(forKey: readingKey),
            let saved = try? JSONDecoder().decode(RecentReading.self, from: data) {
@@ -142,9 +177,83 @@ struct AnnotationActivity: Identifiable, Codable {
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.annotations." + namespace),
            let saved = try? JSONDecoder().decode([AnnotationActivity].self, from: data) { activities = saved }
+        if let data = UserDefaults.standard.data(forKey: "browser.home-pins." + namespace),
+           let pins = try? JSONDecoder().decode([BrowserHomePin].self, from: data) { homePins = pins }
         connectBrowser()
     }
+    var currentPin: BrowserHomePin? {
+        let destination: BrowserHomePin.Destination
+        let title: String
+        switch current.resource {
+        case .web(let page):
+            let url = page.url
+            destination = .webpage(url, bookmarkID: page.bookmarkID)
+            title = (browser.url == url ? RecentWebpage.normalizedTitle(browser.title) : nil) ?? url.host ?? "网页"
+        case .document(let document):
+            destination = .document(document.text)
+            title = document.text.title
+        default: return nil
+        }
+        return homePins.first { pin in
+            switch (pin.destination, destination) {
+            case (.webpage(let a, _), .webpage(let b, _)): a == b
+            case (.document(let a), .document(let b)): a.id == b.id
+            default: false
+            }
+        } ?? BrowserHomePin(id: UUID(), title: title, destination: destination)
+    }
+    func savePin(_ pin: BrowserHomePin) {
+        guard !pin.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if let index = homePins.firstIndex(where: { $0.id == pin.id }) { homePins[index] = pin }
+        else { homePins.append(pin) }
+        persistPins()
+        if case .webpage(let url, _) = pin.destination, browser.url == url {
+            let browser = browser
+            let navigation = browser.navigationID
+            Task { [weak self] in
+                let value = try? await browser.web.callAsyncJavaScript("""
+                    const icon = document.querySelector('link[rel~="apple-touch-icon"]')
+                        || document.querySelector('link[rel~="icon"]');
+                    return icon ? icon.href : null;
+                    """, arguments: [:], in: nil, contentWorld: .defaultClient)
+                guard let self, browser.navigationID == navigation,
+                      let address = value as? String, let iconURL = TextBrowserModel.address(address),
+                      let index = self.homePins.firstIndex(where: { $0.id == pin.id && $0.destination == pin.destination }) else { return }
+                self.homePins[index].faviconURL = iconURL
+                self.persistPins()
+            }
+        }
+    }
+    func hideRecentText(_ text: CatalogText) {
+        hiddenHomeRecents.textIDs.insert(text.id)
+        persistHiddenHomeRecents()
+    }
+    func hideRecentWebpage(_ page: RecentWebpage) {
+        hiddenHomeRecents.webpageURLs.insert(page.url)
+        persistHiddenHomeRecents()
+    }
+    private func persistHiddenHomeRecents() {
+        if let data = try? JSONEncoder().encode(hiddenHomeRecents) {
+            UserDefaults.standard.set(data, forKey: "browser.hidden-home-recents." + namespace)
+        }
+    }
+    func deletePin(_ pin: BrowserHomePin) {
+        homePins.removeAll { $0.id == pin.id }
+        persistPins()
+    }
+    func openPin(_ pin: BrowserHomePin) async {
+        switch pin.destination {
+        case .webpage(let url, let bookmarkID): openURL(url, bookmarkID: bookmarkID)
+        case .document(let text): await open(text)
+        }
+    }
+    private func persistPins() {
+        if let data = try? JSONEncoder().encode(homePins) {
+            UserDefaults.standard.set(data, forKey: "browser.home-pins." + namespace)
+        }
+    }
     private func connectBrowser() {
+        browser.web.allowsBackForwardNavigationGestures = canSwipe(-1) || canSwipe(1)
         browser.committed = { [weak self] item in self?.committed(item) }
         browser.historyGesture = { [weak self] url in self?.handleWebGesture(url) ?? false }
         browser.navigationBegan = { [weak self] in
@@ -247,9 +356,14 @@ struct AnnotationActivity: Identifiable, Codable {
             UserDefaults.standard.set(data, forKey: "browser.recent." + namespace)
         }
     }
+    func canSwipe(_ distance: Int) -> Bool {
+        let index = history.index + distance
+        return current.isWeb && history.entries.indices.contains(index) && history.entries[index].isWeb
+    }
     private func handleWebGesture(_ url: URL) -> Bool {
         guard !restoringWeb else { return false }
         let distance = browser.web.backForwardList.backItem?.url == url ? -1 : 1
+        guard canSwipe(distance) else { return true }
         let index = history.index + distance
         guard history.entries.indices.contains(index) else { return true }
         if case .web(let page) = history.entries[index].resource, page.url == url { return false }

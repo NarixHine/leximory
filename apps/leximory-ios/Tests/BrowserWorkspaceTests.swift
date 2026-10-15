@@ -6,6 +6,29 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func homePinsPersistEditsAndDeletionPerAccount() throws {
+        let namespace = "pins-test." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.home-pins." + namespace) }
+        let mobile = client(WorkspaceTransport())
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        let url = try #require(URL(string: "https://example.com/article"))
+        workspace.visit(.web(WebResource(url: url, bookmarkID: "saved-bookmark")))
+        var pin = try #require(workspace.currentPin)
+        #expect(pin.destination == .webpage(url, bookmarkID: "saved-bookmark"))
+        pin.title = "Reading"
+        workspace.savePin(pin)
+        #expect(workspace.currentPin?.id == pin.id)
+        pin.title = "Daily reading"
+        workspace.savePin(pin)
+        let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        #expect(restored.homePins == [pin])
+        #expect(BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other").homePins.isEmpty)
+        restored.clearHistory()
+        #expect(restored.homePins == [pin])
+        restored.deletePin(pin)
+        #expect(BrowserWorkspaceModel(client: mobile, namespace: namespace).homePins.isEmpty)
+    }
+
     @Test func automaticallyReconciledReviewFailureDoesNotNotifyOrLoseTheDraft() async throws {
         let client = MobileClient(baseURL: try #require(URL(string: "https://workspace.test")), transport: OfflineTransport(), token: { _ in "verified" })
         let model = ReviewModel(client: client, selection: ReviewSelection(date: "2026-10-13", language: "en"))

@@ -11,6 +11,82 @@ final class BrowserWorkspaceUITests: XCTestCase {
     @MainActor private func restore(_ app: XCUIApplication) {
         app.terminate(); app.launchArguments = []; app.launch()
     }
+    @MainActor func testFindIsAvailableForWebpagesAndSearchablePDFs() throws {
+        let page = try BrowserPageServer(); defer { page.listener.cancel() }
+        let app = launch(); defer { restore(app) }
+        app.buttons["浏览网页"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser-more"].tap()
+        app.buttons["在网页中查找"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (search.value as? String)?.count ?? 0))
+        search.typeText("forest\n")
+        let webpage = XCTAttachment(screenshot: app.screenshot())
+        webpage.name = "Webpage native find"; webpage.lifetime = .keepAlways; add(webpage)
+        XCTAssertFalse(app.buttons["browser-more"].isHittable)
+        app.buttons["find.doneButton"].tap()
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-more"].isHittable)
+        app.buttons["首页"].tap()
+        XCTAssertFalse(search.exists)
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        if !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        XCTAssertTrue(app.otherElements["ebook-reader"].waitForExistence(timeout: 10))
+        app.buttons["browser-more"].tap()
+        XCTAssertTrue(app.buttons["在 PDF 中查找"].waitForExistence(timeout: 10))
+        app.buttons["在 PDF 中查找"].tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (search.value as? String)?.count ?? 0))
+        search.typeText("river\n")
+        let document = XCTAttachment(screenshot: app.screenshot())
+        document.name = "PDF native find"; document.lifetime = .keepAlways; add(document)
+        XCTAssertFalse(app.buttons["browser-more"].isHittable)
+        app.buttons["find.doneButton"].tap()
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-more"].isHittable)
+    }
+    @MainActor func testHomePinCanBeCreatedRenamedAndDeleted() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let article = app.buttons["browser-resource-fixture-reader"].firstMatch
+        XCTAssertTrue(article.waitForExistence(timeout: 10)); article.tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 10))
+        app.buttons["browser-more"].tap()
+        app.buttons["固定到主页"].tap()
+        let name = app.textFields["名称"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: (name.value as? String)?.count ?? 0))
+        name.typeText("Daily reading")
+        app.buttons["保存"].tap()
+        app.buttons["首页"].tap()
+        let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch
+        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        XCTAssertEqual(pin.label, "Daily reading")
+        let home = XCTAttachment(screenshot: app.screenshot())
+        home.name = "Home shortcut and tinted cards"; home.lifetime = .keepAlways; add(home)
+        pin.press(forDuration: 1)
+        app.buttons["编辑"].tap()
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Daily reading".count))
+        name.typeText("Reading")
+        app.buttons["保存"].tap()
+        XCTAssertEqual(pin.label, "Reading")
+        pin.press(forDuration: 1)
+        app.buttons["删除"].tap()
+        XCTAssertFalse(pin.exists)
+    }
     @MainActor func testFreshHomeKeyboardCardsAndBottomControls() {
         let app = launch(); defer { restore(app) }
         XCTAssertFalse(app.tabBars.firstMatch.exists)

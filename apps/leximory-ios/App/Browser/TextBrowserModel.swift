@@ -120,6 +120,7 @@ final class BrowserWebView: WKWebView {
         web.customUserAgent = Self.safariUserAgent(idiom: UIDevice.current.userInterfaceIdiom)
         web.navigationDelegate = self
         web.uiDelegate = self
+        web.isFindInteractionEnabled = true
         web.allowsBackForwardNavigationGestures = true
         web.scrollView.contentInset.bottom = 80
         observations = [
@@ -187,6 +188,7 @@ final class BrowserWebView: WKWebView {
         pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        webView.findInteraction?.dismissFindNavigator()
         navigationBegan?()
         navigationID = UUID(); error = nil; update()
     }

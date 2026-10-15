@@ -24,11 +24,6 @@ struct BrowserFoldersView: View {
                 }.listRowBackground(Color.clear)
             }
             Group {
-                if !workspace.recentTexts.isEmpty {
-                    Section("继续阅读") {
-                        ForEach(workspace.recentTexts.prefix(5)) { recent in BrowserResourceRow(text: recent) { Task { await workspace.open(recent) } } }
-                    }
-                }
                 Section {
                     ForEach(folders.filter { !$0.archived }) { library in folder(library) }
                 }
@@ -36,7 +31,7 @@ struct BrowserFoldersView: View {
                     Section {
                         DisclosureGroup("已归档", isExpanded: $archiveExpanded) {
                             ForEach(folders.filter(\.archived)) { library in folder(library) }
-                        }.foregroundStyle(.secondary)
+                        }.foregroundStyle(.primary)
                     }
                 }
                 if folders.isEmpty && !workspace.loading { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }

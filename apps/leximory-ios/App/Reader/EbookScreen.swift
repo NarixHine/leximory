@@ -26,6 +26,8 @@ struct EbookChapter: Identifiable {
     var trayRequest: String?
     var backRequest: UUID?
     var canBookmark = false
+    var canFind = false
+    @ObservationIgnored weak var findInteraction: UIFindInteraction?
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
     var bookmarkErrorMessage = "标记未能保存，请重试。"
@@ -619,6 +621,7 @@ struct NativePDFReader: UIViewRepresentable {
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
         view.reader = reader
+        view.isFindInteractionEnabled = true
         context.coordinator.gestures.install(on: view, centerTap: true)
         view.backgroundColor = LeximoryPalette.paperUI
         view.autoScales = true; view.displayMode = .singlePageContinuous
@@ -630,6 +633,15 @@ struct NativePDFReader: UIViewRepresentable {
             return view
         }
         view.document = document
+        Task { @MainActor in
+            reader.canFind = await Task.detached(priority: .utility) { [data] in
+                guard let searchableDocument = PDFDocument(data: data) else { return false }
+                return (0..<searchableDocument.pageCount).contains { index in
+                    guard let text = searchableDocument.page(at: index)?.string else { return false }
+                    return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                }
+            }.value
+        }
         reader.totalPages = document.pageCount
         view.initialPageNumber = Int(reader.location ?? "")
         if let document = view.document {
@@ -647,6 +659,7 @@ struct NativePDFReader: UIViewRepresentable {
             if reader.chapters.isEmpty { reader.chapters = (0..<document.pageCount).map { EbookChapter(title: "\($0 + 1)", location: "\($0 + 1)") } }
 
         }
+        reader.findInteraction = view.findInteraction
         context.coordinator.observe(view)
         view.onInitialLayout = {
             Task { reader.ready = true; context.coordinator.pageChanged() }
