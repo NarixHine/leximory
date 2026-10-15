@@ -24,6 +24,7 @@ export const textRowSchema = z.object({
     has_ebook: z.boolean(),
     content: z.string(),
     created_at: z.string().nullable(),
+    updated_at: z.string().nullable(),
     no: z.number().nullable(),
     bookmark_url: z.string().nullable().optional(),
 })

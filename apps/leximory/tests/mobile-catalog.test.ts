@@ -25,6 +25,7 @@ const article: TextRow = {
     emoji: null,
     has_ebook: false,
     created_at: null,
+    updated_at: null,
     no: null,
 }
 function store(overrides: Partial<CatalogStore> = {}): CatalogStore {

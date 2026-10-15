@@ -149,7 +149,7 @@ private struct CoverTexture: View {
                 for y in stride(from: 0.0, through: size.height, by: 28) {
                     grid.move(to: CGPoint(x: 0, y: y)); grid.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                context.stroke(grid, with: .color(dark ? color.opacity(0.18) : Color(red: 0.72, green: 0.78, blue: 0.74).opacity(0.26)), lineWidth: 0.6)
+                context.stroke(grid, with: .color(dark ? color.opacity(0.26) : Color(red: 0.72, green: 0.78, blue: 0.74).opacity(0.40)), lineWidth: 0.7)
             case 0:
                 // The web's drafting-paper grid, with a slowly passing wash.
                 var grid = Path()

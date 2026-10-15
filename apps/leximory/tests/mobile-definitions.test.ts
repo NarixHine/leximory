@@ -32,6 +32,7 @@ const store: CatalogStore = {
         content: document.source,
         no: null,
         created_at: null,
+        updated_at: null,
         topics: [],
         emoji: null,
         has_ebook: false,

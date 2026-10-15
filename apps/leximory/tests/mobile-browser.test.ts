@@ -33,6 +33,7 @@ const bookmark: TextRow = {
     topics: [],
     emoji: null,
     created_at: null,
+    updated_at: null,
     no: null,
 }
 const selection = {

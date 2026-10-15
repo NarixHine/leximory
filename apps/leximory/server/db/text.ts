@@ -87,7 +87,7 @@ export async function updateText({
 }>) {
     const { data: rec } = await supabase
         .from('texts')
-        .update({ title, content, topics, emoji })
+        .update({ title, content, topics, emoji, updated_at: new Date().toISOString() })
         .is('bookmark_url', null)
         .eq('id', id)
         .select('lib')

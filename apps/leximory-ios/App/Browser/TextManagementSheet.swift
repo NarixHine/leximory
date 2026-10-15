@@ -41,7 +41,6 @@ struct TextManagementSheet: View {
     @State private var choosingFile = false
     @State private var file: BrowserEbookFile?
     @State private var confirmingDelete = false
-    @State private var confirmingFileRemoval = false
     @State private var confirmingReplacement = false
     private var unavailable: Bool { busy || sync?.online == false }
     private var valid: Bool {
@@ -121,13 +120,9 @@ struct TextManagementSheet: View {
                 }
             }
             .confirmationDialog("替换电子书？", isPresented: $confirmingReplacement, titleVisibility: .visible) {
-                Button("替换", role: .destructive) { Task { await changeFile(removing: false) } }
+                Button("替换", role: .destructive) { Task { await replaceFile() } }
                 Button("取消", role: .cancel) { file = nil }
             } message: { Text("阅读位置将重置，荧光笔摘录会保留。") }
-            .confirmationDialog("移除电子书文件？", isPresented: $confirmingFileRemoval, titleVisibility: .visible) {
-                Button("移除文件", role: .destructive) { Task { await changeFile(removing: true) } }
-                Button("取消", role: .cancel) {}
-            } message: { Text("标题、正文和荧光笔摘录会保留。") }
             .confirmationDialog("舍弃当前修改？", isPresented: $confirmingReload, titleVisibility: .visible) {
                 Button("重新载入", role: .destructive) {
                     source = nil; draft = nil; saveIssue = nil
@@ -143,22 +138,22 @@ struct TextManagementSheet: View {
         }.tint(.primary)
     }
     private var topicSection: some View {
-        Section("主题") {
+        Section("标签") {
             ForEach($topics) { $topic in
                 HStack {
-                    TextField("主题名称", text: $topic.value)
+                    TextField("标签名称", text: $topic.value)
                         .lineLimit(1)
                         .focused($focusedTopic, equals: topic.id).submitLabel(.done)
                         .onSubmit { focusedTopic = nil }
                         .accessibilityIdentifier("text-topic-field")
-                    Button("移除主题", systemImage: "minus.circle.fill", role: .destructive) {
+                    Button("移除标签", systemImage: "minus.circle.fill", role: .destructive) {
                         if focusedTopic == topic.id { focusedTopic = nil }
                         topics.removeAll { $0.id == topic.id }
                     }.labelStyle(.iconOnly).buttonStyle(.borderless).frame(width: 44)
-                        .accessibilityLabel("移除主题：\(topic.value)")
+                        .accessibilityLabel("移除标签：\(topic.value)")
                 }
             }
-            Button("添加主题", systemImage: "plus") {
+            Button("添加标签", systemImage: "plus") {
                 let topic = EditableTopic(value: "")
                 topics.append(topic); focusedTopic = topic.id
             }.disabled(topics.count >= 32 || topics.contains { $0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
@@ -170,7 +165,6 @@ struct TextManagementSheet: View {
             Button("替换电子书", systemImage: "doc.badge.arrow.up") { choosingFile = true }
                 .disabled(unavailable).accessibilityIdentifier("text-replace-ebook")
             if let file { Text(file.name).foregroundStyle(.secondary) }
-            Button("移除电子书文件", role: .destructive) { confirmingFileRemoval = true }.disabled(unavailable)
         } footer: {
             if let fileError { Text(fileError).accessibilityAddTraits(.updatesFrequently) }
         }
@@ -223,17 +217,14 @@ struct TextManagementSheet: View {
             saveIssue = (MobileClient.cause(of: error) as? MobileFailure)?.error.code == "stale_revision" ? .conflict : .failed
         }
     }
-    private func changeFile(removing: Bool) async {
-        guard !unavailable, source?.text.format == "ebook", removing || file != nil else { return }
+    private func replaceFile() async {
+        guard !unavailable, source?.text.format == "ebook", let file else { return }
         busy = true; fileError = nil
         let saver = workspace.ebookTextID == text.id ? workspace.ebookReader?.positionSaver : nil
         await saver?.suspend()
         defer { busy = false; saver?.resume() }
         do {
-            let updated: CatalogText
-            if removing { updated = try await workspace.client.removeEbook(id: text.id) }
-            else if let file { updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data) }
-            else { return }
+            let updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data)
             playback.stop()
             await workspace.contentChanged(updated)
             do {
@@ -241,8 +232,8 @@ struct TextManagementSheet: View {
                 if let source, TextEdit(refreshed) != TextEdit(source) { saveIssue = .conflict }
                 else { source = refreshed }
             } catch { saveIssue = .fileChanged }
-            file = nil
-        } catch { fileError = removing ? "文件未能移除，请重试。" : "文件未能替换，请重试。" }
+            self.file = nil
+        } catch { fileError = "文件未能替换，请重试。" }
     }
     private func remove() async {
         guard !unavailable else { return }

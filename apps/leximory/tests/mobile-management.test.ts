@@ -23,6 +23,7 @@ const article: TextRow = {
     content: 'A {{bank||bank||河岸}}.',
     has_ebook: false,
     created_at: null,
+    updated_at: null,
     no: null,
 }
 const word = {
@@ -296,19 +297,16 @@ test('generated bodyless file-removal requests work and reject misleading length
     )
 })
 
-test('production edit query uses PostgreSQL array literals through the real Supabase client', async () => {
+test('production edit query keeps metadata out of its revision filter through the real Supabase client', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     const { editTextRecord } = await import('../server/mobile/text-edit-store')
-    for (const [topics, expected] of [
-        [null, 'is.null'],
-        [[], 'eq.{}'],
-        [['Nature'], 'eq.{"Nature"}'],
-        [['Nature', 'Reading'], 'eq.{"Nature","Reading"}'],
-        [
-            ['history, geography', 'quote"', 'back\\slash', 'line\nbreak'],
-            'eq.{"history, geography","quote\\\"","back\\\\slash","line\nbreak"}',
-        ],
-    ] satisfies [string[] | null, string][]) {
+    for (const topics of [
+        null,
+        [],
+        ['Nature'],
+        ['Nature', 'Reading'],
+        ['history, geography', 'quote"', 'back\\slash', 'line\nbreak'],
+    ] satisfies (string[] | null)[]) {
         let requests = 0
         const database = createClient<import('@repo/supabase/types').Database>('https://database.test', 'test-key', {
             auth: { persistSession: false, autoRefreshToken: false },
@@ -317,13 +315,16 @@ test('production edit query uses PostgreSQL array literals through the real Supa
                     requests++
                     const url = new URL(String(input))
                     assert.equal(init?.method, 'PATCH')
-                    assert.equal(url.searchParams.get('topics'), expected)
+                    assert.equal(url.searchParams.get('topics'), null)
                     assert.equal(url.searchParams.get('id'), 'eq.article')
                     assert.equal(url.searchParams.get('lib'), 'eq.folder')
-                    assert.equal(url.searchParams.get('content'), 'eq.' + article.content)
-                    assert.equal(url.searchParams.get('title'), 'eq.River')
-                    assert.equal(url.searchParams.get('emoji'), 'is.null')
-                    assert.deepEqual(JSON.parse(String(init?.body)), fieldsWithoutRevision)
+                    assert.equal(url.searchParams.get('content'), null)
+                    assert.equal(url.searchParams.get('updated_at'), 'is.null')
+                    assert.equal(url.searchParams.get('title'), null)
+                    assert.equal(url.searchParams.get('emoji'), null)
+                    const { updated_at, ...body } = JSON.parse(String(init?.body))
+                    assert.ok(Number.isFinite(Date.parse(updated_at)))
+                    assert.deepEqual(body, fieldsWithoutRevision)
                     return Response.json({ ...article, ...fieldsWithoutRevision })
                 },
             },
@@ -384,4 +385,65 @@ test('text edits accept Swift-encoded empty cover emoji and preserve canonical n
     const { emoji: _, ...swiftPayload } = fields
     assert.equal((await handler(request('texts/article/edit', swiftPayload))).status, 200)
     assert.deepEqual(writes, [{ title: fields.title, topics: fields.topics, content: fields.content, emoji: null }])
+})
+
+test('article edits pass through an HTTP server with an 8 KB request-header limit', async () => {
+    const { createServer } = await import('node:http')
+    const { createClient } = await import('@supabase/supabase-js')
+    const { editTextRecord } = await import('../server/mobile/text-edit-store')
+    const source = { ...article, content: '河岸旁的树木。'.repeat(3000) }
+    let stored: TextRow = source
+    let current: TextRow = source
+    const server = createServer({ maxHeaderSize: 8192 }, async (request, response) => {
+        const chunks: Buffer[] = []
+        for await (const chunk of request) chunks.push(Buffer.from(chunk))
+        const url = new URL(request.url!, 'http://localhost')
+        const expected = stored.updated_at === null ? 'is.null' : 'eq.' + stored.updated_at
+        if (url.searchParams.get('updated_at') !== expected) {
+            response.writeHead(406, { 'content-type': 'application/json' })
+            response.end(JSON.stringify({ code: 'PGRST116', details: 'The result contains 0 rows' }))
+            return
+        }
+        const saved = { ...stored, ...JSON.parse(Buffer.concat(chunks).toString('utf8')) }
+        stored = saved
+        response.writeHead(200, { 'content-type': 'application/json' })
+        response.end(JSON.stringify(saved))
+    })
+    await new Promise<void>((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(0, '127.0.0.1', resolve)
+    })
+    try {
+        const address = server.address()
+        assert.ok(address && typeof address !== 'string')
+        const database = createClient<import('@repo/supabase/types').Database>(
+            `http://127.0.0.1:${address.port}`,
+            'test-key',
+            { auth: { persistSession: false, autoRefreshToken: false } },
+        )
+        for (const content of [source.content, source.content + '\n\nNew paragraph.']) {
+            const saved = await editTextRecord({
+                database,
+                text: current,
+                fields: { title: 'Edited article', topics: [], emoji: null, content },
+            })
+            assert.equal(saved.title, 'Edited article')
+            assert.equal(saved.content, content)
+            assert.ok(Date.parse(saved.updated_at!) > Date.parse(current.updated_at ?? '1970-01-01'))
+            current = saved
+        }
+        stored = { ...stored, content: stored.content.replace('河', '江'), updated_at: '2099-01-01T00:00:00Z' }
+        await assert.rejects(
+            editTextRecord({
+                database,
+                text: current,
+                fields: { title: 'Stale overwrite', topics: [], emoji: null, content: current.content },
+            }),
+            { code: 'stale_revision' },
+        )
+        assert.ok(stored.content.startsWith('江'))
+    } finally {
+        server.closeAllConnections()
+        await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+    }
 })
