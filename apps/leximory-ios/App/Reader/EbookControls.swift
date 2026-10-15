@@ -86,9 +86,10 @@ struct EbookThemePicker: View {
     static func insert(into builder: UIMenuBuilder, reader: EbookReaderState) {
         guard builder.system == .context else { return }
         ReadingSelectionMenu.removeUnrelatedActions(from: builder)
-        ReadingSelectionMenu.insertLearningActions(actions(reader: reader), into: builder, nativeLookupBeforeCopy: true)
+        ReadingSelectionMenu.insertLearningActions(actions(reader: reader, includeSearch: false), into: builder, nativeLookupBeforeCopy: true)
+        builder.insertChild(UIMenu(title: "", options: .displayInline, children: [searchAction(reader: reader)]), atEndOfMenu: .root)
     }
-    static func actions(reader: EbookReaderState, includeBookmark: Bool = true) -> [UIAction] {
+    static func actions(reader: EbookReaderState, includeBookmark: Bool = true, includeSearch: Bool = true) -> [UIAction] {
         let selection = reader.selection
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
@@ -96,7 +97,14 @@ struct EbookThemePicker: View {
         let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark, selection: selection) }
         }
-        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : [])
+        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
+    }
+    private static func searchAction(reader: EbookReaderState) -> UIAction {
+        let selected = reader.selection ?? reader.menuSelection
+        return UIAction(title: "搜索", image: UIImage(systemName: "magnifyingglass"), attributes: reader.search == nil ? .disabled : []) { _ in
+            guard let selection = selected ?? reader.menuSelection ?? reader.selection else { return }
+            reader.search?(selection.quote)
+        }
     }
 }
 

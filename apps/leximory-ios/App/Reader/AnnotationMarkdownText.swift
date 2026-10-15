@@ -99,9 +99,11 @@ private struct RubyAnnotationText: UIViewRepresentable {
     let content: String
     let size: CGFloat
     let language: String
+    @Environment(\.browserWorkspace) private var workspace
 
     func makeUIView(context: Context) -> AnnotationRubyTextView {
         let view = AnnotationRubyTextView()
+        view.delegate = view
         view.isEditable = false; view.isScrollEnabled = false; view.backgroundColor = .clear
         view.textContainer.lineFragmentPadding = 0
         view.accessibilityIdentifier = "annotation-markdown-ruby"
@@ -109,6 +111,7 @@ private struct RubyAnnotationText: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: AnnotationRubyTextView, context: Context) {
+        view.workspace = workspace
         let layout = AnnotationMarkdownLayout(content: content, size: size, language: language)
         view.rubies = layout.rubies
         view.rubyFont = LeximoryTypography.proseUI(size * 0.48, language: "Japanese")
@@ -123,7 +126,21 @@ private struct RubyAnnotationText: UIViewRepresentable {
     }
 }
 
-private final class AnnotationRubyTextView: UITextView {
+private final class AnnotationRubyTextView: UITextView, UITextViewDelegate {
+    weak var workspace: BrowserWorkspaceModel?
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+    }
+    func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        let text = (textView.text ?? "") as NSString
+        let native = ReadingSelectionMenu.copyAndLookupActions(suggestedActions)
+        guard range.location <= text.length, range.length <= text.length - range.location else { return UIMenu(children: native) }
+        let search = ReadingSelectionMenu.searchAction(query: text.substring(with: range), perform: workspace.map { workspace in
+            { [weak workspace] query in workspace?.search(query) }
+        })
+        return UIMenu(children: native + [search])
+    }
     var rubies: [AnnotationMarkdownLayout.Ruby] = []
     var rubyFont = UIFont.systemFont(ofSize: 9)
     private var labels: [UILabel] = []

@@ -309,7 +309,10 @@ struct BrowserWorkspaceView: View {
     private var addressControl: some View {
         HStack(spacing: 8) {
             if editingAddress {
-                BrowserAddressField(address: address, editor: addressEditor, submit: submitAddress).frame(height: 48)
+                BrowserAddressField(address: address, editor: addressEditor, submit: submitAddress, search: { query in
+                    finishEditing()
+                    workspace.search(query)
+                }).frame(height: 48)
             } else {
                 Button(action: beginEditing) {
                     HStack(spacing: 6) {

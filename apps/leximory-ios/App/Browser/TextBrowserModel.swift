@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import QuartzCore
 import LeximoryCore
 
 enum BrowserSearchEngine: String, CaseIterable, Identifiable {
@@ -29,6 +30,7 @@ struct BrowserSelection: Decodable {
 
 final class BrowserWebView: WKWebView {
     var lookup: ((BrowserSelection) -> Void)?
+    var search: ((String) -> Void)?
     private var selectionRequest = UUID()
     func invalidateSelection() { selectionRequest = UUID() }
     private static let world = WKContentWorld.world(name: "LeximoryBrowserSelection")
@@ -90,7 +92,6 @@ final class BrowserWebView: WKWebView {
         guard builder.system == .context else { return }
         guard !super.canPerformAction(#selector(UIResponderStandardEditActions.cut(_:)), withSender: nil) else { return }
         ReadingSelectionMenu.removeUnrelatedActions(from: builder)
-        builder.replaceChildren(ofMenu: .root) { ReadingSelectionMenu.copyAndLookupActions($0) }
         // Each menu owns its snapshot. A late response from an older menu cannot
         // replace the selection used by a newer menu or a different document.
         let request = selectionRequest
@@ -109,7 +110,18 @@ final class BrowserWebView: WKWebView {
                 }
             }
         }
+        let searchAction = UIAction(title: "搜索", image: UIImage(systemName: "magnifyingglass"), attributes: search == nil ? .disabled : []) { [weak self] _ in
+            guard let self, selectionRequest == request else { return }
+            if let capturedSelection { search?(capturedSelection.quote) }
+            else {
+                capture { [weak self] selection in
+                    guard let self, self.selectionRequest == request, let selection else { return }
+                    self.search?(selection.quote)
+                }
+            }
+        }
         ReadingSelectionMenu.insertLearningActions([action], into: builder)
+        builder.insertChild(UIMenu(title: "", options: .displayInline, children: [searchAction]), atEndOfMenu: .root)
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
@@ -145,6 +157,7 @@ final class BrowserWebView: WKWebView {
     @ObservationIgnored var historyGesture: ((URL) -> Bool)?
     @ObservationIgnored var navigationBegan: (() -> Void)?
     @ObservationIgnored private var resumeOffset: CGFloat?
+    @ObservationIgnored private var searchNavigation: WKNavigation?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
     override convenience init() { self.init(websiteDataStore: .default()) }
@@ -156,6 +169,7 @@ final class BrowserWebView: WKWebView {
         // No app credentials or native message handlers are exposed to websites.
         web = BrowserWebView(frame: .zero, configuration: configuration)
         super.init()
+        web.search = { [weak self] query in self?.search(query) }
         web.customUserAgent = Self.safariUserAgent(idiom: UIDevice.current.userInterfaceIdiom)
         web.navigationDelegate = self
         web.uiDelegate = self
@@ -187,9 +201,19 @@ final class BrowserWebView: WKWebView {
         if ["javascript:", "data:", "file:", "about:", "http:", "https:"].contains(where: { input.lowercased().hasPrefix($0) }) { return nil }
         if let url = address(input), let host = url.host,
            host.contains(".") || host == "localhost" || host.contains(":") { return url }
+        return searchURL(input, engine: engine)
+    }
+    static func searchURL(_ query: String, engine: BrowserSearchEngine? = nil) -> URL? {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return nil }
+        let engine = engine ?? UserDefaults.standard.string(forKey: "browser.searchEngine").flatMap(BrowserSearchEngine.init(rawValue:)) ?? .bing
         var search = URLComponents(string: engine.endpoint)!
-        search.queryItems = [URLQueryItem(name: engine.queryParameter, value: input)]
+        search.queryItems = [URLQueryItem(name: engine.queryParameter, value: query)]
         return search.url
+    }
+    func search(_ query: String) {
+        guard let url = Self.searchURL(query) else { return }
+        load(url, animateSearch: true)
     }
     static func safariUserAgent(idiom: UIUserInterfaceIdiom, version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> String {
         let safari = "\(version.majorVersion).\(version.minorVersion)"
@@ -208,10 +232,11 @@ final class BrowserWebView: WKWebView {
         let host = url?.host?.lowercased() ?? ""
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
-    func load(_ url: URL, offset: CGFloat? = nil) {
+    func load(_ url: URL, offset: CGFloat? = nil, animateSearch: Bool = false) {
         resumeOffset = offset
         error = nil
-        web.load(URLRequest(url: url))
+        let navigation = web.load(URLRequest(url: url))
+        searchNavigation = animateSearch ? navigation : nil
     }
     static func clearBrowsingData(in store: WKWebsiteDataStore = .default(), preferences: UserDefaults = .standard) async {
         // Drop every browser's page and back/forward list before clearing shared website storage.
@@ -246,6 +271,16 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         update()
         if let item = webView.backForwardList.currentItem { committed?(item) }
+        if let searchNavigation, navigation === searchNavigation {
+            self.searchNavigation = nil
+            guard webView.window != nil, !UIAccessibility.isReduceMotionEnabled else { return }
+            let transition = CATransition()
+            transition.type = .push
+            transition.subtype = webView.effectiveUserInterfaceLayoutDirection == .rightToLeft ? .fromLeft : .fromRight
+            transition.duration = 0.3
+            transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            webView.layer.add(transition, forKey: "searchNavigation")
+        }
     }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }

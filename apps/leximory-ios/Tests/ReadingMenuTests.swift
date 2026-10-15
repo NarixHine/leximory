@@ -10,15 +10,19 @@ import LeximoryCore
         let parent = ReadingTextView(document: document, textID: TextID(rawValue: "text"), jumpToEnd: false,
             readOnly: offline, onDefine: { _, _, _ in })
         let copy = UIAction(title: "Copy") { _ in }
-        let define = UIMenu(title: "Define", identifier: .lookup, children: [UIAction(title: "Define") { _ in }])
+        let nativeDefine = UIAction(title: "Define") { _ in }
+        let define = UIMenu(title: "Define", identifier: .lookup, children: [nativeDefine])
         let menu = try #require(parent.makeCoordinator().textView(UITextView(),
             editMenuForTextIn: NSRange(location: 0, length: 4), suggestedActions: [copy, define]))
         #expect(menu.children.contains { $0 === copy })
-        #expect(menu.children.contains { $0 === define })
+        #expect(!menu.children.contains { $0 === define })
+        let defineGroup = try #require(menu.children.compactMap { $0 as? UIMenu }.first { $0.identifier == ReadingSelectionMenu.nativeDefineMenuID })
+        #expect(defineGroup.children.first === nativeDefine)
         let actions = menu.children.flatMap { ($0 as? UIMenu)?.children ?? [$0] }
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
         if !offline { #expect(actions.first?.title == ReadingSelectionMenu.lookupTitle) }
-        #expect(actions.last?.title == "Define")
+        #expect(actions.contains { $0.title == "Define" })
+        #expect(actions.last?.title == "搜索")
     }
     @Test(arguments: [false, true]) func ebookHidesLookupAndPreservesDisabledBookmarkOffline(offline: Bool) {
         let reader = EbookReaderState()
@@ -31,20 +35,26 @@ import LeximoryCore
     }
     @Test func browserFilteringPreservesNativeDefineAndItsOriginalAction() throws {
         let native = UIAction(title: "Define") { _ in }
-        let lookup = UIMenu(title: "", identifier: .lookup, children: [native])
+        let extras = ["查找所选内容", "翻译", "搜索网页"].map { UIAction(title: $0) { _ in } }
+        let lookup = UIMenu(title: "", identifier: .lookup, children: [native] + extras)
         let copy = UICommand(title: "Copy", action: #selector(UIResponderStandardEditActions.copy(_:)))
         let selectAll = UICommand(title: "Select All", action: #selector(UIResponderStandardEditActions.selectAll(_:)))
         let children = ReadingSelectionMenu.copyAndLookupActions([copy, selectAll, lookup])
         #expect(children.count == 2)
-        #expect(children.last === lookup)
-        #expect((children.last as? UIMenu)?.children.first === native)
+        let retained = try #require(children.last as? UIMenu)
+        #expect(retained.identifier != .lookup)
+        #expect(retained.children.count == 1)
+        #expect(retained.children.first === native)
         let nested = UIMenu(children: [lookup])
-        #expect(ReadingSelectionMenu.nativeLookupMenus(in: [copy, nested]).first === lookup)
+        let nativeMenus = ReadingSelectionMenu.nativeLookupMenus(in: [copy, nested])
+        #expect((nativeMenus.first as? UIMenu)?.identifier != .lookup)
+        #expect((nativeMenus.first as? UIMenu)?.children.count == 1)
+        #expect((nativeMenus.first as? UIMenu)?.children.first === native)
     }
 
     @Test func existingPDFHighlightOmitsAddHighlight() {
         let actions = EbookLearningMenu.actions(reader: EbookReaderState(), includeBookmark: false)
-        #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle])
+        #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle, "搜索"])
     }
 
 }

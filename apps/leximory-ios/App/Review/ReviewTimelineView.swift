@@ -44,7 +44,7 @@ struct ReviewTimelineView: View {
                     if hasLoaded && !loading && days.isEmpty {
                         LeximoryUnavailableView("还没有可复习的词汇", systemImage: "leaf", message: "阅读时保存词汇，明天在这里回忆旧知。")
                     }
-                    LazyVStack(alignment: .leading, spacing: 24) {
+                    LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(days) { day in
                             dayRow(day)
                         }
@@ -108,7 +108,7 @@ struct ReviewTimelineView: View {
                             Button { open(ReviewSelection(date: day.date, language: lang)) } label: {
                                 ReviewProgressView(value: progress?.percentage ?? 0, language: lang,
                                                    conversationCompleted: progress?.conversationCompleted ?? false)
-                                    .frame(minHeight: 44).contentShape(.rect)
+                                    .frame(minHeight: 44, alignment: .top).contentShape(.rect)
                             }.buttonStyle(.plain)
                                 .accessibilityLabel("\(learningLanguageName(lang))，复习进度 \(progress?.percentage ?? 0)%")
                         }
@@ -116,7 +116,7 @@ struct ReviewTimelineView: View {
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, day.isToday ? 20 : 8)
+        .padding(.vertical, day.isToday ? 20 : 4)
         .padding(.horizontal, day.isToday ? 20 : 0)
         .background {
             if day.isToday {

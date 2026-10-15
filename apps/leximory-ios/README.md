@@ -80,7 +80,7 @@ Use the lawn and cat together for spacious loading scenes, at 80% width up to 56
 
 ## Reading and learning
 
-Selection menus put 猫忆查 and ebook 🖍️荧光笔 first, preserve native Define after the Leximory actions, and remove unrelated sharing, replacement, find, and Select All in learning mode. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
+Selection menus put 猫忆查 and ebook 🖍️荧光笔 first, preserve only native Define and Copy, and offer 搜索 for the selected text. 搜索 uses the chosen search engine inside the Leximory browser and participates in workspace history; never open Safari for this action. Remove 查找所选内容, 翻译, 搜索网页, sharing, replacement, find, Select All, and other unrequested system actions. Remove Apple's lookup menu container entirely and retain the original native Define action in a Leximory-owned menu; retaining the system lookup identifier allows Search Web to return after menu construction. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
 
 Static annotations highlight on touch-down and open on touch-up, anchored to the selected line. Use a fitted popover on iPad and tray on phone, with a comfortable 400 pt measure and 24 pt insets. Keep actions below the definition. Article highlights are short sage-yellow strokes behind the lower glyph area, separately fitted to each line.
 

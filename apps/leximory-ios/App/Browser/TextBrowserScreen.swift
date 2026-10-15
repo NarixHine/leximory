@@ -249,7 +249,10 @@ struct TextBrowserScreen: View {
         HStack(spacing: 8) {
             if editingAddress {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                BrowserAddressField(address: address, editor: addressEditor, submit: openAddress)
+                BrowserAddressField(address: address, editor: addressEditor, submit: openAddress, search: { query in
+                    finishEditing()
+                    browser.web.search?(query)
+                })
                     .frame(maxWidth: .infinity).frame(height: 48)
             } else {
                 Button {
@@ -307,6 +310,7 @@ struct BrowserAddressField: UIViewRepresentable {
     let address: String
     let editor: BrowserAddressEditor
     let submit: () -> Void
+    var search: ((String) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> BrowserURLTextField {
@@ -376,6 +380,12 @@ struct BrowserAddressField: UIViewRepresentable {
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
             parent.submit()
             return false
+        }
+        func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+            let text = (textField.text ?? "") as NSString
+            let native = ReadingSelectionMenu.removingSystemSearchActions(suggestedActions)
+            guard range.location <= text.length, range.length <= text.length - range.location else { return UIMenu(children: native) }
+            return UIMenu(children: native + [ReadingSelectionMenu.searchAction(query: text.substring(with: range), perform: parent.search)])
         }
     }
 }

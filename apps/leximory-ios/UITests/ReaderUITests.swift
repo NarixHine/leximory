@@ -836,7 +836,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.menuItems["拷贝"].waitForExistence(timeout: 5))
         let define = app.menuItems["🐈 猫忆查"]
         XCTAssertTrue(define.exists)
-        for title in ["搜索网页", "Search Web"] {
+        for title in ["查找所选内容", "翻译", "搜索网页", "Translate", "Search Web"] {
             XCTAssertFalse(app.menuItems[title].exists)
         }
         assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])

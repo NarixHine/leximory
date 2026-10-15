@@ -27,6 +27,7 @@ struct EbookChapter: Identifiable {
     var backRequest: UUID?
     var canBookmark = false
     var canFind = false
+    @ObservationIgnored var search: ((String) -> Void)?
     @ObservationIgnored weak var findInteraction: UIFindInteraction?
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
@@ -164,8 +165,10 @@ struct EbookScreen: View {
         .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
         .onChange(of: reader.backRequest) { _, _ in if let workspace { workspace.go(-1) } else { dismiss() } }
         .onChange(of: resourceActive, initial: true) { _, active in
-            if active { workspace?.ebookReader = reader; workspace?.ebookTextID = article.id.rawValue }
-            else { definition = nil; tray = nil; positionSaver?.flush() }
+            if active {
+                workspace?.ebookReader = reader; workspace?.ebookTextID = article.id.rawValue
+                reader.search = workspace.map { workspace in { [weak workspace] query in workspace?.search(query) } }
+            } else { reader.search = nil; definition = nil; tray = nil; positionSaver?.flush() }
         }
         .onChange(of: reader.trayRequest) { _, request in
             guard resourceActive, let request else { return }

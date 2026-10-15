@@ -295,6 +295,7 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     private func connectBrowser() {
         browser.web.allowsBackForwardNavigationGestures = canSwipe(-1) || canSwipe(1)
+        browser.web.search = { [weak self] query in self?.search(query) }
         browser.committed = { [weak self] item in self?.committed(item) }
         browser.historyGesture = { [weak self] url in self?.handleWebGesture(url) ?? false }
         browser.navigationBegan = { [weak self] in
@@ -340,6 +341,12 @@ struct AnnotationActivity: Identifiable, Codable {
         rememberCurrentWebpage()
         acknowledgeCurrent()
         rememberCurrentReading()
+    }
+    func search(_ query: String) {
+        guard let url = TextBrowserModel.searchURL(query) else { return }
+        visit(.web(WebResource(url: url)))
+        restoringWeb = true
+        browser.load(url, animateSearch: true)
     }
     func openURL(_ url: URL, bookmarkID: String? = nil) {
         visit(.web(WebResource(url: url, bookmarkID: bookmarkID)))
