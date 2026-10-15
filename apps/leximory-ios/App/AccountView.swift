@@ -8,7 +8,6 @@ struct AccountView: View {
     let playback: PlaybackController
     @State private var details: AccountSettings?
     @State private var loading = false
-    @State private var loadFailed = false
     @State private var busy = false
     @State private var notice: String?
     @State private var failure: String?
@@ -45,7 +44,7 @@ struct AccountView: View {
                         management(details)
                     } else if loading {
                         ProgressView("正在打开账号").frame(maxWidth: .infinity).padding(.top, 80)
-                    } else if loadFailed {
+                    } else {
                         LeximoryUnavailableView("暂时无法打开账号", systemImage: "person.crop.circle.badge.exclamationmark") {
                             Button { Task { await load() } } label: {
                                 Label("重试", systemImage: "arrow.clockwise")
@@ -213,7 +212,6 @@ struct AccountView: View {
         #endif
         guard !loading else { return }
         loading = true
-        loadFailed = false
         defer { loading = false }
         if details == nil, let cached = await session.client.localStore?.value(AccountSettings.self, for: "account-settings"), cached.userId == session.state.accountID {
             details = cached
@@ -222,7 +220,7 @@ struct AccountView: View {
             let result = try await session.client.accountSettings()
             guard !Task.isCancelled, result.userId == session.state.accountID else { return }
             details = result
-        } catch { loadFailed = !Task.isCancelled && !MobileClient.isConnectionFailure(error) }
+        } catch { if details == nil && !Task.isCancelled { failure = "暂时无法打开账号，请稍后重试。" } }
     }
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
         #if DEBUG && targetEnvironment(simulator)
@@ -233,7 +231,7 @@ struct AccountView: View {
         Task {
             defer { busy = false }
             do { try await action(); await load() }
-            catch { guard !MobileClient.isConnectionFailure(error) else { return }; failure = (error as? AccountActionError)?.message ?? "操作未完成，请稍后重试。" }
+            catch { failure = (error as? AccountActionError)?.message ?? "操作未完成，请稍后重试。" }
         }
     }
 }
@@ -339,7 +337,7 @@ private struct AccountEditor: View {
                 }
                 value = ""; confirmation = ""
                 if field == .email { emailUpdated = true } else { dismiss() }
-            } catch { guard !MobileClient.isConnectionFailure(error) else { return }; message = "更新失败，请检查填写内容后重试。" }
+            } catch { message = "更新失败，请检查填写内容后重试。" }
         }
     }
 }
@@ -378,7 +376,7 @@ private struct AccountPlansSheet: View {
                                     Task {
                                         defer { busy = false }
                                         do { openURL(try await session.client.accountCheckout(plan: plan.id)) }
-                                        catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "暂时无法升级，请稍后重试。" }
+                                        catch { self.error = "暂时无法升级，请稍后重试。" }
                                     }
                                 }.buttonStyle(.borderedProminent).tint(LeximoryPalette.ink).foregroundStyle(LeximoryPalette.paper).disabled(busy)
                             }

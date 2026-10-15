@@ -166,10 +166,6 @@ struct BrowserImportSheet: View {
             } else { return }
             imported(text, file == nil && fullText); dismiss()
         } catch {
-            if MobileClient.isConnectionFailure(error) {
-                uncertain = importStarted && (file != nil || fullText)
-                return
-            }
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
                 uncertain = importStarted && (file != nil || fullText) && failure.error.code == "service_unavailable"
                 self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : failure.error.message

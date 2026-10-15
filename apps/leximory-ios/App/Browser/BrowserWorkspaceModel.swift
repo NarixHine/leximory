@@ -279,7 +279,7 @@ struct AnnotationActivity: Identifiable, Codable {
             track(details)
             acknowledge(text.id)
         } catch {
-            guard openRequest == request, !Task.isCancelled, !MobileClient.isConnectionFailure(error) else { return }
+            guard openRequest == request, !Task.isCancelled else { return }
             self.error = "暂时无法打开，请稍后重试。"
         }
     }
@@ -317,7 +317,7 @@ struct AnnotationActivity: Identifiable, Codable {
                 recentReading.texts.removeAll { !accessible.contains($0.libraryId) }
                 persistRecentReading()
             }
-            catch { }
+            catch { if !Task.isCancelled, libraries.isEmpty { self.error = "暂时无法打开文件夹，请稍后重试。" } }
         }
     }
     func loadFolder(_ library: CatalogLibrary, online: Bool) async {
@@ -333,7 +333,7 @@ struct AnnotationActivity: Identifiable, Codable {
             persistRecentReading()
         }
         catch {
-            guard folderRequests[library.id] == request, !Task.isCancelled, !MobileClient.isConnectionFailure(error) else { return }
+            guard folderRequests[library.id] == request, !Task.isCancelled else { return }
             if MobileClient.isAccessFailure(error) {
                 texts[library.id] = []
                 recentReading.texts.removeAll { $0.libraryId == library.id }
@@ -347,7 +347,7 @@ struct AnnotationActivity: Identifiable, Codable {
             try await client.setLibraryArchived(libraryID: library.id, archived: !library.archived)
             catalogMutation += 1
             if let index = libraries.firstIndex(where: { $0.id == library.id }) { libraries[index].archived.toggle() }
-        } catch { guard !MobileClient.isConnectionFailure(error) else { return }; self.error = "文件夹未能更新，请重试。" }
+        } catch { self.error = "文件夹未能更新，请重试。" }
     }
     func upsertFolder(_ library: CatalogLibrary) {
         catalogMutation += 1
@@ -368,7 +368,6 @@ struct AnnotationActivity: Identifiable, Codable {
                 revision += 1
             } catch {
                 guard !Task.isCancelled else { return }
-                if MobileClient.isConnectionFailure(error) { continue }
                 if let index = activities.firstIndex(where: { $0.id == activity.id }) { activities[index].state = .failed }
             }
         }

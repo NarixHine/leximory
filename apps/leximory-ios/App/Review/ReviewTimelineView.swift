@@ -39,12 +39,20 @@ struct ReviewTimelineView: View {
                             .accessibilityLabel("每日已存词汇数量")
                     }
                     if loading && days.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(60) }
+                    if loadFailed && !hasLoaded && !loading {
+                        reloadHistory
+                            .padding(.leading, dateWidth + 24)
+                    }
                     if hasLoaded && !loading && days.isEmpty {
                         LeximoryUnavailableView("还没有可复习的词汇", systemImage: "leaf", message: "阅读时保存词汇，明天在这里回忆旧知。")
                     }
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(days) { day in
                             dayRow(day)
+                        }
+                        if cursor != nil && loadFailed && !loading {
+                            reloadHistory
+                                .frame(maxWidth: .infinity)
                         }
                         if cursor != nil && !loadFailed {
                             ProgressView().frame(maxWidth: .infinity)
@@ -70,6 +78,20 @@ struct ReviewTimelineView: View {
                 }
 
         }.tint(.primary)
+    }
+
+    private var reloadHistory: some View {
+        Button {
+            Task { await load(reset: !hasLoaded) }
+        } label: {
+            Label("重新载入", systemImage: "arrow.clockwise")
+                .font(LeximoryTypography.interface(14))
+                .foregroundStyle(ReviewStyle.meta)
+                .frame(minHeight: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("重新载入复习记录")
     }
 
     private var dateWidth: CGFloat { sizeClass == .regular ? 64 : 40 }

@@ -6,27 +6,6 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
-    @Test func networkFailuresLeaveWorkspaceAndReviewDraftsIntactWithoutAlerts() async throws {
-        let transport = WorkspaceTransport()
-        let namespace = "workspace-test." + UUID().uuidString
-        let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
-        let details = try await workspace.client.documentDetails(textID: "article")
-        await transport.disconnect()
-        await workspace.open(details.text)
-        await workspace.refresh(online: true)
-        await workspace.loadFolder(details.library, online: true)
-        #expect(workspace.error == nil)
-        #expect(!workspace.opening)
-        #expect(workspace.current.title == "Leximory")
-        let review = ReviewModel(client: workspace.client, selection: ReviewSelection(date: "2026-10-13", language: "en"))
-        review.drafts["translation-0"] = "My answer"
-        await review.submit(index: 0, text: "My answer")
-        #expect(review.error == nil)
-        #expect(review.drafts["translation-0"] == "My answer")
-        #expect(review.awaitingConfirmation)
-        #expect(!review.submitting)
-    }
-
     @Test func recentReadingRestoresTitlesBeforeAnyFolderRefresh() async throws {
         let namespace = "workspace-test." + UUID().uuidString
         defer {
@@ -158,8 +137,6 @@ import HTTPTypes
         MobileClient(baseURL: URL(string: "https://workspace.test")!, transport: transport, token: { _ in "verified" })
     }
     private actor WorkspaceTransport: ClientTransport {
-        private var disconnected = false
-        func disconnect() { disconnected = true }
         var calls = 0
         private var completed = false
         private var delayed = false
@@ -167,7 +144,6 @@ import HTTPTypes
         func delayNextRead() { delayed = true }
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             calls += 1
-            if disconnected { throw URLError(.networkConnectionLost) }
             if delayed { delayed = false; try await Task.sleep(for: .milliseconds(200)) }
             guard operationID == "document" else { throw URLError(.unsupportedURL) }
             let status = completed ? "completed" : "annotating"

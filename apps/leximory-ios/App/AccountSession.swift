@@ -131,7 +131,7 @@ actor AccountTokens {
             let cause = MobileClient.cause(of: error)
             if Self.requiresSignIn(cause) || (cause as? MobileFailure)?.error.code == "unauthenticated" {
                 await clearStore(); state = .signedOut
-            } else if !state.isSignedIn && !MobileClient.isConnectionFailure(error) { state = .unavailable("暂时无法连接文库，请稍后重试。") }
+            } else if !state.isSignedIn { state = .unavailable("暂时无法连接文库，请稍后重试。") }
         }
     }
     func signIn(email: String, password: String) async throws {

@@ -87,7 +87,6 @@ enum PlaybackState: Equatable {
             } catch {
                 guard let self, !Task.isCancelled, self.generation == request else { return }
                 self.wantsPlayback = false
-                if MobileClient.isConnectionFailure(error) { self.stop(); return }
                 self.state = .failed(source, "无法播放录音，请重新打开。")
             }
         }
@@ -162,7 +161,6 @@ enum PlaybackState: Equatable {
                     if self.wantsPlayback && !self.interrupted { self.player?.play() }
                     self.publishProgress()
                 case .failed:
-                    if let error = item.error, MobileClient.isConnectionFailure(error) { self.stop(); return }
                     self.wantsPlayback = false
                     self.state = .failed(source, "录音不存在或播放链接已过期。")
                     self.clearNowPlaying()

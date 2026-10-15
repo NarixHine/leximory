@@ -33,7 +33,7 @@ enum ReviewExercise: Hashable {
                 if snapshot != nil { error = nil }
             } catch {
                 if Task.isCancelled { return }
-                if !MobileClient.isConnectionFailure(error), snapshot?.exists != true && snapshot?.inProgress != true { self.error = "复习暂时无法打开，请稍后重试。" }
+                if snapshot?.exists != true && snapshot?.inProgress != true { self.error = "复习暂时无法打开，请稍后重试。" }
             }
             let idle = snapshot?.exists == true && snapshot?.needsRefresh == false && !awaitingConfirmation
             for _ in 0..<(idle ? 15 : 1) {
@@ -70,7 +70,7 @@ enum ReviewExercise: Hashable {
             await client.localStore?.save(current, for: "review/" + selection.id)
             error = nil
         } catch {
-            if Task.isCancelled || MobileClient.isConnectionFailure(error) { return }
+            if Task.isCancelled { return }
             if let failure = error as? ReviewHTTPError, (400..<500).contains(failure.status) {
                 pendingSubmission = nil
             }

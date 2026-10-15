@@ -151,7 +151,7 @@ struct TextBrowserScreen: View {
                         browser.error = "书签网址无法打开。"; return
                     }
                     browser.load(url)
-                } catch { guard !MobileClient.isConnectionFailure(error) else { return }; browser.error = "书签暂时无法打开，请重试。" }
+                } catch { browser.error = "书签暂时无法打开，请重试。" }
             } else if restoresSession, let saved = savedPage, let url = TextBrowserModel.address(saved.url) {
                 browser.load(url, offset: saved.offset)
             } else if let homeURL, let url = TextBrowserModel.address(homeURL) {

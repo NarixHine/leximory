@@ -101,7 +101,7 @@ struct LibraryGallery: View {
             Task {
                 defer { archiving.remove(library.id) }
                 do { try await archive?(library, archived) }
-                catch { guard !MobileClient.isConnectionFailure(error) else { return }; archiveError = "请检查网络后重试。" }
+                catch { archiveError = "请检查网络后重试。" }
             }
         } label: {
             Group {
