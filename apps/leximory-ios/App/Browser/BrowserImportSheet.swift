@@ -118,9 +118,7 @@ struct BrowserImportSheet: View {
                 switch step {
                 case .folder: BrowserFolderPicker(workspace: workspace, selection: $folderID)
                 case .content:
-                    TextEditor(text: $content).font(LeximoryTypography.prose(17)).padding(16)
-                        .navigationTitle("编辑全文").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { path.removeLast() } } }
+                    ArticleEditorPage(content: $content, language: folder?.preview.language ?? "English")
                 }
             }
             .task {

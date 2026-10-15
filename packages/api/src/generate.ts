@@ -37,6 +37,31 @@ specification.paths['/libraries/{libraryId}/ebooks'] = {
         security: [{ bearerAuth: [] }],
     },
 }
+specification.paths['/texts/{textId}/ebook-replace'] = {
+    post: {
+        operationId: 'replaceEbook',
+        parameters: [
+            { name: 'textId', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+        ],
+        requestBody: {
+            required: true,
+            content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } },
+        },
+        responses: {
+            '200': {
+                description: 'Replaced ebook',
+                content: {
+                    'application/json': {
+                        schema: specification.paths['/libraries/{libraryId}/articles']!.post!.responses!['200']!
+                            .content!['application/json']!.schema,
+                    },
+                },
+            },
+        },
+        security: [{ bearerAuth: [] }],
+    },
+}
 for (const path of Object.values(specification.paths ?? {})) {
     for (const method of ['get', 'post'] as const) {
         const operation = path?.[method]

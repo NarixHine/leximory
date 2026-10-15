@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hans">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'none'; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'"
+        />
+        <style>
+            :root {
+                color-scheme: light dark;
+                --size: 17px;
+                --font: Georgia, serif;
+            }
+            body {
+                margin: 0;
+                background: transparent;
+                color: light-dark(#192024, #cecdc3);
+                font: var(--size) / 1.7 var(--font);
+                overflow-wrap: anywhere;
+            }
+            .tiptap {
+                outline: none;
+                min-height: 65vh;
+                padding: 16px 20px 80px;
+                white-space: pre-wrap;
+            }
+            p {
+                margin: 0 0 0.8em;
+            }
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                font-weight: 600;
+                line-height: 1.3;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            h2 {
+                font-size: 1.3em;
+            }
+            blockquote {
+                border-left: 3px solid #9caea1;
+                margin-left: 0;
+                padding-left: 16px;
+            }
+            ul,
+            ol {
+                padding-left: 24px;
+            }
+            pre,
+            code {
+                font-family: ui-monospace, monospace;
+            }
+            pre {
+                padding: 12px;
+                background: light-dark(#f1f5f1, #27272a);
+                white-space: pre-wrap;
+                border-radius: 8px;
+            }
+            lexi-comment {
+                background: linear-gradient(transparent 55%, #bdd98173 55%);
+            }
+            lexi-audio {
+                display: block;
+            }
+            .smallcaps {
+                font-variant: small-caps;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            td,
+            th {
+                border: 1px solid #9caea1;
+                padding: 8px;
+            }
+            .preserved {
+                margin: 12px 0;
+            }
+            .ProseMirror-selectednode {
+                outline: 1px solid #9caea1;
+            }
+        </style>
+    </head>
+    <body>
+        <main id="editor"></main>
+        <script src="editor.js"></script>
+    </body>
+</html>

@@ -39,6 +39,7 @@ async function main() {
         definitions: ['definitions', 'vocabulary', 'ebookDefinitions', 'ebookVocabulary'],
         ebooks: ['ebook', 'ebookPosition', 'ebookBookmark', 'removeEbookBookmark'],
         authoring: ['extractArticle', 'vocabularyList', 'savedWord', 'editWord', 'importArticle', 'uploadEbook'],
+        management: ['editableText', 'editText', 'removeText', 'replaceEbook', 'removeEbook', 'removeWord'],
         folders: ['createFolder', 'renameFolder', 'libraryArchive'],
         review: ['reviewTimeline', 'reviewCheck', 'reviewStart', 'reviewTranslation', 'reviewConversation'],
         shortcuts: ['saveShortcutWord'],

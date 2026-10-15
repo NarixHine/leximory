@@ -22,6 +22,7 @@ struct BrowserWorkspaceView: View {
     @State private var finding = false
     @State private var findRequest: UUID?
     @State private var findInteraction: UIFindInteraction?
+    @State private var editingText: CatalogText?
     @State private var editingPin: BrowserHomePin?
     @State private var activitySheet = false
     @State private var confirmingClear = false
@@ -111,6 +112,9 @@ struct BrowserWorkspaceView: View {
             finishEditing(); workspace.openURL(url)
             return .handled
         })
+        .sheet(item: $editingText) { text in
+            TextManagementSheet(text: text, workspace: workspace, playback: playback)
+        }
         .sheet(item: $importRequest, onDismiss: {
             if let (text, annotating) = importedText { importedText = nil; Task { await workspace.imported(text, annotating: annotating) } }
         }) { request in
@@ -336,6 +340,12 @@ struct BrowserWorkspaceView: View {
     }
     private var more: some View {
         Menu {
+            if case .document(let document) = workspace.current.resource, document.library.owned && !document.library.shadow {
+                Section {
+                    Button("编辑", systemImage: "pencil") { editingText = workspace.documents[document.text.id]?.text ?? document.text }
+                        .disabled(sync?.online == false).accessibilityIdentifier("browser-edit-text")
+                }
+            }
             if let pin = workspace.currentPin {
                 Section {
                     if workspace.current.isWeb {

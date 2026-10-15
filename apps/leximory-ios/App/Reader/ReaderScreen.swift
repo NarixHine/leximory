@@ -132,6 +132,7 @@ struct ReaderScreen: View {
         .onChange(of: sync?.revision) { _, _ in Task { await load() } }
         .onChange(of: workspace?.revision) { _, _ in
             guard let details = workspace?.documents[article.id.rawValue], let document = details.document else { return }
+            refreshedArticle = details.text.preview
             if case .loaded(let previous) = state, previous == document { return }
             if resourceActive, workspace?.completionID == article.id.rawValue { annotationReveal = UUID() }
             state = .loaded(document); refreshedArticle = details.text.preview

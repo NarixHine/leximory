@@ -4362,6 +4362,786 @@
         }
       }
     },
+    "/texts/{textId}/edit": {
+      "get": {
+        "operationId": "editableText",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                        },
+                        "libraryId": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "topics": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "emoji": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "format": {
+                          "enum": [
+                            "article",
+                            "ebook",
+                            "bookmark"
+                          ],
+                          "type": "string"
+                        },
+                        "bookmarkURL": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uri"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "libraryId",
+                        "title",
+                        "topics",
+                        "emoji",
+                        "createdAt",
+                        "format"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "contentEditable": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "content",
+                    "revision",
+                    "contentEditable"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "editText",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "topics": {
+                    "type": "array",
+                    "maxItems": 32,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    }
+                  },
+                  "emoji": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
+                  },
+                  "content": {
+                    "type": "string",
+                    "maxLength": 180000
+                  },
+                  "revision": {
+                    "type": "string",
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "title",
+                  "topics",
+                  "emoji",
+                  "content",
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "emoji": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "format": {
+                      "enum": [
+                        "article",
+                        "ebook",
+                        "bookmark"
+                      ],
+                      "type": "string"
+                    },
+                    "bookmarkURL": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "title",
+                    "topics",
+                    "emoji",
+                    "createdAt",
+                    "format"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/texts/{textId}/remove": {
+      "post": {
+        "operationId": "removeText",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "libraryId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  }
+                },
+                "required": [
+                  "libraryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/texts/{textId}/ebook-remove": {
+      "post": {
+        "operationId": "removeEbook",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "emoji": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "format": {
+                      "enum": [
+                        "article",
+                        "ebook",
+                        "bookmark"
+                      ],
+                      "type": "string"
+                    },
+                    "bookmarkURL": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "title",
+                    "topics",
+                    "emoji",
+                    "createdAt",
+                    "format"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vocabulary/{wordId}/remove": {
+      "post": {
+        "operationId": "removeWord",
+        "parameters": [
+          {
+            "name": "wordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "libraryId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  }
+                },
+                "required": [
+                  "libraryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/libraries/{libraryId}/articles": {
       "post": {
         "operationId": "importArticle",
@@ -7587,6 +8367,184 @@
         "responses": {
           "200": {
             "description": "Uploaded ebook",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "libraryId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "topics": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "emoji": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "format": {
+                      "enum": [
+                        "article",
+                        "ebook",
+                        "bookmark"
+                      ],
+                      "type": "string"
+                    },
+                    "bookmarkURL": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "libraryId",
+                    "title",
+                    "topics",
+                    "emoji",
+                    "createdAt",
+                    "format"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/texts/{textId}/ebook-replace": {
+      "post": {
+        "operationId": "replaceEbook",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replaced ebook",
             "content": {
               "application/json": {
                 "schema": {

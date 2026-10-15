@@ -457,6 +457,58 @@ struct AnnotationActivity: Identifiable, Codable {
         await open(text)
         revision += 1
     }
+    func contentChanged(_ text: CatalogText, reloadReader: Bool = true) async {
+        catalogMutation += 1
+        folderRequests[text.libraryId] = UUID()
+        openRequest = UUID()
+        texts[text.libraryId, default: []].removeAll { $0.id == text.id }
+        texts[text.libraryId, default: []].insert(text, at: 0)
+        documents[text.id] = nil
+        if reloadReader { ebookReader = nil; ebookTextID = nil }
+        homePins = homePins.map { pin in
+            guard case .document(let previous) = pin.destination, previous.id == text.id else { return pin }
+            var pin = pin; pin.destination = .document(text)
+            if pin.title == previous.title { pin.title = text.title }
+            return pin
+        }
+        persistPins(); rememberReading(text)
+        recentlyOpened[text.libraryId] = text.preview
+        persistRecentlyOpened()
+        // Replace all retained copies so Back and Forward cannot resurrect a stale reader.
+        do {
+            let details = try await client.documentDetails(textID: text.id)
+            documents[text.id] = details
+            history.transform { entry in
+                guard entry.textID == text.id else { return entry }
+                if reloadReader { return BrowserEntry(resource: .document(details)) }
+                var entry = entry; entry.resource = .document(details)
+                return entry
+            }
+        } catch {
+            history.removeAll { $0.textID == text.id }
+        }
+        revision += 1
+    }
+    func contentRemoved(_ text: CatalogText) {
+        catalogMutation += 1; openRequest = UUID(); opening = false
+        folderRequests[text.libraryId] = UUID()
+        texts[text.libraryId]?.removeAll { $0.id == text.id }
+        documents[text.id] = nil
+        activities.removeAll { $0.id == text.id }; persistActivities()
+        pollAttempts[text.id] = nil
+        recentReading.ids.removeAll { $0 == text.id }
+        recentReading.texts.removeAll { $0.id == text.id }; persistRecentReading()
+        if recentlyOpened[text.libraryId]?.id.rawValue == text.id { recentlyOpened[text.libraryId] = nil }
+        persistRecentlyOpened()
+        homePins.removeAll { if case .document(let saved) = $0.destination { return saved.id == text.id }; return false }
+        persistPins()
+        history.removeAll { $0.textID == text.id }
+        if ebookTextID == text.id { ebookReader = nil; ebookTextID = nil }
+        revision += 1
+    }
+    private func persistRecentlyOpened() {
+        if let data = try? JSONEncoder().encode(recentlyOpened) { UserDefaults.standard.set(data, forKey: "recent-access." + namespace) }
+    }
     func refresh(online: Bool) async {
         let request = UUID(); catalogRequest = request
         let mutation = catalogMutation
@@ -520,7 +572,9 @@ struct AnnotationActivity: Identifiable, Codable {
         for activity in activities where activity.state == .pending {
             guard !Task.isCancelled else { return }
             do {
+                let mutation = catalogMutation
                 let details = try await client.documentDetails(textID: activity.id)
+                guard catalogMutation == mutation, activities.contains(where: { $0.id == activity.id }) else { continue }
                 documents[activity.id] = details
                 track(details)
                 pollAttempts[activity.id, default: 0] += 1

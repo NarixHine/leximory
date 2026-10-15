@@ -227,6 +227,37 @@ import HTTPTypes
         #expect(workspace.current.title == "Leximory")
         #expect(workspace.hasPending)
     }
+    @Test func textRemovalClearsHistoryPinsRecentReadingAndLateAnnotationResponses() async throws {
+        let transport = WorkspaceTransport()
+        let namespace = "management-test." + UUID().uuidString
+        defer {
+            for key in ["browser.annotations.", "browser.recent.", "browser.home-pins.", "recent-access."] {
+                UserDefaults.standard.removeObject(forKey: key + namespace)
+            }
+        }
+        let workspace = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
+        let text = try await workspace.client.documentDetails(textID: "article").text
+        await workspace.imported(text, annotating: true)
+        workspace.savePin(try #require(workspace.currentPin))
+        workspace.visit(.home)
+        await workspace.open(text)
+        await transport.delayNextRead()
+        let calls = await transport.calls
+        let poll = Task { await workspace.poll() }
+        while await transport.calls == calls { await Task.yield() }
+        workspace.contentRemoved(text)
+        await poll.value
+        #expect(workspace.history.entries.allSatisfy { $0.textID != text.id })
+        #expect(workspace.documents[text.id] == nil)
+        #expect(workspace.recentTexts.isEmpty)
+        #expect(workspace.activities.isEmpty)
+        #expect(workspace.homePins.isEmpty)
+        #expect(workspace.recentlyOpened[text.libraryId] == nil)
+        let reopened = BrowserWorkspaceModel(client: client(transport), namespace: namespace)
+        #expect(reopened.recentTexts.isEmpty)
+        #expect(reopened.activities.isEmpty)
+        #expect(reopened.homePins.isEmpty)
+    }
     private func client(_ transport: WorkspaceTransport) -> MobileClient {
         MobileClient(baseURL: URL(string: "https://workspace.test")!, transport: transport, token: { _ in "verified" })
     }

@@ -96,11 +96,17 @@ struct CorpusWordTray: View {
     let client: MobileClient
     let isPopover: Bool
     let updated: (SavedWord) -> Void
+    let deleted: ((String) -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @State private var verifiedWord: SavedWord?
+    @State private var confirmingDelete = false
+    @State private var deleting = false
+    @State private var deletionError: String?
     @State private var editing = false
-    init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, updated: @escaping (SavedWord) -> Void) {
+    init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, deleted: ((String) -> Void)? = nil, updated: @escaping (SavedWord) -> Void) {
         initialWord = word
         _editor = State(initialValue: VocabularyEditModel(word: word))
-        self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated
+        self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated; self.deleted = deleted
     }
     @State private var height: CGFloat = 320
     @State private var bottomInset: CGFloat = 0
@@ -122,12 +128,19 @@ struct CorpusWordTray: View {
                         if let error = editor.error {
                             Text(error).font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
                         }
+                        if let deletionError { Text(deletionError).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
                         HStack(spacing: 16) {
-                            if library.owned && word.protected != true {
+                            if library.owned && (verifiedWord?.protected ?? word.protected) != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
                                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                                    .disabled(sync?.online == false)
+                                    .disabled(sync?.online == false || deleting)
+                            }
+                            if deleted != nil, library.owned, (verifiedWord?.protected ?? word.protected) != true {
+                                Button("删除词汇", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+                                    .labelStyle(.iconOnly).frame(width: 44, height: 44)
+                                    .disabled(sync?.online == false || deleting || editor.saving)
+                                    .accessibilityIdentifier("review-delete-word")
                             }
                             if let dictionaryURL {
                                 Link(destination: dictionaryURL) {
@@ -149,6 +162,24 @@ struct CorpusWordTray: View {
             .background(LeximoryPalette.shell)
             .presentationDetents([.height(max(1, min(height, 720) - bottomInset)), .large])
             .presentationCornerRadius(isPopover ? 32 : nil)
+            .interactiveDismissDisabled(deleting)
+            .task(id: initialWord.id) {
+                // Timeline rows do not carry welcome-word protection. Fetch it before enabling removal.
+                verifiedWord = try? await MutationRetry.run { try await client.savedWord(id: initialWord.id) }
+            }
+            .confirmationDialog("删除词汇？", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("删除", role: .destructive) {
+                    guard !deleting, !editor.saving else { return }
+                    let target = verifiedWord ?? word
+                    deleting = true; deletionError = nil
+                    Task {
+                        defer { deleting = false }
+                        do { try await client.removeWord(target); deleted?(target.id); dismiss() }
+                        catch { deletionError = "删除未能完成，请重试。" }
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            } message: { Text("删除后无法恢复。") }
     }
     private var dictionaryURL: URL? {
         let base: String?

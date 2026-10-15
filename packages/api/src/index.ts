@@ -27,6 +27,22 @@ export const textSchema = z
         bookmarkURL: z.url().nullable().optional(),
     })
     .strict()
+export const textEditSchema = z
+    .object({
+        title: z.string().trim().min(1).max(512),
+        topics: z.array(z.string().trim().min(1).max(128)).max(32),
+        emoji: z.string().max(64).nullable(),
+        content: z.string().max(180000),
+    })
+    .strict()
+export const editableTextSchema = z
+    .object({
+        text: textSchema,
+        content: z.string(),
+        revision: z.string(),
+        contentEditable: z.boolean(),
+    })
+    .strict()
 export const accountSchema = z
     .object({
         userId: z.string(),
@@ -344,6 +360,26 @@ export const mobileContract = {
         .route({ method: 'POST', path: '/vocabulary/{wordId}' })
         .input(vocabularyEditSchema.extend({ wordId: resourceID }))
         .output(savedWordSchema),
+    editableText: oc
+        .route({ method: 'GET', path: '/texts/{textId}/edit' })
+        .input(z.object({ textId: resourceID }))
+        .output(editableTextSchema),
+    editText: oc
+        .route({ method: 'POST', path: '/texts/{textId}/edit' })
+        .input(textEditSchema.extend({ textId: resourceID, revision: z.string().max(128) }))
+        .output(textSchema),
+    removeText: oc
+        .route({ method: 'POST', path: '/texts/{textId}/remove' })
+        .input(z.object({ textId: resourceID, libraryId: resourceID }))
+        .output(z.object({ removed: z.boolean() })),
+    removeEbook: oc
+        .route({ method: 'POST', path: '/texts/{textId}/ebook-remove' })
+        .input(z.object({ textId: resourceID }))
+        .output(textSchema),
+    removeWord: oc
+        .route({ method: 'POST', path: '/vocabulary/{wordId}/remove' })
+        .input(z.object({ wordId: resourceID, libraryId: resourceID }))
+        .output(z.object({ removed: z.boolean() })),
     importArticle: oc
         .route({ method: 'POST', path: '/libraries/{libraryId}/articles' })
         .input(articleImportSchema.extend({ libraryId: resourceID }))

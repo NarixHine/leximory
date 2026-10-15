@@ -141,6 +141,36 @@ public actor LocalReadingStore {
     public func removeText(_ id: String) {
         for key in ["document/\(id)", "ebook/\(id)", "book/\(id)", "book-source/\(id)"] { remove(key) }
     }
+    public func saveBook(_ data: Data, source: String, textID: String, ifUnchanged version: Int) throws {
+        guard versions["book/\(textID)", default: 0] == version else { throw CancellationError() }
+        try saveData(data, for: "book/\(textID)")
+        save(source, for: "book-source/\(textID)")
+    }
+    public func applyTextEdit(_ text: CatalogText, content: String) {
+        let documentKey = "document/\(text.id)"
+        if let cached = value(RemoteDocument.self, for: documentKey), cached.document?.source == content {
+            save(RemoteDocument(text: text, library: cached.library, document: cached.document, annotationProgress: cached.annotationProgress), for: documentKey)
+        } else { remove(documentKey) }
+        let bookKey = "ebook/\(text.id)"
+        if let book = value(EbookDescriptor.self, for: bookKey) {
+            save(EbookDescriptor(text: text, library: book.library, url: book.url, format: book.format,
+                                 expiresAt: book.expiresAt, location: book.location, bookmarks: book.bookmarks), for: bookKey)
+        }
+        upsertText(text)
+    }
+    public func deleteText(_ text: CatalogText) {
+        removeText(text.id)
+        let key = "texts/\(text.libraryId)"
+        save((value([CatalogText].self, for: key) ?? []).filter { $0.id != text.id }, for: key)
+    }
+    public func deleteWord(id: String, libraryID: String) {
+        let key = "words/\(libraryID)"
+        remove("word/\(id)")
+        save((value([SavedWord].self, for: key) ?? []).filter { $0.id != id }, for: key)
+        if let timeline = value(ReviewTimeline.self, for: "review-timeline") {
+            save(ReviewTimeline(days: timeline.days.removingWord(id), nextCursor: timeline.nextCursor), for: "review-timeline")
+        }
+    }
     public func removeLibrary(_ id: String) {
         if let texts = value([CatalogText].self, for: "texts/\(id)") { for text in texts { removeText(text.id) } }
         remove("texts/\(id)"); remove("words/\(id)")
@@ -180,7 +210,9 @@ public actor LocalReadingStore {
         texts.removeAll { $0.id == text.id }; texts.insert(text, at: 0)
         save(texts, for: "texts/\(text.libraryId)")
     }
-    public func upsertWord(_ word: SavedWord) {
+    public func upsertWord(_ word: SavedWord, ifUnchanged version: Int? = nil) {
+        if let version, versions["word/\(word.id)", default: 0] != version { return }
+        versions["word/\(word.id)", default: 0] += 1
         var words = value([SavedWord].self, for: "words/\(word.libraryId)") ?? []
         if let index = words.firstIndex(where: { $0.id == word.id }) { words[index] = word }
         else { words.insert(word, at: 0) }

@@ -15,6 +15,7 @@ struct ReviewTimelineView: View {
     @State private var retryReset = true
     @Environment(\.browserResourceActive) private var resourceActive
     @Environment(\.scenePhase) private var scenePhase
+    @State private var contentMutation = 0
     @State private var selectedWord: ReviewDay.Word?
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.browserChromeHeight) private var chromeHeight
@@ -137,7 +138,11 @@ struct ReviewTimelineView: View {
                 if let fields = word.fields {
                     CorpusWordTray(word: SavedWord(id: word.id, libraryId: word.lib, fields: fields),
                         library: FixtureLibrary(id: LibraryID(rawValue: word.lib), name: "", language: learningLanguageName(word.lang), articles: [], owned: true),
-                        client: client, isPopover: sizeClass == .regular) { saved in
+                        client: client, isPopover: sizeClass == .regular, deleted: { id in
+                            contentMutation += 1
+                            selectedWord = nil; days = days.removingWord(id)
+                            Task { await cache() }
+                        }) { saved in
                             for dayIndex in days.indices {
                                 if let wordIndex = days[dayIndex].words.firstIndex(where: { $0.id == saved.id }) {
                                     days[dayIndex].words[wordIndex].word = saved.fields.original
@@ -164,9 +169,11 @@ struct ReviewTimelineView: View {
         loading = true
         retryReset = reset
         defer { loading = false }
+        let mutation = contentMutation
         do {
             let result = try await client.reviewTimeline(cursor: reset ? nil : cursor)
             try Task.checkCancellation()
+            guard mutation == contentMutation else { return }
             if reset { days = result.days } else {
                 for day in result.days {
                     if let index = days.firstIndex(where: { $0.date == day.date }) {

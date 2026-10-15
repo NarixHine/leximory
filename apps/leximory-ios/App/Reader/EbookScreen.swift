@@ -12,6 +12,7 @@ struct EbookChapter: Identifiable {
 
 @MainActor @Observable final class EbookReaderState {
     var chapters: [EbookChapter] = []
+    var positionSaver: EbookPositionSaver?
     var bookmarks: [EbookBookmark] = []
     var location: String?
     var chapter: String?
@@ -361,6 +362,7 @@ struct EbookScreen: View {
                 try await client.saveEbookPosition(textID: article.id.rawValue, location: location)
             }
         }
+        reader.positionSaver = positionSaver
         reader.canBookmark = client != nil || ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures")
         reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.rightToLeft = language == "Japanese"

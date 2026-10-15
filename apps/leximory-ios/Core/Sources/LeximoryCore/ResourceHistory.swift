@@ -20,5 +20,14 @@ public struct ResourceHistory<Resource> {
         return true
     }
     public mutating func replaceCurrent(_ resource: Resource) { entries[index] = resource }
+    public mutating func transform(_ update: (Resource) -> Resource) {
+        entries = entries.map(update)
+    }
+    public mutating func removeAll(where shouldRemove: (Resource) -> Bool) {
+        let remaining = entries.enumerated().filter { !shouldRemove($0.element) }
+        guard !remaining.isEmpty else { return }
+        index = remaining.lastIndex(where: { $0.offset <= index }) ?? 0
+        entries = remaining.map(\.element)
+    }
     public mutating func reset(to home: Resource) { entries = [home]; index = 0 }
 }

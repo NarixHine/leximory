@@ -98,6 +98,21 @@ public struct SavedWord: Codable, Identifiable, Sendable {
     }
 
 }
+public struct EditableText: Codable, Sendable {
+    public let text: CatalogText
+    public let content: String
+    public let revision: String
+    public let contentEditable: Bool
+}
+public struct TextEdit: Codable, Equatable, Sendable {
+    public var title: String
+    public var topics: [String]
+    public var emoji: String?
+    public var content: String
+    public init(_ source: EditableText) {
+        title = source.text.title; topics = source.text.topics; emoji = source.text.emoji; content = source.content
+    }
+}
 public struct RemoteDocument: Codable, Sendable {
     public let text: CatalogText
     public let library: CatalogLibrary
@@ -150,7 +165,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
+        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -359,8 +374,9 @@ public struct MobileClient: Sendable {
         try mapped(try await client.vocabularyList(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<SavedWord>.self)
     }
     public func savedWord(id: String) async throws -> SavedWord {
+        let version = await localStore?.version(for: "word/\(id)") ?? 0
         let word = try mapped(try await client.savedWord(path: .init(wordId: id)).ok.body.json, to: SavedWord.self)
-        await localStore?.upsertWord(word)
+        await localStore?.upsertWord(word, ifUnchanged: version)
         return word
     }
     public func editWord(id: String, fields: VocabularyFields) async throws -> SavedWord {
@@ -380,6 +396,54 @@ public struct MobileClient: Sendable {
     public func uploadEbook(libraryID: String, title: String, filename: String, data: Data) async throws -> CatalogText {
         guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
         let text = try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        await localStore?.upsertText(text)
+        return text
+    }
+    public func editableText(id: String) async throws -> EditableText {
+        try await MutationRetry.run {
+            try mapped(try await client.editableText(path: .init(textId: id)).ok.body.json, to: EditableText.self)
+        }
+    }
+    public func editText(id: String, revision: String, fields: TextEdit) async throws -> CatalogText {
+        let text = try await MutationRetry.run {
+            do {
+                return try mapped(try await client.editText(path: .init(textId: id), body: .json(.init(
+                    title: fields.title, topics: fields.topics, emoji: fields.emoji, content: fields.content, revision: revision))).ok.body.json, to: CatalogText.self)
+            } catch {
+                // Confirm a lost save response without overwriting a concurrent edit.
+                if let current = try? await editableText(id: id), TextEdit(current) == fields { return current.text }
+                throw error
+            }
+        }
+        await localStore?.applyTextEdit(text, content: fields.content)
+        return text
+    }
+    public func removeText(_ text: CatalogText) async throws {
+        try await MutationRetry.run {
+            _ = try await client.removeText(path: .init(textId: text.id), body: .json(.init(libraryId: text.libraryId))).ok
+        }
+        await localStore?.deleteText(text)
+    }
+    public func removeWord(_ word: SavedWord) async throws {
+        try await MutationRetry.run {
+            _ = try await client.removeWord(path: .init(wordId: word.id), body: .json(.init(libraryId: word.libraryId))).ok
+        }
+        await localStore?.deleteWord(id: word.id, libraryID: word.libraryId)
+    }
+    public func replaceEbook(id: String, filename: String, data: Data) async throws -> CatalogText {
+        guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+        let text = try await MutationRetry.run {
+            try mapped(try await client.replaceEbook(path: .init(textId: id), query: .init(filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        }
+        await localStore?.removeText(id)
+        await localStore?.upsertText(text)
+        return text
+    }
+    public func removeEbook(id: String) async throws -> CatalogText {
+        let text = try await MutationRetry.run {
+            try mapped(try await client.removeEbook(path: .init(textId: id)).ok.body.json, to: CatalogText.self)
+        }
+        await localStore?.removeText(id)
         await localStore?.upsertText(text)
         return text
     }
@@ -493,7 +557,10 @@ public struct MobileClient: Sendable {
     }
     private static func bookSource(_ url: URL) -> String {
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        components?.query = nil; components?.fragment = nil
+        let version = components?.queryItems?.filter { $0.name == "v" }
+        components?.queryItems = version
+        if components?.queryItems?.isEmpty == true { components?.query = nil }
+        components?.fragment = nil
         return components?.string ?? url.absoluteString
     }
     public func cachedEbook(textID: String) async -> LocalEbook? {
@@ -503,15 +570,17 @@ public struct MobileClient: Sendable {
         return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
     }
     public func downloadEbook(textID: String) async throws -> LocalEbook {
+        let version = await localStore?.version(for: "book/\(textID)") ?? 0
         let descriptor = try await ebook(textID: textID)
+        guard await localStore?.version(for: "book/\(textID)") ?? 0 == version else { throw CancellationError() }
         if let data = await localStore?.data(for: "book/\(textID)"),
            await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) {
             return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
         }
         let data = try await LocalAssetDownloads.shared.load(descriptor.url, limit: 80 * 1024 * 1024)
         try Task.checkCancellation()
-        try await localStore?.saveData(data, for: "book/\(textID)")
-        await localStore?.save(Self.bookSource(descriptor.url), for: "book-source/\(textID)")
+        guard await localStore?.version(for: "book/\(textID)") ?? 0 == version else { throw CancellationError() }
+        try await localStore?.saveBook(data, source: Self.bookSource(descriptor.url), textID: textID, ifUnchanged: version)
         return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
     }
 }

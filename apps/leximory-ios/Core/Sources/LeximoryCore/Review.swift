@@ -92,3 +92,15 @@ struct ReviewSubmission: Encodable {
     var index: Int? = nil
     var submission: String? = nil
 }
+
+extension Array where Element == ReviewDay {
+    public func removingWord(_ id: String) -> [ReviewDay] {
+        compactMap { day in
+            var day = day
+            day.words.removeAll { $0.id == id }
+            let languages = Set(day.words.map(\.lang))
+            day.progressByLang = day.progressByLang.filter { languages.contains($0.key) }
+            return day.words.isEmpty ? nil : day
+        }
+    }
+}
