@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Testing
 import LeximoryCore
 import OpenAPIRuntime
@@ -6,6 +7,60 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func pinnedIconsRestoreImmediatelyAndSurviveRenamingWithoutAnotherLoad() async throws {
+        let namespace = "icons-test." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.home-pins." + namespace) }
+        let mobile = client(WorkspaceTransport())
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        let page = try #require(URL(string: "https://icons.test/article"))
+        let icon = try #require(URL(string: "https://icons.test/favicon.ico"))
+        let pin = BrowserHomePin(id: UUID(), title: "Reading", destination: .webpage(page))
+        workspace.savePin(pin)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100)).image { context in
+            UIColor.green.setFill(); context.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        }
+        var requests = 0
+        await workspace.cachePinIcons { url in requests += 1; #expect(url == icon); return image }
+        #expect(requests == 1)
+        let cached = try #require(workspace.pinImages[icon])
+        #expect(cached.size == CGSize(width: 96, height: 96))
+        let bytes = try #require(workspace.homePins.first?.faviconData)
+        #expect(bytes.count < 65536)
+        var staleEditorPin = pin
+        staleEditorPin.title = "Daily reading"
+        workspace.savePin(staleEditorPin)
+        #expect(workspace.homePins.first?.faviconData == bytes)
+        let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        #expect(restored.pinImages[icon] != nil)
+        #expect(restored.homePins.first?.faviconData == bytes)
+        await restored.cachePinIcons { _ in requests += 1; throw URLError(.notConnectedToInternet) }
+        #expect(requests == 1)
+        #expect(restored.pinImages[icon] != nil)
+        let other = BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other")
+        #expect(other.pinImages.isEmpty)
+    }
+
+    @Test func pinIconResponseCannotRestoreADeletedPin() async throws {
+        let namespace = "icons-test." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.home-pins." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
+        let page = try #require(URL(string: "https://icons.test/article"))
+        let pin = BrowserHomePin(id: UUID(), title: "Reading", destination: .webpage(page))
+        workspace.savePin(pin)
+        var pending: CheckedContinuation<UIImage, Never>?
+        let request = Task {
+            await workspace.cachePinIcons { _ in await withCheckedContinuation { pending = $0 } }
+        }
+        for _ in 0..<100 where pending == nil { await Task.yield() }
+        let continuation = try #require(pending)
+        workspace.deletePin(pin)
+        continuation.resume(returning: UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { _ in })
+        await request.value
+        #expect(workspace.homePins.isEmpty)
+        #expect(workspace.pinImages.isEmpty)
+        #expect(BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace).homePins.isEmpty)
+    }
+
     @Test func homePinsPersistEditsAndDeletionPerAccount() throws {
         let namespace = "pins-test." + UUID().uuidString
         defer { UserDefaults.standard.removeObject(forKey: "browser.home-pins." + namespace) }

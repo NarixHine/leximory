@@ -170,11 +170,12 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
         XCTAssertTrue(app.menuItems["拷贝"].exists)
-        for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "翻译", "查询", "搜索网页"] {
+        for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "搜索网页"] {
             XCTAssertFalse(app.menuItems[title].exists)
         }
         XCTAssertFalse(app.buttons["共享"].exists)
         XCTAssertFalse(app.buttons["全选"].exists)
+        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
         let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
@@ -221,5 +222,30 @@ final class BrowserPageServer {
             listener.cancel(); throw NSError(domain: "BrowserPageServer", code: 1)
         }
         url = "http://127.0.0.1:\(port.rawValue)/article"
+    }
+}
+
+@MainActor func assertNativeDefineAfterLeximory(in app: XCUIApplication, actions: [String], file: StaticString = #filePath, line: UInt = #line) {
+    let native = app.menuItems.matching(NSPredicate(format: "label IN %@", ["查询", "Look Up", "Define", "定义"])).firstMatch
+    var pages = 0
+    while !native.isHittable && pages < 3 {
+        let next = app.buttons["下一页"].firstMatch
+        guard next.isHittable else { break }
+        next.tap(); pages += 1
+    }
+    XCTAssertTrue(native.isHittable, "Native Define should remain available", file: file, line: line)
+    if pages == 0, native.isHittable {
+        for title in actions {
+            let action = app.menuItems[title]
+            if action.isHittable {
+                let comesAfter = native.frame.minY > action.frame.minY + 5 || native.frame.minX > action.frame.minX
+                XCTAssertTrue(comesAfter, "Native Define should follow \(title)", file: file, line: line)
+            }
+        }
+    }
+    for _ in 0..<pages {
+        let previous = app.buttons["上一页"].firstMatch
+        guard previous.isHittable else { break }
+        previous.tap()
     }
 }

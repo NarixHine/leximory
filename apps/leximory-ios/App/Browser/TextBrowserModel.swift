@@ -29,7 +29,8 @@ struct BrowserSelection: Decodable {
 
 final class BrowserWebView: WKWebView {
     var lookup: ((BrowserSelection) -> Void)?
-    private var capturedSelection: BrowserSelection?
+    private var selectionRequest = UUID()
+    func invalidateSelection() { selectionRequest = UUID() }
     private static let world = WKContentWorld.world(name: "LeximoryBrowserSelection")
     static let selectionScript = """
         const selection = window.getSelection();
@@ -37,24 +38,51 @@ final class BrowserWebView: WKWebView {
         const range = selection.getRangeAt(0);
         const element = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
         if (!element || element.closest('input,textarea,[contenteditable]:not([contenteditable="false"]),script,style')) return null;
-        const clean = (fragment) => {
-          fragment.querySelectorAll('rt,rp,script,style').forEach(node => node.remove());
-          return fragment.textContent || '';
-        };
-        const quote = clean(range.cloneContents());
-        if (!quote.trim() || quote.length > 1024) return null;
+        const excluded = 'rt,rp,script,style,input,textarea,[contenteditable]:not([contenteditable="false"])';
         const block = element.closest('p,li,blockquote,h1,h2,h3,h4,h5,h6,td,pre') || element;
         if (!block.contains(range.endContainer)) return null;
-        const before = document.createRange();
-        before.selectNodeContents(block);
-        before.setEnd(range.startContainer, range.startOffset);
-        const prefix = clean(before.cloneContents());
-        const after = document.createRange();
-        after.selectNodeContents(block);
-        after.setStart(range.endContainer, range.endOffset);
-        const suffix = clean(after.cloneContents());
-        const leading = prefix.slice(-1200);
-        return {quote, context: leading + quote + suffix.slice(0,1200), offset: leading.length, url: location.href};
+        const outside = (node, forward) => {
+          while (node && node !== block) {
+            const sibling = forward ? node.nextSibling : node.previousSibling;
+            if (sibling) return sibling;
+            node = node.parentNode;
+          }
+          return null;
+        };
+        // Walk from the selection boundaries. Never clone a paragraph or read its
+        // complete text just to keep 1,200 characters of surrounding context.
+        const read = (container, offset, forward, limit, selected = false) => {
+          let node = container, result = '', visits = 0;
+          if (node.nodeType !== Node.TEXT_NODE) {
+            node = node.childNodes[forward ? offset : offset - 1] || outside(node, forward);
+            offset = null;
+          }
+          while (node && result.length < limit && visits++ < 4096) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              if (selected && range.comparePoint(node, 0) > 0) break;
+              const start = offset === null ? (forward ? 0 : node.length) : offset;
+              const end = selected && node === range.endContainer ? range.endOffset : node.length;
+              const available = limit - result.length;
+              const part = forward ? node.data.slice(start, Math.min(end, start + available))
+                                   : node.data.slice(Math.max(0, start - available), start);
+              result = forward ? result + part : part + result;
+              if (selected && node === range.endContainer) break;
+              node = outside(node, forward);
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.matches(excluded)) {
+              node = outside(node, forward);
+            } else {
+              node = (forward ? node.firstChild : node.lastChild) || outside(node, forward);
+            }
+            offset = null;
+          }
+          return {text: result, exhausted: visits >= 4096};
+        };
+        const selected = read(range.startContainer, range.startOffset, true, 1025, true);
+        const quote = selected.text;
+        if (!quote.trim() || quote.length > 1024 || selected.exhausted) return null;
+        const leading = read(range.startContainer, range.startOffset, false, 1200).text;
+        const trailing = read(range.endContainer, range.endOffset, true, 1200).text;
+        return {quote, context: leading + quote + trailing, offset: leading.length, url: location.href};
         """
 
     override func buildMenu(with builder: UIMenuBuilder) {
@@ -62,15 +90,26 @@ final class BrowserWebView: WKWebView {
         guard builder.system == .context else { return }
         guard !super.canPerformAction(#selector(UIResponderStandardEditActions.cut(_:)), withSender: nil) else { return }
         ReadingSelectionMenu.removeUnrelatedActions(from: builder)
-        builder.replaceChildren(ofMenu: .root) { ReadingSelectionMenu.copyActions($0) }
-        capturedSelection = nil
-        capture { [weak self] selection in self?.capturedSelection = selection }
-        let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
-            guard let self else { return }
-            if let capturedSelection { lookup?(capturedSelection) }
-            else { capture { [weak self] in if let selection = $0 { self?.lookup?(selection) } } }
+        builder.replaceChildren(ofMenu: .root) { ReadingSelectionMenu.copyAndLookupActions($0) }
+        // Each menu owns its snapshot. A late response from an older menu cannot
+        // replace the selection used by a newer menu or a different document.
+        let request = selectionRequest
+        var capturedSelection: BrowserSelection?
+        capture { [weak self] selection in
+            guard self?.selectionRequest == request else { return }
+            capturedSelection = selection
         }
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [action]), beforeMenu: .standardEdit)
+        let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
+            guard let self, selectionRequest == request else { return }
+            if let capturedSelection { lookup?(capturedSelection) }
+            else {
+                capture { [weak self] selection in
+                    guard let self, self.selectionRequest == request, let selection else { return }
+                    self.lookup?(selection)
+                }
+            }
+        }
+        ReadingSelectionMenu.insertLearningActions([action], into: builder)
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
@@ -188,6 +227,7 @@ final class BrowserWebView: WKWebView {
         pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        web.invalidateSelection()
         webView.findInteraction?.dismissFindNavigator()
         navigationBegan?()
         navigationID = UUID(); error = nil; update()

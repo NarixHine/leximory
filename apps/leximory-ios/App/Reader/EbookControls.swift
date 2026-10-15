@@ -85,8 +85,8 @@ struct EbookThemePicker: View {
 @MainActor enum EbookLearningMenu {
     static func insert(into builder: UIMenuBuilder, reader: EbookReaderState) {
         guard builder.system == .context else { return }
-        ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: reader.readOnly)
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions(reader: reader)), beforeMenu: .standardEdit)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
+        ReadingSelectionMenu.insertLearningActions(actions(reader: reader), into: builder, nativeLookupBeforeCopy: true)
     }
     static func actions(reader: EbookReaderState, includeBookmark: Bool = true) -> [UIAction] {
         let selection = reader.selection
@@ -155,7 +155,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             reader.bookmarkRemovalRequest = highlight.bookmarkID
             self?.dismissSelection()
         }
-        return UIMenu(children: EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove])
+        return UIMenu(children: EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove] + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect {
         guard let activeHighlight, let page = activeHighlight.page else { return .zero }

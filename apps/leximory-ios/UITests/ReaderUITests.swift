@@ -233,6 +233,7 @@ final class ReaderUITests: XCTestCase {
     }
     @MainActor func testEPUBSelectionMenuAndQuietChrome() {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
         app.launch()
         app.buttons["library-fixture-ebooks"].tap()
@@ -246,6 +247,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
         capture(app, name: "EPUB contextual learning menu")
+        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查", "🖍️荧光笔"])
         lookup.tap()
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
         XCTAssertTrue(tray.waitForExistence(timeout: 5))
@@ -823,6 +825,7 @@ final class ReaderUITests: XCTestCase {
     }
     @MainActor func testSelectionKeepsCopyAndAddsDefine() throws {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         if !app.launchArguments.contains("--fixtures") { app.launchArguments.append("--fixtures") }
         app.launch()
         openArticle(app)
@@ -833,9 +836,10 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.menuItems["拷贝"].waitForExistence(timeout: 5))
         let define = app.menuItems["🐈 猫忆查"]
         XCTAssertTrue(define.exists)
-        for title in ["翻译", "查询", "搜索网页", "Translate", "Look Up", "Search Web"] {
+        for title in ["搜索网页", "Search Web"] {
             XCTAssertFalse(app.menuItems[title].exists)
         }
+        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])
         define.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
         dismissDefinitionTray(app)

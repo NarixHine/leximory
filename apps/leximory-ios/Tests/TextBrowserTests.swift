@@ -1,9 +1,109 @@
 import Foundation
 import Testing
 import WebKit
+import SwiftUI
 @testable import Leximory
 
-@MainActor struct TextBrowserTests {
+@MainActor @Suite(.serialized) struct TextBrowserTests {
+    @Test func addressEditingKeepsTheDraftAndCompositionAcrossViewUpdates() async throws {
+        let editor = BrowserAddressEditor()
+        var submitted: String?
+        let fieldView = BrowserAddressField(address: "https://example.com", editor: editor) {
+            submitted = editor.field?.text
+        }
+        let controller = UIHostingController(rootView: fieldView)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer { editor.field?.wantsFocus = false; editor.field?.resignFirstResponder(); window.isHidden = true }
+        controller.view.layoutIfNeeded()
+        for _ in 0..<100 {
+            if editor.field?.isFirstResponder == true { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let field = try #require(editor.field)
+        #expect(field.isFirstResponder)
+        field.text = ""
+        field.insertText("first keyword")
+        field.sendActions(for: .editingChanged)
+        controller.rootView = fieldView
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(field.text == "first keyword")
+        let caret = try #require(field.selectedTextRange)
+        #expect(caret.isEmpty)
+        #expect(field.offset(from: field.beginningOfDocument, to: caret.start) == "first keyword".utf16.count)
+        field.selectedTextRange = field.textRange(from: field.endOfDocument, to: field.endOfDocument)
+        field.setMarkedText("猫忆", selectedRange: NSRange(location: 2, length: 0))
+        let composing = field.text
+        controller.rootView = fieldView
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(field.markedTextRange != nil)
+        #expect(field.text == composing)
+        field.unmarkText()
+        field.sendActions(for: .editingChanged)
+        try await Task.sleep(for: .milliseconds(30))
+        let chineseFont = try #require(field.attributedText?.attribute(.font, at: "first keyword".utf16.count, effectiveRange: nil) as? UIFont)
+        #expect(abs(chineseFont.pointSize - LeximoryTypography.addressUI.pointSize * 0.85) < 0.01)
+        _ = field.delegate?.textFieldShouldReturn?(field)
+        #expect(submitted == "first keyword猫忆")
+    }
+
+    @Test func selectionReadsOnlyBoundedContextWithoutCloningLargeParagraphs() async throws {
+        let web = BrowserWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let navigation = BrowserTestNavigation(); web.navigationDelegate = navigation
+        try await navigation.load(web, html: "<html><body><p id='block'></p></body></html>")
+        _ = try await web.callAsyncJavaScript("""
+            const block = document.getElementById('block');
+            block.append('x'.repeat(1000000));
+            const word = document.createElement('ruby'); word.id = 'word';
+            word.innerHTML = '日本語<rt>にほんご</rt>'; block.append(word);
+            block.append('y'.repeat(1000000));
+            const range = document.createRange(); range.selectNode(word);
+            const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+            """, arguments: [:], in: nil, contentWorld: .page)
+        let value = try await web.callAsyncJavaScript("""
+            Range.prototype.cloneContents = () => { throw new Error('Selection must not clone DOM'); };
+            """ + BrowserWebView.selectionScript, arguments: [:], in: nil,
+            contentWorld: .world(name: "LeximoryBrowserSelection"))
+        let data = try JSONSerialization.data(withJSONObject: #require(value))
+        let selection = try JSONDecoder().decode(BrowserSelection.self, from: data)
+        #expect(selection.quote == "日本語")
+        #expect(selection.context == String(repeating: "x", count: 1200) + "日本語" + String(repeating: "y", count: 1200))
+        #expect(selection.offset == 1200)
+    }
+
+    @Test(arguments: ["text", "element", "nested", "oversized", "crossBlock"])
+    func selectionHandlesDOMBoundariesAndRejectsInvalidRanges(kind: String) async throws {
+        let web = BrowserWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let navigation = BrowserTestNavigation(); web.navigationDelegate = navigation
+        try await navigation.load(web, html: """
+            <html><body><p id="block">🌍 Before <b id="word">quiet <i>forest</i></b><script>private script</script> after.</p><p id="other">another paragraph</p></body></html>
+            """)
+        _ = try await web.callAsyncJavaScript("""
+            const word = document.getElementById('word');
+            const range = document.createRange();
+            if (kind === 'text') { range.setStart(word.firstChild, 0); range.setEnd(word.lastChild.firstChild, 6); }
+            else if (kind === 'nested') { range.selectNodeContents(word); }
+            else if (kind === 'oversized') { word.textContent = 'a'.repeat(1025); range.selectNodeContents(word); }
+            else if (kind === 'crossBlock') { range.setStart(word.firstChild, 0); range.setEnd(document.getElementById('other').firstChild, 7); }
+            else { range.selectNode(word); }
+            const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+            """, arguments: ["kind": kind], in: nil, contentWorld: .page)
+        let value = try await web.callAsyncJavaScript(BrowserWebView.selectionScript, arguments: [:], in: nil,
+            contentWorld: .world(name: "LeximoryBrowserSelection"))
+        if kind == "oversized" || kind == "crossBlock" {
+            #expect(value == nil || value is NSNull)
+        } else {
+            let data = try JSONSerialization.data(withJSONObject: #require(value))
+            let selection = try JSONDecoder().decode(BrowserSelection.self, from: data)
+            #expect(selection.quote == "quiet forest")
+            #expect(selection.context == "🌍 Before quiet forest after.")
+            #expect(selection.offset == "🌍 Before ".utf16.count)
+        }
+    }
+
     @Test func clearingBrowsingDataRemovesCookiesAndAllRememberedPagesOnly() async throws {
         let suite = "browser-purge-test." + UUID().uuidString
         let preferences = try #require(UserDefaults(suiteName: suite))

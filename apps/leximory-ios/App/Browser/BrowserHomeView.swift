@@ -3,6 +3,7 @@ import LeximoryCore
 
 struct BrowserHomeView: View {
     var pins: [BrowserHomePin] = []
+    var pinImages: [URL: UIImage] = [:]
     var openPin: (BrowserHomePin) -> Void = { _ in }
     var editPin: (BrowserHomePin) -> Void = { _ in }
     var deletePin: (BrowserHomePin) -> Void = { _ in }
@@ -113,12 +114,8 @@ struct BrowserHomeView: View {
     }
     private func pinIcon(_ pin: BrowserHomePin) -> some View {
         Group {
-            if let url = pin.iconURL {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFit()
-                } placeholder: {
-                    Image(systemName: pin.symbol).font(.system(size: 26, weight: .regular))
-                }
+            if let url = pin.iconURL, let image = pinImages[url] {
+                Image(uiImage: image).resizable().scaledToFit()
             } else {
                 Image(systemName: pin.symbol).font(.system(size: 26, weight: .regular))
             }
@@ -267,7 +264,7 @@ struct BrowserPinEditor: View {
                         if case .webpage(let originalURL, let bookmarkID) = pin.destination,
                            let url = TextBrowserModel.address(address) {
                             updated.destination = .webpage(url, bookmarkID: url == originalURL ? bookmarkID : nil)
-                            if url != originalURL { updated.faviconURL = nil }
+                            if url != originalURL { updated.faviconURL = nil; updated.faviconData = nil }
                         }
                         save(updated)
                         dismiss()
@@ -279,25 +276,25 @@ struct BrowserPinEditor: View {
 }
 
 private struct BrowserPinLayout: Layout {
-    private func columns(_ width: CGFloat) -> Int { max(1, Int((width + 16) / 92)) }
+    private func columns(_ width: CGFloat) -> Int { max(1, Int((width + 12) / 88)) }
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = min(proposal.width ?? 400, 400)
         let count = columns(width)
-        let itemWidth = (width - CGFloat(count - 1) * 16) / CGFloat(count)
+        let itemWidth = min(76, width)
         let height = subviews.map { $0.sizeThatFits(.init(width: itemWidth, height: nil)).height }.max() ?? 0
         let rows = (subviews.count + count - 1) / count
-        return CGSize(width: width, height: CGFloat(rows) * height + CGFloat(max(0, rows - 1)) * 20)
+        return CGSize(width: width, height: CGFloat(rows) * height + CGFloat(max(0, rows - 1)) * 12)
     }
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let count = columns(bounds.width)
-        let itemWidth = (bounds.width - CGFloat(count - 1) * 16) / CGFloat(count)
+        let itemWidth = min(76, bounds.width)
         let itemHeight = subviews.map { $0.sizeThatFits(.init(width: itemWidth, height: nil)).height }.max() ?? 0
         for index in subviews.indices {
             let row = index / count
             let rowCount = min(count, subviews.count - row * count)
-            let rowWidth = CGFloat(rowCount) * itemWidth + CGFloat(rowCount - 1) * 16
-            subviews[index].place(at: CGPoint(x: bounds.midX - rowWidth / 2 + CGFloat(index % count) * (itemWidth + 16),
-                                              y: bounds.minY + CGFloat(row) * (itemHeight + 20)),
+            let rowWidth = CGFloat(rowCount) * itemWidth + CGFloat(rowCount - 1) * 12
+            subviews[index].place(at: CGPoint(x: bounds.midX - rowWidth / 2 + CGFloat(index % count) * (itemWidth + 12),
+                                              y: bounds.minY + CGFloat(row) * (itemHeight + 12)),
                                   proposal: .init(width: itemWidth, height: itemHeight))
         }
     }

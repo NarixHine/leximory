@@ -40,6 +40,7 @@ struct BrowserHomePin: Codable, Equatable, Identifiable {
     var title: String
     var destination: Destination
     var faviconURL: URL? = nil
+    var faviconData: Data? = nil
     var iconURL: URL? {
         guard case .webpage(let url, _) = destination else { return nil }
         if let faviconURL { return faviconURL }
@@ -107,6 +108,7 @@ struct AnnotationActivity: Identifiable, Codable {
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
     private(set) var homePins: [BrowserHomePin] = []
+    private(set) var pinImages: [URL: UIImage] = [:]
     private(set) var hiddenHomeRecents = HiddenHomeRecents()
     private(set) var recentWebpages: [RecentWebpage] = []
     private var recentReading = RecentReading()
@@ -178,7 +180,12 @@ struct AnnotationActivity: Identifiable, Codable {
         if let data = UserDefaults.standard.data(forKey: "browser.annotations." + namespace),
            let saved = try? JSONDecoder().decode([AnnotationActivity].self, from: data) { activities = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.home-pins." + namespace),
-           let pins = try? JSONDecoder().decode([BrowserHomePin].self, from: data) { homePins = pins }
+           let pins = try? JSONDecoder().decode([BrowserHomePin].self, from: data) {
+            homePins = pins
+            for pin in pins {
+                if let url = pin.iconURL, let data = pin.faviconData, let image = UIImage(data: data) { pinImages[url] = image }
+            }
+        }
         connectBrowser()
     }
     var currentPin: BrowserHomePin? {
@@ -204,8 +211,13 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func savePin(_ pin: BrowserHomePin) {
         guard !pin.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if let index = homePins.firstIndex(where: { $0.id == pin.id }) { homePins[index] = pin }
-        else { homePins.append(pin) }
+        var pin = pin
+        if let index = homePins.firstIndex(where: { $0.id == pin.id }) {
+            let existing = homePins[index]
+            if existing.destination == pin.destination, pin.faviconURL == nil { pin.faviconURL = existing.faviconURL }
+            pin.faviconData = existing.iconURL == pin.iconURL ? existing.faviconData ?? pin.faviconData : nil
+            homePins[index] = pin
+        } else { homePins.append(pin) }
         persistPins()
         if case .webpage(let url, _) = pin.destination, browser.url == url {
             let browser = browser
@@ -219,8 +231,35 @@ struct AnnotationActivity: Identifiable, Codable {
                 guard let self, browser.navigationID == navigation,
                       let address = value as? String, let iconURL = TextBrowserModel.address(address),
                       let index = self.homePins.firstIndex(where: { $0.id == pin.id && $0.destination == pin.destination }) else { return }
+                if self.homePins[index].iconURL != iconURL { self.homePins[index].faviconData = nil }
                 self.homePins[index].faviconURL = iconURL
                 self.persistPins()
+            }
+        }
+    }
+    func cachePinIcons(load: ((URL) async throws -> UIImage)? = nil) async {
+        for pin in homePins {
+            guard !Task.isCancelled else { return }
+            guard let url = pin.iconURL, pinImages[url] == nil else { continue }
+            do {
+                let image: UIImage
+                if let load { image = try await load(url) }
+                else { image = try await ReaderImage.load(url, store: client.localStore) }
+                guard !Task.isCancelled,
+                      let index = homePins.firstIndex(where: { $0.id == pin.id && $0.iconURL == url }) else { continue }
+                let format = UIGraphicsImageRendererFormat(); format.scale = 1
+                let size = CGSize(width: 96, height: 96)
+                let thumbnail = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+                    let scale = min(size.width / max(1, image.size.width), size.height / max(1, image.size.height))
+                    let width = image.size.width * scale, height = image.size.height * scale
+                    image.draw(in: CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height))
+                }
+                guard let data = thumbnail.pngData() else { continue }
+                pinImages[url] = thumbnail
+                homePins[index].faviconData = data
+                persistPins()
+            } catch {
+                // Keep the resource icon. Icon failures never interrupt browsing.
             }
         }
     }
@@ -239,6 +278,8 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func deletePin(_ pin: BrowserHomePin) {
         homePins.removeAll { $0.id == pin.id }
+        let retainedURLs = Set(homePins.compactMap(\.iconURL))
+        pinImages = pinImages.filter { retainedURLs.contains($0.key) }
         persistPins()
     }
     func openPin(_ pin: BrowserHomePin) async {

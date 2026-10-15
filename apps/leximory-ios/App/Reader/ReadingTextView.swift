@@ -9,25 +9,46 @@ import os
     static let lookupTitle = "🐈 猫忆查"
     static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
 
-    static func removeUnrelatedActions(from builder: UIMenuBuilder, keepNativeLookup: Bool = false) {
+    static func removeUnrelatedActions(from builder: UIMenuBuilder) {
         guard builder.system == .context else { return }
         builder.remove(menu: .share)
         builder.remove(menu: .replace)
         builder.remove(menu: .find)
-        if !keepNativeLookup { builder.remove(menu: .lookup) }
-        builder.replaceChildren(ofMenu: .standardEdit) { copyActions($0) }
+        builder.replaceChildren(ofMenu: .standardEdit) { copyAndLookupActions($0) }
+        if builder.menu(for: .standardEdit) != nil, let lookup = builder.menu(for: .lookup) {
+            builder.remove(menu: .lookup)
+            builder.insertSibling(lookup, afterMenu: .standardEdit)
+        }
     }
 
-    static func copyActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+    static func insertLearningActions(_ actions: [UIAction], into builder: UIMenuBuilder, nativeLookupBeforeCopy: Bool = false) {
+        var destination: UIMenu.Identifier = .standardEdit
+        if nativeLookupBeforeCopy, let lookup = builder.menu(for: .lookup), builder.menu(for: .standardEdit) != nil {
+            builder.remove(menu: .lookup)
+            builder.insertSibling(lookup, beforeMenu: .standardEdit)
+            destination = .lookup
+        }
+        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions), beforeMenu: destination)
+    }
+
+    static func copyAndLookupActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
         elements.compactMap { element in
             if let command = element as? UICommand {
                 return command.action == #selector(UIResponderStandardEditActions.copy(_:)) ? command : nil
             }
             if let menu = element as? UIMenu {
-                let children = copyActions(menu.children)
+                if menu.identifier == .lookup { return menu }
+                let children = copyAndLookupActions(menu.children)
                 return children.isEmpty ? nil : menu.replacingChildren(children)
             }
             return nil
+        }
+    }
+
+    static func nativeLookupMenus(in elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.flatMap { element -> [UIMenuElement] in
+            guard let menu = element as? UIMenu else { return [] }
+            return menu.identifier == .lookup ? [menu] : nativeLookupMenus(in: menu.children)
         }
     }
 
@@ -94,8 +115,8 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        if view.keepNativeLookup != readOnly {
-            view.keepNativeLookup = readOnly
+        if view.learningReadOnly != readOnly {
+            view.learningReadOnly = readOnly
             UIMenuSystem.context.setNeedsRebuild()
         }
         view.contentInset.bottom = bottomObstruction
@@ -297,10 +318,10 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
-    var keepNativeLookup = false
+    var learningReadOnly = false
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
-        ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: keepNativeLookup)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
     }
 
     var pendingFinalScroll = false

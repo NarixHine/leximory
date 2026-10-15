@@ -80,7 +80,7 @@ Use the lawn and cat together for spacious loading scenes, at 80% width up to 56
 
 ## Reading and learning
 
-Selection menus offer 猫忆查 before Copy, remove unrelated native lookup, sharing, replacement, find, and Select All in learning mode; and add 🖍️荧光笔 for ebooks. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
+Selection menus put 猫忆查 and ebook 🖍️荧光笔 first, preserve native Define after the Leximory actions, and remove unrelated sharing, replacement, find, and Select All in learning mode. Keep actions beside the selection with native icons. Capture ebook context and location before dismissal.
 
 Static annotations highlight on touch-down and open on touch-up, anchored to the selected line. Use a fitted popover on iPad and tray on phone, with a comfortable 400 pt measure and 24 pt insets. Keep actions below the definition. Article highlights are short sage-yellow strokes behind the lower glyph area, separately fitted to each line.
 

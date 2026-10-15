@@ -21,8 +21,8 @@ struct TextBrowserScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @State private var localBrowser = TextBrowserModel()
-    private var browser: TextBrowserModel { sharedBrowser ?? localBrowser }
+    @State private var localBrowser = BrowserModelStorage()
+    private var browser: TextBrowserModel { sharedBrowser ?? localBrowser.model }
     @State private var address = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var editingAddress = false
@@ -51,7 +51,7 @@ struct TextBrowserScreen: View {
             finishEditing()
             browser.web.stopLoading()
             browser.web.lookup = nil
-            localBrowser = TextBrowserModel()
+            localBrowser = BrowserModelStorage()
             browser.web.lookup = { selection in define(selection) }
             opened = true
             address = ""
@@ -249,7 +249,7 @@ struct TextBrowserScreen: View {
         HStack(spacing: 8) {
             if editingAddress {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                BrowserAddressField(address: $address, editor: addressEditor, submit: openAddress)
+                BrowserAddressField(address: address, editor: addressEditor, submit: openAddress)
                     .frame(maxWidth: .infinity).frame(height: 48)
             } else {
                 Button {
@@ -279,7 +279,7 @@ struct TextBrowserScreen: View {
         withAnimation(motion) { editingAddress = false }
     }
     private func openAddress() {
-        guard let url = TextBrowserModel.destination(address, engine: searchEngine) else { return }
+        guard let url = TextBrowserModel.destination(addressEditor.field?.text ?? address, engine: searchEngine) else { return }
         finishEditing()
         browser.load(url)
     }
@@ -304,7 +304,7 @@ struct TextBrowserScreen: View {
 }
 
 struct BrowserAddressField: UIViewRepresentable {
-    @Binding var address: String
+    let address: String
     let editor: BrowserAddressEditor
     let submit: () -> Void
 
@@ -329,8 +329,11 @@ struct BrowserAddressField: UIViewRepresentable {
     }
     func updateUIView(_ field: BrowserURLTextField, context: Context) {
         context.coordinator.parent = self
-        if field.markedTextRange == nil && field.text != address { field.text = address }
-        context.coordinator.applyTypography(to: field)
+        // UIKit owns the draft and IME composition for the entire editing session.
+        // Replacing attributedText here restarts keyboard selection/layout callbacks.
+        if !field.isFirstResponder, field.markedTextRange == nil, field.text != address {
+            field.attributedText = LeximoryTypography.addressAttributedUI(address)
+        }
         field.enablesReturnKeyAutomatically = true
         DispatchQueue.main.async {
             guard field.wantsFocus, field.window != nil, !field.isFirstResponder else { return }
@@ -345,25 +348,30 @@ struct BrowserAddressField: UIViewRepresentable {
         var parent: BrowserAddressField
         init(_ parent: BrowserAddressField) { self.parent = parent }
         @objc func changed(_ field: UITextField) {
-            parent.address = field.text ?? ""
-            applyTypography(to: field)
-        }
-        func applyTypography(to field: UITextField) {
-            guard field.markedTextRange == nil else { return }
-            let styled = LeximoryTypography.addressAttributedUI(field.text ?? "")
-            guard field.attributedText?.isEqual(to: styled) != true else { return }
-            let selection = field.selectedTextRange.map {
-                NSRange(location: field.offset(from: field.beginningOfDocument, to: $0.start), length: field.offset(from: $0.start, to: $0.end))
-            }
-            field.attributedText = styled
-            if let selection,
-               let start = field.position(from: field.beginningOfDocument, offset: selection.location),
-               let end = field.position(from: start, offset: selection.length) {
-                field.selectedTextRange = field.textRange(from: start, to: end)
+            let draft = field.text
+            // Finish UIKit's edit transaction before adjusting glyph sizes. Stale
+            // edits and active IME composition must never replace the text storage.
+            DispatchQueue.main.async { [weak field] in
+                guard let field, field.isFirstResponder, field.markedTextRange == nil, field.text == draft else { return }
+                let styled = LeximoryTypography.addressAttributedUI(field.text ?? "")
+                guard field.attributedText?.isEqual(to: styled) != true else { return }
+                let selection = field.selectedTextRange.map {
+                    NSRange(location: field.offset(from: field.beginningOfDocument, to: $0.start), length: field.offset(from: $0.start, to: $0.end))
+                }
+                field.attributedText = styled
+                if let selection,
+                   let start = field.position(from: field.beginningOfDocument, offset: selection.location),
+                   let end = field.position(from: start, offset: selection.length) {
+                    field.selectedTextRange = field.textRange(from: start, to: end)
+                }
             }
         }
         func textFieldDidBeginEditing(_ field: UITextField) {
-            DispatchQueue.main.async { field.selectAll(nil) }
+            let initialText = field.text
+            DispatchQueue.main.async { [weak field] in
+                guard let field, field.isFirstResponder, field.markedTextRange == nil, field.text == initialText else { return }
+                field.selectAll(nil)
+            }
         }
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
             parent.submit()
@@ -391,4 +399,10 @@ final class BrowserAddressEditor {
 struct BrowserSession: Codable {
     let url: String
     let offset: CGFloat
+}
+
+@MainActor private final class BrowserModelStorage {
+    // SwiftUI recreates view values frequently. Only create WebKit when this screen
+    // actually owns a browser, never for a screen using the workspace's browser.
+    lazy var model = TextBrowserModel()
 }

@@ -56,7 +56,7 @@ struct BrowserWorkspaceView: View {
                         Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
                     }
                     if editingAddress || isHome {
-                        BrowserHomeView(pins: workspace.homePins,
+                        BrowserHomeView(pins: workspace.homePins, pinImages: workspace.pinImages,
                             openPin: { pin in Task { await workspace.openPin(pin) } },
                             editPin: { editingPin = $0 }, deletePin: workspace.deletePin,
                             hiddenRecentTextIDs: workspace.hiddenHomeRecents.textIDs,
@@ -158,6 +158,11 @@ struct BrowserWorkspaceView: View {
             if let image = try? await ReaderImage.load(url, store: client.localStore), !Task.isCancelled {
                 avatarURL = url; avatarImage = image
             }
+        }
+        .task(id: [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
+            + workspace.homePins.map { $0.id.uuidString + ($0.iconURL?.absoluteString ?? "") }) {
+            guard scenePhase == .active else { return }
+            await workspace.cachePinIcons()
         }
         .task(id: sync?.revision) { await workspace.refresh(online: sync?.online != false) }
         .task(id: scenePhase) {
@@ -304,7 +309,7 @@ struct BrowserWorkspaceView: View {
     private var addressControl: some View {
         HStack(spacing: 8) {
             if editingAddress {
-                BrowserAddressField(address: $address, editor: addressEditor, submit: submitAddress).frame(height: 48)
+                BrowserAddressField(address: address, editor: addressEditor, submit: submitAddress).frame(height: 48)
             } else {
                 Button(action: beginEditing) {
                     HStack(spacing: 6) {
@@ -411,7 +416,7 @@ struct BrowserWorkspaceView: View {
         finishEditing(); workspace.openURL(url)
     }
     private func submitAddress() {
-        guard let url = TextBrowserModel.destination(address, engine: searchEngine) else { return }
+        guard let url = TextBrowserModel.destination(addressEditor.field?.text ?? address, engine: searchEngine) else { return }
         finishEditing(); workspace.openURL(url)
     }
     private func extract() async {

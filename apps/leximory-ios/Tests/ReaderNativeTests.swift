@@ -344,7 +344,7 @@ import LeximoryCore
         let select = UICommand(title: "全选", action: #selector(UIResponderStandardEditActions.selectAll(_:)))
         let copy = UICommand(title: "拷贝", action: #selector(UIResponderStandardEditActions.copy(_:)))
         let paste = UICommand(title: "粘贴", action: #selector(UIResponderStandardEditActions.paste(_:)))
-        let children = ReadingSelectionMenu.copyActions([select, paste, UIMenu(title: "", children: [select, copy])])
+        let children = ReadingSelectionMenu.copyAndLookupActions([select, paste, UIMenu(title: "", children: [select, copy])])
         #expect(children.count == 1)
         let menu = children.first as? UIMenu
         #expect(menu?.children.count == 1)
