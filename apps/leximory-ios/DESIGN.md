@@ -1,6 +1,8 @@
 # Leximory on Apple platforms
 
-The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation; imported text keeps its original punctuation.
+The web app defines copy, colors, typography and product actions. Use native navigation, selection menus, sheets and popovers. Keep implementation details out of the interface. App-authored Chinese uses Chinese punctuation, while imported text keeps its original punctuation.
+
+**Simplicity is the ultimate sophistication. Always present the UI in a considerate, intuitive way, and the copy with a user-facing awareness.**
 
 ## Appearance
 

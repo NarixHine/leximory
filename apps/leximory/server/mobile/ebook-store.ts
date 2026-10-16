@@ -21,11 +21,12 @@ export const ebookStore: EbookStore = {
             if (!error && data) {
                 if (metadata.error) throw metadata.error
                 const url = new URL(data.signedUrl)
-                url.searchParams.set(
-                    'v',
-                    checkedResponse(z.object({ version: z.string().min(1).max(256) }), metadata.data).version,
-                )
-                return { url: url.href, format }
+                const sourceVersion = checkedResponse(
+                    z.object({ version: z.string().min(1).max(256) }),
+                    metadata.data,
+                ).version
+                url.searchParams.set('v', sourceVersion)
+                return { url: url.href, format, sourceVersion }
             }
         }
         return null

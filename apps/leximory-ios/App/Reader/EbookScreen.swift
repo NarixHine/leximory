@@ -47,6 +47,7 @@ struct EbookChapter: Identifiable {
     }
     var pageBounds: CGRect?
     var readOnly = false
+    var drawingEnabled = false
     var rightToLeft = false
     var command: (id: UUID, action: String, value: String?)?
     var loadFailure: String?
@@ -90,6 +91,7 @@ struct EbookScreen: View {
     var language = "English"
     @State private var reader = EbookReaderState()
     @State private var data: Data?
+    @State private var notes: PDFNotesModel?
     private var format: String { reader.format }
     @State private var loading = true
     @State private var loadError: String?
@@ -99,6 +101,7 @@ struct EbookScreen: View {
     @State private var scrubPosition: Double?
     @AppStorage("ebook.appearance") private var appearance = EbookAppearance.paper
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
     @AppStorage("ebook.japanese.prose.size") private var japaneseFontSize = 24.0
@@ -113,10 +116,10 @@ struct EbookScreen: View {
     @Environment(\.browserChromeHeight) private var browserChromeHeight
     @Environment(\.browserResourceActive) private var resourceActive
 
-    var body: some View {
+    private var readerPresentation: some View {
         ZStack {
             if let data {
-                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command)
+                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command, notes: notes, notesRevision: notes?.revision ?? 0, drawingEnabled: notes?.drawing == true)
                     .ignoresSafeArea(.container, edges: [.top, .bottom]) }
                 else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
@@ -163,20 +166,30 @@ struct EbookScreen: View {
             if edge == .trailing { reader.navigate(reader.rightToLeft ? "previous" : "next") }
             if edge == .leading { reader.navigate(reader.rightToLeft ? "next" : "previous") }
         }
+    }
+    private var readerLifecycle: some View {
+        readerPresentation
         .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
+        .task(id: notes?.document) { await notes?.run() }
+        .onChange(of: notes?.drawing) { _, drawing in
+            reader.drawingEnabled = drawing == true
+            if drawing == true { reader.chromeVisible = true; definition = nil; tray = nil }
+        }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { notes?.flush() } }
         .onChange(of: reader.backRequest) { _, _ in if let workspace { workspace.go(-1) } else { dismiss() } }
         .onChange(of: resourceActive, initial: true) { _, active in
             if active {
                 workspace?.ebookReader = reader; workspace?.ebookTextID = article.id.rawValue
                 reader.search = workspace.map { workspace in { [weak workspace] query in workspace?.search(query) } }
-            } else { reader.search = nil; definition = nil; tray = nil; positionSaver?.flush() }
+                if let notes { sync?.activePDF = notes.document; sync?.scheduleNotes() }
+            } else { reader.search = nil; definition = nil; tray = nil; positionSaver?.flush(); notes?.deactivate() }
         }
         .onChange(of: reader.trayRequest) { _, request in
             guard resourceActive, let request else { return }
             tray = EbookTray(rawValue: request); reader.trayRequest = nil
         }
 
-        .onDisappear { positionSaver?.flush() }
+        .onDisappear { positionSaver?.flush(); notes?.deactivate() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
             if action.kind == .define {
@@ -201,9 +214,16 @@ struct EbookScreen: View {
             guard !reader.readOnly, reader.ready, previous != location, let location else { return }
             positionSaver?.schedule(location)
         }
+    }
+    var body: some View {
+        readerLifecycle
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ebook-reader")
-        .accessibilityValue(reader.ready ? format == "epub" ? "epub已打开，\(reader.chapter ?? "")，章节第\(reader.chapterPage)页" : "pdf已打开" : "正在打开")
+        .accessibilityValue(readerAccessibilityValue)
+    }
+    private var readerAccessibilityValue: String {
+        guard reader.ready else { return "正在打开" }
+        return format == "epub" ? "epub已打开，\(reader.chapter ?? "")，章节第\(reader.chapterPage)页" : "pdf已打开"
     }
     private var contentsTray: some View {
             NavigationStack {
@@ -245,7 +265,19 @@ struct EbookScreen: View {
             .presentationBackground(LeximoryPalette.paper)
     }
     private var topControls: some View {
-        HStack(spacing: 8) {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                readerNavigation
+                if reader.chromeVisible { readerActions.fixedSize(horizontal: true, vertical: false).transition(.opacity) }
+            }.frame(height: 44)
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 8) { readerNavigation }.frame(height: 44)
+                if reader.chromeVisible { readerActions }
+            }
+        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
+            .padding(.horizontal, 16)
+    }
+    @ViewBuilder private var readerNavigation: some View {
             if reader.chromeVisible, workspace == nil {
             Button { if let workspace { workspace.go(-1) } else { dismiss() } } label: {
                 Image(systemName: "chevron.left").font(.system(size: 16))
@@ -261,9 +293,6 @@ struct EbookScreen: View {
                 pageLabel.padding(.horizontal, 8).frame(height: 36)
             }
             Spacer(minLength: 0)
-            if reader.chromeVisible { readerActions.transition(.opacity) }
-        }.frame(height: 44).buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
-            .padding(.horizontal, 16)
     }
     private func trayBinding(_ item: EbookTray) -> Binding<Bool> {
         Binding(get: { tray == item }, set: { presented in
@@ -278,7 +307,28 @@ struct EbookScreen: View {
             .frame(width: 44, height: 44).contentShape(Rectangle())
     }
     private var readerActions: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: format == "pdf" ? 4 : 8) {
+            if format == "pdf" {
+                Button {
+                    guard let notes else { return }
+                    if !notes.drawing && (notes.localError || notes.loadError || !notes.problems.isEmpty) { notes.showsProblems = true }
+                    else { Task { await notes.toggleDrawing() } }
+                } label: {
+                    readerActionIcon(notes?.drawing == true ? "checkmark" : "pencil.tip")
+                        .overlay(alignment: .topTrailing) {
+                            if notes?.localError == true || notes?.loadError == true || notes?.problems.isEmpty == false {
+                                Image(systemName: "exclamationmark.circle.fill").font(.system(size: 12)).foregroundStyle(.orange)
+                            }
+                        }
+                }
+                .accessibilityLabel(notes?.drawing == true ? "完成手写" : "手写笔记")
+                .accessibilityHint("手写时用双指滚动页面。")
+                .accessibilityIdentifier("pdf-drawing-toggle")
+                .disabled(!reader.ready || notes == nil || notes?.preparing == true || !PDFDrawingOverlays.supportsDrawing)
+                .popover(isPresented: Binding(get: { notes?.showsProblems == true }, set: { notes?.showsProblems = $0 })) {
+                    if let notes { PDFNotesProblems(model: notes) }
+                }
+            }
             Button { tray = .contents } label: { readerActionIcon("list.bullet") }
                 .accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.contents)) { contentsTray }
@@ -356,6 +406,7 @@ struct EbookScreen: View {
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
     private func load() async {
+        notes?.deactivate(); notes = nil; reader.drawingEnabled = false
         positionSaver?.flush()
         positionSaver = client.map { client in
             EbookPositionSaver { location in
@@ -376,6 +427,9 @@ struct EbookScreen: View {
                     book = try await client.downloadEbook(textID: article.id.rawValue)
                 }
                 try Task.checkCancellation()
+                if book.descriptor.format == "pdf", book.descriptor.pdfSourceVersion != nil, let store = client.notesStore {
+                    notes = PDFNotesModel(book: book, store: store, sync: sync)
+                }
                 reader.location = book.location; reader.bookmarks = book.descriptor.bookmarks
                 reader.format = book.descriptor.format; data = book.data
             } else {
@@ -622,6 +676,9 @@ struct NativePDFReader: UIViewRepresentable {
     let data: Data
     let reader: EbookReaderState
     let command: (id: UUID, action: String, value: String?)?
+    var notes: PDFNotesModel? = nil
+    var notesRevision = 0
+    var drawingEnabled = false
     func makeCoordinator() -> Coordinator { Coordinator(reader: reader) }
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
@@ -633,6 +690,11 @@ struct NativePDFReader: UIViewRepresentable {
         view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0); view.pageShadowsEnabled = false
         view.usePageViewController(false)
+        if let notes {
+            let overlays = PDFDrawingOverlays(model: notes, pdf: view)
+            context.coordinator.drawingOverlays = overlays
+            view.pageOverlayViewProvider = overlays
+        }
         guard let document = PDFDocument(data: data), document.pageCount > 0 else {
             Task { reader.loadFailure = "电子书未能加载，请重试。" }
             return view
@@ -672,6 +734,7 @@ struct NativePDFReader: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: PDFView, context: Context) {
+        context.coordinator.drawingOverlays?.update()
         context.coordinator.updateBookmarks(in: view)
         if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
@@ -686,9 +749,14 @@ struct NativePDFReader: UIViewRepresentable {
             }
         }
     }
+    static func dismantleUIView(_ uiView: PDFView, coordinator: Coordinator) {
+        coordinator.drawingOverlays?.tearDown()
+        uiView.pageOverlayViewProvider = nil
+    }
     @MainActor final class Coordinator: NSObject {
         let reader: EbookReaderState
         var commandID: UUID?
+        var drawingOverlays: PDFDrawingOverlays?
         private var appliedBookmarkIDs: [Int] = []
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
         func updateBookmarks(in view: PDFView) {
@@ -720,6 +788,7 @@ struct NativePDFReader: UIViewRepresentable {
             NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: view)
         }
         @objc func pageChanged() {
+            drawingOverlays?.activateCurrentPage()
             guard reader.ready, let document = view?.document, let page = view?.currentPage else { return }
             let index = document.index(for: page)
             reader.location = String(index + 1); reader.chapter = page.label ?? String(index + 1)

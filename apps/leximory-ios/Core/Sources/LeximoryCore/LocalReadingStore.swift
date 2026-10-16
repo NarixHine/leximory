@@ -154,7 +154,7 @@ public actor LocalReadingStore {
         let bookKey = "ebook/\(text.id)"
         if let book = value(EbookDescriptor.self, for: bookKey) {
             save(EbookDescriptor(text: text, library: book.library, url: book.url, format: book.format,
-                                 expiresAt: book.expiresAt, location: book.location, bookmarks: book.bookmarks), for: bookKey)
+                                 expiresAt: book.expiresAt, location: book.location, bookmarks: book.bookmarks, sourceVersion: book.sourceVersion), for: bookKey)
         }
         upsertText(text)
     }
@@ -222,13 +222,13 @@ public actor LocalReadingStore {
     public func updateEbookLocation(textID: String, location: String) {
         guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
-                             expiresAt: book.expiresAt, location: location, bookmarks: book.bookmarks), for: "ebook/\(textID)")
+                             expiresAt: book.expiresAt, location: location, bookmarks: book.bookmarks, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
     }
     public func removeEbookBookmark(textID: String, bookmarkID: Int) {
         guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
                              expiresAt: book.expiresAt, location: book.location,
-                             bookmarks: book.bookmarks.filter { $0.id != bookmarkID }), for: "ebook/\(textID)")
+                             bookmarks: book.bookmarks.filter { $0.id != bookmarkID }, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
     }
     public func close() {
         closed = true; online = false; manifest = Manifest()

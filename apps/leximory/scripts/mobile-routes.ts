@@ -38,6 +38,7 @@ async function main() {
         ],
         definitions: ['definitions', 'vocabulary', 'ebookDefinitions', 'ebookVocabulary'],
         ebooks: ['ebook', 'ebookPosition', 'ebookBookmark', 'removeEbookBookmark'],
+        'pdf-notes': ['pdfNotes', 'savePDFNote'],
         authoring: ['extractArticle', 'vocabularyList', 'savedWord', 'editWord', 'importArticle', 'uploadEbook'],
         management: ['editableText', 'editText', 'removeText', 'replaceEbook', 'removeEbook', 'removeWord'],
         folders: ['createFolder', 'renameFolder', 'libraryArchive'],

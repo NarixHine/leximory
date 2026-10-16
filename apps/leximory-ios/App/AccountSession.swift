@@ -138,7 +138,7 @@ struct SignInFailure: LocalizedError {
     @ObservationIgnored private var scopedClient: MobileClient?
     var client: MobileClient { scopedClient ?? onlineClient }
     @ObservationIgnored private lazy var onlineClient = makeClient()
-    private func makeClient(store: LocalReadingStore? = nil) -> MobileClient {
+    private func makeClient(store: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) -> MobileClient {
         MobileClient(baseURL: configuration.apiURL, token: { [tokens, weak self] rejected in
         let current = await self?.generation
         do { return try await tokens.token(rejected: rejected) }
@@ -148,7 +148,7 @@ struct SignInFailure: LocalizedError {
         }
     }, unauthorized: { [weak self] rejected in
         await self?.expire(rejected: rejected)
-    }, localStore: store)
+    }, localStore: store, notesStore: notesStore)
     }
     init(configuration: AppConfiguration) {
         let tokens = configuration == AppConfiguration.bundled
@@ -209,7 +209,8 @@ struct SignInFailure: LocalizedError {
     private func openStore(accountID: String) async throws {
         await clearStore()
         let store = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID.lowercased())
-        let scoped = makeClient(store: store)
+        let notes = try PDFNotesStore(root: PDFNotesStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID)
+        let scoped = makeClient(store: store, notesStore: notes)
         scopedClient = scoped
         sync = NativeSync(store: store, client: scoped)
     }

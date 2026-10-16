@@ -1,6 +1,6 @@
 # Native Japanese ebooks and offline reading
 
-The iOS, iPadOS, and Mac Catalyst app renders cached content before refreshing from the existing mobile API. No web-client or database behavior changes are required.
+The iOS, iPadOS, and Mac Catalyst app renders cached content before refreshing from the mobile API. PDF handwriting adds a separate durable note store and page-note API; see [PDF handwriting](pdf-notes.md).
 
 ## Japanese EPUBs
 
@@ -18,9 +18,9 @@ Swipe right to advance and left to return. Left Arrow advances Japanese pages; R
 
 Collections are committed and reconciled only after every page succeeds. Failed pagination preserves the previous snapshot. Completed collections remove deleted items; access rejection removes the rejected library or text and its ebook files. Local version guards prevent an older refresh from overwriting a confirmed archive, word edit, or reading position. Confirmed online changes update the local snapshot. Unchanged responses avoid rewriting content. Ebook bytes are reused only when their saved object URL matches the current descriptor, ignoring expiring signing parameters.
 
-Caching and syncing remain automatic and do not expose download labels, storage counters, sync timestamps, manual sync controls, or read-only banners. Editing controls remain visible and are disabled when disconnected. Cached article annotations, vocabulary definitions, ebook contents, and existing bookmarks remain readable. Lookup, saving, editing, importing, archiving, bookmarks, position writes, and audio require connectivity; there is no offline mutation queue. The API middleware blocks requests before authorization when offline, including actions already open when connectivity disappears. Only a failed user request displays a concise recovery message. The reader has no persistent status footer; text flows to the screen's bottom edge.
+Caching and syncing remain automatic and do not expose download labels, storage counters, sync timestamps, manual sync controls, or read-only banners. Network-dependent editing controls remain visible and are disabled when disconnected. Cached article annotations, vocabulary definitions, ebook contents, and existing bookmarks remain readable. Lookup, article/vocabulary saving and editing, importing, archiving, bookmarks, position writes, and audio require connectivity; these operations have no offline mutation queue. PDF handwriting stays editable offline and uses its own durable upload queue. The API middleware blocks requests before authorization when offline, including actions already open when connectivity disappears. Only a failed user request displays a concise recovery message. The reader has no persistent status footer; text flows to the screen's bottom edge.
 
-Sign-out or confirmed authentication expiry deletes the active partition and account-specific recent access. The closed store rejects late responses so old tasks cannot repopulate another account's cache. A server outage preserves the session and cached reading.
+Sign-out or confirmed authentication expiry deletes the active reading-cache partition and account-specific recent access. The separate PDF note partition is closed and preserved for the same account's next sign-in. Closed stores reject late responses so old tasks cannot repopulate another account's data. A server outage preserves the session and cached reading.
 
 ## Verification and limits
 

@@ -5,7 +5,10 @@ import { MobileError } from './errors'
 import { checkedResponse, jsonBody, type MobileContext, type MobileOperation } from './http'
 
 export interface EbookStore {
-    asset(id: string, signal: AbortSignal): Promise<{ url: string; format: 'pdf' | 'epub' } | null>
+    asset(
+        id: string,
+        signal: AbortSignal,
+    ): Promise<{ url: string; format: 'pdf' | 'epub'; sourceVersion?: string } | null>
     location(textId: string, userId: string): Promise<string | null>
     bookmarks(textId: string, userId: string): Promise<z.infer<typeof ebookBookmarkSchema>[]>
     savePosition(textId: string, userId: string, location: string): Promise<void>

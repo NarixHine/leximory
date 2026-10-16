@@ -17,13 +17,18 @@ import LeximoryCore
     @ObservationIgnored private var pathAvailable = true
     @ObservationIgnored private var syncTask: Task<Void, Never>?
     @ObservationIgnored private var observer: Task<Void, Never>?
+    @ObservationIgnored private var notesTask: Task<Void, Never>?
+    @ObservationIgnored private var scheduledNotes: Task<Void, Never>?
     @ObservationIgnored private var stopped = false
     @ObservationIgnored private var active = false
     @ObservationIgnored private var runID: UUID?
     let store: LocalReadingStore
     let client: MobileClient
+    let notes: PDFNotesSync?
+    var activePDF: PDFNoteDocument?
     init(store: LocalReadingStore, client: MobileClient) {
         self.store = store; self.client = client
+        notes = client.notesStore.map { PDFNotesSync(store: $0, remote: client) }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--offline") {
             pathAvailable = false; online = false
@@ -53,7 +58,14 @@ import LeximoryCore
     }
     func run() async {
         let id = UUID(); runID = id; active = true
-        defer { if runID == id { active = false; runID = nil } }
+        notesTask?.cancel()
+        notesTask = Task { [weak self] in
+            while let self, !Task.isCancelled, !self.stopped {
+                await self.syncNotes()
+                do { try await Task.sleep(for: .seconds(20)) } catch { return }
+            }
+        }
+        defer { if runID == id { active = false; runID = nil; notesTask?.cancel() } }
         while !Task.isCancelled && !stopped {
             await refresh()
             do { try await Task.sleep(for: .seconds(online ? 300 : 20)) } catch { return }
@@ -61,6 +73,7 @@ import LeximoryCore
     }
     func refresh() async {
         guard !stopped, pathAvailable else { return }
+        scheduleNotes()
         if let syncTask { await syncTask.value; return }
         syncing = true; incomplete = false
         let task = Task { [client, store] in
@@ -70,11 +83,13 @@ import LeximoryCore
             do {
                 _ = try await client.account()
                 let libraries = try await client.allLibraries()
+                try await client.notesStore?.reconcileSources(libraryIDs: Set(libraries.map(\.id)))
                 var complete = true
                 for library in libraries {
                     try Task.checkCancellation()
                     do {
                         let texts = try await client.allTexts(libraryID: library.id)
+                        try await client.notesStore?.reconcileSources(libraryID: library.id, textIDs: Set(texts.map(\.id)))
                         _ = try await client.allVocabulary(libraryID: library.id)
                         // Limit downloads and document decoding to three concurrent texts.
                         for offset in stride(from: 0, to: texts.count, by: 3) {
@@ -122,9 +137,23 @@ import LeximoryCore
         await task.value
         syncTask = nil; syncing = false
     }
-    func pause() { active = false; runID = nil; syncTask?.cancel() }
+    func scheduleNotes() {
+        scheduledNotes?.cancel()
+        scheduledNotes = Task { [weak self] in
+            do { try await Task.sleep(for: .milliseconds(600)) } catch { return }
+            await self?.syncNotes()
+        }
+    }
+    private func syncNotes() async {
+        guard active, pathAvailable, !stopped else { return }
+        do { try await notes?.synchronize(document: activePDF) } catch { }
+    }
+    func pause() { active = false; runID = nil; syncTask?.cancel(); notesTask?.cancel(); scheduledNotes?.cancel() }
     func stop() async {
         stopped = true; monitor.cancel(); observer?.cancel(); syncTask?.cancel()
+        notesTask?.cancel(); scheduledNotes?.cancel()
+        await notes?.stop()
+        await client.notesStore?.close()
         await store.close()
     }
 }

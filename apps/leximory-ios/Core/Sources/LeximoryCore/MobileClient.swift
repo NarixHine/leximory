@@ -137,6 +137,10 @@ public struct EbookDescriptor: Codable, Sendable {
     public let expiresAt: Date
     public let location: String?
     public let bookmarks: [EbookBookmark]
+    public var sourceVersion: String? = nil
+    public var pdfSourceVersion: String? {
+        sourceVersion ?? URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "v" }?.value
+    }
 }
 public struct AudioDescriptor: Codable, Sendable {
     public let url: URL
@@ -161,11 +165,12 @@ private struct BearerMiddleware: ClientMiddleware {
     let token: @Sendable (String?) async throws -> String
     let unauthorized: @Sendable (String) async -> Void
     var store: LocalReadingStore? = nil
+    var notesStore: PDFNotesStore? = nil
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions"].contains(operationID)
+        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -189,15 +194,31 @@ private struct BearerMiddleware: ClientMiddleware {
         if result.0.status.code == 401 {
             await unauthorized(request.headerFields[.authorization]?.replacingOccurrences(of: "Bearer ", with: "") ?? original)
         }
-        if [403, 404].contains(result.0.status.code), let path = request.path {
+        let noteOperation = operationID == "pdfNotes" || operationID == "savePDFNote"
+        if !noteOperation, [403, 404].contains(result.0.status.code), let path = request.path {
             let parts = path.split(separator: "?")[0].split(separator: "/")
-            if parts.first == "texts", parts.count > 1 { await store?.removeText(String(parts[1])) }
-            if parts.first == "libraries", parts.count > 1 { await store?.removeLibrary(String(parts[1])) }
+            if parts.first == "texts", parts.count > 1 {
+                await store?.removeText(String(parts[1]))
+                try? await notesStore?.revokeSources(textID: String(parts[1]))
+            }
+            if parts.first == "libraries", parts.count > 1 {
+                await store?.removeLibrary(String(parts[1]))
+                try? await notesStore?.revokeSources(libraryID: String(parts[1]))
+            }
         }
         logger.info("Response: operation=\(operationID, privacy: .public) id=\(diagnosticID, privacy: .public) status=\(result.0.status.code) duration=\(String(describing: started.duration(to: .now)), privacy: .public)")
         if result.0.status.code >= 400, let responseBody = result.1 {
             let bytes = try await Data(collecting: responseBody, upTo: 65536)
-            if let failure = try? JSONDecoder().decode(MobileFailure.self, from: bytes) { throw failure }
+            if let failure = try? JSONDecoder().decode(MobileFailure.self, from: bytes) {
+                if noteOperation, failure.error.code == "inaccessible", let path = request.path {
+                    let parts = path.split(separator: "?")[0].split(separator: "/")
+                    if parts.first == "texts", parts.count > 1 {
+                        await store?.removeText(String(parts[1]))
+                        try? await notesStore?.revokeSources(textID: String(parts[1]))
+                    }
+                }
+                throw failure
+            }
             throw URLError(.badServerResponse)
         }
         return result
@@ -209,20 +230,22 @@ public struct MobileClient: Sendable {
     private let bearerMiddleware: BearerMiddleware
     public let webURL: URL
     public let localStore: LocalReadingStore?
+    public let notesStore: PDFNotesStore?
     public static func cause(of error: any Error) -> any Error {
         if let clientError = error as? ClientError { return cause(of: clientError.underlyingError) }
         return error
     }
-    public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
-        self.init(baseURL: baseURL, transport: URLSessionTransport(), token: token, unauthorized: unauthorized, localStore: localStore)
+    public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) {
+        self.init(baseURL: baseURL, transport: URLSessionTransport(), token: token, unauthorized: unauthorized, localStore: localStore, notesStore: notesStore)
     }
-    public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil) {
+    public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) {
         webURL = baseURL
-        let middleware = BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore)
+        let middleware = BearerMiddleware(token: token, unauthorized: unauthorized, store: localStore, notesStore: notesStore)
         let sharedTransport = ReadCoalescingTransport(transport)
         bearerMiddleware = middleware
         self.transport = sharedTransport
         self.localStore = localStore
+        self.notesStore = notesStore
         client = Client(serverURL: baseURL.appending(path: "api/mobile/v1"), configuration: .init(dateTranscoder: APIExpiryDates()), transport: sharedTransport, middlewares: [middleware])
     }
     private func reviewRequest<Result: Decodable & Sendable>(_ path: String, body: Data? = nil) async throws -> Result {
@@ -423,6 +446,7 @@ public struct MobileClient: Sendable {
             _ = try await client.removeText(path: .init(textId: text.id), body: .json(.init(libraryId: text.libraryId))).ok
         }
         await localStore?.deleteText(text)
+        try? await notesStore?.revokeSources(textID: text.id)
     }
     public func removeWord(_ word: SavedWord) async throws {
         try await MutationRetry.run {
@@ -443,6 +467,7 @@ public struct MobileClient: Sendable {
         let text = try await MutationRetry.run {
             try mapped(try await client.removeEbook(path: .init(textId: id)).ok.body.json, to: CatalogText.self)
         }
+        try? await notesStore?.revokeSources(textID: id)
         await localStore?.removeText(id)
         await localStore?.upsertText(text)
         return text
@@ -471,6 +496,18 @@ public struct MobileClient: Sendable {
     public func saveEbookPosition(textID: String, location: String) async throws {
         _ = try await client.ebookPosition(path: .init(textId: textID), body: .json(.init(location: location))).ok
         await localStore?.updateEbookLocation(textID: textID, location: location)
+    }
+    public func pdfNotes(textID: String, pdfVersion: String, after: Int? = nil) async throws -> PDFNotePage {
+        try mapped(try await client.pdfNotes(path: .init(textId: textID), query: .init(pdfVersion: pdfVersion, after: after)).ok.body.json, to: PDFNotePage.self)
+    }
+    public func savePDFNote(_ upload: PDFNoteUpload) async throws -> PDFPageDrawing {
+        let note = upload.note
+        return try mapped(try await client.savePDFNote(path: .init(textId: upload.key.document.textID), body: .json(.init(
+            pageIndex: note.pageIndex, drawingBase64: note.drawing.base64EncodedString(),
+            canvasWidth: note.canvasWidth, canvasHeight: note.canvasHeight, formatVersion: note.formatVersion,
+            revision: note.revision.uuidString.lowercased(), pdfVersion: upload.key.document.pdfVersion,
+            baseRevision: upload.baseRevision?.uuidString.lowercased()
+        ))).ok.body.json, to: PDFPageDrawing.self)
     }
     public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?) async throws -> EbookBookmark {
         let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location))).ok.body.json, to: EbookBookmark.self)
@@ -566,7 +603,7 @@ public struct MobileClient: Sendable {
     public func cachedEbook(textID: String) async -> LocalEbook? {
         guard let descriptor = await localStore?.value(EbookDescriptor.self, for: "ebook/\(textID)"),
               let data = await localStore?.data(for: "book/\(textID)"),
-              await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) else { return nil }
+              await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) else { return try? await notesStore?.retainedBook(textID: textID) }
         return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
     }
     public func downloadEbook(textID: String) async throws -> LocalEbook {
@@ -577,6 +614,10 @@ public struct MobileClient: Sendable {
            await localStore?.value(String.self, for: "book-source/\(textID)") == Self.bookSource(descriptor.url) {
             return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
         }
+        if let retained = try? await notesStore?.retainedBook(textID: textID),
+           retained.descriptor.pdfSourceVersion == descriptor.pdfSourceVersion {
+            return LocalEbook(descriptor: descriptor, data: retained.data, location: descriptor.location)
+        }
         let data = try await LocalAssetDownloads.shared.load(descriptor.url, limit: 80 * 1024 * 1024)
         try Task.checkCancellation()
         guard await localStore?.version(for: "book/\(textID)") ?? 0 == version else { throw CancellationError() }
@@ -584,6 +625,8 @@ public struct MobileClient: Sendable {
         return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
     }
 }
+
+extension MobileClient: PDFNotesRemote {}
 
 public struct LocalEbook: Sendable {
     public let descriptor: EbookDescriptor

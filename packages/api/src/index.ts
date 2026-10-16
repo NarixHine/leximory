@@ -78,9 +78,27 @@ export const ebookSchema = z
         library: librarySchema,
         url: z.url(),
         format: z.enum(['pdf', 'epub']),
+        sourceVersion: z.string().min(1).max(256).optional(),
         expiresAt: z.iso.datetime(),
         location: z.string().nullable(),
         bookmarks: z.array(ebookBookmarkSchema),
+    })
+    .strict()
+export const pdfVersionSchema = z.string().min(1).max(256)
+export const pdfPageDrawingSchema = z
+    .object({
+        pageIndex: z.int().min(0).max(99999),
+        drawingBase64: z.string().min(1).max(2_796_204),
+        canvasWidth: z.number().positive().max(100000),
+        canvasHeight: z.number().positive().max(100000),
+        formatVersion: z.int().min(1).max(1),
+        revision: z.uuid().toLowerCase(),
+    })
+    .strict()
+export const pdfPageSaveSchema = pdfPageDrawingSchema
+    .extend({
+        pdfVersion: pdfVersionSchema,
+        baseRevision: z.uuid().toLowerCase().nullable().default(null),
     })
     .strict()
 export const ebookSelectionSchema = z
@@ -413,6 +431,20 @@ export const mobileContract = {
         .route({ method: 'POST', path: '/texts/{textId}/ebook-position' })
         .input(z.object({ textId: resourceID, location: z.string().min(1).max(2048) }))
         .output(z.object({ saved: z.boolean() })),
+    pdfNotes: oc
+        .route({ method: 'GET', path: '/texts/{textId}/pdf-notes' })
+        .input(
+            z.object({
+                textId: resourceID,
+                pdfVersion: pdfVersionSchema,
+                after: z.int().min(-1).max(99999).optional(),
+            }),
+        )
+        .output(z.object({ notes: z.array(pdfPageDrawingSchema), nextCursor: z.int().nullable() }).strict()),
+    savePDFNote: oc
+        .route({ method: 'POST', path: '/texts/{textId}/pdf-notes' })
+        .input(pdfPageSaveSchema.extend({ textId: resourceID }))
+        .output(pdfPageDrawingSchema),
     removeEbookBookmark: oc
         .route({ method: 'POST', path: '/texts/{textId}/ebook-bookmark-remove' })
         .input(z.object({ textId: resourceID, bookmarkId: z.number().int().positive() }))
