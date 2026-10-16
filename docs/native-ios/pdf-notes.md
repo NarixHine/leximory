@@ -12,7 +12,7 @@ Entering handwriting retains the source PDF and descriptor in the partition's `S
 
 Confirmed access removal or deletion removes retained source PDFs while preserving unresolved handwriting. Successful full library/text refreshes reconcile retained sources. Replacing a PDF gives it a new version key and preserves older notes separately. Old-version drawings are not automatically transferred to new pages.
 
-File format 1 records strokes in the page overlay's logical coordinate space, with explicit width/height. Resizing the displayed overlay transforms the canvas rather than rewriting its drawing coordinates. PDFKit owns the page's crop and rotation placement. Interaction and visual alignment still require human verification.
+File format 1 records strokes in the page overlay's logical coordinate space, with explicit width/height. Resizing and PDF zoom update the canvas viewport and PencilKit's native zoom while archives retain page coordinates. The canvas cancels outer page magnification to avoid stretching its rendered surface. PDFKit owns the page's crop and rotation placement. Interaction and visual alignment still require human verification.
 
 ## API
 

@@ -20,6 +20,7 @@ import LeximoryCore
         canvas.backgroundColor = .clear; canvas.isOpaque = false
         canvas.overrideUserInterfaceStyle = .light
         canvas.isScrollEnabled = false; canvas.bounces = false
+        canvas.contentInsetAdjustmentBehavior = .never
         canvas.maximumSupportedContentVersion = .version4
         canvas.drawingPolicy = .default
         canvas.isDrawingEnabled = false
@@ -28,11 +29,28 @@ import LeximoryCore
         addSubview(canvas)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        setNeedsLayout()
+    }
     override func layoutSubviews() {
         super.layoutSubviews()
-        canvas.bounds = CGRect(origin: .zero, size: pageSize)
+        guard bounds.width > 0, bounds.height > 0 else { return }
+        let start = convert(bounds.origin, to: window)
+        let end = convert(CGPoint(x: bounds.maxX, y: bounds.minY), to: window)
+        let zoom = hypot(end.x - start.x, end.y - start.y) / pageSize.width
+        guard zoom.isFinite, zoom > 0 else { return }
+        let renderedSize = CGSize(width: pageSize.width * zoom, height: pageSize.height * zoom)
+        // Cancel the PDF's outer magnification and let PencilKit render its own zoom.
+        // The drawing itself stays in the original page coordinate space.
+        canvas.bounds = CGRect(origin: .zero, size: renderedSize)
         canvas.center = CGPoint(x: bounds.midX, y: bounds.midY)
-        canvas.transform = CGAffineTransform(scaleX: bounds.width / max(1, pageSize.width), y: bounds.height / max(1, pageSize.height))
+        canvas.transform = CGAffineTransform(scaleX: bounds.width / renderedSize.width, y: bounds.height / renderedSize.height)
+        if canvas.minimumZoomScale > zoom { canvas.minimumZoomScale = zoom }
+        if canvas.maximumZoomScale < zoom { canvas.maximumZoomScale = zoom }
+        if canvas.zoomScale != zoom { canvas.zoomScale = zoom }
+        if canvas.contentSize != renderedSize { canvas.contentSize = renderedSize }
+        if canvas.contentOffset != .zero { canvas.contentOffset = .zero }
     }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         updateInput?()
@@ -65,6 +83,10 @@ import LeximoryCore
         picker.colorUserInterfaceStyle = .light
         picker.stateAutosaveName = "leximory.pdf.tools"
         picker.addObserver(self)
+        NotificationCenter.default.addObserver(self, selector: #selector(scaleChanged), name: .PDFViewScaleChanged, object: pdf)
+    }
+    @objc private func scaleChanged() {
+        for overlay in overlays.values { overlay.setNeedsLayout() }
     }
     func pdfView(_ view: PDFView, overlayViewFor page: PDFPage) -> UIView? {
         guard !stopped, let document = view.document else { return nil }
@@ -209,6 +231,7 @@ import LeximoryCore
     }
     func tearDown() {
         stopped = true
+        NotificationCenter.default.removeObserver(self)
         presentationUpdate?.cancel(); presentationUpdate = nil
         for overlay in overlays.values { capture(overlay); overlay.load?.cancel(); picker.removeObserver(overlay.canvas) }
         model.flush(); hidePicker()

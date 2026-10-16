@@ -7,6 +7,35 @@ import SwiftUI
 @testable import Leximory
 
 @Suite(.serialized) @MainActor struct PDFDrawingTests {
+    @Test(arguments: [CGFloat(0.5), 1, 2, 4])
+    func canvasRendersAtDisplayScaleWithoutChangingStrokeCoordinates(scale: CGFloat) throws {
+        let pageSize = CGSize(width: 400, height: 600)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        let parent = UIView(frame: CGRect(origin: .zero, size: pageSize))
+        host.view.addSubview(parent)
+        parent.transform = CGAffineTransform(scaleX: scale, y: scale)
+        let overlay = PDFDrawingOverlay(pageIndex: 0, size: pageSize)
+        parent.addSubview(overlay)
+        overlay.canvas.drawing = drawing()
+        let before = overlay.canvas.drawing.dataRepresentation()
+        for resize in [CGFloat(1), 1.5] {
+            overlay.bounds.size = CGSize(width: pageSize.width * resize, height: pageSize.height * resize)
+            overlay.setNeedsLayout()
+            overlay.layoutIfNeeded()
+            let zoom = scale * resize
+            #expect(abs(overlay.canvas.zoomScale - zoom) < 0.001)
+            #expect(abs(displayScale(of: overlay.canvas) - 1) < 0.001)
+            #expect(overlay.canvas.bounds.size == CGSize(width: pageSize.width * zoom, height: pageSize.height * zoom))
+            #expect(overlay.canvas.drawing.dataRepresentation() == before)
+        }
+    }
+
     @Test func drawingModeDoesNotRepeatedlyReconfigurePDFKit() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -107,6 +136,11 @@ import SwiftUI
         let reopened = try #require(provider.overlays[0])
         #expect(reopened.canvas.isFirstResponder)
         #expect(reopened.canvas.drawing.strokes.count == 1)
+        let originalStrokeBounds = reopened.canvas.drawing.bounds
+        pdf.scaleFactor *= 2
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(abs(displayScale(of: reopened.canvas) - 1) < 0.001)
+        #expect(reopened.canvas.drawing.bounds == originalStrokeBounds)
         reopened.canvas.drawing = PKDrawing()
         provider.canvasViewDrawingDidChange(reopened.canvas)
         await model.toggleDrawing()
@@ -123,6 +157,11 @@ import SwiftUI
         }
         return PKDrawing(strokes: [PKStroke(ink: PKInk(.pen, color: .black),
             path: PKStrokePath(controlPoints: points, creationDate: Date()))])
+    }
+    private func displayScale(of view: UIView) -> CGFloat {
+        let start = view.convert(CGPoint.zero, to: view.window)
+        let end = view.convert(CGPoint(x: 1, y: 0), to: view.window)
+        return hypot(end.x - start.x, end.y - start.y)
     }
     private func pdfView(in view: UIView) -> PDFView? {
         if let pdf = view as? PDFView { return pdf }
