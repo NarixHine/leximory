@@ -5,6 +5,61 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct JapaneseEbookTests {
+    @Test func pageNumbersCountVisibleSpreadsForTapsSwipesAndResize() async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 1180, height: 820), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey(); config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let font = try #require(Bundle.main.url(forResource: "LibreBaskerville", withExtension: "ttf"))
+        let fontURL = "data:font/ttf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        _ = try await web.callAsyncJavaScript("""
+            const zip = await JSZip.loadAsync(Uint8Array.from(atob(bytes), c => c.charCodeAt(0)));
+            for (const entry of Object.values(zip.files).filter(e => /\\.xhtml$/.test(e.name) && !/nav|toc/.test(e.name))) {
+                const doc = new DOMParser().parseFromString(await entry.async('string'), 'application/xhtml+xml');
+                doc.querySelector('body').innerHTML = Array.from({length:80}, (_, i) => `<p>Paragraph ${i}. The river winds through the garden while a reader turns the pages of a long chapter.</p>`).join('');
+                zip.file(entry.name, new XMLSerializer().serializeToString(doc));
+            }
+            await window.openBook(await zip.generateAsync({type:'base64'}), '', fonts, theme, []);
+            """, arguments: ["bytes": try Data(contentsOf: book).base64EncodedString(),
+                "fonts": ["regular":fontURL, "italic":fontURL, "display":fontURL],
+                "theme": ["paper":"#ffffff", "ink":"#192024", "size":"20", "leading":"1.6", "weight":"400", "writing":"horizontal-tb"]],
+            in: nil, contentWorld: .page)
+        #expect(probe.failure == nil)
+        try #require(probe.ready)
+
+        for columns in [2, 1] {
+            if columns == 1 {
+                web.frame.size = CGSize(width: 820, height: 1180)
+                _ = try await web.callAsyncJavaScript("await new Promise(r => setTimeout(r, 500)); await painted()", arguments: [:], in: nil, contentWorld: .page)
+            }
+            _ = try await web.callAsyncJavaScript("await window.readerCommand('display', book.spine.first().href); await chapterPainted()", arguments: [:], in: nil, contentWorld: .page)
+            let layout = try #require(try await web.callAsyncJavaScript("return {columns:rendition.manager.layout.divisor, total:rendition.currentLocation().start.displayed.total}", arguments: [:], in: nil, contentWorld: .page) as? [String: Int])
+            #expect(layout["columns"] == columns)
+            let columnTotal = try #require(layout["total"])
+            let expectedTotal = (columnTotal + columns - 1) / columns
+            try #require(expectedTotal > 3)
+            #expect(probe.page == 1)
+            #expect(probe.pages == expectedTotal)
+            for (command, expectedPage) in [
+                ("await window.readerTap(['next'])", 2),
+                ("await window.readerTurn('next'); await window.readerTurn('commit')", 3),
+                ("await window.readerTurn('previous'); await window.readerTurn('commit')", 2),
+                ("await window.readerTap(['previous'])", 1)
+            ] {
+                _ = try await web.callAsyncJavaScript(command, arguments: [:], in: nil, contentWorld: .page)
+                #expect(probe.page == expectedPage, "\(columns) columns, \(command)")
+                #expect(probe.pages == expectedTotal)
+            }
+        }
+    }
+
     @Test(arguments: [false, true])
     func themeVariantsPreserveLocationAndWritingMode(japanese: Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
@@ -619,6 +674,8 @@ import WebKit
     var pageTaps: [String] = []
     var failure: String?
     var location: String?
+    var page: Int?
+    var pages: Int?
     var selection: [String: Any]?
     private var loaded: CheckedContinuation<Void, any Error>?
     func load(_ web: WKWebView, url: URL) async throws {
@@ -636,7 +693,10 @@ import WebKit
         case "pageTap": if let side = body["side"] as? String { pageTaps.append(side) }
         case "ready": ready = true
         case "failed": failure = body["message"] as? String
-        case "location": location = body["location"] as? String
+        case "location":
+            location = body["location"] as? String
+            page = body["page"] as? Int
+            pages = body["pages"] as? Int
         case "selected": selection = body
         default: break
         }

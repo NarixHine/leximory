@@ -273,7 +273,13 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const relocated = location => {
       const cfi=location.start.cfi,href=location.start.href;
       const chapter=flatten(navigation.toc).find(item=>item.href.split('#')[0]===href)?.title||null;
-      send('location',{location:cfi,chapter,page:location.start.displayed?.page||1,pages:location.start.displayed?.total||1,atStart:location.atStart,atEnd:location.atEnd});
+      // epub.js counts columns; the page label counts complete visible spreads.
+      const {layout,settings} = rendition.manager;
+      const columns = settings.axis === 'horizontal' ? layout.divisor : 1;
+      send('location',{location:cfi,chapter,
+        page:Math.ceil((location.start.displayed?.page||1)/columns),
+        pages:Math.ceil((location.start.displayed?.total||1)/columns),
+        atStart:location.atStart,atEnd:location.atEnd});
     };
     reportLocation = relocated;
     rendition.on('relocated', location => { if(ready && !pageTurn && !reflowing) relocated(location); });
