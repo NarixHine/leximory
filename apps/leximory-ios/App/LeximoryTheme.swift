@@ -91,16 +91,6 @@ enum LeximoryTypography {
         return text
     }
 
-    static func addressAttributedUI(_ string: String) -> NSAttributedString {
-        let latin = addressUI
-        let text = NSMutableAttributedString(string: string, attributes: [.font: latin])
-        let chinese = editorialUI(latin.pointSize * chineseGlyphScale, language: "Chinese")
-        for index in string.indices where isChinese(string[index]) {
-            text.addAttribute(.font, value: chinese, range: NSRange(index..<string.index(after: index), in: string))
-        }
-        return text
-    }
-
     private static func isChinese(_ character: Character) -> Bool {
         character.unicodeScalars.contains {
             (0x3400...0x9FFF).contains($0.value) || (0xF900...0xFAFF).contains($0.value)

@@ -475,6 +475,33 @@ final class ReaderUITests: XCTestCase {
         capture(app, name: "iPad reader landscape")
         XCUIDevice.shared.orientation = .portrait
     }
+    @MainActor func testIPadSwitchesHighlightedDefinitionsWithOneTap() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad popover interaction") }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures"]
+        app.launch()
+        openArticle(app)
+        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
+        XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
+        let firstWord = paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.61, dy: 0.22))
+        let secondWord = paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.10, dy: 0.75))
+        let riverDefinition = app.textViews.matching(NSPredicate(format: "value == %@", "The land beside a river.")).firstMatch
+        let moneyDefinition = app.textViews.matching(NSPredicate(format: "value == %@", "A place that keeps and lends money.")).firstMatch
+        firstWord.tap()
+        XCTAssertTrue(riverDefinition.waitForExistence(timeout: 5))
+        secondWord.tap()
+        XCTAssertTrue(moneyDefinition.waitForExistence(timeout: 5))
+        XCTAssertFalse(riverDefinition.exists)
+        firstWord.tap()
+        XCTAssertTrue(riverDefinition.waitForExistence(timeout: 5))
+        XCTAssertFalse(moneyDefinition.exists)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.85)).tap()
+        let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: tray)], timeout: 5) == .completed)
+        firstWord.tap()
+        XCTAssertTrue(riverDefinition.waitForExistence(timeout: 5))
+    }
     @MainActor func testEPUBContentsNavigationAndRotation() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]

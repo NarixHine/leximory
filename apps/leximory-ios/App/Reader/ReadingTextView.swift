@@ -241,14 +241,17 @@ struct ReadingTextView: UIViewRepresentable {
         init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title, showsNotices: false) }
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
             guard let view = gestureRecognizer.view as? RubyTextView else { return false }
-            return view.annotation(at: touch.location(in: view)) != nil
+            return popover != nil || view.annotation(at: touch.location(in: view)) != nil
         }
         @objc func annotationTapped(_ gesture: AnnotationTapRecognizer) {
             guard gesture.state == .ended, let view = gesture.reader else { return }
+            guard view.annotation(at: gesture.location(in: view)) != nil else {
+                popover?.dismiss(animated: true)
+                return
+            }
             view.activateAnnotation(at: gesture.location(in: view))
         }
         func present(_ occurrence: ReaderLayout.Annotation, at rect: CGRect, in view: RubyTextView) {
-            guard popover == nil else { return }
             view.highlightAnnotation(occurrence.tag)
             guard view.traitCollection.horizontalSizeClass == .regular,
                   let presenter = view.window?.rootViewController else {
@@ -257,23 +260,29 @@ struct ReadingTextView: UIViewRepresentable {
                 return
             }
             let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition)
-            let controller = AnnotationPopoverController(rootView: AnyView(EmptyView()))
+            let existing = popover
+            let controller = existing ?? AnnotationPopoverController(rootView: AnyView(EmptyView()))
             let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
                 closeTray: { [weak controller] in controller?.dismiss(animated: true) })
                 .id(item.id)
                 .environment(\.nativeSync, parent.sync)
             controller.rootView = AnyView(content)
-            controller.onDismiss = { [weak view] in view?.highlightAnnotation(nil) }
+            controller.onDismiss = { [weak self, weak controller, weak view] in
+                guard self?.popover === controller else { return }
+                self?.popover = nil
+                view?.highlightAnnotation(nil)
+            }
             controller.modalPresentationStyle = .popover
             controller.sizingOptions = .preferredContentSize
             controller.safeAreaRegions = []
             controller.view.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
             controller.popoverPresentationController?.sourceView = view
             controller.popoverPresentationController?.sourceRect = rect
+            controller.popoverPresentationController?.passthroughViews = [view]
             controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
             controller.popoverPresentationController?.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
             popover = controller
-            presenter.present(controller, animated: true)
+            if existing == nil { presenter.present(controller, animated: true) }
         }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision

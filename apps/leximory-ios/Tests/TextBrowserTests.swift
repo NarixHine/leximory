@@ -8,9 +8,10 @@ import SwiftUI
     @Test func addressEditingKeepsTheDraftAndCompositionAcrossViewUpdates() async throws {
         let editor = BrowserAddressEditor()
         var submitted: String?
+        var drafts: [String] = []
         let fieldView = BrowserAddressField(address: "https://example.com", editor: editor) {
             submitted = editor.field?.text
-        }
+        } draftChanged: { drafts.append($0) }
         let controller = UIHostingController(rootView: fieldView)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = controller
@@ -24,15 +25,23 @@ import SwiftUI
         let field = try #require(editor.field)
         #expect(field.isFirstResponder)
         field.text = ""
-        field.insertText("first keyword")
+        field.insertText("r")
+        let keyboardDelegate = field.inputDelegate
+        let inputChanges = BrowserInputChanges()
+        field.inputDelegate = inputChanges
         field.sendActions(for: .editingChanged)
         controller.rootView = fieldView
         controller.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(30))
-        #expect(field.text == "first keyword")
+        #expect(inputChanges.textChanges == 0)
+        #expect(inputChanges.selectionChanges == 0)
+        field.inputDelegate = keyboardDelegate
+        #expect(field.text == "r")
+        #expect(drafts.last == "r")
         let caret = try #require(field.selectedTextRange)
         #expect(caret.isEmpty)
-        #expect(field.offset(from: field.beginningOfDocument, to: caret.start) == "first keyword".utf16.count)
+        #expect(field.offset(from: field.beginningOfDocument, to: caret.start) == 1)
+        field.insertText("iver")
         field.selectedTextRange = field.textRange(from: field.endOfDocument, to: field.endOfDocument)
         field.setMarkedText("猫忆", selectedRange: NSRange(location: 2, length: 0))
         let composing = field.text
@@ -44,10 +53,10 @@ import SwiftUI
         field.unmarkText()
         field.sendActions(for: .editingChanged)
         try await Task.sleep(for: .milliseconds(30))
-        let chineseFont = try #require(field.attributedText?.attribute(.font, at: "first keyword".utf16.count, effectiveRange: nil) as? UIFont)
-        #expect(abs(chineseFont.pointSize - LeximoryTypography.addressUI.pointSize * 0.85) < 0.01)
+        #expect(field.font == LeximoryTypography.addressUI)
+        #expect(drafts.last == "river猫忆")
         _ = field.delegate?.textFieldShouldReturn?(field)
-        #expect(submitted == "first keyword猫忆")
+        #expect(submitted == "river猫忆")
     }
 
     @Test func selectionReadsOnlyBoundedContextWithoutCloningLargeParagraphs() async throws {
@@ -257,6 +266,18 @@ import SwiftUI
         #expect(privateSelection == nil || privateSelection is NSNull)
         #expect(config.userContentController.userScripts.isEmpty)
     }
+}
+
+@MainActor private final class BrowserInputChanges: NSObject, UITextInputDelegate {
+    var textChanges = 0
+    var selectionChanges = 0
+    func textWillChange(_ textInput: (any UITextInput)?) { textChanges += 1 }
+    func textDidChange(_ textInput: (any UITextInput)?) { textChanges += 1 }
+    func selectionWillChange(_ textInput: (any UITextInput)?) { selectionChanges += 1 }
+    func selectionDidChange(_ textInput: (any UITextInput)?) { selectionChanges += 1 }
+    #if !targetEnvironment(macCatalyst)
+    func conversationContext(_ context: UIConversationContext?, didChange textInput: (any UITextInput)?) {}
+    #endif
 }
 
 @MainActor private final class BrowserTestNavigation: NSObject, WKNavigationDelegate {

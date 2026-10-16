@@ -320,12 +320,14 @@ struct BrowserAddressField: UIViewRepresentable {
         field.delegate = context.coordinator
         field.placeholder = "输入网址或搜索"
         field.font = LeximoryTypography.addressUI
+        field.text = address
         field.adjustsFontForContentSizeCategory = true
         field.keyboardType = .default
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.spellCheckingType = .no
         field.returnKeyType = .search
+        field.enablesReturnKeyAutomatically = true
         field.clearButtonMode = .whileEditing
         field.accessibilityIdentifier = "browser-address-input"
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -334,15 +336,9 @@ struct BrowserAddressField: UIViewRepresentable {
     }
     func updateUIView(_ field: BrowserURLTextField, context: Context) {
         context.coordinator.parent = self
-        // UIKit owns the draft and IME composition for the entire editing session.
-        // Replacing attributedText here restarts keyboard selection/layout callbacks.
+        // UIKit owns text, selection, and composition until editing ends.
         if !field.isFirstResponder, field.markedTextRange == nil, field.text != address {
-            field.attributedText = LeximoryTypography.addressAttributedUI(address)
-        }
-        field.enablesReturnKeyAutomatically = true
-        DispatchQueue.main.async {
-            guard field.wantsFocus, field.window != nil, !field.isFirstResponder else { return }
-            field.becomeFirstResponder()
+            field.text = address
         }
     }
     static func dismantleUIView(_ field: BrowserURLTextField, coordinator: Coordinator) {
@@ -354,22 +350,11 @@ struct BrowserAddressField: UIViewRepresentable {
         init(_ parent: BrowserAddressField) { self.parent = parent }
         @objc func changed(_ field: UITextField) {
             let draft = field.text
-            // Finish UIKit's edit transaction before adjusting glyph sizes. Stale
-            // edits and active IME composition must never replace the text storage.
+            // Publish suggestions after the edit transaction without writing back
+            // into the keyboard's text storage or selection.
             DispatchQueue.main.async { [weak field] in
                 guard let field, field.isFirstResponder, field.markedTextRange == nil, field.text == draft else { return }
                 self.parent.draftChanged?(field.text ?? "")
-                let styled = LeximoryTypography.addressAttributedUI(field.text ?? "")
-                guard field.attributedText?.isEqual(to: styled) != true else { return }
-                let selection = field.selectedTextRange.map {
-                    NSRange(location: field.offset(from: field.beginningOfDocument, to: $0.start), length: field.offset(from: $0.start, to: $0.end))
-                }
-                field.attributedText = styled
-                if let selection,
-                   let start = field.position(from: field.beginningOfDocument, offset: selection.location),
-                   let end = field.position(from: start, offset: selection.length) {
-                    field.selectedTextRange = field.textRange(from: start, to: end)
-                }
             }
         }
         func textFieldDidBeginEditing(_ field: UITextField) {
@@ -398,7 +383,7 @@ final class BrowserURLTextField: UITextField {
         super.didMoveToWindow()
         guard window != nil else { return }
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.wantsFocus, self.window != nil else { return }
+            guard let self, self.wantsFocus, self.window != nil, !self.isFirstResponder else { return }
             self.becomeFirstResponder()
         }
     }
