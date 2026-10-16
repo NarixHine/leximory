@@ -56,7 +56,8 @@ struct BrowserWorkspacePreview: View {
     }
     static func payloads() throws -> [String: Data] {
         func encode(_ object: Any) throws -> Data { try JSONSerialization.data(withJSONObject: object) }
-        let folder: [String: Any] = ["id": "workspace-folder", "name": "Field notes", "language": "en", "owned": true, "archived": false, "shadow": false]
+        let audioReadOnly = ProcessInfo.processInfo.arguments.contains("--workspace-audio-readonly")
+        let folder: [String: Any] = ["id": "workspace-folder", "name": "Field notes", "language": "en", "owned": !audioReadOnly, "archived": false, "shadow": false]
         let japanese: [String: Any] = ["id": "workspace-japanese-folder", "name": "日本語", "language": "ja", "owned": true, "archived": false, "shadow": false]
         let archive: [String: Any] = ["id": "workspace-archive", "name": "Past reading", "language": "en", "owned": true, "archived": true, "shadow": false]
         let samples = FixtureLibrary.samples[0].articles
@@ -73,7 +74,8 @@ struct BrowserWorkspacePreview: View {
         for (index, article) in samples.enumerated() {
             guard let url = Bundle.main.url(forResource: article.resource, withExtension: "json") else { throw CocoaError(.fileNoSuchFile) }
             payloads["document/" + article.id.rawValue] = try encode(["text": rows[index], "library": folder,
-                "document": try JSONSerialization.jsonObject(with: Data(contentsOf: url)), "annotationProgress": NSNull()])
+                "document": try JSONSerialization.jsonObject(with: Data(contentsOf: url)), "annotationProgress": NSNull(),
+                "fullArticleAudioId": index == 0 && ProcessInfo.processInfo.arguments.contains("--workspace-audio-fixtures") ? "fixture_recording" : NSNull()])
         }
         for (text, library, format) in [(epub, folder, "epub"), (pdf, folder, "pdf"), (ja, japanese, "epub")] {
             guard let id = text["id"] as? String else { continue }
@@ -99,6 +101,14 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
         if operationID == "texts", path.count >= 2 { key += "/" + path[path.count - 2] }
         if operationID == "document", let id = path.last { key += "/" + id }
         if operationID == "ebook", path.count >= 2 { key += "/" + path[path.count - 2] }
+        if operationID == "generateArticleAudio", path.count >= 2 {
+            let key = "document/" + path[path.count - 2]
+            if let data = payloads[key], var document = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                document["fullArticleAudioId"] = "fixture_recording"
+                payloads[key] = try JSONSerialization.data(withJSONObject: document)
+            }
+            return (.init(status: .ok), HTTPBody(#"{"audioId":"fixture_recording"}"#))
+        }
         if operationID == "importArticle" || operationID == "createBookmark" {
             guard let body else { throw URLError(.badServerResponse) }
             let input = try await JSONSerialization.jsonObject(with: Data(collecting: body, upTo: 65536)) as? [String: Any] ?? [:]

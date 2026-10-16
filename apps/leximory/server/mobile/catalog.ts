@@ -5,6 +5,7 @@ import type { MobileSubject } from '@repo/schema/mobile'
 import { canReadLibrary } from '@repo/service/access'
 import { MobileError } from './errors'
 import { renderDocument } from './render-document'
+import { articleAudioID, articleSpeech, existingFullArticleAudioID } from './article-speech'
 
 export const libraryRowSchema = z.object({
     id: resourceID,
@@ -127,19 +128,26 @@ export function createCatalog(store: CatalogStore) {
         async document(subject: MobileSubject, textId: string, signal: AbortSignal) {
             const { text, library } = await authorizedText(subject, textId, signal)
             const archived = await store.archived(subject, signal)
+            const document = text.has_ebook || text.bookmark_url ? null : renderDocument(text.content)
+            const fullAudioId = document
+                ? (existingFullArticleAudioID(document) ?? articleAudioID(text.id, articleSpeech(document)))
+                : null
+            const fullArticleAudioId = fullAudioId && (await store.audio(fullAudioId, signal)) ? fullAudioId : null
             return {
                 text: summarizeText(text),
                 library: summarizeLibrary(library, subject, archived),
-                document: text.has_ebook || text.bookmark_url ? null : renderDocument(text.content),
+                document,
+                fullArticleAudioId,
                 annotationProgress: text.bookmark_url ? null : ((await store.progress?.(textId)) ?? null),
             }
         },
         async audio(subject: MobileSubject, textId: string, audioId: string, signal: AbortSignal) {
             const { text } = await authorizedText(subject, textId, signal)
+            if (text.has_ebook || text.bookmark_url) throw new MobileError('inaccessible')
+            const document = renderDocument(text.content)
             if (
-                text.has_ebook ||
-                text.bookmark_url ||
-                !renderDocument(text.content).blocks.some((block) => block.audioId === audioId)
+                articleAudioID(text.id, articleSpeech(document)) !== audioId &&
+                !document.blocks.some((block) => block.audioId === audioId)
             )
                 throw new MobileError('inaccessible')
             const url = await store.audio(audioId, signal)

@@ -60,6 +60,7 @@ export const documentSchema = z
         library: librarySchema,
         document: renderDocumentSchema.nullable(),
         annotationProgress: z.string().nullable().optional(),
+        fullArticleAudioId: resourceID.nullable().optional(),
     })
     .strict()
 export const audioSchema = z.object({ url: z.url(), expiresAt: z.iso.datetime() }).strict()
@@ -500,6 +501,10 @@ export const mobileContract = {
         .route({ method: 'GET', path: '/texts/{textId}' })
         .input(z.object({ textId: resourceID }))
         .output(documentSchema),
+    generateArticleAudio: oc
+        .route({ method: 'POST', path: '/texts/{textId}/article-audio' })
+        .input(z.object({ textId: resourceID, revision: z.string().regex(/^[a-f0-9]{64}$/) }))
+        .output(z.object({ audioId: resourceID }).strict()),
     audio: oc
         .route({ method: 'GET', path: '/texts/{textId}/audio/{audioId}' })
         .input(z.object({ textId: resourceID, audioId: resourceID }))

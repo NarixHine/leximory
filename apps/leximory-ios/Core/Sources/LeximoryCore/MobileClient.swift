@@ -118,6 +118,7 @@ public struct RemoteDocument: Codable, Sendable {
     public let library: CatalogLibrary
     public let document: ReadingDocument?
     public let annotationProgress: String?
+    public var fullArticleAudioId: String? = nil
 }
 public struct EbookBookmark: Codable, Identifiable, Sendable {
     public let id: Int
@@ -170,7 +171,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote"].contains(operationID)
+        let recoversFailures = ["generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -236,7 +237,7 @@ public struct MobileClient: Sendable {
         return error
     }
     public init(baseURL: URL, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) {
-        self.init(baseURL: baseURL, transport: URLSessionTransport(), token: token, unauthorized: unauthorized, localStore: localStore, notesStore: notesStore)
+        self.init(baseURL: baseURL, transport: ArticleAudioTransport(), token: token, unauthorized: unauthorized, localStore: localStore, notesStore: notesStore)
     }
     public init(baseURL: URL, transport: any ClientTransport, token: @escaping @Sendable (String?) async throws -> String, unauthorized: @escaping @Sendable (String) async -> Void = { _ in }, localStore: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) {
         webURL = baseURL
@@ -483,6 +484,16 @@ public struct MobileClient: Sendable {
     public func document(textID: String) async throws -> ReadingDocument {
         guard let document = try await documentDetails(textID: textID).document else { throw URLError(.unsupportedURL) }
         return document
+    }
+    public func generateArticleAudio(textID: String, revision: String) async throws -> String {
+        let id = try await MutationRetry.run {
+            try await client.generateArticleAudio(path: .init(textId: textID), body: .json(.init(revision: revision))).ok.body.json.audioId
+        }
+        if var details = await cachedDocument(textID: textID), details.document?.revision == revision {
+            details.fullArticleAudioId = id
+            await localStore?.save(details, for: "document/\(textID)")
+        }
+        return id
     }
     public func audio(textID: String, audioID: String) async throws -> AudioDescriptor {
         try mapped(try await client.audio(path: .init(textId: textID, audioId: audioID)).ok.body.json, to: AudioDescriptor.self)

@@ -186,7 +186,7 @@ struct FolderEditorSheet: View {
     @State private var busy = false
     @State private var error: String?
     @State private var requestID = UUID().uuidString
-    private let languages = [("en", "英语"), ("fr", "法语"), ("ja", "日语"), ("zh", "古汉语"), ("nl", "荷兰语")]
+    private let languages = [("en", "英语"), ("fr", "法语"), ("ja", "日语"), ("zh", "古汉语"), ("nl", "其他")]
     var body: some View {
         NavigationStack {
             Form {

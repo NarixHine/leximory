@@ -149,7 +149,7 @@ public actor LocalReadingStore {
     public func applyTextEdit(_ text: CatalogText, content: String) {
         let documentKey = "document/\(text.id)"
         if let cached = value(RemoteDocument.self, for: documentKey), cached.document?.source == content {
-            save(RemoteDocument(text: text, library: cached.library, document: cached.document, annotationProgress: cached.annotationProgress), for: documentKey)
+            save(RemoteDocument(text: text, library: cached.library, document: cached.document, annotationProgress: cached.annotationProgress, fullArticleAudioId: cached.fullArticleAudioId), for: documentKey)
         } else { remove(documentKey) }
         let bookKey = "ebook/\(text.id)"
         if let book = value(EbookDescriptor.self, for: bookKey) {

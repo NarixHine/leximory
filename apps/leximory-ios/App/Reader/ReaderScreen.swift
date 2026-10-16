@@ -32,6 +32,8 @@ struct ReaderScreen: View {
     @State private var playbackHeight: CGFloat = 76
     @State private var refreshedArticle: FixtureArticle?
     @State private var annotationReveal: UUID?
+    @State private var fullArticleAudioID: String?
+    @State private var canGenerateAudio = false
     private var currentArticle: FixtureArticle { refreshedArticle ?? article }
     private var jumpToEnd: Bool {
         #if DEBUG
@@ -49,7 +51,7 @@ struct ReaderScreen: View {
                 LeximoryUnavailableView("暂时无法打开文章", systemImage: "doc.text", message: message) { Button("重试") { Task { await load() } } }
             case .loaded(let document):
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
-                    bottomObstruction: browserChromeHeight + (playback.textID == article.id ? playbackHeight + 24 : 0), localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false, annotationReveal: annotationReveal,
+                    bottomObstruction: browserChromeHeight + (playback.textID == article.id ? playbackHeight + 24 : 0), localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false, annotationReveal: annotationReveal, articleAudio: articleAudioButton(document: document),
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, _ in
                         definition = DefinitionPresentation(source: .article(selection), definition: embedded)
                     })
@@ -104,18 +106,6 @@ struct ReaderScreen: View {
                     .accessibilityIdentifier("reader-scrolled-title")
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if case .loaded(let document) = state {
-                    let audioIDs = Array(Set(document.blocks.compactMap(\.audioId))).sorted()
-                    if !audioIDs.isEmpty && sync?.online != false {
-                        Menu("录音", systemImage: "headphones") {
-                            ForEach(audioIDs, id: \.self) { audioID in
-                                Button(client != nil ? "播放录音" : audioID == "fixture_recording" ? "播放测试音频" : "录音暂不可用") {
-                                    playback.toggle(textID: article.id, audioID: audioID, title: article.title)
-                                }
-                            }
-                        }
-                    }
-                }
                 if let client {
                     Menu("阅读选项", systemImage: "ellipsis") {
                         ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
@@ -133,6 +123,7 @@ struct ReaderScreen: View {
         .onChange(of: workspace?.revision) { _, _ in
             guard let details = workspace?.documents[article.id.rawValue], let document = details.document else { return }
             refreshedArticle = details.text.preview
+            updateAudio(details)
             if case .loaded(let previous) = state, previous == document { return }
             if resourceActive, workspace?.completionID == article.id.rawValue { annotationReveal = UUID() }
             state = .loaded(document); refreshedArticle = details.text.preview
@@ -141,27 +132,24 @@ struct ReaderScreen: View {
     }
     private var articleActions: some View {
         HStack(spacing: 8) {
-            if case .loaded(let document) = state {
-                let audioIDs = Array(Set(document.blocks.compactMap(\.audioId))).sorted()
-                if let audioID = audioIDs.first, audioIDs.count == 1 {
-                    Button { playback.toggle(textID: article.id, audioID: audioID, title: currentArticle.title) } label: {
-                        articleActionIcon("headphones")
-                    }.accessibilityLabel("录音").disabled(sync?.online == false)
-                } else if !audioIDs.isEmpty {
-                    Menu {
-                        ForEach(audioIDs, id: \.self) { audioID in
-                            Button("播放录音") { playback.toggle(textID: article.id, audioID: audioID, title: currentArticle.title) }
-                        }
-                    } label: { articleActionIcon("headphones") }
-                        .accessibilityLabel("录音").disabled(sync?.online == false)
-                }
-            }
             if let client {
                 ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
                     articleActionIcon("square.and.arrow.up")
                 }.accessibilityLabel("分享")
             }
         }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
+    }
+    private func articleAudioButton(document: ReadingDocument) -> ArticleAudioButton {
+        ArticleAudioButton(textID: article.id, title: currentArticle.title, document: document,
+            fullAudioID: fullArticleAudioID, canGenerate: canGenerateAudio, online: sync?.online != false,
+            client: client, playback: playback, onGenerated: { id in
+                fullArticleAudioID = id
+                workspace?.recordArticleAudio(textID: article.id.rawValue, revision: document.revision, audioID: id)
+            })
+    }
+    private func updateAudio(_ details: RemoteDocument) {
+        fullArticleAudioID = details.fullArticleAudioId
+        canGenerateAudio = details.library.owned && !details.library.shadow
     }
     private func articleActionIcon(_ symbol: String) -> some View {
         Image(systemName: symbol).font(.system(size: 17))
@@ -174,6 +162,7 @@ struct ReaderScreen: View {
             if case .loaded(let previous) = state, previous == document { }
             else { state = .loaded(document) }
             refreshedArticle = cached.text.preview
+            updateAudio(cached)
         }
         if sync?.online == false {
             if case .loaded = state { return }
@@ -188,6 +177,7 @@ struct ReaderScreen: View {
                 else { throw URLError(.cannotParseResponse) }
                 guard let document = details.document else { throw URLError(.cannotParseResponse) }
                 state = .loaded(document); refreshedArticle = details.text.preview
+                updateAudio(details)
                 return
             }
             if let client {
@@ -196,6 +186,7 @@ struct ReaderScreen: View {
                     try Task.checkCancellation()
                     guard let document = details.document else { throw URLError(.cannotParseResponse) }
                     refreshedArticle = details.text.preview
+                    updateAudio(details)
                     if case .loaded(let previous) = state, previous == document { }
                     else { state = .loaded(document) }
                     guard ["annotating", "saving"].contains(details.annotationProgress ?? "") else { return }

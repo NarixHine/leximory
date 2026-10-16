@@ -18,6 +18,7 @@ async function main() {
         )
     const groups = {
         catalog: ['me', 'libraries', 'texts', 'document', 'audio'],
+        'article-audio': ['generateArticleAudio'],
         account: [
             'accountSettings',
             'accountAccent',
@@ -61,6 +62,7 @@ async function main() {
                 `export { ${operationId} as ${method.toUpperCase()} } from '@/server/mobile/endpoints/${feature}'`,
             )
             files.set(file, exports)
+            if (operationId === 'generateArticleAudio') exports.push('export const maxDuration = 600')
             count++
         }
     }

@@ -90,7 +90,7 @@ Annotation content uses prose typography, bold headwords and muted 释义/语源
 
 Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing. Keep the ink circle and paper icon fully colored even when disabled; success has a short scale-and-turn flourish and symbols slide without fading. Reduce Motion changes symbols immediately. Browser destinations align with the prose in muted text, without a destination selector. Omit implementation explanations and empty website-setting sections.
 
-Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Seek on scrub release.
+Audio playback uses a compact glass capsule, at most 420 pt wide, with playback, title, elapsed time, scrubbing and dismissal. Allow scrolling past the last prose line beneath it. Full-article audio has a visible 朗读全文 button beneath the article title. Tapping it starts or resumes playback and reveals the glass controls directly. Show 生成全文录音 in the same position only when the reader has write access and no full-article recording exists. Section recordings remain distinct in storage and the API and are omitted from the native interface. Generation uses the visible text projected from Leximory Markdown and the same language-specific length limits as text import. Seek on scrub release.
 
 ## Ebooks
 

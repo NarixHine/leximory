@@ -797,18 +797,16 @@ final class ReaderUITests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
-    @MainActor func testMissingRecordingKeepsArticleText() throws {
+    @MainActor func testSectionRecordingsDoNotExposeNativePlayback() throws {
         let app = XCUIApplication()
-        if !app.launchArguments.contains("--fixtures") { app.launchArguments.append("--fixtures") }
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures"]
         app.launch()
         openArticle(app)
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.waitForExistence(timeout: 10))
-        app.buttons["录音"].tap()
-        app.buttons["录音暂不可用"].tap()
-        XCTAssertTrue(app.staticTexts["录音暂不可用"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "reading-document").firstMatch.exists)
-        app.buttons["停止播放"].tap()
-        XCTAssertFalse(app.otherElements["playback-bar"].exists)
+        XCTAssertFalse(app.buttons["录音"].exists)
+        XCTAssertFalse(app.buttons["play-article-audio"].exists)
+        XCTAssertFalse(app.buttons["generate-article-audio"].exists)
     }
     @MainActor func testLongReaderAndRotation() throws {
         let app = XCUIApplication()
@@ -875,23 +873,26 @@ final class ReaderUITests: XCTestCase {
     @MainActor func testDefinitionSheetPreservesAudioAndBackStopsIt() throws {
         guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("iPhone fixture coordinate") }
         let app = XCUIApplication()
-        if !app.launchArguments.contains("--fixtures") { app.launchArguments.append("--fixtures") }
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-audio-fixtures"]
         app.launch()
-        openArticle(app)
-        XCTAssertTrue(app.buttons["录音"].waitForExistence(timeout: 10))
-        app.buttons["录音"].tap()
-        app.buttons["播放测试音频"].tap()
+        XCTAssertTrue(app.buttons["我的书签"].waitForExistence(timeout: 15)); app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        app.buttons["browser-resource-fixture-reader"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["play-article-audio"].waitForExistence(timeout: 10))
+        app.buttons["play-article-audio"].tap()
         XCTAssertTrue(app.buttons["暂停"].waitForExistence(timeout: 10))
         let paragraph = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
         XCTAssertTrue(paragraph.exists)
-        paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.18, dy: 0.5)).tap()
+        paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.065, dy: 0.75)).tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
         dismissDefinitionTray(app)
         XCTAssertTrue(app.buttons["暂停"].exists)
-        app.buttons["BackButton"].tap()
-        XCTAssertTrue(app.buttons["text-fixture-reader"].waitForExistence(timeout: 5))
-        app.buttons["text-fixture-reader"].tap()
-        XCTAssertFalse(app.otherElements["playback-bar"].exists)
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.buttons["browser-resource-fixture-reader"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["browser-resource-fixture-reader"].firstMatch.tap()
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "playback-bar").firstMatch.exists)
         XCTAssertFalse(app.buttons["暂停"].exists)
     }
     @MainActor func testRubyPassageRemainsReadable() throws {

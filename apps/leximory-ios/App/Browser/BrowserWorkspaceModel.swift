@@ -451,6 +451,12 @@ struct AnnotationActivity: Identifiable, Codable {
         page.offset = browser.web.scrollView.contentOffset.y
         var entry = current; entry.resource = .web(page); history.replaceCurrent(entry)
     }
+    func recordArticleAudio(textID: String, revision documentRevision: String, audioID: String) {
+        guard var details = documents[textID], details.document?.revision == documentRevision else { return }
+        details.fullArticleAudioId = audioID
+        documents[textID] = details
+        revision += 1
+    }
     func open(_ text: CatalogText) async {
         let request = UUID(); openRequest = request; opening = true; error = nil
         defer { if openRequest == request { opening = false } }

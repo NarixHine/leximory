@@ -53,6 +53,11 @@ enum PlaybackState: Equatable {
               let url = Bundle.main.url(forResource: "diagnostic-tone", withExtension: "wav") else { return nil }
         return PlaybackDescriptor(url: url, expiresAt: Date().addingTimeInterval(3600))
     }
+    func play(textID: TextID, audioID: String, title: String) {
+        let source = PlaybackSource(textID: textID, audioID: audioID, title: title)
+        if state.source == source, player != nil { resume() }
+        else { start(source) }
+    }
     func toggle(textID: TextID, audioID: String, title: String) {
         let source = PlaybackSource(textID: textID, audioID: audioID, title: title)
         if state.source == source, player != nil {

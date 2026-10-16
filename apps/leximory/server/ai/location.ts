@@ -10,7 +10,7 @@ const LANG_NAME: Record<Lang, string> = {
     en: 'English',
     fr: 'français',
     ja: '日本語',
-    nl: 'Nederlands',
+    nl: '原文所用语言',
 }
 
 /**

@@ -125,6 +125,7 @@ struct ReadingTextView: UIViewRepresentable {
     var sync: NativeSync? = nil
     var readOnly = false
     var annotationReveal: UUID? = nil
+    var articleAudio: ArticleAudioButton? = nil
     @Environment(\.browserWorkspace) private var workspace
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
@@ -140,10 +141,11 @@ struct ReadingTextView: UIViewRepresentable {
         view.textContainer.lineFragmentPadding = 0
         view.adjustsFontForContentSizeCategory = true
         if let article {
-            let header = UIHostingController(rootView: ArticleReadingHeader(article: article, language: language, onTitleFrame: { [weak view, weak coordinator = context.coordinator] rect in
+            let header = UIHostingController(rootView: ArticleReadingHeader(article: article, language: language, audio: articleAudio, onTitleFrame: { [weak view, weak coordinator = context.coordinator] rect in
                 view?.headerTitleFrame = rect
                 if let view { coordinator?.updateTitleVisibility(view) }
-            }))
+            }, onHeightChange: { [weak view] in view?.invalidateReaderGeometry() }))
+            header.sizingOptions = .intrinsicContentSize
             header.view.backgroundColor = .clear
             header.safeAreaRegions = []
             context.coordinator.header = header
@@ -174,9 +176,9 @@ struct ReadingTextView: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.parent = self
         if let article, let header = coordinator.header,
-           header.rootView.article != article || header.rootView.language != language {
-            header.rootView = ArticleReadingHeader(article: article, language: language,
-                                                  onTitleFrame: header.rootView.onTitleFrame)
+           header.rootView.article != article || header.rootView.language != language || header.rootView.audio?.presentationID != articleAudio?.presentationID {
+            header.rootView = ArticleReadingHeader(article: article, language: language, audio: articleAudio,
+                                                  onTitleFrame: header.rootView.onTitleFrame, onHeightChange: header.rootView.onHeightChange)
             header.view.invalidateIntrinsicContentSize()
             view.invalidateReaderGeometry()
         }

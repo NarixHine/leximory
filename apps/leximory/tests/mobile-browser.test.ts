@@ -326,3 +326,9 @@ test('Classical Chinese browser targets use the canonical vocabulary warehouse n
     assert.equal(response.status, 200)
     assert.equal((await response.json()).libraryName, '文言文词汇仓库')
 })
+
+test('nl identifies unlisted languages rather than imposing Dutch', () => {
+    const question = browserLanguageQuestion('Buenos días')
+    assert.equal(question.criteria.nl, '其他')
+    assert.equal(parseBrowserLanguage('nl', 'Buenos días'), 'nl')
+})

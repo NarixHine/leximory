@@ -8503,12 +8503,146 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "fullArticleAudioId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
                     }
                   },
                   "required": [
                     "text",
                     "library",
                     "document"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/texts/{textId}/article-audio": {
+      "post": {
+        "operationId": "generateArticleAudio",
+        "parameters": [
+          {
+            "name": "textId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "revision"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "audioId": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                    }
+                  },
+                  "required": [
+                    "audioId"
                   ],
                   "additionalProperties": false
                 }
