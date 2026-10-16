@@ -10,6 +10,46 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct ReaderNativeTests {
+    @Test func metadataEditsRefreshTheExistingReaderHeader() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let original = FixtureArticle(id: TextID(rawValue: "metadata-test"), title: "Original title", subtitle: "", resource: "reader", topics: ["Before"], coverEmoji: "🌿")
+        let edited = FixtureArticle(id: original.id, title: "Updated title", subtitle: "", resource: "reader", topics: ["After"], coverEmoji: "📖")
+        func reader(_ article: FixtureArticle) -> ReadingTextView {
+            ReadingTextView(document: document, article: article, textID: article.id, jumpToEnd: false, onDefine: { _, _, _ in })
+        }
+        func textView(in view: UIView) -> RubyTextView? {
+            if let reader = view as? RubyTextView { return reader }
+            return view.subviews.lazy.compactMap { textView(in: $0) }.first
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKey() }
+        let host = UIHostingController(rootView: reader(original))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.makeKeyAndVisible()
+        host.view.frame = window.bounds
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let view = try #require(textView(in: host.view))
+        let header = try #require(view.headerView)
+        let before = tapPixels(header)
+        let body = view.attributedText.string
+        view.selectedRange = NSRange(location: 10, length: 4)
+        view.setContentOffset(CGPoint(x: 0, y: 500), animated: false)
+        let offset = view.contentOffset
+        host.rootView = reader(edited)
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        #expect(textView(in: host.view) === view)
+        #expect(view.headerView === header)
+        #expect(pixelDifference(before, tapPixels(header)) > 0.005)
+        #expect(view.attributedText.string == body)
+        #expect(view.selectedRange == NSRange(location: 10, length: 4))
+        #expect(abs(view.contentOffset.y - offset.y) < 1)
+    }
+
     @Test func reviewCatKeepsItsLeftwardPoseAfterStoppingResizingAndNearbyTaps() throws {
         let driver = ReviewCatDriver()
         driver.resize(CGSize(width: 600, height: 400))
