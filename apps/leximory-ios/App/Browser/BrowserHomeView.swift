@@ -37,16 +37,17 @@ struct BrowserHomeView: View {
         Group {
             if compact {
                 GeometryReader { geometry in
+                    let horizontal = geometry.size.width >= 760 && !typeSize.isAccessibilitySize
                     let matchCount = max(0, min(BrowserWorkspaceModel.maximumAddressMatches,
                         Int((geometry.size.height - compactCardsHeight - 24 - 32) / matchRowHeight)))
                     let cardsHeight = max(0, geometry.size.height - CGFloat(matchCount) * matchRowHeight - (matchCount > 0 ? 32 : 0))
                     VStack(spacing: matchCount > 0 ? 32 : 0) {
                         ScrollView {
-                            homeCards(squares: false, folded: true)
+                            homeCards(squares: horizontal, folded: true)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { compactCardsHeight = $0 }
                                 .padding(.horizontal, 28).padding(.vertical, 12)
-                                .frame(maxWidth: 360, minHeight: cardsHeight).frame(maxWidth: .infinity)
+                                .frame(maxWidth: horizontal ? 740 : 360, minHeight: cardsHeight).frame(maxWidth: .infinity)
                         }.scrollBounceBehavior(.basedOnSize).frame(height: cardsHeight)
                         VStack(spacing: 0) {
                             ForEach(addressMatches(addressQuery, matchCount)) { text in
@@ -184,7 +185,7 @@ struct BrowserHomeView: View {
         }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }
     private func homeCards(squares: Bool, folded: Bool) -> some View {
-        let layout = squares ? AnyLayout(HStackLayout(spacing: -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
+        let layout = squares ? AnyLayout(HStackLayout(spacing: folded ? 12 : -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
         return layout {
             card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), label: tone(0x3D527F, 0xB5C8F4), angle: -7, folded: folded, square: squares, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
             card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), label: tone(0x81465D, 0xF1B9CF), angle: 5, folded: folded, square: squares, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
@@ -214,7 +215,14 @@ struct BrowserHomeView: View {
         }.buttonStyle(BrowserCardButtonStyle()).matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || typeSize.isAccessibilitySize ? 0 : angle))
     }
     @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool) -> some View {
-        if square {
+        if square && folded {
+            VStack(spacing: 8) {
+                Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor)
+                Text(title).font(LeximoryTypography.interface(17, style: .headline))
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            }.padding(.horizontal, 12).padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: 96)
+        } else if square {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     Image(systemName: symbol).font(.system(size: 28, weight: .medium)).foregroundStyle(iconColor)
