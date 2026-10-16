@@ -11,6 +11,47 @@ final class BrowserWorkspaceUITests: XCTestCase {
     @MainActor private func restore(_ app: XCUIApplication) {
         app.terminate(); app.launchArguments = []; app.launch()
     }
+    @MainActor func testAddressMatchesOpenAssetsWithoutExpandingFolders() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["浏览网页"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.typeText("river")
+        let match = app.buttons["browser-address-match-workspace-epub"]
+        XCTAssertTrue(match.waitForExistence(timeout: 10))
+        XCTAssertEqual(match.label, "A river journey")
+        XCTAssertLessThanOrEqual(match.frame.maxY, input.frame.minY)
+        let review = app.buttons["browser-review"]
+        XCTAssertLessThanOrEqual(review.frame.maxY, match.frame.minY)
+        let cards = ["browser-browse", "browser-bookmarks", "browser-ebook", "browser-review"].map { app.buttons[$0] }
+        let cardFrames = cards.map(\.frame)
+        let inputFrame = input.frame
+        let matches = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-address-match-"))
+        for query in ["r", "no matches here", "river"] {
+            input.buttons.firstMatch.tap()
+            input.typeText(query)
+            XCTAssertEqual(input.value as? String, query)
+            let expected = query == "no matches here" ? NSPredicate(format: "count == 0") : NSPredicate(format: "count > 0")
+            expectation(for: expected, evaluatedWith: matches)
+            waitForExpectations(timeout: 5)
+            for (card, frame) in zip(cards, cardFrames) {
+                XCTAssertEqual(card.frame.minY, frame.minY, accuracy: 1)
+                XCTAssertEqual(card.frame.height, frame.height, accuracy: 1)
+            }
+            XCTAssertEqual(input.frame.minY, inputFrame.minY, accuracy: 1)
+            for result in matches.allElementsBoundByIndex {
+                XCTAssertGreaterThanOrEqual(result.frame.minY, review.frame.maxY + 32)
+                XCTAssertLessThanOrEqual(result.frame.maxY, input.frame.minY)
+            }
+        }
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Address matches above the bar"; screenshot.lifetime = .keepAlways; add(screenshot)
+        match.tap()
+        XCTAssertTrue(app.otherElements["ebook-reader"].waitForExistence(timeout: 15))
+        XCTAssertFalse(input.exists)
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.buttons["浏览网页"].waitForExistence(timeout: 5))
+    }
     @MainActor func testFindIsAvailableForWebpagesAndSearchablePDFs() throws {
         let page = try BrowserPageServer(); defer { page.listener.cancel() }
         let app = launch(); defer { restore(app) }

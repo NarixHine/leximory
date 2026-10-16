@@ -105,6 +105,7 @@ struct AnnotationActivity: Identifiable, Codable {
 }
 
 @MainActor @Observable final class BrowserWorkspaceModel {
+    static let maximumAddressMatches = 5
     let client: MobileClient
     private(set) var browser = TextBrowserModel()
     private(set) var homePins: [BrowserHomePin] = []
@@ -146,6 +147,33 @@ struct AnnotationActivity: Identifiable, Codable {
     var readyCount: Int { activities.filter { $0.state == .ready && !$0.seen }.count }
     var hasPending: Bool { activities.contains { $0.state == .pending } }
     var writableFolders: [CatalogLibrary] { libraries.filter { $0.owned && !$0.shadow } }
+    var addressSearchFolders: [CatalogLibrary] { libraries.filter { !$0.archived && !$0.shadow } }
+    func addressMatches(_ query: String, limit: Int) -> [CatalogText] {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, limit > 0 else { return [] }
+        let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
+        let needle = query.folding(options: options, locale: .current)
+        var matches: [(text: CatalogText, rank: Int, offset: Int, length: Int, order: Int)] = []
+        var seen = Set<String>()
+        for folder in addressSearchFolders {
+            for text in texts[folder.id] ?? [] where text.libraryId == folder.id {
+                let title = text.title.trimmingCharacters(in: .whitespacesAndNewlines).folding(options: options, locale: .current)
+                guard let range = title.range(of: needle), seen.insert(text.id).inserted else { continue }
+                let offset = title.distance(from: title.startIndex, to: range.lowerBound)
+                let rank = title == needle ? 0 : offset == 0 ? 1 : 2
+                matches.append((text, rank, offset, title.count, matches.count))
+            }
+        }
+        return matches.sorted {
+            ($0.rank, $0.offset, $0.length, $0.order) < ($1.rank, $1.offset, $1.length, $1.order)
+        }.prefix(min(limit, Self.maximumAddressMatches)).map(\.text)
+    }
+    func prepareAddressSearch(online: Bool) async {
+        for folder in addressSearchFolders {
+            guard !Task.isCancelled else { return }
+            await loadFolder(folder, online: online, reportsFailure: false)
+        }
+    }
     var recentTexts: [CatalogText] {
         let all = Array(texts.values.joined())
         let ids = recentReading.ids + libraries.compactMap { recentlyOpened[$0.id]?.id.rawValue }
@@ -534,7 +562,7 @@ struct AnnotationActivity: Identifiable, Codable {
             catch { }
         }
     }
-    func loadFolder(_ library: CatalogLibrary, online: Bool) async {
+    func loadFolder(_ library: CatalogLibrary, online: Bool, reportsFailure: Bool = true) async {
         let request = UUID(); folderRequests[library.id] = request
         if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)"), folderRequests[library.id] == request, !Task.isCancelled { texts[library.id] = cached }
         guard online, folderRequests[library.id] == request, !Task.isCancelled else { return }
@@ -553,7 +581,7 @@ struct AnnotationActivity: Identifiable, Codable {
                 recentReading.texts.removeAll { $0.libraryId == library.id }
                 persistRecentReading()
             }
-            self.error = "文件夹暂时无法打开，请重试。"
+            if reportsFailure { self.error = "文件夹暂时无法打开，请重试。" }
         }
     }
     func setArchived(_ library: CatalogLibrary) async {

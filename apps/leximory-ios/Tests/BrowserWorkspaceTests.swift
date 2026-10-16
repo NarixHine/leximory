@@ -7,6 +7,49 @@ import HTTPTypes
 @testable import Leximory
 
 @MainActor struct BrowserWorkspaceTests {
+    @Test func addressSearchUsesActiveFoldersCapsMatchesAndKeepsCacheOnRefreshFailure() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://workspace.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "address-search")
+        func folder(_ id: String, archived: Bool = false, shadow: Bool = false) throws -> CatalogLibrary {
+            let data = try JSONSerialization.data(withJSONObject: ["id": id, "name": id, "language": "en", "owned": true, "archived": archived, "shadow": shadow])
+            return try JSONDecoder().decode(CatalogLibrary.self, from: data)
+        }
+        func text(_ id: String, folder: String, title: String, format: String) throws -> CatalogText {
+            let data = try JSONSerialization.data(withJSONObject: ["id": id, "libraryId": folder, "title": title, "topics": [], "format": format])
+            return try JSONDecoder().decode(CatalogText.self, from: data)
+        }
+        let active = try folder("active")
+        let archived = try folder("archive", archived: true)
+        let shadow = try folder("shadow", shadow: true)
+        await store.save([archived, shadow, active], for: "libraries")
+        var rows = try [text("article", folder: "active", title: "Café river", format: "article"),
+                        text("ebook", folder: "active", title: "River journey", format: "ebook"),
+                        text("bookmark", folder: "active", title: "River website", format: "bookmark")]
+        rows += try (4...7).map { try text("article-\($0)", folder: "active", title: $0 == 4 ? "River" : "River \($0)", format: "article") }
+        await store.save(rows, for: "texts/active")
+        await store.save([try text("archived", folder: "archive", title: "River archive", format: "article")], for: "texts/archive")
+        await store.save([try text("shadow", folder: "shadow", title: "River shadow", format: "article")], for: "texts/shadow")
+        let mobile = MobileClient(baseURL: origin, transport: OfflineTransport(), token: { _ in "verified" }, localStore: store)
+        let namespace = "address-search." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        await workspace.refresh(online: false)
+        #expect(workspace.addressMatches("  RIVER  ", limit: 5).map(\.id) == ["article-4", "article-5", "article-6", "article-7", "ebook"])
+        #expect(workspace.addressMatches("river", limit: 0).isEmpty)
+        #expect(workspace.addressMatches("river", limit: 1).map(\.id) == ["article-4"])
+        #expect(workspace.addressMatches("river", limit: 20).map(\.id) == ["article-4", "article-5", "article-6", "article-7", "ebook"])
+        #expect(workspace.addressMatches("cafe", limit: 5).map(\.id) == ["article"])
+        #expect(workspace.addressMatches(" \n ", limit: 5).isEmpty)
+        #expect(workspace.addressMatches("missing", limit: 5).isEmpty)
+        await workspace.prepareAddressSearch(online: true)
+        #expect(workspace.error == nil)
+        #expect(workspace.addressMatches("journey", limit: 5).map(\.id) == ["ebook"])
+        workspace.upsertFolder(try folder("active", archived: true))
+        #expect(workspace.addressMatches("river", limit: 5).isEmpty)
+    }
+
     @Test func pinnedIconsRestoreImmediatelyAndSurviveRenamingWithoutAnotherLoad() async throws {
         let namespace = "icons-test." + UUID().uuidString
         defer { UserDefaults.standard.removeObject(forKey: "browser.home-pins." + namespace) }

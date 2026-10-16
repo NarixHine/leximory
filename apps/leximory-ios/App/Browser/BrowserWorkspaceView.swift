@@ -9,6 +9,7 @@ struct BrowserWorkspaceView: View {
     @Binding var pendingText: TextID?
     @State private var workspace: BrowserWorkspaceModel
     @State private var address = ""
+    @State private var addressQuery = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var avatarURL: URL?
     @State private var avatarImage: UIImage?
@@ -66,9 +67,10 @@ struct BrowserWorkspaceView: View {
                             compact: editingAddress, recent: workspace.recentTexts,
                             browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                             ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
+                            addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
                             resume: { text in finishEditing(); Task { await workspace.open(text) } })
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            .padding(.bottom, editingAddress ? chromeHeight : 0)
+                            .padding(.bottom, editingAddress ? chromeHeight + 12 : 0)
                     }
                     if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting ? "正在提取正文" : "正在打开") }
                 }
@@ -85,7 +87,7 @@ struct BrowserWorkspaceView: View {
                     }
                 })
             }
-            .ignoresSafeArea(workspace.current.isReviewLawn ? .keyboard : [], edges: .bottom)
+            .ignoresSafeArea(workspace.current.isReviewLawn && !editingAddress ? .keyboard : [], edges: .bottom)
             .background(LeximoryPalette.paper)
             .overlay(alignment: .top) {
                 if completionNotice || clipboardNotice != nil {
@@ -169,6 +171,10 @@ struct BrowserWorkspaceView: View {
             await workspace.cachePinIcons()
         }
         .task(id: sync?.revision) { await workspace.refresh(online: sync?.online != false) }
+        .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
+            guard editingAddress else { return }
+            await workspace.prepareAddressSearch(online: sync?.online != false)
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
@@ -316,7 +322,7 @@ struct BrowserWorkspaceView: View {
                 BrowserAddressField(address: address, editor: addressEditor, submit: submitAddress, search: { query in
                     finishEditing()
                     workspace.search(query)
-                }).frame(height: 48)
+                }, draftChanged: { addressQuery = $0 }).frame(height: 48)
             } else {
                 Button(action: beginEditing) {
                     HStack(spacing: 6) {
@@ -410,6 +416,7 @@ struct BrowserWorkspaceView: View {
     }
     private func beginEditing() {
         if case .web(let page) = workspace.current.resource { address = page.url.absoluteString } else { address = "" }
+        addressQuery = address
         withAnimation(motion) { editingAddress = true }
     }
     private func finishEditing() {

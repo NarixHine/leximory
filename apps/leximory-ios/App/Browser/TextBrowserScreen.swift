@@ -311,6 +311,7 @@ struct BrowserAddressField: UIViewRepresentable {
     let editor: BrowserAddressEditor
     let submit: () -> Void
     var search: ((String) -> Void)? = nil
+    var draftChanged: ((String) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> BrowserURLTextField {
@@ -357,6 +358,7 @@ struct BrowserAddressField: UIViewRepresentable {
             // edits and active IME composition must never replace the text storage.
             DispatchQueue.main.async { [weak field] in
                 guard let field, field.isFirstResponder, field.markedTextRange == nil, field.text == draft else { return }
+                self.parent.draftChanged?(field.text ?? "")
                 let styled = LeximoryTypography.addressAttributedUI(field.text ?? "")
                 guard field.attributedText?.isEqual(to: styled) != true else { return }
                 let selection = field.selectedTextRange.map {

@@ -22,19 +22,48 @@ struct BrowserHomeView: View {
     let account: () -> Void
     var review: () -> Void = {}
     var avatarImage: UIImage? = nil
+    var addressQuery = ""
+    var addressMatches: (String, Int) -> [CatalogText] = { _, _ in [] }
     let resume: (CatalogText) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.browserChromeHeight) private var chromeHeight
     @ScaledMetric(relativeTo: .headline) private var recentTitleSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .headline) private var matchRowHeight: CGFloat = 44
+    @State private var compactCardsHeight: CGFloat = 256
     @Namespace private var cardNamespace
     var body: some View {
         Group {
             if compact {
-                homeCards(squares: false, folded: true)
-                    .padding(.horizontal, 28)
-                    .frame(maxWidth: 360).frame(maxWidth: .infinity)
+                GeometryReader { geometry in
+                    let matchCount = max(0, min(BrowserWorkspaceModel.maximumAddressMatches,
+                        Int((geometry.size.height - compactCardsHeight - 24 - 32) / matchRowHeight)))
+                    let cardsHeight = max(0, geometry.size.height - CGFloat(matchCount) * matchRowHeight - (matchCount > 0 ? 32 : 0))
+                    VStack(spacing: matchCount > 0 ? 32 : 0) {
+                        ScrollView {
+                            homeCards(squares: false, folded: true)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { compactCardsHeight = $0 }
+                                .padding(.horizontal, 28).padding(.vertical, 12)
+                                .frame(maxWidth: 360, minHeight: cardsHeight).frame(maxWidth: .infinity)
+                        }.scrollBounceBehavior(.basedOnSize).frame(height: cardsHeight)
+                        VStack(spacing: 0) {
+                            ForEach(addressMatches(addressQuery, matchCount)) { text in
+                                Button { resume(text) } label: {
+                                    HStack(spacing: 8) {
+                                        BrowserTextIcon(text: text).font(.system(size: 16, weight: .regular))
+                                            .foregroundStyle(.secondary).accessibilityHidden(true)
+                                        Text(LeximoryTypography.scaledChineseText(text.title, size: recentTitleSize))
+                                            .foregroundStyle(.primary).lineLimit(1).truncationMode(.tail)
+                                    }.frame(maxWidth: .infinity).frame(height: matchRowHeight).contentShape(.rect)
+                                }.buttonStyle(.plain).accessibilityLabel(text.title)
+                                    .accessibilityIdentifier("browser-address-match-" + text.id)
+                            }
+                        }.frame(height: CGFloat(matchCount) * matchRowHeight, alignment: .bottom)
+                            .frame(maxWidth: 400).padding(.horizontal, LeximoryLayout.pageInset).frame(maxWidth: .infinity)
+                    }
+                }
             } else {
         GeometryReader { geometry in
             let squares = geometry.size.width >= 760 && !typeSize.isAccessibilitySize
@@ -90,7 +119,6 @@ struct BrowserHomeView: View {
         }
         .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.86), value: compact)
         .tint(.primary)
-        .accessibilityIdentifier("browser-home")
     }
     private var pinnedPages: some View {
         BrowserPinLayout {
