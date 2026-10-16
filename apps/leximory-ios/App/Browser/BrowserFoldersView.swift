@@ -12,6 +12,7 @@ struct BrowserFoldersView: View {
     @Environment(\.browserChromeHeight) private var chromeHeight
     @State private var archiveExpanded = false
     @State private var editor: FolderEditorRequest?
+    @State private var refreshFailed = false
     private var folders: [CatalogLibrary] { workspace.libraries.filter { !$0.shadow } }
     var body: some View {
         List {
@@ -37,6 +38,14 @@ struct BrowserFoldersView: View {
                 if folders.isEmpty && !workspace.loading { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }
             }
             if workspace.loading { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
+            if refreshFailed {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("部分内容未能更新，请重试。").foregroundStyle(.secondary)
+                        Button("重试") { Task { await refreshBookmarks() } }
+                    }
+                }
+            }
         }
         .listStyle(.insetGrouped)
         .animation(.default, value: workspace.expandedFolders)
@@ -46,15 +55,25 @@ struct BrowserFoldersView: View {
         .frame(maxWidth: .infinity)
         .background(LeximoryPalette.shell)
         .safeAreaPadding(.bottom, chromeHeight)
-        .refreshable {
-            await workspace.refresh(online: sync?.online != false)
-            for folder in folders where workspace.expandedFolders.contains(folder.id) { await workspace.loadFolder(folder, online: sync?.online != false) }
-        }
+        .refreshable { await refreshBookmarks() }
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { workspace.upsertFolder($0) }
         }
         .tint(.primary)
         .accessibilityIdentifier("browser-bookmarks")
+    }
+    private func refreshBookmarks() async {
+        refreshFailed = false
+        workspace.folderFailures.removeAll()
+        if let sync {
+            let complete = await sync.refreshBookmarks(prioritizing: workspace.expandedFolders)
+            guard !Task.isCancelled else { return }
+            await workspace.refresh(online: false)
+            refreshFailed = !complete
+        } else {
+            await workspace.refresh(online: true)
+            for folder in folders where !folder.archived { await workspace.loadFolder(folder, online: true) }
+        }
     }
     private func folder(_ library: CatalogLibrary) -> some View {
         DisclosureGroup(isExpanded: Binding(get: { workspace.expandedFolders.contains(library.id) }, set: { expanded in
@@ -85,7 +104,11 @@ private struct BrowserFolderContents: View {
         Group {
             if let texts = workspace.texts[library.id] {
                 ForEach(texts) { text in BrowserResourceRow(text: text) { Task { await workspace.open(text) } }.padding(.leading, 16) }
-                if texts.isEmpty { Text("还没有书签").foregroundStyle(.secondary).padding(.leading, 16) }
+                if texts.isEmpty && !workspace.folderFailures.contains(library.id) { Text("还没有书签").foregroundStyle(.secondary).padding(.leading, 16) }
+                if workspace.folderFailures.contains(library.id) {
+                    Button("未能更新此文件夹，重试") { Task { await workspace.loadFolder(library, online: sync?.online != false) } }
+                        .padding(.leading, 16)
+                }
             } else if !loaded { ProgressView().padding(.leading, 16) }
             else { Button("重试") { Task { await workspace.loadFolder(library, online: sync?.online != false) } } }
         }

@@ -116,6 +116,7 @@ struct AnnotationActivity: Identifiable, Codable {
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
     private(set) var texts: [String: [CatalogText]] = [:]
+    var folderFailures: Set<String> = []
     private(set) var activities: [AnnotationActivity] = []
     private(set) var documents: [String: RemoteDocument] = [:]
     private(set) var recentlyOpened: [String: FixtureArticle] = [:]
@@ -451,6 +452,9 @@ struct AnnotationActivity: Identifiable, Codable {
         page.offset = browser.web.scrollView.contentOffset.y
         var entry = current; entry.resource = .web(page); history.replaceCurrent(entry)
     }
+    func recordDocument(_ details: RemoteDocument) {
+        documents[details.text.id] = details
+    }
     func recordArticleAudio(textID: String, revision documentRevision: String, audioID: String) {
         guard var details = documents[textID], details.document?.revision == documentRevision else { return }
         details.fullArticleAudioId = audioID
@@ -570,24 +574,27 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func loadFolder(_ library: CatalogLibrary, online: Bool, reportsFailure: Bool = true) async {
         let request = UUID(); folderRequests[library.id] = request
-        if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)"), folderRequests[library.id] == request, !Task.isCancelled { texts[library.id] = cached }
-        guard online, folderRequests[library.id] == request, !Task.isCancelled else { return }
+        folderFailures.remove(library.id)
+        let mutation = catalogMutation
+        if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)"), folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled { texts[library.id] = cached }
+        guard online, folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled else { return }
         do {
             let result = try await client.allTexts(libraryID: library.id)
-            guard folderRequests[library.id] == request, !Task.isCancelled else { return }
+            guard folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled else { return }
             texts[library.id] = result
+            folderFailures.remove(library.id)
             let available = Set(result.map(\.id))
             recentReading.texts.removeAll { $0.libraryId == library.id && !available.contains($0.id) }
             persistRecentReading()
         }
         catch {
-            guard folderRequests[library.id] == request, !Task.isCancelled else { return }
+            guard folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled else { return }
             if MobileClient.isAccessFailure(error) {
                 texts[library.id] = []
                 recentReading.texts.removeAll { $0.libraryId == library.id }
                 persistRecentReading()
             }
-            if reportsFailure { self.error = "文件夹暂时无法打开，请重试。" }
+            if reportsFailure { folderFailures.insert(library.id) }
         }
     }
     func setArchived(_ library: CatalogLibrary) async {

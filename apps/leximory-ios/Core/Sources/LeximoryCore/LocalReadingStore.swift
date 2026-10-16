@@ -175,8 +175,8 @@ public actor LocalReadingStore {
         if let texts = value([CatalogText].self, for: "texts/\(id)") { for text in texts { removeText(text.id) } }
         remove("texts/\(id)"); remove("words/\(id)")
     }
-    public func reconcileLibraries(_ libraries: [CatalogLibrary], ifUnchanged version: Int? = nil) {
-        if let version, versions["libraries", default: 0] != version { return }
+    @discardableResult public func reconcileLibraries(_ libraries: [CatalogLibrary], ifUnchanged version: Int? = nil) -> [CatalogLibrary] {
+        if let version, versions["libraries", default: 0] != version { return value([CatalogLibrary].self, for: "libraries") ?? [] }
         let ids = Set(libraries.map(\.id))
         for key in Array(manifest.entries.keys) where key.hasPrefix("texts/") || key.hasPrefix("words/") {
             let id = String(key.split(separator: "/").last ?? "")
@@ -190,14 +190,16 @@ public actor LocalReadingStore {
             if let book = value(EbookDescriptor.self, for: key), !ids.contains(book.library.id) { removeText(book.text.id) }
         }
         save(libraries, for: "libraries")
+        return libraries
     }
-    public func reconcileTexts(_ texts: [CatalogText], libraryID: String, ifUnchanged version: Int? = nil) {
-        if let version, versions["texts/\(libraryID)", default: 0] != version { return }
+    @discardableResult public func reconcileTexts(_ texts: [CatalogText], libraryID: String, ifUnchanged version: Int? = nil) -> [CatalogText] {
+        if let version, versions["texts/\(libraryID)", default: 0] != version { return value([CatalogText].self, for: "texts/\(libraryID)") ?? [] }
         let ids = Set(texts.map(\.id))
         if let previous = value([CatalogText].self, for: "texts/\(libraryID)") {
             for text in previous where !ids.contains(text.id) { removeText(text.id) }
         }
         save(texts, for: "texts/\(libraryID)")
+        return texts
     }
     public func setArchived(libraryID: String, archived: Bool) {
         guard var libraries = value([CatalogLibrary].self, for: "libraries"),

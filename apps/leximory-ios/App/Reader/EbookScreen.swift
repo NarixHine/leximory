@@ -91,9 +91,13 @@ struct EbookScreen: View {
     var language = "English"
     @State private var reader = EbookReaderState()
     @State private var data: Data?
+    @State private var contentID = UUID()
+    @State private var loadedBook: LocalEbook?
+    @State private var bookRequest = UUID()
     @State private var notes: PDFNotesModel?
     private var format: String { reader.format }
     @State private var loading = true
+    @State private var refreshingContent = false
     @State private var loadError: String?
     @State private var tray: EbookTray?
     @State private var definition: DefinitionPresentation?
@@ -120,10 +124,15 @@ struct EbookScreen: View {
         ZStack {
             if let data {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command, notes: notes, notesRevision: notes?.revision ?? 0, drawingEnabled: notes?.drawing == true)
-                    .ignoresSafeArea(.container, edges: [.top, .bottom]) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                    .id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
-            if loading { ReadingLoadingIndicator("正在打开电子书").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
+            if refreshingContent && loading {
+                ProgressView().padding(18)
+                    .glassEffect(.regular, in: .circle)
+                    .accessibilityLabel("正在更新内容")
+            }
+            if loading && !refreshingContent { ReadingLoadingIndicator("正在打开电子书").frame(maxWidth: .infinity, maxHeight: .infinity).background(LeximoryPalette.paper) }
             if let loadError {
                 LeximoryUnavailableView("暂时无法打开电子书", systemImage: "book.closed", message: loadError) { Button("重试") { Task { await load() } } }
             }
@@ -208,8 +217,12 @@ struct EbookScreen: View {
             }
         }
         .task(id: article.id) { await load() }
-        .onChange(of: reader.loadFailure) { _, failure in if let failure { loading = false; loadError = failure } }
-        .onChange(of: reader.ready) { _, ready in if ready { loading = false } }
+        .task(id: resourceActive) {
+            guard resourceActive, let client, let loadedBook else { return }
+            await refreshBook(loadedBook, client: client)
+        }
+        .onChange(of: reader.loadFailure) { _, failure in if let failure { loading = false; refreshingContent = false; loadError = failure } }
+        .onChange(of: reader.ready) { _, ready in if ready { loading = false; refreshingContent = false } }
         .onChange(of: reader.location) { previous, location in
             guard !reader.readOnly, reader.ready, previous != location, let location else { return }
             positionSaver?.schedule(location)
@@ -417,11 +430,13 @@ struct EbookScreen: View {
         reader.canBookmark = client != nil || ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures")
         reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.rightToLeft = language == "Japanese"
-        loading = true; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
+        bookRequest = UUID(); loadedBook = nil
+        loading = true; refreshingContent = false; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
         do {
             if let client {
                 let book: LocalEbook
-                if let cached = await client.cachedEbook(textID: article.id.rawValue) { book = cached }
+                let cached = await client.cachedEbook(textID: article.id.rawValue)
+                if let cached { book = cached }
                 else {
                     guard sync?.online != false else { throw URLError(.notConnectedToInternet) }
                     book = try await client.downloadEbook(textID: article.id.rawValue)
@@ -432,6 +447,8 @@ struct EbookScreen: View {
                 }
                 reader.location = book.location; reader.bookmarks = book.descriptor.bookmarks
                 reader.format = book.descriptor.format; data = book.data
+                loadedBook = book
+                if cached != nil { await refreshBook(book, client: client) }
             } else {
                 reader.format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
                 #if DEBUG
@@ -457,6 +474,39 @@ struct EbookScreen: View {
         } catch {
             if !Task.isCancelled {
                 loading = false; loadError = sync?.online == false ? "无法打开电子书，请连接网络后重试。" : "请检查网络后重试。"
+            }
+        }
+    }
+    private func refreshBook(_ book: LocalEbook, client: MobileClient) async {
+        guard sync?.online != false else { return }
+        let request = UUID(); bookRequest = request
+        let bookmarks = reader.bookmarks
+        do {
+            let refreshed = try await client.downloadEbook(textID: article.id.rawValue)
+            try Task.checkCancellation()
+            guard bookRequest == request else { return }
+            if refreshed.data != book.data || refreshed.descriptor.format != book.descriptor.format {
+                await positionSaver?.suspend()
+                guard bookRequest == request, !Task.isCancelled else { positionSaver?.resume(); return }
+                notes?.deactivate(); notes = nil
+                reader.ready = false; loading = true; refreshingContent = true
+                reader.location = refreshed.location; reader.format = refreshed.descriptor.format
+                reader.bookmarks = refreshed.descriptor.bookmarks
+                if refreshed.descriptor.format == "pdf", refreshed.descriptor.pdfSourceVersion != nil, let store = client.notesStore {
+                    notes = PDFNotesModel(book: refreshed, store: store, sync: sync)
+                }
+                data = refreshed.data; contentID = UUID()
+                positionSaver?.resume()
+            } else if reader.bookmarks == bookmarks {
+                reader.bookmarks = refreshed.descriptor.bookmarks
+            }
+            loadedBook = refreshed
+        } catch {
+            // A failed revalidation must leave the cached book readable.
+            guard !Task.isCancelled, bookRequest == request else { return }
+            if MobileClient.isAccessFailure(error) {
+                notes?.deactivate(); notes = nil; data = nil; loading = false
+                loadError = "暂时无法访问这本电子书。"
             }
         }
     }

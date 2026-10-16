@@ -120,7 +120,7 @@ public struct RemoteDocument: Codable, Sendable {
     public let annotationProgress: String?
     public var fullArticleAudioId: String? = nil
 }
-public struct EbookBookmark: Codable, Identifiable, Sendable {
+public struct EbookBookmark: Codable, Equatable, Identifiable, Sendable {
     public let id: Int
     public let quote: String
     public let chapter: String?
@@ -577,14 +577,12 @@ public struct MobileClient: Sendable {
     public func allLibraries() async throws -> [CatalogLibrary] {
         let version = await localStore?.version(for: "libraries")
         let items = try await collectPages { try await libraries(cursor: $0) }
-        await localStore?.reconcileLibraries(items, ifUnchanged: version)
-        return items
+        return await localStore?.reconcileLibraries(items, ifUnchanged: version) ?? items
     }
     public func allTexts(libraryID: String) async throws -> [CatalogText] {
         let version = await localStore?.version(for: "texts/\(libraryID)")
         let items = try await collectPages { try await texts(libraryID: libraryID, cursor: $0) }
-        await localStore?.reconcileTexts(items, libraryID: libraryID, ifUnchanged: version)
-        return items
+        return await localStore?.reconcileTexts(items, libraryID: libraryID, ifUnchanged: version) ?? items
     }
     public func allVocabulary(libraryID: String) async throws -> [SavedWord] {
         let version = await localStore?.version(for: "words/\(libraryID)") ?? 0

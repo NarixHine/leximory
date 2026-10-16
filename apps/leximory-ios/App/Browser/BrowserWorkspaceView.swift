@@ -170,7 +170,7 @@ struct BrowserWorkspaceView: View {
             guard scenePhase == .active else { return }
             await workspace.cachePinIcons()
         }
-        .task(id: sync?.revision) { await workspace.refresh(online: sync?.online != false) }
+        .task(id: sync?.revision) { await workspace.refresh(online: sync == nil) }
         .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
             guard editingAddress else { return }
             await workspace.prepareAddressSearch(online: sync?.online != false)

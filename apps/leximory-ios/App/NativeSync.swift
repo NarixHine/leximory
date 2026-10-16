@@ -16,6 +16,7 @@ import LeximoryCore
     @ObservationIgnored private let monitor = NWPathMonitor()
     @ObservationIgnored private var pathAvailable = true
     @ObservationIgnored private var syncTask: Task<Void, Never>?
+    @ObservationIgnored private var catalogTask: Task<Bool, Never>?
     @ObservationIgnored private var observer: Task<Void, Never>?
     @ObservationIgnored private var notesTask: Task<Void, Never>?
     @ObservationIgnored private var scheduledNotes: Task<Void, Never>?
@@ -137,6 +138,46 @@ import LeximoryCore
         await task.value
         syncTask = nil; syncing = false
     }
+    func refreshBookmarks(prioritizing expanded: Set<String>) async -> Bool {
+        guard !stopped, pathAvailable else { return false }
+        if let catalogTask { return await catalogTask.value }
+        let task = Task { [self] in
+            for attempt in 0..<MutationRetry.maxAttempts {
+                guard !Task.isCancelled, !stopped, pathAvailable else { return false }
+                // Probe again after a connection failure instead of trusting the stale offline flag.
+                await store.setOnline(true)
+                do {
+                    let libraries = try await client.allLibraries()
+                    try Task.checkCancellation()
+                    revision += 1
+                    let folders = libraries.filter { !$0.archived }.sorted {
+                        expanded.contains($0.id) && !expanded.contains($1.id)
+                    }
+                    var failure: (any Error)?
+                    for folder in folders {
+                        try Task.checkCancellation()
+                        do {
+                            _ = try await client.allTexts(libraryID: folder.id)
+                            try Task.checkCancellation()
+                            revision += 1
+                        } catch {
+                            if failure == nil { failure = error }
+                        }
+                    }
+                    if let failure { throw failure }
+                    return true
+                } catch {
+                    guard !Task.isCancelled, MutationRetry.isRetryable(error), attempt + 1 < MutationRetry.maxAttempts else { return false }
+                    do { try await MutationRetry.pause(after: attempt) } catch { return false }
+                }
+            }
+            return false
+        }
+        catalogTask = task
+        let complete = await task.value
+        catalogTask = nil
+        return complete
+    }
     func scheduleNotes() {
         scheduledNotes?.cancel()
         scheduledNotes = Task { [weak self] in
@@ -148,9 +189,9 @@ import LeximoryCore
         guard active, pathAvailable, !stopped else { return }
         do { try await notes?.synchronize(document: activePDF) } catch { }
     }
-    func pause() { active = false; runID = nil; syncTask?.cancel(); notesTask?.cancel(); scheduledNotes?.cancel() }
+    func pause() { active = false; runID = nil; syncTask?.cancel(); catalogTask?.cancel(); notesTask?.cancel(); scheduledNotes?.cancel() }
     func stop() async {
-        stopped = true; monitor.cancel(); observer?.cancel(); syncTask?.cancel()
+        stopped = true; monitor.cancel(); observer?.cancel(); syncTask?.cancel(); catalogTask?.cancel()
         notesTask?.cancel(); scheduledNotes?.cancel()
         await notes?.stop()
         await client.notesStore?.close()

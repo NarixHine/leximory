@@ -324,3 +324,170 @@ import HTTPTypes
         }
     }
 }
+
+@MainActor struct BookmarkRefreshTests {
+    @Test func pullRecoversAndRefreshesCollapsedFoldersWithoutDownloadingOrFetchingVocabulary() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "refresh")
+        let archived = try decodeText("archived-item", library: "archived", title: "Keep archived content")
+        await store.save([archived], for: "texts/archived")
+        await store.save([try decodeText("deleted", library: "active", title: "Deleted elsewhere")], for: "texts/active")
+        let transport = CatalogRefreshTransport(failures: 1)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let sync = NativeSync(store: store, client: client)
+        await store.setOnline(false)
+        let complete = await sync.refreshBookmarks(prioritizing: ["active"])
+        #expect(complete)
+        let active = try #require(await store.value([CatalogText].self, for: "texts/active"))
+        let collapsed = try #require(await store.value([CatalogText].self, for: "texts/collapsed"))
+        #expect(active.map(\.title) == ["Updated article"])
+        #expect(collapsed.map(\.id) == ["ebook", "link"])
+        #expect(await store.value([CatalogText].self, for: "texts/archived") == [archived])
+        #expect(await transport.catalogReads == 2)
+        #expect(await transport.operations.allSatisfy { ["libraries", "texts"].contains($0) })
+        await sync.stop()
+    }
+
+    @Test func exhaustedRefreshKeepsTheCachedCatalogAndDoesNotSetAModalError() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "failure")
+        let library = try JSONDecoder().decode(CatalogLibrary.self, from: Data(CatalogRefreshTransport.libraryJSON.utf8))
+        let text = try decodeText("cached", library: "active", title: "Still readable")
+        await store.save([library], for: "libraries")
+        await store.save([text], for: "texts/active")
+        let transport = CatalogRefreshTransport(failures: 10)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let sync = NativeSync(store: store, client: client)
+        let complete = await sync.refreshBookmarks(prioritizing: [])
+        let namespace = "refresh-test." + UUID().uuidString
+        defer {
+            for prefix in ["browser.recent.", "browser.home-pins.", "recent-access."] { UserDefaults.standard.removeObject(forKey: prefix + namespace) }
+        }
+        let workspace = BrowserWorkspaceModel(client: client, namespace: namespace)
+        await workspace.refresh(online: false)
+        #expect(!complete)
+        #expect(workspace.libraries.map(\.id) == ["active"])
+        #expect(workspace.texts["active"]?.map(\.title) == ["Still readable"])
+        #expect(workspace.error == nil)
+        #expect(await transport.catalogReads == 3)
+        await sync.stop()
+    }
+
+    @Test func confirmedEditWinsOverAnOlderFolderResponseInBothMemoryAndDisk() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "race")
+        let transport = CatalogRefreshTransport(delayActive: true)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let library = try JSONDecoder().decode(CatalogLibrary.self, from: Data(CatalogRefreshTransport.libraryJSON.utf8))
+        let namespace = "refresh-test." + UUID().uuidString
+        defer {
+            for prefix in ["browser.recent.", "browser.home-pins.", "recent-access."] { UserDefaults.standard.removeObject(forKey: prefix + namespace) }
+        }
+        let workspace = BrowserWorkspaceModel(client: client, namespace: namespace)
+        let read = Task { await workspace.loadFolder(library, online: true) }
+        await transport.waitForActiveRead()
+        let edited = try decodeText("article", library: "active", title: "My confirmed edit")
+        await store.upsertText(edited)
+        await workspace.contentChanged(edited, reloadReader: false)
+        await transport.resumeActiveRead()
+        await read.value
+        #expect(workspace.texts["active"]?.map(\.title) == ["My confirmed edit"])
+        #expect(await store.value([CatalogText].self, for: "texts/active")?.map(\.title) == ["My confirmed edit"])
+    }
+
+    @Test func collectionReadReturnsTheConfirmedSnapshotWhenAnOlderResponseArrives() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "collection-race")
+        let transport = CatalogRefreshTransport(delayActive: true)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let read = Task { try await client.allTexts(libraryID: "active") }
+        await transport.waitForActiveRead()
+        await store.upsertText(try decodeText("article", library: "active", title: "Confirmed while fetching"))
+        await transport.resumeActiveRead()
+        let result = try await read.value
+        #expect(result.map(\.title) == ["Confirmed while fetching"])
+    }
+
+    @Test func ebookRevalidationUpdatesMetadataWithoutDownloadingAnUnchangedFile() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "ebook")
+        try await store.saveBook(Data("original file".utf8), source: "https://bookmarks.test/book.pdf?v=1", textID: "ebook", ifUnchanged: 0)
+        let client = MobileClient(baseURL: origin, transport: CatalogRefreshTransport(), token: { _ in "verified" }, localStore: store)
+        let book = try await client.downloadEbook(textID: "ebook")
+        #expect(book.data == Data("original file".utf8))
+        #expect(book.descriptor.bookmarks.map(\.quote) == ["A new highlight"])
+        #expect(book.location == "5")
+        #expect(await client.cachedEbook(textID: "ebook")?.descriptor.bookmarks.map(\.id) == [42])
+    }
+
+    private func decodeText(_ id: String, library: String, title: String) throws -> CatalogText {
+        let data = try JSONSerialization.data(withJSONObject: ["id": id, "libraryId": library, "title": title, "topics": [], "format": "article"])
+        return try JSONDecoder().decode(CatalogText.self, from: data)
+    }
+
+    private actor CatalogRefreshTransport: ClientTransport {
+        static let libraryJSON = #"{"id":"active","name":"Reading","language":"en","owned":true,"archived":false,"shadow":false}"#
+        var catalogReads = 0
+        var operations: [String] = []
+        private var failures: Int
+        private var delayActive: Bool
+        private var activeStarted = false
+        private var started: CheckedContinuation<Void, Never>?
+        private var resume: CheckedContinuation<Void, Never>?
+        init(failures: Int = 0, delayActive: Bool = false) { self.failures = failures; self.delayActive = delayActive }
+        func waitForActiveRead() async {
+            if activeStarted { return }
+            await withCheckedContinuation { started = $0 }
+        }
+        func resumeActiveRead() { resume?.resume(); resume = nil }
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            operations.append(operationID)
+            let json: String
+            switch operationID {
+            case "libraries":
+                catalogReads += 1
+                if failures > 0 { failures -= 1; throw URLError(.networkConnectionLost) }
+                json = """
+                {"items":[\(Self.libraryJSON),
+                 {"id":"collapsed","name":"Collapsed","language":"en","owned":true,"archived":false,"shadow":false},
+                 {"id":"archived","name":"Archive","language":"en","owned":true,"archived":true,"shadow":false}],"nextCursor":null}
+                """
+            case "ebook":
+                json = """
+                {"text":{"id":"ebook","libraryId":"active","title":"A book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},
+                 "library":\(Self.libraryJSON),"url":"https://bookmarks.test/book.pdf?token=renewed&v=1","format":"pdf",
+                 "expiresAt":"2099-01-01T00:00:00Z","location":"5",
+                 "bookmarks":[{"id":42,"quote":"A new highlight","chapter":null,"location":"5","createdAt":null}]}
+                """
+            case "texts":
+                if request.path?.contains("/active/") == true {
+                    if delayActive {
+                        delayActive = false
+                        await withCheckedContinuation { continuation in
+                            resume = continuation; activeStarted = true; started?.resume(); started = nil
+                        }
+                    }
+                    json = #"{"items":[{"id":"article","libraryId":"active","title":"Updated article","topics":[],"format":"article"}],"nextCursor":null}"#
+                } else if request.path?.contains("/collapsed/") == true {
+                    if request.path?.contains("cursor=") == true {
+                        json = #"{"items":[{"id":"link","libraryId":"collapsed","title":"A website","topics":[],"format":"bookmark","bookmarkURL":"https://example.com"}],"nextCursor":null}"#
+                    } else {
+                        json = #"{"items":[{"id":"ebook","libraryId":"collapsed","title":"A book","topics":[],"format":"ebook"}],"nextCursor":"next"}"#
+                    }
+                } else { throw URLError(.unsupportedURL) }
+            default: throw URLError(.unsupportedURL)
+            }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(json))
+        }
+    }
+}

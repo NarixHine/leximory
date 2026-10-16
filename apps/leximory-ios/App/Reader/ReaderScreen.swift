@@ -119,7 +119,7 @@ struct ReaderScreen: View {
             }
         }
         .task(id: article.id) { definition = nil; await load() }
-        .onChange(of: sync?.revision) { _, _ in Task { await load() } }
+        .onChange(of: sync?.revision) { _, _ in if resourceActive { Task { await load() } } }
         .onChange(of: workspace?.revision) { _, _ in
             guard let details = workspace?.documents[article.id.rawValue], let document = details.document else { return }
             refreshedArticle = details.text.preview
@@ -128,7 +128,10 @@ struct ReaderScreen: View {
             if resourceActive, workspace?.completionID == article.id.rawValue { annotationReveal = UUID() }
             state = .loaded(document); refreshedArticle = details.text.preview
         }
-        .onChange(of: resourceActive) { _, active in if !active { definition = nil } }
+        .onChange(of: resourceActive) { _, active in
+            if active { Task { await load() } }
+            else { definition = nil }
+        }
     }
     private var articleActions: some View {
         HStack(spacing: 8) {
@@ -171,11 +174,15 @@ struct ReaderScreen: View {
         }
         do {
             if let workspace {
+                let revision = workspace.revision
                 let details: RemoteDocument
-                if let existing = workspace.documents[article.id.rawValue] { details = existing }
-                else if let client { details = try await client.documentDetails(textID: article.id.rawValue) }
+                if let client { details = try await client.documentDetails(textID: article.id.rawValue) }
+                else if let existing = workspace.documents[article.id.rawValue] { details = existing }
                 else { throw URLError(.cannotParseResponse) }
+                try Task.checkCancellation()
+                guard workspace.revision == revision else { return }
                 guard let document = details.document else { throw URLError(.cannotParseResponse) }
+                workspace.recordDocument(details)
                 state = .loaded(document); refreshedArticle = details.text.preview
                 updateAudio(details)
                 return
