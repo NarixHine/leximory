@@ -788,7 +788,7 @@ struct NativePDFReader: UIViewRepresentable {
             NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: view)
         }
         @objc func pageChanged() {
-            drawingOverlays?.activateCurrentPage()
+            drawingOverlays?.schedulePresentationUpdate()
             guard reader.ready, let document = view?.document, let page = view?.currentPage else { return }
             let index = document.index(for: page)
             reader.location = String(index + 1); reader.chapter = page.label ?? String(index + 1)

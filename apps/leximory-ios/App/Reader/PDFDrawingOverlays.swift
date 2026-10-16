@@ -22,6 +22,7 @@ import LeximoryCore
         canvas.isScrollEnabled = false; canvas.bounces = false
         canvas.maximumSupportedContentVersion = .version4
         canvas.drawingPolicy = .default
+        canvas.isDrawingEnabled = false
         canvas.contentSize = size
         canvas.accessibilityIdentifier = "pdf-drawing-page-\(pageIndex)"
         addSubview(canvas)
@@ -52,6 +53,8 @@ import LeximoryCore
     private let model: PDFNotesModel
     private let picker = PKToolPicker()
     private weak var activeCanvas: PKCanvasView?
+    private var presentationUpdate: Task<Void, Never>?
+    private var stopped = false
     private weak var navigationPan: UIPanGestureRecognizer?
     private var originalMinimum = 1
     private var originalTouchTypes: [NSNumber] = []
@@ -64,7 +67,7 @@ import LeximoryCore
         picker.addObserver(self)
     }
     func pdfView(_ view: PDFView, overlayViewFor page: PDFPage) -> UIView? {
-        guard let document = view.document else { return nil }
+        guard !stopped, let document = view.document else { return nil }
         let index = document.index(for: page)
         if let overlay = overlays[index] { return overlay }
         let size = page.bounds(for: view.displayBox).size
@@ -78,12 +81,12 @@ import LeximoryCore
         return overlay
     }
     func pdfView(_ pdfView: PDFView, willDisplayOverlayView overlayView: UIView, for page: PDFPage) {
-        update()
+        schedulePresentationUpdate()
     }
     func pdfView(_ pdfView: PDFView, willEndDisplayingOverlayView overlayView: UIView, for page: PDFPage) {
         guard let overlay = overlayView as? PDFDrawingOverlay else { return }
         capture(overlay); model.flush()
-        if activeCanvas === overlay.canvas { hidePicker() }
+        if activeCanvas === overlay.canvas { schedulePresentationUpdate() }
         overlay.load?.cancel(); picker.removeObserver(overlay.canvas)
         overlays[overlay.pageIndex] = nil
     }
@@ -107,24 +110,44 @@ import LeximoryCore
                     overlay.appliedData = overlay.canvas.drawing.dataRepresentation(); overlay.revision = note?.revision
                     overlay.loaded = true; overlay.applying = false
                 }
-                overlay.canvas.isDrawingEnabled = overlay.loaded && model.drawing
-                activateCurrentPage()
+                schedulePresentationUpdate()
             } catch { if !Task.isCancelled { model.failedToLoad() } }
         }
     }
     func update() {
-        pdf?.isInMarkupMode = model.drawing
+        guard !stopped else { return }
+        for overlay in overlays.values { load(overlay) }
+        schedulePresentationUpdate()
+    }
+    func schedulePresentationUpdate() {
+        guard !stopped, presentationUpdate == nil else { return }
+        // Enter and leave drawing outside PDFKit and SwiftUI layout callbacks.
+        presentationUpdate = Task { [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled, let self else { return }
+            defer { presentationUpdate = nil }
+            updatePresentation()
+        }
+    }
+    private func updatePresentation() {
+        if !model.drawing {
+            for overlay in overlays.values { capture(overlay) }
+            model.flush()
+            // Release PencilKit before PDFKit changes the page's interaction mode.
+            hidePicker()
+        }
+        if let pdf, pdf.isInMarkupMode != model.drawing { pdf.isInMarkupMode = model.drawing }
         for overlay in overlays.values {
-            overlay.canvas.isDrawingEnabled = model.drawing && overlay.loaded
-            load(overlay)
+            let enabled = model.drawing && overlay.loaded
+            if overlay.canvas.isDrawingEnabled != enabled { overlay.canvas.isDrawingEnabled = enabled }
         }
         configureNavigation()
-        if model.drawing { activateCurrentPage() } else { hidePicker(); model.flush() }
+        if model.drawing { activateLoadedPage() }
     }
-    func activateCurrentPage() {
+    private func activateLoadedPage() {
         if let activeCanvas, [.began, .changed].contains(activeCanvas.drawingGestureRecognizer.state) { return }
-        guard model.drawing, let pdf, let page = pdf.currentPage, let document = pdf.document,
-              let overlay = overlays[document.index(for: page)], overlay.loaded else { return }
+        guard model.drawing, let pdf, let page = pdf.currentPage, let document = pdf.document else { return }
+        guard let overlay = overlays[document.index(for: page)], overlay.loaded else { hidePicker(); return }
         activate(overlay.canvas)
     }
     private func activate(_ canvas: PKCanvasView) {
@@ -137,8 +160,9 @@ import LeximoryCore
     }
     private func hidePicker() {
         guard let canvas = activeCanvas else { return }
+        activeCanvas = nil
         picker.setVisible(false, forFirstResponder: canvas)
-        canvas.resignFirstResponder(); activeCanvas = nil
+        canvas.resignFirstResponder()
     }
     private func configureNavigation() {
         if navigationPan == nil {
@@ -153,14 +177,18 @@ import LeximoryCore
                 parent = view.superview
             }
         }
+        let minimum: Int
+        let touchTypes: [NSNumber]
         if model.drawing {
             let pencilOnly = UIDevice.current.userInterfaceIdiom == .pad && UIPencilInteraction.prefersPencilOnlyDrawing
-            navigationPan?.minimumNumberOfTouches = pencilOnly ? 1 : 2
-            navigationPan?.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue), NSNumber(value: UITouch.TouchType.indirectPointer.rawValue)]
+            minimum = pencilOnly ? 1 : 2
+            touchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue), NSNumber(value: UITouch.TouchType.indirectPointer.rawValue)]
         } else {
-            navigationPan?.minimumNumberOfTouches = originalMinimum
-            navigationPan?.allowedTouchTypes = originalTouchTypes
+            minimum = originalMinimum
+            touchTypes = originalTouchTypes
         }
+        if navigationPan?.minimumNumberOfTouches != minimum { navigationPan?.minimumNumberOfTouches = minimum }
+        if navigationPan?.allowedTouchTypes != touchTypes { navigationPan?.allowedTouchTypes = touchTypes }
     }
     func toolPickerSelectedToolItemDidChange(_ toolPicker: PKToolPicker) { configureNavigation() }
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) { if model.drawing { activate(canvasView) } }
@@ -180,10 +208,12 @@ import LeximoryCore
         overlay.appliedData = data; overlay.revision = note.revision
     }
     func tearDown() {
+        stopped = true
+        presentationUpdate?.cancel(); presentationUpdate = nil
         for overlay in overlays.values { capture(overlay); overlay.load?.cancel(); picker.removeObserver(overlay.canvas) }
         model.flush(); hidePicker()
         navigationPan?.minimumNumberOfTouches = originalMinimum; navigationPan?.allowedTouchTypes = originalTouchTypes
-        pdf?.isInMarkupMode = false
+        if pdf?.isInMarkupMode == true { pdf?.isInMarkupMode = false }
         picker.removeObserver(self); overlays.removeAll()
     }
 }
