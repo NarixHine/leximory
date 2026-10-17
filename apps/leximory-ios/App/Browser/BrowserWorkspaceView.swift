@@ -22,6 +22,8 @@ struct BrowserWorkspaceView: View {
     var session: AccountSession?
     @Binding var pendingText: TextID?
     @State private var workspace: BrowserWorkspaceModel
+    @State private var wallpapers: HomeWallpaperStore
+    @State private var editingWallpaper = false
     @State private var address = ""
     @State private var addressQuery = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
@@ -50,44 +52,48 @@ struct BrowserWorkspaceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     @Namespace private var chromeNamespace
 
     init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, pendingText: Binding<TextID?>, initialWorkspace: BrowserWorkspaceModel? = nil) {
         self.client = client; self.playback = playback; self.session = session; _pendingText = pendingText
         _workspace = State(initialValue: initialWorkspace ?? BrowserWorkspaceModel(client: client, namespace: namespace))
+        _wallpapers = State(initialValue: HomeWallpaperStore(namespace: namespace))
     }
     private var webBookmarkID: String? { if case .web(let page) = workspace.current.resource { page.bookmarkID } else { nil } }
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86) }
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                ZStack {
-                    TextBrowserScreen(client: client, bookmarkID: webBookmarkID, sharedBrowser: workspace.browser, showsControls: false, restoresSession: false)
-                        .id(ObjectIdentifier(workspace.browser))
-                        .opacity(workspace.current.isWeb ? 1 : 0)
-                        .blur(radius: editingAddress ? 3 : 0)
-                        .allowsHitTesting(workspace.current.isWeb && !editingAddress)
-                        .accessibilityHidden(!workspace.current.isWeb)
-                    retainedResources.blur(radius: editingAddress ? 3 : 0).allowsHitTesting(!editingAddress)
-                    if editingAddress {
-                        Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
+                HomeWallpaperSurface(wallpaper: isHome ? wallpapers[HomeWallpaperAppearance(colorScheme)] : nil) {
+                    ZStack {
+                        TextBrowserScreen(client: client, bookmarkID: webBookmarkID, sharedBrowser: workspace.browser, showsControls: false, restoresSession: false)
+                            .id(ObjectIdentifier(workspace.browser))
+                            .opacity(workspace.current.isWeb ? 1 : 0)
+                            .blur(radius: editingAddress ? 3 : 0)
+                            .allowsHitTesting(workspace.current.isWeb && !editingAddress)
+                            .accessibilityHidden(!workspace.current.isWeb)
+                        retainedResources.blur(radius: editingAddress ? 3 : 0).allowsHitTesting(!editingAddress)
+                        if editingAddress {
+                            Color.black.opacity(0.18).ignoresSafeArea().onTapGesture { finishEditing() }
+                        }
+                        if editingAddress || isHome {
+                            BrowserHomeView(pins: workspace.homePins, pinImages: workspace.pinImages,
+                                openPin: { pin in Task { await workspace.openPin(pin) } },
+                                editPin: { editingPin = $0 }, deletePin: workspace.deletePin,
+                                hiddenRecentTextIDs: workspace.hiddenHomeRecents.textIDs,
+                                hiddenRecentWebURLs: workspace.hiddenHomeRecents.webpageURLs,
+                                hideRecentText: workspace.hideRecentText, hideRecentWebpage: workspace.hideRecentWebpage,
+                                compact: editingAddress, recent: workspace.recentTexts,
+                                browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
+                                ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
+                                addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
+                                resume: { text in finishEditing(); Task { await workspace.open(text) } })
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                .padding(.bottom, editingAddress ? chromeHeight + 12 : 0)
+                        }
+                        if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting && !workspace.browser.isPDF ? "正在提取正文" : "正在打开") }
                     }
-                    if editingAddress || isHome {
-                        BrowserHomeView(pins: workspace.homePins, pinImages: workspace.pinImages,
-                            openPin: { pin in Task { await workspace.openPin(pin) } },
-                            editPin: { editingPin = $0 }, deletePin: workspace.deletePin,
-                            hiddenRecentTextIDs: workspace.hiddenHomeRecents.textIDs,
-                            hiddenRecentWebURLs: workspace.hiddenHomeRecents.webpageURLs,
-                            hideRecentText: workspace.hideRecentText, hideRecentWebpage: workspace.hideRecentWebpage,
-                            compact: editingAddress, recent: workspace.recentTexts,
-                            browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                            ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
-                            addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
-                            resume: { text in finishEditing(); Task { await workspace.open(text) } })
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            .padding(.bottom, editingAddress ? chromeHeight + 12 : 0)
-                    }
-                    if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting && !workspace.browser.isPDF ? "正在提取正文" : "正在打开") }
                 }
                 .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { gesture in
                     guard !editingAddress, abs(gesture.translation.width) > abs(gesture.translation.height) * 1.5 else { return }
@@ -141,6 +147,10 @@ struct BrowserWorkspaceView: View {
             BrowserPinEditor(pin: pin) { workspace.savePin($0) }
         }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
+        .sheet(isPresented: $editingWallpaper) {
+            HomeWallpaperEditor(store: wallpapers, appearance: HomeWallpaperAppearance(colorScheme))
+        }
+        .task { await wallpapers.load() }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
             Task {
                 do { let file = try await BrowserEbookFile.read(result.get()); importRequest = BrowserImportRequest(source: .ebook(file)) }
@@ -369,6 +379,12 @@ struct BrowserWorkspaceView: View {
     }
     private var more: some View {
         Menu {
+            if isHome {
+                Section {
+                    Button("主页壁纸", systemImage: "photo") { editingWallpaper = true }
+                        .accessibilityIdentifier("browser-home-wallpaper")
+                }
+            }
             if case .document(let document) = workspace.current.resource, document.library.owned && !document.library.shadow {
                 Section {
                     Button("编辑", systemImage: "pencil") { editingText = workspace.documents[document.text.id]?.text ?? document.text }

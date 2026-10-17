@@ -54,9 +54,9 @@ struct BrowserHomeView: View {
                                 Button { resume(text) } label: {
                                     HStack(spacing: 8) {
                                         BrowserTextIcon(text: text).font(.system(size: 16, weight: .regular))
-                                            .foregroundStyle(.secondary).accessibilityHidden(true)
+                                            .homeWallpaperInk(secondary: true).accessibilityHidden(true)
                                         Text(LeximoryTypography.scaledChineseText(text.title, size: recentTitleSize))
-                                            .foregroundStyle(.primary).lineLimit(1).truncationMode(.tail)
+                                            .homeWallpaperInk().lineLimit(1).truncationMode(.tail)
                                     }.frame(maxWidth: .infinity).frame(height: matchRowHeight).contentShape(.rect)
                                 }.buttonStyle(.plain).accessibilityLabel(text.title)
                                     .accessibilityIdentifier("browser-address-match-" + text.id)
@@ -78,12 +78,12 @@ struct BrowserHomeView: View {
                         ViewThatFits(in: .horizontal) {
                             Text("Leximory Browser").fixedSize()
                             Text("Leximory").fixedSize()
-                        }.editorialFont(34, relativeTo: .title, language: nil)
+                        }.editorialFont(34, relativeTo: .title, language: nil).homeWallpaperInk()
                         Spacer()
                         Button(action: account) {
                             Group {
                                 if let avatarImage { Image(uiImage: avatarImage).resizable().scaledToFill() }
-                                else { Image(systemName: "person.crop.circle").resizable().scaledToFit().foregroundStyle(.secondary) }
+                                else { Image(systemName: "person.crop.circle").resizable().scaledToFit().homeWallpaperInk(secondary: true) }
                             }.frame(width: 36, height: 36).clipShape(Circle())
                                 .frame(width: 48, height: 48).contentShape(Circle())
                         }.buttonStyle(.plain).accessibilityLabel("账号")
@@ -92,7 +92,7 @@ struct BrowserHomeView: View {
                     if !pins.isEmpty { pinnedPages }
                     if !readingResources.isEmpty || recentWebpage != nil {
                         VStack(spacing: 0) {
-                            Text("继续浏览").editorialFont(16, relativeTo: .headline).foregroundStyle(.secondary).padding(.bottom, 3)
+                            Text("继续浏览").editorialFont(16, relativeTo: .headline).homeWallpaperInk(secondary: true).padding(.bottom, 3)
                             if let page = recentWebpage {
                                 recentLink(page.displayTitle, symbol: "globe", type: "网页") { openWebpage(page) }
                                     .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
@@ -128,6 +128,7 @@ struct BrowserHomeView: View {
                     VStack(spacing: 8) {
                         pinIcon(pin)
                         Text(pin.title).font(LeximoryTypography.interface(13, style: .footnote))
+                            .homeWallpaperInk()
                             .lineLimit(1).truncationMode(.tail)
                             .frame(maxWidth: .infinity).multilineTextAlignment(.center)
                     }.foregroundStyle(.primary).frame(maxWidth: .infinity).contentShape(.rect)
@@ -178,8 +179,8 @@ struct BrowserHomeView: View {
         Button(action: action) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: symbol).symbolVariant(.none).font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(.secondary).accessibilityHidden(true)
-                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize)).foregroundStyle(.primary)
+                    .homeWallpaperInk(secondary: true).accessibilityHidden(true)
+                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize)).homeWallpaperInk()
                     .lineLimit(1).truncationMode(.tail)
             }.frame(maxWidth: .infinity, minHeight: 32).contentShape(.rect)
         }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
