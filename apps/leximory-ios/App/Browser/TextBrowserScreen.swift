@@ -27,6 +27,7 @@ struct TextBrowserScreen: View {
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
     @State private var editingAddress = false
     @State private var settings = false
+    @State private var adBlockingSettings = false
     @State private var settingsFromDefinition = false
     @State private var savingBookmark = false
     @State private var definition: DefinitionPresentation?
@@ -73,10 +74,14 @@ struct TextBrowserScreen: View {
             if let error = browser.error {
                 VStack(spacing: 12) {
                     Text(error).font(LeximoryTypography.interface(16, style: .callout))
-                    Button("重试") {
+                    Button("重试", systemImage: "arrow.clockwise") {
                         if browser.url == nil { opened = false; openingAttempt += 1 }
                         else { browser.web.reload() }
                     }
+                    .font(LeximoryTypography.interface(17, style: .body))
+                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
+                    .tint(LeximoryPalette.ink).foregroundStyle(LeximoryPalette.paper)
+                    .accessibilityIdentifier("browser-load-retry")
                 }.padding(20).foregroundStyle(.primary)
                     .glassEffect(.regular, in: .rect(cornerRadius: 24))
                     .accessibilityIdentifier("browser-load-error")
@@ -117,6 +122,9 @@ struct TextBrowserScreen: View {
         }
         .sheet(isPresented: $savingBookmark) {
             BrowserBookmarkSheet(client: client, url: browser.url?.absoluteString ?? "")
+        }
+        .sheet(isPresented: $adBlockingSettings) {
+            BrowserAdBlockingSettings(blocker: browser.adBlocker, browser: browser)
         }
         .confirmationDialog("清除所有浏览数据？", isPresented: $confirmingClear, titleVisibility: .visible) {
             Button("清除浏览数据", role: .destructive) {
@@ -226,6 +234,10 @@ struct TextBrowserScreen: View {
                             if browser.canGoForward {
                                 Button("前进", systemImage: "chevron.right") { browser.web.goForward() }
                             }
+                        }
+                        Section {
+                            Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }
+                                .accessibilityIdentifier("browser-ad-blocking")
                         }
                         Section {
                             Button(role: .destructive) { confirmingClear = true } label: {

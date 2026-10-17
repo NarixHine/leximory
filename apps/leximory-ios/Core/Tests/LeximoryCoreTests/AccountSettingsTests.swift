@@ -5,6 +5,25 @@ import HTTPTypes
 @testable import LeximoryCore
 
 @Suite struct AccountSettingsTests {
+    @Test func replacingAvatarAtTheSameStorageURLRefreshesItsCacheIdentity() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = URL(string: "https://account.example")!
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let client = MobileClient(baseURL: origin, transport: SettingsTransport(), token: { _ in "verified" }, localStore: store)
+        let firstImage = Data([0xff, 0xd8, 1])
+        let secondImage = Data([0xff, 0xd8, 2])
+        let firstURL = try await client.uploadAccountAvatar(firstImage)
+        let secondURL = try await client.uploadAccountAvatar(secondImage)
+        #expect(firstURL != secondURL)
+        #expect(secondURL.scheme == "https")
+        #expect(secondURL.host == "avatars.example")
+        #expect(secondURL.path == "/reader")
+        let reopened = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        #expect(await reopened.data(for: "image/\(firstURL.absoluteString)") == firstImage)
+        #expect(await reopened.data(for: "image/\(secondURL.absoluteString)") == secondImage)
+    }
+
     @Test func generatedClientPreservesFractionalQuotasAndAccountDetails() async throws {
         let transport = SettingsTransport()
         let client = MobileClient(baseURL: URL(string: "https://account.example")!, transport: transport, token: { _ in "verified" })
@@ -42,6 +61,7 @@ import HTTPTypes
             case "accountRevokeToken": payload = Data(#"{"saved":true}"#.utf8)
             case "accountBilling": payload = Data(#"{"url":"https://billing.example/portal"}"#.utf8)
             case "accountCheckout": payload = Data(#"{"url":"https://billing.example/checkout"}"#.utf8)
+            case "accountAvatar": payload = Data(#"{"url":"https://avatars.example/reader"}"#.utf8)
             default: throw URLError(.unsupportedURL)
             }
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(payload))

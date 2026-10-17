@@ -1,0 +1,18 @@
+EasyList and EasyPrivacy
+Copyright The EasyList authors (https://easylist.to/).
+Source snapshots: https://easylist.to/easylist/easylist.txt and https://easylist.to/easylist/easyprivacy.txt
+Source revision and SHA-256 hashes are recorded in ad-blocking-manifest.json.
+
+Leximory redistributes these filter data under Creative Commons Attribution-ShareAlike 3.0 Unported.
+https://creativecommons.org/licenses/by-sa/3.0/
+The complete license is included in EasyList-CC-BY-SA-3.0.txt.
+The converted JSON remains available under the same license. This license covers the filter data, not the application code.
+
+Changes: converted to native Safari 26 content rules with AdGuard SafariConverterLib v4.3.0;
+omitted advanced scriptlets, extended CSS, and HTML filtering;
+restricted network blocking to subresource types to preserve document navigation without disabling cosmetic rules.
+Leximory adds user-selected website exceptions to compiled copies locally.
+
+Conversion tool: https://github.com/AdguardTeam/SafariConverterLib
+GPL-3.0 tool used separately during preparation. No converter code or executable is included in the app.
+Reproducible source snapshots and the preparation script are in scripts/adblocking-sources and scripts/prepare-browser-ad-rules.py.

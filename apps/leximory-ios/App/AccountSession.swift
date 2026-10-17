@@ -132,6 +132,7 @@ struct SignInFailure: LocalizedError {
     }
     private(set) var state: State = .restoring
     private(set) var generation = 0
+    private(set) var avatarRevision = 0
     let tokens: AccountTokens
     private let configuration: AppConfiguration
     private(set) var sync: NativeSync?
@@ -205,6 +206,20 @@ struct SignInFailure: LocalizedError {
             guard generation == current, state.isSignedIn, !Task.isCancelled else { return }
             state = .signedIn(account)
         } catch { }
+    }
+    func updateAvatar(_ data: Data) async throws {
+        let current = generation
+        let url = try await client.uploadAccountAvatar(data)
+        guard generation == current, !Task.isCancelled else { throw CancellationError() }
+        try await tokens.updateAvatar(url)
+        guard generation == current, !Task.isCancelled else { throw CancellationError() }
+        if var settings = await client.localStore?.value(AccountSettings.self, for: "account-settings"),
+           settings.userId == state.accountID {
+            settings.image = url.absoluteString
+            await client.localStore?.save(settings, for: "account-settings")
+        }
+        guard generation == current, !Task.isCancelled else { throw CancellationError() }
+        avatarRevision += 1
     }
     private func openStore(accountID: String) async throws {
         await clearStore()

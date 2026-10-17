@@ -145,6 +145,11 @@ final class BrowserWebView: WKWebView {
 @MainActor @Observable final class TextBrowserModel: NSObject, WKNavigationDelegate, WKUIDelegate {
     static let browsingDataWillClear = Notification.Name("Leximory.browsingDataWillClear")
     @ObservationIgnored let web: BrowserWebView
+    @ObservationIgnored let adBlocker: BrowserAdBlocker
+    private(set) var canReloadForBlocking = false
+    @ObservationIgnored private var blockingLists: [WKContentRuleList] = []
+    @ObservationIgnored private var policyRequest = UUID()
+    @ObservationIgnored private var pendingReloadSafety = false
     private(set) var url: URL?
     private(set) var title = ""
     private(set) var loading = false
@@ -157,14 +162,16 @@ final class BrowserWebView: WKWebView {
     @ObservationIgnored var committed: ((WKBackForwardListItem) -> Void)?
     @ObservationIgnored var historyGesture: ((URL) -> Bool)?
     @ObservationIgnored var navigationBegan: (() -> Void)?
-    @ObservationIgnored private var resumeOffset: CGFloat?
+    @ObservationIgnored private var pendingScroll: (navigation: WKNavigation, offset: CGFloat)?
+    @ObservationIgnored private var currentNavigation: WKNavigation?
     @ObservationIgnored private var searchNavigation: WKNavigation?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
     @ObservationIgnored private var pdfDownload: BrowserPDFDownload?
 
     override convenience init() { self.init(websiteDataStore: .default()) }
 
-    init(websiteDataStore: WKWebsiteDataStore) {
+    init(websiteDataStore: WKWebsiteDataStore, adBlocker: BrowserAdBlocker = .shared) {
+        self.adBlocker = adBlocker
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = websiteDataStore
         configuration.defaultWebpagePreferences.preferredContentMode = UIDevice.current.userInterfaceIdiom == .phone ? .mobile : .desktop
@@ -178,6 +185,7 @@ final class BrowserWebView: WKWebView {
         web.isFindInteractionEnabled = true
         web.allowsBackForwardNavigationGestures = true
         web.scrollView.contentInset.bottom = 80
+        Task { try? await adBlocker.currentPolicy() }
         observations = [
             web.observe(\.url, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.title, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
@@ -235,12 +243,28 @@ final class BrowserWebView: WKWebView {
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
     func load(_ url: URL, offset: CGFloat? = nil, animateSearch: Bool = false) {
-        resumeOffset = offset
         error = nil
         let navigation = web.load(URLRequest(url: url))
+        if let navigation, let offset { pendingScroll = (navigation, offset) }
+        else { pendingScroll = nil }
         searchNavigation = animateSearch ? navigation : nil
     }
+    var scrollPosition: CGFloat { pendingScroll?.offset ?? web.scrollView.contentOffset.y }
+    func go(to item: WKBackForwardListItem, offset: CGFloat) -> WKNavigation? {
+        let navigation = web.go(to: item)
+        pendingScroll = navigation.map { ($0, offset) }
+        return navigation
+    }
+    func restoreScrollPosition(_ offset: CGFloat) {
+        if web.isLoading, let currentNavigation { pendingScroll = (currentNavigation, offset) }
+        else {
+            pendingScroll = nil
+            web.scrollView.setContentOffset(CGPoint(x: 0, y: offset), animated: false)
+        }
+    }
     static func clearBrowsingData(in store: WKWebsiteDataStore = .default(), preferences: UserDefaults = .standard) async {
+        if preferences === UserDefaults.standard { BrowserAdBlocker.shared.clearExceptions() }
+        else { BrowserAdBlocker.clearExceptions(in: preferences) }
         // Drop every browser's page and back/forward list before clearing shared website storage.
         NotificationCenter.default.post(name: browsingDataWillClear, object: nil)
         for key in preferences.dictionaryRepresentation().keys where key.hasPrefix("browser.last-page.") {
@@ -254,6 +278,8 @@ final class BrowserWebView: WKWebView {
         pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        currentNavigation = navigation
+        if pendingScroll?.navigation !== navigation { pendingScroll = nil }
         pdfDownload?.cancel()
         isPDF = false
         web.invalidateSelection()
@@ -267,12 +293,22 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         update()
         if let item = webView.backForwardList.currentItem { committed?(item) }
-        if let resumeOffset {
-            webView.scrollView.setContentOffset(CGPoint(x: 0, y: resumeOffset), animated: false)
-            self.resumeOffset = nil
+        if let pendingScroll, pendingScroll.navigation === navigation {
+            Task { @MainActor [weak self] in
+                guard let self, self.pendingScroll?.navigation === navigation else { return }
+                let top = (pendingScroll.offset + webView.scrollView.adjustedContentInset.top) / webView.scrollView.zoomScale
+                _ = try? await webView.callAsyncJavaScript("""
+                    await new Promise(requestAnimationFrame);
+                    window.scrollTo({left: 0, top, behavior: 'instant'});
+                    """, arguments: ["top": top], in: nil, contentWorld: .world(name: "LeximoryBrowserPosition"))
+                guard self.pendingScroll?.navigation === navigation else { return }
+                webView.scrollView.setContentOffset(CGPoint(x: 0, y: pendingScroll.offset), animated: false)
+                self.pendingScroll = nil
+            }
         }
     }
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        canReloadForBlocking = pendingReloadSafety
         update()
         if let item = webView.backForwardList.currentItem { committed?(item) }
         if let searchNavigation, navigation === searchNavigation {
@@ -286,9 +322,10 @@ final class BrowserWebView: WKWebView {
             webView.layer.add(transition, forKey: "searchNavigation")
         }
     }
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error) }
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }
-    private func failed(_ error: any Error) {
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
+    private func failed(_ error: any Error, navigation: WKNavigation?) {
+        if pendingScroll?.navigation === navigation { pendingScroll = nil }
         guard (error as NSError).code != NSURLErrorCancelled else { return }
         let failure = error as NSError
         Logger(subsystem: "com.leximory.reader", category: "browser").error("Navigation failed: host=\(self.web.url?.host ?? "unknown", privacy: .private) domain=\(failure.domain, privacy: .public) code=\(failure.code)")
@@ -300,7 +337,32 @@ final class BrowserWebView: WKWebView {
               Self.allowsNavigation(destination, mainFrame: navigationAction.targetFrame?.isMainFrame != false) else { return .cancel }
         if navigationAction.navigationType == .backForward, navigationAction.targetFrame?.isMainFrame != false,
            historyGesture?(destination) == true { return .cancel }
+        if navigationAction.targetFrame?.isMainFrame == true {
+            let request = UUID()
+            policyRequest = request
+            for attempt in 0..<2 {
+                do {
+                    let policy = try await adBlocker.currentPolicy()
+                    guard policyRequest == request else { return .cancel }
+                    installBlocking(policy)
+                    break
+                } catch {
+                    guard policyRequest == request else { return .cancel }
+                    if attempt == 1 {
+                        Logger(subsystem: "com.leximory.reader", category: "browser").error("Ad rules could not be prepared; preserving available browser rules")
+                    }
+                }
+            }
+            pendingReloadSafety = navigationAction.request.httpMethod == "GET"
+                && navigationAction.navigationType != .formSubmitted && navigationAction.navigationType != .formResubmitted
+        }
         return .allow
+    }
+    func installBlocking(_ policy: BrowserBlockingPolicy) {
+        let controller = web.configuration.userContentController
+        for list in blockingLists { controller.remove(list) }
+        for list in policy.lists { controller.add(list) }
+        blockingLists = policy.lists
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         if navigationResponse.isForMainFrame {
@@ -314,7 +376,7 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url = navigationAction.request.url, Self.address(url.absoluteString) != nil {
-            resumeOffset = nil; error = nil
+            pendingScroll = nil; error = nil
             web.load(navigationAction.request)
         }
         return nil

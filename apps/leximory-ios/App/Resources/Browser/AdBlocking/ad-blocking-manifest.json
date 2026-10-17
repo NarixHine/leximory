@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "converter": {
+    "repository": "https://github.com/AdguardTeam/SafariConverterLib",
+    "tag": "v4.3.0",
+    "commit": "7a2e93f0afa70479cc59985f332025236c3f0c39",
+    "safariVersion": "26.0",
+    "advancedBlocking": false
+  },
+  "sources": [
+    {
+      "name": "easylist",
+      "url": "https://easylist.to/easylist/easylist.txt",
+      "sha256": "c455adcb7177153d3a07cedc5f6e1ff00bbe13ca9df2e2f2e871b112e8cc97c8"
+    },
+    {
+      "name": "easyprivacy",
+      "url": "https://easylist.to/easylist/easyprivacy.txt",
+      "sha256": "24346c924f27bd6223c9078f2d46c6018ddb718000a902128140415796204f0f"
+    }
+  ],
+  "ruleCount": 117561,
+  "exclusions": [
+    "advanced scriptlets",
+    "extended CSS",
+    "HTML filtering"
+  ],
+  "files": [
+    {
+      "name": "ad-blocking-rules",
+      "sha256": "16ea8a9f2c941ce497327991feb37c49f26b65c4cb8106b8a9f680da843557d7"
+    }
+  ]
+}

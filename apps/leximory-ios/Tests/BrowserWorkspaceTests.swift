@@ -4,9 +4,98 @@ import Testing
 import LeximoryCore
 import OpenAPIRuntime
 import HTTPTypes
+import Network
 @testable import Leximory
 
+private final class ScrollHistoryServer: Sendable {
+    let listener: NWListener
+    let origin: URL
+    init() async throws {
+        let listener = try NWListener(using: .tcp, on: .any)
+        self.listener = listener
+        let html = """
+            <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+            <script>history.scrollRestoration = 'manual';</script></head>
+            <body style="height:6000px">A long reading page</body></html>
+            """
+        let response = Data(("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html).utf8)
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: .global())
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { _, _, _, _ in
+                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+            listener.stateUpdateHandler = { state in
+                switch state {
+                case .ready: listener.stateUpdateHandler = nil; continuation.resume()
+                case .failed(let error): listener.stateUpdateHandler = nil; continuation.resume(throwing: error)
+                default: break
+                }
+            }
+            listener.start(queue: .global())
+        }
+        let port = try #require(listener.port)
+        origin = try #require(URL(string: "http://127.0.0.1:\(port.rawValue)"))
+    }
+}
+
 @MainActor struct BrowserWorkspaceTests {
+    @Test func webpageHistoryRestoresEachPagesScrollPosition() async throws {
+        let namespace = "workspace-test." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
+        let web = workspace.browser.web
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        controller.view.addSubview(web)
+        web.frame = window.bounds
+        window.makeKeyAndVisible()
+        defer { web.stopLoading(); window.isHidden = true }
+        let server = try await ScrollHistoryServer()
+        defer { server.listener.cancel() }
+        let first = server.origin.appending(path: "first")
+        let second = server.origin.appending(path: "second")
+        func waitForPage(_ url: URL) async throws {
+            for _ in 0..<500 {
+                if web.backForwardList.currentItem?.url == url, !web.isLoading {
+                    try await Task.sleep(for: .milliseconds(150))
+                    return
+                }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            Issue.record("Navigation timed out: expected \(url), actual \(String(describing: web.url)), workspace \(workspace.current.title)")
+            throw URLError(.timedOut)
+        }
+        workspace.openURL(first)
+        try await waitForPage(first)
+        web.scrollView.setContentOffset(CGPoint(x: 0, y: 420), animated: false)
+        workspace.browser.load(second)
+        try await waitForPage(second)
+        if case .web(let saved) = workspace.history.entries[1].resource {
+            #expect(abs(saved.offset - 420) < 2, "The departing page must be captured before navigation resets its scroll view")
+        }
+        web.scrollView.setContentOffset(CGPoint(x: 0, y: 980), animated: false)
+        workspace.go(-1)
+        try await waitForPage(first)
+        #expect(abs(web.scrollView.contentOffset.y - 420) < 2)
+        workspace.go(1)
+        try await waitForPage(second)
+        #expect(abs(web.scrollView.contentOffset.y - 980) < 2)
+        web.goBack()
+        try await waitForPage(first)
+        #expect(abs(web.scrollView.contentOffset.y - 420) < 2)
+        web.goForward()
+        try await waitForPage(second)
+        #expect(abs(web.scrollView.contentOffset.y - 980) < 2)
+        workspace.visit(.home)
+        workspace.go(-1)
+        #expect(abs(web.scrollView.contentOffset.y - 980) < 2)
+    }
+
     @Test func addressSearchUsesActiveFoldersCapsMatchesAndKeepsCacheOnRefreshFailure() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

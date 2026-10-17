@@ -40,8 +40,6 @@ struct HomeWallpaperEditor: View {
                             .frame(minHeight: 44).tint(.primary)
                             .accessibilityIdentifier("wallpaper-reset")
                     }
-                    Text("随系统外观自动切换。")
-                        .font(LeximoryTypography.interface(13, style: .footnote)).foregroundStyle(.secondary)
                 }.padding(24).frame(maxWidth: 400).frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)

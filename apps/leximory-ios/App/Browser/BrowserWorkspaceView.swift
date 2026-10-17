@@ -24,6 +24,7 @@ struct BrowserWorkspaceView: View {
     @State private var workspace: BrowserWorkspaceModel
     @State private var wallpapers: HomeWallpaperStore
     @State private var editingWallpaper = false
+    @State private var adBlockingSettings = false
     @State private var address = ""
     @State private var addressQuery = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
@@ -147,6 +148,9 @@ struct BrowserWorkspaceView: View {
             BrowserPinEditor(pin: pin) { workspace.savePin($0) }
         }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
+        .sheet(isPresented: $adBlockingSettings) {
+            BrowserAdBlockingSettings(blocker: workspace.browser.adBlocker, browser: workspace.current.isWeb ? workspace.browser : nil)
+        }
         .sheet(isPresented: $editingWallpaper) {
             HomeWallpaperEditor(store: wallpapers, appearance: HomeWallpaperAppearance(colorScheme))
         }
@@ -177,17 +181,14 @@ struct BrowserWorkspaceView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             if editingAddress { finishEditing() }
         }
-        .task(id: isHome) {
-            guard isHome, session != nil else { return }
-            let settings: AccountSettings?
-            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") { settings = cached }
-            else { settings = try? await client.accountSettings() }
-            guard !Task.isCancelled else { return }
-            let url = settings?.image.flatMap(URL.init(string:))
-            guard let url else { avatarURL = nil; avatarImage = nil; return }
-            if avatarURL == url, avatarImage != nil { return }
-            if let image = try? await ReaderImage.load(url, store: client.localStore), !Task.isCancelled {
-                avatarURL = url; avatarImage = image
+        .task(id: [isHome ? "home" : "away", scenePhase == .active ? "active" : "inactive",
+                   sync?.online == false ? "offline" : "online", String(session?.avatarRevision ?? 0)]) {
+            guard isHome, scenePhase == .active, session != nil else { return }
+            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") {
+                await updateAvatar(cached)
+            }
+            if let settings = try? await client.accountSettings() {
+                await updateAvatar(settings)
             }
         }
         .task(id: [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
@@ -261,6 +262,17 @@ struct BrowserWorkspaceView: View {
         findRequest = UUID()
     }
     private var isHome: Bool { if case .home = workspace.current.resource { true } else { false } }
+    private func updateAvatar(_ settings: AccountSettings) async {
+        guard !Task.isCancelled, settings.userId == session?.state.accountID else { return }
+        guard let url = settings.image.flatMap(URL.init(string:)) else {
+            avatarURL = nil; avatarImage = nil
+            return
+        }
+        guard avatarURL != url || avatarImage == nil else { return }
+        if let image = try? await ReaderImage.load(url, store: client.localStore), !Task.isCancelled {
+            avatarURL = url; avatarImage = image
+        }
+    }
     private var retainedEntries: [BrowserEntry] {
         var ids = Set<String>()
         return workspace.history.entries.filter { entry in
@@ -417,6 +429,8 @@ struct BrowserWorkspaceView: View {
             }
             Section {
                 Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
+                Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }
+                    .accessibilityIdentifier("browser-ad-blocking")
                 Picker(selection: $searchEngine) {
                     ForEach(BrowserSearchEngine.allCases) { engine in Text(engine.name).tag(engine) }
                 } label: {

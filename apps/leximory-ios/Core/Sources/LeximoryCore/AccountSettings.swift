@@ -10,7 +10,7 @@ public struct AccountSettings: Codable, Sendable {
     public let plan: String
     public let planLabel: String
     public let username: String?
-    public let image: String?
+    public var image: String?
     public let email: String?
     public let createdAt: String
     public let balance: Double

@@ -307,7 +307,10 @@ public struct MobileClient: Sendable {
     public func revokeAccountToken() async throws { _ = try await client.accountRevokeToken().ok.body.json }
     public func uploadAccountAvatar(_ data: Data) async throws -> URL {
         let result = try await client.accountAvatar(body: .json(.init(data: data.base64EncodedString(), contentType: .image_sol_jpeg))).ok.body.json
-        guard let url = URL(string: result.url) else { throw URLError(.badURL) }; return url
+        guard let storedURL = URL(string: result.url) else { throw URLError(.badURL) }
+        let url = storedURL.appending(queryItems: [URLQueryItem(name: "v", value: UUID().uuidString)])
+        try? await localStore?.saveData(data, for: "image/\(url.absoluteString)")
+        return url
     }
     public func accountCheckout(plan: String) async throws -> URL {
         guard let selected = Operations.accountCheckout.Input.Body.jsonPayload.planPayload(rawValue: plan) else { throw URLError(.badURL) }

@@ -362,10 +362,10 @@ struct AnnotationActivity: Identifiable, Codable {
         if case .web(let page) = current.resource {
             restoringWeb = true
             if let item = page.item, browser.web.backForwardList.currentItem !== item {
-                if browser.web.go(to: item) == nil { browser.load(page.url, offset: page.offset) }
+                if browser.go(to: item, offset: page.offset) == nil { browser.load(page.url, offset: page.offset) }
             }
             else if browser.url != page.url { browser.load(page.url, offset: page.offset) }
-            else { restoringWeb = false; browser.web.scrollView.setContentOffset(CGPoint(x: 0, y: page.offset), animated: false) }
+            else { restoringWeb = false; browser.restoreScrollPosition(page.offset) }
         }
         rememberCurrentWebpage()
         acknowledgeCurrent()
@@ -439,8 +439,16 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     private func handleWebGesture(_ url: URL) -> Bool {
         guard !restoringWeb else { return false }
-        let distance = browser.web.backForwardList.backItem?.url == url ? -1 : 1
-        guard canSwipe(distance) else { return true }
+        let target = history.entries.firstIndex { entry in
+            if case .web(let page) = entry.resource, let item = page.item {
+                return item === browser.web.backForwardList.currentItem
+            }
+            return false
+        }
+        let distance: Int
+        if let target, target != history.index { distance = target - history.index }
+        else { distance = browser.web.backForwardList.backItem?.url == url ? -1 : 1 }
+        guard abs(distance) == 1, canSwipe(distance) else { return true }
         let index = history.index + distance
         guard history.entries.indices.contains(index) else { return true }
         if case .web(let page) = history.entries[index].resource, page.url == url { return false }
@@ -448,8 +456,8 @@ struct AnnotationActivity: Identifiable, Codable {
         return true
     }
     private func rememberWebPosition() {
-        guard case .web(var page) = current.resource else { return }
-        page.offset = browser.web.scrollView.contentOffset.y
+        guard !restoringWeb, case .web(var page) = current.resource else { return }
+        page.offset = browser.scrollPosition
         var entry = current; entry.resource = .web(page); history.replaceCurrent(entry)
     }
     func recordDocument(_ details: RemoteDocument) {

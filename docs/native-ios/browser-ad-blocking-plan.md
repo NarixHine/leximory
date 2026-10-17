@@ -1,6 +1,6 @@
 # Browser ad-blocking implementation plan
 
-Status: ready for implementation review. Updated 2026-10-17. Planning only; no feature code, dependencies, app settings, or hosted services have been changed.
+Status: implemented on 2026-10-17; remaining verification assigned to the human at their request. See [handoff and checks](browser-ad-blocking-verification.md).
 
 This replaces the earlier banner-image-only proposal and its hosted eligibility policy. It follows the requested configuring UI and the [feasibility assessment](browser-ad-blocking-feasibility.md). Execute the tasks below in order after implementation is authorized. Every task has an observable completion check.
 
@@ -16,13 +16,13 @@ This replaces the earlier banner-image-only proposal and its hosted eligibility 
 
 ## Settings specification
 
-Place 广告拦截, using the SF Symbol `hand.raised`, immediately after 搜索引擎 in `BrowserWorkspaceView.more`. It remains available from Home and saved resources. Add the same entry to `TextBrowserScreen`'s webpage options. Both open `BrowserAdBlockingSettings` with the same preference store and a captured optional current-page context.
+Place 广告拦截, using the SF Symbol `hand.raised`, beside 搜索引擎 in `BrowserWorkspaceView.more`. It remains available from Home and saved resources. Add the same entry to `TextBrowserScreen`'s webpage options. Both open `BrowserAdBlockingSettings` with the same preference store and a captured optional current-page context.
 
 | Element | Exact behavior |
 | --- | --- |
 | Sheet title | 广告拦截 |
 | First row | 拦截广告, a native switch |
-| First footer | 减少网页中的广告与跟踪。YouTube 等网站的视频广告可能仍会显示。 |
+| First footer | 减少网页中的广告与跟踪。 |
 | Current-site section | Present only for an HTTP or HTTPS webpage. Header shows its full normalized hostname. The switch reads 在此网站拦截. |
 | Global switch off | Keep the current-site switch visible but disabled. Preserve its remembered choice. |
 | 网站例外 | Navigation row shown only when saved or draft exceptions exist. The destination lists hostnames alphabetically with a 恢复拦截 action for each. No add-host form or empty-state page. |
@@ -139,4 +139,4 @@ Review notes should describe optional browser-local ad/tracker filtering, public
 
 The first executable task is producing and compiling the reproducible filter artifact. Complete that check before wiring navigation or building the settings UI. Task 2 follows Task 1; Task 3 follows Task 2; Task 4 follows Task 3; Task 5 verifies the complete behavior; Task 6 finishes the reviewable change.
 
-This revision changes only this planning document. No dependency installation, rule generation, prototype execution, application build, test run, settings change, or deployment is authorized by the request to make the plan actionable.
+The implementation is authorized. App Store submission, deployment, and physical-device installation remain separate actions.

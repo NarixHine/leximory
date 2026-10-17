@@ -73,8 +73,7 @@ struct AccountView: View {
                           let encoded = await Self.avatarJPEG(data), encoded.count <= 1_048_576 else {
                         throw AccountActionError(message: "请上传小于 1MB 的图片。")
                     }
-                    let url = try await session.client.uploadAccountAvatar(encoded)
-                    try await session.tokens.updateAvatar(url)
+                    try await session.updateAvatar(encoded)
                     photo = nil
                     notice = "头像已更新"
                 }

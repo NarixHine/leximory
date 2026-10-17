@@ -157,6 +157,11 @@ struct BrowserHomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .circular))
         .padding(12)
         .background(LeximoryPalette.shell.opacity(translucentBackgrounds ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 20, style: .circular))
+        .background {
+            if translucentBackgrounds {
+                RoundedRectangle(cornerRadius: 20, style: .circular).fill(.ultraThinMaterial)
+            }
+        }
         .accessibilityHidden(true)
     }
     private var readingResources: [CatalogText] {
@@ -213,6 +218,11 @@ struct BrowserHomeView: View {
                         .shadow(color: (colorScheme == .dark ? label : border)
                             .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.45),
                             radius: folded ? 8 : 16, y: folded ? 2 : 4)
+                }
+                .background {
+                    if translucentBackgrounds {
+                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.ultraThinMaterial)
+                    }
                 }
                 .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: folded ? 4 : 6) }
                 .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
