@@ -33,12 +33,21 @@ struct HomeWallpaperEditor: View {
                                 .accessibilityIdentifier("wallpaper-error")
                         }
 
-                        Button("恢复默认") {
-                            do { try store.remove(appearance); error = nil }
-                            catch { self.error = "暂时无法恢复默认，请重试。" }
-                        }.disabled(store[appearance] == nil || importing || !store.loaded)
-                            .frame(minHeight: 44).tint(.primary)
-                            .accessibilityIdentifier("wallpaper-reset")
+                        HStack(spacing: 16) {
+                            Button("恢复默认") {
+                                do { try store.restoreDefault(appearance); error = nil }
+                                catch { self.error = "暂时无法恢复默认，请重试。" }
+                            }.disabled(store.choice(for: appearance) == .bundled || importing || !store.loaded)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .accessibilityIdentifier("wallpaper-reset")
+
+                            Button("使用纯色") {
+                                do { try store.useSolidColor(appearance); error = nil }
+                                catch { self.error = "暂时无法使用纯色，请重试。" }
+                            }.disabled(store.choice(for: appearance) == .solid || importing || !store.loaded)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .accessibilityIdentifier("wallpaper-solid")
+                        }.tint(.primary)
                     }
                 }.padding(24).frame(maxWidth: 400).frame(maxWidth: .infinity)
             }
@@ -73,7 +82,7 @@ struct HomeWallpaperEditor: View {
     }
 
     private var photoPicker: some View {
-        let title = store[appearance] == nil ? "选择照片" : "更换照片"
+        let title = store.choice(for: appearance) == .photo ? "更换照片" : "选择照片"
         let busy = importing
         return PhotosPicker(selection: $selection, matching: .images, preferredItemEncoding: .current) {
             Label(title, systemImage: "photo")
@@ -85,7 +94,7 @@ struct HomeWallpaperEditor: View {
     }
 
     private var preview: some View {
-        HomeWallpaperSurface(wallpaper: store[appearance]) {
+        HomeWallpaperSurface(wallpaper: store[appearance], usesSystemBackground: store.choice(for: appearance) == .solid) {
             BrowserHomeView(compact: false, recent: [], browse: {}, paste: {}, recentWebpages: [],
                 openWebpage: { _ in }, bookmarks: {}, ebook: {}, account: {}, resume: { _ in })
                 .frame(width: 360, height: 560)
@@ -99,7 +108,7 @@ struct HomeWallpaperEditor: View {
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(appearance.title)模式主页预览")
-        .accessibilityValue(store[appearance] == nil ? "默认" : "自选照片")
+        .accessibilityValue(store.choice(for: appearance).title)
         .accessibilityIdentifier("wallpaper-preview")
     }
 }

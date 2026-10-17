@@ -11,10 +11,34 @@ enum HomeWallpaperAppearance: String, CaseIterable, Identifiable, Sendable {
     init(_ scheme: ColorScheme) { self = scheme == .dark ? .dark : .light }
 }
 
+enum HomeWallpaperChoice: String, Codable, Sendable {
+    case bundled, photo, solid
+
+    var title: String {
+        switch self {
+        case .bundled: "默认"
+        case .photo: "自选照片"
+        case .solid: "纯色"
+        }
+    }
+}
+
 struct HomeWallpaper: Sendable {
     let image: UIImage
     private let luminance: [Double]
     private static let sampleSize = 48
+
+    static let defaultLight = bundled(named: "HomeWallpaperLight")
+    static let defaultDark = bundled(named: "HomeWallpaperDark")
+
+    static func defaultWallpaper(for appearance: HomeWallpaperAppearance) -> Self? {
+        appearance == .light ? defaultLight : defaultDark
+    }
+
+    private static func bundled(named name: String) -> Self? {
+        guard let image = UIImage(named: name), let cgImage = image.cgImage else { return nil }
+        return Self(image: image, luminance: samples(cgImage))
+    }
 
     static func prepare(_ data: Data) throws -> (wallpaper: Self, jpeg: Data) {
         guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
@@ -81,8 +105,10 @@ struct HomeWallpaper: Sendable {
 }
 
 @MainActor @Observable final class HomeWallpaperStore {
-    private(set) var light: HomeWallpaper?
-    private(set) var dark: HomeWallpaper?
+    private(set) var light = HomeWallpaper.defaultLight
+    private(set) var dark = HomeWallpaper.defaultDark
+    private(set) var lightChoice = HomeWallpaperChoice.bundled
+    private(set) var darkChoice = HomeWallpaperChoice.bundled
     private(set) var loaded = false
     @ObservationIgnored private let directory: URL
 
@@ -91,18 +117,30 @@ struct HomeWallpaper: Sendable {
         directory = root.appending(path: "HomeWallpapers/" + key, directoryHint: .isDirectory)
     }
     subscript(_ appearance: HomeWallpaperAppearance) -> HomeWallpaper? { appearance == .light ? light : dark }
+    func choice(for appearance: HomeWallpaperAppearance) -> HomeWallpaperChoice { appearance == .light ? lightChoice : darkChoice }
 
     func load() async {
         guard !loaded else { return }
         let directory = directory
         let result = await Task.detached(priority: .userInitiated) {
-            HomeWallpaperAppearance.allCases.map { appearance -> HomeWallpaper? in
-                guard let data = try? Data(contentsOf: directory.appending(path: appearance.rawValue + ".jpg")) else { return nil }
-                return try? HomeWallpaper.prepare(data).wallpaper
+            HomeWallpaperAppearance.allCases.map { appearance -> (HomeWallpaperChoice, HomeWallpaper?) in
+                let photoURL = directory.appending(path: appearance.rawValue + ".jpg")
+                let choice = (try? Data(contentsOf: directory.appending(path: appearance.rawValue + ".json")))
+                    .flatMap { try? JSONDecoder().decode(HomeWallpaperChoice.self, from: $0) }
+                    ?? (FileManager.default.fileExists(atPath: photoURL.path) ? .photo : .bundled)
+                switch choice {
+                case .solid: return (.solid, nil)
+                case .photo:
+                    if let data = try? Data(contentsOf: photoURL), let wallpaper = try? HomeWallpaper.prepare(data).wallpaper {
+                        return (.photo, wallpaper)
+                    }
+                    return (.bundled, HomeWallpaper.defaultWallpaper(for: appearance))
+                case .bundled: return (.bundled, HomeWallpaper.defaultWallpaper(for: appearance))
+                }
             }
         }.value
         guard !loaded else { return }
-        light = result[0]; dark = result[1]; loaded = true
+        (lightChoice, light) = result[0]; (darkChoice, dark) = result[1]; loaded = true
     }
 
     func set(_ data: Data, for appearance: HomeWallpaperAppearance) async throws {
@@ -110,12 +148,35 @@ struct HomeWallpaper: Sendable {
         try Task.checkCancellation()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try prepared.jpeg.write(to: directory.appending(path: appearance.rawValue + ".jpg"), options: .atomic)
-        if appearance == .light { light = prepared.wallpaper } else { dark = prepared.wallpaper }
+        try persist(.photo, for: appearance)
+        if appearance == .light { light = prepared.wallpaper; lightChoice = .photo }
+        else { dark = prepared.wallpaper; darkChoice = .photo }
     }
-    func remove(_ appearance: HomeWallpaperAppearance) throws {
-        let url = directory.appending(path: appearance.rawValue + ".jpg")
-        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
-        if appearance == .light { light = nil } else { dark = nil }
+
+    func restoreDefault(_ appearance: HomeWallpaperAppearance) throws {
+        try persist(.bundled, for: appearance)
+        if appearance == .light { light = HomeWallpaper.defaultLight; lightChoice = .bundled }
+        else { dark = HomeWallpaper.defaultDark; darkChoice = .bundled }
+        try? FileManager.default.removeItem(at: directory.appending(path: appearance.rawValue + ".jpg"))
+    }
+
+    func useSolidColor(_ appearance: HomeWallpaperAppearance) throws {
+        try persist(.solid, for: appearance)
+        if appearance == .light { light = nil; lightChoice = .solid }
+        else { dark = nil; darkChoice = .solid }
+        try? FileManager.default.removeItem(at: directory.appending(path: appearance.rawValue + ".jpg"))
+    }
+
+    func removeAll() throws {
+        if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
+        light = HomeWallpaper.defaultLight; lightChoice = .bundled
+        dark = HomeWallpaper.defaultDark; darkChoice = .bundled
+        loaded = true
+    }
+
+    private func persist(_ choice: HomeWallpaperChoice, for appearance: HomeWallpaperAppearance) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try JSONEncoder().encode(choice).write(to: directory.appending(path: appearance.rawValue + ".json"), options: .atomic)
     }
 }
 
@@ -132,6 +193,7 @@ extension EnvironmentValues {
 
 struct HomeWallpaperSurface<Content: View>: View {
     let wallpaper: HomeWallpaper?
+    var usesSystemBackground = false
     @ViewBuilder let content: Content
     @State private var bounds = CGRect.zero
     var body: some View {
@@ -146,7 +208,9 @@ struct HomeWallpaperSurface<Content: View>: View {
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { bounds = $0 }
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
-                } else { LeximoryPalette.paper.ignoresSafeArea() }
+                } else {
+                    (usesSystemBackground ? Color(uiColor: .systemBackground) : LeximoryPalette.paper).ignoresSafeArea()
+                }
             }
     }
 }

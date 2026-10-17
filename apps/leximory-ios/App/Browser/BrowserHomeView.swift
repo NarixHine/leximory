@@ -70,7 +70,7 @@ struct BrowserHomeView: View {
                 }
             } else {
         GeometryReader { geometry in
-            let squares = geometry.size.width >= 760 && !typeSize.isAccessibilitySize
+            let squares = geometry.size.width >= 760 && UIDevice.current.userInterfaceIdiom != .phone && !typeSize.isAccessibilitySize
             ScrollView {
                 VStack(spacing: 28) {
                     HStack(spacing: 12) {
@@ -194,42 +194,53 @@ struct BrowserHomeView: View {
             }.frame(maxWidth: .infinity, minHeight: 32).contentShape(.rect)
         }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }
-    private func homeCards(squares: Bool, folded: Bool) -> some View {
-        let layout = squares ? AnyLayout(HStackLayout(spacing: folded ? 12 : -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
-        return layout {
-            card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xDFE7FD, 0x22252D), border: tone(0xCDDAFD, 0x535A6C), label: tone(0x3D527F, 0xB5C8F4), angle: -7, folded: folded, square: squares, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
-            card("我的书签", symbol: "bookmark.fill", color: tone(0xFDE2E4, 0x2B2427), border: tone(0xFAD2E1, 0x6B555F), label: tone(0x81465D, 0xF1B9CF), angle: 5, folded: folded, square: squares, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
-            card("打开电子书", symbol: "book.closed.fill", color: tone(0xFFF1E6, 0x292723), border: tone(0xEAE4E9, 0x615B60), label: tone(0x78543A, 0xE5C7A9), angle: -4, folded: folded, square: squares, action: ebook).accessibilityIdentifier("browser-ebook")
-            card("每日复习", symbol: "leaf.fill", color: tone(0xE7EEDB, 0x242921), border: tone(0xD9E8BF, 0x535F48), label: tone(0x4C6237, 0xC2D9A1), angle: 3, folded: folded, square: squares, action: review)
-                .accessibilityIdentifier("browser-review")
-        }.padding(.horizontal, folded ? 0 : 8)
+    @ViewBuilder private func homeCards(squares: Bool, folded: Bool) -> some View {
+        if !squares && !folded && !typeSize.isAccessibilitySize {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible())], spacing: 20) {
+                homeCardButtons(squares: true, folded: false, grid: true)
+            }.padding(.horizontal, 8)
+        } else {
+            let layout = squares ? AnyLayout(HStackLayout(spacing: folded ? 12 : -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
+            layout {
+                homeCardButtons(squares: squares, folded: folded, grid: false)
+            }.padding(.horizontal, folded ? 0 : 8)
+        }
+    }
+    @ViewBuilder private func homeCardButtons(squares: Bool, folded: Bool, grid: Bool) -> some View {
+        card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xFAFCF8, 0x1D2925), border: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
+        card("我的书签", symbol: "bookmark.fill", color: tone(0xF8FBF7, 0x1D2925), border: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
+        card("打开电子书", symbol: "book.closed.fill", color: tone(0xFDFDF8, 0x1D2930), border: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
+        card("每日复习", symbol: "leaf.fill", color: tone(0xFCFDF8, 0x242B38), border: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
+            .accessibilityIdentifier("browser-review")
     }
     private func tone(_ light: UInt32, _ dark: UInt32) -> Color {
         let value = colorScheme == .dark ? dark : light
         return Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
     }
-    private func card(_ title: String, symbol: String, color: Color, border: Color, label: Color, angle: Double, folded: Bool, square: Bool, action: @escaping () -> Void) -> some View {
+    private func card(_ title: String, symbol: String, color: Color, border: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            cardLabel(title, symbol: symbol, iconColor: border.mix(with: LeximoryPalette.ink, by: colorScheme == .dark ? 0.35 : 0.2).opacity(translucentBackgrounds ? 0.7 : 1), folded: folded, square: square)
+            cardLabel(title, symbol: symbol,
+                iconColor: colorScheme == .dark ? border : border.mix(with: label, by: 0.35),
+                folded: folded, square: square, grid: grid)
                 .foregroundStyle(label)
-                .background(color.opacity(translucentBackgrounds ? 0.18 : colorScheme == .dark ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .background(color.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.18 : 0.82) : 1), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
                 .background {
                     RoundedRectangle(cornerRadius: folded ? 22 : 30)
-                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? 0.12 : 1))
+                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.12 : 0) : 1))
                         .shadow(color: (colorScheme == .dark ? label : border)
-                            .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.45),
+                            .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.16),
                             radius: folded ? 8 : 16, y: folded ? 2 : 4)
                 }
                 .background {
-                    if translucentBackgrounds {
-                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.ultraThinMaterial).opacity(0.7)
+                    if colorScheme == .dark && translucentBackgrounds {
+                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.thinMaterial).opacity(0.75)
                     }
                 }
                 .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: folded ? 4 : 6) }
                 .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
         }.buttonStyle(BrowserCardButtonStyle()).matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || typeSize.isAccessibilitySize ? 0 : angle))
     }
-    @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool) -> some View {
+    @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
         if square && folded {
             VStack(spacing: 8) {
                 Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor)
@@ -246,7 +257,9 @@ struct BrowserHomeView: View {
                 }
                 Spacer(minLength: 16)
                 Text(title).font(LeximoryTypography.interface(24, style: .title2)).fixedSize(horizontal: false, vertical: true)
-            }.padding(20).frame(width: 180, height: 180)
+            }.padding(grid ? 16 : 20)
+                .frame(width: grid ? nil : 180, height: grid ? nil : 180)
+                .frame(maxWidth: grid ? .infinity : nil, minHeight: grid ? 160 : nil)
         } else {
             HStack(spacing: 20) {
                 Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)

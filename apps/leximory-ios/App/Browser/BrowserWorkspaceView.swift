@@ -66,7 +66,8 @@ struct BrowserWorkspaceView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                HomeWallpaperSurface(wallpaper: isHome ? wallpapers[HomeWallpaperAppearance(colorScheme)] : nil) {
+                HomeWallpaperSurface(wallpaper: isHome ? wallpapers[HomeWallpaperAppearance(colorScheme)] : nil,
+                    usesSystemBackground: isHome && wallpapers.choice(for: HomeWallpaperAppearance(colorScheme)) == .solid) {
                     ZStack {
                         TextBrowserScreen(client: client, bookmarkID: webBookmarkID, sharedBrowser: workspace.browser, showsControls: false, restoresSession: false)
                             .id(ObjectIdentifier(workspace.browser))
