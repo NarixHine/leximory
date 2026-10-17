@@ -132,8 +132,14 @@ enum PlaybackState: Equatable {
         if let descriptor, descriptor.expiresAt <= now() { start(source, seekTo: max(0, seconds), autoPlay: wantsPlayback); return }
         let duration = player.currentItem?.duration.seconds ?? 0
         guard duration.isFinite, duration > 0 else { return }
-        player.seek(to: CMTime(seconds: min(max(0, seconds), duration), preferredTimescale: 600))
-        publishProgress()
+        let request = generation
+        player.seek(to: CMTime(seconds: min(max(0, seconds), duration), preferredTimescale: 600),
+                    toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            Task { @MainActor [weak self] in
+                guard finished, let self, self.generation == request else { return }
+                self.publishProgress()
+            }
+        }
     }
     func leaveReader(unless textID: TextID?) {
         if state.source?.textID != textID { stop() }

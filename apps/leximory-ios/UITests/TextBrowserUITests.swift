@@ -197,7 +197,7 @@ final class TextBrowserUITests: XCTestCase {
 final class BrowserPageServer {
     let listener: NWListener
     let url: String
-    init() throws {
+    init(pdfData: Data? = nil) throws {
         let listener = try NWListener(using: .tcp, on: .any)
         self.listener = listener
         let html = """
@@ -209,12 +209,16 @@ final class BrowserPageServer {
         <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p><a href="/next">Continue walking</a></main></body></html>
         """
         let response = Data(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html).utf8)
+        let pdfResponse = pdfData.map { data in
+            Data("HTTP/1.1 200 OK\r\nContent-Type: application/pdf\r\nContent-Disposition: inline; filename=\"River pages.pdf\"\r\nContent-Length: \(data.count)\r\nConnection: close\r\n\r\n".utf8) + data
+        }
         let ready = XCTestExpectation(description: "Local article server")
         listener.stateUpdateHandler = { state in if case .ready = state { ready.fulfill() } }
         listener.newConnectionHandler = { connection in
             connection.start(queue: .global(qos: .userInitiated))
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { _, _, _, _ in
-                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { request, _, _, _ in
+                let isPDF = request.map { String(decoding: $0, as: UTF8.self).hasPrefix("GET /document ") } == true
+                connection.send(content: isPDF ? pdfResponse ?? response : response, completion: .contentProcessed { _ in connection.cancel() })
             }
         }
         listener.start(queue: .global(qos: .userInitiated))

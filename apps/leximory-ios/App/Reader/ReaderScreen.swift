@@ -65,7 +65,7 @@ struct ReaderScreen: View {
             if playback.textID == article.id {
                 PlaybackBar(playback: playback)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { playbackHeight = $0 }
-                    .padding(.horizontal, 16).padding(.bottom, 12 + browserChromeHeight)
+                    .padding(.horizontal, LeximoryLayout.pageInset).padding(.bottom, 12 + browserChromeHeight)
                     .transition(reduceMotion ? .opacity : .offset(y: 8).combined(with: .opacity))
             }
         }

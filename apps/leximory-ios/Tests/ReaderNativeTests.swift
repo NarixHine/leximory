@@ -651,6 +651,58 @@ import LeximoryCore
         #expect(probe.trayFrame.height > shortTray.height)
         #expect(probe.trayFrame.height <= 900 * 0.78 + 1)
     }
+    @Test func playbackProgressFollowsAudioAfterAControlAdjustment() async throws {
+        let playback = PlaybackController()
+        defer { playback.stop() }
+        playback.play(textID: TextID(rawValue: "fixture-reader"), audioID: "fixture_recording", title: "Article")
+        await playback.waitForResolution()
+        playback.pause()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKey() }
+        let host = UIHostingController(rootView: PlaybackBar(playback: playback))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        func slider(in view: UIView) -> UISlider? {
+            if let slider = view as? UISlider { return slider }
+            return view.subviews.lazy.compactMap { slider(in: $0) }.first
+        }
+        for _ in 0..<50 {
+            if slider(in: host.view) != nil { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let control = try #require(slider(in: host.view))
+        control.value = control.maximumValue * 0.25
+        control.sendActions(for: .valueChanged)
+        try await Task.sleep(for: .milliseconds(100))
+        let adjustedPosition = Double(control.value / control.maximumValue) * 20
+        #expect(abs(adjustedPosition - 5) < 0.1)
+        playback.resume()
+        try await Task.sleep(for: .seconds(2))
+        guard case .ready(_, let elapsed, let duration, let playing) = playback.state else {
+            Issue.record("The recording did not become ready.")
+            return
+        }
+        #expect(playing)
+        #expect(abs(duration - 20) < 0.1)
+        #expect(elapsed >= adjustedPosition + 1)
+        #expect(abs(Double(control.value / control.maximumValue) * duration - elapsed) < 0.75)
+
+        playback.pause()
+        playback.seek(to: 12)
+        for _ in 0..<50 {
+            if case .ready(_, let position, _, false) = playback.state, abs(position - 12) < 0.1 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard case .ready(_, let position, _, let resumed) = playback.state else {
+            Issue.record("Seeking lost the recording.")
+            return
+        }
+        #expect(abs(position - 12) < 0.1)
+        #expect(resumed == false)
+    }
+
     @Test func localMissingRecordingAndNavigationClearPlaybackState() async {
         let playback = PlaybackController(resolve: { _ in nil })
         playback.toggle(textID: TextID(rawValue: "first"), audioID: "missing", title: "First")

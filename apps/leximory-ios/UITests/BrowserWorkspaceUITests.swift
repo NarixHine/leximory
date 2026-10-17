@@ -1,11 +1,46 @@
 import XCTest
+import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testWebPDFUsesEbookFolderSelectionAndSavesAsAnEbook() throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 320, height: 480)).pdfData { context in
+            context.beginPage()
+            ("A river journey" as NSString).draw(at: CGPoint(x: 24, y: 24), withAttributes: nil)
+        }
+        let page = try BrowserPageServer(pdfData: data)
+        defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url.replacingOccurrences(of: "/article", with: "/document")])
+        defer { restore(app) }
+        let save = app.buttons["browser-magic-save"]
+        expectation(for: NSPredicate(format: "label == %@ AND enabled == true", "保存 PDF"), evaluatedWith: save)
+        waitForExpectations(timeout: 15)
+        save.tap()
+        XCTAssertTrue(app.navigationBars["保存 PDF"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["River pages.pdf"].exists)
+        XCTAssertTrue(app.buttons["编辑标题"].exists)
+        XCTAssertFalse(app.staticTexts["保存方式"].exists)
+        XCTAssertFalse(app.staticTexts["全文预览"].exists)
+        XCTAssertEqual(app.buttons["browser-import-submit"].label, "保存")
+        app.buttons["取消"].tap()
+        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        save.tap()
+        XCTAssertTrue(app.navigationBars["保存 PDF"].waitForExistence(timeout: 15))
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Save webpage PDF into a folder"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.buttons["browser-import-submit"].tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 10))
+        expectation(for: NSPredicate(format: "value CONTAINS %@", "pdf已打开"), evaluatedWith: reader)
+        waitForExpectations(timeout: 15)
+    }
+
     @MainActor private func launch(extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--browser-workspace-fixtures"] + extraArguments
         app.launch()
-        XCTAssertTrue(app.buttons["浏览网页"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 15))
         return app
     }
     @MainActor private func restore(_ app: XCUIApplication) {
@@ -247,10 +282,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
     }
     @MainActor func testDefuddleImportAndCompletionAcrossDestinations() throws {
         let page = try BrowserPageServer(); defer { page.listener.cancel() }
-        let app = launch(extraArguments: ["--workspace-hold-annotations"]); defer { restore(app) }
-        app.buttons["浏览网页"].tap()
-        let input = app.textFields["browser-address-input"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
+        let app = launch(extraArguments: ["--workspace-hold-annotations", "--workspace-webpage-url", page.url]); defer { restore(app) }
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
         app.buttons["browser-magic-save"].tap()
         XCTAssertTrue(app.staticTexts["全文预览"].waitForExistence(timeout: 15), app.debugDescription)

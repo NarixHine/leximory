@@ -2,7 +2,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 import LeximoryCore
 
-struct BrowserEbookFile {
+struct BrowserEbookFile: Sendable {
+    static let maximumSize = 4_718_592
     let name: String
     let data: Data
     static func read(_ url: URL) async throws -> Self {
@@ -11,18 +12,24 @@ struct BrowserEbookFile {
             defer { if access { url.stopAccessingSecurityScopedResource() } }
             guard ["epub", "pdf"].contains(url.pathExtension.lowercased()) else { throw URLError(.unsupportedURL) }
             let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-            guard size > 0, size <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+            guard size > 0, size <= maximumSize else { throw URLError(.dataLengthExceedsMaximum) }
             let data = try Data(contentsOf: url)
-            guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+            guard !data.isEmpty, data.count <= maximumSize else { throw URLError(.dataLengthExceedsMaximum) }
             return Self(name: url.lastPathComponent, data: data)
         }.value
     }
 }
 
 struct BrowserImportRequest: Identifiable {
-    enum Source { case article(BrowserArticleDraft), ebook(BrowserEbookFile) }
+    enum Source { case article(BrowserArticleDraft), ebook(BrowserEbookFile), pdf(BrowserEbookFile) }
     let id = UUID()
     let source: Source
+    var title: String {
+        switch source { case .article: "保存网页"; case .ebook: "打开电子书"; case .pdf: "保存 PDF" }
+    }
+    var confirmation: String {
+        switch source { case .article, .pdf: "保存"; case .ebook: "打开" }
+    }
 }
 
 private enum ImportStep: Hashable { case folder, content }
@@ -46,7 +53,9 @@ struct BrowserImportSheet: View {
     @State private var requestID = UUID().uuidString
     @State private var editingTitle = false
     private var draft: BrowserArticleDraft? { if case .article(let draft) = request.source { draft } else { nil } }
-    private var file: BrowserEbookFile? { if case .ebook(let file) = request.source { file } else { nil } }
+    private var file: BrowserEbookFile? {
+        switch request.source { case .ebook(let file), .pdf(let file): file; case .article: nil }
+    }
     private var folder: CatalogLibrary? { workspace.writableFolders.first { $0.id == folderID } }
     private var limit: Int { switch folder?.language { case "en", "fr": 30000; case "zh": 5000; default: 10000 } }
     private var valid: Bool {
@@ -57,7 +66,7 @@ struct BrowserImportSheet: View {
         self.request = request; self.workspace = workspace; self.imported = imported
         switch request.source {
         case .article(let draft): _title = State(initialValue: draft.title); _content = State(initialValue: draft.content)
-        case .ebook(let file): _title = State(initialValue: (file.name as NSString).deletingPathExtension); _content = State(initialValue: "")
+        case .ebook(let file), .pdf(let file): _title = State(initialValue: (file.name as NSString).deletingPathExtension); _content = State(initialValue: "")
         }
     }
     var body: some View {
@@ -102,13 +111,13 @@ struct BrowserImportSheet: View {
                 if let error { Section { Text(error).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) } }
             }
             .disabled(busy)
-            .navigationTitle(file != nil ? "打开电子书" : "保存网页").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(request.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
                 if path.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
                         Button { confirmImport() } label: {
-                            if busy { ProgressView() } else { Text(file != nil ? "打开" : fullText ? "导入" : "保存") }
+                            if busy { ProgressView() } else { Text(file == nil && fullText ? "导入" : request.confirmation) }
                         }.disabled(!valid || busy || uncertain || sync?.online == false)
                             .accessibilityIdentifier("browser-import-submit")
                     }

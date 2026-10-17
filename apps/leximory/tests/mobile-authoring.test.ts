@@ -6,6 +6,7 @@ import assert from 'node:assert/strict'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createAuthoringOperations, type AuthoringStore } from '../server/mobile/authoring'
 import type { CatalogStore } from '../server/mobile/catalog'
+import { MobileError } from '../server/mobile/errors'
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const fields = { original: 'banks', lemma: 'bank', definition: '河岸', etymology: '古英语', cognates: 'embankment' }
 const word = { id: 'word', libraryId: 'library', fields }
@@ -57,6 +58,8 @@ function harness(store: Partial<AuthoringStore> = {}, owner = catalog) {
                 format: 'ebook',
             }
         },
+        chooseEbookEmoji: async () => '🪐',
+        setEbookEmoji: async () => {},
         ...store,
     }
     return {
@@ -72,6 +75,14 @@ function request(path: string, body?: unknown) {
         method: body === undefined ? 'GET' : 'POST',
         headers: { authorization: 'Bearer test' },
         body: body === undefined ? undefined : JSON.stringify(body),
+    })
+}
+function ebookUpload(filename: string, bytes: Uint8Array<ArrayBuffer> | string, title = 'Book') {
+    const parameters = new URLSearchParams({ title, filename })
+    return new Request(`https://example.com/api/mobile/v1/libraries/library/ebooks?${parameters}`, {
+        method: 'POST',
+        headers: { authorization: 'Bearer test', 'content-type': 'application/octet-stream' },
+        body: bytes,
     })
 }
 test('saved words load, edit the canonical fields, and preserve the destination library', async () => {
@@ -170,19 +181,109 @@ test('article upload passes generation settings, validates language length, and 
 })
 test('PDF/EPUB streams enforce size and signatures before storage', async () => {
     const { handler, writes } = harness()
-    const upload = (name: string, bytes: Uint8Array<ArrayBuffer> | string) =>
-        new Request(`https://example.com/api/mobile/v1/libraries/library/ebooks?title=Book&filename=${name}`, {
-            method: 'POST',
-            headers: { authorization: 'Bearer test', 'content-type': 'application/octet-stream' },
-            body: bytes,
-        })
-    assert.equal((await handler(upload('book.pdf', '%PDF-1.7\nexample'))).status, 200)
-    assert.equal((await handler(upload('book.EPUB', new Uint8Array([0x50, 0x4b, 3, 4, 0])))).status, 200)
-    assert.equal((await handler(upload('book.pdf', 'not a pdf'))).status, 422)
-    assert.equal((await handler(upload('book.exe', 'not a book'))).status, 422)
-    assert.equal((await handler(upload('empty.pdf', ''))).status, 400)
-    assert.equal((await handler(upload('huge.pdf', new Uint8Array(4_718_593)))).status, 400)
+    assert.equal((await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))).status, 200)
+    assert.equal((await handler(ebookUpload('book.EPUB', new Uint8Array([0x50, 0x4b, 3, 4, 0])))).status, 200)
+    assert.equal((await handler(ebookUpload('book.pdf', 'not a pdf'))).status, 422)
+    assert.equal((await handler(ebookUpload('book.exe', 'not a book'))).status, 422)
+    assert.equal((await handler(ebookUpload('empty.pdf', ''))).status, 400)
+    assert.equal((await handler(ebookUpload('huge.pdf', new Uint8Array(4_718_593)))).status, 400)
     assert.equal(writes.length, 2)
+})
+
+test('EPUB and PDF imports choose, persist, and return an emoji using the bearer owner and book metadata', async () => {
+    for (const file of [
+        { filename: '宇宙 & planets.pdf', bytes: '%PDF-1.7\nexample' },
+        { filename: 'Cosmos.EPUB', bytes: new Uint8Array([0x50, 0x4b, 3, 4, 0]) },
+    ]) {
+        const steps: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async (owner, input) => {
+                assert.equal(writes.length, 1, 'the book must be saved before emoji generation')
+                steps.push({ owner, input })
+                return '🪐'
+            },
+            setEbookEmoji: async (id, emoji) => {
+                steps.push({ id, emoji })
+            },
+        })
+        const response = await handler(ebookUpload(file.filename, file.bytes, '  Cosmos  '))
+        assert.equal(response.status, 200)
+        assert.deepEqual(await response.json(), {
+            id: 'ebook',
+            libraryId: 'library',
+            title: 'Cosmos',
+            topics: [],
+            emoji: '🪐',
+            createdAt: null,
+            format: 'ebook',
+        })
+        assert.deepEqual(steps, [
+            { owner: subject, input: { title: 'Cosmos', filename: file.filename } },
+            { id: 'ebook', emoji: '🪐' },
+        ])
+    }
+})
+
+test('invalid emoji choices never overwrite an imported book', async () => {
+    for (const emoji of ['', 'a planet', '🪐🌍']) {
+        const saved: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async () => emoji,
+            setEbookEmoji: async (...args) => {
+                saved.push(args)
+            },
+        })
+        const response = await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))
+        assert.equal(response.status, 200)
+        assert.equal((await response.json()).emoji, null)
+        assert.equal(writes.length, 1)
+        assert.deepEqual(saved, [])
+    }
+})
+
+test('quota, generation, timeout, and emoji persistence failures keep the successful ebook import', async (t) => {
+    t.mock.method(console, 'error', () => {})
+    for (const failure of ['quota', 'generation', 'timeout', 'persistence']) {
+        const saved: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async () => {
+                if (failure === 'quota') throw new MobileError('quota_exceeded')
+                if (failure === 'generation') throw new Error('Provider unavailable')
+                if (failure === 'timeout') throw new DOMException('Emoji generation timed out', 'TimeoutError')
+                return '🪐'
+            },
+            setEbookEmoji: async (...args) => {
+                saved.push(args)
+                throw new Error('Database unavailable')
+            },
+        })
+        const response = await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))
+        assert.equal(response.status, 200)
+        const imported = await response.json()
+        assert.equal(imported.id, 'ebook')
+        assert.equal(imported.emoji, null)
+        assert.equal(writes.length, 1)
+        assert.deepEqual(saved, failure === 'persistence' ? [['ebook', '🪐']] : [])
+    }
+})
+
+test('rejected and failed uploads never attempt emoji assignment', async () => {
+    const attempts: string[] = []
+    const { handler } = harness({
+        ebook: async () => {
+            throw new MobileError('service_unavailable')
+        },
+        chooseEbookEmoji: async () => {
+            attempts.push('choose')
+            return '🪐'
+        },
+        setEbookEmoji: async () => {
+            attempts.push('save')
+        },
+    })
+    assert.equal((await handler(ebookUpload('book.pdf', 'invalid'))).status, 422)
+    assert.equal((await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))).status, 503)
+    assert.deepEqual(attempts, [])
 })
 
 test('shared corpus allows reading while protected welcome words cannot be edited', async () => {

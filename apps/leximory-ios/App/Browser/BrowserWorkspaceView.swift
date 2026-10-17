@@ -2,6 +2,20 @@ import SwiftUI
 import UniformTypeIdentifiers
 import LeximoryCore
 
+private enum BrowserSaveFailure {
+    case oversizedPDF, unavailablePDF, unavailableArticle
+    var message: String {
+        switch self {
+        case .oversizedPDF: "PDF 超过 4.5 MB，暂时无法保存。"
+        case .unavailablePDF: "PDF 暂时无法保存，请重试。"
+        case .unavailableArticle: "正文暂时无法提取，请重新加载网页后重试。"
+        }
+    }
+    var canRetry: Bool {
+        switch self { case .oversizedPDF: false; default: true }
+    }
+}
+
 struct BrowserWorkspaceView: View {
     let client: MobileClient
     let playback: PlaybackController
@@ -19,6 +33,7 @@ struct BrowserWorkspaceView: View {
     @State private var importRequest: BrowserImportRequest?
     @State private var importedText: (CatalogText, Bool)?
     @State private var extracting = false
+    @State private var saveError: BrowserSaveFailure?
     @State private var clipboardNotice: UUID?
     @State private var finding = false
     @State private var findRequest: UUID?
@@ -72,7 +87,7 @@ struct BrowserWorkspaceView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                             .padding(.bottom, editingAddress ? chromeHeight + 12 : 0)
                     }
-                    if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting ? "正在提取正文" : "正在打开") }
+                    if workspace.opening || extracting { ProgressView().padding(20).glassEffect(.regular, in: .circle).accessibilityLabel(extracting && !workspace.browser.isPDF ? "正在提取正文" : "正在打开") }
                 }
                 .simultaneousGesture(DragGesture(minimumDistance: 35).onEnded { gesture in
                     guard !editingAddress, abs(gesture.translation.width) > abs(gesture.translation.height) * 1.5 else { return }
@@ -222,11 +237,13 @@ struct BrowserWorkspaceView: View {
         }
         .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
         .onChange(of: workspace.current.id) { _, _ in
+            saveError = nil
             workspace.browser.web.findInteraction?.dismissFindNavigator()
             findInteraction?.dismissFindNavigator()
             findRequest = nil; finding = false; findInteraction = nil
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
         }
+        .onChange(of: workspace.browser.navigationID) { saveError = nil }
     }
     private func beginFind(_ interaction: UIFindInteraction?) {
         guard let interaction else { return }
@@ -308,7 +325,13 @@ struct BrowserWorkspaceView: View {
                                 ], startPoint: .topLeading, endPoint: .bottomTrailing))
                                 .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle)
                         }.buttonStyle(.plain).disabled(extracting || sync?.online == false || workspace.browser.loading || workspace.browser.error != nil)
-                            .accessibilityLabel("保存网页").accessibilityIdentifier("browser-magic-save")
+                            .accessibilityLabel(workspace.browser.isPDF ? "保存 PDF" : "保存网页").accessibilityIdentifier("browser-magic-save")
+                            .popover(isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text(saveError?.message ?? "").font(LeximoryTypography.interface(15))
+                                    if saveError?.canRetry == true { Button("重试") { Task { await extract() } } }
+                                }.padding(20).frame(maxWidth: 320).presentationCompactAdaptation(.popover)
+                            }
                     }
                     more
                 }
@@ -440,16 +463,30 @@ struct BrowserWorkspaceView: View {
         finishEditing(); workspace.openURL(url)
     }
     private func extract() async {
+        saveError = nil
         extracting = true
         defer { extracting = false }
         let resourceID = workspace.current.id
+        let navigationID = workspace.browser.navigationID
+        let pdf = workspace.browser.isPDF
         do {
+            if pdf {
+                let file = try await workspace.browser.pdfFile()
+                guard workspace.current.id == resourceID, workspace.browser.navigationID == navigationID else { return }
+                importRequest = BrowserImportRequest(source: .pdf(file))
+                return
+            }
             var draft = try await workspace.browser.extractArticle()
-            guard workspace.current.id == resourceID else { return }
+            guard workspace.current.id == resourceID, workspace.browser.navigationID == navigationID else { return }
             if let id = webBookmarkID { draft.sourceFolderID = workspace.documents[id]?.library.id }
             importRequest = BrowserImportRequest(source: .article(draft))
         }
-        catch { if (error as? URLError)?.code != .cancelled { workspace.error = "正文暂时无法提取，请重新加载网页后重试。" } }
+        catch {
+            guard workspace.current.id == resourceID, workspace.browser.navigationID == navigationID,
+                  !Task.isCancelled, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { return }
+            if pdf, (error as? URLError)?.code == .dataLengthExceedsMaximum { saveError = .oversizedPDF }
+            else { saveError = pdf ? .unavailablePDF : .unavailableArticle }
+        }
     }
 }
 

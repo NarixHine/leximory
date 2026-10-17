@@ -21,7 +21,7 @@ struct BrowserWorkspacePreview: View {
                 try? FileManager.default.removeItem(at: root)
                 let origin = URL(string: "https://workspace-fixture.invalid")!
                 let store = try LocalReadingStore(root: root, origin: origin, accountID: "fixture")
-                let transport = BrowserWorkspaceFixtureTransport(payloads: payloads)
+                let transport = BrowserWorkspaceFixtureTransport(payloads: payloads, store: store)
                 let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "fixture" }, localStore: store)
                 _ = try await client.allLibraries()
                 for library in try await client.allLibraries() {
@@ -46,6 +46,9 @@ struct BrowserWorkspacePreview: View {
                 UserDefaults.standard.removeObject(forKey: "browser.recent.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")
                 let workspace = BrowserWorkspaceModel(client: client, namespace: "workspace-fixture")
+                let arguments = ProcessInfo.processInfo.arguments
+                if let index = arguments.firstIndex(of: "--workspace-webpage-url"), arguments.indices.contains(index + 1),
+                   let url = TextBrowserModel.address(arguments[index + 1]) { workspace.openURL(url) }
                 if ProcessInfo.processInfo.arguments.contains("--workspace-hold-annotations") {
                     await transport.setCompletionGate { [weak workspace] in workspace?.current.textID != "workspace-import" }
                 }
@@ -92,7 +95,8 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
     var payloads: [String: Data]
     private var pendingReads = 0
     private var completionGate: (@MainActor @Sendable () -> Bool)?
-    init(payloads: [String: Data]) { self.payloads = payloads }
+    private let store: LocalReadingStore
+    init(payloads: [String: Data], store: LocalReadingStore) { self.payloads = payloads; self.store = store }
     func setCompletionGate(_ gate: @escaping @MainActor @Sendable () -> Bool) { completionGate = gate }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         if operationID == "review" { return try await review.send(request, body: body, baseURL: baseURL, operationID: operationID) }
@@ -101,6 +105,25 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
         if operationID == "texts", path.count >= 2 { key += "/" + path[path.count - 2] }
         if operationID == "document", let id = path.last { key += "/" + id }
         if operationID == "ebook", path.count >= 2 { key += "/" + path[path.count - 2] }
+        if operationID == "uploadEbook" {
+            guard let body else { throw URLError(.badServerResponse) }
+            let data = try await Data(collecting: body, upTo: BrowserEbookFile.maximumSize)
+            guard data.starts(with: Data("%PDF-".utf8)),
+                  let url = URL(string: request.path ?? "", relativeTo: baseURL),
+                  let query = URLComponents(url: url, resolvingAgainstBaseURL: true)?.queryItems,
+                  let title = query.first(where: { $0.name == "title" })?.value,
+                  let libraries = try JSONSerialization.jsonObject(with: payloads["libraries"] ?? Data()) as? [String: Any],
+                  let folders = libraries["items"] as? [[String: Any]],
+                  let folder = folders.first(where: { $0["id"] as? String == path[path.count - 2] }) else { throw URLError(.badServerResponse) }
+            let id = "workspace-pdf-import"
+            let source = "https://workspace-fixture.invalid/books/\(id).pdf"
+            let text: [String: Any] = ["id": id, "libraryId": path[path.count - 2], "title": title, "topics": [], "format": "ebook"]
+            payloads["document/" + id] = try JSONSerialization.data(withJSONObject: ["text": text, "library": folder, "document": NSNull(), "annotationProgress": NSNull()])
+            payloads["ebook/" + id] = try JSONSerialization.data(withJSONObject: ["text": text, "library": folder, "url": source, "format": "pdf", "expiresAt": "2099-01-01T00:00:00Z", "location": NSNull(), "bookmarks": []])
+            try await store.saveData(data, for: "book/" + id)
+            await store.save(source, for: "book-source/" + id)
+            return (.init(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: text)))
+        }
         if operationID == "generateArticleAudio", path.count >= 2 {
             let key = "document/" + path[path.count - 2]
             if let data = payloads[key], var document = try JSONSerialization.jsonObject(with: data) as? [String: Any] {

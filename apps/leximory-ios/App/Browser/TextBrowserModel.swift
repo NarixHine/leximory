@@ -148,6 +148,7 @@ final class BrowserWebView: WKWebView {
     private(set) var url: URL?
     private(set) var title = ""
     private(set) var loading = false
+    private(set) var isPDF = false
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     private(set) var navigationID = UUID()
@@ -159,6 +160,7 @@ final class BrowserWebView: WKWebView {
     @ObservationIgnored private var resumeOffset: CGFloat?
     @ObservationIgnored private var searchNavigation: WKNavigation?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
+    @ObservationIgnored private var pdfDownload: BrowserPDFDownload?
 
     override convenience init() { self.init(websiteDataStore: .default()) }
 
@@ -252,6 +254,8 @@ final class BrowserWebView: WKWebView {
         pageColor = web.themeColor ?? web.underPageBackgroundColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        pdfDownload?.cancel()
+        isPDF = false
         web.invalidateSelection()
         webView.findInteraction?.dismissFindNavigator()
         navigationBegan?()
@@ -299,6 +303,9 @@ final class BrowserWebView: WKWebView {
         return .allow
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if navigationResponse.isForMainFrame {
+            isPDF = navigationResponse.response.mimeType?.lowercased() == "application/pdf"
+        }
         if navigationResponse.isForMainFrame, let response = navigationResponse.response as? HTTPURLResponse {
             Logger(subsystem: "com.leximory.reader", category: "browser").info("Page response: host=\(response.url?.host ?? "unknown", privacy: .private) status=\(response.statusCode)")
         }
@@ -323,6 +330,21 @@ struct BrowserArticleDraft: Identifiable {
 }
 
 extension TextBrowserModel {
+    func pdfFile() async throws -> BrowserEbookFile {
+        guard isPDF, let url else { throw URLError(.cancelled) }
+        let navigation = navigationID
+        return try await MutationRetry.run { @MainActor in
+            guard navigation == self.navigationID else { throw URLError(.cancelled) }
+            let download = BrowserPDFDownload()
+            self.pdfDownload?.cancel()
+            self.pdfDownload = download
+            defer { if self.pdfDownload === download { self.pdfDownload = nil } }
+            let file = try await download.file(from: self.web, url: url)
+            guard navigation == self.navigationID else { throw URLError(.cancelled) }
+            return file
+        }
+    }
+
     func extractArticle() async throws -> BrowserArticleDraft {
         guard let url, let resource = Bundle.main.url(forResource: "defuddle", withExtension: "js") else { throw URLError(.cannotParseResponse) }
         let source = try String(contentsOf: resource, encoding: .utf8)

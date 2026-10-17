@@ -1,6 +1,34 @@
 import XCTest
 
 final class ArticleAudioUITests: XCTestCase {
+    @MainActor func testProgressKeepsAdvancingAfterScrubbingAndPauseResume() {
+        let app = launch(readOnly: true)
+        defer { restore(app) }
+        open("fixture-reader", in: app)
+        app.buttons["play-article-audio"].tap()
+        let slider = app.sliders["播放进度"]
+        XCTAssertTrue(slider.waitForExistence(timeout: 10))
+        XCTAssertTrue((slider.value as? String)?.contains("0:20") == true)
+
+        slider.adjust(toNormalizedSliderPosition: 0.2)
+        assertProgressAdvances(slider)
+        slider.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5)).tap()
+        assertProgressAdvances(slider)
+        app.buttons["暂停"].tap()
+        slider.adjust(toNormalizedSliderPosition: 0.1)
+        app.buttons["播放"].tap()
+        assertProgressAdvances(slider)
+    }
+
+    @MainActor private func assertProgressAdvances(_ slider: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        for _ in 0..<2 {
+            let initial = slider.value as? String
+            let advances = NSPredicate { _, _ in slider.value as? String != initial }
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: advances, object: nil)], timeout: 5),
+                           .completed, "Playback progress froze after interaction at \(initial ?? "unknown").", file: file, line: line)
+        }
+    }
+
     @MainActor func testInlinePlayStartsPlaybackAndRevealsGlassControls() {
         let app = launch(readOnly: true)
         defer { restore(app) }
@@ -64,6 +92,15 @@ final class ArticleAudioUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(play.frame.height, 44)
         XCTAssertGreaterThanOrEqual(play.frame.minX, 0)
         XCTAssertLessThanOrEqual(play.frame.maxX, app.frame.maxX)
+        play.tap()
+        let pause = app.buttons["暂停"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        let controls = app.descendants(matching: .any).matching(identifier: "playback-bar").firstMatch
+        XCTAssertGreaterThanOrEqual(controls.frame.minX, 20)
+        XCTAssertLessThanOrEqual(controls.frame.maxX, app.frame.maxX - 20)
+        XCTAssertTrue(pause.isHittable)
+        XCTAssertTrue(app.buttons["停止播放"].isHittable)
+        XCTAssertTrue(app.sliders["播放进度"].isHittable)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Dark landscape audio with large text"; screenshot.lifetime = .keepAlways; add(screenshot)
     }

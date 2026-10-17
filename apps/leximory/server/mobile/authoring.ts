@@ -14,6 +14,7 @@ import type { MobileSubject } from '@repo/schema/mobile'
 import { MobileError } from './errors'
 import { bodyBytes, checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
 import { createCatalog, type CatalogStore, type LibraryRow } from './catalog'
+import { isValidEmoji } from '@/lib/utils'
 
 export type WordFields = z.infer<typeof vocabularyEditSchema>
 export interface AuthoringStore {
@@ -36,6 +37,12 @@ export interface AuthoringStore {
         input: z.infer<typeof articleImportSchema>,
     ): Promise<z.infer<typeof textSchema>>
     ebook(library: LibraryRow, title: string, file: File): Promise<z.infer<typeof textSchema>>
+    chooseEbookEmoji(
+        subject: MobileSubject,
+        input: { title: string; filename: string },
+        signal: AbortSignal,
+    ): Promise<string>
+    setEbookEmoji(id: string, emoji: string): Promise<void>
 }
 const vocabularyPageSchema = z.object({ items: z.array(savedWordSchema), nextCursor: z.string().nullable() }).strict()
 const articlePreviewInput = z.object({ url: z.url().max(2048) }).strict()
@@ -117,7 +124,24 @@ export function createAuthoringOperations(dependencies: { catalog: CatalogStore;
                 ? new TextDecoder().decode(bytes.subarray(0, 5)) === '%PDF-'
                 : bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 3 && bytes[3] === 4
         if (!validSignature) throw new MobileError('unsupported_format')
-        return checkedResponse(textSchema, await store.ebook(library, title, file))
+        const ebook = checkedResponse(textSchema, await store.ebook(library, title, file))
+        try {
+            const emoji = await store.chooseEbookEmoji(
+                context.subject,
+                { title, filename },
+                AbortSignal.any([context.signal, AbortSignal.timeout(12000)]),
+            )
+            if (isValidEmoji(emoji)) {
+                await store.setEbookEmoji(ebook.id, emoji)
+                return { ...ebook, emoji }
+            }
+        } catch (error) {
+            // Emoji failures must not turn a saved book into a failed, retryable import.
+            if (!(error instanceof MobileError && error.code === 'quota_exceeded')) {
+                console.error('[mobile/ebook] emoji assignment failed', { textId: ebook.id, error })
+            }
+        }
+        return ebook
     }
 
     return { vocabularyList, savedWord, editWord, extractArticle, importArticle, uploadEbook }

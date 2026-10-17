@@ -8,7 +8,9 @@ import { supabase } from '@repo/supabase'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { PLANS, PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
-import { createText, deleteText, uploadEbook, setTextAnnotationProgress } from '@/server/db/text'
+import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
+import { emojiChoice } from '@/server/ai/emoji'
+import { runEvaluation } from '@/server/ai/evaluate'
 import { inngest } from '@/server/inngest/client'
 import { MobileError } from './errors'
 import type { AuthoringStore } from './authoring'
@@ -129,6 +131,16 @@ export const authoringStore: AuthoringStore = {
             createdAt: new Date().toISOString(),
             format: 'ebook',
         }
+    },
+    async chooseEbookEmoji(subject, input, signal) {
+        await charge(subject, ACTION_QUOTA_COST.evaluation)
+        const { answers } = await runEvaluation({ ...emojiChoice(input), abortSignal: signal })
+        return answers.emoji.choice
+    },
+    async setEbookEmoji(id, emoji) {
+        const libraryId = await updateText({ id, emoji })
+        revalidateTag(`texts:${libraryId}`, { expire: 0 })
+        revalidateTag(id, { expire: 0 })
     },
 }
 
