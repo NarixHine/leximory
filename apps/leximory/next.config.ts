@@ -4,6 +4,10 @@ import { NextConfig } from 'next'
 import { ALLOWED_IMAGE_REMOTE_PATTERNS, FYP_BLOG_LINK } from '@repo/env/config'
 
 const nextConfig: NextConfig = {
+    typescript: {
+        // The build script checks generated route types with tsc-ts first.
+        ignoreBuildErrors: true,
+    },
     cacheComponents: true,
     experimental: {
         mdxRs: true,

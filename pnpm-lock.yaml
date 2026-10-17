@@ -510,6 +510,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.18)
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
@@ -793,6 +796,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.1.18
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1040,6 +1046,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.1.18
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1083,6 +1092,9 @@ importers:
       '@types/node':
         specifier: ^22.19.5
         version: 22.19.5
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1111,6 +1123,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1127,6 +1142,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1149,6 +1167,9 @@ importers:
       '@types/react':
         specifier: ^19.2.0
         version: 19.2.14
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1177,6 +1198,9 @@ importers:
       '@types/node':
         specifier: latest
         version: 26.6.4
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1235,6 +1259,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1281,6 +1308,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1488,6 +1518,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.23(postcss@8.5.28)
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1522,6 +1555,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -1547,6 +1583,9 @@ importers:
       '@types/node':
         specifier: ^25.0.5
         version: 25.9.2
+      tsc-ts:
+        specifier: 0.0.2
+        version: 0.0.2
       typescript:
         specifier: latest
         version: 7.0.2
@@ -6458,6 +6497,41 @@ packages:
     resolution: {integrity: sha512-xQcPxVrKr3yT9+ZEM3skYXikJc/ocZlGDIcsBQ3mMwL3Weq1QL7jx/uGLXvrSO2Yh0DWUjWI6Q/oiRCEUM6P8w==}
     engines: {node: '>=14'}
 
+  '@tsc-ts/darwin-arm64@0.0.2':
+    resolution: {integrity: sha512-RkGySmyRvij4adIw2DeN0hFtqVZd6D+wbiGAsphD7f4AAWezQDD0pDa39K72XI4yuWf6hi3xk7WMYTzwSd3oLw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@tsc-ts/darwin-x64@0.0.2':
+    resolution: {integrity: sha512-9Rvn2ysWS8nodbATIAztOCENJJ52J00TtEP3yzjq3kYuCdHKsprm/H0G98OlYpRDxltFgiWW1W1SnDUjHEAX0g==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@tsc-ts/linux-arm64-gnu@0.0.2':
+    resolution: {integrity: sha512-WlSK+cRpvWqgKdwuBFOwbiBQ2v1ztmq0hlO71PBLWEitPcNpgwq8dYWQFp+0H6+MJ8I5OMl1D0DmyzQArUOuww==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@tsc-ts/linux-arm64-musl@0.0.2':
+    resolution: {integrity: sha512-orV1lOLL4q41kXH6gQClllGmsAFZddx9KlgijfpmhPqjZlg4Ha7YT+WjDPi2Hs9VO6/nQKMaxqXOZdE6JxP/eA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@tsc-ts/linux-x64-gnu@0.0.2':
+    resolution: {integrity: sha512-/+IrlTylDCCTqMtmEvV3pH+jWNnsI7I5+pSFFQj5tMFTYA7ArwROsaygtP6voPZtY6o+jFg6G7gPfxpCLPyYRg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@tsc-ts/linux-x64-musl@0.0.2':
+    resolution: {integrity: sha512-mkKacIeCPv0lPUTRyhbZV1ZfzDhXZhrsYVsR5q6ZOfTp49L7VKpDcGWLXqCmvhNXFUQy/Gq4+XFwEgF8+NfRNg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@tsc-ts/win32-x64-msvc@0.0.2':
+    resolution: {integrity: sha512-Qs/QuhzU9HaVWsuWZo2J964NtGDA9bBQj2m5PagtL1Vn1Lhtpl9xEl55A+/Laop/pTK4KkUvo7DEotT0gy7pcQ==}
+    cpu: [x64]
+    os: [win32]
+
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
@@ -10176,6 +10250,11 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
+
+  tsc-ts@0.0.2:
+    resolution: {integrity: sha512-2wk85TpOB6sy4KSV+TA/C4EzI7O9X4RPTipMeqeDEG0+v6h6ubyi0uHeDXcxplKzW9BBy8mLZXiYCevv+KxRbg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
@@ -18557,6 +18636,27 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@tsc-ts/darwin-arm64@0.0.2':
+    optional: true
+
+  '@tsc-ts/darwin-x64@0.0.2':
+    optional: true
+
+  '@tsc-ts/linux-arm64-gnu@0.0.2':
+    optional: true
+
+  '@tsc-ts/linux-arm64-musl@0.0.2':
+    optional: true
+
+  '@tsc-ts/linux-x64-gnu@0.0.2':
+    optional: true
+
+  '@tsc-ts/linux-x64-musl@0.0.2':
+    optional: true
+
+  '@tsc-ts/win32-x64-msvc@0.0.2':
+    optional: true
+
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
@@ -22922,6 +23022,16 @@ snapshots:
   ts-api-utils@2.4.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
+
+  tsc-ts@0.0.2:
+    optionalDependencies:
+      '@tsc-ts/darwin-arm64': 0.0.2
+      '@tsc-ts/darwin-x64': 0.0.2
+      '@tsc-ts/linux-arm64-gnu': 0.0.2
+      '@tsc-ts/linux-arm64-musl': 0.0.2
+      '@tsc-ts/linux-x64-gnu': 0.0.2
+      '@tsc-ts/linux-x64-musl': 0.0.2
+      '@tsc-ts/win32-x64-msvc': 0.0.2
 
   tsconfig-paths@3.15.0:
     dependencies:

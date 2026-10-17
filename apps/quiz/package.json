@@ -4,10 +4,10 @@
     "private": true,
     "scripts": {
         "dev": "next dev -p 3002",
-        "build": "next build",
+        "build": "pnpm run check-types --incremental false && next build",
         "start": "next start",
         "lint": "next lint",
-        "check-types": "tsc --noEmit"
+        "check-types": "next typegen && tsc-ts --noEmit"
     },
     "dependencies": {
         "@ai-sdk/gateway": "^3.0.10",
@@ -92,6 +92,7 @@
         "eslint-config-next": "16.0.0",
         "eslint-plugin-react-hooks": "^6.1.0",
         "tailwindcss": "^4",
+        "tsc-ts": "0.0.2",
         "typescript": "^5.9.3"
     }
 }

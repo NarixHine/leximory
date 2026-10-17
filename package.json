@@ -4,6 +4,7 @@
     "private": true,
     "packageManager": "pnpm@10.8.1",
     "scripts": {
+        "check-types": "turbo check-types",
         "dev": "turbo dev --concurrency=15",
         "ios:tunnel": "cloudflared tunnel --protocol http2 run --token \"$LEXIMORY_CLOUDFLARE_TUNNEL_TOKEN\"",
         "format": "prettier --write",

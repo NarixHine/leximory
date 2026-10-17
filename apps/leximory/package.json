@@ -4,10 +4,10 @@
     "private": true,
     "scripts": {
         "dev": "concurrently 'next dev -p 3001' 'pnpx inngest-cli@latest dev' 'pnpx @upstash/qstash-cli dev'",
-        "build": "next build",
+        "build": "pnpm run check-types --incremental false && next build",
         "start": "next start",
         "lint": "next lint",
-        "check-types": "tsc --noEmit",
+        "check-types": "next typegen && tsc-ts --noEmit",
         "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-article-audio.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts tests/mobile-pdf-notes.test.ts tests/mobile-authoring.test.ts tests/mobile-management.test.ts tests/mobile-vocabulary-save.test.ts tests/mobile-browser.test.ts tests/mobile-folders.test.ts tests/mobile-review.test.ts tests/mobile-http.test.ts tests/mobile-shortcuts.test.ts tests/mobile-account.test.ts tests/mobile-next-runtime.test.ts",
         "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts",
         "generate:mobile-routes": "node --import tsx scripts/mobile-routes.ts --write",
@@ -183,6 +183,7 @@
         "serwist": "^9.5.11",
         "tailwindcss": "^4.1.11",
         "tailwindcss-animate": "^1.0.7",
+        "tsc-ts": "0.0.2",
         "typescript": "^5.9.2"
     }
 }

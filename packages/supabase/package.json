@@ -2,7 +2,7 @@
     "name": "@repo/supabase",
     "type": "module",
     "scripts": {
-        "dev": "tsc --watch"
+        "dev": "tsc-ts --watch"
     },
     "exports": {
         ".": "./src/index.ts",
@@ -21,6 +21,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",
         "@types/node": "^25.0.5",
+        "tsc-ts": "0.0.2",
         "typescript": "latest"
     },
     "dependencies": {
