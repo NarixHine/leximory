@@ -153,13 +153,14 @@ struct BrowserHomeView: View {
                 Image(systemName: pin.symbol).font(.system(size: 26, weight: .regular))
             }
         }
+        .opacity(translucentBackgrounds ? 0.7 : 1)
         .frame(width: 32, height: 32)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .circular))
         .padding(12)
-        .background(LeximoryPalette.shell.opacity(translucentBackgrounds ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 20, style: .circular))
+        .background(LeximoryPalette.shell.opacity(translucentBackgrounds ? 0.18 : 1), in: RoundedRectangle(cornerRadius: 20, style: .circular))
         .background {
             if translucentBackgrounds {
-                RoundedRectangle(cornerRadius: 20, style: .circular).fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 20, style: .circular).fill(.ultraThinMaterial).opacity(0.7)
             }
         }
         .accessibilityHidden(true)
@@ -209,19 +210,19 @@ struct BrowserHomeView: View {
     }
     private func card(_ title: String, symbol: String, color: Color, border: Color, label: Color, angle: Double, folded: Bool, square: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            cardLabel(title, symbol: symbol, iconColor: border.mix(with: LeximoryPalette.ink, by: colorScheme == .dark ? 0.35 : 0.2), folded: folded, square: square)
+            cardLabel(title, symbol: symbol, iconColor: border.mix(with: LeximoryPalette.ink, by: colorScheme == .dark ? 0.35 : 0.2).opacity(translucentBackgrounds ? 0.7 : 1), folded: folded, square: square)
                 .foregroundStyle(label)
-                .background(color.opacity(colorScheme == .dark && !translucentBackgrounds ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .background(color.opacity(translucentBackgrounds ? 0.18 : colorScheme == .dark ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
                 .background {
                     RoundedRectangle(cornerRadius: folded ? 22 : 30)
-                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? 0.6 : 1))
+                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? 0.12 : 1))
                         .shadow(color: (colorScheme == .dark ? label : border)
                             .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.45),
                             radius: folded ? 8 : 16, y: folded ? 2 : 4)
                 }
                 .background {
                     if translucentBackgrounds {
-                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.ultraThinMaterial).opacity(0.7)
                     }
                 }
                 .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: folded ? 4 : 6) }
