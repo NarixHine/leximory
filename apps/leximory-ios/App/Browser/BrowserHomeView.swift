@@ -28,11 +28,14 @@ struct BrowserHomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.hasHomeWallpaper) private var hasWallpaper
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.browserChromeHeight) private var chromeHeight
     @ScaledMetric(relativeTo: .headline) private var recentTitleSize: CGFloat = 20
     @ScaledMetric(relativeTo: .headline) private var matchRowHeight: CGFloat = 44
     @State private var compactCardsHeight: CGFloat = 256
     @Namespace private var cardNamespace
+    private var translucentBackgrounds: Bool { hasWallpaper && !reduceTransparency }
     var body: some View {
         Group {
             if compact {
@@ -153,7 +156,7 @@ struct BrowserHomeView: View {
         .frame(width: 32, height: 32)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .circular))
         .padding(12)
-        .background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 20, style: .circular))
+        .background(LeximoryPalette.shell.opacity(translucentBackgrounds ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 20, style: .circular))
         .accessibilityHidden(true)
     }
     private var readingResources: [CatalogText] {
@@ -203,10 +206,10 @@ struct BrowserHomeView: View {
         Button(action: action) {
             cardLabel(title, symbol: symbol, iconColor: border.mix(with: LeximoryPalette.ink, by: colorScheme == .dark ? 0.35 : 0.2), folded: folded, square: square)
                 .foregroundStyle(label)
-                .background(color.opacity(colorScheme == .dark ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .background(color.opacity(colorScheme == .dark && !translucentBackgrounds ? 1 : 0.3), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
                 .background {
                     RoundedRectangle(cornerRadius: folded ? 22 : 30)
-                        .fill(LeximoryPalette.paper)
+                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? 0.6 : 1))
                         .shadow(color: (colorScheme == .dark ? label : border)
                             .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.45),
                             radius: folded ? 8 : 16, y: folded ? 2 : 4)

@@ -126,6 +126,9 @@ private struct HomeWallpaperContext {
 private extension EnvironmentValues {
     @Entry var homeWallpaperContext: HomeWallpaperContext? = nil
 }
+extension EnvironmentValues {
+    var hasHomeWallpaper: Bool { homeWallpaperContext != nil }
+}
 
 struct HomeWallpaperSurface<Content: View>: View {
     let wallpaper: HomeWallpaper?

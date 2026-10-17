@@ -1,126 +1,142 @@
-# Conservative browser ad-blocking implementation plan
+# Browser ad-blocking implementation plan
 
-Plan date: 2026-10-17. This document implements the direction from the [feasibility assessment](browser-ad-blocking-feasibility.md). It plans the work; application behavior remains unchanged.
+Status: ready for implementation review. Updated 2026-10-17. Planning only; no feature code, dependencies, app settings, or hosted services have been changed.
 
-## Product decision
+This replaces the earlier banner-image-only proposal and its hosted eligibility policy. It follows the requested configuring UI and the [feasibility assessment](browser-ad-blocking-feasibility.md). Execute the tasks below in order after implementation is authorized. Every task has an observable completion check.
 
-Make website operation the priority. Automatically block only reviewed third-party banner-image requests on explicitly approved pages. Load everything normally whenever the browser lacks current evidence that a rule is suitable. Require no setup, filter management, website exceptions, or recovery actions from users.
+## Fixed product decisions
 
-This reduces risk; it cannot eliminate it. A website can change its behavior or react to any blocked request. WebKit cannot prove that a page's forms, controls, and business logic still work. If zero additional interference is an absolute acceptance criterion, ship ordinary browsing without active ad blocking. Do not represent automatic fallback as a guarantee of zero breakage.
+- Add general ad and tracker blocking to the built-in webpage browser, enabled by default after rules prepare successfully.
+- Add one 广告拦截 entry to the existing menus. Configuration lives in one shared native sheet. Add no toolbar controls, badges, counters, protection scores, filter subscriptions, or Basic/Strict modes.
+- Store the global preference and website exceptions locally on this installation, like the existing search-engine preference. Do not synchronize them through accounts or the backend.
+- Apply changes only after confirmation. Reload the current webpage only when the user explicitly chooses 应用并重新载入. Never automatically replay a form submission.
+- Bundle native WebKit JSON rules. Update them with app releases. Add no hosted policy endpoint, timer-based rule expiry, remote executable scripts, or runtime filter downloads in this release.
+- Use ordinary declarative filtering on YouTube. Add no YouTube-specific player scripts or ad-free claims. The native YouTube app is outside this feature.
+- Keep ebooks, the article editor, authentication web views, saved content, and backend behavior outside this change.
 
-The first release deliberately offers limited banner-ad reduction. It does not promise general tracker protection, removal of every advertisement, or an ad-free YouTube experience.
+## Settings specification
 
-## Fixed scope
+Place 广告拦截, using the SF Symbol `hand.raised`, immediately after 搜索引擎 in `BrowserWorkspaceView.more`. It remains available from Home and saved resources. Add the same entry to `TextBrowserScreen`'s webpage options. Both open `BrowserAdBlockingSettings` with the same preference store and a captured optional current-page context.
 
-| Area | First-release behavior |
+| Element | Exact behavior |
 | --- | --- |
-| Eligible content | Precisely matched third-party image URLs on reviewed top-level website hosts and page paths |
-| Unreviewed websites or paths | Ordinary browsing, with no blocking |
-| Subframes and embedded players | No blocking of their resources |
-| Scripts, styles, fonts, API requests, media, navigation | Unchanged |
-| Cookies, authentication, consent, CAPTCHA, payments | No changes to these mechanisms; their pages are outside the approved set |
-| Layout and page content | No cosmetic selectors, element removal, or layout rewriting; empty ad space may remain |
-| YouTube | No YouTube rules or player manipulation; its pages and embedded-player frames remain unfiltered |
-| User experience | Automatic; no counters, settings, exception lists, warnings, or prompts for this optional feature |
+| Sheet title | 广告拦截 |
+| First row | 拦截广告, a native switch |
+| First footer | 减少网页中的广告与跟踪。YouTube 等网站的视频广告可能仍会显示。 |
+| Current-site section | Present only for an HTTP or HTTPS webpage. Header shows its full normalized hostname. The switch reads 在此网站拦截. |
+| Global switch off | Keep the current-site switch visible but disabled. Preserve its remembered choice. |
+| 网站例外 | Navigation row shown only when saved or draft exceptions exist. The destination lists hostnames alphabetically with a 恢复拦截 action for each. No add-host form or empty-state page. |
+| Cancel | 取消 discards all draft edits, including exception removals. Swiping the sheet away does the same. |
+| Confirm, unchanged | 完成 closes without compiling, saving, or reloading. |
+| Confirm, changed without an affected current webpage | 完成 applies the draft and closes after success. |
+| Confirm, changed with an affected current webpage | 应用并重新载入 applies the draft and explicitly reloads that page. Footer reads 更改后将重新载入当前网页，请先保存网页中填写的内容。 |
+| Existing POST/form-result page | Confirm with 完成, apply the policy for future navigation, and do not reload. Footer reads 更改将在下次打开网页时生效。 |
+| Preparation while confirming | Disable duplicate confirmation and editing; show activity within the confirmation control. Preserve the draft. |
+| Unrecoverable apply failure | Keep the sheet and draft open. Show 广告拦截设置未能应用，请重试。 beside confirmation, with 重试. Cancel stays available. |
 
-YouTube is excluded because it expressly objects to ad blocking and may restrict playback. [YouTube Help](https://support.google.com/youtube/answer/14129599?hl=en). Public WebKit APIs reduce implementation risk but do not guarantee App Store approval; third-party terms still matter under Apple's review rules. [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#intellectual-property).
+Use the existing Chinese interface font, native grouped form, primary and secondary label colors, and native switch tint. Use content-sized presentation where space permits and a scrollable full-height sheet for accessibility text sizes. Let native navigation, switches, and dismissal supply motion. Do not add decorative animation.
 
-## Phase 1: Establish an eligible rule set
+Capture the document identity when opening settings. If navigation changes while the sheet is open, discard its current-page reload target and use 完成. Recompute whether the draft changes that document's effective blocking, so editing an unrelated exception never reloads it. Track whether the current document came from a form request; if the request method cannot be established, do not reload automatically. Restoring an exception uses the same confirmation flow.
 
-Deliver a small, owned and reviewed rule manifest before enabling any filtering. Do not import EasyList, a generic tracking list, or another browser's scripts for this first release.
+Website exceptions match the exact normalized hostname across HTTP/HTTPS and ports. `example.com`, `www.example.com`, and `m.example.com` remain separate, and the sheet shows which one is affected. Lowercase and normalize internationalized hostnames, remove a terminal DNS dot, and test lookalikes and IPv6. Never infer a registrable domain by taking the final two labels.
 
-Each candidate records a stable ID, content version, exact website and page patterns, advertising-image URL pattern, initial review date, maximum review age, and evidence of the ad-only purpose. The evidence includes reproducible page visits, the matched requests, and comparison of the relevant user journeys with filtering on and off. Do not put private browsing histories or signed URLs into the manifest.
+## Task 1: Produce a reproducible bundled filter artifact
 
-Admit a candidate only when all of these conditions hold:
+Files to add under `apps/leximory-ios`:
 
-- The top-level host and path belong to a reviewed page family, such as a particular publication's article pages. Unknown paths, home pages, sign-in, checkout, and account pages remain outside it.
-- The target is a dedicated advertising-image endpoint. A shared image CDN, a broad Google domain, or a generic `/ads/` substring is insufficient evidence.
-- The native rule restricts the resource type to `image`, the relationship to `third-party`, and the loading context to the top frame. Confirm these restrictions compile and behave correctly on the minimum supported iOS runtime. If the required context restriction is unavailable, omit the rule rather than broaden it.
-- Tests prove complete host and path boundaries. Lookalike hosts, query-string occurrences, unexpected ports, and unreviewed subdomains do not qualify.
-- The reviewed page continues to work after the image fails, including its ad-block detection behavior. Sites that demand advertising or disable content are ineligible; do not defeat their checks.
+- `scripts/prepare-browser-ad-rules.py`, a maintainer command with explicit refresh and offline `--check` modes.
+- `App/Resources/Browser/AdBlocking/rules-*.json`, the generated WebKit lists.
+- `App/Resources/Browser/AdBlocking/manifest.json`, with source URLs, source-content hashes, converter tag and exact commit, target Safari version, generated-file hashes, and conversion exclusions.
+- `App/Resources/Browser/AdBlocking/ATTRIBUTION.txt`, with the required credits, license text or bundled license files, and source locations.
 
-Set the initial maximum review age to seven days. This is a conservative starting policy, not a guarantee that a website cannot change sooner. Record subsequent reviews in the bounded policy described in Phase 3, so operators can renew evidence for the same bundled rule without making users install weekly builds. Re-review or let the rule expire automatically. Rules stay ineligible until evidence exists; do not fill the shipping manifest with guessed domains.
+Use EasyList and EasyPrivacy as the initial source candidates. Pin source snapshots by hash instead of fetching mutable URLs during ordinary builds. Use AdGuard's `SafariConverterLib` command-line converter as an offline maintainer tool, initially evaluating tag `v4.3.0`; resolve and record its exact commit before generating assets. Do not link the converter or its advanced extension engine into Leximory. The converter distinguishes native JSON from advanced rules, so consume only its native output. Preserve source exception rules and converter rule ordering. [Converter documentation](https://github.com/AdguardTeam/SafariConverterLib), [candidate release](https://github.com/AdguardTeam/SafariConverterLib/releases/tag/v4.3.0).
 
-Exit condition: at least one useful rule passes review and the controlled tests below. If none qualifies, retain normal browsing and do not advertise a functioning blocker.
+Review the converter's GPL terms and the source lists' CC BY-SA redistribution requirements before committing artifacts. Include obligations for derived JSON and App Store distribution in that review. The [EasyList license page](https://easylist.to/pages/licence.html) supplies the source attribution and license choices. Do not assume the converter's license determines the generated data's license, or that using a build tool automatically licenses the app under its terms.
 
-## Phase 2: Build the browser-only WebKit integration
+Target Safari 26, matching the app's minimum runtime. Retain only output supported by native WebKit. Record excluded scriptlets, extended CSS, HTML filtering, response rewriting, and unsupported rules in the developer manifest. Keep this report out of the configuring UI. Do not add a hand-written desktop filter parser or silently replace the sources with a small guessed domain list.
 
-Deliver these application-local files, following the existing XcodeGen source structure:
+Keep generated groups within the converter and WebKit limits without discarding ordering-dependent exceptions. Preserve normal top-level navigation and media playback; verify these in the native tests rather than assuming conversion proves compatibility.
 
-| File | Responsibility |
+**Done when:** offline `--check` reproduces the recorded hashes, all bundled groups compile on the minimum runtime, provenance and license obligations are recorded, and controlled blocked/allowed requests behave correctly. If licensing or native conversion fails, stop this task with the concrete failure. Do not mark an empty artifact as working protection.
+
+## Task 2: Add the preference model and rule compiler
+
+Add `App/Browser/BrowserAdBlocker.swift` and `Tests/BrowserAdBlockerTests.swift`.
+
+Use an app-local `@MainActor` manager with an injectable `UserDefaults` store and rule-store adapter. Keep the saved value small: a schema version, `enabled`, and a set of excluded normalized hosts. Use the key `browser.adBlocking.preferences.v1`. An absent value requests the default enabled policy; a corrupt value uses that same policy with no exceptions. Persist only confirmed settings.
+
+The manager owns loading the manifest, validating hashes, preparing compiled lists, and producing a prepared policy. Key compiled variants by the bundled content hash and canonical exception set. Coalesce identical in-flight preparation. Ignore completion of superseded requests; a late enable must not override a newer disable, Cancel, or browser-data clear.
+
+Add exact top-URL exception rules to every owned list while preserving source-rule ordering. Test that these disable both request blocking and cosmetic rules on the excluded top-level host, including its child frames. Exceptions must not exempt the same advertising request when another top-level website embeds it. Do not use unrestricted suffix matching or a navigation-delegate host check as a substitute.
+
+Install a replacement only after every required list compiles. On failure retain the previous usable prepared policy and committed preference. One silent retry is sufficient for a local preparation failure; only an unresolved user-requested apply gets the sheet's retry state. Removing protection removes only this feature's owned lists, preserving unrelated controller rules.
+
+**Done when:** tests prove canonical host matching, default values, confirmed persistence, Cancel, atomic replacement, duplicate-request coalescing, superseded completion, failed preparation, and preservation of unrelated rules. No failed apply changes the committed preference or leaves a partially installed policy.
+
+## Task 3: Integrate with webpage navigation and browser lifecycle
+
+Modify `App/Browser/TextBrowserModel.swift` and `App/Browser/BrowserWorkspaceModel.swift`.
+
+Inject the manager into `TextBrowserModel`, defaulting to the shared installation manager. Make browser construction and `clearHistory()` use that same manager. Keep `BrowserWebView`, its cookies, website data store, user agent, selection handlers, PDF handling, and workspace history intact.
+
+Prepare the bundled policy before allowing the first external top-level load when protection is enabled. Use the existing asynchronous navigation-policy path so direct `web.load`, restored URLs, in-page links, and popup-to-current-view navigation cannot bypass preparation. Subframes use installed WebKit rules and must not start their own preparation loop. Prewarm local compilation without fetching a network resource.
+
+At each new top-level navigation, install the latest confirmed prepared policy before allowing the request. Native rules must evaluate top-level exceptions across redirects. Preserve the existing workspace back/forward interception. Existing back/forward-cache content may retain the appearance it had when loaded; do not force a reload or discard browser history to change it. Reloaded documents use current settings.
+
+Settings confirmation captures the old committed policy, prepares the draft, checks that the action is still current, installs the complete result, and then commits preferences. Reload only the captured, still-current, reload-safe document when the user chose that action. Other open browser instances adopt the committed policy at their next document navigation; do not mutate their pages halfway through a visit.
+
+If initial preparation ultimately fails, allow ordinary browsing and retain the desired preference for a later retry. Settings must explain that blocking is unavailable rather than claim active protection. Never add a blocker error to normal webpage content.
+
+In `clearBrowsingData`, clear exception records before broadcasting browser recreation. Preserve the global preference, saved resources, account data, and compiled base assets. Invalidate pending work so it cannot restore cleared exceptions. Existing website import-destination preferences stay separate.
+
+**Done when:** first load is filtered; links, redirects, frames, reload, native/workspace history, popup navigation, restored sessions, and browser recreation follow the confirmed policy. Disabling and clearing exceptions remain effective after a late compilation completes. Browsing still works after preparation failure.
+
+## Task 4: Implement the shared settings sheet and menu entries
+
+Add `App/Browser/BrowserAdBlockingSettings.swift` and `UITests/BrowserAdBlockingUITests.swift`. Modify `App/Browser/BrowserWorkspaceView.swift` and `App/Browser/TextBrowserScreen.swift` only to add presentation state and the menu entry.
+
+Implement the settings specification above using a draft copied from committed preferences. Keep exception-list edits in that same draft. The sheet calls the manager's apply operation; views do not parse rules, manage WebKit controllers, or write `UserDefaults` directly.
+
+Use stable accessibility identifiers: `browser-ad-blocking`, `ad-blocking-enabled`, `ad-blocking-site`, `ad-blocking-exceptions`, `ad-blocking-cancel`, and `ad-blocking-confirm`. Give exception restore actions the corresponding hostname in their accessible label.
+
+**Done when:** both entry points show the same sheet and remembered preferences; Home omits the current-site section; no-exception accounts see no exception-management row; cancelled edits make no changes; confirmation reloads only the intended safe document. Verify light/dark appearance, narrow landscape, largest accessibility text, VoiceOver order, and reachable confirmation controls on phone and iPad.
+
+## Task 5: Prove request blocking and compatibility
+
+Add `Tests/Support/BrowserHTTPFixture.swift`, a loopback HTTP server using ephemeral ports, and extend `BrowserAdBlockerTests`. Use independent test preference suites. Exercise actual `WKWebView` requests; hiding an element alone does not prove that its request was blocked.
+
+| Scenario | Required assertion |
 | --- | --- |
-| `App/Browser/BrowserAdBlocker.swift` | Validate bundled rules and policy, compile and cache WebKit lists, publish immutable usable snapshots |
-| `App/Browser/BrowserAdRules.json` | Reviewed, versioned candidates and their evidence metadata |
-| `App/Browser/TextBrowserModel.swift` | Attach an eligible prepared snapshot to the webpage browser at a document boundary |
-| `Tests/BrowserAdBlockerTests.swift` | Rule boundaries, policy expiry, compilation, and real WebKit network behavior |
+| First load with protection | Targeted ad resource never reaches the server; ordinary resource and article content do |
+| Global off | Both resources reach the server |
+| Exact-host exception | Both resources and child-frame resources load on the excluded top-level host |
+| Different or lookalike host | The same ad resource remains blocked outside the exception |
+| Cosmetic exception | Hidden ad fixture becomes visible after explicitly applying the exception and reloading |
+| Redirect into/out of an exception | Final top-level host determines filtering without a transient wrong exception |
+| Navigation while preparation is pending | Latest intended URL wins; an old completion cannot start or replay a superseded navigation |
+| Cancel or clear during preparation | No old draft or cleared exception is committed or installed |
+| Preparation failure | Previous policy remains usable, or first-load browsing proceeds without a blocker-specific page error |
+| POST/form-result settings change | No second submission, forced refresh, erased draft, or navigation-history change |
+| Independent web views | Ebook, editor, and authentication configurations have no blocker rules |
 
-Keep the public interface small: asynchronous preparation and an optional prepared rule list for the next document. The manager owns compilation and eligibility; views and navigation callers do not parse rules. Use dependency injection for time, policy fetching, and the rule store in tests. A generic rule-engine framework or shared Core package is unnecessary.
+Re-run existing `TextBrowserTests` and relevant `BrowserWorkspaceTests`, particularly verification frames, cookies, selection context, PDF handling, browsing-data clearing, and workspace history. Add regression assertions only where this change affects the behavior.
 
-Generate WebKit JSON from the restricted manifest. Permit only the `block` action with the image, third-party, top-frame, and approved-page restrictions. Reject arbitrary actions, unrestricted patterns, missing metadata, and unknown schema versions. Compile through `WKContentRuleListStore`; attach through the webpage browser's own content controller. Apple's [rule format](https://developer.apple.com/documentation/safariservices/creating-a-content-blocker) provides resource, top-URL, frame, and loading-context restrictions; Apple's [WKWebView example](https://developer.apple.com/videos/play/wwdc2022/10049/) demonstrates native rule compilation and installation.
+Perform dated manual smoke checks on YouTube watch pages and Shorts, signed-in and signed-out playback, seeking, full screen, and playlists. Also check representative reading pages, sign-in, consent, and an advertising-gated page. Record what ads remain and any playback failures. These checks establish observed compatibility, not guaranteed YouTube ad removal or zero breakage.
 
-Prewarm preparation without delaying a page. Key the compiled cache by the actual rule-content hash. A compiled cache entry is usable only while the underlying rule evidence and disable policy are still valid. A cached list alone is not authorization to keep filtering indefinitely.
+**Done when:** deterministic request tests and existing browser regressions pass on iOS 26 and the current runtime. Complete phone/iPad UI checks and a Mac Catalyst build. Leave test simulators in normal account mode, remove fixture arguments, and preserve real account data. Physical-device installation remains outside this work unless authorized.
 
-Choose the snapshot once, before the web view's first external document load. If preparation is incomplete, let that browser instance remain unfiltered without awaiting network access or compilation. For a filtered instance, eligibility may only shrink during its lifetime. A revocation or expiry removes its owned list and leaves that instance unfiltered. Never add replacement or expanded rules to an existing browsing session. A later browser instance can use a fresh snapshot without recreating the current browser just for filtering.
+## Task 6: Package and document the release
 
-This trades some coverage on cold startup for a simpler lifetime guarantee. Rules cannot appear halfway through a visit, and history restoration cannot acquire new filtering behavior. Native URL and context restrictions handle redirects and subsequent documents. Test native back/forward cache behavior rather than assuming the navigation delegate controls every restored page.
+Regenerate the project using `bash apps/leximory-ios/scripts/generate-project.sh`. Build and test the `Leximory` scheme with XcodeBuildMCP, selecting an available simulator after inspecting session defaults. Run the focused `LeximoryTests/BrowserAdBlockerTests`, `LeximoryTests/TextBrowserTests`, relevant workspace tests, and `LeximoryUITests/BrowserAdBlockingUITests`. Capture the exact destination, runtime, command/tool arguments, and result in `docs/native-ios/browser-ad-blocking-verification.md`.
 
-Keep the existing `WKWebView`, cookies, data store, user agent, and native history. Recreating the web view to enable filtering is not acceptable. `BrowserWorkspaceModel.clearHistory()` must create its replacement browser through the same preparation path. Ebook and editor controllers receive no ad rules. Remove only the lists owned by this feature, preserving any unrelated WebKit rules.
+Update `apps/leximory-ios/DESIGN.md` and `README.md` with the final menu location, local preferences, exception clearing, explicit reload behavior, and limits. Keep the feasibility assessment as the policy record. Include the filter artifact refresh/check procedure and attribution locations for maintainers.
 
-Exit condition: first load, browser recreation, history, and cold-cache browsing work without a filtering-related delay or user action.
+Review notes should describe optional browser-local ad/tracker filtering, public WebKit rules, user-controlled exceptions, and the lack of a guaranteed video-ad-removal feature. Do not promise App Store approval. Do not submit, deploy, or publish as part of implementation unless separately requested.
 
-## Phase 3: Keep eligibility current and disabling automatic
+**Done when:** the generated project contains all source and resource files, the app builds, required tests have recorded results, the UI matches its specification, and the working diff contains no unrelated changes or database/schema work.
 
-Deliver a small public, HTTPS policy document on Leximory's existing hosting. Its location and deployment are part of implementation, not an assumed existing endpoint. No database, Supabase, account credentials, or per-website request telemetry are required.
+## Execution boundaries
 
-The document contains a schema version, publication and expiry times, an increasing revision, a global-disable flag, revoked bundled-rule versions, and the last successful review date for each exact bundled-rule hash. It may renew review evidence for an unchanged rule. It cannot introduce hosts, patterns, scripts, or blocking capabilities. Unknown rule IDs or mismatched hashes cannot become eligible. Persist a revocation for that rule version so a later policy response cannot reactivate it. Only an app release with a newly reviewed version can replace a revoked rule.
+The first executable task is producing and compiling the reproducible filter artifact. Complete that check before wiring navigation or building the settings UI. Task 2 follows Task 1; Task 3 follows Task 2; Task 4 follows Task 3; Task 5 verifies the complete behavior; Task 6 finishes the reviewable change.
 
-Treat review renewal as an operator responsibility with recorded evidence. Automate reproducible smoke checks and flag changed journeys for review; passing a shallow page-load check alone cannot renew the review date. If nobody maintains this evidence, the feature expires into normal browsing instead of asking the user to fix anything. New scope requires bundled assets and an app release.
-
-Require a successfully validated policy no older than 24 hours and a rule review no older than seven days before a rule is eligible. Use a stricter server expiry if supplied. A fresh install with no policy loads normally while preparation runs. Offline devices may use a valid cached policy; after expiry they browse normally. Reject rollback revisions, malformed documents, invalid clocks, future review dates, and unsupported schemas. Do not send account identifiers, page URLs, or cookies in this fetch.
-
-Refresh policy on foreground entry and while the app remains active, at most once per 15 minutes after a successful check. Back off failed requests while honoring the fixed expiry. A global disable or revocation stops further use of the affected lists. Expiry must also remove them from active controllers without reloading the document, with a foreground check before an inactive browser resumes. An unfinished compilation must not reinstall revoked or expired rules.
-
-| Situation | Automatic behavior |
-| --- | --- |
-| Missing, corrupt, expired, or uncompiled rules | Continue ordinary browsing |
-| Policy update temporarily unavailable | Use only the still-valid eligible snapshot; fall back to ordinary browsing on expiry |
-| Candidate compilation fails | Retain a previous snapshot only if it remains eligible; otherwise use no rules |
-| Rule or feature is revoked | Stop filtering with it; never refresh or replay the website automatically |
-| Website load fails | Preserve the browser's normal failure handling; do not guess that blocking caused it |
-
-Disabling prevents future matching cancellations. It cannot undo an image request already blocked or guarantee recovery of a page that has already reacted. Policy changes reach devices when refreshes succeed; a connected active device normally checks within 15 minutes, while the cached policy expires within 24 hours. These are mitigation limits, not instantaneous repair promises.
-
-Do not build heuristics around missing elements, HTTP errors, or page-load timing to detect all breakage. Do not retry forms, replay navigation, erase cookies, or reload a page as a filtering fallback. No blocker-specific error UI is necessary because this optional feature always yields to ordinary browsing.
-
-Exit condition: every preparation, freshness, and revocation failure returns to ordinary browsing without a prompt, forced reload, or lost input.
-
-## Phase 4: Verify behavior and release
-
-Add controlled HTTP fixtures that record requests, and exercise actual `WKWebView` loads. Keep these tests independent of live accounts and mutable production websites.
-
-Required checks:
-
-1. A reviewed top-level fixture's targeted ad image never reaches the fixture server. Its normal images and article content do.
-2. The identical advertising-image URL loads on an unreviewed site, an unreviewed path, and inside a child frame. This verifies that scope restrictions actually work.
-3. Matching-looking script, stylesheet, font, API, document, video, and audio requests all reach the server. An embedded player's resources remain unfiltered.
-4. Typing, submitting a form once, links, cookies, CAPTCHA-like frames, selection lookup, import, PDF opening, scrolling, and playback behave as they do without filtering. Runtime disabling preserves entered text and never submits or navigates again.
-5. Cold compilation, offline startup, malformed assets, stale policy, rule expiry, revocation, rollback policy responses, and compilation finishing after revocation all take the documented automatic path. Inject time; do not make tests wait hours or days.
-6. Redirects into and out of approved paths, popup navigation, back/forward restoration, and browser recreation cannot broaden rule coverage or acquire rules partway through a document visit.
-7. Clearing browsing data removes no account content and introduces no new webpage-history records. Ad-rule evidence and policy caches contain no browsing URLs or account secrets.
-
-Regenerate the Xcode project and run the focused native tests plus existing `TextBrowserTests` and relevant `BrowserWorkspaceTests`. Run on iOS 26 and the current iOS runtime, phone and iPad, plus the existing Mac Catalyst target. Leave the app in normal account mode after verification. The hosted policy is a static data asset; no web product behavior changes or JavaScript package installation are needed for the native portion.
-
-Before each rule version ships, replay its real page journeys in addition to deterministic fixtures. Include any known advertising gate, infinite scroll, selection/import, media, and layout-sensitive controls. Record the app build, runtime, website, date, and exact result. A new failure removes the candidate; it does not justify a new bypass.
-
-Start with internal testing, then TestFlight. Keep the policy endpoint available before distributing a build with active candidates. App Review notes should describe limited automatic banner-image filtering, its scope restrictions, and normal browsing on preparation failure. Make no zero-breakage, universal blocking, tracking-protection, or YouTube-ad-removal claims.
-
-## Completion criteria
-
-- Real WebKit tests prove that eligible banner-image requests are blocked and excluded requests still load.
-- Approved website journeys have no observed functional regression in the recorded test matrix.
-- Unknown websites, expired rules, disabled policies, and uncertain preparation use ordinary browsing.
-- Users never have to configure exceptions, refresh filters, or repair a page for the feature's own recovery path.
-- A developer can revoke filtering without changing an account or asking users to update settings, subject to the refresh and expiry limits above.
-- Residual risk is documented honestly. General website compatibility and App Store approval cannot be guaranteed.
-
-No implementation or live website effectiveness testing has been performed as part of this plan. The next executable unit is Phase 1's evidence manifest and controlled rule-scope tests, followed by the browser integration.
+This revision changes only this planning document. No dependency installation, rule generation, prototype execution, application build, test run, settings change, or deployment is authorized by the request to make the plan actionable.
