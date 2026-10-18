@@ -232,6 +232,39 @@ private final class ScrollHistoryServer: Sendable {
         }
     }
 
+    @Test(arguments: ["article", "ebook"])
+    func reopeningHiddenReadingRestoresItToHomeAcrossLaunches(format: String) async throws {
+        let namespace = "workspace-test." + UUID().uuidString
+        defer {
+            for prefix in ["browser.hidden-home-recents.", "browser.recent.", "recent-access.", "browser.annotations."] {
+                UserDefaults.standard.removeObject(forKey: prefix + namespace)
+            }
+        }
+        let mobile = client(WorkspaceTransport(format: format))
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        let text = try await mobile.documentDetails(textID: "article").text
+        await workspace.open(text)
+        workspace.visit(.home)
+        workspace.hideRecentText(text)
+        #expect(workspace.hiddenHomeRecents.textIDs.contains(text.id))
+        #expect(workspace.recentTexts == [text])
+
+        let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        #expect(restored.hiddenHomeRecents.textIDs.contains(text.id))
+        #expect(BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other").hiddenHomeRecents.textIDs.isEmpty)
+        restored.visit(.bookmarks)
+        await restored.open(text)
+        restored.visit(.home)
+        #expect(restored.hiddenHomeRecents.textIDs.isEmpty)
+        #expect(restored.recentTexts == [text])
+        #expect(BrowserWorkspaceModel(client: mobile, namespace: namespace).hiddenHomeRecents.textIDs.isEmpty)
+
+        restored.hideRecentText(text)
+        restored.go(-1)
+        #expect(restored.current.textID == text.id)
+        #expect(restored.hiddenHomeRecents.textIDs.isEmpty)
+    }
+
     @Test func recentReadingRestoresTitlesBeforeAnyFolderRefresh() async throws {
         let namespace = "workspace-test." + UUID().uuidString
         defer {
@@ -395,8 +428,10 @@ private final class ScrollHistoryServer: Sendable {
     }
     private actor WorkspaceTransport: ClientTransport {
         var calls = 0
+        private let format: String
         private var completed = false
         private var delayed = false
+        init(format: String = "article") { self.format = format }
         func complete() { completed = true }
         func delayNextRead() { delayed = true }
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
@@ -405,7 +440,7 @@ private final class ScrollHistoryServer: Sendable {
             guard operationID == "document" else { throw URLError(.unsupportedURL) }
             let status = completed ? "completed" : "annotating"
             let json = """
-            {"text":{"id":"article","libraryId":"folder","title":"Along the river","topics":[],"emoji":null,"createdAt":null,"format":"article"},
+            {"text":{"id":"article","libraryId":"folder","title":"Along the river","topics":[],"emoji":null,"createdAt":null,"format":"\(format)"},
              "library":{"id":"folder","name":"Reading","language":"en","owned":true,"archived":false,"shadow":false},"annotationProgress":"\(status)",
              "document":{"version":1,"revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","source":"Along the river.","blocks":[{"id":"block","kind":"paragraph","sourceRange":{"location":0,"length":16},"displayText":"Along the river.","spans":[]}]}}
             """

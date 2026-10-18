@@ -73,36 +73,41 @@ bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` red
  * Mobile definition path: the same trim, but the mobile client parses `{{原文形式||…}}`
  * (see `parseGeneratedDefinition`), so the format section and the examples use braces, the field
  * names are the mobile ones, and empty trailing fields are omitted rather than left blank.
- * Edited as a pair with WORD_GUIDE_EN: both describe one chunk, the output contract differs.
+ * Both guides describe one chunk; mobile has its own lexical guidance and output contract.
  */
 const WORD_GUIDE_MOBILE_EN = `# 核心指令
 
 你将看到一个英文句子，句中只有一个用 [[ ]] 标出的语块。你只需要为这一个语块生成注解。
 
 - 若被标记的是常见搭配，注解整个搭配（如注解 on side 而非只注解 side）
-- 释义必须贴合该语块在本句中的具体含义；多义词只注解语境义
+- 根据语境选择相关义项，先释所选词语本身的一般词义，再注明本句更具体的含义或所指。不要把未选中的修饰语含义并入词义；选中整个短语时才整体释义
 - 例句必须自造，不得照抄原句
 - 语源与同语根词必须真实可考；没有把握就留空该字段，严禁编造
 - 禁止输出原句，禁止注解 [[ ]] 以外的任何内容
-- 若语块是常见词或泛指词（如 the South、the Administration），释义必须点明它在本句中的具体所指
 
 ## 输出格式
 
 只输出一行，整行用双花括号包住这个语块，字段之间用 || 分隔，前后不要任何多余内容：
 
-{{原文形式||原形||语境释义||词源||同语根词}}
+{{原文形式||原形||原形释义||词源||同语根词}}
 
 - 原文形式：与句中完全一致（不含标点）
-- 原形：词典形，短语给出完整短语
-- 语境释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*
+- 原形：保留语境词性，普通复数、时态还原为词典形（apostles → apostle）；有独立词义或语义色彩的形式保留（形容词 simplified 保留，被动动词 was simplified by… 还原为 simplify；brethren 保留其群体、宗教或古雅色彩）。短语给出完整短语
+- 先确定第二栏原形，再据此给出词性、中英文释义、音标和词源；单复数、时态也须一致，不得沿用选中形式（如 apostle 按单数释义和注音）
+- 原形释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*
 - 词源：原义与构词，形如 语源“原义”: ***词素*** (义) + ***词素*** (义)
 - 同语根词：形如 ***词素*** (义) → **派生词** (中文)；没有词源或同源词时省略相应末尾字段，不要输出空字段
 
 ## 示例
 
-{{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known: *It later transpired that he had left.*||语源“升腾”: ***trans-*** (across) + ***spire*** (breathe)||***trans-*** (across) → **trans**fer (转移); ***spire*** (breathe) → in**spire** (鼓舞)}}
+{{children||child||**n. 孩子** \`tʃaɪld\` a young human being: *The child waved at me.*}}
 
-{{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}`
+{{walked||walk||**v. 步行** \`wɔːk\` move on foot: *We walk to school every day.*}}
+
+{{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}
+
+earthly [[sojourn]] 的输出示例：
+{{sojourn||sojourn||**n. 逗留；暂居（此处指寄居尘世）** \`ˈsɒdʒən\` a temporary stay: *Her sojourn in Rome lasted a week.*}}`
 
 /**
  * Guide for annotating one marked chunk. English uses the trimmed guide (see WORD_GUIDE_EN);
@@ -111,8 +116,7 @@ const WORD_GUIDE_MOBILE_EN = `# 核心指令
 export const wordGuide = (lang: Lang) => (lang === 'en' ? WORD_GUIDE_EN : instruction[lang])
 
 /** Guide for the mobile definition path: same trim, braced output contract. */
-export const mobileWordGuide = (lang: Lang) =>
-    lang === 'en' ? WORD_GUIDE_MOBILE_EN : instruction[lang]
+export const mobileWordGuide = (lang: Lang) => (lang === 'en' ? WORD_GUIDE_MOBILE_EN : instruction[lang])
 
 /** System prompt for the single-chunk (tap-to-define) annotation path. */
 export const wordAnnotationInstructions = (lang: Lang) => `

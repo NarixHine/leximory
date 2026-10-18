@@ -305,6 +305,11 @@ struct AnnotationActivity: Identifiable, Codable {
             UserDefaults.standard.set(data, forKey: "browser.hidden-home-recents." + namespace)
         }
     }
+    private func restoreHomeRecent(textID: String? = nil, webpageURL: URL? = nil) {
+        let removedText = textID.flatMap { hiddenHomeRecents.textIDs.remove($0) }
+        let removedWebpage = webpageURL.flatMap { hiddenHomeRecents.webpageURLs.remove($0) }
+        if removedText != nil || removedWebpage != nil { persistHiddenHomeRecents() }
+    }
     func deletePin(_ pin: BrowserHomePin) {
         homePins.removeAll { $0.id == pin.id }
         let retainedURLs = Set(homePins.compactMap(\.iconURL))
@@ -398,6 +403,7 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func rememberCurrentWebpage() {
         guard case .web(let page) = current.resource, page.item != nil else { return }
+        restoreHomeRecent(textID: page.bookmarkID, webpageURL: page.url)
         let title = browser.url == page.url ? browser.title : page.item?.title
         let savedTitle = recentWebpages.first(where: { $0.url == page.url })?.title
         let bookmarkTitle = recentTexts.first(where: { $0.id == page.bookmarkID })?.title
@@ -422,6 +428,7 @@ struct AnnotationActivity: Identifiable, Codable {
         rememberReading(details.text)
     }
     private func rememberReading(_ text: CatalogText) {
+        restoreHomeRecent(textID: text.id, webpageURL: text.bookmarkURL.flatMap(TextBrowserModel.address))
         recentReading.ids = Array(([text.id] + recentReading.ids.filter { $0 != text.id }).prefix(5))
         recentReading.texts.removeAll { $0.id == text.id }
         recentReading.texts.insert(text, at: 0)

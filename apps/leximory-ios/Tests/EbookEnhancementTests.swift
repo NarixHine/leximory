@@ -59,24 +59,32 @@ import LeximoryCore
         #expect(try sample(restored, pageY: 450) == sample(light, pageY: 450))
     }
 
-    @Test func overlappingPDFHighlightsHaveOneCoatOfColor() throws {
+    @Test(arguments: [false, true]) func overlappingPDFHighlightsHaveOneCoatOfSage(inverted: Bool) throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 160, height: 80)).pdfData { $0.beginPage() }
         let page = try #require(PDFDocument(data: data)?.page(at: 0))
         var preceding: [CGRect] = []
         for (index, bounds) in [CGRect(x: 10, y: 20, width: 70, height: 40),
                                 CGRect(x: 40, y: 20, width: 70, height: 40),
                                 CGRect(x: 55, y: 20, width: 30, height: 40)].enumerated() {
-            page.addAnnotation(EbookPDFHighlight(bounds: bounds, bookmarkID: index, excluding: preceding))
+            page.addAnnotation(EbookPDFHighlight(bounds: bounds, bookmarkID: index, excluding: preceding, inverted: inverted))
             preceding.append(bounds)
         }
-        let image = try #require(page.thumbnail(of: CGSize(width: 160, height: 80), for: .mediaBox).cgImage)
+        let thumbnail = page.thumbnail(of: CGSize(width: 160, height: 80), for: .mediaBox)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let image = try #require(UIGraphicsImageRenderer(size: CGSize(width: 160, height: 80), format: format).image { context in
+            thumbnail.draw(in: CGRect(x: 0, y: 0, width: 160, height: 80))
+            if inverted {
+                context.cgContext.setBlendMode(.difference)
+                UIColor.white.setFill()
+                context.cgContext.fill(CGRect(x: 0, y: 0, width: 160, height: 80))
+            }
+        }.cgImage)
         let single = try pixel(image, x: 20, y: 40)
-        #expect(single[0] > 240)
-        #expect(single[1] > 210)
-        #expect(single[2] < 180)
+        let expected = inverted ? [85, 98, 58, 255] : [225, 238, 198, 255]
+        for (actual, target) in zip(single, expected) { #expect(abs(Int(actual) - target) <= 2) }
         #expect(try pixel(image, x: 60, y: 40) == single)
         #expect(try pixel(image, x: 100, y: 40) == single)
-        #expect(try pixel(image, x: 130, y: 40) == [255, 255, 255, 255])
+        #expect(try pixel(image, x: 130, y: 40) == (inverted ? [0, 0, 0, 255] : [255, 255, 255, 255]))
     }
 
     private func pixel(_ image: CGImage, x: Int, y: Int) throws -> [UInt8] {

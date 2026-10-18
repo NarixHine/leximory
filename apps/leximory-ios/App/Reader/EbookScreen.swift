@@ -807,7 +807,7 @@ struct PDFReaderView: UIViewRepresentable {
     }
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.drawingOverlays?.update()
-        context.coordinator.updateBookmarks(in: view)
+        context.coordinator.updateBookmarks(in: view, inverted: context.environment.colorScheme == .dark)
         if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
             switch command.action {
@@ -830,11 +830,13 @@ struct PDFReaderView: UIViewRepresentable {
         var commandID: UUID?
         var drawingOverlays: PDFDrawingOverlays?
         private var appliedBookmarkIDs: [Int] = []
+        private var appliedInversion = false
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
-        func updateBookmarks(in view: PDFView) {
+        func updateBookmarks(in view: PDFView, inverted: Bool = false) {
             let ids = reader.bookmarks.map(\.id)
-            guard ids != appliedBookmarkIDs, let document = view.document else { return }
+            guard ids != appliedBookmarkIDs || inverted != appliedInversion, let document = view.document else { return }
             appliedBookmarkIDs = ids
+            appliedInversion = inverted
             for (page, annotation) in bookmarkAnnotations { page.removeAnnotation(annotation) }
             bookmarkAnnotations.removeAll()
             for bookmark in reader.bookmarks {
@@ -846,7 +848,7 @@ struct PDFReaderView: UIViewRepresentable {
                         let preceding = bookmarkAnnotations.compactMap { entry in
                             entry.0 === page ? entry.1.bounds : nil
                         }
-                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, excluding: preceding)
+                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, excluding: preceding, inverted: inverted)
                         page.addAnnotation(annotation)
                         bookmarkAnnotations.append((page, annotation))
                     }

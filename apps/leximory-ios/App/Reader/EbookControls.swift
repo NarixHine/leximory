@@ -129,11 +129,17 @@ final class LearningWebView: WKWebView {
 final class EbookPDFHighlight: PDFAnnotation {
     let bookmarkID: Int
     private let excludedBounds: [CGRect]
-    init(bounds: CGRect, bookmarkID: Int, excluding: [CGRect] = []) {
+    init(bounds: CGRect, bookmarkID: Int, excluding: [CGRect] = [], inverted: Bool = false) {
         self.bookmarkID = bookmarkID
         excludedBounds = excluding.filter { $0.intersects(bounds) }
         super.init(bounds: bounds, forType: .highlight, withProperties: nil)
-        color = UIColor(red: 1, green: 0.88, blue: 0.12, alpha: 0.5)
+        let marker = LeximoryPalette.wordHighlightUI.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        if inverted {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            marker.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            // Compensate for page inversion so the visible marker stays Leximory sage.
+            color = UIColor(red: 1 - red, green: 1 - green, blue: 1 - blue, alpha: alpha)
+        } else { color = marker }
     }
     required init?(coder: NSCoder) { return nil }
     override func draw(with box: PDFDisplayBox, in context: CGContext) {

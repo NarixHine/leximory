@@ -271,6 +271,49 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertEqual(browsed.count, 1)
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Continue browsing with three resources and one webpage"; screenshot.lifetime = .keepAlways; add(screenshot)
     }
+    @MainActor func testHiddenRecentsReturnWhenReopenedFromBookmarksAndHistory() throws {
+        let page = try BrowserPageServer(); defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url]); defer { restore(app) }
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+        let webpage = app.buttons["browser-recent-webpage-" + page.url]
+        XCTAssertTrue(webpage.waitForExistence(timeout: 5))
+        webpage.press(forDuration: 1)
+        app.buttons["从主页隐藏"].tap()
+        XCTAssertTrue(webpage.waitForNonExistence(timeout: 5))
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+        XCTAssertTrue(webpage.waitForExistence(timeout: 5))
+
+        for id in ["fixture-reader", "workspace-epub"] {
+            app.buttons["我的书签"].tap()
+            let resource = app.buttons["browser-resource-" + id].firstMatch
+            if id == "fixture-reader" {
+                let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+                XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+            }
+            XCTAssertTrue(resource.waitForExistence(timeout: 10))
+            if !resource.isHittable { app.swipeUp() }
+            resource.tap()
+            let reader = id == "workspace-epub" ? app.otherElements["ebook-reader"] : app.textViews["reading-document"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+            let recent = app.buttons["browser-resume-" + id]
+            XCTAssertTrue(recent.waitForExistence(timeout: 5))
+            recent.press(forDuration: 1)
+            app.buttons["从主页隐藏"].tap()
+            XCTAssertTrue(recent.waitForNonExistence(timeout: 5))
+            app.buttons["我的书签"].tap()
+            XCTAssertTrue(resource.waitForExistence(timeout: 10))
+            if !resource.isHittable { app.swipeUp() }
+            resource.tap()
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            app.buttons["首页"].coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
+            XCTAssertTrue(recent.waitForExistence(timeout: 5))
+            XCTAssertEqual(app.buttons.matching(identifier: "browser-resume-" + id).count, 1)
+        }
+    }
     @MainActor func testMoreOnlyShowsContextAndOpensNativeActivitySheet() {
         let app = launch(); defer { restore(app) }
         app.buttons["browser-more"].tap()
