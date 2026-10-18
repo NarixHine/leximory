@@ -13,6 +13,8 @@ struct AccountView: View {
     @State private var failure: String?
     @State private var editor: AccountEditor.Field?
     @State private var showsPlans = false
+    @State private var openingSubscription = false
+    @State private var purchaseStore = MembershipStore()
     @State private var confirmsSignOut = false
     @State private var photo: PhotosPickerItem?
     #if DEBUG && targetEnvironment(simulator)
@@ -20,6 +22,7 @@ struct AccountView: View {
     init(session: AccountSession, playback: PlaybackController, preview: AccountSettings? = nil) {
         self.session = session; self.playback = playback
         _details = State(initialValue: preview); fixtureMode = preview != nil
+        _purchaseStore = State(initialValue: MembershipStore(preview: preview != nil))
         _showsPlans = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-plans-preview"))
         _editor = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-editor-preview") ? .username : nil)
     }
@@ -27,7 +30,6 @@ struct AccountView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.horizontalSizeClass) private var sizeClass
 
     private var editingUnavailable: Bool { busy || session.sync?.online == false }
 
@@ -37,7 +39,6 @@ struct AccountView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     if let details {
                         hero(details)
-                        actions(details)
                         stats(details)
                         AccountActivityCalendar(details: details)
                         preferences(details)
@@ -82,7 +83,7 @@ struct AccountView: View {
                 AccountEditor(field: field, session: session, username: details?.username ?? "")
             }
             .sheet(isPresented: $showsPlans) {
-                if let details { AccountPlansSheet(details: details, session: session) }
+                if let details { MembershipView(details: details, session: session, store: purchaseStore) }
             }
             .alert("退出登录？", isPresented: $confirmsSignOut) {
                 Button("退出登录", role: .destructive) { playback.stop(); Task { await session.signOut() } }
@@ -133,34 +134,32 @@ struct AccountView: View {
         format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return format.date(from: value) ?? ISO8601DateFormatter().date(from: value)
     }
-    private func actions(_ value: AccountSettings) -> some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { subscription(value); claim(value) }
-            VStack(spacing: 12) { subscription(value); claim(value) }
-        }
-    }
-    private func subscription(_ value: AccountSettings) -> some View {
+    private func subscriptionCard(_ value: AccountSettings) -> some View {
         Button {
-            if value.plan == "beginner" { showsPlans = true }
-            else { perform { openURL(try await session.client.accountBilling()) } }
+            if value.plan == "beginner" || value.membership?.provider == .appStore { showsPlans = true }
+            else {
+                perform {
+                    openingSubscription = true
+                    defer { openingSubscription = false }
+                    openURL(try await session.client.accountBilling())
+                }
+            }
         } label: {
-            Label(value.plan == "beginner" ? "升级" : "管理订阅", systemImage: "sparkles")
-                .foregroundStyle(LeximoryPalette.paper)
-                .frame(maxWidth: .infinity).padding(.vertical, 10)
-        }.buttonStyle(.borderedProminent).tint(LeximoryPalette.ink).buttonBorderShape(.capsule).disabled(editingUnavailable)
-    }
-    private func claim(_ value: AccountSettings) -> some View {
-        Button { perform { notice = try await session.client.claimDailyLexicoin() } } label: {
-            Label(value.hasClaimed ? "今日已领取" : sizeClass == .compact ? "领取余额" : "领取每日 LexiCoin", systemImage: "gift")
-                .frame(maxWidth: .infinity).padding(.vertical, 10)
-        }.buttonStyle(.bordered).buttonBorderShape(.capsule).disabled(value.hasClaimed || editingUnavailable)
+            MembershipEntryLabel(details: value, opening: openingSubscription, unavailable: editingUnavailable)
+        }
+        .buttonStyle(MembershipEntryButtonStyle()).disabled(editingUnavailable)
+        .accessibilityLabel("订阅计划，\(value.membershipTitle)")
+        .accessibilityValue(value.membershipSummary)
+        .accessibilityHint(value.hasPaidMembership ? "管理当前订阅" : "查看会员方案")
+        .accessibilityIdentifier("account-subscription")
     }
     private func stats(_ value: AccountSettings) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
-            AccountStatCard(title: "LexiCoin 余额", symbol: "circle.grid.2x2", value: value.balance.formatted())
-            AccountStatCard(title: "订阅计划", symbol: "globe", value: value.planLabel.replacingOccurrences(of: "—", with: "—\n"))
-            AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions)
-            AccountQuotaCard(title: "AI 语点额度", allowance: value.audio)
+        VStack(spacing: 12) {
+            subscriptionCard(value)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
+                AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions)
+                AccountQuotaCard(title: "AI 语点额度", allowance: value.audio)
+            }
         }
     }
     private func preferences(_ value: AccountSettings) -> some View {
@@ -235,19 +234,109 @@ struct AccountView: View {
     }
 }
 
-private struct AccountStatCard: View {
-    let title: String
-    let symbol: String
-    let value: String
+private struct MembershipEntryLabel: View {
+    let details: AccountSettings
+    let opening: Bool
+    let unavailable: Bool
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private let paper = Color(red: 248 / 255, green: 250 / 255, blue: 248 / 255)
+    private let ink = Color(red: 25 / 255, green: 32 / 255, blue: 36 / 255)
+    private var foreground: Color { colorScheme == .dark ? paper : ink }
+    private var actionFill: Color { colorScheme == .dark ? paper : ink }
+    private var actionInk: Color { colorScheme == .dark ? ink : paper }
+    private var actionTitle: String { details.hasPaidMembership ? "管理当前订阅" : "查看会员方案" }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack { Text(title).font(LeximoryTypography.interface(13, style: .caption1)); Spacer(); Image(systemName: symbol) }.foregroundStyle(.secondary)
-            Spacer(minLength: 12)
-            Text(value).font(LeximoryTypography.interface(22, style: .title2)).frame(maxWidth: .infinity, alignment: .leading)
-        }.frame(maxWidth: .infinity, minHeight: 88, alignment: .leading).padding(16)
-            .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+        VStack(alignment: .leading, spacing: 16) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    Text("订阅计划")
+                    if !details.hasPaidMembership { Text(details.membershipTitle) }
+                }.fixedSize()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("订阅计划")
+                    if !details.hasPaidMembership { Text(details.membershipTitle) }
+                }
+            }
+            .font(LeximoryTypography.interface(13, style: .subheadline))
+            .foregroundStyle(foreground.opacity(0.8))
+
+            if typeSize.isAccessibilitySize {
+                headline
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    illustratedHeadline(width: 240)
+                    illustratedHeadline(width: 160)
+                    VStack(alignment: .leading, spacing: 12) {
+                        headline
+                        artwork.frame(maxWidth: 240).frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+            }
+            if details.hasPaidMembership || details.membership != nil {
+                Text(details.membershipSummary)
+                    .font(LeximoryTypography.interface(14, style: .subheadline))
+                    .foregroundStyle(foreground.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 12) {
+                Text(actionTitle).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                if opening { ProgressView().tint(actionInk) }
+                else { Image(systemName: "chevron.right").accessibilityHidden(true) }
+            }
+            .font(LeximoryTypography.interface(15, style: .subheadline))
+            .foregroundStyle(actionInk)
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(actionFill, in: .capsule)
+            .opacity(unavailable && !opening ? 0.55 : 1)
+        }
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(foreground)
+        .background {
+            GeometryReader { geometry in
+                Image(decorative: colorScheme == .dark ? "HomeWallpaperDark" : "HomeWallpaperLight")
+                    .resizable().scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .bottom)
+                    .clipped()
+            }
+        }
+        .clipShape(.rect(cornerRadius: 24))
+        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(foreground.opacity(0.12), lineWidth: 0.5) }
+        .contentShape(.rect(cornerRadius: 24))
+    }
+
+    private var headline: some View {
+        Text(details.hasPaidMembership ? details.membershipTitle : "畅学语言，\n畅行天下。")
+            .editorialFont(26, relativeTo: .title, language: "Chinese")
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func illustratedHeadline(width: CGFloat) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            headline.fixedSize(horizontal: true, vertical: true)
+            Spacer(minLength: 0)
+            artwork.frame(width: width)
+        }
+    }
+
+    @ViewBuilder private var artwork: some View {
+        if let image = UIImage(named: "membership-reading.png") {
+            Image(uiImage: image).resizable().scaledToFit().accessibilityHidden(true)
+        }
     }
 }
+
+private struct MembershipEntryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.82 : 1)
+    }
+}
+
 private struct AccountQuotaCard: View {
     let title: String
     let allowance: Account.Allowance
@@ -337,57 +426,6 @@ private struct AccountEditor: View {
                 value = ""; confirmation = ""
                 if field == .email { emailUpdated = true } else { dismiss() }
             } catch { message = "更新失败，请检查填写内容后重试。" }
-        }
-    }
-}
-
-private struct AccountPlansSheet: View {
-    let details: AccountSettings
-    let session: AccountSession
-    @State private var busy = false
-    @State private var error: String?
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    ForEach(details.subscriptionPlans) { plan in
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text(plan.name).font(LeximoryTypography.interface(22, style: .title2))
-                                Spacer()
-                                if plan.id == "polyglot" { Text("推荐").font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary) }
-                            }
-                            Text("\(plan.price) /月").font(LeximoryTypography.interface(20, style: .title3))
-                            Divider()
-                            if plan.id != "beginner" {
-                                Label("Talk to Your Library", systemImage: "checkmark")
-                                Text("自动化复盘：对话 AI，玩转词汇").foregroundStyle(.secondary)
-                            }
-                            Label("\(Int(plan.definitions)) 次文章注解", systemImage: "checkmark")
-                            Text("相当于 \(Int(plan.definitions * 4)) 次词汇注解").foregroundStyle(.secondary)
-                            Label("\(Int(plan.audio)) 次朗读生成", systemImage: "checkmark")
-                            Label("每日 LexiCoin，可领取 \(Int(plan.dailyAmount)) 个代币", systemImage: "checkmark")
-                            if plan.id != "beginner" {
-                                Button(plan.id == "bilingual" ? "开始体验" : "立即升级") {
-                                    busy = true
-                                    Task {
-                                        defer { busy = false }
-                                        do { openURL(try await session.client.accountCheckout(plan: plan.id)) }
-                                        catch { self.error = "暂时无法升级，请稍后重试。" }
-                                    }
-                                }.buttonStyle(.borderedProminent).tint(LeximoryPalette.ink).foregroundStyle(LeximoryPalette.paper).disabled(busy)
-                            }
-                        }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
-                    }
-                    if let error { Text(error).foregroundStyle(.red) }
-                    Link("联系 hi@leximory.com", destination: URL(string: "mailto:hi@leximory.com")!)
-                }.padding(20).frame(maxWidth: 640).frame(maxWidth: .infinity)
-            }.background(LeximoryPalette.paper).font(LeximoryTypography.interface(15, style: .subheadline))
-                .navigationTitle("升级").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
         }
     }
 }

@@ -1,0 +1,103 @@
+# Native subscription backend plan
+
+Reviewed on 18 October 2026. Proposal only; no backend code or database changes have been applied. This replaces the earlier five-table design.
+
+## Review result
+
+The earlier plan duplicated ownership, account tokens, transactions, notification delivery and effective plans. The recommended first release needs **one new table**, the existing Inngest service, one shared access resolver, and one purchase-delivery endpoint. This is an engineering recommendation, not an Apple-prescribed database design.
+
+The current frontend is not ready for App Store submission. Real payment and restoration remain disabled. Its privacy explanation is not a published policy, account settings lack account deletion, and the unrestricted Creem portal needs review. The Sandbox restriction in the earlier plan would also break App Review purchases.
+
+## Existing behavior to reuse
+
+- `public.users.plan` already holds the existing web or manually assigned plan. Creem activation/expiration updates it through `updatePlan`. Keep that existing meaning. Apple delivery must **never write it**.
+- `packages/user/src/index.ts:getPlan` is already used by web quotas. Extend it into the shared effective-plan resolver; migrate direct plan readers too, including mobile account settings, account summary, annotation services and audio generation. Auth metadata also contains a plan field in `getUserById`; it must not become a competing authorization source.
+- Plan names, tier ordering and AI limits belong to `@repo/env/config`. Add the Apple product-to-plan mapping there once. Do not copy product IDs or prices into SQL constraints.
+- Redis continues to hold used AI allowances and their rolling 30-day windows. Subscribing changes the limit, not the consumed amount or reset time. Native screens expose no currency controls or benefits.
+- Inngest already runs durable background work. Reuse it for Apple notifications and periodic status reconciliation.
+
+## Store facts and infer the rest
+
+| Item | Decision |
+| --- | --- |
+| Apple appAccountToken | Use the authenticated Supabase `auth.users.id` UUID. No new token table or GET-token endpoint. |
+| Subscription ownership | Store the account ID on the subscription-chain row. The same row survives expiration and account deletion. |
+| Apple billing evidence | Keep the latest verified signed transaction, signed renewal information and Apple's returned status. |
+| Product, expiry, grace period, renewal choice | Decode from verified signed claims. Do not add parallel columns for the first release. |
+| Effective access and plan | Compute from existing `users.plan`, Apple evidence, approved environment and current server time. Never store another `is_active` or effective-plan field. |
+| Purchase history | Query Apple's history API when support needs it. A permanent local transaction ledger is unnecessary for subscription-only, non-additive delivery. |
+| Notification retries | Inngest handles delivery, retries and execution records. No second SQL queue with leases and attempt counters. |
+| Concurrency version | Keep a row version for compare-and-swap. It controls writes, not membership state. |
+
+Apple accepts an app-provided UUID and returns it in transaction and renewal information. Reusing the existing random Supabase UUID is our implementation choice; treat it as a pseudonymous identifier disclosed to Apple, never as a secret or proof of authentication. Do not send email or profile data as the token. See [Apple's appAccountToken documentation](https://developer.apple.com/documentation/appstoreserverapi/appaccounttoken).
+
+[`billing-schema-proposal.sql`](billing-schema-proposal.sql) creates only `apple_subscriptions`, with RLS and server-only grants. It adds no `users` columns and changes no existing balances or web billing data. SQL alone does not implement signature verification, immutable ownership or conditional writes; the delivery RPC below is required before enabling purchases. The script intentionally fails on an existing table. If any part of the old proposal was applied outside this chat, inspect it before preparing a migration; do not drop existing financial records.
+
+At this scale, decode the few subscription rows belonging to an account when resolving access. If profiling later proves this expensive, cache decoded verified claims, bounded by the next expiry or grace deadline and invalidated on snapshot replacement. Add indexed expiry columns only when a measured query needs them.
+
+## One access resolver, two independent sources
+
+```text
+legacyPlan = existing users.plan
+applePlan = highest eligible plan from this account's verified Apple chains
+account.plan = higher(legacyPlan, applePlan)
+```
+
+Apple access requires the correct bundle, allowed product, subscription group, environment and owner. Active status additionally requires an unexpired transaction without revocation or supersession. Grace status requires an unexpired verified grace deadline and no revocation. Billing retry alone, expired periods and revoked subscriptions grant no Apple access. Evaluate dates at authorization time so a delayed cron job cannot extend a subscription.
+
+Use the existing configured ordering `beginner < bilingual < polyglot`. Do not sum allowances from multiple providers. A canceled renewal keeps its current entitlement until expiry; derive cancellation from the signed renewal setting. An old refunded or upgraded transaction must not invalidate a newer current transaction from the same chain.
+
+This removes the Creem/Apple overwrite problem without backfilling a second Creem ledger: a Creem expiration changes only the existing legacy source; Apple expiration changes only the Apple source. Both web and native consumers receive the computed effective plan. This simplification is safe **only after every entitlement/paid-feature reader uses the resolver**. Do not ship a half-migrated system where some readers still treat `users.plan` as the final answer. Invalidate or bound any downstream account/plan cache at entitlement deadlines.
+
+A non-beginner legacy plan blocks a second Apple checkout. A historical `creem_id` does not prove an active web subscription or distinguish a manual grant. Treat unknown legacy provenance as `legacy`, not a guessed `web` or `complimentary` provider. Resolve billing-management eligibility from verified provider data when needed. Likewise, web checkout should check the shared effective plan before offering a duplicate subscription. Independent Apple and web payment systems cannot guarantee that two simultaneous checkouts will never charge; handle that race explicitly and help the user cancel the unwanted renewal.
+
+## Delivery and recovery
+
+1. Configure one App Store subscription group. Polyglot is level 1; Bilingual is level 2. Use the proposed monthly IDs already in the frontend only after confirming them in App Store Connect. No trial, annual offer or Family Sharing is promised in this release. Disable promoted/streamlined out-of-app acquisition initially so new purchases have an authenticated Leximory account token. Unknown legacy or out-of-app transactions without a token require an ownership-recovery flow, not a guessed owner.
+2. Extend the existing authenticated account response with server-derived membership and purchase eligibility. The client already knows its authenticated UUID; there is no separate billing-bootstrap endpoint. The existing account catalog returns each Apple product ID from the same server mapping; remove the hand-maintained native ID list when wiring delivery. StoreKit supplies localized product names and prices. The backend keeps the product allowlist and environment policy. The current optional native membership contract must be extended to represent `legacy` provenance and multiple billing sources when they exist. Return these as derived billing entries alongside the single computed account plan; do not invent legacy expiry or renewal status. The current frontend is preparatory, not already compatible with this revised backend contract.
+3. Add authenticated `POST /account/apple-billing/transactions`. Accept a size-limited transaction JWS. Use [Apple's App Store Server Library](https://github.com/apple/app-store-server-library-node) to verify signature/certificate chain, bundle, production appAppleId, environment, allowed product, transaction type, subscription group and dates. Require the signed account token to match the authenticated UUID. Neither a decoded client payload nor possession of a UUID proves a purchase.
+4. Read the chain and its version, then fetch current authoritative status from the matching Apple environment **outside** a database transaction. Verify the returned nested signed transaction and renewal information and their chain identity. A database RPC locks the chain row, checks ownership and the expected version, and replaces the verified snapshot atomically. Identical evidence is a no-op. For a new chain, insert under the composite primary key; on conflict, reread and reconcile. A stale version means refetch Apple and retry; do not overwrite newer evidence. This handles API fetches completing out of order without a transaction spanning a network call. Preserve a newer known revocation or renewal decision if Apple returns older signed evidence; refetch instead of downgrading freshness. Never accept a notification's arrival order as billing order.
+5. Return server-confirmed account settings and acknowledgement of the submitted transaction only after the snapshot commit and effective-plan calculation. This acknowledgement can cover an older valid transaction when Apple reports a newer current period; it is not a new grant. No quota or currency increment occurs, so retrying the same request is harmless without a transaction ledger. If Apple has not yet exposed a just-completed purchase, retry and keep the transaction unfinished. Never report purchase success from a queued job or local StoreKit success alone.
+6. Start the StoreKit transaction listener at session scope. Capture the account generation and token before purchasing, pass `.appAccountToken(authenticatedUUID)`, and reject superseded-session delivery results. Finish a transaction only after server acknowledgement. Keep unfinished transactions across process death. Pending approval prevents resubmission; user cancellation returns silently to the selected plan. Restore explicitly calls `AppStore.sync()` and submits verified current entitlements to the same endpoint. Wrong account, no purchase, delayed confirmation and service failure need distinct recovery.
+7. Verify each V2 notification at the HTTP boundary, including nested payloads and environment. Send a minimal chain-refresh event with `id = environment + notificationUUID` to Inngest and return success only after Inngest accepts it. Do not put JWS evidence, email or auth tokens in queue payloads or logs. The worker fetches Apple status and uses the same versioned snapshot writer. Repeat events remain safe after Inngest's deduplication window because snapshot replacement has no additive effects. Fail the HTTP request if enqueueing fails. Use Inngest retries, failure alerts and replay; do not add a second database worker queue. See [Inngest event delivery](https://www.inngest.com/docs/reference/typescript/v3/events/send).
+8. Reconcile known chains periodically and replay recent notification history to discover events missed before a chain was first stored. Keep the recovery window within Apple's supported history period and monitor outages; Inngest is a deliberate operational dependency. Unknown-owner events must remain recoverable through retry/history/support. [Apple documents notification retry and history recovery](https://developer.apple.com/documentation/appstoreservernotifications/responding-to-app-store-server-notifications). Dates still limit access immediately even when reconciliation is late; refund detection depends on notification/reconciliation timeliness.
+9. The same chain row is the ownership record. Never transfer it automatically to another account, even when the Apple account matches. A null owner is a deletion tombstone, not an unclaimed purchase. Offer account recovery and App Store cancellation access rather than a dead end. Define retention for signed evidence and the residual chain identifier; delete or redact data without a lawful retention basis. The UUID remains embedded in signed evidence until that evidence is erased.
+
+The versioned writer is backend work still to implement, not part of the dashboard SQL. It must also prevent updates from reclaiming a deleted/tombstoned row. A client retry cannot resurrect a deleted account. Inngest concurrency limits can reduce collisions but do not replace the database conditional write because synchronous client delivery also writes snapshots.
+
+## Sandbox and App Review
+
+Keep Production and Sandbox rows separate. Ordinary paying accounts resolve Production evidence only. A server-configured test/review account cohort may resolve Sandbox evidence for development, TestFlight and App Review, including the production-signed submitted binary. The cohort is server-owned configuration, never a client query flag or editable profile metadata. It must include the supplied reviewer account and be explained in review notes. Sandbox grants are test access, never revenue or production purchase evidence.
+
+The old blanket ban on Sandbox entitlements in the production service was incorrect for App Review. [Apple evaluates purchases in Sandbox](https://developer.apple.com/help/app-review/before-submitting-for-review/configure-in-app-purchases), so test the submitted binary against the deployed backend with the reviewer account before submission. If reviewers must create fresh accounts, support a documented authenticated review-enrollment route instead of silently blocking their purchases.
+
+## App Store compliance review
+
+The intended subscription model is suitable, but the present app is **not submission-ready**. These are release gates, not a claim that approval is guaranteed.
+
+| Area | Finding and required action |
+| --- | --- |
+| Digital features | Keep native upgrades on StoreKit. Existing cross-platform access can remain. Avoid assuming Leximory qualifies for the reader-app exception. |
+| External portal | The current account card opens an unrestricted Creem portal for legacy paid users. Inspect its actual destinations. For the simplest worldwide release, use native status/cancellation/support and omit links that can sell or upgrade digital access. US and entitled-storefront exceptions require an explicit scoped implementation. |
+| Completeness | Disabled checkout and nonfunctional restore must be replaced before submitting the purchase release. |
+| Personal data / AI | Add explicit permission before sharing personal data with third-party AI, with an accessible withdrawal path and accurate disclosures. Current generic explanatory text alone is insufficient evidence of consent. |
+
+These findings follow [App Review Guidelines 2.1, 3.1.1–3.1.3 and 5.1](https://developer.apple.com/app-store/review/guidelines/). The restricted-portal recommendation is conservative product judgment, not an assertion that every cancellation-only link is prohibited.
+
+Subscription screens must show the name, period, service provided, full localized renewal price, restore/sign-in access, and working Terms and Privacy Policy links. Keep monthly AI allowances explicit, distinguish their rolling 30-day reset from the calendar-month billing period, and explain what happens to unused allowance. Publish a real privacy policy URL in both the app and App Store Connect; the current local explanation does not satisfy that link requirement. See [Apple's subscription presentation requirements](https://developer.apple.com/app-store/subscriptions/).
+
+Account creation also requires an easy-to-find way to initiate **complete account deletion** inside the app. A sign-out button or support email is insufficient. Offer native App Store subscription management and explain continuing renewal, but do not force cancellation or waiting for expiry before deletion. Implement secure deletion, associated-data erasure and disclosed lawful retention. See [Apple's account-deletion guidance](https://developer.apple.com/help/app-review/guideline-reference/5-1-1-account-deletion).
+
+One subscription group supports tier changes without separate concurrent Apple subscriptions. Test upgrades, scheduled downgrades, renewals and cancellation; do not require customers to buy the same Apple subscription twice across iPhone and iPad. Use Apple's native management UI for Apple billing. See [Apple's subscription guidance](https://developer.apple.com/app-store/subscriptions/).
+
+## Verification before enabling purchases
+
+- Every paid feature and every displayed effective plan uses the shared resolver on web and native paths. Apple delivery never writes `users.plan`.
+- A canceled Apple subscription remains available to expiry; expiry, grace-end and revocation do not rely on a cron to stop time-bounded access. Creem expiration cannot cancel active Apple access, and Apple expiry cannot cancel an existing legacy plan.
+- Duplicate transactions/events never increase allowances or create a second owner. Stale concurrent refreshes cannot overwrite newer state. Deletion racing with delivery cannot reclaim a chain.
+- Test real Sandbox purchases, restore, approval pending, cancellation, refunds, billing retry, grace, tier changes, response loss, process death, account switching, wrong-account recovery and notification outage/replay.
+- Test the production-signed review binary on both iPhone and iPad against the deployed review environment policy. Confirm products, Paid Apps Agreement, review metadata, policy links, deletion and AI disclosure/consent.
+- Verify RLS denies reads and writes to anon/authenticated roles. Verify forged, wrong-bundle, wrong-product and wrong-environment JWS payloads never grant access.
+- Confirm Inngest event retention/replay configuration, failure monitoring and notification-history recovery before choosing not to run a second SQL inbox.
+
+No Supabase command was executed for this review. The revised SQL remains a proposal for manual review and execution in the dashboard.

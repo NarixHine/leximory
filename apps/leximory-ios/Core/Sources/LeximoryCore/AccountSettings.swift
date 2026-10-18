@@ -13,9 +13,6 @@ public struct AccountSettings: Codable, Sendable {
     public var image: String?
     public let email: String?
     public let createdAt: String
-    public let balance: Double
-    public let dailyAmount: Double
-    public let hasClaimed: Bool
     public let accent: String
     public let definitions: Account.Allowance
     public let audio: Account.Allowance
@@ -26,8 +23,16 @@ public struct AccountSettings: Codable, Sendable {
         public let price: String
         public let definitions: Double
         public let audio: Double
-        public let dailyAmount: Double
     }
     public let subscriptionPlans: [SubscriptionPlan]
+    public struct Membership: Codable, Sendable {
+        public enum Provider: String, Codable, Sendable { case appStore, web, complimentary }
+        public enum Status: String, Codable, Sendable { case active, gracePeriod, billingRetry, expired, revoked }
+        public let provider: Provider
+        public let status: Status
+        public let expiresAt: String?
+        public let autoRenews: Bool?
+    }
+    public let membership: Membership?
     public let today: String
 }

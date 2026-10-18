@@ -34,7 +34,6 @@ import HTTPTypes
         #expect(account.accent == "BrE")
         #expect(account.subscriptionPlans.map(\.id) == ["beginner", "bilingual", "polyglot"])
         #expect(account.activity.last?.count == 36)
-        #expect(try await client.claimDailyLexicoin() == "领取成功，LexiCoin + 1")
         try await client.setAccountAccent("AmE")
         #expect(await transport.accent == "AmE")
         #expect(try await client.accountToken() == "private-token")
@@ -51,7 +50,6 @@ import HTTPTypes
             case "accountSettings":
                 let url = try #require(Bundle.module.url(forResource: "account-settings", withExtension: "json", subdirectory: "Fixtures"))
                 payload = try Data(contentsOf: url)
-            case "accountClaim": payload = Data(#"{"message":"领取成功，LexiCoin + 1"}"#.utf8)
             case "accountAccent":
                 struct Input: Decodable { let accent: String }
                 let data = try await Data(collecting: #require(body), upTo: 1024)

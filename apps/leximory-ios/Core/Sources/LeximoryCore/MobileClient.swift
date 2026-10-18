@@ -300,9 +300,6 @@ public struct MobileClient: Sendable {
         guard let value = Operations.accountAccent.Input.Body.jsonPayload.accentPayload(rawValue: accent) else { throw URLError(.badURL) }
         _ = try await client.accountAccent(body: .json(.init(accent: value))).ok.body.json
     }
-    public func claimDailyLexicoin() async throws -> String {
-        try await client.accountClaim().ok.body.json.message
-    }
     public func accountToken() async throws -> String { try await client.accountToken().ok.body.json.token }
     public func revokeAccountToken() async throws { _ = try await client.accountRevokeToken().ok.body.json }
     public func uploadAccountAvatar(_ data: Data) async throws -> URL {

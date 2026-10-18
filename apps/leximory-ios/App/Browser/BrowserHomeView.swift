@@ -196,9 +196,9 @@ struct BrowserHomeView: View {
     }
     @ViewBuilder private func homeCards(squares: Bool, folded: Bool) -> some View {
         if !squares && !folded && !typeSize.isAccessibilitySize {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 20), GridItem(.flexible())], spacing: 20) {
+            BrowserHomeCardGrid {
                 homeCardButtons(squares: true, folded: false, grid: true)
-            }.padding(.horizontal, 8)
+            }
         } else {
             let layout = squares ? AnyLayout(HStackLayout(spacing: folded ? 12 : -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
             layout {
@@ -218,14 +218,15 @@ struct BrowserHomeView: View {
         return Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
     }
     private func card(_ title: String, symbol: String, color: Color, border: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let radius: CGFloat = folded ? 22 : grid ? 24 : 30
+        return Button(action: action) {
             cardLabel(title, symbol: symbol,
                 iconColor: colorScheme == .dark ? border : border.mix(with: label, by: 0.35),
                 folded: folded, square: square, grid: grid)
                 .foregroundStyle(label)
-                .background(color.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.18 : 0.82) : 1), in: RoundedRectangle(cornerRadius: folded ? 22 : 30))
+                .background(color.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.18 : 0.82) : 1), in: RoundedRectangle(cornerRadius: radius))
                 .background {
-                    RoundedRectangle(cornerRadius: folded ? 22 : 30)
+                    RoundedRectangle(cornerRadius: radius)
                         .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.12 : 0) : 1))
                         .shadow(color: (colorScheme == .dark ? label : border)
                             .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.16),
@@ -233,12 +234,14 @@ struct BrowserHomeView: View {
                 }
                 .background {
                     if colorScheme == .dark && translucentBackgrounds {
-                        RoundedRectangle(cornerRadius: folded ? 22 : 30).fill(.thinMaterial).opacity(0.75)
+                        RoundedRectangle(cornerRadius: radius).fill(.thinMaterial).opacity(0.75)
                     }
                 }
-                .overlay { RoundedRectangle(cornerRadius: folded ? 22 : 30).strokeBorder(border, lineWidth: folded ? 4 : 6) }
+                .overlay { RoundedRectangle(cornerRadius: radius).strokeBorder(border, lineWidth: folded ? 4 : grid ? 5 : 6) }
                 .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
-        }.buttonStyle(BrowserCardButtonStyle()).matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || typeSize.isAccessibilitySize ? 0 : angle))
+                .contentShape(RoundedRectangle(cornerRadius: radius))
+        }.buttonStyle(BrowserCardButtonStyle()).accessibilityLabel(title)
+            .matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || grid || typeSize.isAccessibilitySize ? 0 : angle))
     }
     @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
         if square && folded {
@@ -249,17 +252,21 @@ struct BrowserHomeView: View {
             }.padding(.horizontal, 12).padding(.vertical, 12)
                 .frame(maxWidth: .infinity, minHeight: 96)
         } else if square {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top) {
-                    Image(systemName: symbol).font(.system(size: 28, weight: .medium)).foregroundStyle(iconColor)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .center, spacing: 0) {
+                    Image(systemName: symbol).font(.system(size: grid ? 26 : 28, weight: .medium)).foregroundStyle(iconColor)
+                        .frame(width: 32, height: 32, alignment: .leading)
                     Spacer(minLength: 0)
-                    Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
+                    Image(systemName: "arrow.up.right").font(.system(size: grid ? 15 : 17, weight: .medium)).foregroundStyle(iconColor)
+                        .frame(width: 32, height: 32, alignment: .trailing)
                 }
-                Spacer(minLength: 16)
-                Text(title).font(LeximoryTypography.interface(24, style: .title2)).fixedSize(horizontal: false, vertical: true)
-            }.padding(grid ? 16 : 20)
+                Spacer(minLength: 12)
+                Text(title).font(LeximoryTypography.interface(grid ? 19 : 24, style: grid ? .headline : .title2))
+                    .lineLimit(1).minimumScaleFactor(0.65).allowsTightening(true)
+                    .fixedSize(horizontal: false, vertical: true)
+            }.padding(grid ? 18 : 20)
                 .frame(width: grid ? nil : 180, height: grid ? nil : 180)
-                .frame(maxWidth: grid ? .infinity : nil, minHeight: grid ? 160 : nil)
+                .frame(maxWidth: grid ? .infinity : nil, maxHeight: grid ? .infinity : nil, alignment: .topLeading)
         } else {
             HStack(spacing: 20) {
                 Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
@@ -268,6 +275,27 @@ struct BrowserHomeView: View {
                 Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
             }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
                 .frame(maxWidth: .infinity, minHeight: 58)
+        }
+    }
+}
+
+private struct BrowserHomeCardGrid: Layout {
+    private func side(for width: CGFloat) -> CGFloat { max(0, (width - 12) / 2) }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 304
+        return CGSize(width: width, height: side(for: width) * 2 + 12)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let side = side(for: bounds.width)
+        for index in subviews.indices {
+            let column = index % 2
+            let row = index / 2
+            let x = bounds.minX + CGFloat(column) * (side + 12)
+            let y = bounds.minY + CGFloat(row) * (side + 12)
+            subviews[index].place(at: CGPoint(x: x, y: y), anchor: .topLeading,
+                proposal: ProposedViewSize(width: side, height: side))
         }
     }
 }

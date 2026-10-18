@@ -128,11 +128,11 @@ After generating the project, select your development team in Xcode, or pass `DE
 
 ## Account
 
-账号 preserves the web settings page's profile header, daily LexiCoin claim, balance, subscription, AI 词点额度 and AI 语点额度, monthly vocabulary calendar, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. Use the Shanghai calendar for activity and daily claims.
+账号 preserves the web settings page's profile header, subscription, AI 词点额度 and AI 语点额度, monthly vocabulary calendar, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. Use the Shanghai calendar for activity.
 
 Use native navigation, segmented preferences, a photo picker, edit sheets, sharing and destructive confirmations. Plan comparison opens in a native sheet and checkout uses the existing billing service. Account summaries are cached within the account's reading store; editing stays visible and is disabled offline. Passkeys are fetched on demand and never written to the reading cache.
 
-The 账号 tab replicates web settings through authenticated mobile account endpoints. It includes quotas, LexiCoin claims, activity, accent preferences, passkey controls, profile editing, avatar selection and learning-progress sharing. `--account-fixtures` previews this screen without live data; account mutations are disabled in this preview. `AccountUITests` checks summary values, native upgrade and edit sheets, and sign-out confirmation, then relaunches the app in normal account mode.
+The 账号 tab replicates web settings through authenticated mobile account endpoints. It includes quotas, activity, accent preferences, passkey controls, profile editing, avatar selection and learning-progress sharing. `--account-fixtures` previews this screen without live data; account mutations are disabled in this preview. `AccountUITests` checks summary values, native upgrade and edit sheets, and sign-out confirmation, then relaunches the app in normal account mode.
 
 ## Editing and removal
 
