@@ -17,14 +17,19 @@ struct MembershipTests {
         let account = try details()
         #expect(account.membership == nil)
         #expect(account.membershipTitle == "初学者")
-        #expect(account.membershipSummary == "免费使用，按需升级")
+        #expect(account.membershipNotice == nil)
         #expect(account.definitions.used == 3.75)
     }
 
     @Test func cancellationKeepsAccessUntilExpiry() throws {
         let account = try details(membership: ["provider": "appStore", "status": "active", "autoRenews": false, "expiresAt": "2026-11-17T12:00:00Z"])
-        #expect(account.membershipSummary == "已取消续订，到期前仍可使用")
+        #expect(account.membershipNotice == "已取消续订，到期前仍可使用")
         #expect(account.membershipDate == Date(timeIntervalSince1970: 1_794_916_800))
+    }
+
+    @Test func activeMembershipNeedsNoRoutineStatusMessage() throws {
+        let account = try details(membership: ["provider": "appStore", "status": "active", "autoRenews": true])
+        #expect(account.membershipNotice == nil)
     }
 
     @Test(arguments: [
@@ -35,7 +40,7 @@ struct MembershipTests {
     ])
     func billingStatesDescribeTheActionNeeded(status: String, expected: String) throws {
         let account = try details(membership: ["provider": "appStore", "status": status])
-        #expect(account.membershipSummary == expected)
+        #expect(account.membershipNotice == expected)
     }
 
     private func details(membership: [String: Any]? = nil) throws -> AccountSettings {

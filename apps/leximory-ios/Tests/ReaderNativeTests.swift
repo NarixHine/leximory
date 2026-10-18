@@ -544,6 +544,7 @@ import LeximoryCore
         #expect(UIFont(name: "RalewayRoman-Regular", size: 17) != nil)
         #expect(UIFont(name: "RalewayRoman-SemiBold", size: 17) != nil)
         #expect(UIFont(name: "EBGaramond-Regular", size: 36) != nil)
+        #expect(LeximoryTypography.editorialUI(38).fontName == "EBGaramond-Regular")
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)
         #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongProJP_Regular", size: 29) != nil)
@@ -552,6 +553,23 @@ import LeximoryCore
         #expect(LeximoryTypography.proseUI(18, language: "Chinese", bold: true).fontName == "ChillDuanHeiSongBold")
         #expect(LeximoryTypography.proseUI(18, language: "Chinese").fontName == "ChillDuanHeiSongRegular")
         #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
+    }
+
+    @Test func accountHeatmapNumbersRemainReadableAcrossIntensities() {
+        func luminance(_ color: Color) -> Double {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            func linear(_ value: CGFloat) -> Double {
+                let value = Double(value)
+                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+        }
+        for count in [0, 1, 9, 10, 19, 20, 34, 35, 100] {
+            let colors = AccountHeatmapPalette.colors(for: count)
+            let values = [luminance(colors.background), luminance(colors.foreground)].sorted()
+            #expect((values[1] + 0.05) / (values[0] + 0.05) >= 4.5)
+        }
     }
     @Test func attributedTextKeepsCanonicalOffsetsAndEmbeddedDefinitions() throws {
         let document = try FixtureArticle.samples[0].document()

@@ -33,6 +33,21 @@ final class AccountUITests: XCTestCase {
         app.buttons["取消"].tap()
     }
 
+    @MainActor func testActivePlanLeadsWithoutRoutineStatus() throws {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--account-fixtures", "--membership-active"]
+        app.launch()
+        let subscription = app.buttons["account-subscription"]
+        XCTAssertTrue(subscription.waitForExistence(timeout: 10))
+        XCTAssertTrue(subscription.label.contains("双语者"))
+        XCTAssertFalse(app.staticTexts["当前计划权益已生效"].exists)
+        capture("Account active plan")
+        subscription.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)).tap()
+        XCTAssertTrue(app.buttons["管理 App Store 订阅"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["当前计划权益已生效"].exists)
+    }
+
     @MainActor func testPaidCardKeepsAccessAndOpensManagement() throws {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }

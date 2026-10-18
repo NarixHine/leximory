@@ -189,7 +189,7 @@ struct MembershipView: View {
     private var currentMembership: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text(details.membershipTitle).editorialFont(26, relativeTo: .title, language: "Chinese")
-            Text(details.membershipSummary).foregroundStyle(.secondary)
+            if let notice = details.membershipNotice { Text(notice).foregroundStyle(.secondary) }
             if let date = details.membershipDate {
                 Text("\(details.membership?.status == .active && details.membership?.autoRenews == true ? "下次续订" : "订阅到期")：\(date.formatted(.dateTime.year().month().day().locale(Locale(identifier: "zh_CN"))))")
                     .font(LeximoryTypography.interface(14, style: .subheadline)).foregroundStyle(.secondary)

@@ -149,7 +149,7 @@ struct AccountView: View {
         }
         .buttonStyle(MembershipEntryButtonStyle()).disabled(editingUnavailable)
         .accessibilityLabel("订阅计划，\(value.membershipTitle)")
-        .accessibilityValue(value.membershipSummary)
+        .accessibilityValue(value.membershipNotice ?? "")
         .accessibilityHint(value.hasPaidMembership ? "管理当前订阅" : "查看会员方案")
         .accessibilityIdentifier("account-subscription")
     }
@@ -244,8 +244,6 @@ private struct MembershipEntryLabel: View {
     private let paper = Color(red: 248 / 255, green: 250 / 255, blue: 248 / 255)
     private let ink = Color(red: 25 / 255, green: 32 / 255, blue: 36 / 255)
     private var foreground: Color { colorScheme == .dark ? paper : ink }
-    private var actionFill: Color { colorScheme == .dark ? paper : ink }
-    private var actionInk: Color { colorScheme == .dark ? ink : paper }
     private var actionTitle: String { details.hasPaidMembership ? "管理当前订阅" : "查看会员方案" }
 
     var body: some View {
@@ -253,46 +251,35 @@ private struct MembershipEntryLabel: View {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 12) {
                     Text("订阅计划")
-                    if !details.hasPaidMembership { Text(details.membershipTitle) }
+                    if !details.hasPaidMembership { planCaption }
                 }.fixedSize()
                 VStack(alignment: .leading, spacing: 6) {
                     Text("订阅计划")
-                    if !details.hasPaidMembership { Text(details.membershipTitle) }
+                    if !details.hasPaidMembership { planCaption }
                 }
             }
             .font(LeximoryTypography.interface(13, style: .subheadline))
             .foregroundStyle(foreground.opacity(0.8))
 
             if typeSize.isAccessibilitySize {
-                headline
+                headline(size: details.hasPaidMembership ? 30 : 26)
             } else {
                 ViewThatFits(in: .horizontal) {
-                    illustratedHeadline(width: 240)
-                    illustratedHeadline(width: 160)
+                    illustratedHeadline(width: 240, titleSize: details.hasPaidMembership ? 38 : 30)
+                    illustratedHeadline(width: 160, titleSize: details.hasPaidMembership ? 30 : 26)
                     VStack(alignment: .leading, spacing: 12) {
-                        headline
+                        headline(size: details.hasPaidMembership ? 30 : 26)
                         artwork.frame(maxWidth: 240).frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
             }
-            if details.hasPaidMembership || details.membership != nil {
-                Text(details.membershipSummary)
+            if let notice = details.membershipNotice {
+                Text(notice)
                     .font(LeximoryTypography.interface(14, style: .subheadline))
                     .foregroundStyle(foreground.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            HStack(spacing: 12) {
-                Text(actionTitle).fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                if opening { ProgressView().tint(actionInk) }
-                else { Image(systemName: "chevron.right").accessibilityHidden(true) }
-            }
-            .font(LeximoryTypography.interface(15, style: .subheadline))
-            .foregroundStyle(actionInk)
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .background(actionFill, in: .capsule)
-            .opacity(unavailable && !opening ? 0.55 : 1)
+            action.opacity(unavailable && !opening ? 0.55 : 1)
         }
         .padding(20).frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(foreground)
@@ -309,19 +296,44 @@ private struct MembershipEntryLabel: View {
         .contentShape(.rect(cornerRadius: 24))
     }
 
-    private var headline: some View {
+    private var planCaption: some View {
+        Text(details.membershipTitle).editorialFont(18, relativeTo: .headline, language: nil)
+    }
+
+    private func headline(size: CGFloat) -> some View {
         Text(details.hasPaidMembership ? details.membershipTitle : "畅学语言，\n畅行天下。")
-            .editorialFont(26, relativeTo: .title, language: "Chinese")
+            .editorialFont(size, relativeTo: .title, language: nil)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func illustratedHeadline(width: CGFloat) -> some View {
+    private func illustratedHeadline(width: CGFloat, titleSize: CGFloat) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            headline.fixedSize(horizontal: true, vertical: true)
+            headline(size: titleSize).fixedSize(horizontal: true, vertical: true)
             Spacer(minLength: 0)
             artwork.frame(width: width)
         }
+    }
+
+    @ViewBuilder private var action: some View {
+        if #available(iOS 26, *) {
+            actionLabel.glassEffect(.regular.interactive(!unavailable), in: .capsule)
+        } else {
+            actionLabel.background(.regularMaterial, in: .capsule)
+        }
+    }
+
+    private var actionLabel: some View {
+        HStack(spacing: 12) {
+            Text(actionTitle).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            if opening { ProgressView() }
+            else { Image(systemName: "chevron.right").accessibilityHidden(true) }
+        }
+        .font(LeximoryTypography.interface(15, style: .subheadline))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 
     @ViewBuilder private var artwork: some View {

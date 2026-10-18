@@ -104,10 +104,10 @@ extension AccountSettings {
         }
     }
     var hasPaidMembership: Bool { plan != "beginner" }
-    var membershipSummary: String {
-        guard let membership else { return hasPaidMembership ? "当前计划权益已生效" : "免费使用，按需升级" }
+    var membershipNotice: String? {
+        guard let membership else { return nil }
         switch membership.status {
-        case .active: return membership.autoRenews == false ? "已取消续订，到期前仍可使用" : "当前计划权益已生效"
+        case .active: return membership.autoRenews == false ? "已取消续订，到期前仍可使用" : nil
         case .gracePeriod: return "请更新付款方式，宽限期内权益仍可使用"
         case .billingRetry: return "续订未完成，请检查付款方式"
         case .expired: return "订阅已到期，可继续使用免费计划"
