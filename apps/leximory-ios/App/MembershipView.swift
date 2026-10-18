@@ -37,15 +37,19 @@ struct MembershipView: View {
             }
             .navigationTitle(details.hasPaidMembership ? "我的会员" : "")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
-            .font(LeximoryTypography.interface(16))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    LeximorySheetCloseButton { dismiss() }
+                        .disabled(store.action.isBusy).accessibilityIdentifier("membership-close")
+                }
+            }
             .foregroundStyle(LeximoryPalette.ink)
-            .background(LeximoryPalette.paper)
             .sheet(isPresented: $showsPrivacy) { privacy }
             .tint(LeximoryPalette.ink)
             .task { await store.load() }
             .interactiveDismissDisabled(store.action.isBusy)
         }
+        .leximorySheetStyle()
         .presentationDetents([.large])
         .presentationSizing(MembershipPresentationSizing())
     }
@@ -72,12 +76,11 @@ struct MembershipView: View {
             .frame(maxWidth: 520).frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .background(LeximoryPalette.paper)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !scrollsPurchaseAction {
                 purchaseFooter.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
                     .frame(maxWidth: 560).frame(maxWidth: .infinity)
-                    .background(LeximoryPalette.paper)
+                    .background(.background)
             }
         }
     }
@@ -243,9 +246,14 @@ private struct MembershipPrivacyView: View {
                     Text("如需了解或处理个人数据，请联系 hi@leximory.com。")
                     Link("联系隐私支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
                 }.padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)
-            }.background(LeximoryPalette.paper)
-                .font(LeximoryTypography.interface(16)).navigationTitle("隐私说明").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+            }
+                .navigationTitle("隐私说明").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        LeximorySheetCloseButton { dismiss() }.accessibilityIdentifier("membership-privacy-close")
+                    }
+                }
         }
+        .leximorySheetStyle()
     }
 }

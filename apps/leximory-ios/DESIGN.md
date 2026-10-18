@@ -48,6 +48,16 @@ Interface hierarchy uses regular weight and primary/secondary label colors. Head
 
 Article covers and wrapping titles scroll with the prose. Phone titles use 28 pt Garamond, wide titles 32 pt. A 22 pt toolbar title appears after the full title scrolls away. Article paper continues through the bottom safe area.
 
+## Sheets
+
+Use the wallpaper editor as the reference for general sheets. Preserve the native sheet background, navigation controls and corners. Do not cover it with a full-sheet paper fill or custom material. `leximorySheetStyle()` applies the scaled 17 pt interface font, neutral tint, hidden Form/List scroll backgrounds and a visible phone grabber. Keep native grouped rows and feature-specific artwork, previews and button accents, including the wallpaper photo button's sage tint.
+
+Sheets whose changes already apply, or which only show information, use the shared top-right close button labeled 关闭 for accessibility. Closing must not imply that work is completed. Wallpaper, membership, privacy, article annotation activity and handwriting problems use this pattern. Match explicit close availability to interactive dismissal while an operation must finish.
+
+Draft editors retain 取消 and an explicit commit verb. Folder creation uses 创建, rename uses 保存, and ad blocking uses 应用 or 应用并重新载入. Disable Apply when nothing changed and there is no failed blocking policy to retry. The full-text editor's 应用 transfers its text into the parent draft; Save or Import remains the parent's action. Short folder and shortcut editors can expand to the large detent for keyboard and larger type.
+
+Keep paper reader popovers, annotation trays, and review overlays in their existing task-specific styles. This sheet treatment does not change persistence, draft cancellation or recovery behavior.
+
 ## Navigation and account state
 
 Browser navigation uses a Safari-compatible identity and mobile content on iPhone, desktop content on iPad and Mac. Keywords use the selected search engine, defaulting to Bing; URLs open directly. Preserve webpage cookies and verification frames. Load failures use a Liquid Glass surface above the page with a filled native capsule retry button, reload symbol and standard touch target.

@@ -411,7 +411,7 @@ private struct AccountEditor: View {
             }
             .interactiveDismissDisabled(saving)
             .alert("请确认新邮箱", isPresented: $emailUpdated) { Button("好") { dismiss() } } message: { Text("请查看邮箱中的确认邮件，完成邮箱更新。") }
-        }.presentationDetents([.medium, .large])
+        }.leximorySheetStyle().presentationDetents([.medium, .large])
     }
     private func save() {
         saving = true; message = nil

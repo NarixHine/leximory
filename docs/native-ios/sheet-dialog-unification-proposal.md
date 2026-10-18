@@ -1,6 +1,10 @@
 # iOS sheet and dialog audit
 
-Date: 2026-10-18. Status: proposal awaiting human approval.
+Date: 2026-10-18. Status: audit followed by a limited implementation.
+
+The user selected the wallpaper sheet's native background and feel as the reference and requested only the highest-impact UI changes. That selection supersedes the proposed explicit paper background below. The implementation shares native sheet styling across the main workspace/account sheets, replaces the five dismissal-only Finish buttons with accessible close controls, clarifies folder/ad-blocking/full-text commit labels, aligns membership close with its busy dismissal guard, and adds large-height fallbacks for folder/shortcut editors. Wallpaper keeps its sage photo action. Reading/review styles, persistence, dirty-draft handling, error flows and older navigation paths are outside this limited pass. The inventory and original proposal below remain a record of the audit before implementation.
+
+Implementation verification: regenerated the Xcode project and successfully ran `xcodebuild build-for-testing` for the Leximory scheme on `generic/platform=iOS` with signing disabled. App and test targets compile. The build reports deprecation warnings in existing test code. Updated existing UI test selectors for the new close controls and the unchanged-policy Apply state. No tests were executed, no simulator was launched, and no app was installed. `git diff --check` passed. The new sheet rules are recorded in DESIGN.md.
 
 This is a source review of the current working tree. No simulator, build, app launch, account action, or database operation was performed. No app code or design rules were changed. Native system defaults described below are inferred from the presentation code; their rendered appearance has not been checked.
 

@@ -539,8 +539,12 @@ private struct BrowserAnnotationSheet: View {
                 }
             }.overlay { if workspace.activities.isEmpty { LeximoryUnavailableView("暂无预注释文章", systemImage: "sparkles") } }
                 .navigationTitle("文章注释队列").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
-        }.presentationDetents([.medium, .large]).tint(.primary)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        LeximorySheetCloseButton { dismiss() }.accessibilityIdentifier("annotation-activity-close")
+                    }
+                }
+        }.leximorySheetStyle().presentationDetents([.medium, .large])
     }
 }
 

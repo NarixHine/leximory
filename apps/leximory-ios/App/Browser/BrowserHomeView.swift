@@ -363,7 +363,7 @@ struct BrowserPinEditor: View {
                     }.disabled(!valid)
                 }
             }
-        }.presentationDetents([.height(sectionHeight * (isWebpage ? 2 : 1) + 88)])
+        }.leximorySheetStyle().presentationDetents([.height(sectionHeight * (isWebpage ? 2 : 1) + 88), .large])
     }
 }
 

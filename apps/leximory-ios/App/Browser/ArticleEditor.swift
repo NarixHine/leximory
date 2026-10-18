@@ -51,7 +51,7 @@ struct ArticleEditorPage: View {
                     ToolbarItem(placement: .cancellationAction) { Button("返回") { dismiss() } }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button("应用") {
                         committing = true
                         Task {
                             defer { committing = false }

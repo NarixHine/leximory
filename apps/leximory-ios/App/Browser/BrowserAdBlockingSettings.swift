@@ -94,12 +94,13 @@ struct BrowserAdBlockingSettings: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: apply) {
                         if applying { ProgressView().accessibilityLabel("正在应用") }
-                        else { Text(reloadsPage ? "应用并重新载入" : "完成") }
-                    }.disabled(applying)
+                        else { Text(reloadsPage ? "应用并重新载入" : "应用") }
+                    }.disabled(applying || (!changed && !blocker.unavailable))
                         .accessibilityIdentifier("ad-blocking-confirm")
                 }
             }
         }
+        .leximorySheetStyle()
         .interactiveDismissDisabled(applying)
         .presentationSizing(.form)
         .onDisappear { application?.cancel() }

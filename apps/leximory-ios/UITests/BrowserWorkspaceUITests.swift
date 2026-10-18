@@ -277,7 +277,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertFalse(app.buttons["已存词汇"].exists)
         app.buttons["文章注释队列"].tap()
         XCTAssertTrue(app.staticTexts["暂无预注释文章"].waitForExistence(timeout: 5))
-        app.buttons["完成"].tap()
+        app.buttons["annotation-activity-close"].tap()
         XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
     }
     @MainActor func testDefuddleImportAndCompletionAcrossDestinations() throws {

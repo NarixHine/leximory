@@ -17,7 +17,8 @@ final class BrowserAdBlockingUITests: XCTestCase {
         XCTAssertEqual(global.value as? String, initial)
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Ad blocking settings on Home"; attachment.lifetime = .keepAlways; add(attachment)
-        app.buttons["ad-blocking-confirm"].tap()
+        XCTAssertFalse(app.buttons["ad-blocking-confirm"].isEnabled)
+        app.buttons["ad-blocking-cancel"].tap()
     }
 
     @MainActor func testWebsiteSettingsShowTheExactHostAndExplicitReloadAction() throws {

@@ -135,7 +135,7 @@ struct TextManagementSheet: View {
                 Button("取消", role: .cancel) {}
             } message: { Text("删除后无法恢复，已存词汇会保留。") }
             .interactiveDismissDisabled(busy || !path.isEmpty)
-        }.tint(.primary)
+        }.leximorySheetStyle()
     }
     private var topicSection: some View {
         Section("标签") {

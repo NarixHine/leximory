@@ -18,7 +18,7 @@ final class AccountUITests: XCTestCase {
         subscription.tap()
         XCTAssertTrue(app.buttons["membership-purchase"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$4.49"))
-        app.buttons["完成"].tap()
+        app.buttons["membership-close"].tap()
         let username = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "用户名")).firstMatch
         for _ in 0..<5 where !username.isHittable { app.swipeUp() }
         XCTAssertTrue(username.waitForExistence(timeout: 5)); username.tap()
@@ -46,7 +46,7 @@ final class AccountUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["已取消续订，到期前仍可使用"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["管理 App Store 订阅"].exists)
         XCTAssertFalse(app.buttons["membership-purchase"].exists)
-        app.buttons["完成"].tap()
+        app.buttons["membership-close"].tap()
         XCTAssertTrue(subscription.waitForExistence(timeout: 5))
     }
 
@@ -66,7 +66,7 @@ final class AccountUITests: XCTestCase {
         capture("Account largest type")
         subscription.tap()
         XCTAssertTrue(app.buttons["membership-purchase"].waitForExistence(timeout: 5))
-        app.buttons["完成"].tap()
+        app.buttons["membership-close"].tap()
         app.terminate()
         XCUIDevice.shared.orientation = .landscapeLeft
         app.launchArguments = ["--account-fixtures"]

@@ -158,11 +158,16 @@ struct PDFNotesProblems: View {
                     }
                 }
             }
-            .font(LeximoryTypography.interface(16))
             .navigationTitle("手写笔记").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { model.showsProblems = false } } }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    LeximorySheetCloseButton { model.showsProblems = false }.accessibilityIdentifier("pdf-notes-close")
+                }
+            }
         }
+        .leximorySheetStyle()
         .frame(minWidth: 320, idealHeight: 440)
+        .presentationCompactAdaptation(.sheet)
         .presentationDetents([.medium, .large])
     }
     private func preview(_ note: PDFPageDrawing, title: String) -> some View {

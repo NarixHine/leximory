@@ -55,11 +55,13 @@ struct HomeWallpaperEditor: View {
             .font(LeximoryTypography.interface(17, style: .body))
             .navigationTitle("主页壁纸").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }.disabled(importing).accessibilityIdentifier("wallpaper-done")
+                ToolbarItem(placement: .topBarTrailing) {
+                    LeximorySheetCloseButton { dismiss() }
+                        .disabled(importing).accessibilityIdentifier("wallpaper-close")
                 }
             }
         }
+        .leximorySheetStyle()
         .interactiveDismissDisabled(importing)
         .task { await store.load() }
         .task(id: selection) {

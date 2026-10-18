@@ -223,13 +223,13 @@ struct FolderEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await save() } } label: { if busy { ProgressView() } else { Text("完成") } }
+                    Button { Task { await save() } } label: { if busy { ProgressView() } else { Text(library == nil ? "创建" : "保存") } }
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 128 || busy)
                 }
             }
             .onAppear { if let library { name = library.name; language = library.language } }
             .interactiveDismissDisabled(busy)
-        }.font(LeximoryTypography.interface(17)).presentationDetents([.medium]).tint(.primary)
+        }.leximorySheetStyle().presentationDetents([.medium, .large])
     }
     private func save() async {
         busy = true; error = nil

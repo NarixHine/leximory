@@ -145,7 +145,7 @@ struct BrowserImportSheet: View {
                 if folderID == nil, workspace.writableFolders.count == 1 { folderID = workspace.writableFolders.first?.id }
             }
             .interactiveDismissDisabled(busy)
-        }.font(LeximoryTypography.interface(17)).presentationDetents([.large]).presentationDragIndicator(.visible).tint(.primary)
+        }.leximorySheetStyle().presentationDetents([.large])
     }
     private func sectionHeading(_ title: String) -> some View {
         Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.primary)
