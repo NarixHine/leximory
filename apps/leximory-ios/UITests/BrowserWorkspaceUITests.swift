@@ -2,6 +2,48 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testPDFToolPalettePersistence() {
+        let app = launch(); defer { restore(app) }
+        func openPDFTools() {
+            app.buttons["我的书签"].tap()
+            let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+            if !pdf.exists {
+                let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+                XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+            }
+            XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+            if !pdf.isHittable { app.swipeUp() }
+            pdf.tap()
+            let reader = app.otherElements["ebook-reader"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 10))
+            expectation(for: NSPredicate(format: "value CONTAINS %@", "pdf已打开"), evaluatedWith: reader)
+            waitForExpectations(timeout: 10)
+            let toggle = app.buttons["pdf-drawing-toggle"]
+            if !toggle.isHittable { reader.tap() }
+            XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+            XCTAssertTrue(toggle.isEnabled); toggle.tap()
+            XCTAssertEqual(toggle.label, "完成手写")
+            XCTAssertTrue(app.buttons["马克笔"].waitForExistence(timeout: 5))
+        }
+        openPDFTools()
+        let marker = app.buttons["马克笔"]
+        marker.tap()
+        app.buttons["蓝色"].tap()
+        XCTAssertTrue(marker.isSelected)
+        let color = marker.value as? String
+        XCTAssertNotNil(color)
+        for relaunch in [false, true] {
+            if relaunch { app.terminate(); app.launch() }
+            else {
+                app.buttons["pdf-drawing-toggle"].tap()
+                app.buttons["首页"].tap()
+            }
+            openPDFTools()
+            XCTAssertTrue(marker.isSelected)
+            XCTAssertEqual(marker.value as? String, color)
+        }
+    }
+
     @MainActor func testWebPDFUsesEbookFolderSelectionAndSavesAsAnEbook() throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 320, height: 480)).pdfData { context in
             context.beginPage()

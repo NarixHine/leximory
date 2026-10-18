@@ -7,6 +7,59 @@ import SwiftUI
 @testable import Leximory
 
 @Suite(.serialized) @MainActor struct PDFDrawingTests {
+    @Test func toolPickerRestoresBrushCustomInkColorAndWidth() async throws {
+        let name = "leximory.pdf.tools.test.\(UUID().uuidString)"
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        let canvas = PKCanvasView(frame: CGRect(x: 0, y: 0, width: 400, height: 600))
+        host.view = canvas
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKey()
+            for key in UserDefaults.standard.dictionaryRepresentation().keys where key.contains(name) {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        let customColor = UIColor(red: 0.23, green: 0.47, blue: 0.71, alpha: 1)
+        func makePicker() -> PKToolPicker {
+            let picker = PKToolPicker(toolItems: PKToolPicker.defaultToolItems.map { item in
+                guard let ink = item as? PKToolPickerInkingItem, ink.inkingTool.inkType == .marker else { return item }
+                return PKToolPickerInkingItem(type: .marker, color: customColor, width: 18, identifier: item.identifier)
+            })
+            picker.maximumSupportedContentVersion = .version4
+            picker.colorUserInterfaceStyle = .light
+            picker.stateAutosaveName = name
+            return picker
+        }
+        var picker: PKToolPicker? = makePicker()
+        picker?.addObserver(canvas)
+        picker?.setVisible(true, forFirstResponder: canvas)
+        canvas.becomeFirstResponder()
+        try await Task.sleep(for: .milliseconds(200))
+        let marker = try #require(picker?.toolItems.first { ($0 as? PKToolPickerInkingItem)?.inkingTool.inkType == .marker })
+        picker?.selectedToolItemIdentifier = marker.identifier
+        try await Task.sleep(for: .milliseconds(200))
+        picker?.setVisible(false, forFirstResponder: canvas)
+        canvas.resignFirstResponder()
+        picker?.removeObserver(canvas)
+        picker = nil
+        let reopened = PDFDrawingOverlays.makeToolPicker(autosaveName: name)
+        reopened.addObserver(canvas)
+        reopened.setVisible(true, forFirstResponder: canvas)
+        canvas.becomeFirstResponder()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(reopened.selectedToolItemIdentifier == marker.identifier)
+        #expect((canvas.tool as? PKInkingTool)?.inkType == .marker)
+        #expect((canvas.tool as? PKInkingTool)?.color == customColor)
+        #expect(abs(try #require(canvas.tool as? PKInkingTool).width - 18) < 0.001)
+        reopened.setVisible(false, forFirstResponder: canvas)
+        canvas.resignFirstResponder()
+        reopened.removeObserver(canvas)
+    }
+
     @Test(arguments: [CGFloat(0.5), 1, 2, 4])
     func canvasRendersAtDisplayScaleWithoutChangingStrokeCoordinates(scale: CGFloat) throws {
         let pageSize = CGSize(width: 400, height: 600)

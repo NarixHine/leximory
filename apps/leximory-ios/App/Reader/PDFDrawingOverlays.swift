@@ -73,7 +73,7 @@ import LeximoryCore
     private(set) var overlays: [Int: PDFDrawingOverlay] = [:]
     private weak var pdf: PDFView?
     private let model: PDFNotesModel
-    private let picker = PKToolPicker()
+    private let picker: PKToolPicker
     private weak var activeCanvas: PKCanvasView?
     private var presentationUpdate: Task<Void, Never>?
     private var stopped = false
@@ -82,12 +82,17 @@ import LeximoryCore
     private var originalTouchTypes: [NSNumber] = []
     init(model: PDFNotesModel, pdf: PDFView) {
         self.model = model; self.pdf = pdf
+        picker = Self.makeToolPicker()
         super.init()
-        picker.maximumSupportedContentVersion = .version4
-        picker.colorUserInterfaceStyle = .light
-        picker.stateAutosaveName = "leximory.pdf.tools"
         picker.addObserver(self)
         NotificationCenter.default.addObserver(self, selector: #selector(scaleChanged), name: .PDFViewScaleChanged, object: pdf)
+    }
+    static func makeToolPicker(autosaveName: String = "leximory.pdf.tools") -> PKToolPicker {
+        let picker = PKToolPicker()
+        picker.maximumSupportedContentVersion = .version4
+        picker.colorUserInterfaceStyle = .light
+        picker.stateAutosaveName = autosaveName
+        return picker
     }
     @objc private func scaleChanged() {
         for overlay in overlays.values { overlay.setNeedsLayout() }

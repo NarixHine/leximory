@@ -21,8 +21,9 @@ struct BrowserWorkspacePreview: View {
                 try? FileManager.default.removeItem(at: root)
                 let origin = URL(string: "https://workspace-fixture.invalid")!
                 let store = try LocalReadingStore(root: root, origin: origin, accountID: "fixture")
+                let notes = try PDFNotesStore(root: root.appending(path: "notes"), origin: origin, accountID: "fixture")
                 let transport = BrowserWorkspaceFixtureTransport(payloads: payloads, store: store)
-                let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "fixture" }, localStore: store)
+                let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "fixture" }, localStore: store, notesStore: notes)
                 _ = try await client.allLibraries()
                 for library in try await client.allLibraries() {
                     for text in try await client.allTexts(libraryID: library.id) {
@@ -84,7 +85,7 @@ struct BrowserWorkspacePreview: View {
             guard let id = text["id"] as? String else { continue }
             payloads["document/" + id] = try encode(["text": text, "library": library, "document": NSNull(), "annotationProgress": NSNull()])
             payloads["ebook/" + id] = try encode(["text": text, "library": library, "url": "https://workspace-fixture.invalid/books/\(id).\(format)", "format": format,
-                "expiresAt": "2099-01-01T00:00:00Z", "location": NSNull(), "bookmarks": []])
+                "expiresAt": "2099-01-01T00:00:00Z", "location": NSNull(), "bookmarks": [], "sourceVersion": "fixture-original"])
         }
         return payloads
     }
