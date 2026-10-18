@@ -35,3 +35,7 @@ export const articleImported = eventType('app/article.imported', {
 export const inngest = new Inngest({
     id: 'leximory',
 })
+
+export const appleSubscriptionChanged = eventType('app/apple.subscription.changed', {
+    schema: staticSchema<{ environment: 'Production' | 'Sandbox'; chain: string }>(),
+})

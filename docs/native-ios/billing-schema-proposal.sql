@@ -24,7 +24,7 @@ create index apple_subscriptions_user_idx
     on public.apple_subscriptions(user_id) where user_id is not null;
 
 -- user_id = NULL is a retained ownership tombstone, never an unclaimed subscription.
--- The delivery RPC must reject ownership changes and stale expected-version writes.
+-- The conditional server writer must reject ownership changes and stale expected-version writes.
 -- On deletion, erase signed evidence when retention no longer has a lawful basis.
 -- Nullable evidence permits a minimal tombstone without retaining the old account UUID in a JWS.
 -- Define a lawful retention period for the remaining chain identifier too.

@@ -8,34 +8,31 @@ struct MembershipView: View {
     let store: MembershipStore
     @State private var selection: MembershipPlan = .bilingual
     @State private var showsManagement = false
-    @State private var managementFailure: String?
-    @State private var openingManagement = false
     @State private var showsPrivacy = false
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
             Group {
                 if store.action == .success {
                     ContentUnavailableView {
-                        Label("欢迎成为\(selection.title)", systemImage: "checkmark.seal")
+                        Label(store.confirmedPlan.map { "欢迎成为\($0.title)" } ?? "会员权益已生效", systemImage: "checkmark.seal")
                             .accessibilityIdentifier("membership-success")
                     } description: {
                         Text("会员权益已生效。")
                     } actions: {
                         Button("继续阅读") { dismiss() }.buttonStyle(.borderedProminent)
                     }
-                } else if details.hasPaidMembership {
+                } else if showsMembershipDetails {
                     ScrollView { currentMembership.padding(20) }
                         .manageSubscriptionsSheet(isPresented: $showsManagement)
                 } else {
                     purchaseContent
                 }
             }
-            .navigationTitle(details.hasPaidMembership ? "我的会员" : "")
+            .navigationTitle(showsMembershipDetails ? "我的会员" : "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -46,7 +43,7 @@ struct MembershipView: View {
             .foregroundStyle(LeximoryPalette.ink)
             .sheet(isPresented: $showsPrivacy) { privacy }
             .tint(LeximoryPalette.ink)
-            .task { await store.load() }
+            .task { await store.load(settings: details) }
             .interactiveDismissDisabled(store.action.isBusy)
         }
         .leximorySheetStyle()
@@ -54,6 +51,7 @@ struct MembershipView: View {
         .presentationSizing(MembershipPresentationSizing())
     }
 
+    private var showsMembershipDetails: Bool { details.hasPaidMembership || details.membership?.status == .billingRetry }
     private var scrollsPurchaseAction: Bool { typeSize.isAccessibilitySize || verticalSizeClass == .compact }
 
     private var purchaseContent: some View {
@@ -124,7 +122,7 @@ struct MembershipView: View {
                 .accessibilityLabel("\(plan.title)，每月\(store.prices[plan] ?? "价格暂不可用")")
                 .accessibilityAddTraits(selection == plan ? .isSelected : [])
                 .accessibilityIdentifier("membership-plan-\(plan.id)")
-                .disabled(store.action.isBusy || store.action == .pending)
+                .disabled(store.action.isBusy || store.action == .pending || store.action == .confirming)
             }
         }
     }
@@ -150,11 +148,14 @@ struct MembershipView: View {
             if store.action == .pending {
                 Text("正在等待购买批准，无需再次购买。")
                     .accessibilityIdentifier("membership-pending")
-            } else if !store.canPurchase && store.availability != .loading && !store.action.isBusy {
+            } else if store.action == .confirming {
+                Text("正在确认订阅，请勿重复购买。")
+            } else if store.availability == .unavailable && !store.action.isBusy {
                 Text("App Store 订阅暂未开放，你可以继续免费使用。")
             }
             if case .purchaseFailed(let message) = store.action { Text(message) }
-            Button { Task { await store.purchase(selection) } } label: {
+            if case .deliveryFailed(let message) = store.action { Text(message).accessibilityIdentifier("membership-error") }
+            Button { Task { await store.purchase(selection, session: session) } } label: {
                 HStack(spacing: 8) {
                     if store.action == .purchasing { ProgressView().tint(LeximoryPalette.paper) }
                     Text("订阅\(selection.title)")
@@ -166,13 +167,13 @@ struct MembershipView: View {
             Text("\(store.prices[selection] ?? "价格暂不可用") / 月，自动续订，可随时取消")
                 .accessibilityIdentifier("membership-price")
             HStack(spacing: 20) {
-                Button { Task { await store.restore() } } label: {
+                Button { Task { await store.restore(session: session) } } label: {
                     HStack(spacing: 5) {
                         if store.action == .restoring { ProgressView() }
                         Text("恢复购买")
                     }.frame(minHeight: 44)
                 }.accessibilityIdentifier("membership-restore")
-                    .disabled(store.action.isBusy || store.action == .pending)
+                    .disabled(store.action.isBusy || store.action == .pending || store.action == .confirming)
                 Link("条款", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                     .frame(minHeight: 44)
                 Button("隐私") { showsPrivacy = true }.frame(minHeight: 44)
@@ -188,43 +189,30 @@ struct MembershipView: View {
 
     private var currentMembership: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(details.membershipTitle).editorialFont(26, relativeTo: .title, language: "Chinese")
+            Text(details.membership?.plan.flatMap(MembershipPlan.init(rawValue:))?.title ?? details.membershipTitle).editorialFont(26, relativeTo: .title, language: "Chinese")
             if let notice = details.membershipNotice { Text(notice).foregroundStyle(.secondary) }
             if let date = details.membershipDate {
                 Text("\(details.membership?.status == .active && details.membership?.autoRenews == true ? "下次续订" : "订阅到期")：\(date.formatted(.dateTime.year().month().day().locale(Locale(identifier: "zh_CN"))))")
                     .font(LeximoryTypography.interface(14, style: .subheadline)).foregroundStyle(.secondary)
             }
-            if details.membership?.provider != .complimentary {
-                Button {
-                    if details.membership?.provider == .appStore { showsManagement = true }
-                    else { openOriginalSubscription() }
-                } label: {
-                    HStack {
-                        Text(details.membership?.provider == .appStore ? "管理 App Store 订阅" : "管理原订阅")
-                        Spacer()
-                        if openingManagement { ProgressView() } else { Image(systemName: "arrow.up.right") }
-                    }.frame(minHeight: 44)
-                }.disabled(openingManagement || session.sync?.online == false)
-                if details.membership?.provider != .appStore {
-                    Text("订阅由原购买渠道管理。请先确认原订阅状态，避免重复订阅。")
-                        .font(LeximoryTypography.interface(13, style: .footnote)).foregroundStyle(.secondary)
+            if details.memberships?.contains(where: { $0.provider == .appStore }) == true || details.membership?.provider == .appStore {
+                Button { showsManagement = true } label: {
+                    HStack { Text("管理 App Store 订阅"); Spacer(); Image(systemName: "arrow.up.right") }.frame(minHeight: 44)
                 }
-                if let managementFailure { Text(managementFailure).font(LeximoryTypography.interface(14, style: .subheadline)).foregroundStyle(.secondary) }
             }
+            if details.membership?.provider == .legacy || (details.membership == nil && details.hasPaidMembership) {
+                Text("已有会员权益可在此继续使用。如需确认原订阅或取消续订，请联系支持，避免重复订阅。")
+                    .font(LeximoryTypography.interface(13, style: .footnote)).foregroundStyle(.secondary)
+                Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+            }
+
         }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
             .background(LeximoryPalette.cover, in: .rect(cornerRadius: 24))
     }
 
     private var privacy: some View { MembershipPrivacyView() }
 
-    private func openOriginalSubscription() {
-        openingManagement = true; managementFailure = nil
-        Task {
-            defer { openingManagement = false }
-            do { openURL(try await session.client.accountBilling()) }
-            catch { managementFailure = "暂时无法打开订阅管理，请稍后重试或联系我们。" }
-        }
-    }
+
 }
 
 private struct MembershipPresentationSizing: PresentationSizing {

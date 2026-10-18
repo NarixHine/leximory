@@ -25,7 +25,15 @@
                 "QSTASH_URL",
                 "QSTASH_TOKEN",
                 "QSTASH_CURRENT_SIGNING_KEY",
-                "QSTASH_NEXT_SIGNING_KEY"
+                "QSTASH_NEXT_SIGNING_KEY",
+                "APPLE_APP_ID",
+                "APPLE_SUBSCRIPTION_GROUP_ID",
+                "APPLE_ISSUER_ID",
+                "APPLE_KEY_ID",
+                "APPLE_PRIVATE_KEY",
+                "APPLE_ROOT_CERTIFICATES",
+                "APPLE_SANDBOX_USER_IDS",
+                "APPLE_PURCHASES_ENABLED"
             ]
         },
         "check-types": {

@@ -1,7 +1,7 @@
 import env, { IS_PROD } from '@repo/env'
 
-export const PLANS = ['beginner', 'bilingual', 'polyglot', 'leximory'] as const
-export type Plan = (typeof PLANS)[number]
+import type { Plan } from './billing'
+export { PLANS, type Plan } from './billing'
 
 export const ADMIN_UID = '3599113b-8407-46b7-85bc-4f9a1c425c59' as const
 

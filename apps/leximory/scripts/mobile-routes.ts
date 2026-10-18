@@ -19,6 +19,7 @@ async function main() {
     const groups = {
         catalog: ['me', 'libraries', 'texts', 'document', 'audio'],
         'article-audio': ['generateArticleAudio'],
+        'apple-billing': ['appleTransaction'],
         account: [
             'accountSettings',
             'accountAccent',

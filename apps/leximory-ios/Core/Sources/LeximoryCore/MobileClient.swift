@@ -309,6 +309,13 @@ public struct MobileClient: Sendable {
         try? await localStore?.saveData(data, for: "image/\(url.absoluteString)")
         return url
     }
+    public struct AppleDelivery: Codable, Sendable {
+        public let acknowledgedTransactionId: String
+        public let plan: String
+    }
+    public func deliverAppleTransaction(_ signedTransaction: String) async throws -> AppleDelivery {
+        try mapped(try await client.appleTransaction(body: .json(.init(signedTransaction: signedTransaction))).ok.body.json, to: AppleDelivery.self)
+    }
     public func accountCheckout(plan: String) async throws -> URL {
         guard let selected = Operations.accountCheckout.Input.Body.jsonPayload.planPayload(rawValue: plan) else { throw URLError(.badURL) }
         let result = try await client.accountCheckout(body: .json(.init(plan: selected))).ok.body.json

@@ -41,6 +41,12 @@ import HTTPTypes
         #expect(try await client.accountBilling().absoluteString == "https://billing.example/portal")
         #expect(try await client.accountCheckout(plan: "bilingual").absoluteString == "https://billing.example/checkout")
     }
+    @Test func appleDeliveryUsesTheAuthenticatedGeneratedClientAndReturnsItsAcknowledgement() async throws {
+        let client = MobileClient(baseURL: URL(string: "https://account.example")!, transport: SettingsTransport(), token: { _ in "verified" })
+        let delivery = try await client.deliverAppleTransaction("signed.apple.transaction")
+        #expect(delivery.acknowledgedTransactionId == "123456")
+        #expect(delivery.plan == "bilingual")
+    }
     private actor SettingsTransport: ClientTransport {
         var accent: String?
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
@@ -59,6 +65,11 @@ import HTTPTypes
             case "accountRevokeToken": payload = Data(#"{"saved":true}"#.utf8)
             case "accountBilling": payload = Data(#"{"url":"https://billing.example/portal"}"#.utf8)
             case "accountCheckout": payload = Data(#"{"url":"https://billing.example/checkout"}"#.utf8)
+            case "appleTransaction":
+                struct Input: Decodable { let signedTransaction: String }
+                let data = try await Data(collecting: #require(body), upTo: 33000)
+                #expect(try JSONDecoder().decode(Input.self, from: data).signedTransaction == "signed.apple.transaction")
+                payload = Data(#"{"acknowledgedTransactionId":"123456","plan":"bilingual"}"#.utf8)
             case "accountAvatar": payload = Data(#"{"url":"https://avatars.example/reader"}"#.utf8)
             default: throw URLError(.unsupportedURL)
             }

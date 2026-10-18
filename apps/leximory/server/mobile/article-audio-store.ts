@@ -1,13 +1,12 @@
 import 'server-only'
 import { randomUUID } from 'node:crypto'
-import { z } from 'zod'
+import { getMembership } from '@repo/user/membership'
 import { redis } from '@repo/kv/redis'
 import { supabase } from '@repo/supabase'
-import { PLANS, PLAN_AUDIO_QUOTA } from '@repo/env/config'
+import { PLAN_AUDIO_QUOTA } from '@repo/env/config'
 import { revalidateTag } from 'next/cache'
 import { speak } from '@/server/ai/speak'
 import { uploadAudio } from '@/server/db/audio'
-import { checkedResponse } from './http'
 import { MobileError } from './errors'
 import type { ArticleAudioStore } from './article-audio'
 
@@ -28,8 +27,7 @@ export const articleAudioStore: ArticleAudioStore = {
         try {
             if (await exists(id)) return
             signal.throwIfAborted()
-            const { data } = await supabase.from('users').select('plan').eq('id', userId).single().throwOnError()
-            const plan = checkedResponse(z.enum(PLANS), data.plan ?? 'beginner')
+            const { plan } = await getMembership(userId, signal)
             // The receipt survives failed uploads and lost responses. Retrying this article costs no extra quota.
             const allowed = await redis.eval(
                 `if redis.call('EXISTS', KEYS[2]) == 1 then return 2 end

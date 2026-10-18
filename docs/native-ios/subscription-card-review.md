@@ -31,11 +31,11 @@ Direct documentation HTML initially returned a JavaScript shell and the Markdown
 
 ## Direction gate
 
-| Direction | Journey and visual change | Benefit and tradeoff | Motion and remaining proof |
-| --- | --- | --- | --- |
+| Direction                                                     | Journey and visual change                                                                                                                                          | Benefit and tradeoff                                                                                                                                       | Motion and remaining proof                                                                                                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D1 Ink and watercolor, recommended and automatically selected | Retain routing; replace the entry label with an ink surface, light editorial headline, current-tier caption, exact cats/book art, and explicit view/manage action. | Strong separation from quota cards, direct continuity with the sheet. Costs additional vertical space; artwork and headline need testing at narrow widths. | Native sheet; opacity-only press feedback. No idle movement. Reduce Motion keeps the same feedback. New layout, contrast and hit behavior require native verification. |
-| D2 Pale illustrated invitation | Same journey and explicit action, pale sage surface with the same illustration. | Quiet and familiar; closer to the rejected card's low-salience appearance beside pale quota cards. | Same native sheet and opacity feedback; no custom spatial motion. Dynamic Type and contrast remain unproven. |
-| D3 Full lawn scene | Same journey with the lawn illustration extending across the card and an inset action band. | More immersive scenery; more crop and text-background contrast risk on iPhone and iPad. | Keep scenery static and sheet native. Reduce Motion unchanged. Crop/legibility need additional runtime proof. |
+| D2 Pale illustrated invitation                                | Same journey and explicit action, pale sage surface with the same illustration.                                                                                    | Quiet and familiar; closer to the rejected card's low-salience appearance beside pale quota cards.                                                         | Same native sheet and opacity feedback; no custom spatial motion. Dynamic Type and contrast remain unproven.                                                           |
+| D3 Full lawn scene                                            | Same journey with the lawn illustration extending across the card and an inset action band.                                                                        | More immersive scenery; more crop and text-background contrast risk on iPhone and iPad.                                                                    | Keep scenery static and sheet native. Reduce Motion unchanged. Crop/legibility need additional runtime proof.                                                          |
 
 Direction selection is Design Arc judgment grounded in the objective and inspected constraints. It is not a measured conversion claim. No new screens, fees, trials or entitlement promises are introduced.
 
@@ -51,23 +51,23 @@ Direction selection is Design Arc judgment grounded in the objective and inspect
 
 ## Complete material state inventory
 
-| ID | State and action | Proposal / implementation treatment |
-| --- | --- | --- |
-| E1 | Free account, phone light/dark | New invitation; real current-tier caption; view plans. |
-| E2 | Free account, iPad portrait/landscape | Same identity and full width; constrain text/art to the account measure. |
-| E3 | Paid active | Actual paid name and status; manage current subscription. |
-| E4 | Renewal canceled | Preserve access-to-expiry message; management action. |
-| E5 | Grace / billing retry | Existing payment-action-needed copy; no celebratory new-purchase message. |
-| E6 | Expired / revoked | Existing ended-access copy and free-tier plan context; view available plans. |
-| E7 | Cached offline / action busy | Keep identity and cached content; retain disabled action and in-control busy feedback. No new infrastructure banner. |
-| E8 | Initial loading / account unavailable | Retain existing spinner or retry page. No fabricated membership card without account data. |
-| P1 | Sheet and plan selection | Retain existing localized monthly price, selection, allowances and close action. |
-| P2 | Product loading / unavailable | Retain existing wait/unavailable explanation and disabled checkout. |
-| P3 | Approval pending | Existing pending copy; no repurchase or tier switching. |
-| P4 | User cancels payment | Return silently to the same selected plan and price. |
-| P5 | Purchase / restore failure | Existing local error beside affected action and support recovery. |
-| P6 | Confirmed success | Existing success screen and return to reading; fixture-only until backend delivery. |
-| M1 | Provider management / return | Existing App Store system sheet or existing legacy routing; no replica Apple payment UI. |
+| ID  | State and action                      | Proposal / implementation treatment                                                                                  |
+| --- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| E1  | Free account, phone light/dark        | New invitation; real current-tier caption; view plans.                                                               |
+| E2  | Free account, iPad portrait/landscape | Same identity and full width; constrain text/art to the account measure.                                             |
+| E3  | Paid active                           | Actual paid name and status; manage current subscription.                                                            |
+| E4  | Renewal canceled                      | Preserve access-to-expiry message; management action.                                                                |
+| E5  | Grace / billing retry                 | Existing payment-action-needed copy; no celebratory new-purchase message.                                            |
+| E6  | Expired / revoked                     | Existing ended-access copy and free-tier plan context; view available plans.                                         |
+| E7  | Cached offline / action busy          | Keep identity and cached content; retain disabled action and in-control busy feedback. No new infrastructure banner. |
+| E8  | Initial loading / account unavailable | Retain existing spinner or retry page. No fabricated membership card without account data.                           |
+| P1  | Sheet and plan selection              | Retain existing localized monthly price, selection, allowances and close action.                                     |
+| P2  | Product loading / unavailable         | Retain existing wait/unavailable explanation and disabled checkout.                                                  |
+| P3  | Approval pending                      | Existing pending copy; no repurchase or tier switching.                                                              |
+| P4  | User cancels payment                  | Return silently to the same selected plan and price.                                                                 |
+| P5  | Purchase / restore failure            | Existing local error beside affected action and support recovery.                                                    |
+| P6  | Confirmed success                     | Existing success screen and return to reading; fixture-only until backend delivery.                                  |
+| M1  | Provider management / return          | Existing App Store system sheet or existing legacy routing; no replica Apple payment UI.                             |
 
 Planned implementation viewports: iPhone 402 × 874 and compact landscape; iPad 834 × 1210 and landscape; light/dark, largest accessibility text, Reduce Motion. These are target specifications, not new render proof.
 
@@ -75,21 +75,21 @@ Planned implementation viewports: iPhone 402 × 874 and compact landscape; iPad 
 
 Selected set: platform. No new raster asset is needed. `membership-reading.png` is the exact existing built-in Imagegen illustration described in [membership-art.md](membership-art.md).
 
-| Asset ID | File / provenance | Intended use and variants | Source / render proof |
-| --- | --- | --- | --- |
-| A1 | `apps/leximory-ios/App/Resources/Membership/membership-reading.png`; SHA-256 `033e067a6edfd713a42b8631fd02f3f0642ba13561df85ebc7f95877437f171d` | Same transparent PNG in card and purchase sheet, both appearances. Preserve character identities and entire silhouette. | Existing file inspected; card integration and phone/iPad runtime proof pending. |
-| A2 | Bundled Chinese editorial, EB Garamond and Raleway faces from LeximoryTheme | Semantic native titles/labels with Dynamic Type; not raster lettering in production. | Existing font APIs inspected; new wrapping proof pending. |
-| A3 | Native SF Symbols arrow/checkmark as appropriate | Semantic action/state affordance; native text supplies the meaning. | Native implementation pending. |
+| Asset ID | File / provenance                                                                                                                               | Intended use and variants                                                                                               | Source / render proof                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| A1       | `apps/leximory-ios/App/Resources/Membership/membership-reading.png`; SHA-256 `033e067a6edfd713a42b8631fd02f3f0642ba13561df85ebc7f95877437f171d` | Same transparent PNG in card and purchase sheet, both appearances. Preserve character identities and entire silhouette. | Existing file inspected; card integration and phone/iPad runtime proof pending. |
+| A2       | Bundled Chinese editorial, EB Garamond and Raleway faces from LeximoryTheme                                                                     | Semantic native titles/labels with Dynamic Type; not raster lettering in production.                                    | Existing font APIs inspected; new wrapping proof pending.                       |
+| A3       | Native SF Symbols arrow/checkmark as appropriate                                                                                                | Semantic action/state affordance; native text supplies the meaning.                                                     | Native implementation pending.                                                  |
 
 The static proposal board is a design artifact, never an app resource. Image generation must use A1 as the unchanged visual reference; the implementation imports the exact A1 file rather than extracting a regenerated lookalike from the board.
 
 ## Motion contracts
 
-| ID | Purpose / trigger / start and end | Spatial behavior / choreography / timing / easing | Interruption / Reduce Motion / evidence / implementation / proof |
-| --- | --- | --- | --- |
-| MC1 Press | Confirm direct touch; press down/release; normal → subdued → normal label. | No displacement or scaling; no choreography. Instant opacity state change, no animation duration/easing. Values are Design Arc judgment. | Release/cancel restores normal immediately; same non-spatial alternative under Reduce Motion. Custom SwiftUI ButtonStyle within existing frontend authorization. Specified only; runtime input proof pending. |
-| MC2 Membership sheet | Preserve account context on explicit card activation; account → existing membership sheet → account on close. | Native SwiftUI sheet; default platform timing/easing are unverified, not invented. | Native dismissal/interruption and system Reduce Motion behavior retained. Pattern-level inference from the existing SwiftUI sheet; runtime proof pending. |
-| MC3 State changes | Explain availability, pending approval and success without idle decoration. | Existing state rendering and native ProgressView; no new custom transition, loop, parallax or delayed action. Exact system timing unverified. | Preserve visible text/control state without spatial animation; respect system accessibility. Existing MembershipView is the implementation source. New screen-state verification pending. |
+| ID                   | Purpose / trigger / start and end                                                                             | Spatial behavior / choreography / timing / easing                                                                                             | Interruption / Reduce Motion / evidence / implementation / proof                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MC1 Press            | Confirm direct touch; press down/release; normal → subdued → normal label.                                    | No displacement or scaling; no choreography. Instant opacity state change, no animation duration/easing. Values are Design Arc judgment.      | Release/cancel restores normal immediately; same non-spatial alternative under Reduce Motion. Custom SwiftUI ButtonStyle within existing frontend authorization. Specified only; runtime input proof pending. |
+| MC2 Membership sheet | Preserve account context on explicit card activation; account → existing membership sheet → account on close. | Native SwiftUI sheet; default platform timing/easing are unverified, not invented.                                                            | Native dismissal/interruption and system Reduce Motion behavior retained. Pattern-level inference from the existing SwiftUI sheet; runtime proof pending.                                                     |
+| MC3 State changes    | Explain availability, pending approval and success without idle decoration.                                   | Existing state rendering and native ProgressView; no new custom transition, loop, parallax or delayed action. Exact system timing unverified. | Preserve visible text/control state without spatial animation; respect system accessibility. Existing MembershipView is the implementation source. New screen-state verification pending.                     |
 
 ## Proposal and validation record
 
@@ -101,24 +101,24 @@ Objective confirmation: explicit objective plus Fully automatic selection, no pa
 
 Render R0: `exec-b5d7323e-435d-4102-a87c-a1a410ff73e0.png`, Codex built-in Imagegen, 1536 × 1024. Inspected the complete board. Verdict: `meets with corrections`. Correction scope is platform, round 1 of at most 3. The core direction remains unchanged.
 
-| State | Requirement / provenance | Observed in R0 | Classification / next action |
-| --- | --- | --- | --- |
-| E1 | Editorial free headline, secondary tier, exact-art identity; selected contract | Ink card and action match; tier is too large | Repairable drift: reduce tier to metadata |
-| E2 | Full-width restrained iPad measure; selected contract | Clear larger illustration and action, no added panels | Match; native size/reflow remains runtime proof |
-| E3 | Paid title and management; existing data | Correct paid title and action | Match |
-| E4 | Canceled subscriber keeps paid tier; existing data | Incorrect beginner title | Repairable drift: 双语者 with retained-access copy |
-| E5 | Grace/retry keep paid tier and management; existing data | Beginner title and changed action | Repairable drift: actual paid tier, status, 管理当前订阅 |
-| E6 | Ended status, free-tier context; existing data | Free card but missing ended-status distinction | Repairable drift: include ended status |
-| E7 | Cached disabled card / in-control busy; existing behavior | Disabled action present, busy absent | Repairable drift: include busy control state |
-| E8 | Existing account spinner / retry page; existing behavior | Fabricated unknown-plan cards | Repairable drift: remove cards before account data |
-| P1 | Preserve complete sheet; existing screen | Sheet reduced to artwork and plan names | Repairable drift: include actual full reference and monthly/legal context |
-| P2 | Loading/unavailable disabled checkout; existing behavior | Illustrated as a combined simplified panel | Repairable drift: distinguish loading and unavailable |
-| P3 | Approval without repurchase; existing behavior | Intent visible | Match; exact state text in correction |
-| P4 | Silent cancellation preserves choice; existing behavior | Missing | Repairable drift: include return to selection |
-| P5 | Local purchase/restore errors and recovery; existing behavior | Generic combined failure | Repairable drift: distinguish affected controls |
-| P6 | Existing success and continue; existing behavior | Generic changed success text | Repairable drift: use actual success text |
-| M1 | System handoff and account return; native platform | Handoff tile, no payment replica | Match |
-| MC1–3 | Static least-motion contract; selected contract | No decorative motion shown | Runtime proof: press/release, interruption, native presentation, Reduce Motion remain unverified |
+| State | Requirement / provenance                                                       | Observed in R0                                        | Classification / next action                                                                     |
+| ----- | ------------------------------------------------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| E1    | Editorial free headline, secondary tier, exact-art identity; selected contract | Ink card and action match; tier is too large          | Repairable drift: reduce tier to metadata                                                        |
+| E2    | Full-width restrained iPad measure; selected contract                          | Clear larger illustration and action, no added panels | Match; native size/reflow remains runtime proof                                                  |
+| E3    | Paid title and management; existing data                                       | Correct paid title and action                         | Match                                                                                            |
+| E4    | Canceled subscriber keeps paid tier; existing data                             | Incorrect beginner title                              | Repairable drift: 双语者 with retained-access copy                                               |
+| E5    | Grace/retry keep paid tier and management; existing data                       | Beginner title and changed action                     | Repairable drift: actual paid tier, status, 管理当前订阅                                         |
+| E6    | Ended status, free-tier context; existing data                                 | Free card but missing ended-status distinction        | Repairable drift: include ended status                                                           |
+| E7    | Cached disabled card / in-control busy; existing behavior                      | Disabled action present, busy absent                  | Repairable drift: include busy control state                                                     |
+| E8    | Existing account spinner / retry page; existing behavior                       | Fabricated unknown-plan cards                         | Repairable drift: remove cards before account data                                               |
+| P1    | Preserve complete sheet; existing screen                                       | Sheet reduced to artwork and plan names               | Repairable drift: include actual full reference and monthly/legal context                        |
+| P2    | Loading/unavailable disabled checkout; existing behavior                       | Illustrated as a combined simplified panel            | Repairable drift: distinguish loading and unavailable                                            |
+| P3    | Approval without repurchase; existing behavior                                 | Intent visible                                        | Match; exact state text in correction                                                            |
+| P4    | Silent cancellation preserves choice; existing behavior                        | Missing                                               | Repairable drift: include return to selection                                                    |
+| P5    | Local purchase/restore errors and recovery; existing behavior                  | Generic combined failure                              | Repairable drift: distinguish affected controls                                                  |
+| P6    | Existing success and continue; existing behavior                               | Generic changed success text                          | Repairable drift: use actual success text                                                        |
+| M1    | System handoff and account return; native platform                             | Handoff tile, no payment replica                      | Match                                                                                            |
+| MC1–3 | Static least-motion contract; selected contract                                | No decorative motion shown                            | Runtime proof: press/release, interruption, native presentation, Reduce Motion remain unverified |
 
 The first correction request batches all listed drift. The board remains a preview, not a production asset. Exact A1 integration will be checked separately in the application source and runtime.
 
@@ -140,24 +140,24 @@ Render R3: `exec-43c3f449-520e-4153-acb8-0c87d301c4dd.png`, 1024 × 1536. Inspec
 
 The user explicitly answered **Accept and implement with that correction** to the question naming removal of the metadata separators in native SwiftUI and reuse of the exact existing illustration. This is an explicit product exception and implementation instruction, not an automatic `meets direction` verdict. It changes no platform/accessibility requirement. Selected design and production assets remain platform A1–A3. The board itself is not imported into the app.
 
-| State | Final R3 inspection against selected contract | Classification / implementation action |
-| --- | --- | --- |
-| E1 | Phone light/dark ink invitation, secondary tier, complete art, explicit capsule | Match except metadata separator; remove in SwiftUI under explicit acceptance |
-| E2 | Restrained wide iPad card with larger whole illustration | Match; narrow/landscape layout is runtime proof |
-| E3 | Paid title/status and management action, no free invitation | Match except accepted metadata correction |
-| E4 | Paid canceled tier with retained access | Match except accepted metadata correction |
-| E5 | Paid grace and retry, payment recovery status, management action | Match except accepted metadata correction |
-| E6 | Expired and revoked, free context and enabled view-plans action | Match except accepted metadata correction |
-| E7 | Cached disabled action; opening spinner inside control | Match except accepted metadata correction |
-| E8 | Plain account loading / unavailable retry without fabricated plan | Match; retained existing UI |
-| P1 | Full existing sheet with monthly price, allowances and legal/restoration context | Match; retained existing UI |
-| P2 | Separate product loading / unavailable with disabled checkout | Match; retained existing UI |
-| P3 | Pending approval prevents repurchase | Match; retained existing UI |
-| P4 | Cancellation returns silently to selected plan and price | Match; retained existing UI |
-| P5 | Purchase error by purchase action, restore error and support by restore | Match; retained existing UI |
-| P6 | Existing confirmed success and continue | Match; retained existing UI |
-| M1 | System handoff and return, no recreated Apple payment UI | Match; native management retained |
-| MC1–3 | No idle motion, opacity press, native sheet and existing state rendering | Matches static capabilities; timing, interruption and Reduce Motion remain runtime proof |
+| State | Final R3 inspection against selected contract                                    | Classification / implementation action                                                   |
+| ----- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| E1    | Phone light/dark ink invitation, secondary tier, complete art, explicit capsule  | Match except metadata separator; remove in SwiftUI under explicit acceptance             |
+| E2    | Restrained wide iPad card with larger whole illustration                         | Match; narrow/landscape layout is runtime proof                                          |
+| E3    | Paid title/status and management action, no free invitation                      | Match except accepted metadata correction                                                |
+| E4    | Paid canceled tier with retained access                                          | Match except accepted metadata correction                                                |
+| E5    | Paid grace and retry, payment recovery status, management action                 | Match except accepted metadata correction                                                |
+| E6    | Expired and revoked, free context and enabled view-plans action                  | Match except accepted metadata correction                                                |
+| E7    | Cached disabled action; opening spinner inside control                           | Match except accepted metadata correction                                                |
+| E8    | Plain account loading / unavailable retry without fabricated plan                | Match; retained existing UI                                                              |
+| P1    | Full existing sheet with monthly price, allowances and legal/restoration context | Match; retained existing UI                                                              |
+| P2    | Separate product loading / unavailable with disabled checkout                    | Match; retained existing UI                                                              |
+| P3    | Pending approval prevents repurchase                                             | Match; retained existing UI                                                              |
+| P4    | Cancellation returns silently to selected plan and price                         | Match; retained existing UI                                                              |
+| P5    | Purchase error by purchase action, restore error and support by restore          | Match; retained existing UI                                                              |
+| P6    | Existing confirmed success and continue                                          | Match; retained existing UI                                                              |
+| M1    | System handoff and return, no recreated Apple payment UI                         | Match; native management retained                                                        |
+| MC1–3 | No idle motion, opacity press, native sheet and existing state rendering         | Matches static capabilities; timing, interruption and Reduce Motion remain runtime proof |
 
 Motion evaluation: the static proposal shows no displacement, parallax or decorative loop and preserves the specified press/sheet/state intent. Provenance remains Design Arc judgment for instantaneous press opacity, pattern-level inference for standard sheet behavior, and unverified for exact platform timing. Static imagery cannot verify interruption or Reduce Motion. Native verification follows under the user's frontend authorization.
 
@@ -213,3 +213,12 @@ The user then supplied the exact heatmap palette `["#edeec9", "#dde7c7", "#bfd8b
 The phone run `test_sim_2026-10-18T05-33-18-872Z_pid18128_76adf0f9.xcresult` passed all 9 reported checks, including the four account UI flows and membership checks. The final user-selected five-color palette was numerically checked against its black day numbers, with contrast from 9.77:1 to 17.67:1. Those exact colors supersede the temporary ramp in the earlier capture. The user then requested immediate wrap-up and no further verification was started. iPad build and normal-mode cleanup are the final housekeeping steps; no new screenshot or broader accessibility certification is claimed for that palette.
 
 Final housekeeping completed: the iPad build succeeded, both simulator apps were stopped and relaunched with empty arguments, and fixture mode is cleared. Real account data is preserved. No backend or Supabase changes were made.
+
+## User-supplied wallpaper replacement, 18 October 2026
+
+The user supplied a new day/night pair and requested replacing the default wallpapers. These assets supersede A4 and A5 above. Both originals remain at 3344 × 1882 pixels, with no recompression or image edits. The home screen and subscription card continue to share the asset-catalog entries.
+
+- `HomeWallpaperLight` now uses the exact user-supplied `day-lawn-wallpaper.jpg`, stored as `apps/leximory-ios/App/Resources/Assets.xcassets/HomeWallpaperLight.imageset/wallpaper.jpg`. SHA-256 `cd2a22eb579e2c096b933b5eb70d30676f5e7437dc28cf9db381f698ce3fdada`.
+- `HomeWallpaperDark` now uses the exact user-supplied `night-lawn-wallpaper.jpg`, stored as `apps/leximory-ios/App/Resources/Assets.xcassets/HomeWallpaperDark.imageset/wallpaper.jpg`. SHA-256 `40d0866983ffb3be27f098e136f52cc359457c70d69adab47b1cdb467bcf7744`.
+
+The focused wallpaper and membership suites pass 14 tests on each of iPhone and iPad. Account-card activation and purchase selection/success pass on both sizes. The iPad largest-text and landscape check also passes. The iPad capture shows the supplied meadow behind the plan name and glass action, with the original book artwork retained.

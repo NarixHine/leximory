@@ -1,13 +1,12 @@
 import { chargeCommentaryQuota } from './quota-store'
-import { checkedResponse } from './http'
+import { getMembership } from '@repo/user/membership'
 import 'server-only'
 import { extractArticleFromUrl } from '@repo/scrape'
 import { languageWelcomeWords } from '@repo/languages'
 import { assertPublicArticleURL } from './article-url'
 import { supabase } from '@repo/supabase'
 import { revalidateTag } from 'next/cache'
-import { z } from 'zod'
-import { PLANS, PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
+import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
 import { emojiChoice } from '@/server/ai/emoji'
 import { runEvaluation } from '@/server/ai/evaluate'
@@ -145,8 +144,8 @@ export const authoringStore: AuthoringStore = {
 }
 
 async function charge(subject: { userId: string }, cost: number) {
-    const { data } = await supabase.from('users').select('plan').eq('id', subject.userId).maybeSingle().throwOnError()
-    const limit = PLAN_COMMENTARY_QUOTA[checkedResponse(z.enum(PLANS), data?.plan ?? 'beginner')]
+    const { plan } = await getMembership(subject.userId)
+    const limit = PLAN_COMMENTARY_QUOTA[plan]
     const allowed = await chargeCommentaryQuota({ userId: subject.userId, cost, limit })
     if (!allowed) throw new MobileError('quota_exceeded')
 }

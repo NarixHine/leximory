@@ -1,0 +1,74 @@
+{
+  "identifier": "E8958306",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingGracePeriodEnabled": false,
+    "_billingIssuesEnabled": false,
+    "_disableDialogs": false,
+    "_failTransactionsEnabled": false,
+    "_locale": "zh_CN",
+    "_renewalBillingIssuesEnabled": false,
+    "_storefront": "USA",
+    "_storeKitErrors": [],
+    "_timeRate": 0
+  },
+  "subscriptionGroups": [
+    {
+      "id": "7A6E0778",
+      "localizations": [],
+      "name": "Leximory Membership",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.49",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "A1D5FE93",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "畅学语言，畅行天下。",
+              "displayName": "双语者",
+              "locale": "zh_CN"
+            }
+          ],
+          "productID": "com.leximory.reader.bilingual.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Bilingual Monthly",
+          "subscriptionGroupID": "7A6E0778",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "6.00",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "83C425FA",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "畅学语言，畅行天下。",
+              "displayName": "语言学人",
+              "locale": "zh_CN"
+            }
+          ],
+          "productID": "com.leximory.reader.polyglot.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Polyglot Monthly",
+          "subscriptionGroupID": "7A6E0778",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

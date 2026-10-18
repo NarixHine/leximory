@@ -36,7 +36,8 @@
                   "quota_exceeded",
                   "unsupported_format",
                   "language_unresolved",
-                  "service_unavailable"
+                  "service_unavailable",
+                  "purchase_account_mismatch"
                 ],
                 "type": "string"
               },
@@ -188,7 +189,8 @@
                       "quota_exceeded",
                       "unsupported_format",
                       "language_unresolved",
-                      "service_unavailable"
+                      "service_unavailable",
+                      "purchase_account_mismatch"
                     ],
                     "type": "string"
                   },
@@ -1648,6 +1650,134 @@
         }
       }
     },
+    "/account/apple-transaction": {
+      "post": {
+        "operationId": "appleTransaction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "signedTransaction": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32000
+                  }
+                },
+                "required": [
+                  "signedTransaction"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "acknowledgedTransactionId": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "plan": {
+                      "enum": [
+                        "beginner",
+                        "bilingual",
+                        "polyglot",
+                        "leximory"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "acknowledgedTransactionId",
+                    "plan"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/account": {
       "get": {
         "operationId": "accountSettings",
@@ -1782,6 +1912,152 @@
                     },
                     "today": {
                       "type": "string"
+                    },
+                    "membership": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "provider": {
+                          "enum": [
+                            "appStore",
+                            "legacy"
+                          ],
+                          "type": "string"
+                        },
+                        "plan": {
+                          "enum": [
+                            "beginner",
+                            "bilingual",
+                            "polyglot",
+                            "leximory"
+                          ],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "active",
+                            "gracePeriod",
+                            "billingRetry",
+                            "expired",
+                            "revoked"
+                          ],
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "autoRenews": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "provider",
+                        "status",
+                        "expiresAt",
+                        "autoRenews"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "memberships": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "enum": [
+                              "appStore",
+                              "legacy"
+                            ],
+                            "type": "string"
+                          },
+                          "plan": {
+                            "enum": [
+                              "beginner",
+                              "bilingual",
+                              "polyglot",
+                              "leximory"
+                            ],
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "active",
+                              "gracePeriod",
+                              "billingRetry",
+                              "expired",
+                              "revoked"
+                            ],
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "autoRenews": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "provider",
+                          "status",
+                          "expiresAt",
+                          "autoRenews"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "appleBilling": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "purchaseEligible": {
+                          "type": "boolean"
+                        },
+                        "products": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "plan": {
+                                "enum": [
+                                  "bilingual",
+                                  "polyglot"
+                                ],
+                                "type": "string"
+                              },
+                              "productId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "plan",
+                              "productId"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "purchaseEligible",
+                        "products"
+                      ],
+                      "additionalProperties": false
                     },
                     "subscriptionPlans": {
                       "type": "array",

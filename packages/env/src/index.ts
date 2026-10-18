@@ -5,6 +5,18 @@ export const IS_PROD = process.env.NODE_ENV === 'production'
 
 const env = createEnv({
     server: {
+        APPLE_APP_ID: z.coerce.number().int().positive().optional(),
+        APPLE_SUBSCRIPTION_GROUP_ID: z.string().min(1).optional(),
+        APPLE_ISSUER_ID: z.uuid().optional(),
+        APPLE_KEY_ID: z
+            .string()
+            .regex(/^[A-Z0-9]{10}$/)
+            .optional(),
+        APPLE_PRIVATE_KEY: z.string().min(1).optional(),
+        APPLE_ROOT_CERTIFICATES: z.string().min(1).optional(),
+        APPLE_SANDBOX_USER_IDS: z.string().optional(),
+        APPLE_PURCHASES_ENABLED: z.enum(['true', 'false']).optional(),
+
         ELEVENLABS_API_KEY: z.string().min(1),
         UPSTASH_REDIS_REST_URL: z.string().min(1),
         UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
@@ -32,6 +44,15 @@ const env = createEnv({
     },
 
     runtimeEnv: {
+        APPLE_APP_ID: process.env.APPLE_APP_ID,
+        APPLE_SUBSCRIPTION_GROUP_ID: process.env.APPLE_SUBSCRIPTION_GROUP_ID,
+        APPLE_ISSUER_ID: process.env.APPLE_ISSUER_ID,
+        APPLE_KEY_ID: process.env.APPLE_KEY_ID,
+        APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY,
+        APPLE_ROOT_CERTIFICATES: process.env.APPLE_ROOT_CERTIFICATES,
+        APPLE_SANDBOX_USER_IDS: process.env.APPLE_SANDBOX_USER_IDS,
+        APPLE_PURCHASES_ENABLED: process.env.APPLE_PURCHASES_ENABLED,
+
         // Audio Generation
         ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
         // Scraping

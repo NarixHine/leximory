@@ -13,8 +13,13 @@ struct AccountView: View {
     @State private var failure: String?
     @State private var editor: AccountEditor.Field?
     @State private var showsPlans = false
-    @State private var openingSubscription = false
-    @State private var purchaseStore = MembershipStore()
+    @State private var previewPurchaseStore = MembershipStore()
+    private var purchaseStore: MembershipStore {
+        #if DEBUG && targetEnvironment(simulator)
+        if fixtureMode { return previewPurchaseStore }
+        #endif
+        return session.membership
+    }
     @State private var confirmsSignOut = false
     @State private var photo: PhotosPickerItem?
     #if DEBUG && targetEnvironment(simulator)
@@ -22,12 +27,11 @@ struct AccountView: View {
     init(session: AccountSession, playback: PlaybackController, preview: AccountSettings? = nil) {
         self.session = session; self.playback = playback
         _details = State(initialValue: preview); fixtureMode = preview != nil
-        _purchaseStore = State(initialValue: MembershipStore(preview: preview != nil))
+        _previewPurchaseStore = State(initialValue: MembershipStore(preview: preview != nil))
         _showsPlans = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-plans-preview"))
         _editor = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-editor-preview") ? .username : nil)
     }
     #endif
-    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -82,7 +86,7 @@ struct AccountView: View {
             .sheet(item: $editor, onDismiss: { Task { await load() } }) { field in
                 AccountEditor(field: field, session: session, username: details?.username ?? "")
             }
-            .sheet(isPresented: $showsPlans) {
+            .sheet(isPresented: $showsPlans, onDismiss: { Task { await load() } }) {
                 if let details { MembershipView(details: details, session: session, store: purchaseStore) }
             }
             .alert("退出登录？", isPresented: $confirmsSignOut) {
@@ -136,16 +140,9 @@ struct AccountView: View {
     }
     private func subscriptionCard(_ value: AccountSettings) -> some View {
         Button {
-            if value.plan == "beginner" || value.membership?.provider == .appStore { showsPlans = true }
-            else {
-                perform {
-                    openingSubscription = true
-                    defer { openingSubscription = false }
-                    openURL(try await session.client.accountBilling())
-                }
-            }
+            showsPlans = true
         } label: {
-            MembershipEntryLabel(details: value, opening: openingSubscription, unavailable: editingUnavailable)
+            MembershipEntryLabel(details: value, unavailable: editingUnavailable)
         }
         .buttonStyle(MembershipEntryButtonStyle()).disabled(editingUnavailable)
         .accessibilityLabel("订阅计划，\(value.membershipTitle)")
@@ -236,7 +233,6 @@ struct AccountView: View {
 
 private struct MembershipEntryLabel: View {
     let details: AccountSettings
-    let opening: Bool
     let unavailable: Bool
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -279,7 +275,7 @@ private struct MembershipEntryLabel: View {
                     .foregroundStyle(foreground.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            action.opacity(unavailable && !opening ? 0.55 : 1)
+            action.opacity(unavailable ? 0.55 : 1)
         }
         .padding(20).frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(foreground)
@@ -327,8 +323,7 @@ private struct MembershipEntryLabel: View {
         HStack(spacing: 12) {
             Text(actionTitle).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            if opening { ProgressView() }
-            else { Image(systemName: "chevron.right").accessibilityHidden(true) }
+            Image(systemName: "chevron.right").accessibilityHidden(true)
         }
         .font(LeximoryTypography.interface(15, style: .subheadline))
         .foregroundStyle(.primary)

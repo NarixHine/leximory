@@ -33,6 +33,39 @@ export type Database = {
     }
     public: {
         Tables: {
+            apple_subscriptions: {
+                Row: {
+                    environment: string
+                    original_transaction_id: string
+                    signed_renewal_info: string | null
+                    signed_transaction_info: string | null
+                    status: number | null
+                    user_id: string | null
+                    verified_at: string
+                    version: number
+                }
+                Insert: {
+                    environment: string
+                    original_transaction_id: string
+                    signed_renewal_info?: string | null
+                    signed_transaction_info?: string | null
+                    status?: number | null
+                    user_id?: string | null
+                    verified_at?: string
+                    version?: number
+                }
+                Update: {
+                    environment?: string
+                    original_transaction_id?: string
+                    signed_renewal_info?: string | null
+                    signed_transaction_info?: string | null
+                    status?: number | null
+                    user_id?: string | null
+                    verified_at?: string
+                    version?: number
+                }
+                Relationships: []
+            }
             bookmarks: {
                 Row: {
                     chapter: string | null

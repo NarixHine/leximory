@@ -132,6 +132,7 @@ struct SignInFailure: LocalizedError {
     }
     private(set) var state: State = .restoring
     private(set) var generation = 0
+    let membership = MembershipStore()
     private(set) var avatarRevision = 0
     let tokens: AccountTokens
     private let configuration: AppConfiguration
@@ -171,6 +172,7 @@ struct SignInFailure: LocalizedError {
             if scopedClient == nil { try await openStore(accountID: account.userId) }
             await client.localStore?.save(account, for: "account")
             state = .signedIn(account)
+            membership.start(session: self)
         } catch {
             guard generation == current, !Task.isCancelled else { return }
             let cause = MobileClient.cause(of: error)
@@ -191,6 +193,7 @@ struct SignInFailure: LocalizedError {
             try await openStore(accountID: account.userId)
             await client.localStore?.save(account, for: "account")
             state = .signedIn(account)
+            membership.start(session: self)
         } catch {
             guard generation == current, !Task.isCancelled, !(error is CancellationError) else { throw CancellationError() }
             let failure = SignInFailure(stage: stage, underlying: error)
@@ -205,6 +208,7 @@ struct SignInFailure: LocalizedError {
             let account = try await client.account()
             guard generation == current, state.isSignedIn, !Task.isCancelled else { return }
             state = .signedIn(account)
+            membership.start(session: self)
         } catch { }
     }
     func updateAvatar(_ data: Data) async throws {
@@ -241,6 +245,7 @@ struct SignInFailure: LocalizedError {
     private func expire(generation current: Int) async {
         guard generation == current, state.isSignedIn else { return }
         if let id = state.accountID { UserDefaults.standard.removeObject(forKey: "recent-access.\(id)") }
+        membership.stop()
         generation += 1
         let expiredGeneration = generation
         state = .restoring
@@ -256,6 +261,7 @@ struct SignInFailure: LocalizedError {
     }
     func signOut() async {
         if let id = state.accountID { UserDefaults.standard.removeObject(forKey: "recent-access.\(id)") }
+        membership.stop()
         generation += 1
         state = .restoring
         await clearStore()

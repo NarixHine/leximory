@@ -188,6 +188,19 @@ export const folderCreateSchema = z
     .object({ name: z.string().trim().min(1).max(128), language: LangSchema, requestId: resourceID })
     .strict()
 export const folderRenameSchema = z.object({ name: z.string().trim().min(1).max(128) }).strict()
+export const membershipSchema = z
+    .object({
+        provider: z.enum(['appStore', 'legacy']),
+        plan: accountSchema.shape.plan.optional(),
+        status: z.enum(['active', 'gracePeriod', 'billingRetry', 'expired', 'revoked']),
+        expiresAt: z.string().nullable(),
+        autoRenews: z.boolean().nullable(),
+    })
+    .strict()
+export const appleTransactionInput = z.object({ signedTransaction: z.string().min(1).max(32000) }).strict()
+export const appleTransactionResult = z
+    .object({ acknowledgedTransactionId: z.string().regex(/^\d+$/), plan: accountSchema.shape.plan })
+    .strict()
 export const accountSettingsSchema = accountSchema
     .extend({
         username: z.string().nullable(),
@@ -202,6 +215,18 @@ export const accountSettingsSchema = accountSchema
         audio: accountSchema.shape.definitions,
         activity: z.array(z.object({ date: z.string(), count: z.int().nonnegative() }).strict()),
         today: z.string(),
+        membership: membershipSchema.nullable().optional(),
+        memberships: z.array(membershipSchema).optional(),
+        appleBilling: z
+            .object({
+                enabled: z.boolean(),
+                purchaseEligible: z.boolean(),
+                products: z.array(
+                    z.object({ plan: z.enum(['bilingual', 'polyglot']), productId: z.string() }).strict(),
+                ),
+            })
+            .strict()
+            .optional(),
         subscriptionPlans: z.array(
             z
                 .object({
@@ -303,6 +328,10 @@ export const mobileContract = {
         .route({ method: 'POST', path: '/review/conversation' })
         .input(reviewConversationSchema)
         .output(z.object({ success: z.boolean() })),
+    appleTransaction: oc
+        .route({ method: 'POST', path: '/account/apple-transaction' })
+        .input(appleTransactionInput)
+        .output(appleTransactionResult),
     accountSettings: oc.route({ method: 'GET', path: '/account' }).output(accountSettingsSchema),
     accountAccent: oc
         .route({ method: 'POST', path: '/account/accent' })

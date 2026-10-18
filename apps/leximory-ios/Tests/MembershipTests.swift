@@ -50,3 +50,29 @@ struct MembershipTests {
         return try JSONDecoder().decode(AccountSettings.self, from: JSONSerialization.data(withJSONObject: json))
     }
 }
+
+import StoreKit
+import StoreKitTest
+
+@MainActor @Suite(.serialized) struct LocalStoreKitTests {
+    private final class BundleMarker: NSObject { }
+
+    @Test func monthlyProductsPurchaseAndExpireWithoutAppStoreConnect() async throws {
+        let url = try #require(Bundle(for: BundleMarker.self).url(forResource: "Leximory", withExtension: "storekit"))
+        let store = try SKTestSession(contentsOf: url)
+        store.disableDialogs = true
+        store.clearTransactions()
+        defer { store.clearTransactions() }
+        let products = try await Product.products(for: ["com.leximory.reader.bilingual.monthly", "com.leximory.reader.polyglot.monthly"])
+        #expect(Set(products.map(\.id)) == ["com.leximory.reader.bilingual.monthly", "com.leximory.reader.polyglot.monthly"])
+        #expect(products.allSatisfy { $0.type == .autoRenewable && $0.subscription?.subscriptionPeriod.unit == .month })
+        let token = UUID()
+        let transaction = try await store.buyProduct(identifier: "com.leximory.reader.bilingual.monthly", options: [.appAccountToken(token)])
+        #expect(transaction.environment == .xcode)
+        #expect(transaction.appAccountToken == token)
+        #expect(transaction.expirationDate != nil)
+        try store.expireSubscription(productIdentifier: transaction.productID)
+        #expect(store.allTransactions().contains { $0.productIdentifier == transaction.productID })
+        await transaction.finish()
+    }
+}

@@ -3,12 +3,12 @@ import { serializeWord } from './word-format'
 import { checkedResponse } from './http'
 import { shadowLibrary } from './shadow-library'
 import 'server-only'
-import { z } from 'zod'
+import { getMembership } from '@repo/user/membership'
 import { streamText } from 'ai'
 import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
 import { definitionSchema } from '@repo/api'
-import { PLANS, PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
+import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { revalidateTag } from 'next/cache'
 import { mobileWordGuide } from '@/lib/prompt'
 import { wordAI } from '@/server/ai/config'
@@ -20,11 +20,11 @@ export const definitionServices: DefinitionServices = {
     async preferences(subject) {
         const { data } = await supabase
             .from('users')
-            .select('plan,accent')
+            .select('accent')
             .eq('id', subject.userId)
             .maybeSingle()
             .throwOnError()
-        const plan = checkedResponse(z.enum(PLANS), data?.plan ?? 'beginner')
+        const { plan } = await getMembership(subject.userId)
         return { accent: data?.accent ?? '', limit: PLAN_COMMENTARY_QUOTA[plan] }
     },
     async cached(key) {

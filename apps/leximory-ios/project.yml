@@ -1,81 +1,121 @@
 name: Leximory
 options:
-  minimumXcodeGenVersion: 2.44.1
-  deploymentTarget:
-    iOS: '26.0'
-  bundleIdPrefix: com.leximory
+    minimumXcodeGenVersion: 2.44.1
+    deploymentTarget:
+        iOS: '26.0'
+    bundleIdPrefix: com.leximory
 settings:
-  base:
-    SWIFT_VERSION: '6.0'
-    SWIFT_STRICT_CONCURRENCY: complete
-    TARGETED_DEVICE_FAMILY: '1,2'
-    SUPPORTS_MACCATALYST: YES
-    CODE_SIGN_STYLE: Automatic
+    base:
+        SWIFT_VERSION: '6.0'
+        SWIFT_STRICT_CONCURRENCY: complete
+        TARGETED_DEVICE_FAMILY: '1,2'
+        SUPPORTS_MACCATALYST: YES
+        CODE_SIGN_STYLE: Automatic
 packages:
-  Supabase:
-    url: https://github.com/supabase/supabase-swift
-    exactVersion: 2.48.0
-  LeximoryCore:
-    path: Core
+    Supabase:
+        url: https://github.com/supabase/supabase-swift
+        exactVersion: 2.48.0
+    LeximoryCore:
+        path: Core
 targets:
-  Leximory:
-    type: application
-    platform: iOS
-    sources: [App]
-    dependencies:
-      - package: LeximoryCore
-      - package: Supabase
-        product: Auth
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
-        "PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]": com.leximory.reader.mac
-        "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": LeximoryMac.entitlements
-        MARKETING_VERSION: 0.1.0
-        CURRENT_PROJECT_VERSION: 1
-        GENERATE_INFOPLIST_FILE: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-    info:
-      path: Info.plist
-      properties:
-        CFBundleDisplayName: Leximory
-        CFBundleURLTypes:
-          - CFBundleURLName: com.leximory.reader
-            CFBundleURLSchemes: [leximory]
-        CFBundleDevelopmentRegion: zh_CN
-        CFBundleLocalizations: [zh-Hans]
-        NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-          NSAllowsArbitraryLoadsInWebContent: true
-        UIAppFonts: [LeximoryNotoEmoji.ttf, LibreBaskerville.ttf, LibreBaskerville-Italic.ttf, SpaceMono-Regular.ttf, SourceCodePro-Medium.ttf, EBGaramond.ttf, EBGaramond-Italic.ttf, LXGWWenKaiScreen.ttf, ChillDuanHeiSongProJP_Regular.otf, ChillDuanHeiSongRegular.otf, ChillDuanHeiSongBold.otf, Raleway-Regular.ttf, Raleway-SemiBold.ttf]
-        UILaunchScreen: {}
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
-        UIBackgroundModes: [audio]
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
-        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
-  LeximoryTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources: [Tests]
-    dependencies:
-      - target: Leximory
-    settings:
-      base:
-        GENERATE_INFOPLIST_FILE: YES
-  LeximoryUITests:
-    type: bundle.ui-testing
-    platform: iOS
-    sources: [UITests]
-    dependencies:
-      - target: Leximory
-    settings:
-      base:
-        GENERATE_INFOPLIST_FILE: YES
+    Leximory:
+        type: application
+        platform: iOS
+        sources: [App]
+        dependencies:
+            - package: LeximoryCore
+            - package: Supabase
+              product: Auth
+        settings:
+            base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
+                'PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]': com.leximory.reader.mac
+                'CODE_SIGN_ENTITLEMENTS[sdk=macosx*]': LeximoryMac.entitlements
+                MARKETING_VERSION: 0.1.0
+                CURRENT_PROJECT_VERSION: 1
+                GENERATE_INFOPLIST_FILE: NO
+                ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        info:
+            path: Info.plist
+            properties:
+                CFBundleDisplayName: Leximory
+                CFBundleURLTypes:
+                    - CFBundleURLName: com.leximory.reader
+                      CFBundleURLSchemes: [leximory]
+                CFBundleDevelopmentRegion: zh_CN
+                CFBundleLocalizations: [zh-Hans]
+                NSAppTransportSecurity:
+                    NSAllowsLocalNetworking: true
+                    NSAllowsArbitraryLoadsInWebContent: true
+                UIAppFonts:
+                    [
+                        LeximoryNotoEmoji.ttf,
+                        LibreBaskerville.ttf,
+                        LibreBaskerville-Italic.ttf,
+                        SpaceMono-Regular.ttf,
+                        SourceCodePro-Medium.ttf,
+                        EBGaramond.ttf,
+                        EBGaramond-Italic.ttf,
+                        LXGWWenKaiScreen.ttf,
+                        ChillDuanHeiSongProJP_Regular.otf,
+                        ChillDuanHeiSongRegular.otf,
+                        ChillDuanHeiSongBold.otf,
+                        Raleway-Regular.ttf,
+                        Raleway-SemiBold.ttf,
+                    ]
+                UILaunchScreen: {}
+                UIApplicationSceneManifest:
+                    UIApplicationSupportsMultipleScenes: false
+                UIBackgroundModes: [audio]
+                UISupportedInterfaceOrientations:
+                    [
+                        UIInterfaceOrientationPortrait,
+                        UIInterfaceOrientationLandscapeLeft,
+                        UIInterfaceOrientationLandscapeRight,
+                    ]
+                UISupportedInterfaceOrientations~ipad:
+                    [
+                        UIInterfaceOrientationPortrait,
+                        UIInterfaceOrientationPortraitUpsideDown,
+                        UIInterfaceOrientationLandscapeLeft,
+                        UIInterfaceOrientationLandscapeRight,
+                    ]
+    LeximoryTests:
+        type: bundle.unit-test
+        platform: iOS
+        sources:
+            - path: Tests
+            - path: StoreKit/Leximory.storekit
+              buildPhase: resources
+        dependencies:
+            - target: Leximory
+        settings:
+            base:
+                GENERATE_INFOPLIST_FILE: YES
+    LeximoryUITests:
+        type: bundle.ui-testing
+        platform: iOS
+        sources: [UITests]
+        dependencies:
+            - target: Leximory
+        settings:
+            base:
+                GENERATE_INFOPLIST_FILE: YES
 schemes:
-  Leximory:
-    build:
-      targets:
-        Leximory: all
-    test:
-      targets: [LeximoryTests, LeximoryUITests]
+    Leximory:
+        build:
+            targets:
+                Leximory: all
+        test:
+            targets: [LeximoryTests, LeximoryUITests]
+    Leximory-StoreKit-Local:
+        build:
+            targets:
+                Leximory: all
+        run:
+            config: Debug
+            storeKitConfiguration: StoreKit/Leximory.storekit
+            environmentVariables:
+                LEXIMORY_STOREKIT_LOCAL: '1'
+        test:
+            targets: [LeximoryTests, LeximoryUITests]

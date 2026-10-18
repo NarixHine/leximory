@@ -5,12 +5,14 @@ import { redirect } from 'next/navigation'
 import { CREEM_PRODUCT_ID, PaidTier, prefixUrl, SIGN_IN_URL } from '@repo/env/config'
 import { creem } from '@/server/client/creem'
 import { getUserOrThrow } from '@repo/user'
+import { getMembership } from '@repo/user/membership'
 
 export async function upgrade({ plan }: { plan: PaidTier }) {
     const { userId } = await getUserOrThrow()
     if (!userId) {
         redirect(SIGN_IN_URL)
     }
+    if (!(await getMembership(userId)).purchaseEligible) redirect('/settings')
     const session = await creem.createCheckoutSession({
         success_url: prefixUrl('/settings'),
         product_id: CREEM_PRODUCT_ID[plan],
