@@ -35,7 +35,13 @@ struct BrowserFoldersView: View {
                         }.foregroundStyle(.primary)
                     }
                 }
-                if folders.isEmpty && !workspace.loading { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }
+                if folders.isEmpty && !workspace.loading {
+                    if sync?.catalogFailed == true {
+                        LeximoryUnavailableView("暂时无法加载书签", systemImage: "wifi.exclamationmark", message: "请检查网络后重试。") {
+                            Button("重试") { Task { await refreshBookmarks() } }
+                        }
+                    } else { LeximoryUnavailableView("还没有书签", systemImage: "bookmark", message: "保存网页，或打开一本电子书。") }
+                }
             }
             if workspace.loading { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
             if refreshFailed {
@@ -72,7 +78,7 @@ struct BrowserFoldersView: View {
             refreshFailed = !complete
         } else {
             await workspace.refresh(online: true)
-            for folder in folders where !folder.archived { await workspace.loadFolder(folder, online: true) }
+            for folder in folders where !folder.archived { await workspace.loadFolder(folder, online: true, refresh: true) }
         }
     }
     private func folder(_ library: CatalogLibrary) -> some View {
@@ -106,11 +112,11 @@ private struct BrowserFolderContents: View {
                 ForEach(texts) { text in BrowserResourceRow(text: text) { Task { await workspace.open(text) } }.padding(.leading, 16) }
                 if texts.isEmpty && !workspace.folderFailures.contains(library.id) { Text("还没有书签").foregroundStyle(.secondary).padding(.leading, 16) }
                 if workspace.folderFailures.contains(library.id) {
-                    Button("未能更新此文件夹，重试") { Task { await workspace.loadFolder(library, online: sync?.online != false) } }
+                    Button("未能更新此文件夹，重试") { Task { await workspace.loadFolder(library, online: sync?.online != false, refresh: true) } }
                         .padding(.leading, 16)
                 }
             } else if !loaded { ProgressView().padding(.leading, 16) }
-            else { Button("重试") { Task { await workspace.loadFolder(library, online: sync?.online != false) } } }
+            else { Button("重试") { Task { await workspace.loadFolder(library, online: sync?.online != false, refresh: true) } } }
         }
         .task(id: library.id) { await workspace.loadFolder(library, online: sync?.online != false); loaded = true }
     }

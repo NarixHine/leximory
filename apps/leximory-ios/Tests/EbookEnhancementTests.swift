@@ -6,6 +6,70 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct EbookEnhancementTests {
+    @Test func livePDFHighlightsDoNotStackWhenSavingOverlappingSelections() async throws {
+        let quote = "alpha bravo charlie delta echo"
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            (quote as NSString).draw(at: CGPoint(x: 30, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 20)])
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let reader = EbookReaderState()
+        let host = UIHostingController(rootView: NativePDFReader(data: data, reader: reader, command: nil))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        func snapshot() throws -> CGImage {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            return try #require(UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }.cgImage)
+        }
+        func findPDF(_ view: UIView) -> PDFView? {
+            if let pdf = view as? PDFView { return pdf }
+            return view.subviews.lazy.compactMap { findPDF($0) }.first
+        }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        let pdf = try #require(findPDF(host.view))
+        let page = try #require(pdf.document?.page(at: 0))
+        let text = try #require(page.string)
+        let points = try quote.split(separator: " ").map { word in
+            let range = try #require(text.range(of: String(word)))
+            let selection = try #require(page.selection(for: NSRange(range, in: text)))
+            let bounds = selection.bounds(for: page)
+            return pdf.convert(pdf.convert(CGPoint(x: bounds.midX, y: bounds.maxY - 1), from: page), to: host.view)
+        }
+        func markerPixels(_ image: CGImage) throws -> [[UInt8]] {
+            try points.map { try pixel(image, x: Int($0.x), y: image.height - Int($0.y) - 1) }
+        }
+        for dark in [false, true] {
+            host.overrideUserInterfaceStyle = dark ? .dark : .light
+            reader.bookmarks = [EbookBookmark(id: 1, quote: quote, chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let single = try markerPixels(snapshot())
+            reader.bookmarks = [EbookBookmark(id: 2, quote: "bravo charlie", chapter: nil, location: "1"),
+                EbookBookmark(id: 3, quote: "alpha bravo charlie delta", chapter: nil, location: "1"),
+                EbookBookmark(id: 4, quote: "charlie delta echo", chapter: nil, location: "1"),
+                EbookBookmark(id: 5, quote: "bravo charlie", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let overlap = try markerPixels(snapshot())
+            #expect(overlap == single, "Live PDFKit overlap must have one coat, dark \(dark)")
+            #expect(single.allSatisfy { $0[1] > $0[0] && $0[0] > $0[2] }, "All sampled pixels must contain the sage marker")
+            let learningPDF = try #require(pdf as? LearningPDFView)
+            #expect(learningPDF.highlight(at: host.view.convert(points[2], to: pdf))?.bookmarkID == 5,
+                "A fully covered save must remain independently selectable")
+            reader.bookmarks = [EbookBookmark(id: 4, quote: "charlie delta echo", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let remaining = try markerPixels(snapshot())
+            reader.bookmarks = []
+            try await Task.sleep(for: .milliseconds(100))
+            reader.bookmarks = [EbookBookmark(id: 6, quote: "charlie delta echo", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            #expect(try markerPixels(snapshot()) == remaining, "Removing overlapping saves must restore the remaining highlight")
+        }
+    }
+
     @Test func pdfInvertsWhenAppearanceChangesWithoutRecreatingTheDocument() async throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
             context.beginPage()

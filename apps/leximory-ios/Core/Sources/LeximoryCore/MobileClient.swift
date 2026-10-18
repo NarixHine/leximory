@@ -581,15 +581,27 @@ public struct MobileClient: Sendable {
               (try? details.document?.validate()) != nil || details.document == nil else { return nil }
         return details
     }
+    public func cachedLibraries() async -> [CatalogLibrary]? {
+        guard await localStore?.value(Bool.self, for: "complete/libraries") == true else { return nil }
+        return await localStore?.value([CatalogLibrary].self, for: "libraries")
+    }
+    public func cachedTexts(libraryID: String) async -> [CatalogText]? {
+        guard await localStore?.value(Bool.self, for: "complete/texts/\(libraryID)") == true else { return nil }
+        return await localStore?.value([CatalogText].self, for: "texts/\(libraryID)")
+    }
     public func allLibraries() async throws -> [CatalogLibrary] {
         let version = await localStore?.version(for: "libraries")
         let items = try await collectPages { try await libraries(cursor: $0) }
-        return await localStore?.reconcileLibraries(items, ifUnchanged: version) ?? items
+        let result = await localStore?.reconcileLibraries(items, ifUnchanged: version) ?? items
+        try await notesStore?.reconcileSources(libraryIDs: Set(result.map(\.id)))
+        return result
     }
     public func allTexts(libraryID: String) async throws -> [CatalogText] {
         let version = await localStore?.version(for: "texts/\(libraryID)")
         let items = try await collectPages { try await texts(libraryID: libraryID, cursor: $0) }
-        return await localStore?.reconcileTexts(items, libraryID: libraryID, ifUnchanged: version) ?? items
+        let result = await localStore?.reconcileTexts(items, libraryID: libraryID, ifUnchanged: version) ?? items
+        try await notesStore?.reconcileSources(libraryID: libraryID, textIDs: Set(result.map(\.id)))
+        return result
     }
     public func allVocabulary(libraryID: String) async throws -> [SavedWord] {
         let version = await localStore?.version(for: "words/\(libraryID)") ?? 0

@@ -119,7 +119,6 @@ struct ReaderScreen: View {
             }
         }
         .task(id: article.id) { definition = nil; await load() }
-        .onChange(of: sync?.revision) { _, _ in if resourceActive { Task { await load() } } }
         .onChange(of: workspace?.revision) { _, _ in
             guard let details = workspace?.documents[article.id.rawValue], let document = details.document else { return }
             refreshedArticle = details.text.preview

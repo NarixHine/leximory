@@ -130,10 +130,11 @@ public actor LocalReadingStore {
         try persist(); storageFailure = false; notify()
     }
     private static func isCatalog(_ key: String) -> Bool {
-        key == "libraries" || key.hasPrefix("texts/") || key.hasPrefix("words/")
+        key == "libraries" || key.hasPrefix("texts/") || key.hasPrefix("words/") || key.hasPrefix("complete/")
     }
     public func remove(_ key: String) {
         guard !closed else { return }
+        if key == "libraries" || key.hasPrefix("texts/") { remove("complete/\(key)") }
         manifest.entries.removeValue(forKey: key)
         versions[key, default: 0] += 1
         try? FileManager.default.removeItem(at: file(key)); try? persist(); notify()
@@ -190,6 +191,7 @@ public actor LocalReadingStore {
             if let book = value(EbookDescriptor.self, for: key), !ids.contains(book.library.id) { removeText(book.text.id) }
         }
         save(libraries, for: "libraries")
+        save(true, for: "complete/libraries")
         return libraries
     }
     @discardableResult public func reconcileTexts(_ texts: [CatalogText], libraryID: String, ifUnchanged version: Int? = nil) -> [CatalogText] {
@@ -199,6 +201,7 @@ public actor LocalReadingStore {
             for text in previous where !ids.contains(text.id) { removeText(text.id) }
         }
         save(texts, for: "texts/\(libraryID)")
+        save(true, for: "complete/texts/\(libraryID)")
         return texts
     }
     public func setArchived(libraryID: String, archived: Bool) {

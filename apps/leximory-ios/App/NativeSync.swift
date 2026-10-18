@@ -5,20 +5,12 @@ import LeximoryCore
 
 @MainActor @Observable final class NativeSync {
     private(set) var online = true
-    private(set) var syncing = false
-    private(set) var savedBooks = 0
-    private(set) var bytes = 0
-    private(set) var lastSync: Date?
-    private(set) var incomplete = false
-    private(set) var storageFailure = false
     private(set) var revision = 0
-    private(set) var downloadedTextIDs: Set<String> = []
+    private(set) var catalogFailed = false
     @ObservationIgnored private let monitor = NWPathMonitor()
     @ObservationIgnored private var pathAvailable = true
-    @ObservationIgnored private var syncTask: Task<Void, Never>?
     @ObservationIgnored private var catalogTask: Task<Bool, Never>?
     @ObservationIgnored private var observer: Task<Void, Never>?
-    @ObservationIgnored private var notesTask: Task<Void, Never>?
     @ObservationIgnored private var scheduledNotes: Task<Void, Never>?
     @ObservationIgnored private var stopped = false
     @ObservationIgnored private var active = false
@@ -45,98 +37,57 @@ import LeximoryCore
                 #endif
                 pathAvailable = available
                 await store.setOnline(available)
-                if available && active { await refresh() }
+                if available && active { await loadCatalogIfNeeded(); scheduleNotes() }
             }
         }
         monitor.start(queue: DispatchQueue(label: "com.leximory.sync.path"))
         observer = Task { [weak self, store] in
             for await status in await store.updates() {
                 guard let self, !Task.isCancelled else { return }
-                online = status.online; savedBooks = status.savedBooks; bytes = status.bytes
-                lastSync = status.lastSync; storageFailure = status.storageFailure; downloadedTextIDs = status.downloadedTextIDs
+                online = status.online
             }
         }
     }
-    func run() async {
+    func run(waitForNextPass: @Sendable () async throws -> Void = { try await Task.sleep(for: .seconds(20)) }) async {
         let id = UUID(); runID = id; active = true
-        notesTask?.cancel()
-        notesTask = Task { [weak self] in
-            while let self, !Task.isCancelled, !self.stopped {
-                await self.syncNotes()
-                do { try await Task.sleep(for: .seconds(20)) } catch { return }
+        defer { if runID == id { active = false; runID = nil } }
+        await loadCatalogIfNeeded()
+        var recoveryAttempts = 0
+        while !Task.isCancelled && !stopped && runID == id {
+            if online { recoveryAttempts = 0 }
+            if pathAvailable && !online && recoveryAttempts < MutationRetry.maxAttempts {
+                recoveryAttempts += 1
+                await store.setOnline(true)
+                do {
+                    _ = try await client.account()
+                    await loadCatalogIfNeeded()
+                } catch { await store.setOnline(false) }
             }
-        }
-        defer { if runID == id { active = false; runID = nil; notesTask?.cancel() } }
-        while !Task.isCancelled && !stopped {
-            await refresh()
-            do { try await Task.sleep(for: .seconds(online ? 300 : 20)) } catch { return }
+            await syncNotes()
+            do { try await waitForNextPass() } catch { return }
         }
     }
-    func refresh() async {
-        guard !stopped, pathAvailable else { return }
-        scheduleNotes()
-        if let syncTask { await syncTask.value; return }
-        syncing = true; incomplete = false
-        let task = Task { [client, store] in
-            // A successful path alone cannot prove that the backend is reachable.
-            // Retry reads on foreground/reconnect; failed requests restore read-only mode.
-            await store.setOnline(true)
+    func loadCatalogIfNeeded() async {
+        guard !stopped, pathAvailable, !Task.isCancelled else { return }
+        await store.setOnline(true)
+        guard await client.cachedLibraries() == nil else { return }
+        for attempt in 0..<MutationRetry.maxAttempts {
             do {
-                _ = try await client.account()
-                let libraries = try await client.allLibraries()
-                try await client.notesStore?.reconcileSources(libraryIDs: Set(libraries.map(\.id)))
-                var complete = true
-                for library in libraries {
-                    try Task.checkCancellation()
-                    do {
-                        let texts = try await client.allTexts(libraryID: library.id)
-                        try await client.notesStore?.reconcileSources(libraryID: library.id, textIDs: Set(texts.map(\.id)))
-                        _ = try await client.allVocabulary(libraryID: library.id)
-                        // Limit downloads and document decoding to three concurrent texts.
-                        for offset in stride(from: 0, to: texts.count, by: 3) {
-                            let batch = Array(texts[offset..<min(offset + 3, texts.count)])
-                            await withTaskGroup(of: Bool.self) { group in
-                                for text in batch {
-                                    group.addTask {
-                                        do {
-                                            try Task.checkCancellation()
-                                            let details = try await client.documentDetails(textID: text.id)
-                                            if text.format == "ebook" { _ = try await client.downloadEbook(textID: text.id) }
-                                            if let document = details.document {
-                                                for block in document.blocks {
-                                                    for span in block.spans {
-                                                        if case .image(let url, _) = span.style {
-                                                            if await store.data(for: "image/\(url.absoluteString)") == nil {
-                                                                let data = try await LocalAssetDownloads.shared.load(url, limit: 8 * 1024 * 1024)
-                                                                try await store.saveData(data, for: "image/\(url.absoluteString)")
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            return true
-                                        } catch { return false }
-                                    }
-                                }
-                                for await success in group { if !success { complete = false } }
-                            }
-                        }
-                    } catch {
-                        if Task.isCancelled { return }
-                        complete = false
-                    }
-                }
+                await store.setOnline(true)
+                _ = try await client.allLibraries()
                 try Task.checkCancellation()
-                if complete { await store.completeSync() }
-                incomplete = !complete
+                catalogFailed = false
                 revision += 1
+                return
             } catch {
-                if !Task.isCancelled { incomplete = true }
+                guard !stopped, !Task.isCancelled else { return }
+                guard pathAvailable, MutationRetry.isRetryable(error), attempt + 1 < MutationRetry.maxAttempts else {
+                    catalogFailed = true
+                    return
+                }
+                do { try await MutationRetry.pause(after: attempt) } catch { return }
             }
         }
-        syncTask = task
-        await task.value
-        syncTask = nil; syncing = false
     }
     func refreshBookmarks(prioritizing expanded: Set<String>) async -> Bool {
         guard !stopped, pathAvailable else { return false }
@@ -149,6 +100,7 @@ import LeximoryCore
                 do {
                     let libraries = try await client.allLibraries()
                     try Task.checkCancellation()
+                    catalogFailed = false
                     revision += 1
                     let folders = libraries.filter { !$0.archived }.sorted {
                         expanded.contains($0.id) && !expanded.contains($1.id)
@@ -186,13 +138,13 @@ import LeximoryCore
         }
     }
     private func syncNotes() async {
-        guard active, pathAvailable, !stopped else { return }
+        guard active, pathAvailable, !stopped, !Task.isCancelled else { return }
         do { try await notes?.synchronize(document: activePDF) } catch { }
     }
-    func pause() { active = false; runID = nil; syncTask?.cancel(); catalogTask?.cancel(); notesTask?.cancel(); scheduledNotes?.cancel() }
+    func pause() { active = false; runID = nil; catalogTask?.cancel(); scheduledNotes?.cancel() }
     func stop() async {
-        stopped = true; monitor.cancel(); observer?.cancel(); syncTask?.cancel(); catalogTask?.cancel()
-        notesTask?.cancel(); scheduledNotes?.cancel()
+        stopped = true; monitor.cancel(); observer?.cancel(); catalogTask?.cancel()
+        scheduledNotes?.cancel()
         await notes?.stop()
         await client.notesStore?.close()
         await store.close()

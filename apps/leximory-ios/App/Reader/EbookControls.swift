@@ -128,11 +128,29 @@ final class LearningWebView: WKWebView {
 
 final class EbookPDFHighlight: PDFAnnotation {
     let bookmarkID: Int
-    private let excludedBounds: [CGRect]
     init(bounds: CGRect, bookmarkID: Int, excluding: [CGRect] = [], inverted: Bool = false) {
         self.bookmarkID = bookmarkID
-        excludedBounds = excluding.filter { $0.intersects(bounds) }
         super.init(bounds: bounds, forType: .highlight, withProperties: nil)
+        var regions = [bounds]
+        for excluded in excluding where excluded.intersects(bounds) {
+            regions = regions.flatMap { region -> [CGRect] in
+                let cut = region.intersection(excluded)
+                guard !cut.isNull else { return [region] }
+                return [
+                    CGRect(x: region.minX, y: region.minY, width: region.width, height: cut.minY - region.minY),
+                    CGRect(x: region.minX, y: cut.maxY, width: region.width, height: region.maxY - cut.maxY),
+                    CGRect(x: region.minX, y: cut.minY, width: cut.minX - region.minX, height: cut.height),
+                    CGRect(x: cut.maxX, y: cut.minY, width: region.maxX - cut.maxX, height: cut.height)
+                ].filter { $0.width > 0 && $0.height > 0 }
+            }
+        }
+        // PDFKit's live renderer uses native quads rather than our draw override.
+        quadrilateralPoints = regions.flatMap { region in
+            [CGPoint(x: region.minX, y: region.maxY), CGPoint(x: region.maxX, y: region.maxY),
+             CGPoint(x: region.minX, y: region.minY), CGPoint(x: region.maxX, y: region.minY)]
+                .map { NSValue(cgPoint: CGPoint(x: $0.x - bounds.minX, y: $0.y - bounds.minY)) }
+        }
+        shouldDisplay = !regions.isEmpty
         let marker = LeximoryPalette.wordHighlightUI.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
         if inverted {
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
@@ -142,19 +160,6 @@ final class EbookPDFHighlight: PDFAnnotation {
         } else { color = marker }
     }
     required init?(coder: NSCoder) { return nil }
-    override func draw(with box: PDFDisplayBox, in context: CGContext) {
-        context.saveGState()
-        // Intersect successive cutouts so even three overlapping saves paint only once.
-        for excluded in excludedBounds {
-            context.addRect(bounds)
-            context.addRect(bounds.intersection(excluded))
-            context.clip(using: .evenOdd)
-        }
-        context.setBlendMode(.multiply)
-        context.setFillColor(color.cgColor)
-        context.fill(bounds)
-        context.restoreGState()
-    }
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {

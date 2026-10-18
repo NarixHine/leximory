@@ -5,6 +5,29 @@ import OpenAPIRuntime
 @testable import LeximoryCore
 
 struct LocalReadingStoreTests {
+    @Test func onlyCompleteCollectionsCanSkipTheNetworkAcrossRelaunches() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "collections")
+        let text = CatalogText(id: "new", libraryId: "library", title: "New import", topics: [], emoji: nil, createdAt: nil, format: "article")
+        let client = MobileClient(baseURL: origin, transport: CountingTransport(), token: { _ in "test" }, localStore: store)
+        await store.upsertText(text)
+        #expect(await client.cachedTexts(libraryID: "library") == nil)
+        await store.reconcileTexts([text], libraryID: "library")
+        await store.reconcileLibraries([])
+        let reopened = try LocalReadingStore(root: root, origin: origin, accountID: "collections")
+        let restored = MobileClient(baseURL: origin, transport: CountingTransport(), token: { _ in "test" }, localStore: reopened)
+        #expect(await restored.cachedLibraries()?.isEmpty == true)
+        // The empty library snapshot revoked the old folder and its completeness marker.
+        #expect(await restored.cachedTexts(libraryID: "library") == nil)
+        await reopened.reconcileTexts([], libraryID: "empty")
+        #expect(await restored.cachedTexts(libraryID: "empty")?.isEmpty == true)
+        await reopened.reconcileTexts([text], libraryID: "library")
+        #expect(await restored.cachedTexts(libraryID: "library") == [text])
+        await reopened.remove("texts/library")
+        await reopened.upsertText(text)
+        #expect(await restored.cachedTexts(libraryID: "library") == nil)
+    }
+
     @Test func removedEbookBookmarkStaysRemovedAfterCacheReopens() async throws {
         let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
         let store = try LocalReadingStore(root: root, origin: origin, accountID: "first")

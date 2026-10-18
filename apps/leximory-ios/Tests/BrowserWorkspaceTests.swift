@@ -450,6 +450,96 @@ private final class ScrollHistoryServer: Sendable {
 }
 
 @MainActor struct BookmarkRefreshTests {
+    @Test func coldStartLoadsOnlyFolderMetadataAndWarmStartsMakeNoCatalogRequests() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "bootstrap")
+        let transport = CatalogRefreshTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let sync = NativeSync(store: store, client: client)
+        await sync.loadCatalogIfNeeded()
+        await sync.loadCatalogIfNeeded()
+        let passes = BackgroundPasses()
+        await sync.run(waitForNextPass: { try await passes.next() })
+        await sync.run(waitForNextPass: { throw CancellationError() })
+        #expect(await passes.count == 4)
+        #expect(await transport.operations == ["libraries"])
+        #expect(await client.cachedLibraries()?.count == 3)
+        #expect(await client.cachedTexts(libraryID: "active") == nil)
+        #expect(!sync.catalogFailed)
+        await sync.stop()
+    }
+
+    private actor BackgroundPasses {
+        var count = 0
+        func next() throws {
+            count += 1
+            if count == 4 { throw CancellationError() }
+        }
+    }
+
+    @Test func failedFirstLoadStopsRetryingAndAnExplicitPullRecovers() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "bootstrap-recovery")
+        let transport = CatalogRefreshTransport(failures: 3)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let sync = NativeSync(store: store, client: client)
+        await sync.loadCatalogIfNeeded()
+        #expect(sync.catalogFailed)
+        #expect(await transport.catalogReads == 3)
+        #expect(await sync.refreshBookmarks(prioritizing: []))
+        #expect(!sync.catalogFailed)
+        #expect(await transport.catalogReads == 4)
+        #expect(await transport.operations.allSatisfy { ["libraries", "texts"].contains($0) })
+        await sync.stop()
+    }
+
+    @Test func openingCachedFoldersUsesNoRequestsAndExplicitRefreshFetchesCurrentContents() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "cached-folder")
+        let cached = try decodeText("old", library: "active", title: "Cached article")
+        await store.reconcileTexts([cached], libraryID: "active")
+        let transport = CatalogRefreshTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let library = try JSONDecoder().decode(CatalogLibrary.self, from: Data(CatalogRefreshTransport.libraryJSON.utf8))
+        let namespace = UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: client, namespace: namespace)
+        await workspace.loadFolder(library, online: true)
+        await workspace.loadFolder(library, online: true)
+        #expect(workspace.texts["active"] == [cached])
+        #expect(await transport.operations.isEmpty)
+        await workspace.loadFolder(library, online: true, refresh: true)
+        #expect(workspace.texts["active"]?.map(\.title) == ["Updated article"])
+        #expect(await transport.operations == ["texts"])
+        await workspace.loadFolder(library, online: true)
+        #expect(await transport.operations == ["texts"])
+        await store.close()
+    }
+
+    @Test func aLocalImportDoesNotPreventFetchingTheRestOfAFolder() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://bookmarks.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "partial-folder")
+        await store.upsertText(try decodeText("local", library: "active", title: "Just imported"))
+        let transport = CatalogRefreshTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let library = try JSONDecoder().decode(CatalogLibrary.self, from: Data(CatalogRefreshTransport.libraryJSON.utf8))
+        let namespace = UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.recent." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: client, namespace: namespace)
+        await workspace.loadFolder(library, online: true)
+        #expect(workspace.texts["active"]?.map(\.id) == ["article"])
+        #expect(await transport.operations == ["texts"])
+        await store.close()
+    }
+
     @Test func pullRecoversAndRefreshesCollapsedFoldersWithoutDownloadingOrFetchingVocabulary() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

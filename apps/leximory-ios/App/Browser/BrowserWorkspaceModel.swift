@@ -587,11 +587,12 @@ struct AnnotationActivity: Identifiable, Codable {
             catch { }
         }
     }
-    func loadFolder(_ library: CatalogLibrary, online: Bool, reportsFailure: Bool = true) async {
+    func loadFolder(_ library: CatalogLibrary, online: Bool, reportsFailure: Bool = true, refresh: Bool = false) async {
         let request = UUID(); folderRequests[library.id] = request
         folderFailures.remove(library.id)
         let mutation = catalogMutation
         if let cached = await client.localStore?.value([CatalogText].self, for: "texts/\(library.id)"), folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled { texts[library.id] = cached }
+        if !refresh, await client.cachedTexts(libraryID: library.id) != nil { return }
         guard online, folderRequests[library.id] == request, catalogMutation == mutation, !Task.isCancelled else { return }
         do {
             let result = try await client.allTexts(libraryID: library.id)
