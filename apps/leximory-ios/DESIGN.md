@@ -120,7 +120,7 @@ Horizontal EPUB prose defaults to 18 pt phone/20 pt wide with 1.6 leading, a 560
 
 PDFs scroll vertically and offer fit-page/fit-width. PDF content runs edge to edge behind floating controls without solid header or footer bands. EPUB prose reserves 52 pt above for controls and 12 pt below above the address bar. Reading progress scrubbing is available in EPUB reading options. Contents, bookmarks and settings use paper popovers on iPad and fitted sheets on phone. Short lists fit their content; long lists scroll. Dismiss outside or with the system gesture.
 
-PDF pages and handwriting invert automatically in dark appearance while reading controls retain their system colors. PDFKit owns navigation and zoom in handwriting mode; PencilKit strokes stay in page coordinates. Saved PDF highlights use Leximory's sage marker (`#BDD981`, 45% opacity), preserving its hue in dark appearance and uniform opacity across overlapping saves. Each save remains independently removable.
+PDF paper and ink invert automatically in dark appearance while colored content, highlights and handwriting retain their hues. Reading controls retain their system colors. PDFKit owns navigation and zoom in handwriting mode; PencilKit strokes stay in page coordinates. Saved PDF highlights use Leximory's sage marker (`#BDD981`, 45% opacity), with uniform opacity across overlapping saves. Each save remains independently removable.
 
 Bookmarks use spaced quote cards with chapter names or PDF page numbers. Show and highlight saves immediately, then reconcile the result. Failed saves remove the pending bookmark and announce a brief error. Reading-position sync failures stay silent.
 

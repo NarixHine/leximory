@@ -7,6 +7,72 @@ import SwiftUI
 @testable import Leximory
 
 @Suite(.serialized) @MainActor struct PDFDrawingTests {
+    @Test(arguments: [false, true])
+    func coloredMarkersKeepTheirHueWhenAppearanceChanges(initialDark: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let (model, data, _) = try fixture(root: root)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: DrawingReader(data: data, model: model))
+        host.overrideUserInterfaceStyle = initialDark ? .dark : .light
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        let pdf = try #require(pdfView(in: host.view))
+        let provider = try #require(pdf.pageOverlayViewProvider as? PDFDrawingOverlays)
+        let overlay = try #require(provider.overlays[0])
+        await overlay.load?.value
+        let colors: [UIColor] = [.yellow, .red, .green, .blue, .black]
+        overlay.canvas.drawing = PKDrawing(strokes: colors.enumerated().map { index, color in
+            let points = (0..<4).map { point in
+                PKStrokePoint(location: CGPoint(x: 100 + point * 20, y: 160 + index * 60),
+                    timeOffset: Double(point) * 0.01, size: CGSize(width: 24, height: 24),
+                    opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2)
+            }
+            return PKStroke(ink: PKInk(index == 4 ? .pen : .marker, color: color),
+                path: PKStrokePath(controlPoints: points, creationDate: .now))
+        })
+        let original = overlay.canvas.drawing.dataRepresentation()
+        func markerSamples() throws -> [[Int]] {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            let image = try #require(UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }.cgImage)
+            return try colors.indices.map { index in
+                let point = overlay.canvas.convert(CGPoint(x: 130 * overlay.canvas.zoomScale,
+                    y: CGFloat(160 + index * 60) * overlay.canvas.zoomScale), to: host.view)
+                var bytes = [UInt8](repeating: 0, count: 4)
+                try bytes.withUnsafeMutableBytes { storage in
+                    let context = try #require(CGContext(data: storage.baseAddress, width: 1, height: 1,
+                        bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+                    context.draw(image, in: CGRect(x: -Int(point.x), y: -(image.height - Int(point.y) - 1),
+                        width: image.width, height: image.height))
+                }
+                return bytes.map(Int.init)
+            }
+        }
+        for dark in [initialDark, !initialDark, initialDark] {
+            host.overrideUserInterfaceStyle = dark ? .dark : .light
+            try await Task.sleep(for: .milliseconds(250))
+            var samples = try markerSamples()
+            for _ in 0..<10 where abs(samples[0][0] - samples[0][2]) < 20 {
+                try await Task.sleep(for: .milliseconds(100))
+                samples = try markerSamples()
+            }
+            #expect(samples[0][0] > samples[0][2] + 20 && samples[0][1] > samples[0][2] + 20, "Yellow marker, dark \(dark): \(samples[0])")
+            #expect(samples[1][0] > samples[1][1] + 20 && samples[1][0] > samples[1][2] + 20, "Red marker, dark \(dark): \(samples[1])")
+            #expect(samples[2][1] > samples[2][0] + 20 && samples[2][1] > samples[2][2] + 20, "Green marker, dark \(dark): \(samples[2])")
+            #expect(samples[3][2] > samples[3][0] + 20 && samples[3][2] > samples[3][1] + 20, "Blue marker, dark \(dark): \(samples[3])")
+            #expect(samples[4].prefix(3).allSatisfy { dark ? $0 > 240 : $0 < 15 }, "Pen contrast, dark \(dark): \(samples[4])")
+            #expect(overlay.canvas.drawing.dataRepresentation() == original)
+        }
+    }
+
     @Test func toolPickerRestoresBrushCustomInkColorAndWidth() async throws {
         let name = "leximory.pdf.tools.test.\(UUID().uuidString)"
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
