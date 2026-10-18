@@ -30,6 +30,9 @@ import SwiftUI
             overlay.layoutIfNeeded()
             let zoom = scale * resize
             #expect(abs(overlay.canvas.zoomScale - zoom) < 0.001)
+            #expect(overlay.canvas.minimumZoomScale == overlay.canvas.maximumZoomScale)
+            #expect(overlay.canvas.panGestureRecognizer.isEnabled == false)
+            #expect(overlay.canvas.pinchGestureRecognizer?.isEnabled != true)
             #expect(abs(displayScale(of: overlay.canvas) - 1) < 0.001)
             #expect(overlay.canvas.bounds.size == CGSize(width: pageSize.width * zoom, height: pageSize.height * zoom))
             #expect(overlay.canvas.drawing.dataRepresentation() == before)
@@ -136,10 +139,31 @@ import SwiftUI
         let reopened = try #require(provider.overlays[0])
         #expect(reopened.canvas.isFirstResponder)
         #expect(reopened.canvas.drawing.strokes.count == 1)
+        #expect(reopened.canvas.panGestureRecognizer.isEnabled == false)
+        #expect(reopened.canvas.pinchGestureRecognizer?.isEnabled != true)
         let originalStrokeBounds = reopened.canvas.drawing.bounds
         pdf.scaleFactor *= 2
         try await Task.sleep(for: .milliseconds(200))
         #expect(abs(displayScale(of: reopened.canvas) - 1) < 0.001)
+        #expect(reopened.canvas.drawing.bounds == originalStrokeBounds)
+        let page = try #require(pdf.currentPage)
+        func strokePosition() -> CGPoint {
+            reopened.canvas.convert(CGPoint(x: 40 * reopened.canvas.zoomScale, y: 80 * reopened.canvas.zoomScale), to: pdf)
+        }
+        func pagePosition() -> CGPoint { pdf.convert(CGPoint(x: 40, y: 520), from: page) }
+        #expect(abs(strokePosition().x - pagePosition().x) < 1)
+        #expect(abs(strokePosition().y - pagePosition().y) < 1)
+        var parent = pdf.documentView?.superview
+        while let view = parent, !(view is UIScrollView) { parent = view.superview }
+        let navigation = try #require(parent as? UIScrollView)
+        #expect(navigation.panGestureRecognizer.isEnabled)
+        #expect(navigation.pinchGestureRecognizer?.isEnabled == true)
+        let beforePan = pagePosition()
+        navigation.contentOffset.y += 40
+        pdf.layoutIfNeeded()
+        #expect(abs(pagePosition().y - beforePan.y + 40) < 1)
+        #expect(abs(strokePosition().x - pagePosition().x) < 1)
+        #expect(abs(strokePosition().y - pagePosition().y) < 1)
         #expect(reopened.canvas.drawing.bounds == originalStrokeBounds)
         reopened.canvas.drawing = PKDrawing()
         provider.canvasViewDrawingDidChange(reopened.canvas)

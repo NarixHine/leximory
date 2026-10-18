@@ -128,11 +128,27 @@ final class LearningWebView: WKWebView {
 
 final class EbookPDFHighlight: PDFAnnotation {
     let bookmarkID: Int
-    init(bounds: CGRect, bookmarkID: Int) {
+    private let excludedBounds: [CGRect]
+    init(bounds: CGRect, bookmarkID: Int, excluding: [CGRect] = []) {
         self.bookmarkID = bookmarkID
+        excludedBounds = excluding.filter { $0.intersects(bounds) }
         super.init(bounds: bounds, forType: .highlight, withProperties: nil)
+        color = UIColor(red: 1, green: 0.88, blue: 0.12, alpha: 0.5)
     }
     required init?(coder: NSCoder) { return nil }
+    override func draw(with box: PDFDisplayBox, in context: CGContext) {
+        context.saveGState()
+        // Intersect successive cutouts so even three overlapping saves paint only once.
+        for excluded in excludedBounds {
+            context.addRect(bounds)
+            context.addRect(bounds.intersection(excluded))
+            context.clip(using: .evenOdd)
+        }
+        context.setBlendMode(.multiply)
+        context.setFillColor(color.cgColor)
+        context.fill(bounds)
+        context.restoreGState()
+    }
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {

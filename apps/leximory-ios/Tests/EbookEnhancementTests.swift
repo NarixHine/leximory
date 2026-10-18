@@ -6,6 +6,90 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct EbookEnhancementTests {
+    @Test func pdfInvertsWhenAppearanceChangesWithoutRecreatingTheDocument() async throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            UIColor.black.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 300, width: 400, height: 300))
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let reader = EbookReaderState()
+        let host = UIHostingController(rootView: NativePDFReader(data: data, reader: reader, command: nil))
+        host.overrideUserInterfaceStyle = .light
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        func findPDF(_ view: UIView) -> PDFView? {
+            if let pdf = view as? PDFView { return pdf }
+            return view.subviews.lazy.compactMap { findPDF($0) }.first
+        }
+        let pdf = try #require(findPDF(host.view))
+        let document = try #require(pdf.document)
+        let page = try #require(pdf.currentPage)
+        let originalScale = pdf.scaleFactor
+        func snapshot() throws -> CGImage {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            return try #require(UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }.cgImage)
+        }
+        func sample(_ image: CGImage, pageY: CGFloat) throws -> [UInt8] {
+            let point = pdf.convert(pdf.convert(CGPoint(x: 200, y: pageY), from: page), to: host.view)
+            return try pixel(image, x: Int(point.x), y: image.height - Int(point.y) - 1)
+        }
+        let light = try snapshot()
+        #expect(try sample(light, pageY: 450).prefix(3).allSatisfy { $0 > 240 })
+        #expect(try sample(light, pageY: 150).prefix(3).allSatisfy { $0 < 15 })
+        host.overrideUserInterfaceStyle = .dark
+        try await Task.sleep(for: .milliseconds(250))
+        let dark = try snapshot()
+        #expect(try sample(dark, pageY: 450).prefix(3).allSatisfy { $0 < 15 })
+        #expect(try sample(dark, pageY: 150).prefix(3).allSatisfy { $0 > 240 })
+        #expect(findPDF(host.view) === pdf)
+        #expect(pdf.document === document)
+        #expect(pdf.scaleFactor == originalScale)
+        #expect(pdf.currentPage === page)
+        host.overrideUserInterfaceStyle = .light
+        try await Task.sleep(for: .milliseconds(250))
+        let restored = try snapshot()
+        #expect(try sample(restored, pageY: 450) == sample(light, pageY: 450))
+    }
+
+    @Test func overlappingPDFHighlightsHaveOneCoatOfColor() throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 160, height: 80)).pdfData { $0.beginPage() }
+        let page = try #require(PDFDocument(data: data)?.page(at: 0))
+        var preceding: [CGRect] = []
+        for (index, bounds) in [CGRect(x: 10, y: 20, width: 70, height: 40),
+                                CGRect(x: 40, y: 20, width: 70, height: 40),
+                                CGRect(x: 55, y: 20, width: 30, height: 40)].enumerated() {
+            page.addAnnotation(EbookPDFHighlight(bounds: bounds, bookmarkID: index, excluding: preceding))
+            preceding.append(bounds)
+        }
+        let image = try #require(page.thumbnail(of: CGSize(width: 160, height: 80), for: .mediaBox).cgImage)
+        let single = try pixel(image, x: 20, y: 40)
+        #expect(single[0] > 240)
+        #expect(single[1] > 210)
+        #expect(single[2] < 180)
+        #expect(try pixel(image, x: 60, y: 40) == single)
+        #expect(try pixel(image, x: 100, y: 40) == single)
+        #expect(try pixel(image, x: 130, y: 40) == [255, 255, 255, 255])
+    }
+
+    private func pixel(_ image: CGImage, x: Int, y: Int) throws -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: 4)
+        try bytes.withUnsafeMutableBytes { storage in
+            let context = try #require(CGContext(data: storage.baseAddress, width: 1, height: 1,
+                bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+            context.draw(image, in: CGRect(x: -x, y: -y, width: image.width, height: image.height))
+        }
+        return bytes
+    }
+
     @Test func removingWrappedPDFBookmarkRemovesAllLinesAndFailureRestoresThem() throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
             context.beginPage()
@@ -17,7 +101,7 @@ import LeximoryCore
         let quote = try #require(page.string?.trimmingCharacters(in: .whitespacesAndNewlines))
         let reader = EbookReaderState()
         reader.bookmarks = [EbookBookmark(id: 42, quote: quote, chapter: nil, location: "1")]
-        let coordinator = NativePDFReader.Coordinator(reader: reader)
+        let coordinator = PDFReaderView.Coordinator(reader: reader)
         let view = LearningPDFView()
         view.document = document
         coordinator.updateBookmarks(in: view)

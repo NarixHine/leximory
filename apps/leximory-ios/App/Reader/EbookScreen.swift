@@ -722,7 +722,29 @@ private struct NativeEPUBReader: UIViewRepresentable {
     }
 }
 
-struct NativePDFReader: UIViewRepresentable {
+struct NativePDFReader: View {
+    let data: Data
+    let reader: EbookReaderState
+    let command: (id: UUID, action: String, value: String?)?
+    var notes: PDFNotesModel? = nil
+    var notesRevision = 0
+    var drawingEnabled = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        PDFReaderView(data: data, reader: reader, command: command, notes: notes,
+            notesRevision: notesRevision, drawingEnabled: drawingEnabled)
+            .overlay {
+                Color.white.opacity(colorScheme == .dark ? 1 : 0)
+                    .blendMode(.difference)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .compositingGroup()
+    }
+}
+
+struct PDFReaderView: UIViewRepresentable {
     let data: Data
     let reader: EbookReaderState
     let command: (id: UUID, action: String, value: String?)?
@@ -735,7 +757,7 @@ struct NativePDFReader: UIViewRepresentable {
         view.reader = reader
         view.isFindInteractionEnabled = true
         context.coordinator.gestures.install(on: view, centerTap: true)
-        view.backgroundColor = LeximoryPalette.paperUI
+        view.backgroundColor = .white
         view.autoScales = true; view.displayMode = .singlePageContinuous
         view.displayDirection = .vertical
         view.displaysPageBreaks = true; view.pageBreakMargins = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0); view.pageShadowsEnabled = false
@@ -821,8 +843,10 @@ struct NativePDFReader: UIViewRepresentable {
                       let selection = target.selection(for: NSRange(range, in: text)) else { continue }
                 for line in selection.selectionsByLine() {
                     for page in line.pages {
-                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id)
-                        annotation.color = UIColor(LeximoryPalette.illustration).withAlphaComponent(0.3)
+                        let preceding = bookmarkAnnotations.compactMap { entry in
+                            entry.0 === page ? entry.1.bounds : nil
+                        }
+                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, excluding: preceding)
                         page.addAnnotation(annotation)
                         bookmarkAnnotations.append((page, annotation))
                     }

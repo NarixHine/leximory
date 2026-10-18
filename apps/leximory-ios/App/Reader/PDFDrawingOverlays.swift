@@ -20,6 +20,9 @@ import LeximoryCore
         canvas.backgroundColor = .clear; canvas.isOpaque = false
         canvas.overrideUserInterfaceStyle = .light
         canvas.isScrollEnabled = false; canvas.bounces = false
+        canvas.panGestureRecognizer.isEnabled = false
+        canvas.pinchGestureRecognizer?.isEnabled = false
+        canvas.bouncesZoom = false
         canvas.contentInsetAdjustmentBehavior = .never
         canvas.maximumSupportedContentVersion = .version4
         canvas.drawingPolicy = .default
@@ -49,6 +52,7 @@ import LeximoryCore
         if canvas.minimumZoomScale > zoom { canvas.minimumZoomScale = zoom }
         if canvas.maximumZoomScale < zoom { canvas.maximumZoomScale = zoom }
         if canvas.zoomScale != zoom { canvas.zoomScale = zoom }
+        canvas.minimumZoomScale = zoom; canvas.maximumZoomScale = zoom
         if canvas.contentSize != renderedSize { canvas.contentSize = renderedSize }
         if canvas.contentOffset != .zero { canvas.contentOffset = .zero }
     }
