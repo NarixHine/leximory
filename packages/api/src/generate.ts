@@ -1,12 +1,16 @@
 import { OpenAPIGenerator } from '@orpc/openapi'
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
 import { readFile, writeFile } from 'node:fs/promises'
-import { mobileContract, mobileErrorSchema, definitionFrameSchema } from './index'
+import { mobileContract, mobileErrorSchema, definitionFrameSchema, ebookHighlightColorSchema } from './index'
 const generator = new OpenAPIGenerator({ schemaConverters: [new ZodToJsonSchemaConverter()] })
 const specification = await generator.generate(mobileContract, {
     info: { title: 'Leximory Mobile', version: '1.0.0' },
     servers: [{ url: '/api/mobile/v1' }],
-    commonSchemas: { MobileError: { schema: mobileErrorSchema }, DefinitionFrame: { schema: definitionFrameSchema } },
+    commonSchemas: {
+        MobileError: { schema: mobileErrorSchema },
+        DefinitionFrame: { schema: definitionFrameSchema },
+        EbookHighlightColor: { schema: ebookHighlightColorSchema },
+    },
     security: [{ bearerAuth: [] }],
     components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } } },
 })

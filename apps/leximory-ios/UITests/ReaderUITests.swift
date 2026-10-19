@@ -372,6 +372,38 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["暂无标记"].waitForExistence(timeout: 5), app.debugDescription)
     }
 
+    @MainActor func testPDFHighlighterShowsNativeColorPalette() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        for _ in 0..<4 where !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-contents"].tap()
+        app.buttons["2"].tap()
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 10))
+        let word = passage.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+        word.tap()
+        let remove = app.menuItems["移除"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
+        remove.tap()
+        XCTAssertTrue(remove.waitForNonExistence(timeout: 5))
+        word.press(forDuration: 1.2)
+        let highlighter = app.menuItems["🖍️荧光笔"]
+        XCTAssertTrue(highlighter.waitForExistence(timeout: 5), app.debugDescription)
+        highlighter.tap()
+        for color in ["鼠尾草绿", "黄色", "绿色", "蓝色", "粉色", "紫色"] {
+            let swatch = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch
+            XCTAssertTrue(swatch.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(swatch.isHittable, "The \(color) swatch must be accessible in the native palette.")
+        }
+        capture(app, name: "PDF native highlighter color palette")
+    }
+
     @MainActor func testPDFBookmarkCardsShowPageAndNavigate() {
         let app = XCUIApplication()
         app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]

@@ -139,7 +139,7 @@ struct MobileClientTests {
     }
     private struct EbookTransport: ClientTransport {
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
-            let payload = #"{"text":{"id":"book","libraryId":"library","title":"Book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},"library":{"id":"library","name":"文库","language":"en","owned":true,"archived":false,"shadow":false},"url":"https://example.com/book.epub","format":"epub","expiresAt":"2026-10-03T10:43:13.505Z","location":null,"bookmarks":[{"id":1,"quote":"bank","chapter":null,"location":null,"createdAt":null}]}"#
+            let payload = #"{"text":{"id":"book","libraryId":"library","title":"Book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},"library":{"id":"library","name":"文库","language":"en","owned":true,"archived":false,"shadow":false},"url":"https://example.com/book.epub","format":"epub","expiresAt":"2026-10-03T10:43:13.505Z","location":null,"bookmarks":[{"id":1,"quote":"bank","chapter":null,"location":null,"createdAt":null,"color":"sage"}]}"#
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(payload))
         }
     }

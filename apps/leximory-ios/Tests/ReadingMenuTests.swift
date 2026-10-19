@@ -31,7 +31,36 @@ import LeximoryCore
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
         let bookmark = actions.first { $0.title == "🖍️荧光笔" }
         #expect(bookmark != nil)
-        if offline { #expect(bookmark?.attributes.contains(.disabled) == true) }
+        if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
+    }
+    @Test(arguments: EbookHighlightColor.allCases)
+    func pdfColorPaletteKeepsTheSelectionWhenChoosingAColor(color: EbookHighlightColor) throws {
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        reader.selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
+        let menu = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIMenu)
+        #expect(menu.options.contains(.displayAsPalette))
+        let action = try #require(menu.children.compactMap { $0 as? UIAction }.first { $0.title == color.title })
+        reader.selection = nil
+        let button = UIButton(primaryAction: action)
+        button.sendActions(for: .touchUpInside)
+        let selectionAction = try #require(reader.selectionAction)
+        guard case .bookmark(let selectedColor) = selectionAction.kind else { Issue.record("Expected a highlight action"); return }
+        #expect(selectedColor == color)
+        #expect(selectionAction.selection.quote == "river")
+        #expect(selectionAction.selection.location == "3")
+        let pending = reader.beginBookmark(selectionAction.selection, color: selectedColor)
+        #expect(reader.bookmarks.first?.color == color)
+        let saved = EbookBookmark(id: 42, quote: pending.quote, chapter: pending.chapter, location: pending.location, color: color)
+        reader.finishBookmark(pending, saved: saved)
+        #expect(reader.bookmarks == [saved])
+    }
+    @Test(arguments: [false, true])
+    func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.readOnly = offline; reader.canBookmark = offline
+        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        #expect(action.attributes.contains(.disabled))
     }
     @Test func browserFilteringPreservesNativeDefineAndItsOriginalAction() throws {
         let native = UIAction(title: "Define") { _ in }

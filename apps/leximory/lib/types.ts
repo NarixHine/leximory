@@ -1,3 +1,6 @@
+import type { z } from 'zod'
+import type { ebookHighlightColorSchema } from '@repo/api'
+
 export type LibProps = {
     params: Promise<{
         lib: string
@@ -21,4 +24,5 @@ export type EbookBookmark = {
     chapter: string | null
     location: string | null
     createdAt: string
+    color: z.infer<typeof ebookHighlightColorSchema>
 }

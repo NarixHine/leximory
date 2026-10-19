@@ -64,6 +64,7 @@ export const documentSchema = z
     })
     .strict()
 export const audioSchema = z.object({ url: z.url(), expiresAt: z.iso.datetime() }).strict()
+export const ebookHighlightColorSchema = z.enum(['sage', 'yellow', 'green', 'blue', 'pink', 'purple'])
 export const ebookBookmarkSchema = z
     .object({
         id: z.number(),
@@ -71,6 +72,7 @@ export const ebookBookmarkSchema = z
         chapter: z.string().nullable(),
         location: z.string().nullable(),
         createdAt: z.string().nullable(),
+        color: ebookHighlightColorSchema,
     })
     .strict()
 export const ebookSchema = z
@@ -487,6 +489,7 @@ export const mobileContract = {
                 quote: z.string().min(1).max(16000),
                 chapter: z.string().max(512).nullable(),
                 location: z.string().max(2048).nullable(),
+                color: ebookHighlightColorSchema.default('sage'),
             }),
         )
         .output(ebookBookmarkSchema),

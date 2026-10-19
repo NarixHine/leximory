@@ -35,15 +35,23 @@ struct EbookChapter: Identifiable {
     var bookmarkErrorMessage = "标记未能保存，请重试。"
     var bookmarkRemovalRequest: Int?
     private var pendingBookmarkRemovals: [Int: EbookBookmark] = [:]
+    private var bookmarkRemovalOrder: [Int] = []
     func beginBookmarkRemoval(_ id: Int) -> EbookBookmark? {
         guard let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
+        if pendingBookmarkRemovals.isEmpty { bookmarkRemovalOrder = bookmarks.map(\.id) }
         let bookmark = bookmarks.remove(at: index)
         pendingBookmarkRemovals[id] = bookmark
         return bookmark
     }
     func finishBookmarkRemoval(_ id: Int, succeeded: Bool) {
         guard let bookmark = pendingBookmarkRemovals.removeValue(forKey: id) else { return }
-        if !succeeded { bookmarks.append(bookmark); bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID() }
+        if !succeeded {
+            let preceding = Set(bookmarkRemovalOrder.prefix { $0 != id })
+            let index = bookmarks.lastIndex { preceding.contains($0.id) }.map { $0 + 1 } ?? 0
+            bookmarks.insert(bookmark, at: index)
+            bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID()
+        }
+        if pendingBookmarkRemovals.isEmpty { bookmarkRemovalOrder = [] }
     }
     var pageBounds: CGRect?
     var readOnly = false
@@ -55,8 +63,8 @@ struct EbookChapter: Identifiable {
     var totalPages = 0
     var atStart = true
     var atEnd = false
-    func beginBookmark(_ selection: EbookSelection) -> EbookBookmark {
-        let bookmark = EbookBookmark(id: nextPendingBookmarkID, quote: selection.quote, chapter: chapter, location: selection.location ?? location)
+    func beginBookmark(_ selection: EbookSelection, color: EbookHighlightColor = .sage) -> EbookBookmark {
+        let bookmark = EbookBookmark(id: nextPendingBookmarkID, quote: selection.quote, chapter: chapter, location: selection.location ?? location, color: color)
         nextPendingBookmarkID -= 1
         bookmarks.append(bookmark)
         self.selection = nil; menuSelection = nil
@@ -201,9 +209,11 @@ struct EbookScreen: View {
         .onDisappear { positionSaver?.flush(); notes?.deactivate() }
         .onChange(of: reader.selectionAction?.id) { _, _ in
             guard let action = reader.selectionAction else { return }
-            if action.kind == .define {
+            switch action.kind {
+            case .define:
                 definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil)
-            } else { Task { await saveBookmark(action.selection) } }
+            case .bookmark(let color): Task { await saveBookmark(action.selection, color: color) }
+            }
         }
         .onChange(of: reader.bookmarkRemovalRequest) { _, id in
             reader.bookmarkRemovalRequest = nil
@@ -510,11 +520,11 @@ struct EbookScreen: View {
             }
         }
     }
-    private func saveBookmark(_ selection: EbookSelection) async {
+    private func saveBookmark(_ selection: EbookSelection, color: EbookHighlightColor) async {
         guard !reader.readOnly, let client else { return }
-        let pending = reader.beginBookmark(selection)
+        let pending = reader.beginBookmark(selection, color: color)
         do {
-            let bookmark = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: pending.quote, chapter: pending.chapter, location: pending.location)
+            let bookmark = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: pending.quote, chapter: pending.chapter, location: pending.location, color: pending.color)
             reader.finishBookmark(pending, saved: bookmark)
         } catch { reader.finishBookmark(pending, saved: nil) }
     }
@@ -528,7 +538,8 @@ struct EbookBookmarkCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "bookmark.fill").font(.system(size: 14)).foregroundStyle(LeximoryPalette.muted)
+                Image(systemName: "bookmark.fill").font(.system(size: 14))
+                    .foregroundStyle(isPDF ? Color(bookmark.color.ink.withAlphaComponent(1)) : LeximoryPalette.muted)
                     .accessibilityHidden(true)
                 if let chapter = bookmark.chapter?.trimmingCharacters(in: .whitespacesAndNewlines), !chapter.isEmpty {
                     Text(chapter).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -830,29 +841,29 @@ struct PDFReaderView: UIViewRepresentable {
         let reader: EbookReaderState
         var commandID: UUID?
         var drawingOverlays: PDFDrawingOverlays?
-        private var appliedBookmarkIDs: [Int] = []
+        private var appliedBookmarks: [EbookBookmark] = []
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
         func updateBookmarks(in view: PDFView) {
-            let ids = reader.bookmarks.map(\.id)
-            guard ids != appliedBookmarkIDs, let document = view.document else { return }
-            appliedBookmarkIDs = ids
+            guard reader.bookmarks != appliedBookmarks, let document = view.document else { return }
+            appliedBookmarks = reader.bookmarks
             for (page, annotation) in bookmarkAnnotations { page.removeAnnotation(annotation) }
             bookmarkAnnotations.removeAll()
-            for bookmark in reader.bookmarks {
+            for bookmark in reader.bookmarks.reversed() {
                 guard let number = Int(bookmark.location ?? ""), let target = document.page(at: number - 1),
                       let text = target.string, let range = text.range(of: bookmark.quote),
                       let selection = target.selection(for: NSRange(range, in: text)) else { continue }
                 for line in selection.selectionsByLine() {
                     for page in line.pages {
-                        let preceding = bookmarkAnnotations.compactMap { entry in
+                        let covering = bookmarkAnnotations.compactMap { entry in
                             entry.0 === page ? entry.1.bounds : nil
                         }
-                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, excluding: preceding)
-                        page.addAnnotation(annotation)
+                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, color: bookmark.color, excluding: covering)
                         bookmarkAnnotations.append((page, annotation))
                     }
                 }
             }
+            bookmarkAnnotations.reverse()
+            for (page, annotation) in bookmarkAnnotations { page.addAnnotation(annotation) }
         }
         weak var view: PDFView?
         let gestures: EbookGestures

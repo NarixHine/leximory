@@ -57,7 +57,7 @@ test('ebook descriptor signs only after authorization and returns user-private w
         },
         bookmarks: async (_id, uid) => {
             assert.equal(uid, 'reader')
-            return [{ id: 1, quote: 'bank', chapter: null, location: null, createdAt: null }]
+            return [{ id: 1, quote: 'bank', chapter: null, location: null, createdAt: null, color: 'blue' }]
         },
         savePosition: async () => {
             throw Error('unexpected write')
@@ -82,6 +82,7 @@ test('ebook descriptor signs only after authorization and returns user-private w
     const payload = await response.json()
     assert.equal(payload.format, 'epub')
     assert.equal(payload.bookmarks.length, 1)
+    assert.equal(payload.bookmarks[0].color, 'blue')
     assert.ok(payload.location.startsWith('epubcfi'))
     assert.equal(payload.document, undefined)
     assert.deepEqual(calls, ['book'])
@@ -100,7 +101,14 @@ test('ebook position and bookmark writes validate data and derive their owner', 
         },
         saveBookmark: async (input) => {
             writes.push(input)
-            return { id: 1, quote: input.quote, chapter: input.chapter, location: input.location, createdAt: null }
+            return {
+                id: 1,
+                quote: input.quote,
+                chapter: input.chapter,
+                location: input.location,
+                createdAt: null,
+                color: input.color,
+            }
         },
     }
     const handler = testMobileHandler(createEbookOperations({ catalog, ebooks }), verify)
@@ -111,7 +119,14 @@ test('ebook position and bookmark writes validate data and derive their owner', 
         200,
     )
     assert.deepEqual(writes[0], ['book', 'reader', '3'])
-    assert.deepEqual(writes[1], { textId: 'book', userId: 'reader', quote: 'bank', chapter: null, location: '3' })
+    assert.deepEqual(writes[1], {
+        textId: 'book',
+        userId: 'reader',
+        quote: 'bank',
+        chapter: null,
+        location: '3',
+        color: 'sage',
+    })
     assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: 1, userId: 'other' }))).status, 400)
     assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: -1 }))).status, 400)
     const denied = testMobileHandler(
@@ -122,6 +137,34 @@ test('ebook position and bookmark writes validate data and derive their owner', 
     assert.equal(writes.length, 2)
     assert.equal((await handler(request('ebook-bookmark-remove', { bookmarkId: 1 }))).status, 200)
     assert.deepEqual(writes[2], { textId: 'book', userId: 'reader', bookmarkId: 1 })
+    for (const color of ['sage', 'yellow', 'green', 'blue', 'pink', 'purple']) {
+        const response = await handler(
+            request('ebook-bookmarks', { quote: 'river', chapter: null, location: '3', color }),
+        )
+        assert.equal(response.status, 200)
+        assert.equal((await response.json()).color, color)
+        assert.deepEqual(writes.at(-1), {
+            textId: 'book',
+            userId: 'reader',
+            quote: 'river',
+            chapter: null,
+            location: '3',
+            color,
+        })
+    }
+    const writeCount = writes.length
+    for (const color of ['red', '', null, 1]) {
+        assert.equal(
+            (await handler(request('ebook-bookmarks', { quote: 'river', chapter: null, location: '3', color }))).status,
+            400,
+        )
+    }
+    assert.equal(
+        (await denied(request('ebook-bookmarks', { quote: 'river', chapter: null, location: '3', color: 'blue' })))
+            .status,
+        404,
+    )
+    assert.equal(writes.length, writeCount)
 })
 test('ebook lookup applies quota and context validation and saves only its completed receipt', async () => {
     const receipts = new Map<string, Receipt>()

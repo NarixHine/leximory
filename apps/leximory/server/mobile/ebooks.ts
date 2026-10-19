@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ebookSchema, ebookBookmarkSchema, resourceID } from '@repo/api'
+import { ebookSchema, ebookBookmarkSchema, ebookHighlightColorSchema, resourceID } from '@repo/api'
 import { createCatalog, summarizeText, summarizeLibrary, type CatalogStore } from './catalog'
 import { MobileError } from './errors'
 import { checkedResponse, jsonBody, type MobileContext, type MobileOperation } from './http'
@@ -19,6 +19,7 @@ export interface EbookStore {
         quote: string
         chapter: string | null
         location: string | null
+        color: z.infer<typeof ebookHighlightColorSchema>
     }): Promise<z.infer<typeof ebookBookmarkSchema>>
 }
 const positionInput = z.object({ location: z.string().min(1).max(2048) }).strict()
@@ -27,6 +28,7 @@ const bookmarkInput = z
         quote: z.string().min(1).max(16000),
         chapter: z.string().max(512).nullable(),
         location: z.string().max(2048).nullable(),
+        color: ebookHighlightColorSchema.default('sage'),
     })
     .strict()
 const bookmarkRemovalInput = z.object({ bookmarkId: z.number().int().positive() }).strict()

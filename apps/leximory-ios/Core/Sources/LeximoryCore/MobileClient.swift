@@ -120,14 +120,28 @@ public struct RemoteDocument: Codable, Sendable {
     public let annotationProgress: String?
     public var fullArticleAudioId: String? = nil
 }
+public typealias EbookHighlightColor = Components.Schemas.EbookHighlightColor
+
 public struct EbookBookmark: Codable, Equatable, Identifiable, Sendable {
     public let id: Int
     public let quote: String
     public let chapter: String?
     public let location: String?
     public let createdAt: String?
-    public init(id: Int, quote: String, chapter: String?, location: String?, createdAt: String? = nil) {
+    public let color: EbookHighlightColor
+    public init(id: Int, quote: String, chapter: String?, location: String?, createdAt: String? = nil, color: EbookHighlightColor = .sage) {
         self.id = id; self.quote = quote; self.chapter = chapter; self.location = location; self.createdAt = createdAt
+        self.color = color
+    }
+    private enum CodingKeys: String, CodingKey { case id, quote, chapter, location, createdAt, color }
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(Int.self, forKey: .id)
+        quote = try values.decode(String.self, forKey: .quote)
+        chapter = try values.decodeIfPresent(String.self, forKey: .chapter)
+        location = try values.decodeIfPresent(String.self, forKey: .location)
+        createdAt = try values.decodeIfPresent(String.self, forKey: .createdAt)
+        color = try values.decodeIfPresent(EbookHighlightColor.self, forKey: .color) ?? .sage
     }
 }
 public struct EbookDescriptor: Codable, Sendable {
@@ -527,8 +541,8 @@ public struct MobileClient: Sendable {
             baseRevision: upload.baseRevision?.uuidString.lowercased()
         ))).ok.body.json, to: PDFPageDrawing.self)
     }
-    public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?) async throws -> EbookBookmark {
-        let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location))).ok.body.json, to: EbookBookmark.self)
+    public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?, color: EbookHighlightColor = .sage) async throws -> EbookBookmark {
+        let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location, color: color))).ok.body.json, to: EbookBookmark.self)
         // Refresh authoritative private bookmark metadata after a confirmed save.
         _ = try? await ebook(textID: textID)
         return bookmark

@@ -217,6 +217,17 @@
             "additionalProperties": false
           }
         ]
+      },
+      "EbookHighlightColor": {
+        "enum": [
+          "sage",
+          "yellow",
+          "green",
+          "blue",
+          "pink",
+          "purple"
+        ],
+        "type": "string"
       }
     }
   },
@@ -6122,6 +6133,9 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "color": {
+                            "$ref": "#/components/schemas/EbookHighlightColor"
                           }
                         },
                         "required": [
@@ -6129,7 +6143,8 @@
                           "quote",
                           "chapter",
                           "location",
-                          "createdAt"
+                          "createdAt",
+                          "color"
                         ],
                         "additionalProperties": false
                       }
@@ -6897,6 +6912,10 @@
                       "null"
                     ],
                     "maxLength": 2048
+                  },
+                  "color": {
+                    "$ref": "#/components/schemas/EbookHighlightColor",
+                    "default": "sage"
                   }
                 },
                 "required": [
@@ -6939,6 +6958,9 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "color": {
+                      "$ref": "#/components/schemas/EbookHighlightColor"
                     }
                   },
                   "required": [
@@ -6946,7 +6968,8 @@
                     "quote",
                     "chapter",
                     "location",
-                    "createdAt"
+                    "createdAt",
+                    "color"
                   ],
                   "additionalProperties": false
                 }

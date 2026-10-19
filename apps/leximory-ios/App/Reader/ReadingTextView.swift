@@ -33,7 +33,7 @@ import os
         }
     }
 
-    static func insertLearningActions(_ actions: [UIAction], into builder: UIMenuBuilder, nativeLookupBeforeCopy: Bool = false) {
+    static func insertLearningActions(_ actions: [UIMenuElement], into builder: UIMenuBuilder, nativeLookupBeforeCopy: Bool = false) {
         var destination: UIMenu.Identifier = .standardEdit
         if nativeLookupBeforeCopy, let lookup = builder.menu(for: nativeDefineMenuID), builder.menu(for: .standardEdit) != nil {
             builder.remove(menu: nativeDefineMenuID)

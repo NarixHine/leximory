@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import PDFKit
+import LeximoryCore
 
 struct EbookSelection: Equatable {
     let quote: String
@@ -11,7 +12,7 @@ struct EbookSelection: Equatable {
 }
 
 struct EbookSelectionAction {
-    enum Kind { case define, bookmark }
+    enum Kind { case define, bookmark(EbookHighlightColor) }
     let id = UUID()
     let kind: Kind
     let selection: EbookSelection
@@ -89,15 +90,27 @@ struct EbookThemePicker: View {
         ReadingSelectionMenu.insertLearningActions(actions(reader: reader, includeSearch: false), into: builder, nativeLookupBeforeCopy: true)
         builder.insertChild(UIMenu(title: "", options: .displayInline, children: [searchAction(reader: reader)]), atEndOfMenu: .root)
     }
-    static func actions(reader: EbookReaderState, includeBookmark: Bool = true, includeSearch: Bool = true) -> [UIAction] {
+    static func actions(reader: EbookReaderState, includeBookmark: Bool = true, includeSearch: Bool = true) -> [UIMenuElement] {
         let selection = reader.selection
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
         let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
-            if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark, selection: selection) }
+            if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark(.sage), selection: selection) }
         }
-        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
+        let highlight: UIMenuElement
+        if reader.format == "pdf", reader.canBookmark, !reader.readOnly {
+            let colors = EbookHighlightColor.allCases.map { color in
+                UIAction(title: color.title, image: color.swatch) { _ in
+                    guard let selection = selection ?? reader.menuSelection else { return }
+                    reader.selectionAction = EbookSelectionAction(kind: .bookmark(color), selection: selection)
+                }
+            }
+            let palette = UIMenu(title: bookmark.title, image: bookmark.image, options: .displayAsPalette, children: colors)
+            palette.preferredElementSize = .small
+            highlight = palette
+        } else { highlight = bookmark }
+        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [highlight] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
     }
     private static func searchAction(reader: EbookReaderState) -> UIAction {
         let selected = reader.selection ?? reader.menuSelection
@@ -126,9 +139,37 @@ final class LearningWebView: WKWebView {
     }
 }
 
+extension EbookHighlightColor {
+    var title: String {
+        switch self {
+        case .sage: "鼠尾草绿"
+        case .yellow: "黄色"
+        case .green: "绿色"
+        case .blue: "蓝色"
+        case .pink: "粉色"
+        case .purple: "紫色"
+        }
+    }
+    var ink: UIColor {
+        let rgb: UInt32 = switch self {
+        case .sage: 0xBDD981
+        case .yellow: 0xFFE066
+        case .green: 0x73D99B
+        case .blue: 0x80BFFF
+        case .pink: 0xFF99BF
+        case .purple: 0xBD9BEB
+        }
+        return UIColor(red: CGFloat((rgb >> 16) & 255) / 255, green: CGFloat((rgb >> 8) & 255) / 255,
+                       blue: CGFloat(rgb & 255) / 255, alpha: 0.45)
+    }
+    var swatch: UIImage? {
+        UIImage(systemName: "circle.fill")?.withTintColor(ink.withAlphaComponent(1), renderingMode: .alwaysOriginal)
+    }
+}
+
 final class EbookPDFHighlight: PDFAnnotation {
     let bookmarkID: Int
-    init(bounds: CGRect, bookmarkID: Int, excluding: [CGRect] = []) {
+    init(bounds: CGRect, bookmarkID: Int, color: EbookHighlightColor = .sage, excluding: [CGRect] = []) {
         self.bookmarkID = bookmarkID
         super.init(bounds: bounds, forType: .highlight, withProperties: nil)
         var regions = [bounds]
@@ -151,7 +192,7 @@ final class EbookPDFHighlight: PDFAnnotation {
                 .map { NSValue(cgPoint: CGPoint(x: $0.x - bounds.minX, y: $0.y - bounds.minY)) }
         }
         shouldDisplay = !regions.isEmpty
-        color = LeximoryPalette.wordHighlightUI.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        self.color = color.ink
     }
     required init?(coder: NSCoder) { return nil }
 }

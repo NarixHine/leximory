@@ -69,6 +69,7 @@ export type Database = {
             bookmarks: {
                 Row: {
                     chapter: string | null
+                    color: string
                     created_at: string
                     id: number
                     location: string | null
@@ -78,6 +79,7 @@ export type Database = {
                 }
                 Insert: {
                     chapter?: string | null
+                    color?: string
                     created_at: string
                     id?: number
                     location?: string | null
@@ -87,6 +89,7 @@ export type Database = {
                 }
                 Update: {
                     chapter?: string | null
+                    color?: string
                     created_at?: string
                     id?: number
                     location?: string | null
