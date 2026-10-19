@@ -5,7 +5,7 @@ import { browserLanguageQuestion, parseBrowserLanguage } from './browser-languag
 import { mobileMutationID } from './vocabulary-save'
 
 export async function detectLanguage(context: string, quote: string) {
-    const key = 'browser:language:v2:' + mobileMutationID(context, quote)
+    const key = 'browser:language:v3:' + mobileMutationID(context, quote)
     const cached = await redis.get(key)
     if (cached) return parseBrowserLanguage(cached, quote)
     const result = await runEvaluation({

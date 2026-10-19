@@ -18,8 +18,11 @@ function harness(
         failGenerationOnce?: boolean
         deferSave?: boolean
         failSave?: boolean
+        vocabulary?: { language: ShortcutWordResult['language']; annotation: string; lemma: string }
     } = {},
 ) {
+    const language = options.vocabulary?.language ?? 'fr'
+    const libraryId = language === 'fr' ? 'french-shadow' : language + '-shadow'
     const metrics = { detections: 0, charges: 0, generations: 0, saves: [] as string[], libraries: 0 }
     const receipts = new Map<string, { word: string; result?: ShortcutWordResult }>()
     const chargedRequests = new Set<string>()
@@ -66,21 +69,23 @@ function harness(
             chargedRequests.add(requestId)
             return true
         },
-        async *generate() {
+        async *generate(_context, generatedLanguage) {
+            assert.equal(generatedLanguage, language)
             metrics.generations++
             if (options.failGenerationOnce && metrics.generations === 1) throw new TypeError('provider disconnected')
             if (options.delayGeneration) await delay(options.delayGeneration)
             yield options.malformed
                 ? '{{x||x||' + 'a'.repeat(17000) + '}}'
-                : '{{bonjour||bonjour||**你好**\n\n礼貌的问候。||来自 *bon* 与 *jour*。||**jour**：一天。}}'
+                : (options.vocabulary?.annotation ??
+                  '{{bonjour||bonjour||**你好**\n\n礼貌的问候。||来自 *bon* 与 *jour*。||**jour**：一天。}}')
         },
         complete: async () => {},
         receipt: async () => null,
-        async save(owner, library, language, definition, requestId) {
+        async save(owner, library, savedLanguage, definition, requestId) {
             assert.equal(owner.userId, 'reader')
-            assert.equal(library, 'french-shadow')
-            assert.equal(language, 'fr')
-            assert.equal(definition.lemma, 'bonjour')
+            assert.equal(library, libraryId)
+            assert.equal(savedLanguage, language)
+            assert.equal(definition.lemma, options.vocabulary?.lemma ?? 'bonjour')
             metrics.saves.push(requestId ?? '')
             if (options.failSave) throw new TypeError('save unavailable')
             if (options.loseSave && metrics.saves.length === 1) throw new TypeError('response lost')
@@ -96,11 +101,11 @@ function harness(
         detectLanguage: async () => {
             metrics.detections++
             if (options.invalidLanguage) throw new MobileError('language_unresolved')
-            return 'fr'
+            return language
         },
         shadowLibrary: async () => {
             metrics.libraries++
-            return 'french-shadow'
+            return libraryId
         },
     })
     const endpoint = testMobileHandler(operations, async () => ({ kind: 'authenticated', subject }))
@@ -121,6 +126,29 @@ const request = (body: unknown, bearer = true) =>
         headers: bearer ? { authorization: 'Bearer verified' } : {},
         body: JSON.stringify(body),
     })
+test('Shortcut generates and saves an unlisted-language word as NL with its native lemma', async () => {
+    const h = harness({
+        vocabulary: {
+            language: 'nl',
+            lemma: 'Haus',
+            annotation: '{{Häuser||Haus||**名词 房屋**（德语；中性 das Haus，复数 Häuser）}}',
+        },
+    })
+    const response = await h.handler(request({ word: 'Häuser', requestId: 'save-nl' }))
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), {
+        language: 'nl',
+        annotation: {
+            lemma: 'Haus',
+            definition: '**名词 房屋**（德语；中性 das Haus，复数 Häuser）',
+            etymology: null,
+            cognates: null,
+        },
+    })
+    assert.equal(h.metrics.detections, 1)
+    assert.equal(h.metrics.generations, 1)
+    assert.deepEqual(h.metrics.saves, ['save-nl'])
+})
 test('Shortcut returns its complete Markdown annotation in one HTTP request', async () => {
     const h = harness()
     const response = await h.handler(request({ word: ' bonjour ', requestId: 'save' }))

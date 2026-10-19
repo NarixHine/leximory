@@ -53,11 +53,19 @@ function harness(
         quota?: boolean
         detectionError?: Error
         detectedLanguage?: LibraryRow['lang']
+        generatedAnnotation?: string
     } = {},
 ) {
     const library = options.library ?? own
     const receipts = new Map<string, BrowserReceipt>()
-    const metrics = { detections: 0, charges: 0, saves: [] as string[], ruleWrites: 0, bookmarkWrites: 0 }
+    const metrics = {
+        detections: 0,
+        charges: 0,
+        saves: [] as string[],
+        ruleWrites: 0,
+        bookmarkWrites: 0,
+        generations: [] as { context: string; language: LibraryRow['lang'] }[],
+    }
     const catalog: CatalogStore = {
         library: async (id) => (id === library.id ? library : null),
         text: async () => bookmark,
@@ -107,8 +115,9 @@ function harness(
             metrics.charges++
             return options.quota !== false
         },
-        async *generate() {
-            yield '{{bonjour||bonjour||你好}}'
+        async *generate(context, language) {
+            metrics.generations.push({ context, language })
+            yield options.generatedAnnotation ?? '{{bonjour||bonjour||你好}}'
         },
         complete: async () => {},
         receipt: async () => null,
@@ -328,7 +337,57 @@ test('Classical Chinese browser targets use the canonical vocabulary warehouse n
 })
 
 test('nl identifies unlisted languages rather than imposing Dutch', () => {
-    const question = browserLanguageQuestion('Buenos días')
-    assert.equal(question.criteria.nl, '其他')
-    assert.equal(parseBrowserLanguage('nl', 'Buenos días'), 'nl')
+    for (const quote of [
+        'Buenos días',
+        'Häuser',
+        'gezellig',
+        'книга',
+        'مكتب',
+        'kitaplardan',
+        '안녕하세요',
+        'नमस्ते',
+        'สวัสดี',
+        '这本书很有趣',
+    ]) {
+        const question = browserLanguageQuestion(quote)
+        assert.match(question.criteria.nl, /not listed/)
+        assert.match(question.instructions, /所有可识别语言必须选 nl/)
+        assert.equal(parseBrowserLanguage('nl', quote), 'nl')
+        assert.throws(
+            () => parseBrowserLanguage('other', quote),
+            (error) => error instanceof MobileError && error.code === 'language_unresolved',
+        )
+    }
+})
+
+test('an unlisted browser language stays NL through generation and vocabulary saving', async () => {
+    const h = harness({
+        detectedLanguage: 'nl',
+        generatedAnnotation: '{{Häuser||Haus||**名词 房屋**（德语；中性 das Haus，复数 Häuser）}}',
+    })
+    const response = await h.handler(
+        request('browser/selection', {
+            ...selection,
+            quote: 'Häuser',
+            context: 'Die Häuser stehen am Fluss.',
+            offset: 4,
+        }),
+    )
+    assert.equal(response.status, 200)
+    const target = await response.json()
+    assert.equal(target.language, 'nl')
+    assert.equal(target.libraryName, '其他词汇仓库')
+    const stream = await h.handler(request('browser/definitions', { selectionId: target.selectionId }))
+    const frames = (await stream.text())
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+    assert.equal(frames.at(-1).kind, 'completed')
+    assert.equal(frames.at(-1).definition.lemma, 'Haus')
+    assert.deepEqual(h.metrics.generations, [{ context: 'Die [[Häuser]] stehen am Fluss.', language: 'nl' }])
+    const saved = await h.handler(
+        request('browser/vocabulary', { completionId: frames.at(-1).requestId, requestId: 'save-nl' }),
+    )
+    assert.equal(saved.status, 200)
+    assert.deepEqual(h.metrics.saves, ['personal-shadow:nl'])
 })

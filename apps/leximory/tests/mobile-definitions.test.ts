@@ -3,10 +3,111 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
-import { createDefinitionOperations, type DefinitionServices, type Receipt } from '../server/mobile/definitions'
+import {
+    createDefinitionOperations,
+    parseGeneratedDefinition,
+    type DefinitionServices,
+    type Receipt,
+} from '../server/mobile/definitions'
 import { renderDocument } from '../server/mobile/render-document'
+import { mobileWordGuide, instruction, wordGuide } from '../lib/prompt'
 import type { CatalogStore } from '../server/mobile/catalog'
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
+
+test('mobile NL guide examples preserve language-specific lemmas in the real definition parser', () => {
+    const guide = mobileWordGuide('nl')
+    assert.notEqual(guide, instruction.nl)
+    // Article and web word paths retain their existing guides.
+    assert.equal(wordGuide('nl'), instruction.nl)
+    for (const language of ['fr', 'ja', 'zh'] as const) {
+        assert.equal(wordGuide(language), instruction[language])
+    }
+    const examples = [...guide.slice(guide.indexOf('## 示例')).matchAll(/^\{\{[^\n]+\}\}$/gm)].map(([output]) =>
+        parseGeneratedDefinition(output),
+    )
+    assert.deepEqual(
+        examples.map(({ lemma }) => lemma),
+        ['Haus', 'kitap', 'مكتب', 'echar de menos'],
+    )
+    assert.deepEqual(
+        examples.map(({ etymology, cognates }) => [etymology !== null, cognates !== null]),
+        [
+            [false, false],
+            [true, false],
+            [true, true],
+            [false, false],
+        ],
+    )
+    const [german, turkish, arabic] = examples
+    assert.ok(german && turkish && arabic?.cognates)
+    assert.match(german.definition, /das Haus.*Häuser/)
+    assert.match(turkish.definition, /离格/)
+    assert.match(arabic.cognates, /ك ت ب/)
+    assert.match(arabic.definition, /读作 مَكْتَب/)
+})
+
+for (const { language, lemmas, fieldCounts } of [
+    { language: 'fr', lemmas: ['entériner', 'se prévaloir de', 'illusoire'], fieldCounts: [3, 3, 5] },
+    {
+        language: 'ja',
+        lemmas: ['瓜実顔', '可哀想', '逃げだす', '腑に落ちない', '怒り狂う'],
+        fieldCounts: [3, 3, 3, 3, 4],
+    },
+    { language: 'zh', lemmas: ['乘', '衡人', '秋', '度'], fieldCounts: [3, 3, 3, 3] },
+] as const) {
+    test(`mobile ${language} word examples parse with the language's lemma and field contract`, () => {
+        const guide = mobileWordGuide(language)
+        assert.notEqual(guide, instruction[language])
+        assert.equal(wordGuide(language), instruction[language])
+        assert.ok(guide.length < instruction[language]!.length)
+        const outputs = [...guide.slice(guide.indexOf('## 示例')).matchAll(/^\{\{[^\n]+\}\}$/gm)].map(
+            ([output]) => output,
+        )
+        assert.deepEqual(
+            outputs.map((output) => output.split('||').length),
+            fieldCounts,
+        )
+        const definitions = outputs.map(parseGeneratedDefinition)
+        assert.deepEqual(
+            definitions.map(({ lemma }) => lemma),
+            lemmas,
+        )
+        if (language === 'ja') {
+            assert.ok(definitions.every(({ cognates }) => cognates === null))
+            for (const { definition } of definitions) {
+                assert.match(definition, /^\*\*［[^］]+］（[^）]+／[^）]+）\*\* /)
+            }
+            assert.match(definitions[1]?.definition ?? '', /<ruby>不憫<rt>ふびん<\/rt><\/ruby>/)
+            assert.doesNotMatch(definitions[0]?.definition ?? '', /<ruby>/)
+            assert.match(definitions[2]?.definition ?? '', /（逃げ出す／にげだす／逃走）/)
+            assert.match(definitions[3]?.definition ?? '', /理屈は分かっても/)
+        }
+        if (language === 'zh') {
+            assert.ok(definitions.every(({ etymology, cognates }) => etymology === null && cognates === null))
+            for (const output of outputs) {
+                const [original, lemma] = output.slice(2, -2).split('||')
+                assert.equal(original, lemma)
+            }
+            assert.match(definitions[0]?.definition ?? '', /`shèng`/)
+            assert.match(definitions[1]?.definition ?? '', /衡，同“横”/)
+            assert.match(definitions[2]?.definition ?? '', /时机/)
+        }
+        if (language === 'fr') {
+            assert.match(definitions[0]?.definition ?? '', /consacrer un déséquilibre/)
+            assert.match(definitions[1]?.definition ?? '', /v\.pr\./)
+            assert.match(definitions[2]?.cognates ?? '', /\[英\]/)
+        }
+    })
+}
+
+test('mobile English sojourn example uses the checked British noun pronunciation', () => {
+    const guide = mobileWordGuide('en')
+    const output = guide.match(/^\{\{sojourn\|\|[^\n]+\}\}$/m)?.[0]
+    assert.ok(output)
+    const definition = parseGeneratedDefinition(output)
+    assert.equal(definition.lemma, 'sojourn')
+    assert.match(definition.definition, /`ˈsɒdʒɜːn`/)
+})
 const document = renderDocument('A bank and another bank.\n\n{{embracing||embrace||欣然接受||来自法语||brace}}')
 const selected = {
     textId: 'text',

@@ -28,11 +28,11 @@ export const definitionServices: DefinitionServices = {
         return { accent: data?.accent ?? '', limit: PLAN_COMMENTARY_QUOTA[plan] }
     },
     async cached(key) {
-        const value = await redis.get(`mobile:definition:v3:${key}`)
+        const value = await redis.get(`mobile:definition:v7:${key}`)
         return value === null ? null : checkedResponse(definitionSchema, value)
     },
     async cache(key, definition) {
-        await redis.set(`mobile:definition:v3:${key}`, definition, { ex: 86400 })
+        await redis.set(`mobile:definition:v7:${key}`, definition, { ex: 86400 })
     },
     charge: (subject, limit, requestId) =>
         chargeCommentaryQuota({ userId: subject.userId, cost: ACTION_QUOTA_COST.wordAnnotation, limit, requestId }),
@@ -40,8 +40,8 @@ export const definitionServices: DefinitionServices = {
         const { textStream } = streamText({
             ...wordAI,
             abortSignal: signal,
-            maxOutputTokens: 800,
-            instructions: `${mobileWordGuide(language)}\n只注解上下文中被 [[ ]] 标出的一个完整语块。语境义与解释使用中文。只输出一个 {{原文形式||原形||语境释义||词源||同源词}}，没有词源或同源词时省略相应末尾字段，不输出空字段、代码围栏或其他文字。${language === 'en' ? `用户偏好：${accent}。` : ''}`,
+            maxOutputTokens: language === 'nl' ? 1600 : 800,
+            instructions: `${mobileWordGuide(language)}${language === 'en' ? `\n用户偏好：${accent}。` : ''}`,
             prompt: context,
         })
         for await (const delta of textStream) yield delta

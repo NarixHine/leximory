@@ -2,6 +2,10 @@ import 'server-only'
 import { EN_ANNOTATION_PROMPT } from '@repo/service/prompts'
 import { Lang } from '@repo/env/config'
 import { NOT_LISTED_PROMPT } from './nl.prompt'
+import { NOT_LISTED_MOBILE_WORD_PROMPT } from './nl-word.prompt'
+import { FRENCH_MOBILE_WORD_PROMPT } from './fr-word.prompt'
+import { JAPANESE_MOBILE_WORD_PROMPT } from './ja-word.prompt'
+import { CLASSICAL_CHINESE_MOBILE_WORD_PROMPT } from './zh-word.prompt'
 import { JAPANESE_PROMPT } from './ja.prompt'
 import { CHINESE_PROMPT } from './zh.prompt'
 import { FRENCH_PROMPT } from './fr.prompt'
@@ -79,10 +83,10 @@ const WORD_GUIDE_MOBILE_EN = `# 核心指令
 
 你将看到一个英文句子，句中只有一个用 [[ ]] 标出的语块。你只需要为这一个语块生成注解。
 
-- 若被标记的是常见搭配，注解整个搭配（如注解 on side 而非只注解 side）
+- 若被标记的是常见搭配，注解整个搭配（如完整注解 bridge the gap，而非只注解 gap）
 - 根据语境选择相关义项，先释所选词语本身的一般词义，再注明本句更具体的含义或所指。不要把未选中的修饰语含义并入词义；选中整个短语时才整体释义
 - 例句必须自造，不得照抄原句
-- 语源与同语根词必须真实可考；没有把握就留空该字段，严禁编造
+- 语源与同语根词必须真实可考；没有把握就省略相应末尾字段，严禁编造
 - 禁止输出原句，禁止注解 [[ ]] 以外的任何内容
 
 ## 输出格式
@@ -107,7 +111,7 @@ const WORD_GUIDE_MOBILE_EN = `# 核心指令
 {{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}
 
 earthly [[sojourn]] 的输出示例：
-{{sojourn||sojourn||**n. 逗留；暂居（此处指寄居尘世）** \`ˈsɒdʒən\` a temporary stay: *Her sojourn in Rome lasted a week.*}}`
+{{sojourn||sojourn||**n. 逗留；暂居（此处指寄居尘世）** \`ˈsɒdʒɜːn\` a temporary stay: *Her sojourn in Rome lasted a week.*}}`
 
 /**
  * Guide for annotating one marked chunk. English uses the trimmed guide (see WORD_GUIDE_EN);
@@ -115,8 +119,16 @@ earthly [[sojourn]] 的输出示例：
  */
 export const wordGuide = (lang: Lang) => (lang === 'en' ? WORD_GUIDE_EN : instruction[lang])
 
-/** Guide for the mobile definition path: same trim, braced output contract. */
-export const mobileWordGuide = (lang: Lang) => (lang === 'en' ? WORD_GUIDE_MOBILE_EN : instruction[lang])
+const MOBILE_WORD_GUIDES = {
+    en: WORD_GUIDE_MOBILE_EN,
+    fr: FRENCH_MOBILE_WORD_PROMPT,
+    ja: JAPANESE_MOBILE_WORD_PROMPT,
+    zh: CLASSICAL_CHINESE_MOBILE_WORD_PROMPT,
+    nl: NOT_LISTED_MOBILE_WORD_PROMPT,
+} satisfies Record<Lang, string>
+
+/** Mobile guides define one selected chunk and each language's braced field contract. */
+export const mobileWordGuide = (lang: Lang) => MOBILE_WORD_GUIDES[lang]
 
 /** System prompt for the single-chunk (tap-to-define) annotation path. */
 export const wordAnnotationInstructions = (lang: Lang) => `
