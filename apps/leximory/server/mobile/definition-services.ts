@@ -28,11 +28,11 @@ export const definitionServices: DefinitionServices = {
         return { accent: data?.accent ?? '', limit: PLAN_COMMENTARY_QUOTA[plan] }
     },
     async cached(key) {
-        const value = await redis.get(`mobile:definition:v7:${key}`)
+        const value = await redis.get(`mobile:definition:v9:${key}`)
         return value === null ? null : checkedResponse(definitionSchema, value)
     },
     async cache(key, definition) {
-        await redis.set(`mobile:definition:v7:${key}`, definition, { ex: 86400 })
+        await redis.set(`mobile:definition:v9:${key}`, definition, { ex: 86400 })
     },
     charge: (subject, limit, requestId) =>
         chargeCommentaryQuota({ userId: subject.userId, cost: ACTION_QUOTA_COST.wordAnnotation, limit, requestId }),

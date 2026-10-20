@@ -27,23 +27,28 @@ test('mobile NL guide examples preserve language-specific lemmas in the real def
     )
     assert.deepEqual(
         examples.map(({ lemma }) => lemma),
-        ['Haus', 'kitap', 'مكتب', 'echar de menos'],
+        ['beschönigen', 'çekince', 'ذريعة', 'esgrimir'],
     )
     assert.deepEqual(
         examples.map(({ etymology, cognates }) => [etymology !== null, cognates !== null]),
         [
-            [false, false],
-            [true, false],
             [true, true],
             [false, false],
+            [false, false],
+            [true, false],
         ],
     )
     const [german, turkish, arabic] = examples
-    assert.ok(german && turkish && arabic?.cognates)
-    assert.match(german.definition, /das Haus.*Häuser/)
-    assert.match(turkish.definition, /离格/)
-    assert.match(arabic.cognates, /ك ت ب/)
-    assert.match(arabic.definition, /读作 مَكْتَب/)
+    assert.ok(german?.cognates && turkish && arabic)
+    assert.match(german.definition, /etwas Negatives günstiger darstellen/)
+    assert.match(german.cognates, /ver\*\*schön\*\*ern/)
+    assert.match(turkish.definition, /bir düşünceye veya karara/)
+    assert.match(arabic.definition, /جمعها ذَرَائِع/)
+    for (const { definition } of examples) {
+        const body = definition.replace(/^\*\*[^*]+\*\*\s*/, '')
+        assert.doesNotMatch(body, /\p{Script=Han}/u)
+        assert.match(body, /: \*[^*]+\*$/u)
+    }
 })
 
 for (const { language, lemmas, fieldCounts } of [

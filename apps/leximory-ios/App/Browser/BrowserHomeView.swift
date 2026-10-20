@@ -436,20 +436,31 @@ private struct BrowserRecentCard: View {
     var favicon: UIImage? = nil
     var photograph: UIImage? = nil
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.hasHomeWallpaper) private var hasWallpaper
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @ScaledMetric(relativeTo: .headline) private var titleSize: CGFloat = 17
     @ScaledMetric(relativeTo: .caption) private var bylineSize: CGFloat = 12
 
     var body: some View {
+        let iconInk = emoji == nil ? LeximoryPalette.illustration : CoverPalette.emojiInk(identity: identity, dark: colorScheme == .dark)
+        let translucent = hasWallpaper && !reduceTransparency
         Color.clear.aspectRatio(16.0 / 9, contentMode: .fit)
             .overlay {
-                if let photograph {
-                    GeometryReader { geometry in
-                        Image(uiImage: photograph).resizable().scaledToFill()
-                            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                Group {
+                    if let photograph {
+                        GeometryReader { geometry in
+                            Image(uiImage: photograph).resizable().scaledToFill()
+                                .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                        }
+                    } else {
+                        CoverArt(motif: .leaf, identity: identity, emoji: "", cornerRadius: 0, background: .newspaper)
                     }
-                } else {
-                    CoverArt(motif: .leaf, identity: identity, emoji: "", cornerRadius: 0, background: .newspaper)
                 }
+                .blur(radius: 0.8, opaque: true)
+                .opacity(translucent ? (colorScheme == .dark ? 0.32 : 0.36) : 1)
+            }
+            .background {
+                if translucent { Rectangle().fill(.ultraThinMaterial) }
             }
             .overlay {
                 if photograph != nil {
@@ -460,31 +471,34 @@ private struct BrowserRecentCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Group {
                         if let emoji {
-                            Text(emoji).font(.custom("LeximoryNotoEmoji", fixedSize: 28))
+                            Text(emoji).font(.custom("LeximoryNotoEmoji", fixedSize: 24))
                                 .fixedSize()
-                                .foregroundStyle(CoverPalette.emojiInk(identity: identity, dark: colorScheme == .dark))
+                                .foregroundStyle(iconInk)
                         } else if let favicon {
-                            Image(uiImage: favicon).resizable().scaledToFill().frame(width: 28, height: 28)
-                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .circular))
-                                .overlay { RoundedRectangle(cornerRadius: 7).strokeBorder(LeximoryPalette.border.opacity(0.7), lineWidth: 0.5) }
+                            Image(uiImage: favicon).resizable().scaledToFill().frame(width: 26, height: 26)
+                                .clipShape(RoundedRectangle(cornerRadius: 6.5, style: .circular))
+                                .overlay { RoundedRectangle(cornerRadius: 6.5).strokeBorder(LeximoryPalette.border.opacity(0.7), lineWidth: 0.5) }
                         } else {
-                            Image(systemName: "globe").font(.system(size: 26, weight: .regular))
-                                .foregroundStyle(LeximoryPalette.illustration)
+                            Image(systemName: "globe").font(.system(size: 24, weight: .regular))
+                                .foregroundStyle(iconInk)
                         }
-                    }.frame(width: 30, height: 30).accessibilityHidden(true)
+                    }.frame(width: emoji == nil ? 26 : 32, height: 26)
+                        .padding(.leading, emoji == nil ? 0 : 4).accessibilityHidden(true)
                     Text(byline).font(LeximoryTypography.interface(bylineSize))
-                        .foregroundStyle(photograph == nil ? Color.secondary : Color.white.opacity(0.9))
+                        .foregroundStyle(photograph == nil ? iconInk : Color.white.opacity(0.9))
                         .lineLimit(1).truncationMode(.tail)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 2)
+                        .padding(.top, 4)
+                        .padding(.horizontal, 4)
                         .accessibilityIdentifier("browser-recent-byline-" + identity)
-                    Spacer(minLength: 2)
+                    Spacer(minLength: 1)
                     Text(LeximoryTypography.scaledChineseText(title, size: titleSize))
                         .foregroundStyle(photograph == nil ? LeximoryPalette.ink : Color.white)
                         .lineLimit(1).truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                }.padding(.horizontal, 10).padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                }.padding(8)
             }
             .clipShape(.rect(cornerRadius: 16))
             .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(LeximoryPalette.border.opacity(0.7), lineWidth: 0.5) }
