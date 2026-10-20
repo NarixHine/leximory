@@ -2,6 +2,35 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testPDFTextAnnotationWhilePencilToolsStayOpen() {
+        let app = launch(extraArguments: ["--pdf-pencil-only"]); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        if folder.waitForExistence(timeout: 5) { folder.tap() }
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10)); pdf.tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 10))
+        let toggle = app.buttons["pdf-drawing-toggle"]
+        if !toggle.isHittable { reader.tap() }
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        app.buttons["ebook-contents"].tap(); app.buttons["2"].tap()
+        toggle.tap()
+        XCTAssertEqual(toggle.label, "完成手写")
+        XCTAssertTrue(app.otherElements["Drawing-Palette"].waitForExistence(timeout: 5))
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
+        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
+        let lookup = app.menuItems["🐈 猫忆查"]
+        XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
+        XCTAssertEqual(toggle.label, "完成手写")
+        XCTAssertTrue(app.otherElements["Drawing-Palette"].exists, app.debugDescription)
+        lookup.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.label, "完成手写")
+    }
+
     @MainActor func testPDFToolPalettePersistence() {
         let app = launch(); defer { restore(app) }
         func openPDFTools() {

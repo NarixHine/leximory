@@ -13,6 +13,10 @@ import LeximoryCore
     var revision: UUID?
     var load: Task<Void, Never>?
     var updateInput: (() -> Void)?
+    var allowsFingerSelection: Bool {
+        canvas.drawingPolicy == .pencilOnly ||
+            (canvas.drawingPolicy == .default && UIPencilInteraction.prefersPencilOnlyDrawing)
+    }
     init(pageIndex: Int, size: CGSize) {
         self.pageIndex = pageIndex; pageSize = size
         super.init(frame: CGRect(origin: .zero, size: size))
@@ -26,6 +30,10 @@ import LeximoryCore
         canvas.contentInsetAdjustmentBehavior = .never
         canvas.maximumSupportedContentVersion = .version4
         canvas.drawingPolicy = .default
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures"),
+           ProcessInfo.processInfo.arguments.contains("--pdf-pencil-only") { canvas.drawingPolicy = .pencilOnly }
+        #endif
         canvas.isDrawingEnabled = false
         canvas.contentSize = size
         canvas.accessibilityIdentifier = "pdf-drawing-page-\(pageIndex)"
@@ -58,6 +66,8 @@ import LeximoryCore
     }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         updateInput?()
+        guard canvas.isDrawingEnabled else { return nil }
+        if allowsFingerSelection, event?.allTouches?.contains(where: { $0.type == .pencil }) != true { return nil }
         return super.hitTest(point, with: event)
     }
 }
@@ -75,17 +85,22 @@ import LeximoryCore
     private let model: PDFNotesModel
     private let picker: PKToolPicker
     private weak var activeCanvas: PKCanvasView?
+    private weak var selectionResponder: UIView?
     private var presentationUpdate: Task<Void, Never>?
     private var stopped = false
     private weak var navigationPan: UIPanGestureRecognizer?
     private var originalMinimum = 1
     private var originalTouchTypes: [NSNumber] = []
+    var allowsFingerSelection: Bool {
+        overlays.values.contains { $0.allowsFingerSelection }
+    }
     init(model: PDFNotesModel, pdf: PDFView) {
         self.model = model; self.pdf = pdf
         picker = Self.makeToolPicker()
         super.init()
         picker.addObserver(self)
         NotificationCenter.default.addObserver(self, selector: #selector(scaleChanged), name: .PDFViewScaleChanged, object: pdf)
+        NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: pdf)
     }
     static func makeToolPicker(autosaveName: String = "leximory.pdf.tools") -> PKToolPicker {
         let picker = PKToolPicker()
@@ -97,6 +112,7 @@ import LeximoryCore
     @objc private func scaleChanged() {
         for overlay in overlays.values { overlay.setNeedsLayout() }
     }
+    @objc private func selectionChanged() { schedulePresentationUpdate() }
     func pdfView(_ view: PDFView, overlayViewFor page: PDFPage) -> UIView? {
         guard !stopped, let document = view.document else { return nil }
         let index = document.index(for: page)
@@ -167,19 +183,51 @@ import LeximoryCore
             // Release PencilKit before PDFKit changes the page's interaction mode.
             hidePicker()
         }
-        if let pdf, pdf.isInMarkupMode != model.drawing { pdf.isInMarkupMode = model.drawing }
+        let markup = model.drawing && !allowsFingerSelection
+        if let pdf, pdf.isInMarkupMode != markup {
+            hidePicker()
+            pdf.isInMarkupMode = markup
+        }
         for overlay in overlays.values {
             let enabled = model.drawing && overlay.loaded
             if overlay.canvas.isDrawingEnabled != enabled { overlay.canvas.isDrawingEnabled = enabled }
         }
         configureNavigation()
-        if model.drawing { activateLoadedPage() }
+        if model.drawing {
+            if let pdf, pdf.currentSelection != nil {
+                // PDFKit takes first responder for selection; keep the same picker visible for it.
+                if let responder = firstResponder(in: pdf), responder !== activeCanvas, selectionResponder !== responder {
+                    if let selectionResponder { picker.setVisible(false, forFirstResponder: selectionResponder) }
+                    selectionResponder = responder
+                    picker.setVisible(true, forFirstResponder: responder)
+                }
+            } else {
+                if let selectionResponder { picker.setVisible(false, forFirstResponder: selectionResponder) }
+                selectionResponder = nil
+                activateLoadedPage()
+            }
+        }
+    }
+    private func firstResponder(in view: UIView) -> UIView? {
+        if view.isFirstResponder { return view }
+        return view.subviews.lazy.compactMap { self.firstResponder(in: $0) }.first
     }
     private func activateLoadedPage() {
         if let activeCanvas, [.began, .changed].contains(activeCanvas.drawingGestureRecognizer.state) { return }
         guard model.drawing, let pdf, let page = pdf.currentPage, let document = pdf.document else { return }
+        guard pdf.currentSelection == nil else { return }
         guard let overlay = overlays[document.index(for: page)], overlay.loaded else { hidePicker(); return }
         activate(overlay.canvas)
+    }
+    func drawingHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard !stopped, model.drawing else { return nil }
+        configureNavigation()
+        if pdf?.isInMarkupMode != !allowsFingerSelection { schedulePresentationUpdate() }
+        guard allowsFingerSelection, event?.allTouches?.contains(where: { $0.type == .pencil }) == true,
+              let pdf, let page = pdf.page(for: point, nearest: false), let document = pdf.document,
+              let overlay = overlays[document.index(for: page)] else { return nil }
+        // PDFKit stays in text mode; send Pencil touches to its page-local canvas ourselves.
+        return overlay.hitTest(overlay.convert(point, from: pdf), with: event)
     }
     private func activate(_ canvas: PKCanvasView) {
         guard canvas.window != nil else { return }
@@ -190,6 +238,8 @@ import LeximoryCore
         if !canvas.isFirstResponder { canvas.becomeFirstResponder() }
     }
     private func hidePicker() {
+        if let selectionResponder { picker.setVisible(false, forFirstResponder: selectionResponder) }
+        selectionResponder = nil
         guard let canvas = activeCanvas else { return }
         activeCanvas = nil
         picker.setVisible(false, forFirstResponder: canvas)
@@ -211,8 +261,7 @@ import LeximoryCore
         let minimum: Int
         let touchTypes: [NSNumber]
         if model.drawing {
-            let pencilOnly = UIDevice.current.userInterfaceIdiom == .pad && UIPencilInteraction.prefersPencilOnlyDrawing
-            minimum = pencilOnly ? 1 : 2
+            minimum = allowsFingerSelection ? 1 : 2
             touchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue), NSNumber(value: UITouch.TouchType.indirectPointer.rawValue)]
         } else {
             minimum = originalMinimum
@@ -221,8 +270,13 @@ import LeximoryCore
         if navigationPan?.minimumNumberOfTouches != minimum { navigationPan?.minimumNumberOfTouches = minimum }
         if navigationPan?.allowedTouchTypes != touchTypes { navigationPan?.allowedTouchTypes = touchTypes }
     }
-    func toolPickerSelectedToolItemDidChange(_ toolPicker: PKToolPicker) { configureNavigation() }
-    func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) { if model.drawing { activate(canvasView) } }
+    func toolPickerSelectedToolItemDidChange(_ toolPicker: PKToolPicker) { configureNavigation(); schedulePresentationUpdate() }
+    func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+        if model.drawing {
+            (pdf as? LearningPDFView)?.dismissSelection()
+            activate(canvasView)
+        }
+    }
     func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
         if let overlay = overlays.values.first(where: { $0.canvas === canvasView }) { capture(overlay) }
         model.flush()

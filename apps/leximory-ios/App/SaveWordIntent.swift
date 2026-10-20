@@ -81,6 +81,7 @@ struct ShortcutAnnotationView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
+        .padding(.top, 4)
         .foregroundStyle(.primary)
         .accessibilityIdentifier("shortcut-annotation")
     }

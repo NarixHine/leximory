@@ -2,6 +2,8 @@
 
 The iOS PDF reader uses PencilKit page overlays with the native tool picker. The pencil button enters handwriting mode; the checkmark finishes it. Notes remain visible in reading mode, and PDF text selection and existing quote bookmarks retain their own behavior. Handwriting remains editable offline, independently of network-only learning actions.
 
+With Only Draw with Apple Pencil enabled in the system settings or tool picker, fingers can select PDF text, open learning annotations, and use the text highlighter while the handwriting session and tool picker stay open. Pencil touches go to the page canvas; a new stroke dismisses the text selection and resumes drawing. Finger drawing retains two-finger scrolling and reserves page touches for handwriting.
+
 The original PDF is never rewritten. Each page stores an editable PencilKit archive. An encoded empty drawing is a normal update, so erased strokes do not return after synchronization. The canvas and tool picker both cap PencilKit content at version 4, available on the app's iOS 26 minimum.
 
 ## Storage
@@ -39,15 +41,15 @@ Mac Catalyst does not show Apple's tool picker. The handwriting control is disab
 
 ## Preliminary checks and human verification
 
-Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native compilation checks the PDFKit/PencilKit integration.
+Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native simulator tests cover input routing, drawing persistence, zoom coordinates, and ink appearance. A UI regression test selects PDF text and opens a learning annotation while the handwriting session and tool picker remain active.
 
-Per the user's request, interactive simulator/device verification is left to a human. No physical-device installation or live Supabase writes were performed for testing.
+Physical Pencil input, palm rejection, and cross-device synchronization still require human verification. No physical-device installation or live Supabase writes were performed for testing.
 
 Human checks:
 
 1. Open a real PDF, enter handwriting, draw with the native tools, partially erase, and finish. Reopen it and erase another part of an earlier stroke.
 2. Repeat offline, terminate/relaunch, reconnect, and confirm the drawing arrives as editable strokes on another device.
-3. Check finger drawing and two-finger scrolling on iPhone. On iPad, check Pencil drawing, finger navigation, palm rejection, and the system finger-drawing preference.
+3. Check finger drawing and two-finger scrolling on iPhone. On iPad, check Pencil drawing, finger navigation, palm rejection, and the system finger-drawing preference. With Pencil-only drawing enabled, select text by finger, trigger lookup or highlighting, then resume Pencil drawing without finishing handwriting.
 4. Check continuous scrolling, zoom, crop offsets, rotated pages, orientation changes, narrow windows, ink colors in light/dark appearance, and return to word selection/bookmark controls.
 5. Edit the same page on two devices, including an erasure. Confirm neither version silently replaces the other and that each resolution choice behaves as labeled.
 6. Erase the final stroke, reopen on both devices, and check that it stays erased. Replace the PDF and confirm old notes are not placed on new pages.

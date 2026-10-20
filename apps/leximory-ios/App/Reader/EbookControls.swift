@@ -198,6 +198,10 @@ final class EbookPDFHighlight: PDFAnnotation {
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let hit = (pageOverlayViewProvider as? PDFDrawingOverlays)?.drawingHitTest(point, with: event) { return hit }
+        return super.hitTest(point, with: event)
+    }
     var reader: EbookReaderState?
     var highlightAtTouchDown: EbookPDFHighlight?
     private var activeHighlight: EbookPDFHighlight?
@@ -291,7 +295,11 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         if gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 { reader.backRequest = UUID() }
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if reader.drawingEnabled { return false }
+        if reader.drawingEnabled {
+            guard touch.type != .pencil,
+                  let pdf = gestureRecognizer.view as? LearningPDFView,
+                  (pdf.pageOverlayViewProvider as? PDFDrawingOverlays)?.allowsFingerSelection == true else { return false }
+        }
         if let pdf = gestureRecognizer.view as? LearningPDFView {
             pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil
             pdf.highlightAtTouchDown = pdf.highlight(at: touch.location(in: pdf))
