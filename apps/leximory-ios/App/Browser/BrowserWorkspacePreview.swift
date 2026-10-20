@@ -48,6 +48,17 @@ struct BrowserWorkspacePreview: View {
                 UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")
                 let workspace = BrowserWorkspaceModel(client: client, namespace: "workspace-fixture")
                 let arguments = ProcessInfo.processInfo.arguments
+                if arguments.contains("--workspace-recent-card-fixtures"),
+                   let data = payloads["texts/workspace-folder"],
+                   let page = try? JSONDecoder().decode(CatalogPage<CatalogText>.self, from: data) {
+                    for id in ["fixture-reader", "fixture-forest", "workspace-epub"] {
+                        if let text = page.items.first(where: { $0.id == id }) { await workspace.open(text) }
+                    }
+                    if let text = page.items.first {
+                        workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
+                    }
+                    workspace.visit(.home)
+                }
                 if let index = arguments.firstIndex(of: "--workspace-webpage-url"), arguments.indices.contains(index + 1),
                    let url = TextBrowserModel.address(arguments[index + 1]) { workspace.openURL(url) }
                 if ProcessInfo.processInfo.arguments.contains("--workspace-hold-annotations") {

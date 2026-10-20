@@ -12,6 +12,7 @@ struct WebResource {
 private struct RecentReading: Codable {
     var ids: [String] = []
     var texts: [CatalogText] = []
+    var libraryNames: [String: String]? = nil
 }
 
 struct HiddenHomeRecents: Codable {
@@ -23,11 +24,51 @@ struct RecentWebpage: Codable, Equatable, Identifiable {
     let url: URL
     var title: String? = nil
     var bookmarkID: String? = nil
+    var faviconURL: URL? = nil
+    var previewImageURL: URL? = nil
+    var iconURL: URL? {
+        if let faviconURL { return faviconURL }
+        var origin = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        origin?.path = "/favicon.ico"; origin?.query = nil; origin?.fragment = nil
+        return origin?.url
+    }
     var id: URL { url }
     var displayTitle: String { Self.normalizedTitle(title) ?? "网页" }
     static func normalizedTitle(_ title: String?) -> String? {
         guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
         return title
+    }
+}
+
+struct BrowserWebVisit: Codable, Equatable {
+    var page: RecentWebpage
+    var visitedAt: Date
+    func isRecent(at now: Date) -> Bool {
+        visitedAt > now.addingTimeInterval(-24 * 60 * 60) && visitedAt <= now
+    }
+}
+
+enum BrowserAddressMatch: Identifiable {
+    case text(CatalogText)
+    case webpage(RecentWebpage)
+
+    var id: String {
+        switch self {
+        case .text(let text): text.id
+        case .webpage(let page): "webpage:" + page.url.absoluteString
+        }
+    }
+    var title: String {
+        switch self {
+        case .text(let text): text.title
+        case .webpage(let page): RecentWebpage.normalizedTitle(page.title) ?? page.url.absoluteString
+        }
+    }
+    @MainActor var webpageURL: URL? {
+        switch self {
+        case .text(let text): text.bookmarkURL.flatMap(TextBrowserModel.address)
+        case .webpage(let page): page.url
+        }
     }
 }
 
@@ -110,8 +151,10 @@ struct AnnotationActivity: Identifiable, Codable {
     private(set) var browser = TextBrowserModel()
     private(set) var homePins: [BrowserHomePin] = []
     private(set) var pinImages: [URL: UIImage] = [:]
+    private(set) var recentImages: [URL: UIImage] = [:]
     private(set) var hiddenHomeRecents = HiddenHomeRecents()
     private(set) var recentWebpages: [RecentWebpage] = []
+    private(set) var webVisits: [BrowserWebVisit] = []
     private var recentReading = RecentReading()
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
@@ -149,25 +192,44 @@ struct AnnotationActivity: Identifiable, Codable {
     var hasPending: Bool { activities.contains { $0.state == .pending } }
     var writableFolders: [CatalogLibrary] { libraries.filter { $0.owned && !$0.shadow } }
     var addressSearchFolders: [CatalogLibrary] { libraries.filter { !$0.archived && !$0.shadow } }
-    func addressMatches(_ query: String, limit: Int) -> [CatalogText] {
+    func addressMatches(_ query: String, limit: Int, now: Date = Date()) -> [BrowserAddressMatch] {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty, limit > 0 else { return [] }
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
         let needle = query.folding(options: options, locale: .current)
-        var matches: [(text: CatalogText, rank: Int, offset: Int, length: Int, order: Int)] = []
+        func score(_ value: String) -> (Int, Int, Int)? {
+            let value = value.trimmingCharacters(in: .whitespacesAndNewlines).folding(options: options, locale: .current)
+            guard let range = value.range(of: needle) else { return nil }
+            let offset = value.distance(from: value.startIndex, to: range.lowerBound)
+            return (value == needle ? 0 : offset == 0 ? 1 : 2, offset, value.count)
+        }
+        var matches: [(entry: BrowserAddressMatch, rank: Int, offset: Int, length: Int, order: Int)] = []
         var seen = Set<String>()
         for folder in addressSearchFolders {
             for text in texts[folder.id] ?? [] where text.libraryId == folder.id {
-                let title = text.title.trimmingCharacters(in: .whitespacesAndNewlines).folding(options: options, locale: .current)
-                guard let range = title.range(of: needle), seen.insert(text.id).inserted else { continue }
-                let offset = title.distance(from: title.startIndex, to: range.lowerBound)
-                let rank = title == needle ? 0 : offset == 0 ? 1 : 2
-                matches.append((text, rank, offset, title.count, matches.count))
+                guard let rank = score(text.title), seen.insert(text.id).inserted else { continue }
+                matches.append((.text(text), rank.0, rank.1, rank.2, matches.count))
             }
         }
-        return matches.sorted {
+        for visit in webVisits where visit.isRecent(at: now) {
+            let page = visit.page
+            let fields = [page.title, page.url.host, page.url.absoluteString].compactMap { $0 }
+            guard let rank = fields.compactMap(score).min(by: { $0 < $1 }) else { continue }
+            matches.append((.webpage(page), rank.0, rank.1, rank.2, matches.count))
+        }
+        var seenURLs = Set<URL>()
+        return Array(matches.sorted {
             ($0.rank, $0.offset, $0.length, $0.order) < ($1.rank, $1.offset, $1.length, $1.order)
-        }.prefix(min(limit, Self.maximumAddressMatches)).map(\.text)
+        }.compactMap { match -> BrowserAddressMatch? in
+            if let url = match.entry.webpageURL, !seenURLs.insert(url).inserted { return nil }
+            return match.entry
+        }.prefix(min(limit, Self.maximumAddressMatches)))
+    }
+    func openAddressMatch(_ match: BrowserAddressMatch) async {
+        switch match {
+        case .text(let text): await open(text)
+        case .webpage(let page): openURL(page.url, bookmarkID: page.bookmarkID)
+        }
     }
     func prepareAddressSearch(online: Bool) async {
         for folder in addressSearchFolders {
@@ -184,7 +246,7 @@ struct AnnotationActivity: Identifiable, Codable {
             return all.first { $0.id == id } ?? recentReading.texts.first { $0.id == id }
         }
     }
-    init(client: MobileClient, namespace: String) {
+    init(client: MobileClient, namespace: String, now: Date = Date()) {
         self.client = client; self.namespace = namespace
         if let data = UserDefaults.standard.data(forKey: "browser.hidden-home-recents." + namespace),
            let hidden = try? JSONDecoder().decode(HiddenHomeRecents.self, from: data) { hiddenHomeRecents = hidden }
@@ -194,6 +256,7 @@ struct AnnotationActivity: Identifiable, Codable {
             var seen = Set<String>()
             recentReading.ids = Array(saved.ids.filter { seen.insert($0).inserted }.prefix(5))
             recentReading.texts = saved.texts.filter { seen.contains($0.id) }
+            recentReading.libraryNames = saved.libraryNames
         } else {
             recentReading.ids = UserDefaults.standard.stringArray(forKey: readingKey)
                 ?? UserDefaults.standard.string(forKey: readingKey).map { [$0] } ?? []
@@ -203,6 +266,14 @@ struct AnnotationActivity: Identifiable, Codable {
                 ?? (try? JSONDecoder().decode(RecentWebpage.self, from: data)).map { [$0] } ?? []
             var seen = Set<URL>()
             recentWebpages = Array(pages.filter { TextBrowserModel.address($0.url.absoluteString) != nil && seen.insert($0.url).inserted }.prefix(1))
+        }
+        if let data = UserDefaults.standard.data(forKey: "browser.web-history." + namespace),
+           let saved = try? JSONDecoder().decode([BrowserWebVisit].self, from: data) {
+            var seen = Set<URL>()
+            webVisits = saved.sorted { $0.visitedAt > $1.visitedAt }.filter {
+                $0.isRecent(at: now) && TextBrowserModel.address($0.page.url.absoluteString) != nil && seen.insert($0.page.url).inserted
+            }
+            persistWebVisits()
         }
         if let data = UserDefaults.standard.data(forKey: "recent-access." + namespace),
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
@@ -406,19 +477,86 @@ struct AnnotationActivity: Identifiable, Codable {
         restoreHomeRecent(textID: page.bookmarkID, webpageURL: page.url)
         let title = browser.url == page.url ? browser.title : page.item?.title
         let savedTitle = recentWebpages.first(where: { $0.url == page.url })?.title
+            ?? webVisits.first(where: { $0.page.url == page.url })?.page.title
         let bookmarkTitle = recentTexts.first(where: { $0.id == page.bookmarkID })?.title
-        let recent = RecentWebpage(url: page.url, title: RecentWebpage.normalizedTitle(title) ?? savedTitle ?? bookmarkTitle, bookmarkID: page.bookmarkID)
+        var recent = RecentWebpage(url: page.url, title: RecentWebpage.normalizedTitle(title) ?? savedTitle ?? bookmarkTitle, bookmarkID: page.bookmarkID)
+        let artwork = recentWebpages.first(where: { $0.url == page.url }) ?? webVisits.first(where: { $0.page.url == page.url })?.page
+        recent.faviconURL = artwork?.faviconURL
+        recent.previewImageURL = artwork?.previewImageURL
+        recordWebVisit(recent)
+        if !browser.loading { refreshRecentWebpageArtwork() }
         let pages = [recent]
         guard pages != recentWebpages else { return }
         recentWebpages = pages
         persistRecentWebpages()
     }
+    private func refreshRecentWebpageArtwork() {
+        guard case .web(let page) = current.resource, browser.url == page.url else { return }
+        let browser = browser
+        let navigation = browser.navigationID
+        Task { [weak self] in
+            let value = try? await browser.web.callAsyncJavaScript("""
+                const image = document.querySelector('meta[property="og:image"]')?.content
+                    || document.querySelector('meta[name="twitter:image"]')?.content;
+                const icon = document.querySelector('link[rel~="apple-touch-icon"]')
+                    || document.querySelector('link[rel~="icon"]');
+                function resolve(value) {
+                    try { return value ? new URL(value, document.baseURI).href : null; }
+                    catch { return null; }
+                }
+                return {image: resolve(image), icon: resolve(icon?.getAttribute('href'))};
+                """, arguments: [:], in: nil, contentWorld: .defaultClient)
+            guard let self, self.browser === browser, browser.navigationID == navigation,
+                  browser.url == page.url, let metadata = value as? [String: Any],
+                  let index = self.recentWebpages.firstIndex(where: { $0.url == page.url }) else { return }
+            var updated = self.recentWebpages[index]
+            updated.faviconURL = (metadata["icon"] as? String).flatMap(TextBrowserModel.address)
+            updated.previewImageURL = (metadata["image"] as? String).flatMap(TextBrowserModel.address)
+            guard updated != self.recentWebpages[index] else { return }
+            self.recentWebpages[index] = updated
+            self.persistRecentWebpages()
+            if let visit = self.webVisits.firstIndex(where: { $0.page.url == page.url }) {
+                self.webVisits[visit].page = updated
+                self.persistWebVisits()
+            }
+        }
+    }
+    func cacheRecentImages(load: ((URL) async throws -> UIImage)? = nil) async {
+        let urls = recentWebpages.flatMap { [$0.iconURL, $0.previewImageURL].compactMap { $0 } }
+        recentImages = recentImages.filter { urls.contains($0.key) }
+        for url in urls where recentImages[url] == nil {
+            guard !Task.isCancelled else { return }
+            do {
+                let image: UIImage
+                if let load { image = try await load(url) }
+                else { image = try await ReaderImage.load(url, store: client.localStore) }
+                guard !Task.isCancelled,
+                      recentWebpages.contains(where: { $0.iconURL == url || $0.previewImageURL == url }) else { continue }
+                recentImages[url] = image
+            } catch { }
+        }
+    }
+    func recordWebVisit(_ page: RecentWebpage, at date: Date = Date()) {
+        guard TextBrowserModel.address(page.url.absoluteString) != nil else { return }
+        webVisits.removeAll { $0.page.url == page.url || !$0.isRecent(at: date) }
+        webVisits.insert(BrowserWebVisit(page: page, visitedAt: date), at: 0)
+        persistWebVisits()
+    }
+    private func persistWebVisits() {
+        if let data = try? JSONEncoder().encode(webVisits) {
+            UserDefaults.standard.set(data, forKey: "browser.web-history." + namespace)
+        }
+    }
     func refreshRecentWebpageTitle() {
-        guard let url = browser.url, let index = recentWebpages.firstIndex(where: { $0.url == url }),
-              let title = RecentWebpage.normalizedTitle(browser.title),
-              recentWebpages[index].title != title else { return }
-        recentWebpages[index].title = title
-        persistRecentWebpages()
+        guard let url = browser.url, let title = RecentWebpage.normalizedTitle(browser.title) else { return }
+        if let index = recentWebpages.firstIndex(where: { $0.url == url }), recentWebpages[index].title != title {
+            recentWebpages[index].title = title
+            persistRecentWebpages()
+        }
+        if let index = webVisits.firstIndex(where: { $0.page.url == url }), webVisits[index].page.title != title {
+            webVisits[index].page.title = title
+            persistWebVisits()
+        }
     }
     private func persistRecentWebpages() {
         if let data = try? JSONEncoder().encode(recentWebpages) { UserDefaults.standard.set(data, forKey: "browser.recent-web." + namespace) }
@@ -427,8 +565,19 @@ struct AnnotationActivity: Identifiable, Codable {
         guard case .document(let details) = current.resource else { return }
         rememberReading(details.text)
     }
+    func recentLibraryName(for text: CatalogText) -> String {
+        libraries.first(where: { $0.id == text.libraryId })?.name
+            ?? documents[text.id]?.library.name
+            ?? recentReading.libraryNames?[text.libraryId] ?? ""
+    }
     private func rememberReading(_ text: CatalogText) {
         restoreHomeRecent(textID: text.id, webpageURL: text.bookmarkURL.flatMap(TextBrowserModel.address))
+        let name = recentLibraryName(for: text)
+        if !name.isEmpty {
+            var names = recentReading.libraryNames ?? [:]
+            names[text.libraryId] = name
+            recentReading.libraryNames = names
+        }
         recentReading.ids = Array(([text.id] + recentReading.ids.filter { $0 != text.id }).prefix(5))
         recentReading.texts.removeAll { $0.id == text.id }
         recentReading.texts.insert(text, at: 0)
@@ -436,6 +585,8 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     private func persistRecentReading() {
         recentReading.texts = Array(recentTexts.prefix(5))
+        let libraries = Set(recentReading.texts.map(\.libraryId))
+        recentReading.libraryNames = recentReading.libraryNames?.filter { libraries.contains($0.key) }
         if let data = try? JSONEncoder().encode(recentReading) {
             UserDefaults.standard.set(data, forKey: "browser.recent." + namespace)
         }
@@ -677,6 +828,9 @@ struct AnnotationActivity: Identifiable, Codable {
         connectBrowser()
         history.reset(to: BrowserEntry(resource: .home))
         recentWebpages = []
+        webVisits = []
+        recentImages = [:]
+        UserDefaults.standard.removeObject(forKey: "browser.web-history." + namespace)
         UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace)
         restoringWeb = false
     }

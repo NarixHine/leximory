@@ -13,6 +13,8 @@ struct BrowserHomeView: View {
     var hideRecentWebpage: (RecentWebpage) -> Void = { _ in }
     let compact: Bool
     let recent: [CatalogText]
+    var recentImages: [URL: UIImage] = [:]
+    var libraryName: (CatalogText) -> String = { _ in "" }
     let browse: () -> Void
     let paste: () -> Void
     let recentWebpages: [RecentWebpage]
@@ -23,7 +25,8 @@ struct BrowserHomeView: View {
     var review: () -> Void = {}
     var avatarImage: UIImage? = nil
     var addressQuery = ""
-    var addressMatches: (String, Int) -> [CatalogText] = { _, _ in [] }
+    var addressMatches: (String, Int) -> [BrowserAddressMatch] = { _, _ in [] }
+    var openAddressMatch: (BrowserAddressMatch) -> Void = { _ in }
     let resume: (CatalogText) -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -53,16 +56,21 @@ struct BrowserHomeView: View {
                                 .frame(maxWidth: horizontal ? 740 : 360, minHeight: cardsHeight).frame(maxWidth: .infinity)
                         }.scrollBounceBehavior(.basedOnSize).frame(height: cardsHeight)
                         VStack(spacing: 0) {
-                            ForEach(addressMatches(addressQuery, matchCount)) { text in
-                                Button { resume(text) } label: {
+                            ForEach(addressMatches(addressQuery, matchCount)) { match in
+                                Button { openAddressMatch(match) } label: {
                                     HStack(spacing: 8) {
-                                        BrowserTextIcon(text: text).font(.system(size: 16, weight: .regular))
+                                        Group {
+                                            switch match {
+                                            case .text(let text): BrowserTextIcon(text: text)
+                                            case .webpage: Image(systemName: "globe")
+                                            }
+                                        }.font(.system(size: 16, weight: .regular))
                                             .homeWallpaperInk(secondary: true).accessibilityHidden(true)
-                                        Text(LeximoryTypography.scaledChineseText(text.title, size: recentTitleSize))
+                                        Text(LeximoryTypography.scaledChineseText(match.title, size: recentTitleSize))
                                             .homeWallpaperInk().lineLimit(1).truncationMode(.tail)
                                     }.frame(maxWidth: .infinity).frame(height: matchRowHeight).contentShape(.rect)
-                                }.buttonStyle(.plain).accessibilityLabel(text.title)
-                                    .accessibilityIdentifier("browser-address-match-" + text.id)
+                                }.buttonStyle(.plain).accessibilityLabel(match.title)
+                                    .accessibilityIdentifier("browser-address-match-" + match.id)
                             }
                         }.frame(height: CGFloat(matchCount) * matchRowHeight, alignment: .bottom)
                             .frame(maxWidth: 400).padding(.horizontal, LeximoryLayout.pageInset).frame(maxWidth: .infinity)
@@ -94,24 +102,36 @@ struct BrowserHomeView: View {
                     homeCards(squares: squares, folded: false).frame(maxWidth: squares ? nil : 304)
                     if !pins.isEmpty { pinnedPages }
                     if !readingResources.isEmpty || recentWebpage != nil {
-                        VStack(spacing: 0) {
-                            Text("继续浏览").editorialFont(16, relativeTo: .headline).homeWallpaperInk(secondary: true).padding(.bottom, 3)
-                            if let page = recentWebpage {
-                                recentLink(page.displayTitle, symbol: "globe", type: "网页") { openWebpage(page) }
-                                    .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
-                                    .contextMenu {
-                                        Button("从主页隐藏", systemImage: "eye.slash") { hideRecentWebpage(page) }
-                                    }
+                        VStack(spacing: 12) {
+                            Text("继续浏览").editorialFont(16, relativeTo: .headline)
+                                .homeWallpaperInk(secondary: true, shadow: false)
+                            BrowserRecentLayout {
+                                if let page = recentWebpage {
+                                    Button { openWebpage(page) } label: {
+                                        BrowserRecentCard(title: page.displayTitle, byline: page.url.host ?? "", identity: page.url.absoluteString,
+                                            favicon: page.iconURL.flatMap { recentImages[$0] },
+                                            photograph: page.previewImageURL.flatMap { recentImages[$0] })
+                                    }.buttonStyle(.plain).accessibilityLabel("\(page.displayTitle)，网页")
+                                        .accessibilityValue(page.url.host ?? "")
+                                        .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
+                                        .contextMenu {
+                                            Button("从主页隐藏", systemImage: "eye.slash") { hideRecentWebpage(page) }
+                                        }
+                                }
+                                ForEach(readingResources) { text in
+                                    let savedEmoji = text.emoji?.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let emoji = (savedEmoji?.isEmpty == false ? savedEmoji : nil) ?? (text.format == "ebook" ? "📖" : "📄")
+                                    Button { resume(text) } label: {
+                                        BrowserRecentCard(title: text.title, byline: libraryName(text), identity: text.id, emoji: emoji)
+                                    }.buttonStyle(.plain).accessibilityLabel("\(text.title)，\(text.format == "ebook" ? "电子书" : "文章")")
+                                        .accessibilityValue(libraryName(text))
+                                        .accessibilityIdentifier("browser-resume-" + text.id)
+                                        .contextMenu {
+                                            Button("从主页隐藏", systemImage: "eye.slash") { hideRecentText(text) }
+                                        }
+                                }
                             }
-                            ForEach(readingResources) { text in
-                                let ebook = text.format == "ebook"
-                                recentLink(text.title, symbol: ebook ? "book.closed" : "doc.text", type: ebook ? "电子书" : "文章") { resume(text) }
-                                    .accessibilityIdentifier("browser-resume-" + text.id)
-                                    .contextMenu {
-                                        Button("从主页隐藏", systemImage: "eye.slash") { hideRecentText(text) }
-                                    }
-                            }
-                        }.frame(maxWidth: 400).frame(maxWidth: .infinity).padding(.top, 8)
+                        }.frame(maxWidth: squares ? 680 : 304).frame(maxWidth: .infinity).padding(.top, 8)
                     }
 
                 }.padding(.horizontal, 28).padding(.vertical, 24)
@@ -183,16 +203,6 @@ struct BrowserHomeView: View {
                 && $0.bookmarkURL.flatMap(TextBrowserModel.address).map({ !hiddenRecentWebURLs.contains($0) }) == true
         }), let url = text.bookmarkURL.flatMap(TextBrowserModel.address) else { return nil }
         return RecentWebpage(url: url, title: text.title, bookmarkID: text.id)
-    }
-    private func recentLink(_ title: String, symbol: String, type: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Image(systemName: symbol).symbolVariant(.none).font(.system(size: 16, weight: .regular))
-                    .homeWallpaperInk(secondary: true).accessibilityHidden(true)
-                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize)).homeWallpaperInk()
-                    .lineLimit(1).truncationMode(.tail)
-            }.frame(maxWidth: .infinity, minHeight: 32).contentShape(.rect)
-        }.buttonStyle(.plain).accessibilityLabel("\(title)，\(type)")
     }
     @ViewBuilder private func homeCards(squares: Bool, folded: Bool) -> some View {
         if !squares && !folded && !typeSize.isAccessibilitySize {
@@ -389,5 +399,95 @@ private struct BrowserPinLayout: Layout {
                                               y: bounds.minY + CGFloat(row) * (itemHeight + 12)),
                                   proposal: .init(width: itemWidth, height: itemHeight))
         }
+    }
+}
+
+private struct BrowserRecentLayout: Layout {
+    private func columns(_ width: CGFloat) -> Int { max(1, Int((width + 12) / 156)) }
+    private func itemWidth(_ width: CGFloat) -> CGFloat {
+        min(220, max(0, (width - CGFloat(columns(width) - 1) * 12) / CGFloat(columns(width))))
+    }
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 304
+        let count = columns(width)
+        let rows = (subviews.count + count - 1) / count
+        return CGSize(width: width, height: CGFloat(rows) * itemWidth(width) * 9 / 16 + CGFloat(max(0, rows - 1)) * 12)
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let count = columns(bounds.width)
+        let width = itemWidth(bounds.width)
+        let height = width * 9 / 16
+        for index in subviews.indices {
+            let row = index / count
+            let rowCount = min(count, subviews.count - row * count)
+            let rowWidth = CGFloat(rowCount) * width + CGFloat(rowCount - 1) * 12
+            subviews[index].place(at: CGPoint(x: bounds.midX - rowWidth / 2 + CGFloat(index % count) * (width + 12),
+                                              y: bounds.minY + CGFloat(row) * (height + 12)),
+                anchor: .topLeading, proposal: .init(width: width, height: height))
+        }
+    }
+}
+
+private struct BrowserRecentCard: View {
+    let title: String
+    let byline: String
+    let identity: String
+    var emoji: String? = nil
+    var favicon: UIImage? = nil
+    var photograph: UIImage? = nil
+    @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .headline) private var titleSize: CGFloat = 17
+    @ScaledMetric(relativeTo: .caption) private var bylineSize: CGFloat = 12
+
+    var body: some View {
+        Color.clear.aspectRatio(16.0 / 9, contentMode: .fit)
+            .overlay {
+                if let photograph {
+                    GeometryReader { geometry in
+                        Image(uiImage: photograph).resizable().scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                    }
+                } else {
+                    CoverArt(motif: .leaf, identity: identity, emoji: "", cornerRadius: 0, background: .newspaper)
+                }
+            }
+            .overlay {
+                if photograph != nil {
+                    LinearGradient(colors: [.black.opacity(0.48), .black.opacity(0.72)], startPoint: .top, endPoint: .bottom)
+                }
+            }
+            .overlay {
+                VStack(alignment: .leading, spacing: 0) {
+                    Group {
+                        if let emoji {
+                            Text(emoji).font(.custom("LeximoryNotoEmoji", fixedSize: 28))
+                                .fixedSize()
+                                .foregroundStyle(CoverPalette.emojiInk(identity: identity, dark: colorScheme == .dark))
+                        } else if let favicon {
+                            Image(uiImage: favicon).resizable().scaledToFill().frame(width: 28, height: 28)
+                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .circular))
+                                .overlay { RoundedRectangle(cornerRadius: 7).strokeBorder(LeximoryPalette.border.opacity(0.7), lineWidth: 0.5) }
+                        } else {
+                            Image(systemName: "globe").font(.system(size: 26, weight: .regular))
+                                .foregroundStyle(LeximoryPalette.illustration)
+                        }
+                    }.frame(width: 30, height: 30).accessibilityHidden(true)
+                    Text(byline).font(LeximoryTypography.interface(bylineSize))
+                        .foregroundStyle(photograph == nil ? Color.secondary : Color.white.opacity(0.9))
+                        .lineLimit(1).truncationMode(.tail)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 2)
+                        .accessibilityIdentifier("browser-recent-byline-" + identity)
+                    Spacer(minLength: 2)
+                    Text(LeximoryTypography.scaledChineseText(title, size: titleSize))
+                        .foregroundStyle(photograph == nil ? LeximoryPalette.ink : Color.white)
+                        .lineLimit(1).truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(.horizontal, 10).padding(.vertical, 6)
+            }
+            .clipShape(.rect(cornerRadius: 16))
+            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(LeximoryPalette.border.opacity(0.7), lineWidth: 0.5) }
+            .contentShape(.rect(cornerRadius: 16))
     }
 }

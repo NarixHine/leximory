@@ -361,11 +361,6 @@ struct EbookScreen: View {
             Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
                 .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.settings)) { readingSettings.presentationCompactAdaptation(.sheet) }
-            if let client {
-                ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
-                    readerActionIcon("square.and.arrow.up")
-                }.accessibilityLabel("分享")
-            }
         }
     }
     private var progressControl: some View {

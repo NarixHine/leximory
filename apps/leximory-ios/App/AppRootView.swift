@@ -18,7 +18,7 @@ struct AppRootView: View {
         try? FileManager.default.removeItem(at: FileManager.default.temporaryDirectory.appending(path: "browser-workspace-fixture", directoryHint: .isDirectory))
         let fixtureWallpapers = HomeWallpaperStore(namespace: "workspace-fixture")
         try? fixtureWallpapers.removeAll()
-        for key in ["browser.hidden-home-recents.workspace-fixture", "browser.home-pins.workspace-fixture", "browser.annotations.workspace-fixture", "browser.recent.workspace-fixture", "browser.recent-web.workspace-fixture", "recent-access.workspace-fixture"] { UserDefaults.standard.removeObject(forKey: key) }
+        for key in ["browser.hidden-home-recents.workspace-fixture", "browser.home-pins.workspace-fixture", "browser.annotations.workspace-fixture", "browser.recent.workspace-fixture", "browser.recent-web.workspace-fixture", "browser.web-history.workspace-fixture", "recent-access.workspace-fixture"] { UserDefaults.standard.removeObject(forKey: key) }
         if ProcessInfo.processInfo.arguments.contains("--account-fixtures") || ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
             if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
                 fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })

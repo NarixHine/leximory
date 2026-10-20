@@ -555,6 +555,13 @@ import LeximoryCore
         #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
     }
 
+    @Test func accountHeatmapWithoutARecordedDayHasNoActivityColor() {
+        let future = AccountHeatmapPalette.colors(for: nil)
+        #expect(future.background == .clear)
+        #expect(future.foreground == .secondary)
+        #expect(AccountHeatmapPalette.colors(for: 0).background != .clear)
+    }
+
     @Test func accountHeatmapNumbersRemainReadableAcrossIntensities() {
         func luminance(_ color: Color) -> Double {
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0

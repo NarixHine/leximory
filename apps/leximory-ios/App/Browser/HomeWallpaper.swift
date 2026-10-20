@@ -217,19 +217,22 @@ struct HomeWallpaperSurface<Content: View>: View {
 
 private struct WallpaperInk: ViewModifier {
     let secondary: Bool
+    let shadow: Bool
     @Environment(\.homeWallpaperContext) private var context
+    @Environment(\.colorScheme) private var colorScheme
     @State private var frame = CGRect.zero
     @ViewBuilder func body(content: Content) -> some View {
         if let context {
             let light = context.wallpaper.usesLightInk(in: frame, canvas: context.bounds)
             content.foregroundStyle(light ? Color.white : Color.black)
-                .shadow(color: (light ? Color.black : Color.white).opacity(0.65), radius: 2, y: 1)
+                .shadow(color: (light ? Color.black : Color.white).opacity(shadow ? 0.28 : 0), radius: 1.5, y: 1)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
         } else {
             content.foregroundStyle(secondary ? Color.secondary : Color.primary)
+                .shadow(color: (colorScheme == .dark ? Color.black : Color.white).opacity(shadow ? 0.18 : 0), radius: 1.5, y: 1)
         }
     }
 }
 extension View {
-    func homeWallpaperInk(secondary: Bool = false) -> some View { modifier(WallpaperInk(secondary: secondary)) }
+    func homeWallpaperInk(secondary: Bool = false, shadow: Bool = true) -> some View { modifier(WallpaperInk(secondary: secondary, shadow: shadow)) }
 }

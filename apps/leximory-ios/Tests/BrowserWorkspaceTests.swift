@@ -15,6 +15,7 @@ private final class ScrollHistoryServer: Sendable {
         self.listener = listener
         let html = """
             <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta property="og:image" content="/og.png"><link rel="icon" href="/touch.png">
             <script>history.scrollRestoration = 'manual';</script></head>
             <body style="height:6000px">A long reading page</body></html>
             """
@@ -43,7 +44,10 @@ private final class ScrollHistoryServer: Sendable {
 @MainActor struct BrowserWorkspaceTests {
     @Test func webpageHistoryRestoresEachPagesScrollPosition() async throws {
         let namespace = "workspace-test." + UUID().uuidString
-        defer { UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace) }
+        defer {
+            UserDefaults.standard.removeObject(forKey: "browser.recent-web." + namespace)
+            UserDefaults.standard.removeObject(forKey: "browser.web-history." + namespace)
+        }
         let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
         let web = workspace.browser.web
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -72,6 +76,11 @@ private final class ScrollHistoryServer: Sendable {
         }
         workspace.openURL(first)
         try await waitForPage(first)
+        for _ in 0..<50 where workspace.recentWebpages.first?.previewImageURL == nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(workspace.recentWebpages.first?.previewImageURL == server.origin.appending(path: "og.png"))
+        #expect(workspace.recentWebpages.first?.faviconURL == server.origin.appending(path: "touch.png"))
         web.scrollView.setContentOffset(CGPoint(x: 0, y: 420), animated: false)
         workspace.browser.load(second)
         try await waitForPage(second)
@@ -94,6 +103,13 @@ private final class ScrollHistoryServer: Sendable {
         workspace.visit(.home)
         workspace.go(-1)
         #expect(abs(web.scrollView.contentOffset.y - 980) < 2)
+        #expect(Set(workspace.webVisits.map { $0.page.url }) == [first, second])
+        workspace.visit(.home)
+        let match = try #require(workspace.addressMatches(second.absoluteString, limit: 5).first)
+        await workspace.openAddressMatch(match)
+        try await waitForPage(second)
+        if case .web(let page) = workspace.current.resource { #expect(page.url == second) }
+        else { Issue.record("Selecting a history suggestion must navigate to its webpage") }
     }
 
     @Test func addressSearchUsesActiveFoldersCapsMatchesAndKeepsCacheOnRefreshFailure() async throws {
@@ -137,6 +153,95 @@ private final class ScrollHistoryServer: Sendable {
         #expect(workspace.addressMatches("journey", limit: 5).map(\.id) == ["ebook"])
         workspace.upsertFolder(try folder("active", archived: true))
         #expect(workspace.addressMatches("river", limit: 5).isEmpty)
+    }
+
+    @Test func addressHistoryExpiresPersistsAndClearsPerAccount() async throws {
+        let namespace = "address-history." + UUID().uuidString
+        let key = "browser.web-history." + namespace
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let mobile = client(WorkspaceTransport())
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace, now: now)
+        let url = try #require(URL(string: "https://reading.test/forest"))
+        let page = RecentWebpage(url: url, title: "Quiet forest")
+        workspace.recordWebVisit(page, at: now.addingTimeInterval(-24 * 60 * 60))
+        #expect(workspace.addressMatches("forest", limit: 5, now: now).isEmpty)
+        workspace.recordWebVisit(page, at: now.addingTimeInterval(-24 * 60 * 60 + 1))
+        #expect(workspace.addressMatches("forest", limit: 5, now: now).map(\.title) == ["Quiet forest"])
+        #expect(workspace.addressMatches("forest", limit: 5, now: now.addingTimeInterval(1)).isEmpty)
+        workspace.recordWebVisit(page, at: now)
+        workspace.recordWebVisit(RecentWebpage(url: url, title: "Forest revisited"), at: now)
+        #expect(workspace.webVisits.count == 1)
+        let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace, now: now)
+        #expect(restored.addressMatches("READING.TEST", limit: 5, now: now).map(\.title) == ["Forest revisited"])
+        #expect(restored.addressMatches(url.absoluteString, limit: 5, now: now).count == 1)
+        #expect(restored.recentWebpages.isEmpty, "Autocomplete history must not change Home's single recent link")
+        let expired = BrowserWorkspaceModel(client: mobile, namespace: namespace, now: now.addingTimeInterval(24 * 60 * 60))
+        #expect(expired.webVisits.isEmpty)
+        let other = BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other", now: now)
+        #expect(other.addressMatches("forest", limit: 5, now: now).isEmpty)
+        restored.recordWebVisit(page, at: now)
+        restored.clearHistory()
+        #expect(restored.addressMatches("forest", limit: 5, now: now).isEmpty)
+        #expect(UserDefaults.standard.object(forKey: key) == nil)
+        #expect(BrowserWorkspaceModel(client: mobile, namespace: namespace, now: now).webVisits.isEmpty)
+    }
+
+    @Test func addressMatchesRankExactnessAcrossAssetsAndWebpagesAndDeduplicateLinks() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://workspace.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "mixed-address-search")
+        let folder = try JSONDecoder().decode(CatalogLibrary.self, from: Data(#"{"id":"active","name":"Reading","language":"en","owned":true,"archived":false,"shadow":false}"#.utf8))
+        let rows = try JSONDecoder().decode([CatalogText].self, from: Data(#"[{"id":"exact","libraryId":"active","title":"River","topics":[],"format":"article"},{"id":"prefix","libraryId":"active","title":"River guide","topics":[],"format":"ebook"},{"id":"contains","libraryId":"active","title":"The river","topics":[],"format":"article"},{"id":"bookmark","libraryId":"active","title":"Café","topics":[],"format":"bookmark","bookmarkURL":"https://cafe.test/read"}]"#.utf8))
+        await store.save([folder], for: "libraries")
+        await store.save(rows, for: "texts/active")
+        let mobile = MobileClient(baseURL: origin, transport: OfflineTransport(), token: { _ in "verified" }, localStore: store)
+        let namespace = "mixed-address-search." + UUID().uuidString
+        defer { UserDefaults.standard.removeObject(forKey: "browser.web-history." + namespace) }
+        let workspace = BrowserWorkspaceModel(client: mobile, namespace: namespace)
+        await workspace.refresh(online: false)
+        let now = Date()
+        let exact = RecentWebpage(url: try #require(URL(string: "https://water.test/read")), title: "RIVER")
+        let prefix = RecentWebpage(url: try #require(URL(string: "https://guide.test/read")), title: "River map")
+        let contains = RecentWebpage(url: try #require(URL(string: "https://stories.test/read")), title: "Our river story")
+        workspace.recordWebVisit(exact, at: now)
+        workspace.recordWebVisit(prefix, at: now)
+        workspace.recordWebVisit(contains, at: now)
+        #expect(workspace.addressMatches(" river ", limit: 20, now: now).map(\.title) == ["River", "RIVER", "River map", "River guide", "The river"])
+        #expect(workspace.addressMatches("river", limit: 1, now: now).map(\.id) == ["exact"])
+        let cafe = RecentWebpage(url: try #require(URL(string: "https://cafe.test/read")), title: "Café")
+        workspace.recordWebVisit(cafe, at: now)
+        #expect(workspace.addressMatches("cafe", limit: 5, now: now).map(\.id) == ["bookmark"])
+        #expect(workspace.addressMatches("https://cafe.test/read", limit: 5, now: now).map(\.title) == ["Café"])
+        let host = RecentWebpage(url: try #require(URL(string: "https://river/long/path")), title: "Another page")
+        workspace.recordWebVisit(host, at: now)
+        #expect(workspace.addressMatches("river", limit: 5, now: now).map(\.title) == ["River", "Another page", "RIVER", "River map", "River guide"])
+    }
+
+    @Test func recentWebpageArtworkRestoresAndClearsWithBrowsingData() async throws {
+        let namespace = "recent-artwork." + UUID().uuidString
+        let key = "browser.recent-web." + namespace
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let url = try #require(URL(string: "https://reading.test/article"))
+        let icon = try #require(URL(string: "https://reading.test/icon.png"))
+        let artwork = try #require(URL(string: "https://images.test/cover.jpg"))
+        let page = RecentWebpage(url: url, title: "Forest", faviconURL: icon, previewImageURL: artwork)
+        UserDefaults.standard.set(try JSONEncoder().encode([page]), forKey: key)
+        let workspace = BrowserWorkspaceModel(client: client(WorkspaceTransport()), namespace: namespace)
+        #expect(workspace.recentWebpages == [page])
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { context in
+            UIColor.green.setFill(); context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+        }
+        var requested: [URL] = []
+        await workspace.cacheRecentImages { url in requested.append(url); return image }
+        #expect(requested == [icon, artwork])
+        await workspace.cacheRecentImages { _ in Issue.record("Artwork already in memory must not reload"); return image }
+        #expect(workspace.recentImages.count == 2)
+        workspace.clearHistory()
+        #expect(workspace.recentImages.isEmpty)
+        #expect(workspace.recentWebpages.isEmpty)
+        #expect(UserDefaults.standard.object(forKey: key) == nil)
     }
 
     @Test func pinnedIconsRestoreImmediatelyAndSurviveRenamingWithoutAnotherLoad() async throws {
@@ -278,6 +383,7 @@ private final class ScrollHistoryServer: Sendable {
         await workspace.open(details.text)
         let restored = BrowserWorkspaceModel(client: mobile, namespace: namespace)
         #expect(restored.recentTexts == [details.text])
+        #expect(restored.recentLibraryName(for: details.text) == details.library.name)
         let otherAccount = BrowserWorkspaceModel(client: mobile, namespace: namespace + ".other")
         #expect(otherAccount.recentTexts.isEmpty)
     }

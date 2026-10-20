@@ -82,11 +82,6 @@ struct ReaderScreen: View {
                     .id(item.id)
             }
         }
-        .overlay(alignment: .topTrailing) {
-            if workspace != nil, resourceActive {
-                articleActions.padding(.horizontal, 20).padding(.top, 8)
-            }
-        }
         .toolbar(.hidden, for: .tabBar)
         .toolbar(workspace == nil ? .visible : .hidden, for: .navigationBar)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
@@ -108,9 +103,6 @@ struct ReaderScreen: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if let client {
                     Menu("阅读选项", systemImage: "ellipsis") {
-                        ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
-                            Label("分享", systemImage: "square.and.arrow.up")
-                        }
                         Link(destination: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
                             Label("在网页版打开", systemImage: "safari")
                         }
@@ -132,15 +124,6 @@ struct ReaderScreen: View {
             else { definition = nil }
         }
     }
-    private var articleActions: some View {
-        HStack(spacing: 8) {
-            if let client {
-                ShareLink(item: client.webURL.appending(path: "read/\(article.id.rawValue)")) {
-                    articleActionIcon("square.and.arrow.up")
-                }.accessibilityLabel("分享")
-            }
-        }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
-    }
     private func articleAudioButton(document: ReadingDocument) -> ArticleAudioButton {
         ArticleAudioButton(textID: article.id, title: currentArticle.title, document: document,
             fullAudioID: fullArticleAudioID, canGenerate: canGenerateAudio, online: sync?.online != false,
@@ -153,12 +136,6 @@ struct ReaderScreen: View {
         fullArticleAudioID = details.fullArticleAudioId
         canGenerateAudio = details.library.owned && !details.library.shadow
     }
-    private func articleActionIcon(_ symbol: String) -> some View {
-        Image(systemName: symbol).font(.system(size: 17))
-            .frame(width: 44, height: 44).contentShape(Circle())
-            .glassEffect(.regular.interactive(), in: .circle)
-    }
-
     private func load() async {
         if let cached = await client?.cachedDocument(textID: article.id.rawValue), let document = cached.document {
             if case .loaded(let previous) = state, previous == document { }

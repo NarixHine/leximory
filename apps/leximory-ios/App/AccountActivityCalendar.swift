@@ -19,9 +19,9 @@ struct AccountActivityCalendar: View {
         let offset = calendar.component(.weekday, from: first) - 1
         let counts = Dictionary(details.activity.map { ($0.date, $0.count) }, uniquingKeysWith: +)
         let prefix = String(details.today.prefix(7))
-        return (0..<offset).map { Day(id: "blank-\($0)", number: nil, count: 0) } + range.map { number in
+        return (0..<offset).map { Day(id: "blank-\($0)", number: nil, count: nil) } + range.map { number in
             let key = String(format: "%@-%02d", prefix, number)
-            return Day(id: key, number: number, count: counts[key] ?? 0)
+            return Day(id: key, number: number, count: key > details.today ? nil : (counts[key] ?? 0))
         }
     }
     var body: some View {
@@ -44,7 +44,7 @@ struct AccountActivityCalendar: View {
                             .foregroundStyle(colors.foreground)
                             .background(colors.background, in: .rect(cornerRadius: 8))
                             .overlay { if day.id == details.today { RoundedRectangle(cornerRadius: 8).strokeBorder(colors.foreground.opacity(0.65), lineWidth: 1) } }
-                            .accessibilityLabel("\(day.id)，入库词汇 \(day.count) 个\(day.id == details.today ? "，今天" : "")")
+                            .accessibilityLabel(day.count.map { "\(day.id)，入库词汇 \($0) 个\(day.id == details.today ? "，今天" : "")" } ?? day.id)
                     } else { Color.clear.frame(height: 34).accessibilityHidden(true) }
                 }
             }
@@ -57,14 +57,15 @@ struct AccountActivityCalendar: View {
             }.font(LeximoryTypography.interface(11, style: .caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .trailing).accessibilityHidden(true)
         }.padding(20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
     }
-    private struct Day: Identifiable { let id: String; let number: Int?; let count: Int }
+    private struct Day: Identifiable { let id: String; let number: Int?; let count: Int? }
 }
 
 enum AccountHeatmapPalette {
     static let thresholds = [0, 1, 10, 20, 35]
     private static let shades: [UInt32] = [0xEDEEC9, 0xDDE7C7, 0xBFD8BD, 0x98C9A3, 0x77BFA3]
 
-    static func colors(for count: Int) -> (background: Color, foreground: Color) {
+    static func colors(for count: Int?) -> (background: Color, foreground: Color) {
+        guard let count else { return (.clear, .secondary) }
         let level = thresholds.lastIndex { count >= $0 } ?? 0
         let hex = shades[level]
         let red = Double((hex >> 16) & 255) / 255

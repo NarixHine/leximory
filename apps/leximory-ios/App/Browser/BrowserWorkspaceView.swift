@@ -86,10 +86,11 @@ struct BrowserWorkspaceView: View {
                                 hiddenRecentTextIDs: workspace.hiddenHomeRecents.textIDs,
                                 hiddenRecentWebURLs: workspace.hiddenHomeRecents.webpageURLs,
                                 hideRecentText: workspace.hideRecentText, hideRecentWebpage: workspace.hideRecentWebpage,
-                                compact: editingAddress, recent: workspace.recentTexts,
+                                compact: editingAddress, recent: workspace.recentTexts, recentImages: workspace.recentImages, libraryName: workspace.recentLibraryName,
                                 browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                                 ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
                                 addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
+                                openAddressMatch: { match in finishEditing(); Task { await workspace.openAddressMatch(match) } },
                                 resume: { text in finishEditing(); Task { await workspace.open(text) } })
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                                 .padding(.bottom, editingAddress ? chromeHeight + 12 : 0)
@@ -197,6 +198,10 @@ struct BrowserWorkspaceView: View {
             guard scenePhase == .active else { return }
             await workspace.cachePinIcons()
         }
+        .task(id: recentArtworkTaskID) {
+            guard scenePhase == .active else { return }
+            await workspace.cacheRecentImages()
+        }
         .task(id: sync?.revision) { await workspace.refresh(online: sync == nil) }
         .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
             guard editingAddress else { return }
@@ -256,6 +261,13 @@ struct BrowserWorkspaceView: View {
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
         }
         .onChange(of: workspace.browser.navigationID) { saveError = nil }
+    }
+    private var recentArtworkTaskID: [String] {
+        let state = [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
+        let pages = workspace.recentWebpages.flatMap { page -> [String] in
+            [page.url.absoluteString, page.iconURL?.absoluteString ?? "", page.previewImageURL?.absoluteString ?? ""]
+        }
+        return state + pages
     }
     private func beginFind(_ interaction: UIFindInteraction?) {
         guard let interaction else { return }

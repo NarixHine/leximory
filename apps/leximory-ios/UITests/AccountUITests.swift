@@ -1,6 +1,22 @@
 import XCTest
 
 final class AccountUITests: XCTestCase {
+    @MainActor func testFutureCalendarDaysDoNotReportWordCounts() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--account-fixtures"]
+        app.launch()
+        let future = app.staticTexts["2026-10-13"]
+        let today = app.staticTexts["2026-10-12，入库词汇 36 个，今天"]
+        for _ in 0..<4 where !today.isHittable { app.swipeUp() }
+        XCTAssertTrue(future.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["2026-10-13，入库词汇 0 个"].exists)
+        XCTAssertTrue(today.exists)
+        XCTAssertTrue(app.staticTexts["2026-10-11，入库词汇 33 个"].exists)
+        app.swipeUp()
+        capture("Account calendar keeps future days neutral")
+    }
+
     @MainActor func testAccountReplicatesSummaryAndNativeEditors() throws {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
