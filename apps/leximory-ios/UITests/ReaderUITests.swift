@@ -361,7 +361,8 @@ final class ReaderUITests: XCTestCase {
         let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
         XCTAssertTrue(passage.waitForExistence(timeout: 10))
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
-        let remove = app.menuItems["移除"]
+        let remove = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "移除")).firstMatch
+        if !remove.exists { app.buttons["下一页"].tap() }
         XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertFalse(app.menuItems["🖍️荧光笔"].exists)
         XCTAssertFalse(app.menuItems["颜色"].exists)
@@ -372,7 +373,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["暂无标记"].waitForExistence(timeout: 5), app.debugDescription)
     }
 
-    @MainActor func testPDFHighlighterShowsNativeColorPalette() {
+    @MainActor func testPDFHighlightColorsAppearAfterTappingHighlight() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
@@ -388,20 +389,28 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(passage.waitForExistence(timeout: 10))
         let word = passage.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
         word.tap()
-        let remove = app.menuItems["移除"]
+        for color in ["鼠尾草绿", "黄色", "绿色", "蓝色", "粉色", "紫色"] {
+            let swatch = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch
+            XCTAssertTrue(swatch.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(swatch.isHittable, "The \(color) swatch must be accessible in the native palette.")
+        }
+        capture(app, name: "PDF tapped highlight color palette")
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "蓝色")).firstMatch.tap()
+        word.tap()
+        let blue = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "蓝色")).firstMatch
+        XCTAssertTrue(blue.waitForExistence(timeout: 5), app.debugDescription)
+        let remove = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "移除")).firstMatch
+        if !remove.exists { app.buttons["下一页"].tap() }
         XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
         remove.tap()
         XCTAssertTrue(remove.waitForNonExistence(timeout: 5))
         word.press(forDuration: 1.2)
         let highlighter = app.menuItems["🖍️荧光笔"]
         XCTAssertTrue(highlighter.waitForExistence(timeout: 5), app.debugDescription)
-        highlighter.tap()
         for color in ["鼠尾草绿", "黄色", "绿色", "蓝色", "粉色", "紫色"] {
-            let swatch = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch
-            XCTAssertTrue(swatch.waitForExistence(timeout: 5), app.debugDescription)
-            XCTAssertTrue(swatch.isHittable, "The \(color) swatch must be accessible in the native palette.")
+            XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch.exists)
         }
-        capture(app, name: "PDF native highlighter color palette")
+        capture(app, name: "PDF one-tap highlighter")
     }
 
     @MainActor func testPDFBookmarkCardsShowPageAndNavigate() {

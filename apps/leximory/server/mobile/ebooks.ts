@@ -14,6 +14,7 @@ export interface EbookStore {
     savePosition(textId: string, userId: string, location: string): Promise<void>
     removeBookmark(input: { textId: string; userId: string; bookmarkId: number }): Promise<void>
     saveBookmark(input: {
+        bookmarkId?: number
         textId: string
         userId: string
         quote: string
@@ -29,6 +30,7 @@ const bookmarkInput = z
         chapter: z.string().max(512).nullable(),
         location: z.string().max(2048).nullable(),
         color: ebookHighlightColorSchema.default('sage'),
+        bookmarkId: z.number().int().positive().optional(),
     })
     .strict()
 const bookmarkRemovalInput = z.object({ bookmarkId: z.number().int().positive() }).strict()

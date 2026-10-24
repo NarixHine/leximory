@@ -541,8 +541,9 @@ public struct MobileClient: Sendable {
             baseRevision: upload.baseRevision?.uuidString.lowercased()
         ))).ok.body.json, to: PDFPageDrawing.self)
     }
-    public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?, color: EbookHighlightColor = .sage) async throws -> EbookBookmark {
-        let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location, color: color))).ok.body.json, to: EbookBookmark.self)
+    public func saveEbookBookmark(textID: String, quote: String, chapter: String?, location: String?, color: EbookHighlightColor = .sage, bookmarkID: Int? = nil) async throws -> EbookBookmark {
+        let bookmark = try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: quote, chapter: chapter, location: location, color: color, bookmarkId: bookmarkID))).ok.body.json, to: EbookBookmark.self)
+        await localStore?.saveEbookBookmark(textID: textID, bookmark: bookmark)
         // Refresh authoritative private bookmark metadata after a confirmed save.
         _ = try? await ebook(textID: textID)
         return bookmark

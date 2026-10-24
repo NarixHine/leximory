@@ -6916,6 +6916,12 @@
                   "color": {
                     "$ref": "#/components/schemas/EbookHighlightColor",
                     "default": "sage"
+                  },
+                  "bookmarkId": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "exclusiveMinimum": 0
                   }
                 },
                 "required": [

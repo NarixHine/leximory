@@ -10,6 +10,11 @@ struct EbookChapter: Identifiable {
     var id: String { location }
 }
 
+struct EbookBookmarkColorRequest: Equatable {
+    let bookmarkID: Int
+    let color: EbookHighlightColor
+}
+
 @MainActor @Observable final class EbookReaderState {
     var chapters: [EbookChapter] = []
     var positionSaver: EbookPositionSaver?
@@ -33,11 +38,35 @@ struct EbookChapter: Identifiable {
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
     var bookmarkErrorMessage = "标记未能保存，请重试。"
+    var bookmarkColorRequest: EbookBookmarkColorRequest?
+    private(set) var pendingBookmarkColors: Set<Int> = []
+    var lastHighlightColor: EbookHighlightColor {
+        get { EbookHighlightColor(rawValue: UserDefaults.standard.string(forKey: "pdfHighlightColor") ?? "") ?? .sage }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "pdfHighlightColor") }
+    }
+    func beginBookmarkColorChange(_ request: EbookBookmarkColorRequest) -> EbookBookmark? {
+        guard !readOnly, canBookmark, request.bookmarkID > 0,
+              !pendingBookmarkColors.contains(request.bookmarkID),
+              let index = bookmarks.firstIndex(where: { $0.id == request.bookmarkID }) else { return nil }
+        lastHighlightColor = request.color
+        let previous = bookmarks[index]
+        guard previous.color != request.color else { return nil }
+        pendingBookmarkColors.insert(previous.id)
+        bookmarks[index] = EbookBookmark(id: previous.id, quote: previous.quote, chapter: previous.chapter,
+                                        location: previous.location, createdAt: previous.createdAt, color: request.color)
+        return previous
+    }
+    func finishBookmarkColorChange(_ previous: EbookBookmark, saved: EbookBookmark?) {
+        pendingBookmarkColors.remove(previous.id)
+        guard let index = bookmarks.firstIndex(where: { $0.id == previous.id }) else { return }
+        bookmarks[index] = saved ?? previous
+        if saved == nil { bookmarkErrorMessage = "颜色未能保存，请重试。"; bookmarkNotice = UUID() }
+    }
     var bookmarkRemovalRequest: Int?
     private var pendingBookmarkRemovals: [Int: EbookBookmark] = [:]
     private var bookmarkRemovalOrder: [Int] = []
     func beginBookmarkRemoval(_ id: Int) -> EbookBookmark? {
-        guard let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
+        guard !pendingBookmarkColors.contains(id), let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
         if pendingBookmarkRemovals.isEmpty { bookmarkRemovalOrder = bookmarks.map(\.id) }
         let bookmark = bookmarks.remove(at: index)
         pendingBookmarkRemovals[id] = bookmark
@@ -213,6 +242,23 @@ struct EbookScreen: View {
             case .define:
                 definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil)
             case .bookmark(let color): Task { await saveBookmark(action.selection, color: color) }
+            }
+        }
+        .onChange(of: reader.bookmarkColorRequest) { _, request in
+            reader.bookmarkColorRequest = nil
+            guard let request, let previous = reader.beginBookmarkColorChange(request) else { return }
+            Task {
+                do {
+                    let saved: EbookBookmark
+                    if let client {
+                        saved = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: previous.quote,
+                            chapter: previous.chapter, location: previous.location, color: request.color, bookmarkID: previous.id)
+                    } else if ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures"),
+                              let updated = reader.bookmarks.first(where: { $0.id == previous.id }) {
+                        saved = updated
+                    } else { throw URLError(.unsupportedURL) }
+                    reader.finishBookmarkColorChange(previous, saved: saved)
+                } catch { reader.finishBookmarkColorChange(previous, saved: nil) }
             }
         }
         .onChange(of: reader.bookmarkRemovalRequest) { _, id in

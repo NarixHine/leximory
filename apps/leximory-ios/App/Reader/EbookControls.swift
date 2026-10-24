@@ -96,21 +96,9 @@ struct EbookThemePicker: View {
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
         let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
-            if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark(.sage), selection: selection) }
+            if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.format == "pdf" ? reader.lastHighlightColor : .sage), selection: selection) }
         }
-        let highlight: UIMenuElement
-        if reader.format == "pdf", reader.canBookmark, !reader.readOnly {
-            let colors = EbookHighlightColor.allCases.map { color in
-                UIAction(title: color.title, image: color.swatch) { _ in
-                    guard let selection = selection ?? reader.menuSelection else { return }
-                    reader.selectionAction = EbookSelectionAction(kind: .bookmark(color), selection: selection)
-                }
-            }
-            let palette = UIMenu(title: bookmark.title, image: bookmark.image, options: .displayAsPalette, children: colors)
-            palette.preferredElementSize = .small
-            highlight = palette
-        } else { highlight = bookmark }
-        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [highlight] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
+        return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
     }
     private static func searchAction(reader: EbookReaderState) -> UIAction {
         let selected = reader.selection ?? reader.menuSelection
@@ -162,8 +150,11 @@ extension EbookHighlightColor {
         return UIColor(red: CGFloat((rgb >> 16) & 255) / 255, green: CGFloat((rgb >> 8) & 255) / 255,
                        blue: CGFloat(rgb & 255) / 255, alpha: 0.45)
     }
-    var swatch: UIImage? {
-        UIImage(systemName: "circle.fill")?.withTintColor(ink.withAlphaComponent(1), renderingMode: .alwaysOriginal)
+    func swatch(selected: Bool = false) -> UIImage? {
+        let image = UIImage(systemName: selected ? "circle.inset.filled" : "circle.fill")?
+            .withTintColor(ink.withAlphaComponent(1), renderingMode: .alwaysOriginal)
+        image?.accessibilityLabel = title
+        return image
     }
 }
 
@@ -225,11 +216,26 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
         guard let reader, let highlight = activeHighlight else { return UIMenu(children: []) }
-        let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: reader.readOnly || !reader.canBookmark || highlight.bookmarkID < 0 ? [.destructive, .disabled] : [.destructive]) { [weak self] _ in
+        let canEdit = !reader.readOnly && reader.canBookmark && highlight.bookmarkID > 0
+            && !reader.pendingBookmarkColors.contains(highlight.bookmarkID)
+        let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: canEdit ? [.destructive] : [.destructive, .disabled]) { [weak self] _ in
             reader.bookmarkRemovalRequest = highlight.bookmarkID
             self?.dismissSelection()
         }
-        return UIMenu(children: EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove] + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
+        let bookmark = reader.bookmarks.first { $0.id == highlight.bookmarkID }
+        let colors = EbookHighlightColor.allCases.map { color in
+            let action = UIAction(title: "", image: color.swatch(selected: bookmark?.color == color), discoverabilityTitle: color.title,
+                     attributes: canEdit ? [] : .disabled,
+                     state: bookmark?.color == color ? .on : .off) { [weak self] _ in
+                reader.bookmarkColorRequest = EbookBookmarkColorRequest(bookmarkID: highlight.bookmarkID, color: color)
+                self?.dismissSelection()
+            }
+            action.accessibilityLabel = color.title
+            return action
+        }
+        let palette = UIMenu(title: "颜色", options: [.displayInline, .displayAsPalette], children: colors)
+        palette.preferredElementSize = .small
+        return UIMenu(children: [palette] + EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove] + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect {
         guard let activeHighlight, let page = activeHighlight.page else { return .zero }

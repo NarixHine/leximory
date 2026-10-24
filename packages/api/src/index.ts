@@ -490,6 +490,7 @@ export const mobileContract = {
                 chapter: z.string().max(512).nullable(),
                 location: z.string().max(2048).nullable(),
                 color: ebookHighlightColorSchema.default('sage'),
+                bookmarkId: z.number().int().positive().optional(),
             }),
         )
         .output(ebookBookmarkSchema),

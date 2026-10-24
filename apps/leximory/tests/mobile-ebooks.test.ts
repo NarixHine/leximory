@@ -152,7 +152,56 @@ test('ebook position and bookmark writes validate data and derive their owner', 
             color,
         })
     }
+    const recolored = await handler(
+        request('ebook-bookmarks', {
+            quote: 'river',
+            chapter: null,
+            location: '3',
+            color: 'blue',
+            bookmarkId: 1,
+        }),
+    )
+    assert.equal(recolored.status, 200)
+    assert.deepEqual(writes.at(-1), {
+        textId: 'book',
+        userId: 'reader',
+        quote: 'river',
+        chapter: null,
+        location: '3',
+        color: 'blue',
+        bookmarkId: 1,
+    })
     const writeCount = writes.length
+    for (const bookmarkId of [-1, 0, 1.5, '1', null]) {
+        assert.equal(
+            (
+                await handler(
+                    request('ebook-bookmarks', {
+                        quote: 'river',
+                        chapter: null,
+                        location: '3',
+                        color: 'blue',
+                        bookmarkId,
+                    }),
+                )
+            ).status,
+            400,
+        )
+    }
+    assert.equal(
+        (
+            await denied(
+                request('ebook-bookmarks', {
+                    quote: 'river',
+                    chapter: null,
+                    location: '3',
+                    color: 'blue',
+                    bookmarkId: 1,
+                }),
+            )
+        ).status,
+        404,
+    )
     for (const color of ['red', '', null, 1]) {
         assert.equal(
             (await handler(request('ebook-bookmarks', { quote: 'river', chapter: null, location: '3', color }))).status,

@@ -229,6 +229,15 @@ public actor LocalReadingStore {
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
                              expiresAt: book.expiresAt, location: location, bookmarks: book.bookmarks, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
     }
+    public func saveEbookBookmark(textID: String, bookmark: EbookBookmark) {
+        guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
+        var bookmarks = book.bookmarks
+        if let index = bookmarks.firstIndex(where: { $0.id == bookmark.id }) { bookmarks[index] = bookmark }
+        else { bookmarks.append(bookmark) }
+        save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
+                             expiresAt: book.expiresAt, location: book.location, bookmarks: bookmarks,
+                             sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
+    }
     public func removeEbookBookmark(textID: String, bookmarkID: Int) {
         guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,

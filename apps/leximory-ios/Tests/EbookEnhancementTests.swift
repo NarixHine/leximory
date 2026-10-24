@@ -6,6 +6,44 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct EbookEnhancementTests {
+    @Test func pdfSelectionOffersOneHighlighterAndRemembersRecoloring() throws {
+        let originalPreference = UserDefaults.standard.string(forKey: "pdfHighlightColor")
+        defer { UserDefaults.standard.set(originalPreference, forKey: "pdfHighlightColor") }
+        UserDefaults.standard.removeObject(forKey: "pdfHighlightColor")
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        #expect(reader.lastHighlightColor == .sage)
+        let actions = EbookLearningMenu.actions(reader: reader)
+        #expect(actions.count == 3)
+        #expect(actions[1] is UIAction)
+        let original = EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .sage)
+        reader.bookmarks = [original]
+        let previous = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .blue)))
+        #expect(reader.bookmarks == [EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .blue)])
+        #expect(EbookReaderState().lastHighlightColor == .blue)
+        reader.selection = EbookSelection(quote: "next", context: "the next word", offset: 4)
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader)[1] as? UIAction)
+        highlighter.performWithSender(nil, target: nil)
+        guard case .bookmark(.blue) = reader.selectionAction?.kind else {
+            Issue.record("A new highlight must immediately use the remembered blue color")
+            return
+        }
+        #expect(reader.selectionAction?.selection.quote == "next")
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)) == nil)
+        #expect(reader.beginBookmarkRemoval(42) == nil)
+        reader.finishBookmarkColorChange(previous, saved: nil)
+        #expect(reader.bookmarks == [original])
+        #expect(reader.bookmarkNotice != nil)
+        let retry = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)))
+        let saved = try #require(reader.bookmarks.first)
+        reader.finishBookmarkColorChange(retry, saved: saved)
+        #expect(reader.bookmarks.first?.color == .pink)
+        #expect(EbookReaderState().lastHighlightColor == .pink)
+        reader.readOnly = true
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .yellow)) == nil)
+        #expect(reader.bookmarks.first?.color == .pink)
+    }
+
     @Test(arguments: [false, true])
     func livePDFHighlightsDoNotStackWhenSavingOverlappingSelections(initialDark: Bool) async throws {
         let quote = "alpha bravo charlie delta echo"
