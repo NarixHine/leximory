@@ -7,7 +7,7 @@ import SwiftUI
 @testable import Leximory
 
 @Suite(.serialized) @MainActor struct PDFDrawingTests {
-    @Test func pencilOnlyDrawingPassesTextTouchesToPDFKit() async throws {
+    @Test func pencilOnlyDrawingReceivesInitialHitBeforeTouchesAreAvailable() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let (model, data, _) = try fixture(root: root, text: "A quiet river runs through the valley.")
@@ -36,16 +36,13 @@ import SwiftUI
         try await Task.sleep(for: .milliseconds(100))
         let point = overlay.convert(CGPoint(x: 100, y: 100), to: pdf)
         let hit = try #require(pdf.hitTest(point, with: nil))
-        #expect(hit.isDescendant(of: overlay) == false)
-        #expect(pdf.isInMarkupMode == false)
+        #expect(hit.isDescendant(of: overlay.canvas), "Initial hit testing must reach PencilKit before UIEvent has populated allTouches.")
+        #expect(pdf.isInMarkupMode)
         #expect(overlay.canvas.isDrawingEnabled)
         #expect(model.drawing)
-        for input in [UITouch.TouchType.direct, .indirectPointer] {
-            let event = DrawingEvent(input: input)
-            #expect(try #require(pdf.hitTest(point, with: event)).isDescendant(of: overlay) == false)
-        }
-        let pencilEvent = DrawingEvent(input: .pencil)
-        #expect(try #require(pdf.hitTest(point, with: pencilEvent)).isDescendant(of: overlay.canvas))
+        let initialEvent = UIEvent()
+        #expect(initialEvent.allTouches?.isEmpty != false)
+        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay.canvas))
         overlay.canvas.drawing = drawing()
         provider.canvasViewDrawingDidChange(overlay.canvas)
         let strokes = overlay.canvas.drawing.dataRepresentation()
@@ -65,15 +62,15 @@ import SwiftUI
         provider.update()
         try await Task.sleep(for: .milliseconds(100))
         #expect(pdf.isInMarkupMode)
-        #expect(try #require(pdf.hitTest(point, with: DrawingEvent(input: .direct))).isDescendant(of: overlay.canvas))
+        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay.canvas))
         overlay.canvas.drawingPolicy = .pencilOnly
         provider.update()
         try await Task.sleep(for: .milliseconds(100))
-        #expect(pdf.isInMarkupMode == false)
+        #expect(pdf.isInMarkupMode)
         #expect(overlay.canvas.drawing.dataRepresentation() == strokes)
         await model.toggleDrawing(); provider.update()
         try await Task.sleep(for: .milliseconds(100))
-        #expect(try #require(pdf.hitTest(point, with: pencilEvent)).isDescendant(of: overlay) == false)
+        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay) == false)
     }
 
     @Test(arguments: [false, true])
@@ -393,18 +390,6 @@ import SwiftUI
         let model = PDFNotesModel(book: LocalEbook(descriptor: descriptor, data: data, location: nil), store: store, sync: nil)
         return (model, data, store)
     }
-}
-
-@MainActor private final class DrawingTouch: UITouch {
-    private let input: UITouch.TouchType
-    init(input: UITouch.TouchType) { self.input = input; super.init() }
-    override var type: UITouch.TouchType { input }
-}
-
-@MainActor private final class DrawingEvent: UIEvent {
-    private let touch: UITouch
-    init(input: UITouch.TouchType) { touch = DrawingTouch(input: input); super.init() }
-    override var allTouches: Set<UITouch>? { [touch] }
 }
 
 @MainActor private struct DrawingReader: View {

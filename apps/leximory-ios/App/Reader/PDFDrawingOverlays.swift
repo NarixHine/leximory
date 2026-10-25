@@ -33,6 +33,8 @@ import LeximoryCore
         #if DEBUG && targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures"),
            ProcessInfo.processInfo.arguments.contains("--pdf-pencil-only") { canvas.drawingPolicy = .pencilOnly }
+        if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures"),
+           ProcessInfo.processInfo.arguments.contains("--pdf-drawing-fixtures") { canvas.drawingPolicy = .anyInput }
         #endif
         canvas.isDrawingEnabled = false
         canvas.contentSize = size
@@ -67,12 +69,11 @@ import LeximoryCore
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         updateInput?()
         guard canvas.isDrawingEnabled else { return nil }
-        if allowsFingerSelection, event?.allTouches?.contains(where: { $0.type == .pencil }) != true { return nil }
         return super.hitTest(point, with: event)
     }
 }
 
-@MainActor final class PDFDrawingOverlays: NSObject, @MainActor PDFPageOverlayViewProvider, PKCanvasViewDelegate, PKToolPickerObserver {
+@MainActor final class PDFDrawingOverlays: NSObject, @MainActor PDFPageOverlayViewProvider, PKCanvasViewDelegate, PKToolPickerObserver, UIGestureRecognizerDelegate {
     static var supportsDrawing: Bool {
         #if targetEnvironment(macCatalyst)
         false
@@ -86,6 +87,8 @@ import LeximoryCore
     private let picker: PKToolPicker
     private weak var activeCanvas: PKCanvasView?
     private weak var selectionResponder: UIView?
+    private lazy var textSelection = UILongPressGestureRecognizer(target: self, action: #selector(selectText(_:)))
+    private var selectionAnchor: (page: PDFPage, range: NSRange)?
     private var presentationUpdate: Task<Void, Never>?
     private var stopped = false
     private weak var navigationPan: UIPanGestureRecognizer?
@@ -99,6 +102,11 @@ import LeximoryCore
         picker = Self.makeToolPicker()
         super.init()
         picker.addObserver(self)
+        textSelection.delegate = self
+        textSelection.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue),
+                                          NSNumber(value: UITouch.TouchType.indirectPointer.rawValue)]
+        textSelection.isEnabled = false
+        pdf.addGestureRecognizer(textSelection)
         NotificationCenter.default.addObserver(self, selector: #selector(scaleChanged), name: .PDFViewScaleChanged, object: pdf)
         NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: pdf)
     }
@@ -183,7 +191,8 @@ import LeximoryCore
             // Release PencilKit before PDFKit changes the page's interaction mode.
             hidePicker()
         }
-        let markup = model.drawing && !allowsFingerSelection
+        // Initial hit testing can precede UIEvent.allTouches. Let PencilKit filter its own input.
+        let markup = model.drawing
         if let pdf, pdf.isInMarkupMode != markup {
             hidePicker()
             pdf.isInMarkupMode = markup
@@ -219,15 +228,46 @@ import LeximoryCore
         guard let overlay = overlays[document.index(for: page)], overlay.loaded else { hidePicker(); return }
         activate(overlay.canvas)
     }
-    func drawingHitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard !stopped, model.drawing else { return nil }
-        configureNavigation()
-        if pdf?.isInMarkupMode != !allowsFingerSelection { schedulePresentationUpdate() }
-        guard allowsFingerSelection, event?.allTouches?.contains(where: { $0.type == .pencil }) == true,
-              let pdf, let page = pdf.page(for: point, nearest: false), let document = pdf.document,
-              let overlay = overlays[document.index(for: page)] else { return nil }
-        // PDFKit stays in text mode; send Pencil touches to its page-local canvas ourselves.
-        return overlay.hitTest(overlay.convert(point, from: pdf), with: event)
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        model.drawing && allowsFingerSelection && !overlays.values.contains {
+            [.began, .changed].contains($0.canvas.drawingGestureRecognizer.state)
+        }
+    }
+    @objc private func selectText(_ gesture: UILongPressGestureRecognizer) {
+        guard let pdf = pdf as? LearningPDFView else { return }
+        switch gesture.state {
+        case .began:
+            pdf.dismissSelection()
+            selectionAnchor = nil
+            if let word = word(at: gesture.location(in: pdf)) {
+                selectionAnchor = (word.page, word.range)
+                pdf.setCurrentSelection(word.selection, animate: false)
+            }
+        case .changed:
+            guard let anchor = selectionAnchor, let word = word(at: gesture.location(in: pdf)),
+                  let document = pdf.document else { return }
+            let startsBeforeAnchor = document.index(for: word.page) < document.index(for: anchor.page) ||
+                (word.page === anchor.page && word.range.location < anchor.range.location)
+            let start = startsBeforeAnchor ? (word.page, word.range) : (anchor.page, anchor.range)
+            let end = startsBeforeAnchor ? (anchor.page, anchor.range) : (word.page, word.range)
+            pdf.setCurrentSelection(document.selection(from: start.0, atCharacterIndex: start.1.location,
+                to: end.0, atCharacterIndex: NSMaxRange(end.1) - 1), animate: false)
+        case .ended:
+            if selectionAnchor != nil { pdf.presentTextSelectionMenu() }
+            selectionAnchor = nil
+        case .cancelled, .failed:
+            if selectionAnchor != nil { pdf.dismissSelection() }
+            selectionAnchor = nil
+        default: break
+        }
+    }
+    private func word(at point: CGPoint) -> (page: PDFPage, range: NSRange, selection: PDFSelection)? {
+        guard let pdf, let page = pdf.page(for: point, nearest: false),
+              let selection = page.selectionForWord(at: pdf.convert(point, to: page)),
+              selection.numberOfTextRanges(on: page) > 0 else { return nil }
+        let range = selection.range(at: 0, on: page)
+        guard range.location != NSNotFound, range.length > 0 else { return nil }
+        return (page, range, selection)
     }
     private func activate(_ canvas: PKCanvasView) {
         guard canvas.window != nil else { return }
@@ -246,6 +286,8 @@ import LeximoryCore
         canvas.resignFirstResponder()
     }
     private func configureNavigation() {
+        let selectionEnabled = model.drawing && allowsFingerSelection
+        if textSelection.isEnabled != selectionEnabled { textSelection.isEnabled = selectionEnabled }
         if navigationPan == nil {
             var parent = pdf?.documentView?.superview
             while let view = parent {
@@ -298,6 +340,8 @@ import LeximoryCore
         presentationUpdate?.cancel(); presentationUpdate = nil
         for overlay in overlays.values { capture(overlay); overlay.load?.cancel(); picker.removeObserver(overlay.canvas) }
         model.flush(); hidePicker()
+        pdf?.removeGestureRecognizer(textSelection)
+        selectionAnchor = nil
         navigationPan?.minimumNumberOfTouches = originalMinimum; navigationPan?.allowedTouchTypes = originalTouchTypes
         if pdf?.isInMarkupMode == true { pdf?.isInMarkupMode = false }
         picker.removeObserver(self); overlays.removeAll()

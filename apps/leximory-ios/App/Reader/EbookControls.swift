@@ -189,10 +189,6 @@ final class EbookPDFHighlight: PDFAnnotation {
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if let hit = (pageOverlayViewProvider as? PDFDrawingOverlays)?.drawingHitTest(point, with: event) { return hit }
-        return super.hitTest(point, with: event)
-    }
     var reader: EbookReaderState?
     var highlightAtTouchDown: EbookPDFHighlight?
     private var activeHighlight: EbookPDFHighlight?
@@ -214,8 +210,20 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: nil, sourcePoint: point))
         return true
     }
+    func presentTextSelectionMenu() {
+        guard reader?.selection != nil, let selection = currentSelection, let page = selection.pages.first else { return }
+        activeHighlight = nil
+        if highlightMenu.view == nil { addInteraction(highlightMenu) }
+        let rect = convert(selection.bounds(for: page), from: page)
+        highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: nil,
+            sourcePoint: CGPoint(x: rect.midX, y: rect.midY)))
+    }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
-        guard let reader, let highlight = activeHighlight else { return UIMenu(children: []) }
+        guard let reader else { return UIMenu(children: []) }
+        guard let highlight = activeHighlight else {
+            let copy = UIAction(title: "拷贝", image: UIImage(systemName: "doc.on.doc")) { [weak self] _ in self?.copy(nil) }
+            return UIMenu(children: EbookLearningMenu.actions(reader: reader) + [copy] + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
+        }
         let canEdit = !reader.readOnly && reader.canBookmark && highlight.bookmarkID > 0
             && !reader.pendingBookmarkColors.contains(highlight.bookmarkID)
         let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"), attributes: canEdit ? [.destructive] : [.destructive, .disabled]) { [weak self] _ in
@@ -238,6 +246,9 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         return UIMenu(children: [palette] + EbookLearningMenu.actions(reader: reader, includeBookmark: false) + [remove] + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect {
+        if activeHighlight == nil, let selection = currentSelection, let page = selection.pages.first {
+            return convert(selection.bounds(for: page), from: page)
+        }
         guard let activeHighlight, let page = activeHighlight.page else { return .zero }
         return convert(activeHighlight.bounds, from: page)
     }

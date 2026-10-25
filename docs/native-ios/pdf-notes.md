@@ -4,6 +4,8 @@ The iOS PDF reader uses PencilKit page overlays with the native tool picker. The
 
 With Only Draw with Apple Pencil enabled in the system settings or tool picker, fingers can select PDF text, open learning annotations, and use the text highlighter while the handwriting session and tool picker stay open. Pencil touches go to the page canvas; a new stroke dismisses the text selection and resumes drawing. Finger drawing retains two-finger scrolling and reserves page touches for handwriting.
 
+During Pencil-only handwriting, long-press a word with a finger and lift to open its annotation menu. Drag before lifting to extend the selection across words or pages. PDFKit stays in markup mode so the initial Pencil contact reaches PencilKit, even before UIKit populates the event's touches. A finger-only long-press recognizer selects PDF text without redirecting Pencil touches during hit testing.
+
 The original PDF is never rewritten. Each page stores an editable PencilKit archive. An encoded empty drawing is a normal update, so erased strokes do not return after synchronization. The canvas and tool picker both cap PencilKit content at version 4, available on the app's iOS 26 minimum.
 
 ## Storage
@@ -41,7 +43,7 @@ Mac Catalyst does not show Apple's tool picker. The handwriting control is disab
 
 ## Preliminary checks and human verification
 
-Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native simulator tests cover input routing, drawing persistence, zoom coordinates, and ink appearance. A UI regression test selects PDF text and opens a learning annotation while the handwriting session and tool picker remain active.
+Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native simulator tests cover initial hit testing before touch data exists, drawing persistence, zoom coordinates, and ink appearance. UI regression tests draw a real stroke and compare its rendered ink after reopening the PDF, and select PDF text and open a learning annotation while the handwriting session and tool picker remain active.
 
 Physical Pencil input, palm rejection, and cross-device synchronization still require human verification. No physical-device installation or live Supabase writes were performed for testing.
 
