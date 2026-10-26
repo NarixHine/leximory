@@ -2,80 +2,6 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
-    @MainActor func testPDFStrokeSurvivesFinishingAndReopening() {
-        let app = launch(extraArguments: ["--pdf-drawing-fixtures"]); defer { restore(app) }
-        func openPDF() {
-            app.buttons["我的书签"].tap()
-            let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
-            if !pdf.exists {
-                let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
-                XCTAssertTrue(folder.waitForExistence(timeout: 5)); folder.tap()
-            }
-            XCTAssertTrue(pdf.waitForExistence(timeout: 10)); pdf.tap()
-            let reader = app.otherElements["ebook-reader"]
-            XCTAssertTrue(reader.waitForExistence(timeout: 10))
-            let toggle = app.buttons["pdf-drawing-toggle"]
-            if !toggle.isHittable { reader.tap() }
-            XCTAssertTrue(toggle.waitForExistence(timeout: 5)); toggle.tap()
-            XCTAssertEqual(toggle.label, "完成手写")
-        }
-        openPDF()
-        let reader = app.otherElements["ebook-reader"]
-        func strokeImage() -> Data? {
-            let image = reader.screenshot().image
-            let rect = CGRect(x: image.size.width * 0.4, y: image.size.height * 0.33,
-                width: image.size.width * 0.2, height: image.size.height * 0.04)
-                .applying(CGAffineTransform(scaleX: image.scale, y: image.scale))
-            return image.cgImage?.cropping(to: rect).flatMap { UIImage(cgImage: $0).pngData() }
-        }
-        let blank = strokeImage()
-        XCTAssertNotNil(blank)
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.35)).press(forDuration: 0.05,
-            thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.35)))
-        let drawn = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let image = strokeImage() else { return false }
-            return image != blank
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [drawn], timeout: 5), .completed, "A real drag must render a stroke.")
-        let ink = strokeImage()
-        app.buttons["pdf-drawing-toggle"].tap()
-        app.buttons["首页"].tap()
-        openPDF()
-        let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in strokeImage() == ink }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 5), .completed, "Reopening must restore the visible stroke.")
-    }
-
-    @MainActor func testPDFTextAnnotationWhilePencilToolsStayOpen() {
-        let app = launch(extraArguments: ["--pdf-pencil-only"]); defer { restore(app) }
-        app.buttons["我的书签"].tap()
-        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
-        if folder.waitForExistence(timeout: 5) { folder.tap() }
-        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
-        XCTAssertTrue(pdf.waitForExistence(timeout: 10)); pdf.tap()
-        let reader = app.otherElements["ebook-reader"]
-        XCTAssertTrue(reader.waitForExistence(timeout: 10))
-        let toggle = app.buttons["pdf-drawing-toggle"]
-        if !toggle.isHittable { reader.tap() }
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        app.buttons["ebook-contents"].tap(); app.buttons["2"].tap()
-        toggle.tap()
-        XCTAssertEqual(toggle.label, "完成手写")
-        XCTAssertTrue(app.otherElements["Drawing-Palette"].waitForExistence(timeout: 5))
-        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
-        XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
-        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 0.7,
-            thenDragTo: passage.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)))
-        let lookup = app.menuItems["🐈 猫忆查"]
-        XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
-        XCTAssertEqual(toggle.label, "完成手写")
-        XCTAssertTrue(app.otherElements["Drawing-Palette"].exists, app.debugDescription)
-        lookup.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["final PDF page remains"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertEqual(toggle.label, "完成手写")
-    }
-
     @MainActor func testPDFToolPalettePersistence() {
         let app = launch(); defer { restore(app) }
         func openPDFTools() {
@@ -285,6 +211,46 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["browser-more"].isHittable)
     }
+    @MainActor func testPDFFindEndsHandwritingAndDismissesOnPageTapAndBackground() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        if !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 10))
+        let drawing = app.buttons["pdf-drawing-toggle"]
+        if !drawing.isHittable { reader.tap() }
+        XCTAssertTrue(drawing.waitForExistence(timeout: 5)); drawing.tap()
+        XCTAssertEqual(drawing.label, "完成手写")
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        for identifier in ["pdf-drawing-toggle", "ebook-contents", "ebook-bookmarks", "ebook-settings"] {
+            XCTAssertTrue(app.buttons[identifier].isHittable)
+        }
+        func beginFind() {
+            app.buttons["browser-more"].tap()
+            let find = app.buttons["在 PDF 中查找"]
+            XCTAssertTrue(find.waitForExistence(timeout: 5)); find.tap()
+            XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
+        }
+        beginFind()
+        XCTAssertEqual(drawing.label, "手写笔记")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Full-height PDF Find after handwriting"; screenshot.lifetime = .keepAlways; add(screenshot)
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-more"].isHittable)
+        beginFind()
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-more"].isHittable)
+        XCTAssertGreaterThan(reader.frame.height, app.frame.height * 0.8)
+    }
+
     @MainActor func testHomePinCanBeCreatedRenamedAndDeleted() {
         let app = launch(); defer { restore(app) }
         app.buttons["我的书签"].tap()

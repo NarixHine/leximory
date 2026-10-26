@@ -34,26 +34,58 @@ import LeximoryCore
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
     @Test(arguments: EbookHighlightColor.allCases)
-    func pdfColorPaletteKeepsTheSelectionWhenChoosingAColor(color: EbookHighlightColor) throws {
+    func pdfRetainedSelectionUsesSavedHighlightActionsAfterCreatingAndRecoloring(color: EbookHighlightColor) throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.canBookmark = true
-        reader.selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
-        let menu = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIMenu)
-        #expect(menu.options.contains(.displayAsPalette))
-        let action = try #require(menu.children.compactMap { $0 as? UIAction }.first { $0.title == color.title })
-        reader.selection = nil
-        let button = UIButton(primaryAction: action)
-        button.sendActions(for: .touchUpInside)
-        let selectionAction = try #require(reader.selectionAction)
-        guard case .bookmark(let selectedColor) = selectionAction.kind else { Issue.record("Expected a highlight action"); return }
-        #expect(selectedColor == color)
-        #expect(selectionAction.selection.quote == "river")
-        #expect(selectionAction.selection.location == "3")
-        let pending = reader.beginBookmark(selectionAction.selection, color: selectedColor)
-        #expect(reader.bookmarks.first?.color == color)
-        let saved = EbookBookmark(id: 42, quote: pending.quote, chapter: pending.chapter, location: pending.location, color: color)
+        let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
+        reader.selection = selection; reader.menuSelection = selection
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        UIButton(primaryAction: highlighter).sendActions(for: .touchUpInside)
+        let action = try #require(reader.selectionAction)
+        guard case .bookmark = action.kind else { Issue.record("Expected a highlight action"); return }
+        let pending = reader.beginBookmark(action.selection)
+        #expect(reader.selection == selection)
+        let saved = EbookBookmark(id: 42, quote: "river", chapter: nil, location: "3")
         reader.finishBookmark(pending, saved: saved)
-        #expect(reader.bookmarks == [saved])
+        // PDFKit can rebuild its own menu while retaining the same native selection.
+        reader.selection = nil
+        let menu = EbookLearningMenu.actions(reader: reader)
+        #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
+        let palette = try #require(menu.first as? UIMenu)
+        let swatch = try #require(palette.children.compactMap { $0 as? UIAction }.first { $0.accessibilityLabel == color.title })
+        #expect(swatch.attributes.contains(.disabled) == false)
+        UIButton(primaryAction: swatch).sendActions(for: .touchUpInside)
+        let request = try #require(reader.bookmarkColorRequest)
+        #expect(request.bookmarkID == 42 && request.color == color)
+        if let previous = reader.beginBookmarkColorChange(request) {
+            reader.finishBookmarkColorChange(previous, saved: EbookBookmark(id: 42, quote: "river", chapter: nil, location: "3", color: color))
+        }
+        let reopened = EbookLearningMenu.actions(reader: reader)
+        let reopenedPalette = try #require(reopened.first as? UIMenu)
+        #expect(reopenedPalette.children.compactMap { $0 as? UIAction }.allSatisfy { !$0.attributes.contains(.disabled) })
+        let remove = try #require(reopened.first { $0.title == "移除" } as? UIAction)
+        #expect(remove.attributes.contains(.disabled) == false)
+        UIButton(primaryAction: remove).sendActions(for: .touchUpInside)
+        #expect(reader.bookmarkRemovalRequest == 42)
+    }
+
+    @Test func pdfHighlightActionsRespectPendingSavesAndReadOnlyAccess() throws {
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        let selection = EbookSelection(quote: "river", context: "river", offset: 0, location: "1")
+        reader.selection = selection
+        let pending = reader.beginBookmark(selection)
+        func removeAction() throws -> UIAction {
+            try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "移除" } as? UIAction)
+        }
+        #expect(try removeAction().attributes.contains(.disabled))
+        reader.finishBookmark(pending, saved: EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1"))
+        let savedAction = try removeAction()
+        #expect(savedAction.attributes.contains(.disabled) == false)
+        reader.readOnly = true
+        #expect(try removeAction().attributes.contains(.disabled))
+        UIButton(primaryAction: savedAction).sendActions(for: .touchUpInside)
+        #expect(reader.bookmarkRemovalRequest == nil)
     }
     @Test(arguments: [false, true])
     func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {

@@ -7,72 +7,6 @@ import SwiftUI
 @testable import Leximory
 
 @Suite(.serialized) @MainActor struct PDFDrawingTests {
-    @Test func pencilOnlyDrawingReceivesInitialHitBeforeTouchesAreAvailable() async throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let (model, data, _) = try fixture(root: root, text: "A quiet river runs through the valley.")
-        let pdf = LearningPDFView(frame: CGRect(x: 0, y: 0, width: 400, height: 600))
-        let reader = EbookReaderState()
-        pdf.reader = reader
-        let coordinator = PDFReaderView.Coordinator(reader: reader)
-        coordinator.observe(pdf)
-        let provider = PDFDrawingOverlays(model: model, pdf: pdf)
-        pdf.pageOverlayViewProvider = provider
-        pdf.document = PDFDocument(data: data)
-        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first { $0.isKeyWindow }
-        let window = UIWindow(windowScene: scene)
-        let host = UIViewController()
-        host.view = pdf; window.rootViewController = host; window.makeKeyAndVisible()
-        defer {
-            provider.tearDown(); window.isHidden = true; window.rootViewController = nil; previous?.makeKey()
-        }
-        pdf.layoutIfNeeded()
-        try await Task.sleep(for: .milliseconds(100))
-        let overlay = try #require(provider.overlays[0])
-        await overlay.load?.value
-        overlay.canvas.drawingPolicy = .pencilOnly
-        await model.toggleDrawing(); provider.update()
-        try await Task.sleep(for: .milliseconds(100))
-        let point = overlay.convert(CGPoint(x: 100, y: 100), to: pdf)
-        let hit = try #require(pdf.hitTest(point, with: nil))
-        #expect(hit.isDescendant(of: overlay.canvas), "Initial hit testing must reach PencilKit before UIEvent has populated allTouches.")
-        #expect(pdf.isInMarkupMode)
-        #expect(overlay.canvas.isDrawingEnabled)
-        #expect(model.drawing)
-        let initialEvent = UIEvent()
-        #expect(initialEvent.allTouches?.isEmpty != false)
-        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay.canvas))
-        overlay.canvas.drawing = drawing()
-        provider.canvasViewDrawingDidChange(overlay.canvas)
-        let strokes = overlay.canvas.drawing.dataRepresentation()
-        let page = try #require(pdf.document?.page(at: 0))
-        pdf.setCurrentSelection(page.selection(for: NSRange(location: 2, length: 5)), animate: false)
-        #expect(reader.selection?.quote == "quiet")
-        #expect(reader.selection?.location == "1")
-        provider.update()
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(reader.selection?.quote == "quiet")
-        provider.canvasViewDidBeginUsingTool(overlay.canvas)
-        #expect(pdf.currentSelection == nil)
-        #expect(reader.selection == nil)
-        #expect(model.drawing)
-        #expect(overlay.canvas.isFirstResponder)
-        overlay.canvas.drawingPolicy = .anyInput
-        provider.update()
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(pdf.isInMarkupMode)
-        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay.canvas))
-        overlay.canvas.drawingPolicy = .pencilOnly
-        provider.update()
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(pdf.isInMarkupMode)
-        #expect(overlay.canvas.drawing.dataRepresentation() == strokes)
-        await model.toggleDrawing(); provider.update()
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(try #require(pdf.hitTest(point, with: initialEvent)).isDescendant(of: overlay) == false)
-    }
-
     @Test(arguments: [false, true])
     func coloredMarkersKeepTheirHueWhenAppearanceChanges(initialDark: Bool) async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
@@ -270,8 +204,10 @@ import SwiftUI
         overlay.canvas.drawing = drawing()
         provider.canvasViewDrawingDidChange(overlay.canvas)
         pdf.drawingCanvas = overlay.canvas
-        await model.toggleDrawing()
-        provider.update()
+        await provider.finishDrawing()
+        #expect(!model.drawing)
+        #expect(!overlay.canvas.isDrawingEnabled)
+        #expect(!overlay.canvas.isFirstResponder)
         try await Task.sleep(for: .milliseconds(100))
         #expect(!pdf.isInMarkupMode)
         #expect(!overlay.canvas.isFirstResponder)
@@ -376,13 +312,10 @@ import SwiftUI
         if let pdf = view as? PDFView { return pdf }
         return view.subviews.lazy.compactMap { pdfView(in: $0) }.first
     }
-    private func fixture(root: URL, text: String? = nil) throws -> (PDFNotesModel, Data, PDFNotesStore) {
+    private func fixture(root: URL) throws -> (PDFNotesModel, Data, PDFNotesStore) {
         let origin = URL(string: "https://notes.example")!
         let store = try PDFNotesStore(root: root, origin: origin, accountID: "test")
-        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData {
-            $0.beginPage()
-            if let text { (text as NSString).draw(at: CGPoint(x: 40, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 16)]) }
-        }
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { $0.beginPage() }
         let text = CatalogText(id: "book", libraryId: "folder", title: "Book", topics: [], emoji: nil, createdAt: nil, format: "ebook")
         let library = CatalogLibrary(id: "folder", name: "Books", language: "en", owned: true, archived: false, shadow: false)
         let descriptor = EbookDescriptor(text: text, library: library, url: origin.appending(path: "file.pdf"), format: "pdf",

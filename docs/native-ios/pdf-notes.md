@@ -1,10 +1,6 @@
 # PDF handwriting
 
-The iOS PDF reader uses PencilKit page overlays with the native tool picker. The pencil button enters handwriting mode; the checkmark finishes it. Notes remain visible in reading mode, and PDF text selection and existing quote bookmarks retain their own behavior. Handwriting remains editable offline, independently of network-only learning actions.
-
-With Only Draw with Apple Pencil enabled in the system settings or tool picker, fingers can select PDF text, open learning annotations, and use the text highlighter while the handwriting session and tool picker stay open. Pencil touches go to the page canvas; a new stroke dismisses the text selection and resumes drawing. Finger drawing retains two-finger scrolling and reserves page touches for handwriting.
-
-During Pencil-only handwriting, long-press a word with a finger and lift to open its annotation menu. Drag before lifting to extend the selection across words or pages. PDFKit stays in markup mode so the initial Pencil contact reaches PencilKit, even before UIKit populates the event's touches. A finger-only long-press recognizer selects PDF text without redirecting Pencil touches during hit testing.
+The iOS PDF reader uses PencilKit page overlays with the native tool picker. The pencil button enters handwriting mode; the checkmark returns to reading mode for text selection, lookup, and quote bookmarks. Notes remain visible in reading mode. Handwriting remains editable offline, independently of network-only learning actions.
 
 The original PDF is never rewritten. Each page stores an editable PencilKit archive. An encoded empty drawing is a normal update, so erased strokes do not return after synchronization. The canvas and tool picker both cap PencilKit content at version 4, available on the app's iOS 26 minimum.
 
@@ -43,7 +39,7 @@ Mac Catalyst does not show Apple's tool picker. The handwriting control is disab
 
 ## Preliminary checks and human verification
 
-Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native simulator tests cover initial hit testing before touch data exists, drawing persistence, zoom coordinates, and ink appearance. UI regression tests draw a real stroke and compare its rendered ink after reopening the PDF, and select PDF text and open a learning annotation while the handwriting session and tool picker remain active.
+Automated checks cover authorization, version/page isolation, conditional database queries, duplicate requests, frozen upload retries after a lost response, newer edits during acknowledgment, conflict resolution, storage failure recovery, cache-independent source retention, payload limits, and generated API serialization. Native tests cover drawing persistence, zoom coordinates, ink appearance, and tool-picker restoration. PDF selection UI checks run in reading mode.
 
 Physical Pencil input, palm rejection, and cross-device synchronization still require human verification. No physical-device installation or live Supabase writes were performed for testing.
 
@@ -51,7 +47,7 @@ Human checks:
 
 1. Open a real PDF, enter handwriting, draw with the native tools, partially erase, and finish. Reopen it and erase another part of an earlier stroke.
 2. Repeat offline, terminate/relaunch, reconnect, and confirm the drawing arrives as editable strokes on another device.
-3. Check finger drawing and two-finger scrolling on iPhone. On iPad, check Pencil drawing, finger navigation, palm rejection, and the system finger-drawing preference. With Pencil-only drawing enabled, select text by finger, trigger lookup or highlighting, then resume Pencil drawing without finishing handwriting.
+3. Check finger drawing and two-finger scrolling on iPhone. On iPad, check Pencil drawing, finger navigation, palm rejection, and the system finger-drawing preference.
 4. Check continuous scrolling, zoom, crop offsets, rotated pages, orientation changes, narrow windows, ink colors in light/dark appearance, and return to word selection/bookmark controls.
 5. Edit the same page on two devices, including an erasure. Confirm neither version silently replaces the other and that each resolution choice behaves as labeled.
 6. Erase the final stroke, reopen on both devices, and check that it stays erased. Replace the PDF and confirm old notes are not placed on new pages.

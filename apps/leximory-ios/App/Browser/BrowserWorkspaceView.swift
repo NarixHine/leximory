@@ -41,6 +41,7 @@ struct BrowserWorkspaceView: View {
     @State private var finding = false
     @State private var findRequest: UUID?
     @State private var findInteraction: UIFindInteraction?
+    @State private var findDismissal: BrowserFindDismissal?
     @State private var editingText: CatalogText?
     @State private var editingPin: BrowserHomePin?
     @State private var activitySheet = false
@@ -126,6 +127,7 @@ struct BrowserWorkspaceView: View {
             .toolbar(.hidden, for: .tabBar)
             .disabled(clearingData)
         }
+        .ignoresSafeArea(keepsReadingViewport ? .keyboard : [], edges: .bottom)
         .overlay(alignment: .bottom) {
                 controls.padding(.horizontal, 12).padding(.bottom, 8)
                     .opacity(finding ? 0 : 1).allowsHitTesting(!finding).accessibilityHidden(finding)
@@ -227,8 +229,15 @@ struct BrowserWorkspaceView: View {
             guard let request = findRequest, let interaction = findInteraction else { return }
             // Let the menu finish dismissing before presenting UIKit's find controls.
             do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
-            interaction.presentFindNavigator(showingReplace: false)
+            if workspace.ebookReader?.format == "pdf", interaction === workspace.ebookReader?.findInteraction {
+                await workspace.ebookReader?.prepareForFind?()
+            }
+            guard !Task.isCancelled, findRequest == request else { return }
             finding = true
+            let dismissal = BrowserFindDismissal(interaction: interaction)
+            findDismissal = dismissal
+            defer { dismissal.stop(); if findRequest == request { findDismissal = nil } }
+            interaction.presentFindNavigator(showingReplace: false)
             // UIKit does not publish navigator visibility changes. Observe only during this find session.
             repeat {
                 do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
@@ -253,8 +262,16 @@ struct BrowserWorkspaceView: View {
             workspace.browser.web.allowsBackForwardNavigationGestures = enabled
         }
         .onChange(of: workspace.browser.loading) { _, _ in workspace.refreshRecentWebpageTitle() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                findInteraction?.dismissFindNavigator()
+                findDismissal?.stop(); findDismissal = nil
+                findRequest = nil; finding = false; findInteraction = nil
+            }
+        }
         .onChange(of: workspace.current.id) { _, _ in
             saveError = nil
+            findDismissal?.stop(); findDismissal = nil
             workspace.browser.web.findInteraction?.dismissFindNavigator()
             findInteraction?.dismissFindNavigator()
             findRequest = nil; finding = false; findInteraction = nil
@@ -268,6 +285,10 @@ struct BrowserWorkspaceView: View {
             [page.url.absoluteString, page.iconURL?.absoluteString ?? "", page.previewImageURL?.absoluteString ?? ""]
         }
         return state + pages
+    }
+    private var keepsReadingViewport: Bool {
+        !editingAddress && (workspace.current.isWeb ||
+            (workspace.ebookReader != nil && workspace.current.textID == workspace.ebookTextID))
     }
     private func beginFind(_ interaction: UIFindInteraction?) {
         guard let interaction else { return }
@@ -578,4 +599,33 @@ private struct BrowserVocabularyView: View {
             }
         }.safeAreaPadding(.bottom, chromeHeight)
     }
+}
+
+@MainActor private final class BrowserFindDismissal: NSObject, UIGestureRecognizerDelegate {
+    private weak var interaction: UIFindInteraction?
+    private weak var window: UIWindow?
+    private lazy var tap = UITapGestureRecognizer(target: self, action: #selector(dismiss))
+
+    init(interaction: UIFindInteraction) {
+        self.interaction = interaction
+        super.init()
+        window = interaction.view?.window
+        tap.cancelsTouchesInView = false
+        tap.delegate = self
+        window?.addGestureRecognizer(tap)
+    }
+    func stop() { window?.removeGestureRecognizer(tap) }
+    @objc private func dismiss() { interaction?.dismissFindNavigator() }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard interaction?.isFindNavigatorVisible == true, let content = interaction?.view,
+              content.bounds.contains(touch.location(in: content)) else { return false }
+        var view = touch.view
+        while let current = view {
+            if current is UIControl || current is UITextInput { return false }
+            view = current.superview
+        }
+        return true
+    }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
 }

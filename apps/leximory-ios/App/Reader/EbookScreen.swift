@@ -35,6 +35,7 @@ struct EbookBookmarkColorRequest: Equatable {
     var canFind = false
     @ObservationIgnored var search: ((String) -> Void)?
     @ObservationIgnored weak var findInteraction: UIFindInteraction?
+    @ObservationIgnored var prepareForFind: (() async -> Void)?
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
     var bookmarkErrorMessage = "标记未能保存，请重试。"
@@ -96,7 +97,7 @@ struct EbookBookmarkColorRequest: Equatable {
         let bookmark = EbookBookmark(id: nextPendingBookmarkID, quote: selection.quote, chapter: chapter, location: selection.location ?? location, color: color)
         nextPendingBookmarkID -= 1
         bookmarks.append(bookmark)
-        self.selection = nil; menuSelection = nil
+        if format != "pdf" { self.selection = nil; menuSelection = nil }
         return bookmark
     }
     func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
@@ -337,11 +338,11 @@ struct EbookScreen: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 8) {
                 readerNavigation
-                if reader.chromeVisible { readerActions.fixedSize(horizontal: true, vertical: false).transition(.opacity) }
+                if reader.chromeVisible || reader.drawingEnabled { readerActions.fixedSize(horizontal: true, vertical: false).transition(.opacity) }
             }.frame(height: 44)
             VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 8) { readerNavigation }.frame(height: 44)
-                if reader.chromeVisible { readerActions }
+                if reader.chromeVisible || reader.drawingEnabled { readerActions }
             }
         }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
             .padding(.horizontal, 16)
@@ -852,6 +853,10 @@ struct PDFReaderView: UIViewRepresentable {
 
         }
         reader.findInteraction = view.findInteraction
+        reader.prepareForFind = { [weak view, weak coordinator = context.coordinator] in
+            view?.dismissSelection()
+            await coordinator?.drawingOverlays?.finishDrawing()
+        }
         context.coordinator.observe(view)
         view.onInitialLayout = {
             Task { reader.ready = true; context.coordinator.pageChanged() }
@@ -882,9 +887,16 @@ struct PDFReaderView: UIViewRepresentable {
         let reader: EbookReaderState
         var commandID: UUID?
         var drawingOverlays: PDFDrawingOverlays?
+        private var pendingBookmarkColors: Set<Int> = []
         private var appliedBookmarks: [EbookBookmark] = []
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
         func updateBookmarks(in view: PDFView) {
+            let menuChanged = pendingBookmarkColors != reader.pendingBookmarkColors || reader.bookmarks != appliedBookmarks
+            pendingBookmarkColors = reader.pendingBookmarkColors
+            if menuChanged {
+                UIMenuSystem.context.setNeedsRebuild()
+                (view as? LearningPDFView)?.refreshHighlightMenu()
+            }
             guard reader.bookmarks != appliedBookmarks, let document = view.document else { return }
             appliedBookmarks = reader.bookmarks
             for (page, annotation) in bookmarkAnnotations { page.removeAnnotation(annotation) }

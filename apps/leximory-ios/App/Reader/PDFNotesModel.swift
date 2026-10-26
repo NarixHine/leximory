@@ -14,6 +14,7 @@ import LeximoryCore
     private(set) var loadError = false
     private(set) var problems: [PDFNoteRecord] = []
     var showsProblems = false
+    @ObservationIgnored private var drawingRequest = UUID()
     @ObservationIgnored private var working: [Int: PDFPageDrawing] = [:]
     @ObservationIgnored private var debounce: Task<Void, Never>?
     @ObservationIgnored private var writes: Task<Void, Never>?
@@ -23,16 +24,19 @@ import LeximoryCore
         document = PDFNoteDocument(textID: book.descriptor.text.id, pdfVersion: book.descriptor.pdfSourceVersion ?? "")
     }
     func toggleDrawing() async {
-        if drawing { drawing = false; flush(); return }
+        if drawing { endDrawing(); return }
         guard !preparing else { return }
+        let request = UUID(); drawingRequest = request
         preparing = true
         defer { preparing = false }
         do {
             try await store.retain(book)
+            guard drawingRequest == request else { return }
             localError = false; drawing = true
         } catch { localError = true; showsProblems = true }
     }
-    func deactivate() { drawing = false; flush(); if sync?.activePDF == document { sync?.activePDF = nil } }
+    func endDrawing() { drawingRequest = UUID(); drawing = false; flush() }
+    func deactivate() { endDrawing(); if sync?.activePDF == document { sync?.activePDF = nil } }
     func run() async {
         let updates = await store.updates()
         sync?.activePDF = document; sync?.scheduleNotes()
