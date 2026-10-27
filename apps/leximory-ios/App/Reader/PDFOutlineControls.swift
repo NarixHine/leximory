@@ -20,12 +20,7 @@ struct PDFOutlineControls: View {
             }
             if let model {
                 if let error = model.error {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(error).foregroundStyle(.secondary)
-                        Button("重试") { model.retry() }
-                            .frame(minHeight: 44).contentShape(Rectangle())
-                            .disabled(readOnly || !model.canRetry)
-                    }
+                    Text(error).foregroundStyle(.secondary)
                 } else if !model.busy, let reason = model.unavailableReason {
                     Text(reason).foregroundStyle(.secondary)
                 }

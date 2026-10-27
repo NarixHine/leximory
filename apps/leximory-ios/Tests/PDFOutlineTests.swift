@@ -74,8 +74,8 @@ import SwiftUI
                 }, save: { data, request, generation, _ in
                     self.saves += 1; self.requests.append(request)
                     if self.failSave { throw URLError(.cannotWriteToFile) }
-                    if generation != nil && self.used >= 2 { throw MobileFailure(error: .init(code: "quota_exceeded", message: "Exhausted", retryable: false)) }
                     if let revision = self.receipts[request] { return SavedPDFOutline(data: try #require(self.published), revision: revision) }
+                    if generation != nil && self.used >= 2 { throw MobileFailure(error: .init(code: "quota_exceeded", message: "Exhausted", retryable: false)) }
                     let published = generation == nil ? data : PDFOutlineTests.fixture(title: "Generated \(self.generated)")
                     self.published = published
                     if generation != nil { self.used += 1 }
@@ -103,21 +103,60 @@ import SwiftUI
         #expect(service.used == 0)
         #expect(document.outlineRoot?.child(at: 0)?.label == "Original")
         service.failGeneration = false; service.failSave = true
-        await model.retry()?.value
+        await model.start()?.value
         #expect(service.used == 0)
+        #expect(model.canGenerate)
+        #expect(model.error == "目录未能保存，请再试一次。")
         #expect(model.savedData == data)
         #expect(model.canUndo == false)
         service.failSave = false; service.loseResponse = true
-        await model.retry()?.value
+        await model.start()?.value
         #expect(model.error != nil)
         #expect(reader.chapters.first?.title == "Original")
-        await model.retry()?.value
+        await model.start()?.value
         #expect(service.generated == 2)
         #expect(Set(service.requests).count == 1)
         #expect(service.used == 1)
         #expect(reader.chapters.first?.title == "Generated 2")
         #expect(model.error == nil)
     }
+    @Test func originalGenerateButtonRecoversAnAlreadyChargedPublicationWhenQuotaIsExhausted() async throws {
+        let data = Self.fixture(), service = Service()
+        service.used = 1
+        let model = service.model(data)
+        let (reader, _) = try attach(model, data: data)
+        await model.refreshAllowance()
+        service.loseResponse = true
+        await model.start()?.value
+        await model.refreshAllowance()
+        #expect(model.exhausted)
+        #expect(model.error != nil)
+        #expect(model.canGenerate)
+        await model.start()?.value
+        #expect(model.error == nil)
+        #expect(service.generated == 1)
+        #expect(service.used == 2)
+        #expect(reader.chapters.first?.title == "Generated 1")
+        #expect(model.canGenerate == false)
+    }
+
+    @Test func originalGenerateButtonRetriesAnUnfinishedUndoWithoutGeneratingAgain() async throws {
+        let data = Self.fixture(), service = Service(), model = service.model(data)
+        let (reader, _) = try attach(model, data: data)
+        await model.refreshAllowance()
+        await model.start()?.value
+        service.failSave = true
+        await model.start(.undo)?.value
+        #expect(model.canGenerate)
+        #expect(reader.chapters.first?.title == "Generated 1")
+        service.failSave = false
+        await model.start()?.value
+        #expect(model.error == nil)
+        #expect(reader.chapters.first?.title == "Original")
+        #expect(service.generated == 1)
+        #expect(service.used == 1)
+    }
+
     @Test func undoRedoAndNewUndoPointPersistWithoutAIOrQuota() async throws {
         let data = Self.fixture(), service = Service(), model = service.model(data)
         let (reader, document) = try attach(model, data: data)
@@ -169,7 +208,6 @@ import SwiftUI
         #expect(service.used == 2)
         #expect(model.exhausted)
         #expect(model.canGenerate == false)
-        #expect(model.canRetry == false)
         #expect(model.error == "本期词点额度已用完。")
         #expect(document.outlineRoot?.child(at: 0)?.label == "Original")
     }

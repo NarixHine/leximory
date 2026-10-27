@@ -62,9 +62,12 @@ import LeximoryCore
     }
     var exhausted: Bool { quotaBlocked || (allowance.map { $0.limit - $0.used < 1 } ?? false) }
     var hasPendingSave: Bool { pending != nil }
-    var canGenerate: Bool { !busy && allowance != nil && unavailableReason == nil && pending == nil }
+    var canGenerate: Bool {
+        guard !busy, writable, online, document?.isLocked == false,
+              document?.allowsDocumentChanges == true, document?.isEncrypted == false else { return false }
+        return pending != nil || (allowance != nil && !exhausted)
+    }
     var canRestore: Bool { !busy && pending == nil && writable && online && document?.allowsDocumentChanges == true }
-    var canRetry: Bool { !busy && writable && online && (!exhausted || pending.map { $0.generationID == nil } == true) }
     func attach(_ document: PDFDocument, reader: EbookReaderState) {
         self.document = document; self.reader = reader
         if let saved = PDFDocument(data: savedData) {
@@ -77,13 +80,12 @@ import LeximoryCore
     }
     @discardableResult func start(_ change: Change = .generation) -> Task<Void, Never>? {
         guard !busy, writable, online else { return nil }
-        if change == .generation && pending == nil && !canGenerate { return nil }
+        if change == .generation && !canGenerate { return nil }
         if pending == nil && change != .generation && !canRestore { return nil }
-        busy = true; generating = change == .generation; error = nil
+        busy = true; generating = change == .generation && pending == nil; error = nil
         // This task belongs to the reading session, not the ToC presentation lifecycle.
         return Task { await perform(change) }
     }
-    @discardableResult func retry() -> Task<Void, Never>? { start(pending?.change ?? .generation) }
     private func perform(_ change: Change) async {
         defer { busy = false; generating = false }
         do {
@@ -141,9 +143,9 @@ import LeximoryCore
                     await refreshAllowance(); self.error = "本期词点额度已用完。"
                 case "inaccessible", "unauthenticated", "stale_revision":
                     writable = false; self.error = "这份 PDF 已更新或暂不可修改，请重新打开。"
-                default: self.error = "目录未能生成或保存，请重试。"
+                default: self.error = pending == nil ? "目录未能生成，请再试一次。" : "目录未能保存，请再试一次。"
                 }
-            } else { self.error = "目录未能生成或保存，请重试。" }
+            } else { self.error = pending == nil ? "目录未能生成，请再试一次。" : "目录未能保存，请再试一次。" }
         }
     }
     static func validate(entries: [PDFOutlineEntry], pageCount: Int) throws {

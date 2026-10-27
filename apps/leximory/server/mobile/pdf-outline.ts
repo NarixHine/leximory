@@ -7,6 +7,10 @@ import { checkedResponse, jsonBody, type MobileContext, type MobileOperation } f
 import { MobileError } from './errors'
 
 export type OutlineResult = z.infer<typeof pdfOutlineResultSchema>
+// Gemini rejects the bounded array in the API schema. Enforce its limits after generation.
+export const pdfOutlineModelSchema = pdfOutlineResultSchema.extend({
+    entries: z.array(pdfOutlineResultSchema.shape.entries.element),
+})
 export type OutlineScope = { userId: string; textId: string; sourceVersion: string }
 export interface PDFOutlineStore {
     generate(

@@ -539,6 +539,12 @@ struct EbookScreen: View {
                     guard let url = Bundle.main.url(forResource: article.resource, withExtension: nil) else { throw CocoaError(.fileNoSuchFile) }
                     data = try Data(contentsOf: url)
                 }
+                if format == "pdf", ProcessInfo.processInfo.arguments.contains("--pdf-outline-failure-fixture"), let data {
+                    reader.pdfOutline = PDFOutlineModel(textID: article.id.rawValue, data: data, revision: nil, writable: true,
+                        generate: { _, _ in throw URLError(.cannotConnectToHost) },
+                        save: { _, _, _, _ in throw URLError(.cannotConnectToHost) },
+                        usage: { Account.Allowance(used: 0, limit: 10, resetsIn: 300) })
+                }
                 #else
                 guard let url = Bundle.main.url(forResource: article.resource, withExtension: nil) else { throw CocoaError(.fileNoSuchFile) }
                 data = try Data(contentsOf: url)

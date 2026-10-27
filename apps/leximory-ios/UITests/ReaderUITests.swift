@@ -631,6 +631,37 @@ final class ReaderUITests: XCTestCase {
         app.buttons["2"].tap()
         capture(app, name: "PDF final page")
     }
+    @MainActor func testPDFOutlineFailureUsesTheOriginalGenerateButton() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--pdf-outline-failure-fixture"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        let pdf = app.buttons["text-fixture-pdf"]
+        for _ in 0..<4 where !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        revealEbookControls(app)
+        app.buttons["ebook-contents"].tap()
+        let generate = app.buttons["pdf-outline-generate"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 5))
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: generate)
+        waitForExpectations(timeout: 5)
+        generate.tap()
+        let error = app.staticTexts["目录未能生成，请再试一次。"]
+        XCTAssertTrue(error.waitForExistence(timeout: 5))
+        XCTAssertTrue(generate.isEnabled)
+        XCTAssertEqual(app.buttons.matching(identifier: "pdf-outline-generate").count, 1)
+        XCTAssertFalse(app.buttons["重试"].exists)
+        XCTAssertFalse(app.cells.containing(.button, identifier: "pdf-outline-generate").firstMatch.exists)
+        capture(app, name: "Leximory PDF contents failure with one action")
+        generate.tap()
+        XCTAssertTrue(error.waitForExistence(timeout: 5))
+        XCTAssertTrue(generate.isEnabled)
+        XCTAssertTrue(app.buttons["1"].isHittable)
+        app.buttons["1"].tap()
+        XCTAssertFalse(generate.exists)
+    }
+
     @MainActor func testPDFPageTapDismissesSelectionAndKeepsControlsVisible() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }

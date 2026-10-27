@@ -4,11 +4,11 @@ The iOS contents tray offers AI generation for every PDF. Only the generation bu
 
 ## Saving and quota
 
-`generatePDFOutline` authenticates the caller, requires folder ownership, checks the original PDF version, and returns a validated chapter tree. Results are cached by account, text, source version and request identity. Generation does not charge quota.
+`generatePDFOutline` authenticates the caller, requires folder ownership, checks the original PDF version, and returns a validated chapter tree. Results are cached by account, text, source version and request identity. Generation does not charge quota. The provider schema omits array-size bounds that Gemini rejects; the API still validates the original nonempty, 1,000-entry limit and chapter ordering before returning a result.
 
 `savePDFOutline` serializes the outline on the server with pdf-lib. iOS PDFKit can display the edited tree but omitted outlines from both `dataRepresentation()` and `write(to:)` in the simulator round-trip test. The server changes the outline dictionary without drawing or replacing pages. Original content streams, resources, annotations, links and metadata remain in the PDF object graph.
 
-Each generated PDF is uploaded under a new immutable storage path. After upload, one Redis transaction checks the active revision and remaining shared commentary allowance, publishes the file pointer, records a permanent request receipt and increments usage by exactly one. An upload, serialization, stale revision or quota failure cannot replace the active pointer or charge quota. A lost-response retry returns the recorded publication and never charges again.
+Each generated PDF is uploaded under a new immutable storage path. After upload, one Redis transaction checks the active revision and remaining shared commentary allowance, publishes the file pointer, records a permanent request receipt and increments usage by exactly one. An upload, serialization, stale revision or quota failure cannot replace the active pointer or charge quota. A lost-response retry returns the recorded publication and never charges again. The existing generation button resumes a pending publication with the same request identity; a separate retry or save button is not shown.
 
 Undo and redo select only one of the server-recorded before/after file hashes. They publish the selected file without a charge, upload or AI request. The client retains the corresponding bytes for the reading session. Concurrent changes reject a stale base revision instead of overwriting another saved outline.
 

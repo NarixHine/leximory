@@ -4,7 +4,12 @@ import { PDFDocument, PDFName, PDFDict, PDFArray, PDFHexString, StandardFonts } 
 import { embedPDFOutline } from '../server/mobile/pdf-outline-document'
 import { spawnSync } from 'node:child_process'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
-import { createPDFOutlineOperations, validatePDFOutline, type PDFOutlineStore } from '../server/mobile/pdf-outline'
+import {
+    createPDFOutlineOperations,
+    pdfOutlineModelSchema,
+    validatePDFOutline,
+    type PDFOutlineStore,
+} from '../server/mobile/pdf-outline'
 import { publishPDFOutlineScript } from '../server/mobile/pdf-outline-publication'
 import type { CatalogStore } from '../server/mobile/catalog'
 import type { EbookStore } from '../server/mobile/ebooks'
@@ -110,6 +115,13 @@ test('blank PDFs and empty or unusable model output are failures', async () => {
         ],
     ]) {
         assert.throws(() => validatePDFOutline({ entries }, 2))
+    }
+})
+test('provider output still enforces the API entry limits before generation can succeed', async () => {
+    for (const entries of [[], Array.from({ length: 1001 }, () => ({ title: 'Chapter', page: 1, depth: 0 }))]) {
+        const output = pdfOutlineModelSchema.parse({ entries })
+        const run = handler({ ...untouched, generate: async () => output })
+        assert.equal((await run(request('pdf-outline-generate', generation))).status, 503)
     }
 })
 test('generation and publication keep their identities and server-derived scope', async () => {
