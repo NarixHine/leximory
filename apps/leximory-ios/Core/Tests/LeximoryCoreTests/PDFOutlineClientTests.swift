@@ -5,6 +5,17 @@ import HTTPTypes
 @testable import LeximoryCore
 
 struct PDFOutlineClientTests {
+    @Test func generatedFirstSaveOmitsItsNilBaselineOnTheWire() throws {
+        let id = UUID().uuidString
+        let payload = Operations.savePDFOutline.Input.Body.jsonPayload(requestId: id, sourceVersion: "source",
+            baseRevision: nil, generationId: id, pdfDigest: String(repeating: "a", count: 64))
+        let bytes = try JSONEncoder().encode(payload)
+        let object = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+        #expect(object["baseRevision"] == nil)
+        #expect(object["generationId"] as? String == id)
+        #expect(object["requestId"] as? String == id)
+    }
+
     @Test func generatedClientRetriesWithTheSameIdentityAndPreservesNestedEntries() async throws {
         let transport = OutlineTransport()
         let client = MobileClient(baseURL: URL(string: "https://outline.example")!, transport: transport, token: { _ in "verified" })

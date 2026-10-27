@@ -135,11 +135,11 @@ private final class AnnotationRubyTextView: UITextView, UITextViewDelegate {
     func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
         let text = (textView.text ?? "") as NSString
         let native = ReadingSelectionMenu.copyAndLookupActions(suggestedActions)
-        guard range.location <= text.length, range.length <= text.length - range.location else { return UIMenu(children: native) }
+        guard range.location <= text.length, range.length <= text.length - range.location else { return ReadingSelectionMenu.menu(children: native) }
         let search = ReadingSelectionMenu.searchAction(query: text.substring(with: range), perform: workspace.map { workspace in
             { [weak workspace] query in workspace?.search(query) }
         })
-        return UIMenu(children: native + [search])
+        return ReadingSelectionMenu.menu(children: native + [search])
     }
     var rubies: [AnnotationMarkdownLayout.Ruby] = []
     var rubyFont = UIFont.systemFont(ofSize: 9)

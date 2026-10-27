@@ -6,63 +6,50 @@ import LeximoryCore
 import os
 
 @MainActor enum ReadingSelectionMenu {
-    static let lookupTitle = "🐈 猫忆查"
+    static let lookupTitle = "猫忆查"
     static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
-    static let nativeDefineMenuID = UIMenu.Identifier("com.leximory.selection.native-define")
+
+    static func menu(children: [UIMenuElement], options: UIMenu.Options = []) -> UIMenu {
+        let menu = UIMenu(options: options, children: children)
+        menu.preferredElementSize = .medium
+        let preferences = UIMenuDisplayPreferences()
+        preferences.maximumNumberOfTitleLines = 1
+        menu.displayPreferences = preferences
+        return menu
+    }
 
     static func removeUnrelatedActions(from builder: UIMenuBuilder) {
         guard builder.system == .context else { return }
-        let nativeDefine = builder.menu(for: .lookup) ?? builder.menu(for: nativeDefineMenuID)
-        let defineActions = copyAndLookupActions(nativeDefine?.children ?? [])
-        // Remove Apple's lookup container, including its later system additions.
-        // Keep the original Define action in an app-owned menu instead.
+        let native = copyAndLookupActions(builder.menu(for: .root)?.children ?? [])
         builder.remove(menu: .lookup)
-        builder.remove(menu: nativeDefineMenuID)
-        builder.remove(menu: .share)
-        builder.remove(menu: .replace)
-        builder.remove(menu: .find)
-        builder.replaceChildren(ofMenu: .standardEdit) { copyAndLookupActions($0) }
-        builder.replaceChildren(ofMenu: .root) { copyAndLookupActions($0) }
-        if !defineActions.isEmpty {
-            let menu = UIMenu(title: "", identifier: nativeDefineMenuID, options: .displayInline, children: defineActions)
-            if builder.menu(for: .standardEdit) != nil {
-                builder.insertSibling(menu, afterMenu: .standardEdit)
-            } else {
-                builder.insertChild(menu, atEndOfMenu: .root)
-            }
-        }
+        builder.replaceChildren(ofMenu: .root) { _ in native }
     }
 
-    static func insertLearningActions(_ actions: [UIMenuElement], into builder: UIMenuBuilder, nativeLookupBeforeCopy: Bool = false) {
-        var destination: UIMenu.Identifier = .standardEdit
-        if nativeLookupBeforeCopy, let lookup = builder.menu(for: nativeDefineMenuID), builder.menu(for: .standardEdit) != nil {
-            builder.remove(menu: nativeDefineMenuID)
-            builder.insertSibling(lookup, beforeMenu: .standardEdit)
-            destination = nativeDefineMenuID
-        } else if builder.menu(for: .standardEdit) == nil {
-            if builder.menu(for: nativeDefineMenuID) != nil {
-                destination = nativeDefineMenuID
-            } else {
-                builder.insertChild(UIMenu(title: "", options: .displayInline, children: actions), atStartOfMenu: .root)
-                return
-            }
+    static func insertLearningActions(_ actions: [UIMenuElement], into builder: UIMenuBuilder,
+                                      nativeLookupBeforeCopy: Bool = false, trailingActions: [UIMenuElement] = []) {
+        guard builder.system == .context else { return }
+        builder.replaceChildren(ofMenu: .root) { elements in
+            let native = copyAndLookupActions(elements)
+            let ordered = nativeLookupBeforeCopy
+                ? native.filter { defineTitles.contains(nativeTitle($0)) } + native.filter { !defineTitles.contains(nativeTitle($0)) }
+                : native
+            return [menu(children: actions + ordered + trailingActions, options: .displayInline)]
         }
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: actions), beforeMenu: destination)
     }
 
     private static let defineTitles: Set<String> = ["查询", "查詢", "定义", "定義", "Look Up", "Define"]
     private static let copyTitles: Set<String> = ["拷贝", "拷貝", "复制", "複製", "Copy"]
 
     static func removingSystemSearchActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
-        elements.compactMap { element in
+        elements.flatMap { element -> [UIMenuElement] in
             if let menu = element as? UIMenu {
-                if menu.identifier == .lookup { return copyAndLookupActions([menu]).first }
+                if menu.identifier == .lookup { return copyAndLookupActions(menu.children) }
                 let children = removingSystemSearchActions(menu.children)
-                return children.isEmpty ? nil : menu.replacingChildren(children)
+                return children.isEmpty ? [] : [menu.replacingChildren(children)]
             }
             switch nativeTitle(element) {
-            case "查找所选内容", "尋找所選內容", "翻译", "翻譯", "搜索网页", "搜尋網頁", "Search Web", "Translate", "Find Selection": return nil
-            default: return element
+            case "查找所选内容", "尋找所選內容", "翻译", "翻譯", "搜索网页", "搜尋網頁", "Search Web", "Translate", "Find Selection": return []
+            default: return [element]
             }
         }
     }
@@ -73,33 +60,17 @@ import os
     }
 
     static func copyAndLookupActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
-        elements.compactMap { element in
-            if let menu = element as? UIMenu {
-                let children = copyAndLookupActions(menu.children)
-                guard !children.isEmpty else { return nil }
-                if menu.identifier == .lookup {
-                    return UIMenu(title: menu.title, image: menu.image, identifier: nativeDefineMenuID,
-                                  options: menu.options, children: children)
-                }
-                return children.count == menu.children.count && zip(children, menu.children).allSatisfy { $0 === $1 }
-                    ? menu : menu.replacingChildren(children)
+        elements.flatMap { element -> [UIMenuElement] in
+            if let menu = element as? UIMenu { return copyAndLookupActions(menu.children) }
+            if let command = element as? UICommand, command.action == #selector(UIResponderStandardEditActions.copy(_:)) {
+                return [command]
             }
-            if let command = element as? UICommand {
-                if command.action == #selector(UIResponderStandardEditActions.copy(_:)) { return command }
-            }
-            // UIKit's lookup group also contains Translate and Search Web. Keep
-            // only the native Define labels supported by this app's localizations.
-            if defineTitles.contains(nativeTitle(element)) || copyTitles.contains(nativeTitle(element)) { return element }
-            return nil
+            return defineTitles.contains(nativeTitle(element)) || copyTitles.contains(nativeTitle(element)) ? [element] : []
         }
     }
 
-    static func nativeLookupMenus(in elements: [UIMenuElement]) -> [UIMenuElement] {
-        elements.flatMap { element -> [UIMenuElement] in
-            guard let menu = element as? UIMenu else { return [] }
-            return menu.identifier == .lookup || menu.identifier == nativeDefineMenuID
-                ? copyAndLookupActions([menu]) : nativeLookupMenus(in: menu.children)
-        }
+    static func nativeLookupActions(in elements: [UIMenuElement]) -> [UIMenuElement] {
+        copyAndLookupActions(elements).filter { defineTitles.contains(nativeTitle($0)) }
     }
 
     static func searchAction(query: String?, perform: ((String) -> Void)?) -> UIAction {
@@ -321,16 +292,16 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
             let native = ReadingSelectionMenu.copyAndLookupActions(suggestedActions)
-            guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: native) }
+            guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return ReadingSelectionMenu.menu(children: native) }
             let search = ReadingSelectionMenu.searchAction(query: selection.text, perform: parent.workspace.map { workspace in
                 { [weak workspace] query in workspace?.search(query) }
             })
-            guard !parent.readOnly else { return UIMenu(children: native + [search]) }
+            guard !parent.readOnly else { return ReadingSelectionMenu.menu(children: native + [search]) }
             let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
-            return UIMenu(children: [UIMenu(options: .displayInline, children: [action])] + native + [search])
+            return ReadingSelectionMenu.menu(children: [action] + native + [search])
         }
         private func rect(_ range: NSRange, in view: UITextView) -> CGRect {
             view.presentationRect(for: range)

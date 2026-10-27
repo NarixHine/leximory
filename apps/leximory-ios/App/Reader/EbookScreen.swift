@@ -419,7 +419,7 @@ struct EbookScreen: View {
                 .accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.contents)) { contentsTray }
             Button { tray = .bookmarks } label: { readerActionIcon("highlighter") }
-                .accessibilityLabel("🖍️荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
+                .accessibilityLabel("荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.bookmarks)) { bookmarksTray }
             Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
                 .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)

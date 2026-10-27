@@ -106,8 +106,8 @@ export const pdfOutlineSaveSchema = z
     .object({
         requestId: z.uuid(),
         sourceVersion: z.string().min(1).max(256),
-        baseRevision: z.string().max(256).nullable(),
-        generationId: z.uuid().nullable(),
+        baseRevision: z.string().max(256).nullable().default(null),
+        generationId: z.uuid().nullable().default(null),
         pdfDigest: z.string().regex(/^[a-f0-9]{64}$/),
     })
     .strict()

@@ -243,11 +243,11 @@ final class ReaderUITests: XCTestCase {
         XCTAssertFalse(app.buttons["ebook-contents"].exists)
         capture(app, name: "EPUB quiet prose")
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 1.2)
-        let lookup = app.menuItems["🐈 猫忆查"]
+        let lookup = app.menuItems["猫忆查"]
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
+        XCTAssertTrue(app.menuItems["荧光笔"].exists)
         capture(app, name: "EPUB contextual learning menu")
-        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查", "🖍️荧光笔"])
+        assertNativeDefineAfterLeximory(in: app, actions: ["猫忆查", "荧光笔"])
         lookup.tap()
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
         XCTAssertTrue(tray.waitForExistence(timeout: 5))
@@ -364,7 +364,7 @@ final class ReaderUITests: XCTestCase {
         let remove = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "移除")).firstMatch
         if !remove.exists { app.buttons["下一页"].tap() }
         XCTAssertTrue(remove.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertFalse(app.menuItems["🖍️荧光笔"].exists)
+        XCTAssertFalse(app.menuItems["荧光笔"].exists)
         XCTAssertFalse(app.menuItems["颜色"].exists)
         XCTAssertFalse(app.menuItems["添加备注"].exists)
         remove.tap()
@@ -405,7 +405,7 @@ final class ReaderUITests: XCTestCase {
         remove.tap()
         XCTAssertTrue(remove.waitForNonExistence(timeout: 5))
         word.press(forDuration: 1.2)
-        let highlighter = app.menuItems["🖍️荧光笔"]
+        let highlighter = app.menuItems["荧光笔"]
         XCTAssertTrue(highlighter.waitForExistence(timeout: 5), app.debugDescription)
         for color in ["鼠尾草绿", "黄色", "绿色", "蓝色", "粉色", "紫色"] {
             XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch.exists)
@@ -677,7 +677,7 @@ final class ReaderUITests: XCTestCase {
         let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
         XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
-        let lookup = app.menuItems["🐈 猫忆查"]
+        let lookup = app.menuItems["猫忆查"]
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).tap()
@@ -689,6 +689,7 @@ final class ReaderUITests: XCTestCase {
 
     @MainActor func testPDFContextualLearningMenu() {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
         app.launch()
         app.buttons["library-fixture-ebooks"].tap()
@@ -701,10 +702,16 @@ final class ReaderUITests: XCTestCase {
         let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
         XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
-        XCTAssertTrue(app.menuItems["🐈 猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.menuItems["🖍️荧光笔"].exists)
+        XCTAssertTrue(app.menuItems["猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.menuItems["荧光笔"].exists)
+        let lookup = app.menuItems["猫忆查"]
+        let copy = app.menuItems.matching(NSPredicate(format: "label IN %@", ["拷贝", "拷貝", "复制", "Copy"])).firstMatch
+        XCTAssertTrue(copy.exists)
+        XCTAssertEqual(copy.frame.midY, lookup.frame.midY, accuracy: 2)
+        XCTAssertEqual(copy.frame.height, lookup.frame.height, accuracy: 2)
+        XCTAssertEqual(app.menuItems["荧光笔"].frame.midY, lookup.frame.midY, accuracy: 2)
         capture(app, name: "PDF contextual learning menu")
-        app.menuItems["🐈 猫忆查"].tap()
+        app.menuItems["猫忆查"].tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
     }
     @MainActor func testEPUBControlsHaveFullTargetsAndTopPagination() {
@@ -947,12 +954,12 @@ final class ReaderUITests: XCTestCase {
         paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).press(forDuration: 1)
         capture(app, name: "Selection menu")
         XCTAssertTrue(app.menuItems["拷贝"].waitForExistence(timeout: 5))
-        let define = app.menuItems["🐈 猫忆查"]
+        let define = app.menuItems["猫忆查"]
         XCTAssertTrue(define.exists)
         for title in ["查找所选内容", "翻译", "搜索网页", "Translate", "Search Web"] {
             XCTAssertFalse(app.menuItems[title].exists)
         }
-        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])
+        assertNativeDefineAfterLeximory(in: app, actions: ["猫忆查"])
         define.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
         dismissDefinitionTray(app)

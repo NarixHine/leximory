@@ -17,8 +17,9 @@ import LeximoryCore
             editMenuForTextIn: NSRange(location: 0, length: 4), suggestedActions: [copy, define]))
         #expect(menu.children.contains { $0 === copy })
         #expect(!menu.children.contains { $0 === define })
-        let defineGroup = try #require(menu.children.compactMap { $0 as? UIMenu }.first { $0.identifier == ReadingSelectionMenu.nativeDefineMenuID })
-        #expect(defineGroup.children.first === nativeDefine)
+        #expect(menu.children.contains { $0 === nativeDefine })
+        #expect(menu.children.contains { $0 is UIMenu } == false)
+        #expect(menu.preferredElementSize == .medium)
         let actions = menu.children.flatMap { ($0 as? UIMenu)?.children ?? [$0] }
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
         if !offline { #expect(actions.first?.title == ReadingSelectionMenu.lookupTitle) }
@@ -30,7 +31,7 @@ import LeximoryCore
         reader.readOnly = offline
         let actions = EbookLearningMenu.actions(reader: reader)
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
-        let bookmark = actions.first { $0.title == "🖍️荧光笔" }
+        let bookmark = actions.first { $0.title == "荧光笔" }
         #expect(bookmark != nil)
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
@@ -40,7 +41,7 @@ import LeximoryCore
         reader.format = "pdf"; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
         reader.selection = selection; reader.menuSelection = selection
-        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
         UIButton(primaryAction: highlighter).sendActions(for: .touchUpInside)
         let action = try #require(reader.selectionAction)
         guard case .bookmark = action.kind else { Issue.record("Expected a highlight action"); return }
@@ -51,7 +52,7 @@ import LeximoryCore
         reader.finishBookmark(pending, saved: saved)
         reader.menuSelection = selection
         let menu = EbookLearningMenu.actions(reader: reader)
-        #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
+        #expect(menu.contains { $0.title == "荧光笔" } == false)
         let palette = try #require(menu.first as? UIMenu)
         let swatch = try #require(palette.children.compactMap { $0 as? UIAction }.first { $0.accessibilityLabel == color.title })
         #expect(swatch.attributes.contains(.disabled) == false)
@@ -93,7 +94,7 @@ import LeximoryCore
     func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.readOnly = offline; reader.canBookmark = offline
-        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
         #expect(action.attributes.contains(.disabled))
     }
     @Test func tappingAndReopeningPDFHighlightDoesNotCreateANativeTextSelection() throws {
@@ -138,15 +139,11 @@ import LeximoryCore
         let selectAll = UICommand(title: "Select All", action: #selector(UIResponderStandardEditActions.selectAll(_:)))
         let children = ReadingSelectionMenu.copyAndLookupActions([copy, selectAll, lookup])
         #expect(children.count == 2)
-        let retained = try #require(children.last as? UIMenu)
-        #expect(retained.identifier != .lookup)
-        #expect(retained.children.count == 1)
-        #expect(retained.children.first === native)
+        #expect(children.last === native)
         let nested = UIMenu(children: [lookup])
-        let nativeMenus = ReadingSelectionMenu.nativeLookupMenus(in: [copy, nested])
-        #expect((nativeMenus.first as? UIMenu)?.identifier != .lookup)
-        #expect((nativeMenus.first as? UIMenu)?.children.count == 1)
-        #expect((nativeMenus.first as? UIMenu)?.children.first === native)
+        let nativeActions = ReadingSelectionMenu.nativeLookupActions(in: [copy, nested])
+        #expect(nativeActions.count == 1)
+        #expect(nativeActions.first === native)
     }
 
     @Test func existingPDFHighlightOmitsAddHighlight() {

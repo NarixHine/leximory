@@ -6444,6 +6444,7 @@
                     "maxLength": 256
                   },
                   "baseRevision": {
+                    "default": null,
                     "type": [
                       "string",
                       "null"
@@ -6451,6 +6452,7 @@
                     "maxLength": 256
                   },
                   "generationId": {
+                    "default": null,
                     "type": [
                       "string",
                       "null"
@@ -6465,8 +6467,6 @@
                 "required": [
                   "requestId",
                   "sourceVersion",
-                  "baseRevision",
-                  "generationId",
                   "pdfDigest"
                 ],
                 "additionalProperties": false

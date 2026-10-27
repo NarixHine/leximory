@@ -144,6 +144,23 @@ test('generation and publication keep their identities and server-derived scope'
     assert.equal((await run(request('pdf-outline', save))).status, 200)
     assert.deepEqual(calls, ['generate', 'save'])
 })
+test('native first-save and undo requests accept omitted nullable fields', async () => {
+    const received: unknown[] = []
+    const run = handler({
+        ...untouched,
+        save: async (_scope, input) => {
+            received.push(input)
+            return { revision: requestId, url: 'https://storage.example/published.pdf' }
+        },
+    })
+    // Swift's generated Codable payload omits nil properties instead of sending JSON null.
+    const { baseRevision: _baseline, ...firstSave } = save
+    assert.equal((await run(request('pdf-outline', firstSave))).status, 200)
+    assert.deepEqual(received[0], save)
+    const { generationId: _generation, ...undo } = { ...save, baseRevision: 'saved-outline' }
+    assert.equal((await run(request('pdf-outline', undo))).status, 200)
+    assert.deepEqual(received[1], { ...undo, generationId: null })
+})
 test('quota exhaustion and storage failures remain typed failures at their affected operation', async () => {
     const exhausted = handler({
         ...untouched,

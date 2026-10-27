@@ -120,8 +120,7 @@ final class BrowserWebView: WKWebView {
                 }
             }
         }
-        ReadingSelectionMenu.insertLearningActions([action], into: builder)
-        builder.insertChild(UIMenu(title: "", options: .displayInline, children: [searchAction]), atEndOfMenu: .root)
+        ReadingSelectionMenu.insertLearningActions([action], into: builder, trailingActions: [searchAction])
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
