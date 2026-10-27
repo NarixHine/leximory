@@ -217,41 +217,57 @@ struct BrowserHomeView: View {
         }
     }
     @ViewBuilder private func homeCardButtons(squares: Bool, folded: Bool, grid: Bool) -> some View {
-        card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xFAFCF8, 0x1D2925), border: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
-        card("我的书签", symbol: "bookmark.fill", color: tone(0xF8FBF7, 0x1D2925), border: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
-        card("打开电子书", symbol: "book.closed.fill", color: tone(0xFDFDF8, 0x1D2930), border: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
-        card("每日复习", symbol: "leaf.fill", color: tone(0xFCFDF8, 0x242B38), border: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
+        card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xE0EEDD, 0x1D2925), accent: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
+        card("我的书签", symbol: "bookmark.fill", color: tone(0xDDEFE6, 0x1D2925), accent: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
+        card("打开电子书", symbol: "book.closed.fill", color: tone(0xDCEEF2, 0x1D2930), accent: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
+        card("每日复习", symbol: "leaf.fill", color: tone(0xE1E9F8, 0x242B38), accent: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
             .accessibilityIdentifier("browser-review")
     }
     private func tone(_ light: UInt32, _ dark: UInt32) -> Color {
         let value = colorScheme == .dark ? dark : light
         return Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
     }
-    private func card(_ title: String, symbol: String, color: Color, border: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
+    private func card(_ title: String, symbol: String, color: Color, accent: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
         let radius: CGFloat = folded ? 22 : grid ? 24 : 30
         return Button(action: action) {
             cardLabel(title, symbol: symbol,
-                iconColor: colorScheme == .dark ? border : border.mix(with: label, by: 0.35),
+                iconColor: colorScheme == .dark ? accent : accent.mix(with: LeximoryPalette.ink, by: 0.55),
                 folded: folded, square: square, grid: grid)
-                .foregroundStyle(label)
-                .background(color.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.18 : 0.82) : 1), in: RoundedRectangle(cornerRadius: radius))
-                .background {
-                    RoundedRectangle(cornerRadius: radius)
-                        .fill(LeximoryPalette.paper.opacity(translucentBackgrounds ? (colorScheme == .dark ? 0.12 : 0) : 1))
-                        .shadow(color: (colorScheme == .dark ? label : border)
-                            .opacity(folded ? 0.12 : colorScheme == .dark ? 0.18 : 0.16),
-                            radius: folded ? 8 : 16, y: folded ? 2 : 4)
-                }
-                .background {
-                    if colorScheme == .dark && translucentBackgrounds {
-                        RoundedRectangle(cornerRadius: radius).fill(.thinMaterial).opacity(0.75)
-                    }
-                }
-                .overlay { RoundedRectangle(cornerRadius: radius).strokeBorder(border, lineWidth: folded ? 4 : grid ? 5 : 6) }
-                .shadow(color: .black.opacity(0.04), radius: 4, y: 3)
+                .foregroundStyle(colorScheme == .light ? LeximoryPalette.ink : label)
+                .background { cardSurface(color: color, tint: accent, radius: radius) }
                 .contentShape(RoundedRectangle(cornerRadius: radius))
         }.buttonStyle(BrowserCardButtonStyle()).accessibilityLabel(title)
             .matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || grid || typeSize.isAccessibilitySize ? 0 : angle))
+    }
+    @ViewBuilder private func cardSurface(color: Color, tint: Color, radius: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius)
+        if colorScheme == .light {
+            let highlight = color.mix(with: .white, by: 0.25)
+            if reduceTransparency {
+                shape.fill(LinearGradient(colors: [highlight, color],
+                    startPoint: .topLeading, endPoint: .bottomTrailing))
+            } else {
+                ZStack {
+                    shape.fill(.ultraThinMaterial).opacity(0.25)
+                    shape.fill(LinearGradient(colors: [highlight.opacity(0.80), color.opacity(0.70)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                }
+            }
+        } else {
+            let opacity = reduceTransparency ? 1.0 : hasWallpaper ? 0.72 : 0.92
+            ZStack {
+                if !reduceTransparency {
+                    shape.fill(.ultraThinMaterial)
+                }
+                shape.fill(
+                    LinearGradient(stops: [
+                        .init(color: color.mix(with: tint, by: 0.18).opacity(opacity), location: 0),
+                        .init(color: color.mix(with: tint, by: 0.09).opacity(opacity), location: 0.55),
+                        .init(color: color.mix(with: tint, by: 0.04).opacity(opacity), location: 1)
+                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+            }
+        }
     }
     @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
         if square && folded {
