@@ -35,7 +35,7 @@ Transient network failures remain silent. Permanent upload failures expose recov
 
 Notes do not guarantee immediate upload while iOS suspends the app. They upload when the authenticated app next has network access and execution time. Deploy the mobile API changes before testing account synchronization against that backend. A missing note endpoint is not treated as revoked PDF access.
 
-Mac Catalyst does not show Apple's tool picker. The handwriting control is disabled there; existing notes remain readable. This implementation does not provide typed notes, PDF export, browser editing, or automatic cross-device stroke merging.
+Mac Catalyst does not show Apple's tool picker. The handwriting control is disabled there; existing notes remain readable. This implementation does not provide typed notes, embedding handwriting in exported PDFs, browser editing, or automatic cross-device stroke merging. More → 导出电子书 shares the saved PDF file, including its saved outline; handwriting and Leximory highlights remain separate.
 
 ## Preliminary checks and human verification
 

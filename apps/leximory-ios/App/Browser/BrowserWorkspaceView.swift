@@ -461,6 +461,18 @@ struct BrowserWorkspaceView: View {
                     Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
                 }
             }
+            if case .document(let document) = workspace.current.resource, document.text.format == "ebook" {
+                Section {
+                    if let reader = workspace.ebookReader, workspace.ebookTextID == document.text.id,
+                       let file = reader.export(title: workspace.documents[document.text.id]?.text.title ?? document.text.title) {
+                        ShareLink(item: file, preview: SharePreview(file.filename)) {
+                            Label("导出电子书", systemImage: "square.and.arrow.up")
+                        }.accessibilityIdentifier("browser-export-ebook")
+                    } else {
+                        Button("导出电子书", systemImage: "square.and.arrow.up") {}.disabled(true)
+                    }
+                }
+            }
             Section {
                 Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
                 Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }

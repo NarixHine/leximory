@@ -17,6 +17,12 @@ struct EbookBookmarkColorRequest: Equatable {
 
 @MainActor @Observable final class EbookReaderState {
     var chapters: [EbookChapter] = []
+    var book: LocalEbook?
+    func export(title: String) -> EbookExport? {
+        guard let type = EbookExport.Format(rawValue: format),
+              let bytes = type == .pdf ? (pdfOutline?.savedData ?? book?.data) : book?.data else { return nil }
+        return EbookExport(data: bytes, format: type, title: title)
+    }
     var pdfOutline: PDFOutlineModel?
     var positionSaver: EbookPositionSaver?
     var bookmarks: [EbookBookmark] = []
@@ -132,7 +138,6 @@ struct EbookScreen: View {
     @State private var reader = EbookReaderState()
     @State private var data: Data?
     @State private var contentID = UUID()
-    @State private var loadedBook: LocalEbook?
     @State private var bookRequest = UUID()
     @State private var notes: PDFNotesModel?
     private var format: String { reader.format }
@@ -282,7 +287,7 @@ struct EbookScreen: View {
         }
         .task(id: article.id) { await load() }
         .task(id: resourceActive) {
-            guard resourceActive, let client, let loadedBook else { return }
+            guard resourceActive, let client, let loadedBook = reader.book else { return }
             await refreshBook(loadedBook, client: client)
         }
         .onChange(of: reader.loadFailure) { _, failure in if let failure { loading = false; refreshingContent = false; loadError = failure } }
@@ -419,7 +424,7 @@ struct EbookScreen: View {
                 .accessibilityLabel("目录").accessibilityIdentifier("ebook-contents").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.contents)) { contentsTray }
             Button { tray = .bookmarks } label: { readerActionIcon("highlighter") }
-                .accessibilityLabel("荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
+                .accessibilityLabel("🖍️荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.bookmarks)) { bookmarksTray }
             Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
                 .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
@@ -499,7 +504,7 @@ struct EbookScreen: View {
         reader.canBookmark = client != nil || ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures")
         reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.rightToLeft = language == "Japanese"
-        bookRequest = UUID(); loadedBook = nil
+        bookRequest = UUID(); reader.book = nil
         loading = true; refreshingContent = false; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
         do {
             if let client {
@@ -520,7 +525,7 @@ struct EbookScreen: View {
                     reader.pdfOutline?.online = !reader.readOnly
                 }
                 reader.format = book.descriptor.format; data = book.data
-                loadedBook = book
+                reader.book = book
                 if cached != nil { await refreshBook(book, client: client) }
             } else {
                 reader.format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
@@ -568,7 +573,7 @@ struct EbookScreen: View {
                refreshed.descriptor.pdfSourceVersion == book.descriptor.pdfSourceVersion,
                refreshed.descriptor.outlineRevision == outline.revision {
                 if reader.bookmarks == bookmarks { reader.bookmarks = refreshed.descriptor.bookmarks }
-                loadedBook = refreshed
+                reader.book = refreshed
                 return
             }
             if refreshed.data != book.data || refreshed.descriptor.format != book.descriptor.format {
@@ -588,12 +593,12 @@ struct EbookScreen: View {
             } else if reader.bookmarks == bookmarks {
                 reader.bookmarks = refreshed.descriptor.bookmarks
             }
-            loadedBook = refreshed
+            reader.book = refreshed
         } catch {
             // A failed revalidation must leave the cached book readable.
             guard !Task.isCancelled, bookRequest == request else { return }
             if MobileClient.isAccessFailure(error) {
-                notes?.deactivate(); notes = nil; data = nil; loading = false
+                notes?.deactivate(); notes = nil; data = nil; reader.book = nil; reader.pdfOutline = nil; loading = false
                 loadError = "暂时无法访问这本电子书。"
             }
         }

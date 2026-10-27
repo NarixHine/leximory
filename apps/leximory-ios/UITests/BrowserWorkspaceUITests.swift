@@ -2,6 +2,40 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testEbookExportOpensNativeShareSheet() {
+        for (format, title) in [("pdf", "River pages"), ("epub", "A river journey")] {
+            let app = launch(); defer { restore(app) }
+            app.buttons["browser-more"].tap()
+            XCTAssertFalse(app.buttons["导出电子书"].exists)
+            app.tap()
+            app.buttons["我的书签"].tap()
+            let book = app.buttons["browser-resource-workspace-\(format)"]
+            if !book.exists {
+                let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+                XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+            }
+            XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+            let reader = app.otherElements["ebook-reader"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            expectation(for: NSPredicate(format: "value CONTAINS %@", "\(format)已打开"), evaluatedWith: reader)
+            waitForExpectations(timeout: 20)
+            let position = app.staticTexts["ebook-page-position"].value as? String
+            app.buttons["browser-more"].tap()
+            let export = app.buttons["导出电子书"]
+            XCTAssertTrue(export.waitForExistence(timeout: 5)); XCTAssertTrue(export.isEnabled); export.tap()
+            XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.navigationBars["\(title).\(format)"].exists)
+            XCTAssertTrue(app.cells.containing(NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS %@ OR label CONTAINS %@",
+                "Files", "文件", "ファイル")).firstMatch.exists)
+            let capture = XCTAttachment(screenshot: app.screenshot())
+            capture.name = "Native \(format.uppercased()) export"; capture.lifetime = .keepAlways; add(capture)
+            app.swipeDown()
+            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.otherElements["ActivityListView"])
+            waitForExpectations(timeout: 5)
+            XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))
+            XCTAssertEqual(app.staticTexts["ebook-page-position"].value as? String, position)
+        }
+    }
     @MainActor func testPDFToolPalettePersistence() {
         let app = launch(); defer { restore(app) }
         func openPDFTools() {

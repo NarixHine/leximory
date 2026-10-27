@@ -6,7 +6,7 @@ import LeximoryCore
 import os
 
 @MainActor enum ReadingSelectionMenu {
-    static let lookupTitle = "猫忆查"
+    static let lookupTitle = "🐈 猫忆查"
     static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
 
     static func menu(children: [UIMenuElement], options: UIMenu.Options = []) -> UIMenu {

@@ -36,11 +36,14 @@ import SwiftUI
     @Test(arguments: [false, true]) func replacementSurvivesReopeningAndExportWithContentAndAnnotations(outline: Bool) async throws {
         let original = Self.fixture(outline: outline), service = Service(), model = service.model(Self.fixture(outline: outline))
         let (reader, live) = try attach(model, data: original)
+        reader.format = "pdf"
         reader.location = "2"
         await model.refreshAllowance(); await model.start()?.value
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".pdf")
         defer { try? FileManager.default.removeItem(at: root) }
-        try model.savedData.write(to: root)
+        let file = try #require(reader.export(title: "River pages"))
+        #expect(file.data == model.savedData)
+        try file.data.write(to: root)
         let exported = try #require(PDFDocument(url: root)), before = try #require(PDFDocument(data: original))
         #expect(exported.pageCount == 2)
         #expect(exported.string == before.string)

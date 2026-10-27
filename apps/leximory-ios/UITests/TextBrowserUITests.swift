@@ -16,7 +16,7 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
         let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
         XCTAssertTrue(heading.waitForExistence(timeout: 15)); heading.press(forDuration: 1)
-        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch
+        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch
         XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
         let definition = app.textViews["annotation-markdown"].firstMatch
         XCTAssertTrue(definition.waitForExistence(timeout: 10))
@@ -167,7 +167,7 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 15), app.debugDescription)
         let browser = XCTAttachment(screenshot: app.screenshot()); browser.name = "Single-page browser"; browser.lifetime = .keepAlways; add(browser)
         heading.press(forDuration: 1)
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
         XCTAssertTrue(app.menuItems["拷贝"].exists)
         for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "查找所选内容", "翻译", "搜索网页"] {
@@ -175,8 +175,8 @@ final class TextBrowserUITests: XCTestCase {
         }
         XCTAssertFalse(app.buttons["共享"].exists)
         XCTAssertFalse(app.buttons["全选"].exists)
-        assertNativeDefineAfterLeximory(in: app, actions: ["猫忆查"])
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.tap()
+        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
         let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
         let definitionText = app.textViews["annotation-markdown"].firstMatch

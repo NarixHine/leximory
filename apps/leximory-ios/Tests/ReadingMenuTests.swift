@@ -31,7 +31,7 @@ import LeximoryCore
         reader.readOnly = offline
         let actions = EbookLearningMenu.actions(reader: reader)
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
-        let bookmark = actions.first { $0.title == "荧光笔" }
+        let bookmark = actions.first { $0.title == "🖍️荧光笔" }
         #expect(bookmark != nil)
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
@@ -41,7 +41,7 @@ import LeximoryCore
         reader.format = "pdf"; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
         reader.selection = selection; reader.menuSelection = selection
-        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
         UIButton(primaryAction: highlighter).sendActions(for: .touchUpInside)
         let action = try #require(reader.selectionAction)
         guard case .bookmark = action.kind else { Issue.record("Expected a highlight action"); return }
@@ -52,7 +52,7 @@ import LeximoryCore
         reader.finishBookmark(pending, saved: saved)
         reader.menuSelection = selection
         let menu = EbookLearningMenu.actions(reader: reader)
-        #expect(menu.contains { $0.title == "荧光笔" } == false)
+        #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
         let palette = try #require(menu.first as? UIMenu)
         let swatch = try #require(palette.children.compactMap { $0 as? UIAction }.first { $0.accessibilityLabel == color.title })
         #expect(swatch.attributes.contains(.disabled) == false)
@@ -94,7 +94,7 @@ import LeximoryCore
     func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.readOnly = offline; reader.canBookmark = offline
-        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
+        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
         #expect(action.attributes.contains(.disabled))
     }
     @Test func tappingAndReopeningPDFHighlightDoesNotCreateANativeTextSelection() throws {
